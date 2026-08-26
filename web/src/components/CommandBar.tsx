@@ -14,9 +14,12 @@ export function CommandBar({ view, panelOpen }: CommandBarProps) {
       ]
     : view === "pdf"
       ? [
-          ["[ ]", "page"],
+          ["C-u C-d / PgUp PgDn", "page"],
+          ["2", "one / two pages"],
           ["I", "ink / colour"],
           ["+ −", "zoom"],
+          ["q", "queue"],
+          [":", "commands"],
           ["p", "atlas"],
           ["?", "keys"],
         ]
@@ -27,6 +30,8 @@ export function CommandBar({ view, panelOpen }: CommandBarProps) {
             ["m", "atlas"],
             ["p", "PDF"],
             ["F10", "switch article"],
+            ["q", "queue"],
+            [":", "commands"],
           ]
       : [
           ["h j k l / arrows", "move"],
@@ -37,6 +42,8 @@ export function CommandBar({ view, panelOpen }: CommandBarProps) {
           ["g", "gloss"],
           ["m", "Markdown"],
           ["p", "PDF"],
+          ["q", "queue"],
+          [":", "commands"],
           ["?", "keys"],
         ];
 

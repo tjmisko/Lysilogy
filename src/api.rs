@@ -27,17 +27,20 @@ use crate::{
     Result,
     analysis::{AnalysisService, validate_citations},
     domain::{
-        AnalysisProvider, AnalyzeRequest, CitationStatus, Clarification, ClarifyRequest,
-        CreateHighlightRequest, Highlight, HighlightOrigin, PaperId, PaperMap, PaperOverview,
-        PaperView, ProcessingStage, ProcessingStatus,
+        AgentSession, AnalysisJob, AnalysisJobKind, AnalysisProvider, AnalyzeRequest,
+        CitationStatus, Clarification, ClarifyRequest, CreateHighlightRequest, ExtractedPaper,
+        FeedbackRecord, FeedbackRequest, FeedbackStatus, Highlight, HighlightOrigin, PaperId,
+        PaperMap, PaperOverview, PaperView, ProcessingQueue, ProcessingStage, ProcessingStatus,
     },
     error::Error,
     extract::PdfExtractor,
+    jobs::JobTracker,
     library::LibraryCatalog,
     store::ArtifactStore,
 };
 
 static USER_HIGHLIGHT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+static FEEDBACK_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone, Debug)]
 pub struct AppState {
@@ -46,6 +49,7 @@ pub struct AppState {
     store: ArtifactStore,
     extractor: PdfExtractor,
     analysis: AnalysisService,
+    jobs: JobTracker,
     highlight_write: Arc<Mutex<()>>,
     frontend_root: Option<Arc<PathBuf>>,
 }
@@ -86,12 +90,14 @@ impl AppState {
         let store = ArtifactStore::new(data_root);
         store.initialize().await?;
         let catalog = LibraryCatalog::scan(&library_root, &store).await?;
+        let jobs = JobTracker::load(store.clone()).await?;
         Ok(Self {
             catalog: Arc::new(RwLock::new(catalog)),
             library_root: Arc::new(library_root),
             store,
             extractor,
             analysis,
+            jobs,
             highlight_write: Arc::new(Mutex::new(())),
             frontend_root: None,
         })
@@ -137,7 +143,7 @@ impl AppState {
         provider: AnalysisProvider,
         force: bool,
     ) -> Result<PaperView> {
-        {
+        let overview = {
             let mut catalog = self.catalog.write().await;
             let entry = catalog
                 .get_mut(id)
@@ -155,9 +161,30 @@ impl AppState {
                 return Err(Error::AlreadyProcessing(id.to_string()));
             }
             entry.overview.status = ProcessingStatus::Queued { provider };
+            entry.overview.clone()
+        };
+        if let Err(error) = self
+            .jobs
+            .begin(
+                id.clone(),
+                overview.metadata.title,
+                provider,
+                AnalysisJobKind::Initial,
+                None,
+            )
+            .await
+        {
+            self.catalog
+                .write()
+                .await
+                .mark_failure(id, ProcessingStage::Persistence, &error);
+            return Err(error);
         }
 
         if let Err((stage, error)) = self.run_analysis(id, provider).await {
+            if let Err(tracking_error) = self.jobs.fail(id, stage, &error).await {
+                tracing::error!(paper_id = %id, %tracking_error, "could not persist failed job state");
+            }
             self.catalog.write().await.mark_failure(id, stage, &error);
             return Err(error);
         }
@@ -192,10 +219,31 @@ impl AppState {
             overview
         };
 
+        if let Err(error) = self
+            .jobs
+            .begin(
+                id.clone(),
+                overview.metadata.title.clone(),
+                provider,
+                AnalysisJobKind::Initial,
+                None,
+            )
+            .await
+        {
+            self.catalog
+                .write()
+                .await
+                .mark_failure(&id, ProcessingStage::Persistence, &error);
+            return Err(error);
+        }
+
         let state = self.clone();
         tokio::spawn(async move {
             if let Err((stage, error)) = state.run_analysis(&id, provider).await {
                 tracing::error!(paper_id = %id, %stage, %error, "paper analysis failed");
+                if let Err(tracking_error) = state.jobs.fail(&id, stage, &error).await {
+                    tracing::error!(paper_id = %id, %tracking_error, "could not persist failed job state");
+                }
                 state.catalog.write().await.mark_failure(&id, stage, &error);
             }
         });
@@ -207,7 +255,15 @@ impl AppState {
         id: &PaperId,
         provider: AnalysisProvider,
     ) -> std::result::Result<(), (ProcessingStage, Error)> {
+        self.jobs
+            .transition(id, ProcessingStage::Extraction, "extract")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
         let paper = self.load_or_extract(id).await?;
+        self.jobs
+            .task_completed(id, "extract")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
 
         {
             let mut catalog = self.catalog.write().await;
@@ -216,17 +272,46 @@ impl AppState {
                 entry.overview.status = ProcessingStatus::Analyzing { provider };
             }
         }
-        let analysis = self
+        self.jobs
+            .transition(id, ProcessingStage::Analysis, "read")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        let outcome = self
             .analysis
             .analyze(provider, &paper, &self.store.paper_dir(id))
             .await
             .map_err(|error| (ProcessingStage::Analysis, error))?;
+        for task in ["read", "structure", "evidence", "explain"] {
+            self.jobs
+                .task_completed(id, task)
+                .await
+                .map_err(|error| (ProcessingStage::Persistence, error))?;
+        }
+        self.jobs
+            .transition(id, ProcessingStage::Persistence, "persist")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        let analysis = outcome.analysis;
         let highlight_guard = self.highlight_write.lock().await;
         self.store
             .save_analysis(id, &analysis)
             .await
             .map_err(|error| (ProcessingStage::Persistence, error))?;
+        if let Some(session) = &outcome.session {
+            self.store
+                .save_agent_session(id, session)
+                .await
+                .map_err(|error| (ProcessingStage::Persistence, error))?;
+        }
         drop(highlight_guard);
+        self.jobs
+            .task_completed(id, "persist")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        self.jobs
+            .complete(id, outcome.session.is_some())
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
         {
             let mut catalog = self.catalog.write().await;
             if let Some(entry) = catalog.get_mut(id) {
@@ -470,6 +555,276 @@ impl AppState {
         Ok(())
     }
 
+    pub async fn processing_queue(&self) -> Result<ProcessingQueue> {
+        self.jobs.queue().await
+    }
+
+    async fn queue_feedback(&self, id: PaperId, request: FeedbackRequest) -> Result<AnalysisJob> {
+        let feedback = validate_feedback_request(&request)?;
+        if self.catalog.read().await.get(&id).is_none() {
+            return Err(Error::PaperNotFound(id.to_string()));
+        }
+        if self.store.load_analysis(&id).await?.is_none() {
+            return Err(Error::InvalidRequest(
+                "analyze the paper before sending revision feedback".to_owned(),
+            ));
+        }
+
+        let overview = {
+            let mut catalog = self.catalog.write().await;
+            let entry = catalog
+                .get_mut(&id)
+                .ok_or_else(|| Error::PaperNotFound(id.to_string()))?;
+            if matches!(
+                entry.overview.status,
+                ProcessingStatus::Queued { .. }
+                    | ProcessingStatus::Extracting
+                    | ProcessingStatus::Analyzing { .. }
+            ) {
+                return Err(Error::AlreadyProcessing(id.to_string()));
+            }
+            entry.overview.status = ProcessingStatus::Queued {
+                provider: request.provider,
+            };
+            let overview = entry.overview.clone();
+            drop(catalog);
+            overview
+        };
+
+        let job = match self
+            .jobs
+            .begin(
+                id.clone(),
+                overview.metadata.title,
+                request.provider,
+                AnalysisJobKind::Revision,
+                Some(feedback.clone()),
+            )
+            .await
+        {
+            Ok(job) => job,
+            Err(error) => {
+                self.catalog
+                    .write()
+                    .await
+                    .mark_failure(&id, ProcessingStage::Persistence, &error);
+                return Err(error);
+            }
+        };
+
+        let feedback_id = match self
+            .begin_feedback_record(&id, &feedback, request.provider)
+            .await
+        {
+            Ok(feedback_id) => feedback_id,
+            Err(error) => {
+                if let Err(tracking_error) = self
+                    .jobs
+                    .fail(&id, ProcessingStage::Persistence, &error)
+                    .await
+                {
+                    tracing::error!(paper_id = %id, %tracking_error, "could not persist failed feedback job");
+                }
+                self.catalog
+                    .write()
+                    .await
+                    .mark_failure(&id, ProcessingStage::Persistence, &error);
+                return Err(error);
+            }
+        };
+
+        let state = self.clone();
+        tokio::spawn(async move {
+            if let Err((stage, error)) = state
+                .run_feedback(&id, request.provider, &feedback, &feedback_id)
+                .await
+            {
+                tracing::error!(paper_id = %id, %stage, %error, "paper feedback revision failed");
+                if let Err(tracking_error) = state.jobs.fail(&id, stage, &error).await {
+                    tracing::error!(paper_id = %id, %tracking_error, "could not persist failed feedback job");
+                }
+                if let Err(feedback_error) = state
+                    .finish_feedback(
+                        &id,
+                        &feedback_id,
+                        FeedbackStatus::Failed,
+                        None,
+                        Some(&error),
+                    )
+                    .await
+                {
+                    tracing::error!(paper_id = %id, %feedback_error, "could not persist failed feedback record");
+                }
+                state.catalog.write().await.mark_failure(&id, stage, &error);
+            }
+        });
+        Ok(job)
+    }
+
+    async fn begin_feedback_record(
+        &self,
+        id: &PaperId,
+        feedback: &str,
+        provider: AnalysisProvider,
+    ) -> Result<String> {
+        let now = Utc::now();
+        let sequence = FEEDBACK_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let feedback_id = format!("feedback-{}-{sequence}", now.timestamp_micros());
+        let mut records = self.store.load_feedback(id).await?;
+        records.push(FeedbackRecord {
+            id: feedback_id.clone(),
+            feedback: feedback.to_owned(),
+            provider,
+            status: FeedbackStatus::Queued,
+            submitted_at: now,
+            completed_at: None,
+            session_id: None,
+            error: None,
+        });
+        self.store.save_feedback(id, &records).await?;
+        Ok(feedback_id)
+    }
+
+    async fn feedback_context(
+        &self,
+        id: &PaperId,
+    ) -> std::result::Result<(ExtractedPaper, Option<AgentSession>), (ProcessingStage, Error)> {
+        let paper = self.load_or_extract(id).await?;
+        if self
+            .store
+            .load_analysis(id)
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?
+            .is_none()
+        {
+            return Err((
+                ProcessingStage::Analysis,
+                Error::InvalidRequest(
+                    "the current atlas disappeared before feedback could be applied".to_owned(),
+                ),
+            ));
+        }
+        let session = match self.store.load_agent_session(id).await {
+            Ok(session) => session,
+            Err(error) => {
+                tracing::warn!(paper_id = %id, %error, "saved agent session is unusable; retrying from artifact context");
+                None
+            }
+        };
+        Ok((paper, session))
+    }
+
+    async fn run_feedback(
+        &self,
+        id: &PaperId,
+        provider: AnalysisProvider,
+        feedback: &str,
+        feedback_id: &str,
+    ) -> std::result::Result<(), (ProcessingStage, Error)> {
+        self.jobs
+            .transition(id, ProcessingStage::Analysis, "context")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        let (paper, session) = self.feedback_context(id).await?;
+        self.jobs
+            .task_completed(id, "context")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        self.jobs
+            .task_active(
+                id,
+                "feedback",
+                Some("Resuming the previous agent when its session is available".to_owned()),
+            )
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        self.set_status(id, ProcessingStatus::Analyzing { provider })
+            .await;
+        let outcome = self
+            .analysis
+            .revise(
+                provider,
+                &paper,
+                &self.store.paper_dir(id),
+                feedback,
+                session.as_ref(),
+            )
+            .await
+            .map_err(|error| (ProcessingStage::Analysis, error))?;
+        for task in ["feedback", "revise", "evidence"] {
+            self.jobs
+                .task_completed(id, task)
+                .await
+                .map_err(|error| (ProcessingStage::Persistence, error))?;
+        }
+        self.jobs
+            .transition(id, ProcessingStage::Persistence, "persist")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+
+        let analysis = outcome.analysis;
+        let final_session = outcome.session.as_ref().or(session.as_ref());
+        let highlight_guard = self.highlight_write.lock().await;
+        self.store
+            .save_analysis(id, &analysis)
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        if let Some(agent_session) = final_session {
+            self.store
+                .save_agent_session(id, agent_session)
+                .await
+                .map_err(|error| (ProcessingStage::Persistence, error))?;
+        }
+        drop(highlight_guard);
+        self.finish_feedback(
+            id,
+            feedback_id,
+            FeedbackStatus::Applied,
+            final_session.map(|agent_session| agent_session.session_id.as_str()),
+            None,
+        )
+        .await
+        .map_err(|error| (ProcessingStage::Persistence, error))?;
+        self.jobs
+            .task_completed(id, "persist")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        self.jobs
+            .complete(id, final_session.is_some())
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        {
+            let mut catalog = self.catalog.write().await;
+            if let Some(entry) = catalog.get_mut(id) {
+                entry.overview.status = ProcessingStatus::Ready;
+                entry.overview.metadata = paper.metadata;
+                entry.overview.analyzed_at = Some(analysis.generated_at);
+                entry.overview.one_line_summary = Some(analysis.thesis);
+            }
+        }
+        Ok(())
+    }
+
+    async fn finish_feedback(
+        &self,
+        id: &PaperId,
+        feedback_id: &str,
+        status: FeedbackStatus,
+        session_id: Option<&str>,
+        error: Option<&Error>,
+    ) -> Result<()> {
+        let mut records = self.store.load_feedback(id).await?;
+        let record = records
+            .iter_mut()
+            .find(|record| record.id == feedback_id)
+            .ok_or_else(|| Error::Task(format!("feedback record `{feedback_id}` was not found")))?;
+        record.status = status;
+        record.completed_at = Some(Utc::now());
+        record.session_id = session_id.map(str::to_owned);
+        record.error = error.map(ToString::to_string);
+        self.store.save_feedback(id, &records).await
+    }
+
     async fn clarify(&self, id: &PaperId, request: &ClarifyRequest) -> Result<Clarification> {
         let paper = self.store.load_extraction(id).await?.ok_or_else(|| {
             Error::InvalidRequest("analyze the paper before clarifying a passage".to_owned())
@@ -500,6 +855,26 @@ impl AppState {
     }
 }
 
+fn validate_feedback_request(request: &FeedbackRequest) -> Result<String> {
+    let feedback = request.feedback.trim();
+    if feedback.is_empty() {
+        return Err(Error::InvalidRequest(
+            "feedback must say what should change".to_owned(),
+        ));
+    }
+    if feedback.chars().count() > 8_000 {
+        return Err(Error::InvalidRequest(
+            "feedback is limited to 8,000 characters".to_owned(),
+        ));
+    }
+    if request.provider == AnalysisProvider::Heuristic {
+        return Err(Error::InvalidRequest(
+            "feedback retries require the Codex or Claude reader".to_owned(),
+        ));
+    }
+    Ok(feedback.to_owned())
+}
+
 impl std::fmt::Display for ProcessingStage {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter.write_str(match self {
@@ -517,6 +892,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/health", get(health))
         .route("/api/library", get(library))
         .route("/api/library/scan", post(scan_library))
+        .route("/api/queue", get(processing_queue))
         .route("/api/papers/{id}", get(paper))
         .route("/api/papers/{id}/source", get(paper_source))
         .route("/api/papers/{id}/markdown", get(paper_markdown))
@@ -527,6 +903,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
             delete(delete_highlight),
         )
         .route("/api/papers/{id}/analyze", post(analyze_paper))
+        .route("/api/papers/{id}/feedback", post(feedback_paper))
         .route("/api/papers/{id}/clarify", post(clarify_selection))
         .route("/", get(frontend_index))
         .route("/{*asset}", get(frontend_asset))
@@ -548,6 +925,10 @@ async fn scan_library(State(state): State<AppState>) -> Result<Json<LibraryRespo
     state.refresh().await.map(Json)
 }
 
+async fn processing_queue(State(state): State<AppState>) -> Result<Json<ProcessingQueue>> {
+    state.processing_queue().await.map(Json)
+}
+
 async fn paper(
     State(state): State<AppState>,
     AxumPath(id): AxumPath<String>,
@@ -566,6 +947,16 @@ async fn analyze_paper(
         .queue_analysis(id, request.provider, request.force)
         .await?;
     Ok((StatusCode::ACCEPTED, Json(overview)))
+}
+
+async fn feedback_paper(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+    Json(request): Json<FeedbackRequest>,
+) -> Result<impl IntoResponse> {
+    let id = parse_id(&id)?;
+    let job = state.queue_feedback(id, request).await?;
+    Ok((StatusCode::ACCEPTED, Json(job)))
 }
 
 async fn clarify_selection(
@@ -811,6 +1202,64 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn completed_analysis_exposes_a_finished_plaintext_tasklist() -> Result<()> {
+        let library = tempdir().map_err(|error| Error::io("library", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let filename = "Ada - 1843 - Notes.pdf";
+        let fixture = library.path().join(filename);
+        tokio::fs::write(&fixture, b"discovered without parsing")
+            .await
+            .map_err(|error| Error::io(&fixture, error))?;
+        let state = AppState::new(library.path(), data.path()).await?;
+        let id = PaperId::from_relative_path(Path::new(filename));
+        state
+            .store
+            .save_extraction(
+                &id,
+                &ExtractedPaper {
+                    metadata: PaperMetadata {
+                        title: "Notes".to_owned(),
+                        authors: vec!["Ada".to_owned()],
+                        year: Some(1843),
+                        page_count: Some(1),
+                        subject: None,
+                    },
+                    pages: vec![ExtractedPage {
+                        number: 1,
+                        text: "ABSTRACT\nAn analytical engine follows notation. The notation makes the operation legible."
+                            .to_owned(),
+                    }],
+                    layout: DocumentLayout::default(),
+                },
+            )
+            .await?;
+        let view = state
+            .analyze_now(&id, AnalysisProvider::Heuristic, true)
+            .await?;
+        assert!(view.analysis.is_some());
+        let queue = state.processing_queue().await?;
+        assert_eq!(queue.jobs.len(), 1);
+        assert_eq!(queue.jobs[0].progress, 100);
+        assert!(matches!(
+            queue.jobs[0].status,
+            crate::domain::AnalysisJobStatus::Completed
+        ));
+        let tasklist = state
+            .store
+            .load_tasklist(&id)
+            .await?
+            .ok_or_else(|| Error::Task("tasklist was not written".to_owned()))?;
+        assert!(
+            tasklist
+                .lines()
+                .filter(|line| line.starts_with("- [x]"))
+                .count()
+                >= 5
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn creates_and_deletes_a_sentence_anchored_reader_highlight() -> Result<()> {
         let library = tempdir().map_err(|error| Error::io("library", error))?;
         let data = tempdir().map_err(|error| Error::io("data", error))?;
@@ -892,5 +1341,27 @@ mod tests {
         state.delete_highlight(&id, &highlight.id).await?;
         assert!(state.store.load_highlights(&id).await?.is_empty());
         Ok(())
+    }
+
+    #[test]
+    fn feedback_requires_a_model_reader_and_bounded_text() {
+        let empty = FeedbackRequest {
+            feedback: "   ".to_owned(),
+            provider: AnalysisProvider::Codex,
+        };
+        assert!(validate_feedback_request(&empty).is_err());
+        let offline = FeedbackRequest {
+            feedback: "Explain the result more plainly".to_owned(),
+            provider: AnalysisProvider::Heuristic,
+        };
+        assert!(validate_feedback_request(&offline).is_err());
+        let valid = FeedbackRequest {
+            feedback: "  Explain the result more plainly.  ".to_owned(),
+            provider: AnalysisProvider::Claude,
+        };
+        assert!(matches!(
+            validate_feedback_request(&valid).as_deref(),
+            Ok("Explain the result more plainly.")
+        ));
     }
 }

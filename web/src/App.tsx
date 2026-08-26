@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CommandBar } from "./components/CommandBar";
+import { CommandMenu } from "./components/CommandMenu";
 import { DigestPanel } from "./components/DigestPanel";
 import { GlossPanel } from "./components/GlossPanel";
 import { HelpOverlay } from "./components/HelpOverlay";
@@ -8,6 +9,7 @@ import { LibraryRail } from "./components/LibraryRail";
 import { MarkdownReader } from "./components/MarkdownReader";
 import { PaperSwitcher } from "./components/PaperSwitcher";
 import { PdfReader } from "./components/PdfReader";
+import { QueuePanel } from "./components/QueuePanel";
 import { SectionAtlas } from "./components/SectionAtlas";
 import { useGlobalKeys } from "./hooks/useGlobalKeys";
 import { api } from "./lib/api";
@@ -21,12 +23,22 @@ import type {
   PaperOverview,
   PaperSection,
   PaperView,
+  ProcessingQueue,
 } from "./types";
 
 type Panel = "digest" | "gloss" | "help" | null;
 type ViewMode = "atlas" | "markdown" | "pdf";
 
 const PROCESSING_STATES = new Set(["queued", "extracting", "analyzing"]);
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    (target instanceof HTMLElement && target.isContentEditable)
+  );
+}
 
 function initialPaperId(): string | null {
   const params = new URLSearchParams(window.location.hash.replace(/^#/u, ""));
@@ -80,11 +92,16 @@ export function App() {
   const [compactLayout, setCompactLayout] = useState(() => window.innerWidth < 1180);
   const [libraryOpen, setLibraryOpen] = useState(() => window.innerWidth >= 1180);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [focusQueueFeedback, setFocusQueueFeedback] = useState(false);
+  const [queue, setQueue] = useState<ProcessingQueue>({ jobs: [] });
   const [libraryQuery, setLibraryQuery] = useState("");
   const [provider, setProvider] = useState<AnalysisProvider>("codex");
   const [pdfPage, setPdfPage] = useState(1);
   const [pdfPages, setPdfPages] = useState(1);
   const [pdfZoom, setPdfZoom] = useState(1);
+  const [pdfSpread, setPdfSpread] = useState(false);
   const [darkInk, setDarkInk] = useState(true);
   const [paperMap, setPaperMap] = useState<PaperMap | null>(null);
   const [mapLoading, setMapLoading] = useState(false);
@@ -104,6 +121,12 @@ export function App() {
     return next;
   }, []);
 
+  const refreshQueue = useCallback(async (): Promise<ProcessingQueue> => {
+    const next = await api.queue();
+    setQueue(next);
+    return next;
+  }, []);
+
   const loadPaper = useCallback(async (id: string): Promise<PaperView> => {
     const next = await api.paper(id);
     setPaperView(next);
@@ -112,6 +135,11 @@ export function App() {
 
   useEffect(() => {
     let cancelled = false;
+    void api.queue().then((nextQueue) => {
+      if (!cancelled) setQueue(nextQueue);
+    }).catch(() => {
+      // The library remains usable if an older backend does not expose queue state.
+    });
     void api
       .library()
       .then(async (nextLibrary) => {
@@ -142,17 +170,37 @@ export function App() {
         event.preventDefault();
         setPanel(null);
         setSwitcherOpen(false);
+        setCommandOpen(false);
+        setQueueOpen(false);
         setLibraryOpen((open) => !open);
       } else if (event.key === "F10") {
         event.preventDefault();
         setPanel(null);
+        setCommandOpen(false);
+        setQueueOpen(false);
         if (compactLayout) setLibraryOpen(false);
         setSwitcherOpen((open) => !open);
+      } else if (event.key === ":" && !isEditableTarget(event.target)) {
+        event.preventDefault();
+        setPanel(null);
+        setSwitcherOpen(false);
+        setQueueOpen(false);
+        if (compactLayout) setLibraryOpen(false);
+        setCommandOpen(true);
+      } else if (event.key === "q" && !isEditableTarget(event.target)) {
+        event.preventDefault();
+        setPanel(null);
+        setSwitcherOpen(false);
+        setCommandOpen(false);
+        if (compactLayout) setLibraryOpen(false);
+        setFocusQueueFeedback(false);
+        setQueueOpen((open) => !open);
+        void refreshQueue();
       }
     };
     window.addEventListener("keydown", onFunctionKey);
     return () => window.removeEventListener("keydown", onFunctionKey);
-  }, [compactLayout]);
+  }, [compactLayout, refreshQueue]);
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 1179px)");
@@ -170,17 +218,30 @@ export function App() {
   }, [selectedId]);
 
   const processing =
-    paperView !== null && PROCESSING_STATES.has(paperView.paper.status.state);
+    (paperView !== null && PROCESSING_STATES.has(paperView.paper.status.state)) ||
+    queue.jobs.some(
+      (job) =>
+        job.paper_id === selectedId &&
+        (job.status.state === "queued" || job.status.state === "running"),
+    );
+  const queueHasActive = queue.jobs.some(
+    (job) => job.status.state === "queued" || job.status.state === "running",
+  );
 
   useEffect(() => {
-    if (!processing || selectedId === null) return;
+    if (!queueOpen && !queueHasActive && !processing) return;
     const timer = window.setInterval(() => {
-      void Promise.all([loadPaper(selectedId), refreshLibrary()]).catch((reason: unknown) => {
+      const requests: Array<Promise<unknown>> = [refreshQueue()];
+      if (queueHasActive) requests.push(refreshLibrary());
+      if (processing && selectedId !== null) {
+        requests.push(loadPaper(selectedId));
+      }
+      void Promise.all(requests).catch((reason: unknown) => {
         setError(reason instanceof Error ? reason.message : "Could not refresh analysis status");
       });
-    }, 1_500);
+    }, 850);
     return () => window.clearInterval(timer);
-  }, [loadPaper, processing, refreshLibrary, selectedId]);
+  }, [loadPaper, processing, queueHasActive, queueOpen, refreshLibrary, refreshQueue, selectedId]);
 
   const selectPaper = useCallback(
     (id: string): void => {
@@ -214,17 +275,21 @@ export function App() {
     [selectPaper],
   );
 
-  const analyze = useCallback((): void => {
+  const analyze = useCallback((chosenProvider: AnalysisProvider = provider): void => {
     if (selectedId === null || processing) return;
     setError(null);
-    setNotice(`Queued for ${provider}. You can keep browsing while it reads.`);
+    setNotice(`Queued for ${chosenProvider}. Press q to watch the live tasklist.`);
     void api
-      .analyze(selectedId, provider, paperView?.paper.status.state === "failed")
-      .then(() => Promise.all([loadPaper(selectedId), refreshLibrary()]))
+      .analyze(
+        selectedId,
+        chosenProvider,
+        paperView?.paper.status.state === "failed" || paperView?.paper.status.state === "ready",
+      )
+      .then(() => Promise.all([loadPaper(selectedId), refreshLibrary(), refreshQueue()]))
       .catch((reason: unknown) => {
         setError(reason instanceof Error ? reason.message : "Could not start analysis");
       });
-  }, [loadPaper, paperView?.paper.status.state, processing, provider, refreshLibrary, selectedId]);
+  }, [loadPaper, paperView?.paper.status.state, processing, provider, refreshLibrary, refreshQueue, selectedId]);
 
   const sections = useMemo(() => paperView?.analysis?.sections ?? [], [paperView?.analysis]);
   const selectedSection = sections[activeSection] ?? null;
@@ -252,13 +317,13 @@ export function App() {
   );
 
   const previous = useCallback((): void => {
-    if (view === "pdf") setPdfPage((page) => Math.max(1, page - 1));
+    if (view === "pdf") setPdfPage((page) => Math.max(1, page - (pdfSpread ? 2 : 1)));
     else movePaper(-1);
-  }, [movePaper, view]);
+  }, [movePaper, pdfSpread, view]);
   const next = useCallback((): void => {
-    if (view === "pdf") setPdfPage((page) => Math.min(pdfPages, page + 1));
+    if (view === "pdf") setPdfPage((page) => Math.min(pdfPages, page + (pdfSpread ? 2 : 1)));
     else movePaper(1);
-  }, [movePaper, pdfPages, view]);
+  }, [movePaper, pdfPages, pdfSpread, view]);
 
   const scrollMarkdown = useCallback((delta: number): void => {
     mainStageRef.current?.scrollBy({ top: delta, behavior: "smooth" });
@@ -269,8 +334,94 @@ export function App() {
     stage.scrollTo({ top: edge === "start" ? 0 : stage.scrollHeight, behavior: "smooth" });
   }, []);
 
+  const pageReader = useCallback((direction: -1 | 1, distance: "half" | "full"): void => {
+    if (view === "pdf") {
+      const step = pdfSpread ? 2 : 1;
+      setPdfPage((page) => Math.max(1, Math.min(pdfPages, page + direction * step)));
+      return;
+    }
+    const stage = mainStageRef.current;
+    if (stage === null) return;
+    const fraction = distance === "half" ? 0.5 : 0.9;
+    stage.scrollBy({ top: direction * stage.clientHeight * fraction, behavior: "smooth" });
+  }, [pdfPages, pdfSpread, view]);
+
+  const sendFeedback = useCallback(async (feedback: string): Promise<void> => {
+    if (selectedId === null) throw new Error("No paper is selected");
+    setError(null);
+    try {
+      await api.feedback(selectedId, feedback, provider);
+      setNotice("Feedback queued. The reader will retry from the saved paper state.");
+      await Promise.all([loadPaper(selectedId), refreshLibrary(), refreshQueue()]);
+    } catch (reason: unknown) {
+      const failure = reason instanceof Error ? reason : new Error("Could not queue feedback");
+      setError(failure.message);
+      throw failure;
+    }
+  }, [loadPaper, provider, refreshLibrary, refreshQueue, selectedId]);
+
+  const executeCommand = useCallback((rawCommand: string): void => {
+    const [name = "", argument, ...extra] = rawCommand.trim().toLocaleLowerCase().split(/\s+/u);
+    setCommandOpen(false);
+    if (extra.length > 0) {
+      setError(`Too many arguments for :${name}`);
+      return;
+    }
+    switch (name) {
+      case "analyze": {
+        const chosen = argument ?? provider;
+        if (chosen !== "codex" && chosen !== "claude" && chosen !== "heuristic") {
+          setError(`Unknown reader “${chosen}”. Use codex, claude, or heuristic.`);
+          return;
+        }
+        setProvider(chosen);
+        analyze(chosen);
+        break;
+      }
+      case "queue":
+        setFocusQueueFeedback(false);
+        setQueueOpen(true);
+        void refreshQueue();
+        break;
+      case "feedback":
+        setFocusQueueFeedback(true);
+        setQueueOpen(true);
+        void refreshQueue();
+        break;
+      case "library":
+        setLibraryOpen((open) => !open);
+        break;
+      case "switch":
+        setSwitcherOpen(true);
+        break;
+      case "atlas":
+        setView("atlas");
+        break;
+      case "markdown":
+        setView("markdown");
+        break;
+      case "pdf":
+        setView("pdf");
+        break;
+      case "spread":
+        setView("pdf");
+        setPdfSpread((spread) => !spread);
+        break;
+      case "ink":
+        setDarkInk((value) => !value);
+        break;
+      case "help":
+        setPanel("help");
+        break;
+      default:
+        setError(`Unknown command :${name}`);
+    }
+  }, [analyze, provider, refreshQueue]);
+
   useGlobalKeys({
-    enabled: panel === null && !switcherOpen && !(compactLayout && libraryOpen),
+    enabled:
+      panel === null && !switcherOpen && !commandOpen && !queueOpen &&
+      !(compactLayout && libraryOpen),
     activeIndex: activeSection,
     itemCount: sections.length,
     view,
@@ -289,7 +440,7 @@ export function App() {
     onToggleView: () => setView((current) => (current === "atlas" ? "pdf" : "atlas")),
     onToggleMarkdown: () =>
       setView((current) => (current === "markdown" ? "atlas" : "markdown")),
-    onAnalyze: analyze,
+    onToggleSpread: () => setPdfSpread((spread) => !spread),
     onEscape: () => {
       setLibraryOpen(false);
       if (view !== "atlas") setView("atlas");
@@ -303,6 +454,7 @@ export function App() {
     onZoom: (delta) => setPdfZoom((value) => Math.max(0.5, Math.min(2.5, value + delta))),
     onScroll: scrollMarkdown,
     onScrollTo: scrollMarkdownTo,
+    onPage: pageReader,
   });
 
   useEffect(() => {
@@ -435,6 +587,9 @@ export function App() {
   const currentPaper = paperView?.paper ??
     library?.papers.find((paper) => paper.id === selectedId) ??
     null;
+  const activeJobCount = queue.jobs.filter(
+    (job) => job.status.state === "queued" || job.status.state === "running",
+  ).length;
 
   return (
     <div className="app-shell">
@@ -488,6 +643,17 @@ export function App() {
             </button>
           </div>
           <div className="topbar-actions">
+            <button
+              className={`queue-button ${activeJobCount > 0 ? "has-work" : ""}`}
+              type="button"
+              onClick={() => {
+                setFocusQueueFeedback(false);
+                setQueueOpen(true);
+                void refreshQueue();
+              }}
+            >
+              Queue{activeJobCount > 0 ? ` ${activeJobCount}` : ""} <kbd>q</kbd>
+            </button>
             <label className="provider-select">
               <span>Reader</span>
               <select value={provider} onChange={(event) => setProvider(event.target.value as AnalysisProvider)}>
@@ -499,10 +665,10 @@ export function App() {
             <button
               className="analyze-button"
               type="button"
-              onClick={analyze}
+              onClick={() => analyze()}
               disabled={selectedId === null || processing}
             >
-              {processing ? <><span className="loader" /> Reading</> : <>Analyze <kbd>a</kbd></>}
+              {processing ? <><span className="loader" /> Reading</> : <>Analyze <kbd>:analyze</kbd></>}
             </button>
             <button className="icon-button" type="button" onClick={() => setPanel("help")} aria-label="Show key map">
               ?
@@ -551,10 +717,10 @@ export function App() {
                       <span className="eyebrow">Unmapped paper</span>
                       <h2>Turn this PDF into a reading atlas.</h2>
                       <p>
-                        Text is extracted locally. {provider === "heuristic" ? "The offline structural pass" : `${provider} in read-only plan mode`} builds the sections, quotes, context, and Gloss.
+                        Text is extracted locally. {provider === "heuristic" ? "The offline structural pass" : `${provider}, with write access only to its live tasklist`} builds the sections, quotes, context, and Gloss.
                       </p>
-                      <button type="button" onClick={analyze} disabled={processing}>
-                        {processing ? "Reading the paper…" : `Analyze with ${provider}`} <kbd>a</kbd>
+                      <button type="button" onClick={() => analyze()} disabled={processing}>
+                        {processing ? "Reading the paper…" : `Analyze with ${provider}`} <kbd>:analyze</kbd>
                       </button>
                       {currentPaper.status.state === "failed" && (
                         <p className="inline-error">{currentPaper.status.message}</p>
@@ -599,9 +765,11 @@ export function App() {
                   page={pdfPage}
                   zoom={pdfZoom}
                   darkInk={darkInk}
+                  spread={pdfSpread}
                   onPage={setPdfPage}
                   onPageCount={setPdfPages}
                   onToggleInk={() => setDarkInk((value) => !value)}
+                  onToggleSpread={() => setPdfSpread((spread) => !spread)}
                 />
               )}
             </>
@@ -640,6 +808,28 @@ export function App() {
           selectedId={selectedId}
           onClose={() => setSwitcherOpen(false)}
           onSelect={selectFromSwitcher}
+        />
+      )}
+      {commandOpen && (
+        <CommandMenu onClose={() => setCommandOpen(false)} onExecute={executeCommand} />
+      )}
+      {queueOpen && (
+        <QueuePanel
+          queue={queue}
+          selectedPaperId={selectedId}
+          provider={provider}
+          hasAnalysis={hasAnalysis}
+          focusFeedback={focusQueueFeedback}
+          onClose={() => {
+            setFocusQueueFeedback(false);
+            setQueueOpen(false);
+          }}
+          onSelectPaper={(id) => {
+            setFocusQueueFeedback(false);
+            setQueueOpen(false);
+            selectPaper(id);
+          }}
+          onFeedback={sendFeedback}
         />
       )}
 

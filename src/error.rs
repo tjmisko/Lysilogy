@@ -52,6 +52,11 @@ impl Error {
             source,
         }
     }
+
+    #[must_use]
+    pub const fn retryable(&self) -> bool {
+        !matches!(self, Self::EmptyExtraction(_))
+    }
 }
 
 #[derive(Serialize)]

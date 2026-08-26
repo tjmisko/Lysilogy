@@ -14,7 +14,7 @@ type GlobalKeyOptions = {
   onToggleLibrary: () => void;
   onToggleView: () => void;
   onToggleMarkdown: () => void;
-  onAnalyze: () => void;
+  onToggleSpread: () => void;
   onEscape: () => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -25,6 +25,7 @@ type GlobalKeyOptions = {
   onZoom: (delta: number) => void;
   onScroll: (delta: number) => void;
   onScrollTo: (edge: "start" | "end") => void;
+  onPage: (direction: -1 | 1, distance: "half" | "full") => void;
 };
 
 function isEditable(target: EventTarget | null): boolean {
@@ -67,7 +68,14 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
         current.onEscape();
         return;
       }
-      if (isEditable(event.target) || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isEditable(event.target) || event.metaKey || event.altKey) return;
+      if (event.ctrlKey) {
+        if (event.key === "d" || event.key === "u") {
+          event.preventDefault();
+          current.onPage(event.key === "d" ? 1 : -1, "half");
+        }
+        return;
+      }
 
       const columns = columnCount();
       const clamp = (index: number): number =>
@@ -157,9 +165,11 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
           event.preventDefault();
           current.onToggleMarkdown();
           break;
-        case "a":
-          event.preventDefault();
-          current.onAnalyze();
+        case "2":
+          if (current.view === "pdf") {
+            event.preventDefault();
+            current.onToggleSpread();
+          }
           break;
         case "[":
           event.preventDefault();
@@ -203,6 +213,14 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
             event.preventDefault();
             current.onZoom(-0.1);
           }
+          break;
+        case "PageDown":
+          event.preventDefault();
+          current.onPage(1, "full");
+          break;
+        case "PageUp":
+          event.preventDefault();
+          current.onPage(-1, "full");
           break;
       }
     };

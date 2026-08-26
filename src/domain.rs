@@ -90,13 +90,112 @@ pub enum ProcessingStatus {
     },
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProcessingStage {
     Discovery,
     Extraction,
     Analysis,
     Persistence,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AnalysisJobKind {
+    Initial,
+    Revision,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "state", rename_all = "snake_case")]
+pub enum AnalysisJobStatus {
+    Queued,
+    Running {
+        stage: ProcessingStage,
+    },
+    Completed,
+    Failed {
+        stage: ProcessingStage,
+        message: String,
+        retryable: bool,
+    },
+}
+
+impl AnalysisJobStatus {
+    #[must_use]
+    pub const fn is_active(&self) -> bool {
+        matches!(self, Self::Queued | Self::Running { .. })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AnalysisTaskStatus {
+    Pending,
+    Active,
+    Completed,
+    Failed,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct AnalysisTask {
+    pub id: String,
+    pub label: String,
+    pub status: AnalysisTaskStatus,
+    pub detail: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AnalysisJob {
+    pub paper_id: PaperId,
+    pub paper_title: String,
+    pub provider: AnalysisProvider,
+    pub kind: AnalysisJobKind,
+    pub status: AnalysisJobStatus,
+    pub progress: u8,
+    pub tasks: Vec<AnalysisTask>,
+    pub resumable: bool,
+    pub feedback: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct ProcessingQueue {
+    pub jobs: Vec<AnalysisJob>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct AgentSession {
+    pub provider: AnalysisProvider,
+    pub session_id: String,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct FeedbackRequest {
+    pub feedback: String,
+    pub provider: AnalysisProvider,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FeedbackStatus {
+    Queued,
+    Applied,
+    Failed,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FeedbackRecord {
+    pub id: String,
+    pub feedback: String,
+    pub provider: AnalysisProvider,
+    pub status: FeedbackStatus,
+    pub submitted_at: DateTime<Utc>,
+    pub completed_at: Option<DateTime<Utc>>,
+    pub session_id: Option<String>,
+    pub error: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
