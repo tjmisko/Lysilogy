@@ -28,6 +28,7 @@ impl HeuristicAnalyzer {
     pub(crate) fn analyze(paper: &ExtractedPaper) -> AnalysisDraft {
         let target_pages = target_document_pages(&paper.pages);
         let mut raw_sections = discover_sections(&target_pages);
+        let author_abstract = find_author_abstract(&raw_sections);
         if raw_sections.len() < 5 {
             raw_sections = conceptual_chunks(&target_pages, 7);
         }
@@ -111,10 +112,12 @@ impl HeuristicAnalyzer {
         let prerequisites = prerequisite_hints(&paper.metadata.title, &glossary);
 
         AnalysisDraft {
-            outsider_brief: format!(
-                "Start with the central claim, then use the section map to separate context, method, evidence, and caveats. This offline first pass is intentionally conservative; run Codex or Claude for a source-grounded interpretive digest. {thesis}"
-            ),
+            outsider_brief: "This offline structural pass cannot establish the paper's broader reception or later interpretation. Use the overview to inspect how the paper supports its central claim and where its qualifications lie."
+                .to_owned(),
             thesis,
+            author_abstract,
+            context_notes: Vec::new(),
+            context_sources: Vec::new(),
             prerequisites,
             sections,
             claims: claims.into_iter().take(10).collect(),
@@ -162,6 +165,27 @@ impl HeuristicAnalyzer {
     }
 }
 
+fn find_author_abstract(sections: &[RawSection]) -> Option<String> {
+    let section = sections.iter().find(|section| {
+        section
+            .title
+            .trim()
+            .trim_start_matches(|character: char| {
+                character.is_ascii_digit() || character == '.' || character.is_whitespace()
+            })
+            .eq_ignore_ascii_case("abstract")
+    })?;
+    let text = compact_whitespace(
+        &section
+            .paragraphs
+            .iter()
+            .map(|(_, paragraph)| paragraph.as_str())
+            .collect::<Vec<_>>()
+            .join(" "),
+    );
+    (text.chars().count() >= 30 && text.chars().count() <= 12_000).then_some(text)
+}
+
 fn discover_sections(pages: &[ExtractedPage]) -> Vec<RawSection> {
     let mut output = Vec::new();
     let mut current = RawSection {
@@ -173,14 +197,20 @@ fn discover_sections(pages: &[ExtractedPage]) -> Vec<RawSection> {
     for page in pages {
         let paragraphs = page.text.split("\n\n").map(compact_whitespace);
         for paragraph in paragraphs.filter(|paragraph| !paragraph.is_empty()) {
-            if looks_like_heading(&paragraph) && !current.paragraphs.is_empty() {
-                output.push(current);
-                current = RawSection {
-                    title: clean_heading(&paragraph),
-                    first_page: page.number,
-                    last_page: page.number,
-                    paragraphs: Vec::new(),
-                };
+            if looks_like_heading(&paragraph) {
+                if current.paragraphs.is_empty() {
+                    current.title = clean_heading(&paragraph);
+                    current.first_page = page.number;
+                    current.last_page = page.number;
+                } else {
+                    output.push(current);
+                    current = RawSection {
+                        title: clean_heading(&paragraph),
+                        first_page: page.number,
+                        last_page: page.number,
+                        paragraphs: Vec::new(),
+                    };
+                }
             } else {
                 current.last_page = page.number;
                 current.paragraphs.push((page.number, paragraph));
@@ -939,5 +969,23 @@ mod tests {
         );
         assert_eq!(parsed.len(), 2);
         assert!(parsed[0].contains("everything except machine code"));
+    }
+
+    #[test]
+    fn preserves_an_explicit_authored_abstract() {
+        let abstract_text = "This paper shows how a constrained control-flow vocabulary makes program execution easier to describe and reason about.";
+        let paper = ExtractedPaper {
+            metadata: PaperMetadata::default(),
+            pages: vec![ExtractedPage {
+                number: 1,
+                text: format!(
+                    "Abstract\n\n{abstract_text}\n\nIntroduction\n\nWe argue that program structure should remain visible in its control flow."
+                ),
+            }],
+            layout: DocumentLayout::default(),
+        };
+
+        let analysis = HeuristicAnalyzer::analyze(&paper);
+        assert_eq!(analysis.author_abstract.as_deref(), Some(abstract_text));
     }
 }

@@ -14,8 +14,10 @@ Paper catalog ──► Poppler raw + bbox extraction ──► source.txt + sou
                          └──────────────────┼──────────────────┘
                                             ▼
                                   validated AnalysisDraft
-                                            │ normalize IDs,
-                                            │ pages, dimensions
+                                            │ normalize IDs, pages,
+                                            │ dimensions, source mappings
+                                            ▼
+                                public source-link verifier
                                             ▼
               analysis.json + digest.md + highlights.jsonl
               analysis-tasklist.md + job/session/feedback records
@@ -24,7 +26,7 @@ Paper catalog ──► Poppler raw + bbox extraction ──► source.txt + sou
                                      Axum JSON API
                                             │
                                             ▼
-                           React atlas / digest / Gloss / PDF
+                 React Abstract / Overview / Glossary / Text
 ```
 
 The Rust backend owns discovery, extraction, subprocess isolation, validation, persistence, and state transitions. React owns interaction and presentation. Neither frontend code nor a model process receives an arbitrary filesystem path from the browser.
@@ -40,6 +42,7 @@ The public model lives in `src/domain.rs`. Its enums keep states and semantic di
 - `QuoteSignificance` and `EvidenceStrength` prevent key quotations and claims from becoming untyped strings.
 - `DocumentLayout`, `LayoutToken`, and `LayoutSentence` preserve PDF-point geometry with stable page-local coordinates.
 - `CitationStatus` distinguishes exact, normalized, ambiguous, missing, and legacy-unverified evidence.
+- `ContextNote` maps each external-context sentence to one or more source IDs; `ContextSource` preserves the exact title/authors/year record, the narrowly supported point, final checked URL, and verification time.
 - `Highlight` carries a typed AI/user origin, semantic kind, immutable text anchor, PDF rectangles, note, and timestamp.
 - `AnalysisJob`, `AnalysisTask`, and their enums make queue state and checkbox-derived progress explicit.
 - `AgentSession` records the provider-specific resumable session without exposing it through browser commands.
@@ -65,6 +68,12 @@ Model-backed analysis is deliberately a subprocess boundary:
 
 Codex analysis uses `codex exec --json --output-last-message`; feedback prefers `codex exec resume <SESSION_ID>`. Claude uses its persisted print-mode session and `--resume`. A resume failure is safe to retry fresh because `source.txt`, `analysis.json`, and the reader feedback are all durable context. Clarification is deliberately kept out of the analysis session and runs ephemerally with read-only tools.
 
+Codex analysis enables live web search; Claude receives explicit web-search and fetch tools. The model contract allows at most two external-context notes and requires every note to name exact source records. Missing, duplicate, or malformed mappings invalidate the complete note rather than silently weakening its citation set.
+
+Source-link verification remains application-owned. Only cited HTTP(S) URLs on default ports are considered. For the initial URL and every redirect, the backend resolves DNS itself, rejects credentials and localhost, requires every returned address to be public, disables proxies, pins the request to a previously checked address, and accepts only a 2xx response. Redirect depth and the complete link check are time-bounded. A note survives only when every source it cites succeeds; unchecked and unreferenced records are discarded.
+
+This deterministic gate proves a narrower fact than ground-truth interpretation: the exact link resolved to a public successful response at the recorded time. It cannot establish that the publication semantically entails the generated note. The Abstract view and `digest.md` therefore show the exact source, the analyzer's narrow account of what it supports, the check timestamp, and this limitation so readers can inspect the evidence themselves.
+
 This makes the future switch to a different local agent—or an explicitly configured API adapter—an implementation detail behind `AnalysisService`.
 
 The heuristic provider follows the same typed output path. It identifies printed headings where reliable, falls back to conceptual chunks, scores thesis-like sentences, assigns semantic families, extracts bounded quotations, and builds a small technical gloss. It never presents itself as model interpretation.
@@ -87,6 +96,8 @@ Extraction and analysis artifacts are cached independently. A failed analysis re
 Expected faults have dedicated errors: missing PDF tools, unreadable vaults, empty image-only extractions, failed local commands, timeout, invalid model output, duplicate processing, unsafe paper IDs, oversized extraction, and missing frontend assets.
 
 ## Reader interaction
+
+The top-level information architecture is a monotonic reading ladder: Abstract → Overview → Glossary → Text. Abstract keeps generated orientation visibly separate from the authors' own words: `thesis` is the one-sentence TL;DR, `author_abstract` is retained only when its normalized text is present in the extraction, and `context_notes` provide at most two high-leverage, externally sourced sentences about field history, reception, or later interpretation. Legacy unsourced model context is withheld until reanalysis; the heuristic supplement remains explicitly limited to what can be inferred from the source paper. Overview owns the argument map, Glossary is a full pre-reading curriculum rather than a utility drawer, and Text owns both reconstructed Markdown and PDF formats.
 
 The atlas is a CSS grid whose tile spans come from analysis rather than PDF page dimensions. That is the core product distinction: area expresses conceptual weight, while color expresses argumentative role.
 

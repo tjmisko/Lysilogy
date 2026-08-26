@@ -157,12 +157,30 @@ export type GlossaryEntry = {
   section_ids: string[];
 };
 
+export type ContextNote = {
+  text: string;
+  source_ids: string[];
+};
+
+export type ContextSource = {
+  id: string;
+  title: string;
+  authors: string[];
+  year: number | null;
+  url: string;
+  supports: string;
+  verified_at: string;
+};
+
 export type PaperAnalysis = {
   schema_version: number;
   provider: AnalysisProvider;
   generated_at: string;
   thesis: string;
   outsider_brief: string;
+  author_abstract?: string | null;
+  context_notes?: ContextNote[];
+  context_sources?: ContextSource[];
   prerequisites: string[];
   sections: PaperSection[];
   claims: Claim[];

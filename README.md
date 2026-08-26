@@ -1,8 +1,8 @@
 # Lysilogos
 
-Lysilogos turns a vault of scientific PDFs into a keyboard-first visual atlas for readers who are intelligent outsiders to the field.
+Lysilogos turns a vault of scientific PDFs into a keyboard-first reading path for intelligent outsiders to the field.
 
-The main view maps a paper into conceptual tiles sized by argumentative weight, then lays the verified map directly over coordinate-aligned PDF pages. Focus or hover gives the short reading; opening a tile gives its contextual digest, key quotations, and page links. AI citations are prehighlighted only after deterministic text checks. Reader highlights use the same stable sentence/token anchors. A searchable **Gloss** explains technical language. A reconstructed Markdown tab provides a calm, selectable reading surface, while every PDF canvas defaults to dark rendering and can reveal figures in its original colors.
+The top bar deliberately increases detail in four steps: **Abstract** gives a generated one-sentence TL;DR, the authors' source-validated abstract, and a short contextual supplement; **Overview** maps the paper into conceptual tiles sized by argumentative weight and lays that map over coordinate-aligned PDF pages; **Glossary** teaches the load-bearing technical vocabulary to hold before reading; and **Text** provides both calm reconstructed Markdown and the source PDF. Reception, field history, and later interpretation appear only as cited notes tied to exact source records. Lysilogos independently follows each link to a successful public destination and records when it did so; the interface separately warns that reachability does not prove the source's semantic support. Opening an overview tile gives its contextual digest, key quotations, and page links. AI citations are prehighlighted only after deterministic text checks, and reader highlights use the same stable sentence/token anchors.
 
 The current demo has been exercised against the local `local-articles/Articles` corpus (118 PDFs) and includes a mapped copy of Dijkstra's “GOTO Statements Considered Harmful.”
 
@@ -75,7 +75,9 @@ cargo run -- ingest --provider heuristic
 cargo run -- analyze "title fragment" --provider codex --force
 ```
 
-Lysilogos invokes the local command-line tools rather than an API. Analysis sessions are persisted so reader feedback can continue the same Codex or Claude conversation. Codex uses a workspace-write sandbox and Claude receives read/search/edit tools, but both are explicitly restricted to editing one generated file: `analysis-tasklist.md`. The paper, current atlas, and schemas remain read-only context. JSONL/session metadata and the final schema-validated answer are captured separately, with bounded runtime and stage-specific failures. Clarification requests remain ephemeral and read-only.
+Lysilogos invokes the local command-line tools rather than an API. Analysis sessions are persisted so reader feedback can continue the same Codex or Claude conversation. Codex receives live search in a workspace-write sandbox, while Claude receives paper-reading, tasklist-editing, and web-research tools; both are explicitly restricted to editing one generated file: `analysis-tasklist.md`. The paper, current analysis, and schemas remain read-only context. JSONL/session metadata and the final schema-validated answer are captured separately, with bounded runtime and stage-specific failures. Clarification requests remain ephemeral and read-only.
+
+External context uses a second, application-owned gate: every note must map to exact source records, and every cited URL must pass bounded DNS, redirect, public-address, and HTTP-success checks before either the note or source is persisted. One failed citation withholds the complete note.
 
 Every analysis and feedback retry creates a live Markdown tasklist. Open the queue with `q` to watch the agent mark work active and complete; progress is calculated directly from those checkboxes. If a saved session cannot be resumed, the retry falls back to a fresh agent with `source.txt`, `analysis.json`, the tasklist, and the complete feedback available in its working directory.
 
@@ -91,9 +93,9 @@ Press `?` in the app for the complete, contextual key guide.
 | `g g` / `G` | First / last tile |
 | `Enter` or `o` | Open the focused section digest |
 | `d` | Toggle the digest |
-| `g` | Open Gloss after a short single-key delay |
-| `m` | Toggle atlas / reconstructed Markdown |
-| `p` | Toggle atlas / PDF |
+| `g` | Open the technical Glossary after a short single-key delay |
+| `m` | Toggle Overview / reconstructed Text |
+| `p` | Toggle Overview / source PDF |
 | `2` | Toggle one-page / two-page PDF view |
 | `[` / `]` | Previous / next paper, or PDF page |
 | `Ctrl-d` / `Ctrl-u` | Page forward / back in PDF; half-screen down / up in text views |
@@ -112,7 +114,7 @@ Press `?` in the app for the complete, contextual key guide.
 | `f` | Toggle mapped-only filtering while the library is open |
 | `:` | Open the command menu (`:analyze`, `:queue`, `:feedback`, `:spread`, and more) |
 | `q` | Toggle the processing queue and live agent tasklists |
-| `Esc` | Leave the current mode or close the top panel |
+| `Esc` | Return to Overview or close the top panel |
 
 Native pointer selection also works: select text in a digest, then choose **Clarify selection**. In the page map, `v` enters a coordinate-backed evidence cursor; a second `v` starts a same-page sentence range, movement extends it, `Space` stores it, and `c` sends the exact sentence text into clarification. Same-page ranges keep one compact, relocation-resistant token anchor; cross-page notes should be saved as separate highlights.
 
@@ -139,7 +141,7 @@ Generated files live beneath the selected data root:
         └── *.schema.json     # exact local-CLI output contracts
 ```
 
-Writes are atomic. `highlights.jsonl` is the canonical plaintext-first record: each line is a complete typed highlight with provenance, exact quoted text, PDF page, page-local token range, sentence IDs, and PDF-point rectangles. It is diffable and scriptable without a database; `highlights.md` is regenerated for ordinary reading. The original PDFs are never modified, and generated artifacts can be read, searched, versioned, or reused without running the frontend.
+Writes are atomic. `analysis.json` keeps contextual notes, their source-ID mappings, exact source titles/authors/years, final working URLs, and link-check timestamps; `digest.md` renders the same citations for use outside the app. `highlights.jsonl` is the canonical plaintext-first highlight record: each line is a complete typed highlight with provenance, exact quoted text, PDF page, page-local token range, sentence IDs, and PDF-point rectangles. It is diffable and scriptable without a database; `highlights.md` is regenerated for ordinary reading. The original PDFs are never modified, and generated artifacts can be read, searched, versioned, or reused without running the frontend.
 
 ## Quality checks
 
@@ -155,6 +157,6 @@ npm run build
 npm run smoke
 ```
 
-`npm run smoke` uses the real Dijkstra analysis, Markdown conversion, and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies atlas navigation, the mapped-only filter, F1/F10 switching, the colon command menu, live tasklist progress, feedback retries, contextual digest, keyboard selection/clarification, Gloss, Markdown reading, one/two-page PDF rendering and paging, and capital-`I` inversion.
+`npm run smoke` uses the real Dijkstra analysis, Markdown conversion, and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies the four-level top-bar progression, abstract provenance, exact contextual sources and link-check scope, overview navigation, the mapped-only filter, F1/F10 switching, the colon command menu, live tasklist progress, feedback retries, contextual digest, keyboard selection/clarification, the full Glossary, reconstructed Text, one/two-page PDF rendering and paging, and capital-`I` inversion.
 
 The implementation map and fault boundaries are described in [docs/architecture.md](docs/architecture.md).

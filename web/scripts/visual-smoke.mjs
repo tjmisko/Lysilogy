@@ -15,6 +15,40 @@ const root = path.resolve("..");
 const analysis = JSON.parse(
   await readFile(path.join(root, ".lysilogos", "papers", paperId, "analysis.json"), "utf8"),
 );
+analysis.author_abstract = "For a number of years I have been familiar with the observation that the quality of programmers is a decreasing function of the density of go to statements in the programs they produce.";
+analysis.schema_version = 4;
+analysis.provider = "codex";
+analysis.outsider_brief = "Dijkstra later wrote that the letter was often known only by its editor-supplied title, which became a reusable computing trope. Knuth's later response treated the dispute as a question of disciplined control structures rather than a literal ban.";
+analysis.context_notes = [
+  {
+    text: "Dijkstra later wrote that the letter was often known only by its editor-supplied title, which became a reusable computing trope.",
+    source_ids: ["dijkstra-2001"],
+  },
+  {
+    text: "Knuth's later response treated the dispute as a question of disciplined control structures rather than a literal ban.",
+    source_ids: ["knuth-1974"],
+  },
+];
+analysis.context_sources = [
+  {
+    id: "dijkstra-2001",
+    title: "What led to ‘Notes on Structured Programming’",
+    authors: ["Edsger W. Dijkstra"],
+    year: 2001,
+    url: "https://www.cs.utexas.edu/~EWD/transcriptions/EWD13xx/EWD1308.html",
+    supports: "Dijkstra's own later account of the title change, shallow title-only readings, and the phrase's afterlife.",
+    verified_at: "2026-08-26T12:00:00Z",
+  },
+  {
+    id: "knuth-1974",
+    title: "Structured Programming with go to Statements",
+    authors: ["Donald E. Knuth"],
+    year: 1974,
+    url: "https://homepages.cwi.nl/~storm/teaching/reader/Knuth74.pdf",
+    supports: "A prominent later interpretation arguing for structured, deliberate uses of go to rather than a categorical prohibition.",
+    verified_at: "2026-08-26T12:00:00Z",
+  },
+];
 const extraction = JSON.parse(
   await readFile(path.join(root, ".lysilogos", "papers", paperId, "extraction.json"), "utf8"),
 );
@@ -237,6 +271,24 @@ try {
   });
 
   await page.goto("http://lysilogos.test/", { waitUntil: "networkidle" });
+  await page.locator(".abstract-view").waitFor();
+  const viewLabels = await page.locator(".view-switch > button").allTextContents();
+  assert(
+    viewLabels.join("|").replaceAll(/\s+/gu, " ").includes("01 Abstract|02 Overview|03 Glossary|04 Text"),
+    `reading levels are out of order: ${viewLabels.join(", ")}`,
+  );
+  assert((await page.locator(".abstract-tldr").count()) === 1, "one-sentence TL;DR is missing");
+  assert((await page.locator(".authored-abstract").count()) === 1, "authored abstract is missing");
+  assert((await page.locator(".abstract-supplement").count()) === 1, "AI supplement is missing");
+  assert((await page.locator(".context-source").count()) === 2, "exact context sources are missing");
+  assert((await page.locator(".context-source-check").count()) === 2, "link-check timestamps are missing");
+  assert(
+    (await page.locator(".context-verification-scope").textContent())?.includes("not that the source semantically proves"),
+    "link verification is not distinguished from semantic support",
+  );
+  await page.locator(".context-sources").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: screenshotVariant("abstract"), fullPage: true });
+  await page.getByRole("button", { name: /02 Overview/u }).click();
   await page.locator(".section-tile").first().waitFor();
   const tiles = await page.locator(".section-tile").count();
   assert(tiles >= 5, `expected at least 5 atlas tiles, found ${tiles}`);
@@ -289,6 +341,7 @@ try {
 
   await page.keyboard.press("m");
   await page.locator(".markdown-document").waitFor();
+  assert((await page.locator(".text-view-header").count()) === 1, "Text format chooser is missing");
   assert((await page.locator(".markdown-page-marker").count()) === 4, "Markdown page provenance is incomplete");
   await page.screenshot({ path: screenshotVariant("markdown"), fullPage: true });
   await page.keyboard.press("m");
@@ -305,8 +358,11 @@ try {
 
   await page.keyboard.press("g");
   await delay(500);
-  await page.locator(".gloss-panel").waitFor();
+  await page.locator(".glossary-view").waitFor();
+  assert((await page.locator(".glossary-view .gloss-entry").count()) > 0, "full glossary view is empty");
+  await page.screenshot({ path: screenshotVariant("glossary"), fullPage: true });
   await page.keyboard.press("Escape");
+  await page.locator(".section-atlas").waitFor();
 
   await page.keyboard.press("p");
   await page.locator(".pdf-canvas").waitFor();
@@ -366,6 +422,9 @@ try {
 
   await page.setViewportSize({ width: 390, height: 844 });
   await delay(100);
+  await page.getByRole("button", { name: /01 Abstract/u }).click();
+  await page.locator(".abstract-view").waitFor();
+  await page.screenshot({ path: screenshotVariant("abstract-mobile"), fullPage: true });
   await page.keyboard.press("b");
   await page.locator(".library-rail.is-open").waitFor();
   await page.keyboard.press("j");
@@ -382,7 +441,7 @@ try {
   await page.keyboard.press("Escape");
   await page.locator(".help-card").waitFor({ state: "detached" });
 
-  console.log(`visual smoke passed: ${tiles} tiles, aligned source pages, AI/user highlights, arrows and paging, two-page PDF, Markdown, mapped filter, F1/F10, :analyze, live queue, feedback retry, selection, Gloss, and mobile keys; screenshot ${screenshot}`);
+  console.log(`visual smoke passed: cited context, ${tiles} tiles, aligned source pages, AI/user highlights, arrows and paging, two-page PDF, reconstructed text, mapped filter, F1/F10, :analyze, live queue, feedback retry, selection, glossary, and mobile keys; screenshot ${screenshot}`);
 } finally {
   await browser.close();
 }

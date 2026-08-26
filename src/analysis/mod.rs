@@ -1,5 +1,6 @@
 mod heuristic;
 mod local_cli;
+mod sources;
 
 use std::path::Path;
 
@@ -9,9 +10,9 @@ use serde::{Deserialize, Serialize};
 use crate::{
     Result,
     domain::{
-        AgentSession, AnalysisProvider, Claim, Clarification, EvidenceStrength, ExtractedPaper,
-        GlossaryEntry, KeyQuote, PageSpan, PaperAnalysis, PaperSection, QuoteSignificance,
-        SectionFamily, SectionKind, SectionSourceSpan,
+        AgentSession, AnalysisProvider, Claim, Clarification, ContextNote, ContextSource,
+        EvidenceStrength, ExtractedPaper, GlossaryEntry, KeyQuote, PageSpan, PaperAnalysis,
+        PaperSection, QuoteSignificance, SectionFamily, SectionKind, SectionSourceSpan,
     },
     error::Error,
     layout::verify_quote,
@@ -56,10 +57,9 @@ impl AnalysisService {
                 (result.draft, result.session)
             }
         };
-        Ok(AnalysisOutcome {
-            analysis: normalize_analysis(draft, provider, paper)?,
-            session,
-        })
+        let mut analysis = normalize_analysis(draft, provider, paper)?;
+        sources::verify_context_sources(&mut analysis).await;
+        Ok(AnalysisOutcome { analysis, session })
     }
 
     pub async fn revise(
@@ -79,8 +79,10 @@ impl AnalysisService {
             .local_cli
             .revise(provider, paper, artifact_directory, feedback, session)
             .await?;
+        let mut analysis = normalize_analysis(result.draft, provider, paper)?;
+        sources::verify_context_sources(&mut analysis).await;
         Ok(AnalysisOutcome {
-            analysis: normalize_analysis(result.draft, provider, paper)?,
+            analysis,
             session: result.session,
         })
     }
@@ -139,7 +141,14 @@ impl AnalysisService {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub(crate) struct AnalysisDraft {
     pub thesis: String,
+    #[serde(default)]
     pub outsider_brief: String,
+    #[serde(default)]
+    pub author_abstract: Option<String>,
+    #[serde(default)]
+    pub context_notes: Vec<ContextNoteDraft>,
+    #[serde(default)]
+    pub context_sources: Vec<ContextSourceDraft>,
     #[serde(default)]
     pub prerequisites: Vec<String>,
     pub sections: Vec<SectionDraft>,
@@ -151,6 +160,24 @@ pub(crate) struct AnalysisDraft {
     pub caveats: Vec<String>,
     #[serde(default)]
     pub reading_path: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub(crate) struct ContextNoteDraft {
+    pub text: String,
+    #[serde(default)]
+    pub source_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub(crate) struct ContextSourceDraft {
+    pub id: String,
+    pub title: String,
+    #[serde(default)]
+    pub authors: Vec<String>,
+    pub year: Option<u16>,
+    pub url: String,
+    pub supports: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -199,7 +226,12 @@ fn normalize_analysis(
     paper: &ExtractedPaper,
 ) -> Result<PaperAnalysis> {
     draft.thesis = clean_required("thesis", &draft.thesis)?;
-    draft.outsider_brief = clean_required("outsider brief", &draft.outsider_brief)?;
+    let author_abstract = validated_author_abstract(draft.author_abstract, paper);
+    let (outsider_brief, context_notes, context_sources) = normalize_context(
+        &draft.outsider_brief,
+        draft.context_notes,
+        draft.context_sources,
+    );
     if draft.sections.is_empty() {
         return Err(Error::InvalidAnalysis(
             "analysis did not contain any sections".to_owned(),
@@ -278,11 +310,14 @@ fn normalize_analysis(
     }
 
     let mut analysis = PaperAnalysis {
-        schema_version: 2,
+        schema_version: 4,
         provider,
         generated_at: Utc::now(),
         thesis: draft.thesis,
-        outsider_brief: draft.outsider_brief,
+        outsider_brief,
+        author_abstract,
+        context_notes,
+        context_sources,
         prerequisites: clean_list(draft.prerequisites, 12),
         sections,
         claims: draft.claims.into_iter().take(16).collect(),
@@ -292,6 +327,83 @@ fn normalize_analysis(
     };
     validate_citations(&mut analysis, &paper.layout);
     Ok(analysis)
+}
+
+fn normalize_context(
+    legacy_brief: &str,
+    notes: Vec<ContextNoteDraft>,
+    sources: Vec<ContextSourceDraft>,
+) -> (String, Vec<ContextNote>, Vec<ContextSource>) {
+    let mut id_map = std::collections::HashMap::new();
+    let mut used_ids = std::collections::HashSet::new();
+    let sources = sources
+        .into_iter()
+        .filter_map(|source| {
+            let original_id = source.id.trim().to_owned();
+            let id = slugify(&original_id);
+            let title = compact_whitespace(&source.title);
+            let url = source.url.trim().to_owned();
+            let supports = compact_whitespace(&source.supports);
+            if original_id.is_empty()
+                || id.is_empty()
+                || title.is_empty()
+                || url.is_empty()
+                || supports.is_empty()
+                || !used_ids.insert(id.clone())
+            {
+                return None;
+            }
+            id_map.insert(original_id, id.clone());
+            Some(ContextSource {
+                id,
+                title,
+                authors: clean_list(source.authors, 20),
+                year: source.year.filter(|year| (1000..=2100).contains(year)),
+                url,
+                supports,
+                // This is replaced by the independent link check before the
+                // analysis can be persisted or returned to a client.
+                verified_at: Utc::now(),
+            })
+        })
+        .take(6)
+        .collect::<Vec<_>>();
+
+    let notes = notes
+        .into_iter()
+        .filter_map(|note| {
+            let text = compact_whitespace(&note.text);
+            let mut seen = std::collections::HashSet::new();
+            let requested_ids = note
+                .source_ids
+                .into_iter()
+                .map(|id| id.trim().to_owned())
+                .filter(|id| seen.insert(id.clone()))
+                .collect::<Vec<_>>();
+            if text.is_empty() || requested_ids.is_empty() || requested_ids.len() > 4 {
+                return None;
+            }
+            let source_ids = requested_ids
+                .iter()
+                .map(|id| id_map.get(id).cloned())
+                .collect::<Option<Vec<_>>>()?;
+            Some(ContextNote { text, source_ids })
+        })
+        .take(2)
+        .collect::<Vec<_>>();
+
+    let generated_brief = notes
+        .iter()
+        .map(|note| note.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let legacy_brief = compact_whitespace(legacy_brief);
+    let outsider_brief = if generated_brief.is_empty() {
+        legacy_brief
+    } else {
+        generated_brief
+    };
+    (outsider_brief, notes, sources)
 }
 
 fn resolve_source_span(
@@ -333,7 +445,25 @@ pub fn validate_citations(analysis: &mut PaperAnalysis, layout: &crate::domain::
             quote.anchor = anchor;
         }
     }
-    analysis.schema_version = 2;
+    analysis.schema_version = analysis.schema_version.max(2);
+}
+
+fn validated_author_abstract(candidate: Option<String>, paper: &ExtractedPaper) -> Option<String> {
+    let abstract_text = compact_whitespace(&candidate?);
+    if abstract_text.chars().count() < 30 || abstract_text.chars().count() > 12_000 {
+        return None;
+    }
+    let source_text = compact_whitespace(
+        &paper
+            .pages
+            .iter()
+            .map(|page| page.text.as_str())
+            .collect::<Vec<_>>()
+            .join(" "),
+    );
+    source_text
+        .contains(&abstract_text)
+        .then_some(abstract_text)
 }
 
 fn clean_required(field: &str, value: &str) -> Result<String> {
@@ -419,10 +549,59 @@ pub(crate) fn fallback_quote(text: String, page: u32) -> KeyQuote {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::{DocumentLayout, ExtractedPage, PaperMetadata};
 
     #[test]
     fn creates_stable_readable_slugs() {
         assert_eq!(slugify("Results & Limitations"), "results-limitations");
         assert_eq!(slugify("  A/B  "), "a-b");
+    }
+
+    #[test]
+    fn accepts_only_abstract_text_present_in_the_paper() {
+        let source = "The authored abstract explains the contribution in the authors' own words.";
+        let paper = ExtractedPaper {
+            metadata: PaperMetadata::default(),
+            pages: vec![ExtractedPage {
+                number: 1,
+                text: source.to_owned(),
+            }],
+            layout: DocumentLayout::default(),
+        };
+
+        assert_eq!(
+            validated_author_abstract(Some(source.to_owned()), &paper).as_deref(),
+            Some(source)
+        );
+        assert_eq!(
+            validated_author_abstract(
+                Some("A plausible but invented abstract that is not in the paper.".to_owned()),
+                &paper,
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn drops_context_note_when_any_exact_source_record_is_missing() {
+        let (brief, notes, sources) = normalize_context(
+            "Legacy context must not leak through.",
+            vec![ContextNoteDraft {
+                text: "A broad reception claim.".to_owned(),
+                source_ids: vec!["known".to_owned(), "missing".to_owned()],
+            }],
+            vec![ContextSourceDraft {
+                id: "known".to_owned(),
+                title: "Known source".to_owned(),
+                authors: vec!["Researcher".to_owned()],
+                year: Some(2020),
+                url: "https://example.com/known".to_owned(),
+                supports: "One part of the claim.".to_owned(),
+            }],
+        );
+
+        assert!(notes.is_empty());
+        assert_eq!(sources.len(), 1);
+        assert_eq!(brief, "Legacy context must not leak through.");
     }
 }

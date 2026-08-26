@@ -20,9 +20,9 @@ const GROUPS = [
     commands: [
       ["↵ or o", "Open the focused section"],
       ["d", "Open its contextual digest"],
-      ["g", "Open Gloss (pause after one g)"],
-      ["m", "Toggle atlas / reconstructed Markdown"],
-      ["p", "Toggle atlas / PDF"],
+      ["g", "Open the technical glossary (pause after one g)"],
+      ["m", "Toggle overview / reconstructed full text"],
+      ["p", "Toggle overview / source PDF"],
       ["2", "Toggle one-page / two-page PDF view"],
       ["I", "Toggle dark ink / true colour for every rendered PDF page"],
     ],
@@ -103,8 +103,9 @@ export function HelpOverlay({ onClose }: HelpOverlayProps) {
           ))}
         </div>
         <p>
-          In a digest, visual mode selects whole semantic fragments—digest paragraphs, quotes, and
-          explanations—so keyboard selection remains stable across responsive layouts.
+          The top bar moves from Abstract to Overview to Glossary to Text, increasing detail at
+          each step. In a digest, visual mode selects whole semantic fragments—digest paragraphs,
+          quotes, and explanations—so keyboard selection remains stable across responsive layouts.
         </p>
       </section>
     </div>
