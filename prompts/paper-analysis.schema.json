@@ -2,11 +2,45 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["thesis", "outsider_brief", "author_abstract", "prerequisites", "sections", "claims", "glossary", "caveats", "reading_path"],
+  "required": ["thesis", "author_abstract", "context_notes", "context_sources", "prerequisites", "sections", "claims", "glossary", "caveats", "reading_path"],
   "properties": {
     "thesis": { "type": "string", "maxLength": 600 },
-    "outsider_brief": { "type": "string", "maxLength": 1200 },
     "author_abstract": { "type": ["string", "null"], "maxLength": 12000 },
+    "context_notes": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "source_ids"],
+        "properties": {
+          "text": { "type": "string", "maxLength": 700 },
+          "source_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "context_sources": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "authors", "year", "url", "supports"],
+        "properties": {
+          "id": { "type": "string", "maxLength": 80 },
+          "title": { "type": "string", "maxLength": 500 },
+          "authors": { "type": "array", "maxItems": 20, "items": { "type": "string" } },
+          "year": { "type": ["integer", "null"], "minimum": 1000, "maximum": 2100 },
+          "url": { "type": "string", "maxLength": 2048, "pattern": "^https?://" },
+          "supports": { "type": "string", "maxLength": 700 }
+        }
+      }
+    },
     "prerequisites": { "type": "array", "items": { "type": "string" }, "maxItems": 12 },
     "sections": {
       "type": "array",

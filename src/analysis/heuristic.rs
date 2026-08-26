@@ -116,6 +116,8 @@ impl HeuristicAnalyzer {
                 .to_owned(),
             thesis,
             author_abstract,
+            context_notes: Vec::new(),
+            context_sources: Vec::new(),
             prerequisites,
             sections,
             claims: claims.into_iter().take(10).collect(),

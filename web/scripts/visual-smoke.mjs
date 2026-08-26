@@ -16,7 +16,39 @@ const analysis = JSON.parse(
   await readFile(path.join(root, ".lysilogos", "papers", paperId, "analysis.json"), "utf8"),
 );
 analysis.author_abstract = "For a number of years I have been familiar with the observation that the quality of programmers is a decreasing function of the density of go to statements in the programs they produce.";
-analysis.outsider_brief = "The letter helped turn structured programming from a design preference into a durable standard for reasoning about control flow. Its title later became shorthand for categorical prohibition, although Dijkstra's argument is more specifically about preserving intelligible coordinates for program execution.";
+analysis.schema_version = 4;
+analysis.provider = "codex";
+analysis.outsider_brief = "Dijkstra later wrote that the letter was often known only by its editor-supplied title, which became a reusable computing trope. Knuth's later response treated the dispute as a question of disciplined control structures rather than a literal ban.";
+analysis.context_notes = [
+  {
+    text: "Dijkstra later wrote that the letter was often known only by its editor-supplied title, which became a reusable computing trope.",
+    source_ids: ["dijkstra-2001"],
+  },
+  {
+    text: "Knuth's later response treated the dispute as a question of disciplined control structures rather than a literal ban.",
+    source_ids: ["knuth-1974"],
+  },
+];
+analysis.context_sources = [
+  {
+    id: "dijkstra-2001",
+    title: "What led to ‘Notes on Structured Programming’",
+    authors: ["Edsger W. Dijkstra"],
+    year: 2001,
+    url: "https://www.cs.utexas.edu/~EWD/transcriptions/EWD13xx/EWD1308.html",
+    supports: "Dijkstra's own later account of the title change, shallow title-only readings, and the phrase's afterlife.",
+    verified_at: "2026-08-26T12:00:00Z",
+  },
+  {
+    id: "knuth-1974",
+    title: "Structured Programming with go to Statements",
+    authors: ["Donald E. Knuth"],
+    year: 1974,
+    url: "https://homepages.cwi.nl/~storm/teaching/reader/Knuth74.pdf",
+    supports: "A prominent later interpretation arguing for structured, deliberate uses of go to rather than a categorical prohibition.",
+    verified_at: "2026-08-26T12:00:00Z",
+  },
+];
 const extraction = JSON.parse(
   await readFile(path.join(root, ".lysilogos", "papers", paperId, "extraction.json"), "utf8"),
 );
@@ -208,6 +240,13 @@ try {
   assert((await page.locator(".abstract-tldr").count()) === 1, "one-sentence TL;DR is missing");
   assert((await page.locator(".authored-abstract").count()) === 1, "authored abstract is missing");
   assert((await page.locator(".abstract-supplement").count()) === 1, "AI supplement is missing");
+  assert((await page.locator(".context-source").count()) === 2, "exact context sources are missing");
+  assert((await page.locator(".context-source-check").count()) === 2, "link-check timestamps are missing");
+  assert(
+    (await page.locator(".context-verification-scope").textContent())?.includes("not that the source semantically proves"),
+    "link verification is not distinguished from semantic support",
+  );
+  await page.locator(".context-sources").scrollIntoViewIfNeeded();
   await page.screenshot({ path: screenshotVariant("abstract"), fullPage: true });
   await page.getByRole("button", { name: /02 Overview/u }).click();
   await page.locator(".section-tile").first().waitFor();
@@ -317,7 +356,7 @@ try {
   await page.keyboard.press("Escape");
   await page.locator(".help-card").waitFor({ state: "detached" });
 
-  console.log(`visual smoke passed: ${tiles} tiles, aligned source pages, AI/user highlights, arrows, Markdown, mapped filter, F1/F10, PDF, selection, Gloss, and mobile keys; screenshot ${screenshot}`);
+  console.log(`visual smoke passed: cited context, ${tiles} tiles, aligned source pages, AI/user highlights, arrows, Markdown, mapped filter, F1/F10, PDF, selection, Gloss, and mobile keys; screenshot ${screenshot}`);
 } finally {
   await browser.close();
 }

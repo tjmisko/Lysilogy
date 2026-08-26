@@ -9,8 +9,8 @@ use tokio::fs;
 use crate::{
     Result,
     domain::{
-        CitationStatus, DocumentLayout, ExtractedPage, ExtractedPaper, Highlight, HighlightOrigin,
-        PaperAnalysis, PaperId, PaperMetadata,
+        AnalysisProvider, CitationStatus, DocumentLayout, ExtractedPage, ExtractedPaper, Highlight,
+        HighlightOrigin, PaperAnalysis, PaperId, PaperMetadata,
     },
     error::Error,
     markdown,
@@ -289,11 +289,56 @@ fn render_digest(analysis: &PaperAnalysis) -> String {
     if let Some(author_abstract) = &analysis.author_abstract {
         let _ = write!(markdown, "## Author abstract\n\n{author_abstract}\n\n");
     }
-    let _ = write!(
-        markdown,
-        "## Contextual supplement\n\n{}\n\n## Reading path\n\n",
-        analysis.outsider_brief
-    );
+    markdown.push_str("## Contextual supplement\n\n");
+    if analysis.context_notes.is_empty() && analysis.provider == AnalysisProvider::Heuristic {
+        let _ = write!(markdown, "{}\n\n", analysis.outsider_brief);
+    } else if analysis.context_notes.is_empty() {
+        markdown.push_str(
+            "No externally grounded field-history, reception, or later-interpretation note passed the complete source and link checks.\n\n",
+        );
+    } else {
+        for note in &analysis.context_notes {
+            let citations = note
+                .source_ids
+                .iter()
+                .filter_map(|source_id| {
+                    analysis
+                        .context_sources
+                        .iter()
+                        .position(|source| source.id == *source_id)
+                        .map(|index| format!("[{}]", index + 1))
+                })
+                .collect::<String>();
+            let _ = writeln!(markdown, "- {} {citations}", note.text);
+        }
+        markdown.push('\n');
+    }
+    if !analysis.context_sources.is_empty() {
+        markdown.push_str("## Context sources\n\n");
+        for (index, source) in analysis.context_sources.iter().enumerate() {
+            let authors = if source.authors.is_empty() {
+                "Author unknown".to_owned()
+            } else {
+                source.authors.join(", ")
+            };
+            let year = source
+                .year
+                .map_or_else(|| "year unknown".to_owned(), |year| year.to_string());
+            let _ = write!(
+                markdown,
+                "{}. [{}]({}) — {authors} ({year}).\n   - Used for: {}\n   - Link checked: {}\n",
+                index + 1,
+                source.title,
+                source.url,
+                source.supports,
+                source.verified_at.to_rfc3339()
+            );
+        }
+        markdown.push_str(
+            "\n_Link verification means Lysilogos followed redirects to a public destination and received an HTTP success response at the recorded time. It does not independently establish that a source proves the contextual note._\n\n",
+        );
+    }
+    markdown.push_str("## Reading path\n\n");
     for item in &analysis.reading_path {
         let _ = writeln!(markdown, "- {item}");
     }
@@ -362,7 +407,7 @@ mod tests {
     use tempfile::tempdir;
 
     use super::*;
-    use crate::domain::{AnalysisProvider, PaperAnalysis};
+    use crate::domain::{AnalysisProvider, ContextNote, ContextSource, PaperAnalysis};
 
     #[tokio::test]
     async fn extraction_round_trips_as_plain_text() -> Result<()> {
@@ -412,13 +457,27 @@ mod tests {
         let store = ArtifactStore::new(directory.path());
         store.initialize().await?;
         let id = PaperId::from_relative_path(Path::new("paper.pdf"));
+        let verified_at = Utc::now();
         let analysis = PaperAnalysis {
-            schema_version: 1,
-            provider: AnalysisProvider::Heuristic,
+            schema_version: 4,
+            provider: AnalysisProvider::Codex,
             generated_at: Utc::now(),
             thesis: "A test thesis".to_owned(),
-            outsider_brief: "A test brief".to_owned(),
+            outsider_brief: "A grounded contextual note".to_owned(),
             author_abstract: Some("The authors' own test abstract is preserved here.".to_owned()),
+            context_notes: vec![ContextNote {
+                text: "A grounded contextual note".to_owned(),
+                source_ids: vec!["review".to_owned()],
+            }],
+            context_sources: vec![ContextSource {
+                id: "review".to_owned(),
+                title: "An exact source title".to_owned(),
+                authors: vec!["A. Researcher".to_owned()],
+                year: Some(2024),
+                url: "https://example.com/review".to_owned(),
+                supports: "The historical context in the note.".to_owned(),
+                verified_at,
+            }],
             prerequisites: Vec::new(),
             sections: Vec::new(),
             claims: Vec::new(),
@@ -433,6 +492,8 @@ mod tests {
             .map_err(|error| Error::io("digest.md", error))?;
         assert!(digest.contains("A test thesis"));
         assert!(digest.contains("The authors' own test abstract"));
+        assert!(digest.contains("[An exact source title](https://example.com/review)"));
+        assert!(digest.contains("It does not independently establish"));
         Ok(())
     }
 }

@@ -178,7 +178,7 @@ export function App() {
 
   const processing =
     paperView !== null && PROCESSING_STATES.has(paperView.paper.status.state);
-  const analysisNeedsRefresh = paperView?.analysis != null && paperView.analysis.schema_version < 3;
+  const analysisNeedsRefresh = paperView?.analysis != null && paperView.analysis.schema_version < 4;
 
   useEffect(() => {
     if (!processing || selectedId === null) return;
@@ -625,7 +625,7 @@ export function App() {
                     <span className="eyebrow">Unmapped paper</span>
                     <h2>Build the path from abstract to source.</h2>
                     <p>
-                      Text is extracted locally. {provider === "heuristic" ? "The offline structural pass" : `${provider} in read-only plan mode`} builds the orientation, overview, technical glossary, quotes, and context.
+                      Text is extracted locally. {provider === "heuristic" ? "The offline structural pass" : `${provider} in a read-only research pass`} builds the orientation, overview, technical glossary, quotes, and context.
                     </p>
                     <button type="button" onClick={analyze} disabled={processing}>
                       {processing ? "Reading the paper…" : `Analyze with ${provider}`} <kbd>a</kbd>

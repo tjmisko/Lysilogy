@@ -151,6 +151,14 @@ pub struct PaperAnalysis {
     /// extracted source text. Older analyses and papers without abstracts omit it.
     #[serde(default)]
     pub author_abstract: Option<String>,
+    /// Externally grounded field-history or reception claims. Every note is
+    /// retained only when all of its source IDs pass independent URL checks.
+    #[serde(default)]
+    pub context_notes: Vec<ContextNote>,
+    /// Exact source records for the independently checked public links cited by
+    /// `context_notes`.
+    #[serde(default)]
+    pub context_sources: Vec<ContextSource>,
     #[serde(default)]
     pub prerequisites: Vec<String>,
     #[serde(default)]
@@ -163,6 +171,30 @@ pub struct PaperAnalysis {
     pub caveats: Vec<String>,
     #[serde(default)]
     pub reading_path: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ContextNote {
+    pub text: String,
+    #[serde(default)]
+    pub source_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ContextSource {
+    pub id: String,
+    pub title: String,
+    #[serde(default)]
+    pub authors: Vec<String>,
+    pub year: Option<u16>,
+    pub url: String,
+    /// A concise account of which part of the contextual note this source
+    /// supports. This remains analyzer-supplied and is not labeled as a
+    /// deterministic semantic verification.
+    pub supports: String,
+    /// Time at which Lysilogos independently resolved redirects and received a
+    /// successful response from this public URL.
+    pub verified_at: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -2,7 +2,7 @@
 
 Lysilogos turns a vault of scientific PDFs into a keyboard-first reading path for intelligent outsiders to the field.
 
-The top bar deliberately increases detail in four steps: **Abstract** gives a generated one-sentence TL;DR, the authors' source-validated abstract, and a short contextual supplement; **Overview** maps the paper into conceptual tiles sized by argumentative weight and lays that map over coordinate-aligned PDF pages; **Glossary** teaches the load-bearing technical vocabulary to hold before reading; and **Text** provides both calm reconstructed Markdown and the source PDF. Opening an overview tile gives its contextual digest, key quotations, and page links. AI citations are prehighlighted only after deterministic text checks, and reader highlights use the same stable sentence/token anchors.
+The top bar deliberately increases detail in four steps: **Abstract** gives a generated one-sentence TL;DR, the authors' source-validated abstract, and a short contextual supplement; **Overview** maps the paper into conceptual tiles sized by argumentative weight and lays that map over coordinate-aligned PDF pages; **Glossary** teaches the load-bearing technical vocabulary to hold before reading; and **Text** provides both calm reconstructed Markdown and the source PDF. Reception, field history, and later interpretation appear only as cited notes tied to exact source records. Lysilogos independently follows each link to a successful public destination and records when it did so; the interface separately warns that reachability does not prove the source's semantic support. Opening an overview tile gives its contextual digest, key quotations, and page links. AI citations are prehighlighted only after deterministic text checks, and reader highlights use the same stable sentence/token anchors.
 
 The current demo has been exercised against the local `local-articles/Articles` corpus (118 PDFs) and includes a mapped copy of Dijkstra's “GOTO Statements Considered Harmful.”
 
@@ -75,7 +75,7 @@ cargo run -- ingest --provider heuristic
 cargo run -- analyze "title fragment" --provider codex --force
 ```
 
-Lysilogos invokes the local command-line tools rather than an API. Codex runs ephemerally with a read-only sandbox and a JSON output schema; Claude runs in plan permission mode with only read/search tools. The extracted paper is explicitly treated as untrusted input. Both commands have bounded runtime, validated structured output, and stage-specific failure reporting.
+Lysilogos invokes the local command-line tools rather than an API. Codex runs ephemerally with live search, a read-only sandbox, and a JSON output schema; Claude runs in plan permission mode with paper-reading and web-research tools. The extracted paper is explicitly treated as untrusted input. Both commands have bounded runtime, validated structured output, and stage-specific failure reporting. External context uses a second, application-owned gate: every note must map to exact source records, and every cited URL must pass bounded DNS, redirect, public-address, and HTTP-success checks before either the note or source is persisted. One failed citation withholds the complete note.
 
 The heuristic provider is intentionally conservative. It supplies an immediate offline atlas and clearly labels itself; use a model-backed provider for interpretive reading and field context.
 
@@ -128,7 +128,7 @@ Generated files live beneath the selected data root:
         └── *.schema.json     # exact local-CLI output contracts
 ```
 
-Writes are atomic. `highlights.jsonl` is the canonical plaintext-first record: each line is a complete typed highlight with provenance, exact quoted text, PDF page, page-local token range, sentence IDs, and PDF-point rectangles. It is diffable and scriptable without a database; `highlights.md` is regenerated for ordinary reading. The original PDFs are never modified, and generated artifacts can be read, searched, versioned, or reused without running the frontend.
+Writes are atomic. `analysis.json` keeps contextual notes, their source-ID mappings, exact source titles/authors/years, final working URLs, and link-check timestamps; `digest.md` renders the same citations for use outside the app. `highlights.jsonl` is the canonical plaintext-first highlight record: each line is a complete typed highlight with provenance, exact quoted text, PDF page, page-local token range, sentence IDs, and PDF-point rectangles. It is diffable and scriptable without a database; `highlights.md` is regenerated for ordinary reading. The original PDFs are never modified, and generated artifacts can be read, searched, versioned, or reused without running the frontend.
 
 ## Quality checks
 
@@ -144,6 +144,6 @@ npm run build
 npm run smoke
 ```
 
-`npm run smoke` uses the real Dijkstra analysis, Markdown conversion, and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies the four-level top-bar progression, abstract provenance, overview navigation, the mapped-only filter, F1/F10 switching, contextual digest, keyboard selection/clarification, the full Glossary, reconstructed Text, PDF rendering, and capital-`I` inversion.
+`npm run smoke` uses the real Dijkstra analysis, Markdown conversion, and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies the four-level top-bar progression, abstract provenance, exact contextual sources and link-check scope, overview navigation, the mapped-only filter, F1/F10 switching, contextual digest, keyboard selection/clarification, the full Glossary, reconstructed Text, PDF rendering, and capital-`I` inversion.
 
 The implementation map and fault boundaries are described in [docs/architecture.md](docs/architecture.md).

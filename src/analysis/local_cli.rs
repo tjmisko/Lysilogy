@@ -107,6 +107,7 @@ impl LocalCliAnalyzer {
                 let mut command = Command::new(&self.codex_command);
                 command
                     .args([
+                        "--search",
                         "exec",
                         "--ephemeral",
                         "--sandbox",
@@ -127,7 +128,7 @@ impl LocalCliAnalyzer {
                     "--permission-mode",
                     "plan",
                     "--tools",
-                    "Read,Grep",
+                    "Read,Grep,WebSearch,WebFetch",
                     "--no-session-persistence",
                     "--output-format",
                     "json",
@@ -227,7 +228,11 @@ PDF pages: {pages}
 
 The PDF may be a scan of a journal issue or proceedings volume that contains unrelated papers before or after the target. Locate the target by its title and authors, analyze only that work, and exclude adjacent material.
 
-Produce a source-grounded structural map of the entire target paper. Set `thesis` to exactly one plain-language sentence that works as a TL;DR. Set `author_abstract` to the complete abstract in the authors' own words, copied from the target paper apart from whitespace, or null when the paper has no identifiable authored abstract. Set `outsider_brief` to the highest-leverage one or two sentences that supplement rather than repeat that abstract for a reader unfamiliar with the field. Prioritize well-established context about the field before and after the paper, what the paper clarified, its broader reception, and how later work interpreted it. Because those facts may not appear in the source, include them only when you are genuinely confident they are established; qualify uncertainty and never infer reception merely from the paper's claims. When reliable external context is unavailable, use the supplement to expose a consequential assumption, limitation, or implication that the abstract leaves implicit.
+Produce a source-grounded structural map of the entire target paper. Set `thesis` to exactly one plain-language sentence that works as a TL;DR. Set `author_abstract` to the complete abstract in the authors' own words, copied from the target paper apart from whitespace, or null when the paper has no identifiable authored abstract.
+
+Use live web research for `context_notes` and `context_sources`. Write at most two concise contextual notes that supplement rather than repeat the abstract for a reader unfamiliar with the field. Spend this limited space on the highest-leverage established context: where the field was before and after the paper, what the paper made clear that was not clear before, its broader reception, or how later work interpreted it. Every note must cite one or more exact source IDs, and every cited ID must have one matching bibliographic record. Give the source's exact title, authors, publication year when known, and a direct canonical HTTP(S) URL for the source itself; prefer a DOI landing page, publisher page, journal page, institutional record, or official primary source, never a search-result URL. Use primary sources for historical facts and authoritative peer-reviewed reviews or field histories for claims about reception and influence. Corroborate broad claims with more than one independent source when possible. Make `supports` a narrow account of precisely what the source establishes for the note.
+
+Do not infer reception from the target paper's own claims, citation count alone, snippets, or general reputation. Do not cite a source you did not inspect. Qualify genuine disagreement or uncertainty. A reachable source is not automatically proof of a claim, so make the note no broader than the inspected evidence. If reliable external support is unavailable, return empty `context_notes` and `context_sources`; never fill the gap with unsourced external context.
 
 Prefer the paper's argumentative or conceptual units over blindly copying every printed heading. Each tile summary must be one or two sentences. Each digest must explain the section's role, central reasoning, evidence, assumptions, and connection to the thesis in language accessible to a smart outsider. Treat `glossary` as a pre-reading curriculum: include the load-bearing technical concepts an outsider should have solidly in mind before reading the full text, not every specialized word that happens to appear. For each section, `source_span.start_text` and `source_span.end_text` must be short exact excerpts from the first and last lines belonging to that section, with their PDF page numbers; these boundaries are checked against the deterministic PDF text layer before they are used. Preserve key quotes exactly apart from whitespace and cite the correct PDF page. Do not invent a quote, result, definition, boundary, or page number. Distinguish what the authors show from what they merely argue or assume.
 
