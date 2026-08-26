@@ -291,7 +291,7 @@ pub struct ContextSource {
     /// supports. This remains analyzer-supplied and is not labeled as a
     /// deterministic semantic verification.
     pub supports: String,
-    /// Time at which Lysilogos independently resolved redirects and received a
+    /// Time at which Lysilogy independently resolved redirects and received a
     /// successful response from this public URL.
     pub verified_at: DateTime<Utc>,
 }

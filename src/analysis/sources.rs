@@ -103,7 +103,7 @@ async fn verify_public_link_redirects(value: &str) -> Option<String> {
             .no_proxy()
             .connect_timeout(REQUEST_TIMEOUT)
             .timeout(REQUEST_TIMEOUT)
-            .user_agent(concat!("lysilogos/", env!("CARGO_PKG_VERSION")));
+            .user_agent(concat!("lysilogy/", env!("CARGO_PKG_VERSION")));
         if host.parse::<IpAddr>().is_err() {
             builder = builder.resolve(&host, address);
         }

@@ -1,4 +1,4 @@
-# Lysilogos architecture
+# Lysilogy architecture
 
 ## Shape of the system
 

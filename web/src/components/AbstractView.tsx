@@ -97,7 +97,7 @@ export function AbstractView({
         </header>
         {analysis.author_abstract == null ? (
           <p className="missing-abstract">
-            No authored abstract was identified in the extracted paper. Lysilogos leaves this
+            No authored abstract was identified in the extracted paper. Lysilogy leaves this
             space empty rather than substituting generated prose.
           </p>
         ) : (
@@ -182,7 +182,7 @@ export function AbstractView({
                 ))}
               </ol>
               <p className="context-verification-scope">
-                Lysilogos resolved every redirect, rejected non-public destinations, and required
+                Lysilogy resolved every redirect, rejected non-public destinations, and required
                 an HTTP success response. That verifies link reachability at the recorded time—not
                 that the source semantically proves the note. Open the exact record to inspect the
                 evidence.

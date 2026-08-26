@@ -6,14 +6,14 @@ import { setTimeout as delay } from "node:timers/promises";
 import { chromium } from "playwright";
 
 const paperId = "a72b0e4a80ecd9db";
-const screenshot = process.argv[2] ?? "/tmp/lysilogos-atlas.png";
+const screenshot = process.argv[2] ?? "/tmp/lysilogy-atlas.png";
 const screenshotVariant = (name) => {
   const parsed = path.parse(screenshot);
   return path.join(parsed.dir, `${parsed.name}-${name}${parsed.ext}`);
 };
 const root = path.resolve("..");
 const analysis = JSON.parse(
-  await readFile(path.join(root, ".lysilogos", "papers", paperId, "analysis.json"), "utf8"),
+  await readFile(path.join(root, ".lysilogy", "papers", paperId, "analysis.json"), "utf8"),
 );
 analysis.author_abstract = "For a number of years I have been familiar with the observation that the quality of programmers is a decreasing function of the density of go to statements in the programs they produce.";
 analysis.schema_version = 4;
@@ -50,7 +50,7 @@ analysis.context_sources = [
   },
 ];
 const extraction = JSON.parse(
-  await readFile(path.join(root, ".lysilogos", "papers", paperId, "extraction.json"), "utf8"),
+  await readFile(path.join(root, ".lysilogy", "papers", paperId, "extraction.json"), "utf8"),
 );
 const metadata = extraction.metadata;
 const paper = {
@@ -200,7 +200,7 @@ function mimeType(filename) {
 const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await page.route("http://lysilogos.test/**", async (route) => {
+  await page.route("http://lysilogy.test/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     if (url.pathname === "/api/library") {
@@ -284,7 +284,7 @@ try {
       });
     } else if (url.pathname === `/api/papers/${paperId}/markdown`) {
       await route.fulfill({
-        path: path.join(root, ".lysilogos", "papers", paperId, "source.md"),
+        path: path.join(root, ".lysilogy", "papers", paperId, "source.md"),
         contentType: "text/markdown; charset=utf-8",
       });
     } else {
@@ -294,7 +294,7 @@ try {
     }
   });
 
-  await page.goto("http://lysilogos.test/", { waitUntil: "networkidle" });
+  await page.goto("http://lysilogy.test/", { waitUntil: "networkidle" });
   await page.locator(".abstract-view").waitFor();
   const viewLabels = await page.locator(".view-switch > button").allTextContents();
   assert(
