@@ -60,6 +60,7 @@ export function CommandBar({ view, textMode, panelOpen }: CommandBarProps) {
     commands = [
       ["h j k l / arrows", "move"],
       ["↵", "digest"],
+      ["+ −", "page grid"],
       ["H", "AI evidence"],
       ["U", "my marks"],
       ["v", "mark source"],

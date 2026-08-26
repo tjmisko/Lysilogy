@@ -681,6 +681,21 @@ code {
   background: linear-gradient(100deg, rgba(216, 255, 99, 0.06), transparent 65%);
 }
 
+.conceptual-atlas {
+  margin-top: 54px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.conceptual-atlas-header {
+  margin-bottom: 18px;
+}
+
+.conceptual-atlas-header h2 {
+  margin: 5px 0 0;
+  font: 500 clamp(20px, 2vw, 29px)/1.1 Georgia, serif;
+}
+
 .thesis-mark {
   display: grid;
   width: 31px;
@@ -864,16 +879,16 @@ code {
   align-items: center;
   justify-content: center;
   gap: 9px;
-  margin-top: 36px;
+  margin-top: 0;
   border: 1px solid var(--line);
   color: var(--ink-faint);
   font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .source-map {
-  margin-top: 34px;
-  border-top: 1px solid var(--line);
-  padding-top: 22px;
+  padding: clamp(14px, 2vw, 22px);
+  border: 1px solid var(--line);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.018), transparent 45%);
 }
 
 .source-map-header {
@@ -898,10 +913,14 @@ code {
 .source-map-controls {
   display: flex;
   flex: 0 0 auto;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 5px;
 }
 
-.source-map-controls button {
+.source-map-controls button,
+.page-grid-zoom output {
   padding: 7px 9px;
   border: 1px solid var(--line);
   border-radius: 3px;
@@ -910,9 +929,41 @@ code {
   font: 9px ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.source-map-controls button:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
 .source-map-controls button.is-active {
   border-color: color-mix(in srgb, var(--signal) 60%, var(--line));
   color: var(--signal);
+}
+
+.page-grid-zoom {
+  display: inline-grid;
+  grid-template-columns: 31px auto 31px;
+}
+
+.source-map-controls .page-grid-zoom > * {
+  border-radius: 0;
+}
+
+.source-map-controls .page-grid-zoom > :first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.page-grid-zoom > :not(:first-child) {
+  margin-left: -1px;
+}
+
+.source-map-controls .page-grid-zoom > :last-child {
+  border-radius: 0 3px 3px 0;
+}
+
+.page-grid-zoom output {
+  min-width: 49px;
+  color: var(--ink-soft);
+  text-align: center;
 }
 
 .source-map-status {
@@ -930,26 +981,24 @@ code {
 }
 
 .source-pages {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(var(--page-columns), minmax(0, 1fr));
   align-items: flex-start;
-  gap: 10px;
-  overflow-x: auto;
-  padding: 8px 8px 20px;
+  gap: 5px;
+  padding: 6px;
   border: 1px solid var(--line);
   background: #080909;
-  scroll-snap-type: x proximity;
-  scrollbar-color: var(--line-bright) transparent;
 }
 
 .source-page {
   position: relative;
   isolation: isolate;
-  flex: 0 0 clamp(255px, 26vw, 350px);
+  min-width: 0;
+  width: 100%;
   overflow: hidden;
-  border: 1px solid #626660;
+  border: 1px solid #050606;
   background: #e9e8df;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
-  scroll-snap-align: start;
+  container-type: inline-size;
 }
 
 .source-page > .loader {
@@ -985,12 +1034,14 @@ code {
 .section-regions > button {
   position: absolute;
   left: 0;
+  top: 0;
+  height: 100%;
   overflow: hidden;
   padding: 0;
-  border: 1.5px solid color-mix(in srgb, var(--family) 80%, #111);
-  background: color-mix(in srgb, var(--family) 18%, transparent);
+  border: 2px solid color-mix(in srgb, var(--family) 66%, #060706);
+  background: color-mix(in srgb, var(--family) 32%, transparent);
   color: white;
-  text-align: left;
+  text-align: center;
 }
 
 .section-regions > button.is-inferred {
@@ -1001,25 +1052,24 @@ code {
 .section-regions > button:hover,
 .section-regions > button:focus-visible {
   z-index: 2;
-  background: color-mix(in srgb, var(--family) 31%, transparent);
+  background: color-mix(in srgb, var(--family) 45%, transparent);
   box-shadow: inset 0 0 0 1px var(--signal);
 }
 
 .section-regions > button > span {
   position: absolute;
-  top: 4px;
-  left: 4px;
-  max-width: calc(100% - 8px);
+  inset: 7%;
+  display: grid;
+  place-items: center;
   overflow: hidden;
-  padding: 3px 5px;
-  border-left: 2px solid var(--family);
-  background: rgba(8, 10, 9, 0.84);
-  color: color-mix(in srgb, var(--family) 70%, white);
-  font: 650 8px/1.15 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.035em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
+  padding: 4px;
+  background: rgba(8, 10, 9, 0.62);
+  color: white;
+  font: 700 clamp(6px, 8cqw, 25px)/1.05 Georgia, "Times New Roman", serif;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 
 .source-map.is-marking .section-regions {
@@ -2825,9 +2875,9 @@ code {
   .source-map-controls {
     width: 100%;
     overflow-x: auto;
+    justify-content: flex-start;
   }
   .source-map-controls button { flex: 0 0 auto; }
-  .source-page { flex-basis: min(78vw, 330px); }
 }
 
 @media (max-width: 500px) {
