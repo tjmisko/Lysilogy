@@ -6,7 +6,7 @@
 PDF vault
    │ recursive, read-only discovery
    ▼
-Paper catalog ──► Poppler extraction ──► source.txt + extraction.json
+Paper catalog ──► Poppler extraction ──► source.txt + source.md + extraction.json
                                             │
                          ┌──────────────────┼──────────────────┐
                          ▼                  ▼                  ▼
@@ -57,6 +57,8 @@ This makes the future switch to a different local agent—or an explicitly confi
 
 The heuristic provider follows the same typed output path. It identifies printed headings where reliable, falls back to conceptual chunks, scores thesis-like sentences, assigns semantic families, extracts bounded quotations, and builds a small technical gloss. It never presents itself as model interpretation.
 
+Markdown conversion is a separate, model-free derivative of extraction. It rejoins wrapped lines, infers common headings and labels, neutralizes embedded HTML, and emits explicit PDF page markers. Opening the Markdown tab lazily extracts an unmapped paper if necessary, but does not start a model analysis. The UI offers both a safe rendered view and the exact `.md` source.
+
 ## Fault behavior
 
 Failures are paper-local and observable. A paper moves through:
@@ -74,7 +76,7 @@ Expected faults have dedicated errors: missing PDF tools, unreadable vaults, emp
 
 The atlas is a CSS grid whose tile spans come from analysis rather than PDF page dimensions. That is the core product distinction: area expresses conceptual weight, while color expresses argumentative role.
 
-Focus is the single source of truth for mouse, touch, and keyboard navigation. The digest exposes real selectable DOM text. Keyboard visual mode stores an anchor and a moving character offset over that same text, so `v`, movement, `o`, `y`, and `c` parallel Vim without breaking native browser selection.
+Focus is the single source of truth for mouse, touch, and keyboard navigation. The digest exposes real selectable DOM text. Keyboard visual mode stores an anchor and a moving character offset over that same text, so `v`, movement, `o`, `y`, and `c` parallel Vim without breaking native browser selection. `F1` owns the library rail, while `F10` opens a focused fuzzy switcher that searches titles, authors, and years.
 
 PDF.js renders one page at a time. The default CSS filter produces light paper ink on a dark surface. `i` removes that filter, which is the reliable way to inspect figures, heatmaps, and photographs without color distortion.
 

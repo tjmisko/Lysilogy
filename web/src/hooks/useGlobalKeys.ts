@@ -4,7 +4,7 @@ type GlobalKeyOptions = {
   enabled: boolean;
   activeIndex: number;
   itemCount: number;
-  view: "atlas" | "pdf";
+  view: "atlas" | "markdown" | "pdf";
   onMove: (index: number) => void;
   onOpen: () => void;
   onDigest: () => void;
@@ -13,12 +13,15 @@ type GlobalKeyOptions = {
   onSearch: () => void;
   onToggleLibrary: () => void;
   onToggleView: () => void;
+  onToggleMarkdown: () => void;
   onAnalyze: () => void;
   onEscape: () => void;
   onPrevious: () => void;
   onNext: () => void;
   onInvert: () => void;
   onZoom: (delta: number) => void;
+  onScroll: (delta: number) => void;
+  onScrollTo: (edge: "start" | "end") => void;
 };
 
 function isEditable(target: EventTarget | null): boolean {
@@ -68,31 +71,39 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
         Math.max(0, Math.min(current.itemCount - 1, index));
       switch (event.key) {
         case "h":
-          event.preventDefault();
-          current.onMove(clamp(current.activeIndex - 1));
+          if (current.view === "atlas") {
+            event.preventDefault();
+            current.onMove(clamp(current.activeIndex - 1));
+          }
           break;
         case "l":
-          event.preventDefault();
-          current.onMove(clamp(current.activeIndex + 1));
+          if (current.view === "atlas") {
+            event.preventDefault();
+            current.onMove(clamp(current.activeIndex + 1));
+          }
           break;
         case "j":
           event.preventDefault();
-          current.onMove(clamp(current.activeIndex + columns));
+          if (current.view === "markdown") current.onScroll(120);
+          else if (current.view === "atlas") current.onMove(clamp(current.activeIndex + columns));
           break;
         case "k":
           event.preventDefault();
-          current.onMove(clamp(current.activeIndex - columns));
+          if (current.view === "markdown") current.onScroll(-120);
+          else if (current.view === "atlas") current.onMove(clamp(current.activeIndex - columns));
           break;
         case "G":
           event.preventDefault();
           clearPendingG();
-          current.onMove(Math.max(0, current.itemCount - 1));
+          if (current.view === "markdown") current.onScrollTo("end");
+          else if (current.view === "atlas") current.onMove(Math.max(0, current.itemCount - 1));
           break;
         case "g":
           event.preventDefault();
           if (pendingG.current !== null) {
             clearPendingG();
-            current.onMove(0);
+            if (current.view === "markdown") current.onScrollTo("start");
+            else if (current.view === "atlas") current.onMove(0);
           } else {
             pendingG.current = window.setTimeout(() => {
               pendingG.current = null;
@@ -102,12 +113,16 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
           break;
         case "Enter":
         case "o":
-          event.preventDefault();
-          current.onOpen();
+          if (current.view === "atlas") {
+            event.preventDefault();
+            current.onOpen();
+          }
           break;
         case "d":
-          event.preventDefault();
-          current.onDigest();
+          if (current.view === "atlas") {
+            event.preventDefault();
+            current.onDigest();
+          }
           break;
         case "?":
           event.preventDefault();
@@ -125,6 +140,10 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
           event.preventDefault();
           current.onToggleView();
           break;
+        case "m":
+          event.preventDefault();
+          current.onToggleMarkdown();
+          break;
         case "a":
           event.preventDefault();
           current.onAnalyze();
@@ -137,7 +156,7 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
           event.preventDefault();
           current.onNext();
           break;
-        case "i":
+        case "I":
           if (current.view === "pdf") {
             event.preventDefault();
             current.onInvert();

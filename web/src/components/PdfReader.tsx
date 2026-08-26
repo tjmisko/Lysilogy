@@ -130,7 +130,7 @@ export function PdfReader({
             <span>Next</span> →
           </button>
           <button type="button" className={darkInk ? "is-active" : ""} onClick={onToggleInk}>
-            {darkInk ? "Dark ink" : "True colour"} <kbd>i</kbd>
+            {darkInk ? "Dark ink" : "True colour"} <kbd>I</kbd>
           </button>
         </div>
       </div>
@@ -144,7 +144,7 @@ export function PdfReader({
         />
       </div>
       <div className="pdf-mode-note">
-        Dark ink is the default reading transform. Press <kbd>i</kbd> when a figure needs its
+        Dark ink is the default reading transform. Press <kbd>I</kbd> when a figure needs its
         original colours.
       </div>
     </section>

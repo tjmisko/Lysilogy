@@ -5,6 +5,8 @@ import { DigestPanel } from "./components/DigestPanel";
 import { GlossPanel } from "./components/GlossPanel";
 import { HelpOverlay } from "./components/HelpOverlay";
 import { LibraryRail } from "./components/LibraryRail";
+import { MarkdownReader } from "./components/MarkdownReader";
+import { PaperSwitcher } from "./components/PaperSwitcher";
 import { PdfReader } from "./components/PdfReader";
 import { SectionAtlas } from "./components/SectionAtlas";
 import { useGlobalKeys } from "./hooks/useGlobalKeys";
@@ -19,7 +21,7 @@ import type {
 } from "./types";
 
 type Panel = "digest" | "gloss" | "help" | null;
-type ViewMode = "atlas" | "pdf";
+type ViewMode = "atlas" | "markdown" | "pdf";
 
 const PROCESSING_STATES = new Set(["queued", "extracting", "analyzing"]);
 
@@ -74,6 +76,7 @@ export function App() {
   const [view, setView] = useState<ViewMode>("atlas");
   const [compactLayout, setCompactLayout] = useState(() => window.innerWidth < 1180);
   const [libraryOpen, setLibraryOpen] = useState(() => window.innerWidth >= 1180);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [libraryQuery, setLibraryQuery] = useState("");
   const [provider, setProvider] = useState<AnalysisProvider>("codex");
   const [pdfPage, setPdfPage] = useState(1);
@@ -84,6 +87,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const mainStageRef = useRef<HTMLElement>(null);
 
   const refreshLibrary = useCallback(async (): Promise<LibraryResponse> => {
     const next = await api.library();
@@ -124,6 +128,24 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    const onFunctionKey = (event: KeyboardEvent): void => {
+      if (event.key === "F1") {
+        event.preventDefault();
+        setPanel(null);
+        setSwitcherOpen(false);
+        setLibraryOpen((open) => !open);
+      } else if (event.key === "F10") {
+        event.preventDefault();
+        setPanel(null);
+        if (compactLayout) setLibraryOpen(false);
+        setSwitcherOpen((open) => !open);
+      }
+    };
+    window.addEventListener("keydown", onFunctionKey);
+    return () => window.removeEventListener("keydown", onFunctionKey);
+  }, [compactLayout]);
+
+  useEffect(() => {
     const query = window.matchMedia("(max-width: 1179px)");
     const updateLayout = (event: MediaQueryListEvent | MediaQueryList): void => {
       setCompactLayout(event.matches);
@@ -151,18 +173,15 @@ export function App() {
     return () => window.clearInterval(timer);
   }, [loadPaper, processing, refreshLibrary, selectedId]);
 
-  useEffect(() => {
-    setActiveSection(0);
-    setPanel(null);
-    setPdfPage(1);
-  }, [selectedId]);
-
   const selectPaper = useCallback(
     (id: string): void => {
       if (id === selectedId) {
         setLibraryOpen(false);
         return;
       }
+      setActiveSection(0);
+      setPanel(null);
+      setPdfPage(1);
       setSelectedId(id);
       setPaperView(null);
       setError(null);
@@ -172,6 +191,14 @@ export function App() {
       });
     },
     [loadPaper, selectedId],
+  );
+
+  const selectFromSwitcher = useCallback(
+    (id: string): void => {
+      setSwitcherOpen(false);
+      selectPaper(id);
+    },
+    [selectPaper],
   );
 
   const analyze = useCallback((): void => {
@@ -219,8 +246,17 @@ export function App() {
     else movePaper(1);
   }, [movePaper, pdfPages, view]);
 
+  const scrollMarkdown = useCallback((delta: number): void => {
+    mainStageRef.current?.scrollBy({ top: delta, behavior: "smooth" });
+  }, []);
+  const scrollMarkdownTo = useCallback((edge: "start" | "end"): void => {
+    const stage = mainStageRef.current;
+    if (stage === null) return;
+    stage.scrollTo({ top: edge === "start" ? 0 : stage.scrollHeight, behavior: "smooth" });
+  }, []);
+
   useGlobalKeys({
-    enabled: panel === null && !(compactLayout && libraryOpen),
+    enabled: panel === null && !switcherOpen && !(compactLayout && libraryOpen),
     activeIndex: activeSection,
     itemCount: sections.length,
     view,
@@ -237,15 +273,19 @@ export function App() {
     },
     onToggleLibrary: () => setLibraryOpen((open) => !open),
     onToggleView: () => setView((current) => (current === "atlas" ? "pdf" : "atlas")),
+    onToggleMarkdown: () =>
+      setView((current) => (current === "markdown" ? "atlas" : "markdown")),
     onAnalyze: analyze,
     onEscape: () => {
       setLibraryOpen(false);
-      if (view === "pdf") setView("atlas");
+      if (view !== "atlas") setView("atlas");
     },
     onPrevious: previous,
     onNext: next,
     onInvert: () => setDarkInk((value) => !value),
     onZoom: (delta) => setPdfZoom((value) => Math.max(0.5, Math.min(2.5, value + delta))),
+    onScroll: scrollMarkdown,
+    onScrollTo: scrollMarkdownTo,
   });
 
   useEffect(() => {
@@ -297,6 +337,13 @@ export function App() {
       );
   }, []);
 
+  const markdownConverted = useCallback((): void => {
+    if (selectedId === null) return;
+    void Promise.all([loadPaper(selectedId), refreshLibrary()]).catch((reason: unknown) => {
+      setError(reason instanceof Error ? reason.message : "Could not refresh converted paper");
+    });
+  }, [loadPaper, refreshLibrary, selectedId]);
+
   const currentPaper = paperView?.paper ??
     library?.papers.find((paper) => paper.id === selectedId) ??
     null;
@@ -339,6 +386,13 @@ export function App() {
             </button>
             <button
               type="button"
+              className={view === "markdown" ? "is-active" : ""}
+              onClick={() => setView("markdown")}
+            >
+              Markdown <kbd>m</kbd>
+            </button>
+            <button
+              type="button"
               className={view === "pdf" ? "is-active" : ""}
               onClick={() => setView("pdf")}
             >
@@ -368,7 +422,7 @@ export function App() {
           </div>
         </header>
 
-        <main className="main-stage">
+        <main className="main-stage" ref={mainStageRef}>
           {loading && (
             <div className="center-state"><span className="loader large" /><p>Opening the vault…</p></div>
           )}
@@ -427,7 +481,15 @@ export function App() {
                     onOpen={openSection}
                   />
                 )
-              ) : selectedId === null ? null : (
+              ) : selectedId === null ? null : view === "markdown" ? (
+                <MarkdownReader
+                  key={selectedId}
+                  paperId={selectedId}
+                  title={currentPaper.metadata.title}
+                  onConverted={markdownConverted}
+                  onOpenPage={openPage}
+                />
+              ) : (
                 <PdfReader
                   key={selectedId}
                   url={api.source(selectedId)}
@@ -466,6 +528,14 @@ export function App() {
         />
       )}
       {panel === "help" && <HelpOverlay onClose={() => setPanel(null)} />}
+      {switcherOpen && (
+        <PaperSwitcher
+          papers={library?.papers ?? []}
+          selectedId={selectedId}
+          onClose={() => setSwitcherOpen(false)}
+          onSelect={selectFromSwitcher}
+        />
+      )}
 
       {error !== null && (
         <div className="toast error-toast" role="alert">

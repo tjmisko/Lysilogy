@@ -19,8 +19,9 @@ const GROUPS = [
       ["↵ or o", "Open the focused section"],
       ["d", "Open its contextual digest"],
       ["g", "Open Gloss (pause after one g)"],
+      ["m", "Toggle atlas / reconstructed Markdown"],
       ["p", "Toggle atlas / PDF"],
-      ["i", "Toggle dark ink / true colour in PDF"],
+      ["I", "Toggle dark ink / true colour in PDF"],
     ],
   },
   {
@@ -37,6 +38,9 @@ const GROUPS = [
     title: "Application",
     commands: [
       ["b", "Toggle the library"],
+      ["F1", "Toggle the library from anywhere"],
+      ["F10", "Fuzzy-find and switch articles"],
+      ["f", "Filter to mapped papers while the library is open"],
       ["a", "Analyze with the selected provider"],
       ["esc", "Leave a mode or close a panel"],
       ["?", "Show this reference"],

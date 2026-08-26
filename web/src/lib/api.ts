@@ -21,6 +21,16 @@ export class ApiError extends Error {
   }
 }
 
+async function apiError(response: Response): Promise<ApiError> {
+  let payload: ErrorPayload = {};
+  try {
+    payload = (await response.json()) as ErrorPayload;
+  } catch {
+    // The status text remains a useful fallback for a non-JSON proxy error.
+  }
+  return new ApiError(response.status, payload.message ?? response.statusText);
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
@@ -30,13 +40,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers,
   });
   if (!response.ok) {
-    let payload: ErrorPayload = {};
-    try {
-      payload = (await response.json()) as ErrorPayload;
-    } catch {
-      // The status text remains a useful fallback for a non-JSON proxy error.
-    }
-    throw new ApiError(response.status, payload.message ?? response.statusText);
+    throw await apiError(response);
   }
   return (await response.json()) as T;
 }
@@ -72,4 +76,12 @@ export const api = {
       }),
     }),
   source: (id: string): string => `/api/papers/${id}/source`,
+  markdown: async (id: string, signal?: AbortSignal): Promise<string> => {
+    const response = await fetch(`/api/papers/${id}/markdown`, {
+      headers: { Accept: "text/markdown" },
+      signal,
+    });
+    if (!response.ok) throw await apiError(response);
+    return response.text();
+  },
 };

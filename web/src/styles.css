@@ -592,6 +592,38 @@ code {
   text-transform: uppercase;
 }
 
+.library-counts button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-transform: uppercase;
+}
+
+.library-counts button:hover,
+.library-counts button.is-active {
+  color: var(--signal);
+}
+
+.library-counts button i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--ink-faint);
+  border-radius: 50%;
+}
+
+.library-counts button.is-active i {
+  border-color: var(--evidence);
+  background: var(--evidence);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--evidence) 12%, transparent);
+}
+
+.library-counts button kbd {
+  margin-left: 2px;
+}
+
 .search-box {
   display: flex;
   align-items: center;
@@ -1064,6 +1096,193 @@ code {
   text-transform: capitalize;
 }
 
+/* Markdown */
+.markdown-reader {
+  position: relative;
+  max-width: 1060px;
+  min-height: 70vh;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 56px) 80px;
+}
+
+.markdown-toolbar {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  background: rgba(17, 19, 18, 0.95);
+  backdrop-filter: blur(12px);
+}
+
+.markdown-toolbar > div:first-child {
+  min-width: 0;
+}
+
+.markdown-toolbar strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font: 500 12px Georgia, serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.markdown-controls,
+.mini-switch {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.markdown-controls > button,
+.mini-switch button {
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink-faint);
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.mini-switch {
+  gap: 0;
+}
+
+.mini-switch button + button {
+  margin-left: -1px;
+}
+
+.mini-switch button.is-active {
+  border-color: var(--line-bright);
+  background: var(--panel-bright);
+  color: var(--ink);
+}
+
+.markdown-loading {
+  position: static;
+  justify-content: center;
+  min-height: 45vh;
+}
+
+.markdown-document,
+.markdown-source {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: clamp(30px, 6vw, 72px) clamp(22px, 7vw, 80px);
+  border: 1px solid var(--line);
+  border-top: 0;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.012), transparent 10%, transparent 90%, rgba(255,255,255,0.012)),
+    #111312;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+}
+
+.markdown-document {
+  color: #d1d0c7;
+  font: 16px/1.72 Georgia, "Times New Roman", serif;
+}
+
+.markdown-document h1,
+.markdown-document h2,
+.markdown-document h3,
+.markdown-document h4 {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  line-height: 1.16;
+  text-wrap: balance;
+}
+
+.markdown-document h1 {
+  margin: 0 0 28px;
+  font-size: clamp(31px, 5vw, 48px);
+  letter-spacing: -0.03em;
+}
+
+.markdown-document h2 {
+  margin: 46px 0 18px;
+  font-size: 27px;
+}
+
+.markdown-document h3 {
+  margin: 34px 0 12px;
+  color: #deddd3;
+  font-size: 20px;
+}
+
+.markdown-document p {
+  margin: 0 0 1.25em;
+}
+
+.markdown-document strong {
+  color: var(--ink);
+}
+
+.markdown-document blockquote {
+  margin: 24px 0;
+  padding: 14px 18px;
+  border-left: 2px solid var(--context);
+  background: color-mix(in srgb, var(--context) 7%, transparent);
+  color: var(--ink-soft);
+}
+
+.markdown-document ul {
+  margin: 0 0 1.4em;
+  padding-left: 1.4em;
+}
+
+.markdown-document hr {
+  height: 1px;
+  margin: 52px 0 18px;
+  border: 0;
+  background: var(--line);
+}
+
+.markdown-document pre,
+.markdown-source {
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.markdown-document pre {
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: #0b0d0c;
+  font-size: 12px;
+}
+
+.markdown-page-marker {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  margin: 44px 0 22px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--interpretation);
+  font: 700 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.markdown-page-marker span {
+  color: var(--ink-faint);
+  font-size: 8px;
+}
+
+.markdown-source {
+  color: var(--ink-soft);
+  font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 /* PDF */
 .pdf-reader {
   height: calc(100% - 1px);
@@ -1324,6 +1543,132 @@ code {
   font: 12px/1.5 Georgia, serif;
 }
 
+/* Article switcher */
+.switcher-backdrop {
+  position: fixed;
+  z-index: 115;
+  inset: 0;
+  display: grid;
+  place-items: start center;
+  padding: min(12vh, 110px) 18px 18px;
+  background: rgba(3, 4, 4, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.paper-switcher {
+  display: grid;
+  width: min(720px, 100%);
+  max-height: min(720px, 76vh);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid var(--line-bright);
+  background: #111313;
+  box-shadow: 0 34px 110px rgba(0, 0, 0, 0.72);
+}
+
+.paper-switcher > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  padding: 19px 21px 15px;
+}
+
+.paper-switcher h2 {
+  margin: 4px 0 0;
+  font: 500 27px Georgia, serif;
+}
+
+.paper-switcher > header > kbd {
+  color: var(--ink-faint);
+}
+
+.switcher-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 13px 9px;
+  padding: 11px 13px;
+  border: 1px solid var(--signal);
+  background: #0b0d0c;
+  box-shadow: 0 0 0 3px rgba(216, 255, 99, 0.06);
+  color: var(--signal);
+}
+
+.switcher-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.switcher-results {
+  overflow: auto;
+  padding: 3px 8px 10px;
+  scrollbar-color: var(--line-bright) transparent;
+}
+
+.switcher-results > button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  gap: 11px;
+  align-items: center;
+  padding: 11px 13px;
+  border-left: 2px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  text-align: left;
+}
+
+.switcher-results > button.is-active {
+  border-left-color: var(--signal);
+  background: linear-gradient(90deg, rgba(216, 255, 99, 0.09), transparent);
+  color: var(--ink);
+}
+
+.switcher-results strong,
+.switcher-results small {
+  display: block;
+}
+
+.switcher-results strong {
+  font: 500 14px/1.25 Georgia, serif;
+}
+
+.switcher-results small {
+  margin-top: 4px;
+  color: var(--ink-faint);
+  font: 9px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.switcher-results em {
+  color: var(--evidence);
+  font: 700 8px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.switcher-results > p {
+  padding: 30px;
+  color: var(--ink-faint);
+  font: 13px Georgia, serif;
+  text-align: center;
+}
+
+.paper-switcher > footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-faint);
+  font: 9px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 .toast {
   position: fixed;
   z-index: 130;
@@ -1448,10 +1793,16 @@ code {
     align-items: flex-start;
     flex-direction: column;
   }
+  .markdown-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .markdown-controls { width: 100%; justify-content: space-between; }
   .pdf-toolbar strong { max-width: 80vw; }
   .pdf-controls { width: 100%; justify-content: space-between; }
   .pdf-controls button span { display: none; }
   .pdf-viewport { padding: 14px; }
+  .paper-switcher > footer span:first-child { display: none; }
 }
 
 @media (max-width: 500px) {
@@ -1495,6 +1846,12 @@ code {
   .fragment-explanation { margin-left: 8px; }
   .help-card { padding: 18px; }
   .command-bar { gap: 16px; padding-bottom: env(safe-area-inset-bottom); }
+  .markdown-reader { padding-inline: 10px; }
+  .markdown-document,
+  .markdown-source { padding: 30px 20px 55px; }
+  .markdown-document { font-size: 15px; }
+  .switcher-backdrop { padding: max(10px, env(safe-area-inset-top)) 8px 8px; }
+  .paper-switcher { max-height: calc(100vh - 18px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

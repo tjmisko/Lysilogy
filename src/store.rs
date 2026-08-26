@@ -10,6 +10,7 @@ use crate::{
     Result,
     domain::{ExtractedPage, ExtractedPaper, PaperAnalysis, PaperId, PaperMetadata},
     error::Error,
+    markdown,
 };
 
 static TEMP_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -105,6 +106,11 @@ impl ArtifactStore {
             .collect::<Vec<_>>()
             .join("\n\u{000c}\n");
         write_atomic(&self.text_path(id), text.as_bytes()).await?;
+        write_atomic(
+            &self.markdown_path(id),
+            markdown::render_source(paper).as_bytes(),
+        )
+        .await?;
 
         let manifest = ExtractionMetadata {
             schema_version: EXTRACTION_SCHEMA_VERSION,
@@ -113,6 +119,24 @@ impl ArtifactStore {
         let mut json = serde_json::to_vec_pretty(&manifest)?;
         json.push(b'\n');
         write_atomic(&self.extraction_metadata_path(id), &json).await
+    }
+
+    pub async fn load_markdown(&self, id: &PaperId) -> Result<Option<String>> {
+        let path = self.markdown_path(id);
+        match fs::read_to_string(&path).await {
+            Ok(markdown) => Ok(Some(markdown)),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(error) => Err(Error::io(path, error)),
+        }
+    }
+
+    pub async fn ensure_markdown(&self, id: &PaperId, paper: &ExtractedPaper) -> Result<String> {
+        if let Some(markdown) = self.load_markdown(id).await? {
+            return Ok(markdown);
+        }
+        let markdown = markdown::render_source(paper);
+        write_atomic(&self.markdown_path(id), markdown.as_bytes()).await?;
+        Ok(markdown)
     }
 
     #[must_use]
@@ -130,6 +154,10 @@ impl ArtifactStore {
 
     fn text_path(&self, id: &PaperId) -> PathBuf {
         self.paper_dir(id).join("source.txt")
+    }
+
+    fn markdown_path(&self, id: &PaperId) -> PathBuf {
+        self.paper_dir(id).join("source.md")
     }
 
     fn extraction_metadata_path(&self, id: &PaperId) -> PathBuf {
@@ -235,6 +263,12 @@ mod tests {
             .ok_or_else(|| Error::Task("missing extraction".to_owned()))?;
         assert_eq!(loaded.pages.len(), 2);
         assert_eq!(loaded.pages[1].text, "Second page");
+        let markdown = store
+            .load_markdown(&id)
+            .await?
+            .ok_or_else(|| Error::Task("missing source.md".to_owned()))?;
+        assert!(markdown.contains("# Test paper"));
+        assert!(markdown.contains("## PDF page 2"));
         Ok(())
     }
 

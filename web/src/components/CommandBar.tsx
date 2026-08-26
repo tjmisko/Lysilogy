@@ -1,5 +1,5 @@
 type CommandBarProps = {
-  view: "atlas" | "pdf";
+  view: "atlas" | "markdown" | "pdf";
   panelOpen: boolean;
 };
 
@@ -15,15 +15,24 @@ export function CommandBar({ view, panelOpen }: CommandBarProps) {
     : view === "pdf"
       ? [
           ["[ ]", "page"],
-          ["i", "ink / colour"],
+          ["I", "ink / colour"],
           ["+ −", "zoom"],
           ["p", "atlas"],
           ["?", "keys"],
         ]
+      : view === "markdown"
+        ? [
+            ["j k", "scroll"],
+            ["g g / G", "top / end"],
+            ["m", "atlas"],
+            ["p", "PDF"],
+            ["F10", "switch article"],
+          ]
       : [
           ["h j k l", "move"],
           ["↵", "digest"],
           ["g", "gloss"],
+          ["m", "Markdown"],
           ["p", "PDF"],
           ["?", "keys"],
         ];

@@ -18,6 +18,10 @@ type LibraryRailProps = {
 
 const collator = new Intl.Collator(undefined, { sensitivity: "base" });
 
+function isEditable(target: EventTarget | null): boolean {
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+}
+
 export function LibraryRail({
   open,
   keyboardMode,
@@ -31,10 +35,12 @@ export function LibraryRail({
   onClose,
   onScan,
 }: LibraryRailProps) {
+  const [mappedOnly, setMappedOnly] = useState(false);
   const filtered = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
     return papers
       .filter((paper) => {
+        if (mappedOnly && paper.status.state !== "ready") return false;
         if (needle.length === 0) return true;
         const haystack = [
           paper.metadata.title,
@@ -46,7 +52,7 @@ export function LibraryRail({
         return haystack.includes(needle);
       })
       .sort((left, right) => collator.compare(left.metadata.title, right.metadata.title));
-  }, [papers, query]);
+  }, [mappedOnly, papers, query]);
 
   const readyCount = papers.filter((paper) => paper.status.state === "ready").length;
   const [active, setActive] = useState(0);
@@ -59,6 +65,19 @@ export function LibraryRail({
     itemRefs.current[activeIndex]?.focus({ preventScroll: true });
     itemRefs.current[activeIndex]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [activeIndex, keyboardMode]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onFilterKey = (event: KeyboardEvent): void => {
+      if (event.key === "f" && !isEditable(event.target) && !event.metaKey && !event.ctrlKey) {
+        event.preventDefault();
+        setActive(0);
+        setMappedOnly((value) => !value);
+      }
+    };
+    window.addEventListener("keydown", onFilterKey);
+    return () => window.removeEventListener("keydown", onFilterKey);
+  }, [open]);
 
   useEffect(() => {
     if (!keyboardMode) return;
@@ -161,7 +180,19 @@ export function LibraryRail({
         </div>
         <div className="library-counts">
           <span>{papers.length} papers</span>
-          <span>{readyCount} mapped</span>
+          <button
+            type="button"
+            className={mappedOnly ? "is-active" : ""}
+            aria-pressed={mappedOnly}
+            aria-label={mappedOnly ? "Show all papers" : "Show mapped papers only"}
+            title={mappedOnly ? "Show all papers" : "Show mapped papers only"}
+            onClick={() => {
+              setActive(0);
+              setMappedOnly((value) => !value);
+            }}
+          >
+            <i aria-hidden="true" /> {mappedOnly ? "Mapped only" : `${readyCount} mapped`} <kbd>f</kbd>
+          </button>
         </div>
         <label className="search-box">
           <span aria-hidden="true">/</span>
@@ -215,7 +246,13 @@ export function LibraryRail({
               </span>
             </button>
           ))}
-          {filtered.length === 0 && <p className="quiet-message">No papers match “{query}”.</p>}
+          {filtered.length === 0 && (
+            <p className="quiet-message">
+              {mappedOnly && query.length === 0
+                ? "No mapped papers yet."
+                : `No papers match “${query}”.`}
+            </p>
+          )}
         </div>
         <button className="rail-footer" type="button" onClick={onScan}>
           <span>↻</span>

@@ -51,6 +51,11 @@ enum Command {
         #[arg(long)]
         force: bool,
     },
+    /// Convert one paper to Markdown and print it to standard output.
+    Convert {
+        /// Paper ID or an unambiguous title fragment.
+        query: String,
+    },
     /// Analyze all papers that are not ready, continuing past individual faults.
     Ingest {
         #[arg(long, default_value = "codex")]
@@ -112,6 +117,11 @@ async fn run(cli: Cli) -> Result<()> {
                 Error::Task("analysis completed without a stored artifact".to_owned())
             })?;
             println!("Ready: {}\n{}", view.paper.metadata.title, analysis.thesis);
+            Ok(())
+        }
+        Command::Convert { query } => {
+            let id = resolve_paper(&state, &query).await?;
+            print!("{}", state.markdown(&id).await?);
             Ok(())
         }
         Command::Ingest {

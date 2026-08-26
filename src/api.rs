@@ -195,37 +195,7 @@ impl AppState {
         id: &PaperId,
         provider: AnalysisProvider,
     ) -> std::result::Result<(), (ProcessingStage, Error)> {
-        let (source_path, fallback_metadata) = {
-            let catalog = self.catalog.read().await;
-            let entry = catalog.get(id).ok_or_else(|| {
-                (
-                    ProcessingStage::Discovery,
-                    Error::PaperNotFound(id.to_string()),
-                )
-            })?;
-            let source_path = entry.source_path.clone();
-            let metadata = entry.overview.metadata.clone();
-            drop(catalog);
-            (source_path, metadata)
-        };
-
-        let paper = match self.store.load_extraction(id).await {
-            Ok(Some(paper)) => paper,
-            Ok(None) => {
-                self.set_status(id, ProcessingStatus::Extracting).await;
-                let paper = self
-                    .extractor
-                    .extract(&source_path, &fallback_metadata)
-                    .await
-                    .map_err(|error| (ProcessingStage::Extraction, error))?;
-                self.store
-                    .save_extraction(id, &paper)
-                    .await
-                    .map_err(|error| (ProcessingStage::Persistence, error))?;
-                paper
-            }
-            Err(error) => return Err((ProcessingStage::Persistence, error)),
-        };
+        let paper = self.load_or_extract(id).await?;
 
         {
             let mut catalog = self.catalog.write().await;
@@ -255,6 +225,50 @@ impl AppState {
         Ok(())
     }
 
+    async fn load_or_extract(
+        &self,
+        id: &PaperId,
+    ) -> std::result::Result<crate::domain::ExtractedPaper, (ProcessingStage, Error)> {
+        let (source_path, fallback_metadata) = {
+            let catalog = self.catalog.read().await;
+            let entry = catalog.get(id).ok_or_else(|| {
+                (
+                    ProcessingStage::Discovery,
+                    Error::PaperNotFound(id.to_string()),
+                )
+            })?;
+            let source_path = entry.source_path.clone();
+            let metadata = entry.overview.metadata.clone();
+            drop(catalog);
+            (source_path, metadata)
+        };
+
+        match self.store.load_extraction(id).await {
+            Ok(Some(paper)) => return Ok(paper),
+            Ok(None) => {}
+            Err(error) => return Err((ProcessingStage::Persistence, error)),
+        }
+
+        self.set_status(id, ProcessingStatus::Extracting).await;
+        let paper = self
+            .extractor
+            .extract(&source_path, &fallback_metadata)
+            .await
+            .map_err(|error| (ProcessingStage::Extraction, error))?;
+        self.store
+            .save_extraction(id, &paper)
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        {
+            let mut catalog = self.catalog.write().await;
+            if let Some(entry) = catalog.get_mut(id) {
+                entry.overview.metadata = paper.metadata.clone();
+                entry.overview.status = ProcessingStatus::Extracted;
+            }
+        }
+        Ok(paper)
+    }
+
     async fn set_status(&self, id: &PaperId, status: ProcessingStatus) {
         if let Some(entry) = self.catalog.write().await.get_mut(id) {
             entry.overview.status = status;
@@ -268,6 +282,53 @@ impl AppState {
             .get(id)
             .map(|entry| entry.source_path.clone())
             .ok_or_else(|| Error::PaperNotFound(id.to_string()))
+    }
+
+    pub async fn markdown(&self, id: &PaperId) -> Result<String> {
+        if self.catalog.read().await.get(id).is_none() {
+            return Err(Error::PaperNotFound(id.to_string()));
+        }
+        if let Some(markdown) = self.store.load_markdown(id).await? {
+            return Ok(markdown);
+        }
+        if let Some(paper) = self.store.load_extraction(id).await? {
+            return self.store.ensure_markdown(id, &paper).await;
+        }
+
+        {
+            let mut catalog = self.catalog.write().await;
+            let entry = catalog
+                .get_mut(id)
+                .ok_or_else(|| Error::PaperNotFound(id.to_string()))?;
+            if matches!(
+                entry.overview.status,
+                ProcessingStatus::Queued { .. }
+                    | ProcessingStatus::Extracting
+                    | ProcessingStatus::Analyzing { .. }
+            ) {
+                return Err(Error::AlreadyProcessing(id.to_string()));
+            }
+            entry.overview.status = ProcessingStatus::Extracting;
+            drop(catalog);
+        }
+
+        let paper = match self.load_or_extract(id).await {
+            Ok(paper) => paper,
+            Err((stage, error)) => {
+                self.catalog.write().await.mark_failure(id, stage, &error);
+                return Err(error);
+            }
+        };
+        match self.store.ensure_markdown(id, &paper).await {
+            Ok(markdown) => Ok(markdown),
+            Err(error) => {
+                self.catalog
+                    .write()
+                    .await
+                    .mark_failure(id, ProcessingStage::Persistence, &error);
+                Err(error)
+            }
+        }
     }
 
     async fn clarify(&self, id: &PaperId, request: &ClarifyRequest) -> Result<Clarification> {
@@ -319,6 +380,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/library/scan", post(scan_library))
         .route("/api/papers/{id}", get(paper))
         .route("/api/papers/{id}/source", get(paper_source))
+        .route("/api/papers/{id}/markdown", get(paper_markdown))
         .route("/api/papers/{id}/analyze", post(analyze_paper))
         .route("/api/papers/{id}/clarify", post(clarify_selection))
         .route("/", get(frontend_index))
@@ -395,6 +457,28 @@ async fn paper_source(
     Ok((headers, Body::from_stream(ReaderStream::new(file))).into_response())
 }
 
+async fn paper_markdown(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+) -> Result<Response> {
+    let id = parse_id(&id)?;
+    let markdown = state.markdown(&id).await?;
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("text/markdown; charset=utf-8"),
+    );
+    headers.insert(
+        header::CONTENT_DISPOSITION,
+        HeaderValue::from_static("inline"),
+    );
+    headers.insert(
+        header::CACHE_CONTROL,
+        HeaderValue::from_static("private, max-age=300"),
+    );
+    Ok((headers, markdown).into_response())
+}
+
 fn parse_id(value: &str) -> Result<PaperId> {
     PaperId::from_str(value).map_err(Error::InvalidRequest)
 }
@@ -461,6 +545,7 @@ mod tests {
     use tower::ServiceExt;
 
     use super::*;
+    use crate::domain::{ExtractedPage, ExtractedPaper, PaperMetadata};
 
     #[tokio::test]
     async fn lists_discovered_papers_without_extraction() -> Result<()> {
@@ -490,6 +575,62 @@ mod tests {
             .to_bytes();
         let library: serde_json::Value = serde_json::from_slice(&body)?;
         assert_eq!(library["papers"].as_array().map(Vec::len), Some(1));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn serves_cached_extraction_as_markdown() -> Result<()> {
+        let library = tempdir().map_err(|error| Error::io("library", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let filename = "Ada - 1843 - Notes.pdf";
+        let fixture = library.path().join(filename);
+        tokio::fs::write(&fixture, b"discovered without parsing")
+            .await
+            .map_err(|error| Error::io(&fixture, error))?;
+        let state = AppState::new(library.path(), data.path()).await?;
+        let id = PaperId::from_relative_path(Path::new(filename));
+        state
+            .store
+            .save_extraction(
+                &id,
+                &ExtractedPaper {
+                    metadata: PaperMetadata {
+                        title: "Notes".to_owned(),
+                        authors: vec!["Ada".to_owned()],
+                        year: Some(1843),
+                        page_count: Some(1),
+                        subject: None,
+                    },
+                    pages: vec![ExtractedPage {
+                        number: 1,
+                        text: "ABSTRACT\nAn analytical engine follows notation.".to_owned(),
+                    }],
+                },
+            )
+            .await?;
+        let response = build_router(state, None)
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri(format!("/api/papers/{id}/markdown"))
+                    .body(Body::empty())
+                    .map_err(|error| Error::Task(error.to_string()))?,
+            )
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?;
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get(header::CONTENT_TYPE),
+            Some(&HeaderValue::from_static("text/markdown; charset=utf-8"))
+        );
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?
+            .to_bytes();
+        let markdown = String::from_utf8_lossy(&body);
+        assert!(markdown.contains("# Notes"));
+        assert!(markdown.contains("### Abstract"));
         Ok(())
     }
 }

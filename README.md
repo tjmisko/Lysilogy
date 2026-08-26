@@ -2,7 +2,7 @@
 
 Lysilogos turns a vault of scientific PDFs into a keyboard-first visual atlas for readers who are intelligent outsiders to the field.
 
-The main view maps a paper into conceptual tiles sized by argumentative weight. Focus or hover gives the short reading; opening a tile gives its contextual digest, key quotations, and page links. A searchable **Gloss** explains technical language, while the PDF reader defaults to dark rendering and can reveal figures in their original colors.
+The main view maps a paper into conceptual tiles sized by argumentative weight. Focus or hover gives the short reading; opening a tile gives its contextual digest, key quotations, and page links. A searchable **Gloss** explains technical language. A reconstructed Markdown tab provides a calm, selectable reading surface, while the PDF reader defaults to dark rendering and can reveal figures in their original colors.
 
 The current demo has been exercised against the local `local-articles/Articles` corpus (118 PDFs) and includes a mapped copy of Dijkstra's “GOTO Statements Considered Harmful.”
 
@@ -46,6 +46,9 @@ Discovery is recursive and incremental. Stable paper IDs are derived from paths,
 # Inventory the vault
 cargo run -- scan
 
+# Convert one PDF to portable Markdown on standard output
+cargo run -- convert "title fragment"
+
 # Evaluate the first few prompts before committing to a full run
 cargo run -- ingest --provider codex --limit 3
 
@@ -75,6 +78,7 @@ Press `?` in the app for the complete, contextual key guide.
 | `Enter` or `o` | Open the focused section digest |
 | `d` | Toggle the digest |
 | `g` | Open Gloss after a short single-key delay |
+| `m` | Toggle atlas / reconstructed Markdown |
 | `p` | Toggle atlas / PDF |
 | `[` / `]` | Previous / next paper, or PDF page |
 | `/` | Search the active view |
@@ -82,7 +86,10 @@ Press `?` in the app for the complete, contextual key guide.
 | `o` | Swap the moving end of a visual selection |
 | `c` | Clarify the selection in paper context |
 | `y` | Copy the selection |
-| `i` | Invert the PDF between dark ink and true image colors |
+| `I` | Invert the PDF between dark ink and true image colors |
+| `F1` | Toggle the library from anywhere |
+| `F10` | Open the fuzzy article switcher |
+| `f` | Toggle mapped-only filtering while the library is open |
 | `Esc` | Leave the current mode or close the top panel |
 
 Native pointer selection also works: select text in a digest, then choose **Clarify selection**. This avoids replacing browser text semantics with a custom editor while still making the entire clarification flow keyboard-accessible.
@@ -96,6 +103,7 @@ Generated files live beneath the selected data root:
 └── papers/
     └── <stable-paper-id>/
         ├── source.txt        # UTF-8 extraction, form-feed page boundaries
+        ├── source.md         # best-effort full-document Markdown with page markers
         ├── extraction.json   # extraction schema and normalized metadata
         ├── analysis.json     # typed, versioned application model
         ├── digest.md         # portable human-readable digest
@@ -118,6 +126,6 @@ npm run build
 npm run smoke
 ```
 
-`npm run smoke` uses the real Dijkstra analysis and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies atlas navigation, contextual digest, keyboard selection/clarification, Gloss, and PDF rendering.
+`npm run smoke` uses the real Dijkstra analysis, Markdown conversion, and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies atlas navigation, the mapped-only filter, F1/F10 switching, contextual digest, keyboard selection/clarification, Gloss, Markdown reading, PDF rendering, and capital-`I` inversion.
 
 The implementation map and fault boundaries are described in [docs/architecture.md](docs/architecture.md).
