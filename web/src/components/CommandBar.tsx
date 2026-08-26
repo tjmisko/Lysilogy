@@ -16,11 +16,14 @@ export function CommandBar({ view, textMode, panelOpen }: CommandBarProps) {
     ];
   } else if (view === "text" && textMode === "pdf") {
     commands = [
-      ["[ ]", "page"],
+      ["C-u C-d / PgUp PgDn", "page"],
+      ["2", "one / two pages"],
       ["I", "ink / colour"],
       ["+ −", "zoom"],
       ["m", "reconstructed"],
       ["p", "overview"],
+      ["q", "queue"],
+      [":", "commands"],
       ["?", "keys"],
     ];
   } else if (view === "text") {
@@ -30,6 +33,8 @@ export function CommandBar({ view, textMode, panelOpen }: CommandBarProps) {
       ["m", "overview"],
       ["p", "PDF"],
       ["F10", "switch article"],
+      ["q", "queue"],
+      [":", "commands"],
     ];
   } else if (view === "glossary") {
     commands = [
@@ -38,6 +43,8 @@ export function CommandBar({ view, textMode, panelOpen }: CommandBarProps) {
       ["/", "find concept"],
       ["esc", "overview"],
       ["F10", "switch article"],
+      ["q", "queue"],
+      [":", "commands"],
     ];
   } else if (view === "abstract") {
     commands = [
@@ -45,6 +52,8 @@ export function CommandBar({ view, textMode, panelOpen }: CommandBarProps) {
       ["g", "glossary"],
       ["m", "full text"],
       ["p", "PDF"],
+      ["q", "queue"],
+      [":", "commands"],
       ["?", "keys"],
     ];
   } else {
@@ -57,6 +66,8 @@ export function CommandBar({ view, textMode, panelOpen }: CommandBarProps) {
       ["g", "glossary"],
       ["m", "full text"],
       ["p", "PDF"],
+      ["q", "queue"],
+      [":", "commands"],
       ["?", "keys"],
     ];
   }

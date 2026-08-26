@@ -9,8 +9,9 @@ use tokio::fs;
 use crate::{
     Result,
     domain::{
-        AnalysisProvider, CitationStatus, DocumentLayout, ExtractedPage, ExtractedPaper, Highlight,
-        HighlightOrigin, PaperAnalysis, PaperId, PaperMetadata,
+        AgentSession, AnalysisJob, AnalysisProvider, CitationStatus, DocumentLayout, ExtractedPage,
+        ExtractedPaper, FeedbackRecord, Highlight, HighlightOrigin, PaperAnalysis, PaperId,
+        PaperMetadata,
     },
     error::Error,
     markdown,
@@ -49,6 +50,103 @@ impl ArtifactStore {
 
     pub async fn load_analysis(&self, id: &PaperId) -> Result<Option<PaperAnalysis>> {
         read_json_if_present(&self.analysis_path(id)).await
+    }
+
+    pub async fn load_jobs(&self) -> Result<Vec<AnalysisJob>> {
+        let papers_directory = self.root.join("papers");
+        let mut entries = match fs::read_dir(&papers_directory).await {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) => return Err(Error::io(papers_directory, error)),
+        };
+        let mut jobs = Vec::new();
+        while let Some(entry) = entries
+            .next_entry()
+            .await
+            .map_err(|error| Error::io(&papers_directory, error))?
+        {
+            if !entry
+                .file_type()
+                .await
+                .map_err(|error| Error::io(entry.path(), error))?
+                .is_dir()
+            {
+                continue;
+            }
+            let job_path = entry.path().join("job.json");
+            match read_json_if_present(&job_path).await {
+                Ok(Some(job)) => jobs.push(job),
+                Ok(None) => {}
+                Err(Error::Json(error)) => {
+                    tracing::warn!(path = %job_path.display(), %error, "ignoring malformed persisted job");
+                }
+                Err(error) => return Err(error),
+            }
+        }
+        Ok(jobs)
+    }
+
+    pub async fn save_job(&self, job: &AnalysisJob) -> Result<()> {
+        let directory = self.paper_dir(&job.paper_id);
+        fs::create_dir_all(&directory)
+            .await
+            .map_err(|error| Error::io(&directory, error))?;
+        let mut json = serde_json::to_vec_pretty(job)?;
+        json.push(b'\n');
+        write_atomic(&directory.join("job.json"), &json).await
+    }
+
+    pub async fn load_tasklist(&self, id: &PaperId) -> Result<Option<String>> {
+        read_string_if_present(&self.tasklist_path(id)).await
+    }
+
+    pub async fn save_tasklist(&self, id: &PaperId, tasklist: &str) -> Result<()> {
+        let directory = self.paper_dir(id);
+        fs::create_dir_all(&directory)
+            .await
+            .map_err(|error| Error::io(&directory, error))?;
+        write_atomic(&self.tasklist_path(id), tasklist.as_bytes()).await
+    }
+
+    pub async fn load_agent_session(&self, id: &PaperId) -> Result<Option<AgentSession>> {
+        read_json_if_present(&self.agent_session_path(id)).await
+    }
+
+    pub async fn save_agent_session(&self, id: &PaperId, session: &AgentSession) -> Result<()> {
+        let directory = self.paper_dir(id);
+        fs::create_dir_all(&directory)
+            .await
+            .map_err(|error| Error::io(&directory, error))?;
+        let mut json = serde_json::to_vec_pretty(session)?;
+        json.push(b'\n');
+        write_atomic(&self.agent_session_path(id), &json).await
+    }
+
+    pub async fn load_feedback(&self, id: &PaperId) -> Result<Vec<FeedbackRecord>> {
+        let contents = self.load_feedback_text(id).await?.unwrap_or_default();
+        contents
+            .lines()
+            .filter(|line| !line.trim().is_empty())
+            .map(serde_json::from_str)
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Error::from)
+    }
+
+    pub async fn save_feedback(&self, id: &PaperId, feedback: &[FeedbackRecord]) -> Result<()> {
+        let directory = self.paper_dir(id);
+        fs::create_dir_all(&directory)
+            .await
+            .map_err(|error| Error::io(&directory, error))?;
+        let mut jsonl = String::new();
+        for record in feedback {
+            jsonl.push_str(&serde_json::to_string(record)?);
+            jsonl.push('\n');
+        }
+        write_atomic(&self.feedback_path(id), jsonl.as_bytes()).await
+    }
+
+    async fn load_feedback_text(&self, id: &PaperId) -> Result<Option<String>> {
+        read_string_if_present(&self.feedback_path(id)).await
     }
 
     pub async fn save_analysis(&self, id: &PaperId, analysis: &PaperAnalysis) -> Result<()> {
@@ -254,6 +352,26 @@ impl ArtifactStore {
     fn extraction_metadata_path(&self, id: &PaperId) -> PathBuf {
         self.paper_dir(id).join("extraction.json")
     }
+
+    fn tasklist_path(&self, id: &PaperId) -> PathBuf {
+        self.paper_dir(id).join("analysis-tasklist.md")
+    }
+
+    fn agent_session_path(&self, id: &PaperId) -> PathBuf {
+        self.paper_dir(id).join("agent-session.json")
+    }
+
+    fn feedback_path(&self, id: &PaperId) -> PathBuf {
+        self.paper_dir(id).join("feedback.jsonl")
+    }
+}
+
+async fn read_string_if_present(path: &Path) -> Result<Option<String>> {
+    match fs::read_to_string(path).await {
+        Ok(value) => Ok(Some(value)),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(Error::io(path, error)),
+    }
 }
 
 async fn read_json_if_present<T>(path: &Path) -> Result<Option<T>>
@@ -407,7 +525,10 @@ mod tests {
     use tempfile::tempdir;
 
     use super::*;
-    use crate::domain::{AnalysisProvider, ContextNote, ContextSource, PaperAnalysis};
+    use crate::domain::{
+        AgentSession, AnalysisProvider, ContextNote, ContextSource, FeedbackRecord, FeedbackStatus,
+        PaperAnalysis,
+    };
 
     #[tokio::test]
     async fn extraction_round_trips_as_plain_text() -> Result<()> {
@@ -494,6 +615,42 @@ mod tests {
         assert!(digest.contains("The authors' own test abstract"));
         assert!(digest.contains("[An exact source title](https://example.com/review)"));
         assert!(digest.contains("It does not independently establish"));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn sessions_and_feedback_round_trip_as_plain_files() -> Result<()> {
+        let directory = tempdir().map_err(|error| Error::io("tempdir", error))?;
+        let store = ArtifactStore::new(directory.path());
+        store.initialize().await?;
+        let id = PaperId::from_relative_path(Path::new("paper.pdf"));
+        let now = Utc::now();
+        let session = AgentSession {
+            provider: AnalysisProvider::Codex,
+            session_id: "019c-test-session".to_owned(),
+            updated_at: now,
+        };
+        store.save_agent_session(&id, &session).await?;
+        assert_eq!(store.load_agent_session(&id).await?, Some(session));
+
+        let records = vec![FeedbackRecord {
+            id: "feedback-1".to_owned(),
+            feedback: "Clarify the central result.".to_owned(),
+            provider: AnalysisProvider::Codex,
+            status: FeedbackStatus::Queued,
+            submitted_at: now,
+            completed_at: None,
+            session_id: None,
+            error: None,
+        }];
+        store.save_feedback(&id, &records).await?;
+        let loaded = store.load_feedback(&id).await?;
+        assert_eq!(loaded.len(), 1);
+        assert_eq!(loaded[0].feedback, "Clarify the central result.");
+        let jsonl = fs::read_to_string(store.paper_dir(&id).join("feedback.jsonl"))
+            .await
+            .map_err(|error| Error::io("feedback.jsonl", error))?;
+        assert_eq!(jsonl.lines().count(), 1);
         Ok(())
     }
 }

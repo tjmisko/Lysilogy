@@ -75,7 +75,11 @@ cargo run -- ingest --provider heuristic
 cargo run -- analyze "title fragment" --provider codex --force
 ```
 
-Lysilogos invokes the local command-line tools rather than an API. Codex runs ephemerally with live search, a read-only sandbox, and a JSON output schema; Claude runs in plan permission mode with paper-reading and web-research tools. The extracted paper is explicitly treated as untrusted input. Both commands have bounded runtime, validated structured output, and stage-specific failure reporting. External context uses a second, application-owned gate: every note must map to exact source records, and every cited URL must pass bounded DNS, redirect, public-address, and HTTP-success checks before either the note or source is persisted. One failed citation withholds the complete note.
+Lysilogos invokes the local command-line tools rather than an API. Analysis sessions are persisted so reader feedback can continue the same Codex or Claude conversation. Codex receives live search in a workspace-write sandbox, while Claude receives paper-reading, tasklist-editing, and web-research tools; both are explicitly restricted to editing one generated file: `analysis-tasklist.md`. The paper, current analysis, and schemas remain read-only context. JSONL/session metadata and the final schema-validated answer are captured separately, with bounded runtime and stage-specific failures. Clarification requests remain ephemeral and read-only.
+
+External context uses a second, application-owned gate: every note must map to exact source records, and every cited URL must pass bounded DNS, redirect, public-address, and HTTP-success checks before either the note or source is persisted. One failed citation withholds the complete note.
+
+Every analysis and feedback retry creates a live Markdown tasklist. Open the queue with `q` to watch the agent mark work active and complete; progress is calculated directly from those checkboxes. If a saved session cannot be resumed, the retry falls back to a fresh agent with `source.txt`, `analysis.json`, the tasklist, and the complete feedback available in its working directory.
 
 The heuristic provider is intentionally conservative. It supplies an immediate offline atlas and clearly labels itself; use a model-backed provider for interpretive reading and field context.
 
@@ -92,7 +96,10 @@ Press `?` in the app for the complete, contextual key guide.
 | `g` | Open the technical Glossary after a short single-key delay |
 | `m` | Toggle Overview / reconstructed Text |
 | `p` | Toggle Overview / source PDF |
+| `2` | Toggle one-page / two-page PDF view |
 | `[` / `]` | Previous / next paper, or PDF page |
+| `Ctrl-d` / `Ctrl-u` | Page forward / back in PDF; half-screen down / up in text views |
+| `PageDown` / `PageUp` | Page forward / back in PDF; full-screen down / up in text views |
 | `/` | Search the active view |
 | `v` | Begin keyboard text selection in a digest, or enter sentence marking in the source map |
 | `o` | Swap the moving end of a visual selection |
@@ -105,6 +112,8 @@ Press `?` in the app for the complete, contextual key guide.
 | `F1` | Toggle the library from anywhere |
 | `F10` | Open the fuzzy article switcher |
 | `f` | Toggle mapped-only filtering while the library is open |
+| `:` | Open the command menu (`:analyze`, `:queue`, `:feedback`, `:spread`, and more) |
+| `q` | Toggle the processing queue and live agent tasklists |
 | `Esc` | Return to Overview or close the top panel |
 
 Native pointer selection also works: select text in a digest, then choose **Clarify selection**. In the page map, `v` enters a coordinate-backed evidence cursor; a second `v` starts a same-page sentence range, movement extends it, `Space` stores it, and `c` sends the exact sentence text into clarification. Same-page ranges keep one compact, relocation-resistant token anchor; cross-page notes should be saved as separate highlights.
@@ -125,6 +134,10 @@ Generated files live beneath the selected data root:
         ├── digest.md         # portable human-readable digest
         ├── highlights.jsonl  # canonical one-highlight-per-line records (AI and reader)
         ├── highlights.md     # generated human-readable highlight projection
+        ├── analysis-tasklist.md # live checklist edited by the local coding agent
+        ├── job.json          # typed queue/progress state for the latest run
+        ├── agent-session.json # resumable Codex or Claude session identity
+        ├── feedback.jsonl    # one plaintext-friendly reader feedback record per line
         └── *.schema.json     # exact local-CLI output contracts
 ```
 
@@ -144,6 +157,6 @@ npm run build
 npm run smoke
 ```
 
-`npm run smoke` uses the real Dijkstra analysis, Markdown conversion, and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies the four-level top-bar progression, abstract provenance, exact contextual sources and link-check scope, overview navigation, the mapped-only filter, F1/F10 switching, contextual digest, keyboard selection/clarification, the full Glossary, reconstructed Text, PDF rendering, and capital-`I` inversion.
+`npm run smoke` uses the real Dijkstra analysis, Markdown conversion, and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies the four-level top-bar progression, abstract provenance, exact contextual sources and link-check scope, overview navigation, the mapped-only filter, F1/F10 switching, the colon command menu, live tasklist progress, feedback retries, contextual digest, keyboard selection/clarification, the full Glossary, reconstructed Text, one/two-page PDF rendering and paging, and capital-`I` inversion.
 
 The implementation map and fault boundaries are described in [docs/architecture.md](docs/architecture.md).

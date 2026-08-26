@@ -2,11 +2,13 @@ import type {
   AnalysisProvider,
   Clarification,
   LibraryResponse,
+  AnalysisJob,
   PaperOverview,
   Highlight,
   HighlightKind,
   PaperMap,
   PaperView,
+  ProcessingQueue,
 } from "../types";
 
 type ErrorPayload = {
@@ -52,6 +54,7 @@ export const api = {
   library: (): Promise<LibraryResponse> => request("/api/library"),
   scan: (): Promise<LibraryResponse> =>
     request("/api/library/scan", { method: "POST" }),
+  queue: (): Promise<ProcessingQueue> => request("/api/queue"),
   paper: (id: string): Promise<PaperView> => request(`/api/papers/${id}`),
   paperMap: (id: string, signal?: AbortSignal): Promise<PaperMap> =>
     request(`/api/papers/${id}/map`, { signal }),
@@ -63,6 +66,15 @@ export const api = {
     request(`/api/papers/${id}/analyze`, {
       method: "POST",
       body: JSON.stringify({ provider, force }),
+    }),
+  feedback: (
+    id: string,
+    feedback: string,
+    provider: AnalysisProvider,
+  ): Promise<AnalysisJob> =>
+    request(`/api/papers/${id}/feedback`, {
+      method: "POST",
+      body: JSON.stringify({ feedback, provider }),
     }),
   clarify: (
     id: string,

@@ -143,6 +143,24 @@ const paperMap = {
   layout: { schema_version: 1, pages: layoutPages },
   highlights,
 };
+let analyzeRequests = 0;
+let feedbackRequests = 0;
+let queueJobs = [{
+  paper_id: paperId,
+  paper_title: metadata.title,
+  provider: "codex",
+  kind: "initial",
+  status: { state: "completed" },
+  progress: 100,
+  tasks: [
+    { id: "extract", label: "Extract text and exact PDF page coordinates", status: "completed", detail: null },
+    { id: "read", label: "Read the complete target paper", status: "completed", detail: "4 pages read" },
+  ],
+  resumable: true,
+  feedback: null,
+  created_at: analysis.generated_at,
+  updated_at: analysis.generated_at,
+}];
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -163,6 +181,8 @@ try {
     const url = new URL(request.url());
     if (url.pathname === "/api/library") {
       await route.fulfill({ json: { name: "Articles", papers: [paper, unmappedPaper] } });
+    } else if (url.pathname === "/api/queue") {
+      await route.fulfill({ json: { jobs: queueJobs } });
     } else if (url.pathname === `/api/papers/${paperId}`) {
       await route.fulfill({ json: { paper, analysis } });
     } else if (url.pathname === `/api/papers/${paperId}/map`) {
@@ -208,6 +228,26 @@ try {
           provider: "heuristic",
         },
       });
+    } else if (url.pathname === `/api/papers/${paperId}/analyze` && request.method() === "POST") {
+      analyzeRequests += 1;
+      await route.fulfill({ status: 202, json: paper });
+    } else if (url.pathname === `/api/papers/${paperId}/feedback` && request.method() === "POST") {
+      feedbackRequests += 1;
+      const payload = request.postDataJSON();
+      const job = {
+        ...queueJobs[0],
+        kind: "revision",
+        provider: payload.provider,
+        status: { state: "queued" },
+        progress: 0,
+        feedback: payload.feedback,
+        resumable: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        tasks: [{ id: "feedback", label: "Interpret the reader's feedback", status: "active", detail: "resuming" }],
+      };
+      queueJobs = [job];
+      await route.fulfill({ status: 202, json: job });
     } else if (url.pathname === `/api/papers/${paperId}/source`) {
       await route.fulfill({
         path: path.join(
@@ -334,6 +374,51 @@ try {
   assert(await page.locator(".pdf-canvas").evaluate((canvas) => canvas.classList.contains("dark-ink")), "lowercase i should not invert the PDF");
   await page.keyboard.press("Shift+I");
   assert(!(await page.locator(".pdf-canvas").evaluate((canvas) => canvas.classList.contains("dark-ink"))), "capital I did not reveal true PDF colours");
+  await page.keyboard.press("2");
+  await page.waitForFunction(() => document.querySelectorAll(".pdf-canvas").length === 2);
+  assert((await page.locator(".pdf-canvas").count()) === 2, "two-page PDF view did not render a spread");
+  await page.screenshot({ path: screenshotVariant("pdf-spread"), fullPage: true });
+  await page.keyboard.press("PageDown");
+  await page.locator('.pdf-canvas[aria-label^="Page 3 "]').waitFor();
+  await page.keyboard.press("PageUp");
+  await page.locator('.pdf-canvas[aria-label^="Page 1 "]').waitFor();
+  await page.keyboard.press("Control+d");
+  await page.locator('.pdf-canvas[aria-label^="Page 3 "]').waitFor();
+  await page.keyboard.press("Control+u");
+  await page.locator('.pdf-canvas[aria-label^="Page 1 "]').waitFor();
+  await page.keyboard.press("ArrowRight");
+  await page.locator('.pdf-canvas[aria-label^="Page 3 "]').waitFor();
+  await page.keyboard.press("ArrowLeft");
+  await page.locator('.pdf-canvas[aria-label^="Page 1 "]').waitFor();
+
+  await page.keyboard.press("q");
+  await page.locator(".queue-panel").waitFor();
+  assert((await page.locator(".queue-progress").count()) === 1, "queue did not render tasklist progress");
+  await delay(220);
+  await page.screenshot({ path: screenshotVariant("queue"), fullPage: true });
+  await page.locator(".feedback-form textarea").fill("Explain the central objection more plainly.");
+  await page.locator(".feedback-form button[type=submit]").click();
+  await page.waitForFunction(() => document.querySelector(".feedback-form textarea")?.value === "");
+  assert(feedbackRequests === 1, "feedback retry was not sent to the backend");
+  await page.keyboard.press("q");
+  await page.locator(".queue-panel").waitFor({ state: "detached" });
+  queueJobs = queueJobs.map((job) => ({
+    ...job,
+    status: { state: "completed" },
+    progress: 100,
+    tasks: job.tasks.map((task) => ({ ...task, status: "completed" })),
+  }));
+  await delay(950);
+
+  await page.keyboard.press("a");
+  await delay(40);
+  assert(analyzeRequests === 0, "lowercase a still triggered analysis");
+  await page.keyboard.press(":");
+  await page.locator(".command-menu").waitFor();
+  await page.locator(".command-input input").fill("analyze heuristic");
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => !document.querySelector(".command-menu"));
+  assert(analyzeRequests === 1, ":analyze did not start analysis");
 
   await page.setViewportSize({ width: 390, height: 844 });
   await delay(100);
@@ -356,7 +441,7 @@ try {
   await page.keyboard.press("Escape");
   await page.locator(".help-card").waitFor({ state: "detached" });
 
-  console.log(`visual smoke passed: cited context, ${tiles} tiles, aligned source pages, AI/user highlights, arrows, Markdown, mapped filter, F1/F10, PDF, selection, Gloss, and mobile keys; screenshot ${screenshot}`);
+  console.log(`visual smoke passed: cited context, ${tiles} tiles, aligned source pages, AI/user highlights, arrows and paging, two-page PDF, reconstructed text, mapped filter, F1/F10, :analyze, live queue, feedback retry, selection, glossary, and mobile keys; screenshot ${screenshot}`);
 } finally {
   await browser.close();
 }

@@ -10,9 +10,9 @@ use serde::{Deserialize, Serialize};
 use crate::{
     Result,
     domain::{
-        AnalysisProvider, Claim, Clarification, ContextNote, ContextSource, EvidenceStrength,
-        ExtractedPaper, GlossaryEntry, KeyQuote, PageSpan, PaperAnalysis, PaperSection,
-        QuoteSignificance, SectionFamily, SectionKind, SectionSourceSpan,
+        AgentSession, AnalysisProvider, Claim, Clarification, ContextNote, ContextSource,
+        EvidenceStrength, ExtractedPaper, GlossaryEntry, KeyQuote, PageSpan, PaperAnalysis,
+        PaperSection, QuoteSignificance, SectionFamily, SectionKind, SectionSourceSpan,
     },
     error::Error,
     layout::verify_quote,
@@ -29,6 +29,12 @@ pub struct AnalysisService {
     local_cli: LocalCliAnalyzer,
 }
 
+#[derive(Debug)]
+pub struct AnalysisOutcome {
+    pub analysis: PaperAnalysis,
+    pub session: Option<AgentSession>,
+}
+
 impl AnalysisService {
     #[must_use]
     pub const fn new(local_cli: LocalCliAnalyzer) -> Self {
@@ -40,18 +46,45 @@ impl AnalysisService {
         provider: AnalysisProvider,
         paper: &ExtractedPaper,
         artifact_directory: &Path,
-    ) -> Result<PaperAnalysis> {
-        let draft = match provider {
-            AnalysisProvider::Heuristic => HeuristicAnalyzer::analyze(paper),
+    ) -> Result<AnalysisOutcome> {
+        let (draft, session) = match provider {
+            AnalysisProvider::Heuristic => (HeuristicAnalyzer::analyze(paper), None),
             AnalysisProvider::Codex | AnalysisProvider::Claude => {
-                self.local_cli
+                let result = self
+                    .local_cli
                     .analyze(provider, paper, artifact_directory)
-                    .await?
+                    .await?;
+                (result.draft, result.session)
             }
         };
         let mut analysis = normalize_analysis(draft, provider, paper)?;
         sources::verify_context_sources(&mut analysis).await;
-        Ok(analysis)
+        Ok(AnalysisOutcome { analysis, session })
+    }
+
+    pub async fn revise(
+        &self,
+        provider: AnalysisProvider,
+        paper: &ExtractedPaper,
+        artifact_directory: &Path,
+        feedback: &str,
+        session: Option<&AgentSession>,
+    ) -> Result<AnalysisOutcome> {
+        if provider == AnalysisProvider::Heuristic {
+            return Err(Error::InvalidRequest(
+                "feedback retries require the Codex or Claude reader".to_owned(),
+            ));
+        }
+        let result = self
+            .local_cli
+            .revise(provider, paper, artifact_directory, feedback, session)
+            .await?;
+        let mut analysis = normalize_analysis(result.draft, provider, paper)?;
+        sources::verify_context_sources(&mut analysis).await;
+        Ok(AnalysisOutcome {
+            analysis,
+            session: result.session,
+        })
     }
 
     pub async fn clarify(

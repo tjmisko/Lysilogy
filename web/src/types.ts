@@ -1,4 +1,5 @@
 export type AnalysisProvider = "codex" | "claude" | "heuristic";
+export type ProcessingStage = "discovery" | "extraction" | "analysis" | "persistence";
 
 export type ProcessingStatus =
   | { state: "discovered" }
@@ -9,7 +10,7 @@ export type ProcessingStatus =
   | { state: "ready" }
   | {
       state: "failed";
-      stage: "discovery" | "extraction" | "analysis" | "persistence";
+      stage: ProcessingStage;
       message: string;
       retryable: boolean;
     };
@@ -33,6 +34,44 @@ export type PaperOverview = {
 export type LibraryResponse = {
   name: string;
   papers: PaperOverview[];
+};
+
+export type AnalysisTaskStatus = "pending" | "active" | "completed" | "failed";
+
+export type AnalysisTask = {
+  id: string;
+  label: string;
+  status: AnalysisTaskStatus;
+  detail: string | null;
+};
+
+export type AnalysisJobStatus =
+  | { state: "queued" }
+  | { state: "running"; stage: ProcessingStage }
+  | { state: "completed" }
+  | {
+      state: "failed";
+      stage: ProcessingStage;
+      message: string;
+      retryable: boolean;
+    };
+
+export type AnalysisJob = {
+  paper_id: string;
+  paper_title: string;
+  provider: AnalysisProvider;
+  kind: "initial" | "revision";
+  status: AnalysisJobStatus;
+  progress: number;
+  tasks: AnalysisTask[];
+  resumable: boolean;
+  feedback: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProcessingQueue = {
+  jobs: AnalysisJob[];
 };
 
 export type SectionKind =
