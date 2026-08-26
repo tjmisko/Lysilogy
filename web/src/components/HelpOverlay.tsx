@@ -6,7 +6,7 @@ const GROUPS = [
   {
     title: "Move",
     commands: [
-      ["h j k l", "Move through section tiles"],
+      ["h j k l / arrows", "Move through tiles, lists, pages, and evidence sentences"],
       ["g g / G", "First / last tile"],
       ["[ / ]", "Previous / next paper or PDF page"],
       ["/", "Search the library or Gloss"],
@@ -21,7 +21,7 @@ const GROUPS = [
       ["g", "Open Gloss (pause after one g)"],
       ["m", "Toggle atlas / reconstructed Markdown"],
       ["p", "Toggle atlas / PDF"],
-      ["I", "Toggle dark ink / true colour in PDF"],
+      ["I", "Toggle dark ink / true colour for every rendered PDF page"],
     ],
   },
   {
@@ -32,6 +32,9 @@ const GROUPS = [
       ["o", "Swap the active end"],
       ["c", "Clarify the selection in context"],
       ["y", "Copy the selection"],
+      ["H", "Toggle AI-cited prehighlights in the source map"],
+      ["U", "Toggle reader-created highlights in the source map"],
+      ["v · j/k · space", "Select and save exact PDF sentence ranges"],
     ],
   },
   {

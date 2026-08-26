@@ -65,8 +65,13 @@ export function PaperSwitcher({ papers, selectedId, onClose, onSelect }: PaperSw
       if (candidate !== undefined) onSelect(candidate.paper.id);
     };
     const onKeyDown = (event: KeyboardEvent): void => {
-      const backward = event.key === "ArrowUp" || (event.ctrlKey && ["k", "p"].includes(event.key));
-      const forward = event.key === "ArrowDown" || (event.ctrlKey && ["j", "n"].includes(event.key));
+      const typing = document.activeElement === inputRef.current;
+      const backward = event.key === "ArrowUp"
+        || (!typing && ["h", "k"].includes(event.key))
+        || (event.ctrlKey && ["k", "p"].includes(event.key));
+      const forward = event.key === "ArrowDown"
+        || (!typing && ["j", "l"].includes(event.key))
+        || (event.ctrlKey && ["j", "n"].includes(event.key));
       if (backward || (event.key === "Tab" && event.shiftKey)) {
         event.preventDefault();
         setActive((index) => Math.max(0, index - 1));

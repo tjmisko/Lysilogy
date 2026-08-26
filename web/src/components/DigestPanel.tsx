@@ -17,6 +17,7 @@ import type {
 type DigestPanelProps = {
   section: PaperSection;
   claims: Claim[];
+  initialSelection?: string;
   onClose: () => void;
   onGloss: () => void;
   onOpenPage: (page: number) => void;
@@ -56,6 +57,7 @@ function isEditable(target: EventTarget | null): boolean {
 export function DigestPanel({
   section,
   claims,
+  initialSelection = "",
   onClose,
   onGloss,
   onOpenPage,
@@ -99,7 +101,7 @@ export function DigestPanel({
   const [visualAnchor, setVisualAnchor] = useState<number | null>(null);
   const [visualCursor, setVisualCursor] = useState(0);
   const [nativeSelection, setNativeSelection] = useState("");
-  const [clarifySelection, setClarifySelection] = useState("");
+  const [clarifySelection, setClarifySelection] = useState(initialSelection.trim());
   const [question, setQuestion] = useState("");
   const [provider, setProvider] = useState<AnalysisProvider>("heuristic");
   const [clarification, setClarification] = useState<Clarification | null>(null);
@@ -109,6 +111,12 @@ export function DigestPanel({
   const contentRef = useRef<HTMLDivElement>(null);
   const fragmentRefs = useRef<Array<HTMLElement | null>>([]);
   const questionRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (initialSelection.trim().length > 0) {
+      window.setTimeout(() => questionRef.current?.focus(), 0);
+    }
+  }, [initialSelection]);
 
   const visualBounds = useMemo(
     () =>
@@ -165,11 +173,15 @@ export function DigestPanel({
       switch (event.key) {
         case "j":
         case "l":
+        case "ArrowDown":
+        case "ArrowRight":
           event.preventDefault();
           move(1);
           break;
         case "k":
         case "h":
+        case "ArrowUp":
+        case "ArrowLeft":
           event.preventDefault();
           move(-1);
           break;

@@ -258,7 +258,7 @@ fn escape_text(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::{ExtractedPage, PaperMetadata};
+    use crate::domain::{DocumentLayout, ExtractedPage, PaperMetadata};
 
     use super::*;
 
@@ -277,6 +277,7 @@ mod tests {
                 text: "A Useful Paper\nABSTRACT\nFirst wrapped\nline. A new paragraph\nstarts here.\nKeywords: engines, notation"
                     .to_owned(),
             }],
+            layout: DocumentLayout::default(),
         };
         let markdown = render_source(&paper);
         assert!(markdown.starts_with("# A Useful Paper"));

@@ -61,11 +61,31 @@ export type SectionFamily =
 
 export type PageSpan = { start: number; end: number };
 
+export type CitationStatus = "unverified" | "exact" | "normalized" | "ambiguous" | "missing";
+
+export type TextRect = {
+  x_min: number;
+  y_min: number;
+  x_max: number;
+  y_max: number;
+};
+
+export type TextAnchor = {
+  page: number;
+  start_token: number;
+  end_token: number;
+  sentence_ids: string[];
+  rects: TextRect[];
+  exact_text: string;
+};
+
 export type KeyQuote = {
   text: string;
   page: number;
   explanation: string;
   significance: "thesis" | "definition" | "evidence" | "qualification" | "turning_point";
+  anchor?: TextAnchor | null;
+  validation?: CitationStatus;
 };
 
 export type PaperSection = {
@@ -76,6 +96,7 @@ export type PaperSection = {
   pages: PageSpan;
   summary: string;
   digest: string;
+  source_span?: { start: TextAnchor; end: TextAnchor } | null;
   key_quotes: KeyQuote[];
   related_terms: string[];
   tile_width: number;
@@ -114,6 +135,61 @@ export type PaperAnalysis = {
 export type PaperView = {
   paper: PaperOverview;
   analysis: PaperAnalysis | null;
+};
+
+export type LayoutSentence = {
+  id: string;
+  page: number;
+  start_token: number;
+  end_token: number;
+  text: string;
+  rects: TextRect[];
+};
+
+export type LayoutToken = {
+  index: number;
+  text: string;
+  line: number;
+  rects: TextRect[];
+};
+
+export type LayoutPage = {
+  number: number;
+  width: number;
+  height: number;
+  tokens: LayoutToken[];
+  sentences: LayoutSentence[];
+};
+
+export type DocumentLayout = {
+  schema_version: number;
+  pages: LayoutPage[];
+};
+
+export type HighlightKind = "thesis" | "definition" | "evidence" | "qualification" | "note";
+
+export type HighlightOrigin =
+  | {
+      type: "ai";
+      provider: AnalysisProvider;
+      section_id: string;
+      quote_index: number;
+    }
+  | { type: "user" };
+
+export type Highlight = {
+  id: string;
+  origin: HighlightOrigin;
+  kind: HighlightKind;
+  anchor: TextAnchor;
+  text: string;
+  note: string;
+  created_at: string;
+};
+
+export type PaperMap = {
+  layout: DocumentLayout;
+  highlights: Highlight[];
 };
 
 export type Clarification = {

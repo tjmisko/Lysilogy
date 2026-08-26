@@ -168,6 +168,8 @@ pub struct PaperSection {
     pub summary: String,
     pub digest: String,
     #[serde(default)]
+    pub source_span: Option<SectionSourceSpan>,
+    #[serde(default)]
     pub key_quotes: Vec<KeyQuote>,
     #[serde(default)]
     pub related_terms: Vec<String>,
@@ -175,6 +177,12 @@ pub struct PaperSection {
     pub tile_width: u8,
     #[serde(default = "default_tile_height")]
     pub tile_height: u8,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SectionSourceSpan {
+    pub start: TextAnchor,
+    pub end: TextAnchor,
 }
 
 const fn default_tile_width() -> u8 {
@@ -239,6 +247,12 @@ pub struct KeyQuote {
     pub page: u32,
     pub explanation: String,
     pub significance: QuoteSignificance,
+    /// Deterministic coordinates resolved from the PDF text layer. Analyzer
+    /// output never supplies this field; normalization does.
+    #[serde(default)]
+    pub anchor: Option<TextAnchor>,
+    #[serde(default)]
+    pub validation: CitationStatus,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -250,6 +264,150 @@ pub enum QuoteSignificance {
     Qualification,
     #[default]
     TurningPoint,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CitationStatus {
+    #[default]
+    Unverified,
+    Exact,
+    Normalized,
+    Ambiguous,
+    Missing,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct TextRect {
+    pub x_min: f32,
+    pub y_min: f32,
+    pub x_max: f32,
+    pub y_max: f32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TextAnchor {
+    pub page: u32,
+    pub start_token: u32,
+    pub end_token: u32,
+    #[serde(default)]
+    pub sentence_ids: Vec<String>,
+    #[serde(default)]
+    pub rects: Vec<TextRect>,
+    pub exact_text: String,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct DocumentLayout {
+    pub schema_version: u16,
+    #[serde(default)]
+    pub pages: Vec<LayoutPage>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct LayoutPage {
+    pub number: u32,
+    pub width: f32,
+    pub height: f32,
+    #[serde(default)]
+    pub tokens: Vec<LayoutToken>,
+    #[serde(default)]
+    pub sentences: Vec<LayoutSentence>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct LayoutToken {
+    pub index: u32,
+    pub text: String,
+    pub line: u32,
+    #[serde(default)]
+    pub rects: Vec<TextRect>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct LayoutSentence {
+    pub id: String,
+    pub page: u32,
+    pub start_token: u32,
+    pub end_token: u32,
+    pub text: String,
+    #[serde(default)]
+    pub rects: Vec<TextRect>,
+}
+
+impl LayoutSentence {
+    #[must_use]
+    pub fn anchor(&self) -> TextAnchor {
+        TextAnchor {
+            page: self.page,
+            start_token: self.start_token,
+            end_token: self.end_token,
+            sentence_ids: vec![self.id.clone()],
+            rects: self.rects.clone(),
+            exact_text: self.text.clone(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HighlightKind {
+    Thesis,
+    Definition,
+    #[default]
+    Evidence,
+    Qualification,
+    Note,
+}
+
+impl From<QuoteSignificance> for HighlightKind {
+    fn from(significance: QuoteSignificance) -> Self {
+        match significance {
+            QuoteSignificance::Thesis => Self::Thesis,
+            QuoteSignificance::Definition => Self::Definition,
+            QuoteSignificance::Evidence | QuoteSignificance::TurningPoint => Self::Evidence,
+            QuoteSignificance::Qualification => Self::Qualification,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum HighlightOrigin {
+    Ai {
+        provider: AnalysisProvider,
+        section_id: String,
+        quote_index: u32,
+    },
+    User,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Highlight {
+    pub id: String,
+    pub origin: HighlightOrigin,
+    pub kind: HighlightKind,
+    pub anchor: TextAnchor,
+    pub text: String,
+    #[serde(default)]
+    pub note: String,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct PaperMap {
+    pub layout: DocumentLayout,
+    pub highlights: Vec<Highlight>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct CreateHighlightRequest {
+    pub start_sentence_id: String,
+    pub end_sentence_id: Option<String>,
+    #[serde(default)]
+    pub kind: HighlightKind,
+    #[serde(default)]
+    pub note: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -321,6 +479,7 @@ pub struct ExtractedPage {
 pub struct ExtractedPaper {
     pub metadata: PaperMetadata,
     pub pages: Vec<ExtractedPage>,
+    pub layout: DocumentLayout,
 }
 
 impl ExtractedPaper {

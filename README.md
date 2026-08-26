@@ -2,7 +2,7 @@
 
 Lysilogos turns a vault of scientific PDFs into a keyboard-first visual atlas for readers who are intelligent outsiders to the field.
 
-The main view maps a paper into conceptual tiles sized by argumentative weight. Focus or hover gives the short reading; opening a tile gives its contextual digest, key quotations, and page links. A searchable **Gloss** explains technical language. A reconstructed Markdown tab provides a calm, selectable reading surface, while the PDF reader defaults to dark rendering and can reveal figures in their original colors.
+The main view maps a paper into conceptual tiles sized by argumentative weight, then lays the verified map directly over coordinate-aligned PDF pages. Focus or hover gives the short reading; opening a tile gives its contextual digest, key quotations, and page links. AI citations are prehighlighted only after deterministic text checks. Reader highlights use the same stable sentence/token anchors. A searchable **Gloss** explains technical language. A reconstructed Markdown tab provides a calm, selectable reading surface, while every PDF canvas defaults to dark rendering and can reveal figures in its original colors.
 
 The current demo has been exercised against the local `local-articles/Articles` corpus (118 PDFs) and includes a mapped copy of Dijkstra's “GOTO Statements Considered Harmful.”
 
@@ -37,6 +37,18 @@ cargo run -- \
 ```
 
 For frontend development, run `cargo run -- serve` and `npm run dev` from `web/` in separate terminals. Vite proxies `/api` to the Rust server.
+
+For a normal local redeploy, rebuild both halves, stop the current foreground server with `Ctrl-C`, and launch the release binary again:
+
+```sh
+cd /home/tjmisko/Projects/Lysilogos/web
+npm run build
+cd ..
+cargo build --release
+./target/release/lysilogos serve
+```
+
+If the binary is already managed by a user service, replace the final line with `systemctl --user restart lysilogos.service`. Opening an older map lazily regenerates its coordinate extraction and validates existing quotes. To replace dashed legacy section extents with exact start/end spans, rerun that paper with `--force`; after evaluating the new prompt on a few papers, `ingest --provider codex --force` migrates the full mapped library.
 
 ## Map the vault
 
@@ -73,7 +85,7 @@ Press `?` in the app for the complete, contextual key guide.
 
 | Key | Action |
 | --- | --- |
-| `h j k l` | Move through tiles, panels, or a visual text selection |
+| `h j k l` or arrow keys | Move through tiles, panels, pages, or a visual text selection |
 | `g g` / `G` | First / last tile |
 | `Enter` or `o` | Open the focused section digest |
 | `d` | Toggle the digest |
@@ -82,17 +94,20 @@ Press `?` in the app for the complete, contextual key guide.
 | `p` | Toggle atlas / PDF |
 | `[` / `]` | Previous / next paper, or PDF page |
 | `/` | Search the active view |
-| `v` | Begin keyboard text selection in a digest |
+| `v` | Begin keyboard text selection in a digest, or enter sentence marking in the source map |
 | `o` | Swap the moving end of a visual selection |
 | `c` | Clarify the selection in paper context |
 | `y` | Copy the selection |
-| `I` | Invert the PDF between dark ink and true image colors |
+| `Space` | Persist the selected source sentence range as a reader highlight |
+| `H` | Toggle AI-cited prehighlights |
+| `U` | Toggle reader-created highlights |
+| `I` | Invert every PDF rendering between dark ink and true image colors |
 | `F1` | Toggle the library from anywhere |
 | `F10` | Open the fuzzy article switcher |
 | `f` | Toggle mapped-only filtering while the library is open |
 | `Esc` | Leave the current mode or close the top panel |
 
-Native pointer selection also works: select text in a digest, then choose **Clarify selection**. This avoids replacing browser text semantics with a custom editor while still making the entire clarification flow keyboard-accessible.
+Native pointer selection also works: select text in a digest, then choose **Clarify selection**. In the page map, `v` enters a coordinate-backed evidence cursor; a second `v` starts a same-page sentence range, movement extends it, `Space` stores it, and `c` sends the exact sentence text into clarification. Same-page ranges keep one compact, relocation-resistant token anchor; cross-page notes should be saved as separate highlights.
 
 ## Plain-text artifacts
 
@@ -104,13 +119,16 @@ Generated files live beneath the selected data root:
     └── <stable-paper-id>/
         ├── source.txt        # UTF-8 extraction, form-feed page boundaries
         ├── source.md         # best-effort full-document Markdown with page markers
+        ├── layout.json       # PDF points, stable page-local tokens, and sentence segments
         ├── extraction.json   # extraction schema and normalized metadata
         ├── analysis.json     # typed, versioned application model
         ├── digest.md         # portable human-readable digest
+        ├── highlights.jsonl  # canonical one-highlight-per-line records (AI and reader)
+        ├── highlights.md     # generated human-readable highlight projection
         └── *.schema.json     # exact local-CLI output contracts
 ```
 
-Writes are atomic. The original PDFs are never modified, and generated artifacts can be read, searched, versioned, or reused without running the frontend.
+Writes are atomic. `highlights.jsonl` is the canonical plaintext-first record: each line is a complete typed highlight with provenance, exact quoted text, PDF page, page-local token range, sentence IDs, and PDF-point rectangles. It is diffable and scriptable without a database; `highlights.md` is regenerated for ordinary reading. The original PDFs are never modified, and generated artifacts can be read, searched, versioned, or reused without running the frontend.
 
 ## Quality checks
 

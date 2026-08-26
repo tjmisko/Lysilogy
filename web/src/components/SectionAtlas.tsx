@@ -1,12 +1,27 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 
-import type { PaperAnalysis, PaperSection } from "../types";
+import type { LayoutSentence, PaperAnalysis, PaperMap, PaperSection } from "../types";
+import { SourceMap } from "./SourceMap";
 
 type AtlasProps = {
   analysis: PaperAnalysis;
   activeIndex: number;
   onActiveIndex: (index: number) => void;
   onOpen: (section: PaperSection, index: number) => void;
+  sourceUrl: string;
+  paperTitle: string;
+  paperMap: PaperMap | null;
+  mapLoading: boolean;
+  darkInk: boolean;
+  showAi: boolean;
+  showUser: boolean;
+  markMode: boolean;
+  onShowAi: () => void;
+  onShowUser: () => void;
+  onMarkMode: () => void;
+  onOpenPage: (page: number) => void;
+  onToggleHighlight: (start: LayoutSentence, end?: LayoutSentence) => void;
+  onClarifySentence: (text: string, page: number) => void;
 };
 
 type TileStyle = CSSProperties & {
@@ -24,7 +39,26 @@ const FAMILY_LABELS = [
   ["reference", "Reference"],
 ] as const;
 
-export function SectionAtlas({ analysis, activeIndex, onActiveIndex, onOpen }: AtlasProps) {
+export function SectionAtlas({
+  analysis,
+  activeIndex,
+  onActiveIndex,
+  onOpen,
+  sourceUrl,
+  paperTitle,
+  paperMap,
+  mapLoading,
+  darkInk,
+  showAi,
+  showUser,
+  markMode,
+  onShowAi,
+  onShowUser,
+  onMarkMode,
+  onOpenPage,
+  onToggleHighlight,
+  onClarifySentence,
+}: AtlasProps) {
   const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
@@ -93,6 +127,29 @@ export function SectionAtlas({ analysis, activeIndex, onActiveIndex, onOpen }: A
         Tile area follows conceptual weight, not page count. Hover or focus for the short reading;
         open for quotes and context.
       </p>
+      {mapLoading && (
+        <div className="source-map-loading"><span className="loader" /> Aligning PDF pages and evidence…</div>
+      )}
+      {paperMap !== null && (
+        <SourceMap
+          url={sourceUrl}
+          title={paperTitle}
+          analysis={analysis}
+          paperMap={paperMap}
+          activeSection={activeIndex}
+          darkInk={darkInk}
+          showAi={showAi}
+          showUser={showUser}
+          markMode={markMode}
+          onShowAi={onShowAi}
+          onShowUser={onShowUser}
+          onMarkMode={onMarkMode}
+          onOpenSection={onOpen}
+          onOpenPage={onOpenPage}
+          onToggleHighlight={onToggleHighlight}
+          onClarify={onClarifySentence}
+        />
+      )}
     </section>
   );
 }

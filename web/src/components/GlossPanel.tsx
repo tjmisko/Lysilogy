@@ -41,10 +41,10 @@ export function GlossPanel({ entries, onClose, onSection }: GlossPanelProps) {
       }
       if (event.target === searchRef.current) return;
       const last = Math.max(0, filtered.length - 1);
-      if (event.key === "j") {
+      if (event.key === "j" || event.key === "l" || event.key === "ArrowDown" || event.key === "ArrowRight") {
         event.preventDefault();
         setActive((index) => Math.min(last, index + 1));
-      } else if (event.key === "k") {
+      } else if (event.key === "k" || event.key === "h" || event.key === "ArrowUp" || event.key === "ArrowLeft") {
         event.preventDefault();
         setActive((index) => Math.max(0, index - 1));
       } else if (event.key === "G") {

@@ -1,7 +1,10 @@
 use std::{
     path::{Path, PathBuf},
     str::FromStr,
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicU64, Ordering},
+    },
 };
 
 use axum::{
@@ -10,17 +13,22 @@ use axum::{
     extract::{Path as AxumPath, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{IntoResponse, Response},
-    routing::{get, post},
+    routing::{delete, get, post},
 };
+use chrono::Utc;
 use serde::Serialize;
-use tokio::{fs::File, sync::RwLock};
+use tokio::{
+    fs::File,
+    sync::{Mutex, RwLock},
+};
 use tokio_util::io::ReaderStream;
 
 use crate::{
     Result,
-    analysis::AnalysisService,
+    analysis::{AnalysisService, validate_citations},
     domain::{
-        AnalysisProvider, AnalyzeRequest, Clarification, ClarifyRequest, PaperId, PaperOverview,
+        AnalysisProvider, AnalyzeRequest, CitationStatus, Clarification, ClarifyRequest,
+        CreateHighlightRequest, Highlight, HighlightOrigin, PaperId, PaperMap, PaperOverview,
         PaperView, ProcessingStage, ProcessingStatus,
     },
     error::Error,
@@ -29,6 +37,8 @@ use crate::{
     store::ArtifactStore,
 };
 
+static USER_HIGHLIGHT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
 #[derive(Clone, Debug)]
 pub struct AppState {
     catalog: Arc<RwLock<LibraryCatalog>>,
@@ -36,6 +46,7 @@ pub struct AppState {
     store: ArtifactStore,
     extractor: PdfExtractor,
     analysis: AnalysisService,
+    highlight_write: Arc<Mutex<()>>,
     frontend_root: Option<Arc<PathBuf>>,
 }
 
@@ -81,6 +92,7 @@ impl AppState {
             store,
             extractor,
             analysis,
+            highlight_write: Arc::new(Mutex::new(())),
             frontend_root: None,
         })
     }
@@ -209,10 +221,12 @@ impl AppState {
             .analyze(provider, &paper, &self.store.paper_dir(id))
             .await
             .map_err(|error| (ProcessingStage::Analysis, error))?;
+        let highlight_guard = self.highlight_write.lock().await;
         self.store
             .save_analysis(id, &analysis)
             .await
             .map_err(|error| (ProcessingStage::Persistence, error))?;
+        drop(highlight_guard);
         {
             let mut catalog = self.catalog.write().await;
             if let Some(entry) = catalog.get_mut(id) {
@@ -259,11 +273,21 @@ impl AppState {
             .save_extraction(id, &paper)
             .await
             .map_err(|error| (ProcessingStage::Persistence, error))?;
+        let has_analysis = self
+            .store
+            .load_analysis(id)
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?
+            .is_some();
         {
             let mut catalog = self.catalog.write().await;
             if let Some(entry) = catalog.get_mut(id) {
                 entry.overview.metadata = paper.metadata.clone();
-                entry.overview.status = ProcessingStatus::Extracted;
+                entry.overview.status = if has_analysis {
+                    ProcessingStatus::Ready
+                } else {
+                    ProcessingStatus::Extracted
+                };
             }
         }
         Ok(paper)
@@ -331,6 +355,121 @@ impl AppState {
         }
     }
 
+    pub async fn paper_map(&self, id: &PaperId) -> Result<PaperMap> {
+        if self.catalog.read().await.get(id).is_none() {
+            return Err(Error::PaperNotFound(id.to_string()));
+        }
+        let paper = match self.load_or_extract(id).await {
+            Ok(paper) => paper,
+            Err((stage, error)) => {
+                self.catalog.write().await.mark_failure(id, stage, &error);
+                return Err(error);
+            }
+        };
+        let mut mapped_spans = Vec::new();
+        if let Some(mut analysis) = self.store.load_analysis(id).await? {
+            let needs_validation = analysis.schema_version < 2
+                || analysis.sections.iter().any(|section| {
+                    section
+                        .key_quotes
+                        .iter()
+                        .any(|quote| quote.validation == CitationStatus::Unverified)
+                });
+            if needs_validation {
+                let highlight_guard = self.highlight_write.lock().await;
+                validate_citations(&mut analysis, &paper.layout);
+                self.store.save_analysis(id, &analysis).await?;
+                drop(highlight_guard);
+            }
+            mapped_spans.extend(analysis.sections.iter().map(|section| section.pages));
+        }
+        let highlights = self.store.load_highlights(id).await?;
+        let mut layout = paper.layout;
+        if !mapped_spans.is_empty() {
+            layout.pages.retain(|page| {
+                mapped_spans
+                    .iter()
+                    .any(|span| page.number >= span.start && page.number <= span.end)
+            });
+        }
+        Ok(PaperMap { layout, highlights })
+    }
+
+    pub async fn create_highlight(
+        &self,
+        id: &PaperId,
+        request: &CreateHighlightRequest,
+    ) -> Result<Highlight> {
+        if request.note.chars().count() > 4_000 {
+            return Err(Error::InvalidRequest(
+                "highlight notes are limited to 4,000 characters".to_owned(),
+            ));
+        }
+        let paper_map = self.paper_map(id).await?;
+        let anchor = crate::layout::anchor_for_sentence_range(
+            &paper_map.layout,
+            request.start_sentence_id.trim(),
+            request.end_sentence_id.as_deref().map(str::trim),
+        )
+        .ok_or_else(|| {
+            Error::InvalidRequest(
+                "highlight sentence range was not found on one PDF page".to_owned(),
+            )
+        })?;
+        let highlight_guard = self.highlight_write.lock().await;
+        let mut highlights = self.store.load_highlights(id).await?;
+        if let Some(existing) = highlights.iter_mut().find(|highlight| {
+            matches!(highlight.origin, HighlightOrigin::User)
+                && highlight.anchor.page == anchor.page
+                && highlight.anchor.start_token == anchor.start_token
+                && highlight.anchor.end_token == anchor.end_token
+        }) {
+            existing.kind = request.kind;
+            existing.note = request.note.trim().to_owned();
+            let existing = existing.clone();
+            self.store.save_highlights(id, &highlights).await?;
+            drop(highlight_guard);
+            return Ok(existing);
+        }
+
+        let now = Utc::now();
+        let sequence = USER_HIGHLIGHT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let highlight = Highlight {
+            id: format!("user-{}-{sequence}", now.timestamp_micros()),
+            origin: HighlightOrigin::User,
+            kind: request.kind,
+            text: anchor.exact_text.clone(),
+            anchor,
+            note: request.note.trim().to_owned(),
+            created_at: now,
+        };
+        highlights.push(highlight.clone());
+        self.store.save_highlights(id, &highlights).await?;
+        drop(highlight_guard);
+        Ok(highlight)
+    }
+
+    pub async fn delete_highlight(&self, id: &PaperId, highlight_id: &str) -> Result<()> {
+        if self.catalog.read().await.get(id).is_none() {
+            return Err(Error::PaperNotFound(id.to_string()));
+        }
+        let highlight_guard = self.highlight_write.lock().await;
+        let mut highlights = self.store.load_highlights(id).await?;
+        let position = highlights
+            .iter()
+            .position(|highlight| highlight.id == highlight_id)
+            .ok_or_else(|| Error::InvalidRequest("highlight was not found".to_owned()))?;
+        if !matches!(highlights[position].origin, HighlightOrigin::User) {
+            return Err(Error::InvalidRequest(
+                "AI highlights are regenerated from citations and cannot be deleted".to_owned(),
+            ));
+        }
+        highlights.remove(position);
+        self.store.save_highlights(id, &highlights).await?;
+        drop(highlight_guard);
+        Ok(())
+    }
+
     async fn clarify(&self, id: &PaperId, request: &ClarifyRequest) -> Result<Clarification> {
         let paper = self.store.load_extraction(id).await?.ok_or_else(|| {
             Error::InvalidRequest("analyze the paper before clarifying a passage".to_owned())
@@ -381,6 +520,12 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/papers/{id}", get(paper))
         .route("/api/papers/{id}/source", get(paper_source))
         .route("/api/papers/{id}/markdown", get(paper_markdown))
+        .route("/api/papers/{id}/map", get(paper_map))
+        .route("/api/papers/{id}/highlights", post(create_highlight))
+        .route(
+            "/api/papers/{id}/highlights/{highlight_id}",
+            delete(delete_highlight),
+        )
         .route("/api/papers/{id}/analyze", post(analyze_paper))
         .route("/api/papers/{id}/clarify", post(clarify_selection))
         .route("/", get(frontend_index))
@@ -479,6 +624,33 @@ async fn paper_markdown(
     Ok((headers, markdown).into_response())
 }
 
+async fn paper_map(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+) -> Result<Json<PaperMap>> {
+    let id = parse_id(&id)?;
+    state.paper_map(&id).await.map(Json)
+}
+
+async fn create_highlight(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+    Json(request): Json<CreateHighlightRequest>,
+) -> Result<(StatusCode, Json<Highlight>)> {
+    let id = parse_id(&id)?;
+    let highlight = state.create_highlight(&id, &request).await?;
+    Ok((StatusCode::CREATED, Json(highlight)))
+}
+
+async fn delete_highlight(
+    State(state): State<AppState>,
+    AxumPath((id, highlight_id)): AxumPath<(String, String)>,
+) -> Result<StatusCode> {
+    let id = parse_id(&id)?;
+    state.delete_highlight(&id, &highlight_id).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 fn parse_id(value: &str) -> Result<PaperId> {
     PaperId::from_str(value).map_err(Error::InvalidRequest)
 }
@@ -545,7 +717,10 @@ mod tests {
     use tower::ServiceExt;
 
     use super::*;
-    use crate::domain::{ExtractedPage, ExtractedPaper, PaperMetadata};
+    use crate::domain::{
+        CreateHighlightRequest, DocumentLayout, ExtractedPage, ExtractedPaper, HighlightKind,
+        HighlightOrigin, LayoutPage, LayoutSentence, LayoutToken, PaperMetadata, TextRect,
+    };
 
     #[tokio::test]
     async fn lists_discovered_papers_without_extraction() -> Result<()> {
@@ -605,6 +780,7 @@ mod tests {
                         number: 1,
                         text: "ABSTRACT\nAn analytical engine follows notation.".to_owned(),
                     }],
+                    layout: DocumentLayout::default(),
                 },
             )
             .await?;
@@ -631,6 +807,90 @@ mod tests {
         let markdown = String::from_utf8_lossy(&body);
         assert!(markdown.contains("# Notes"));
         assert!(markdown.contains("### Abstract"));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn creates_and_deletes_a_sentence_anchored_reader_highlight() -> Result<()> {
+        let library = tempdir().map_err(|error| Error::io("library", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let filename = "Ada - 1843 - Notes.pdf";
+        let fixture = library.path().join(filename);
+        tokio::fs::write(&fixture, b"discovered without parsing")
+            .await
+            .map_err(|error| Error::io(&fixture, error))?;
+        let state = AppState::new(library.path(), data.path()).await?;
+        let id = PaperId::from_relative_path(Path::new(filename));
+        let rect = TextRect {
+            x_min: 10.0,
+            y_min: 20.0,
+            x_max: 90.0,
+            y_max: 30.0,
+        };
+        let sentence_id = "p0001-s00001".to_owned();
+        state
+            .store
+            .save_extraction(
+                &id,
+                &ExtractedPaper {
+                    metadata: PaperMetadata {
+                        title: "Notes".to_owned(),
+                        ..PaperMetadata::default()
+                    },
+                    pages: vec![ExtractedPage {
+                        number: 1,
+                        text: "A grounded sentence.".to_owned(),
+                    }],
+                    layout: DocumentLayout {
+                        schema_version: 1,
+                        pages: vec![LayoutPage {
+                            number: 1,
+                            width: 200.0,
+                            height: 300.0,
+                            tokens: vec![LayoutToken {
+                                index: 0,
+                                text: "A grounded sentence.".to_owned(),
+                                line: 0,
+                                rects: vec![rect],
+                            }],
+                            sentences: vec![LayoutSentence {
+                                id: sentence_id.clone(),
+                                page: 1,
+                                start_token: 0,
+                                end_token: 0,
+                                text: "A grounded sentence.".to_owned(),
+                                rects: vec![rect],
+                            }],
+                        }],
+                    },
+                },
+            )
+            .await?;
+
+        let highlight = state
+            .create_highlight(
+                &id,
+                &CreateHighlightRequest {
+                    start_sentence_id: sentence_id,
+                    end_sentence_id: None,
+                    kind: HighlightKind::Note,
+                    note: "Reader note".to_owned(),
+                },
+            )
+            .await?;
+        assert!(matches!(highlight.origin, HighlightOrigin::User));
+        assert_eq!(state.store.load_highlights(&id).await?.len(), 1);
+        let jsonl = tokio::fs::read_to_string(state.store.paper_dir(&id).join("highlights.jsonl"))
+            .await
+            .map_err(|error| Error::io("highlights.jsonl", error))?;
+        assert_eq!(jsonl.lines().count(), 1);
+        assert!(jsonl.contains(r#""type":"user""#));
+        let markdown = tokio::fs::read_to_string(state.store.paper_dir(&id).join("highlights.md"))
+            .await
+            .map_err(|error| Error::io("highlights.md", error))?;
+        assert!(markdown.contains("Owner: Reader"));
+        state.delete_highlight(&id, &highlight.id).await?;
+        assert!(state.store.load_highlights(&id).await?.is_empty());
         Ok(())
     }
 }

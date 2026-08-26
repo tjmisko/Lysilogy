@@ -3,6 +3,9 @@ import type {
   Clarification,
   LibraryResponse,
   PaperOverview,
+  Highlight,
+  HighlightKind,
+  PaperMap,
   PaperView,
 } from "../types";
 
@@ -50,6 +53,8 @@ export const api = {
   scan: (): Promise<LibraryResponse> =>
     request("/api/library/scan", { method: "POST" }),
   paper: (id: string): Promise<PaperView> => request(`/api/papers/${id}`),
+  paperMap: (id: string, signal?: AbortSignal): Promise<PaperMap> =>
+    request(`/api/papers/${id}/map`, { signal }),
   analyze: (
     id: string,
     provider: AnalysisProvider,
@@ -76,6 +81,29 @@ export const api = {
       }),
     }),
   source: (id: string): string => `/api/papers/${id}/source`,
+  createHighlight: (
+    id: string,
+    startSentenceId: string,
+    endSentenceId: string | null = null,
+    kind: HighlightKind = "note",
+    note = "",
+  ): Promise<Highlight> =>
+    request(`/api/papers/${id}/highlights`, {
+      method: "POST",
+      body: JSON.stringify({
+        start_sentence_id: startSentenceId,
+        end_sentence_id: endSentenceId,
+        kind,
+        note,
+      }),
+    }),
+  deleteHighlight: async (id: string, highlightId: string): Promise<void> => {
+    const response = await fetch(
+      `/api/papers/${id}/highlights/${encodeURIComponent(highlightId)}`,
+      { method: "DELETE", headers: { Accept: "application/json" } },
+    );
+    if (!response.ok) throw await apiError(response);
+  },
   markdown: async (id: string, signal?: AbortSignal): Promise<string> => {
     const response = await fetch(`/api/papers/${id}/markdown`, {
       headers: { Accept: "text/markdown" },

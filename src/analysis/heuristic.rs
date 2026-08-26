@@ -8,7 +8,8 @@ use crate::domain::{
 };
 
 use super::{
-    AnalysisDraft, SectionDraft, compact_whitespace, fallback_claim, fallback_quote, slugify,
+    AnalysisDraft, SectionDraft, SourceSpanDraft, compact_whitespace, fallback_claim,
+    fallback_quote, slugify,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -47,7 +48,7 @@ impl HeuristicAnalyzer {
             let kind = classify_kind(&title, &body);
             let family = family_for_kind(kind);
             let sentences = sentences(&body);
-            let summary = summarize(&sentences, 2, 280);
+            let summary = summarize_or_fallback(&sentences, &body);
             let digest = digest(&title, &sentences);
             let quote = choose_quote(&raw, &sentences);
             let length = body.chars().count();
@@ -65,6 +66,7 @@ impl HeuristicAnalyzer {
                 },
                 summary,
                 digest,
+                source_span: source_span(&raw),
                 key_quotes: quote.into_iter().collect(),
                 related_terms: detected_term_names(&body),
                 tile_width: tile_width(length),
@@ -245,6 +247,28 @@ fn raw_chunk(paragraphs: Vec<(u32, String)>, index: usize) -> RawSection {
         last_page,
         paragraphs,
     }
+}
+
+fn source_span(raw: &RawSection) -> Option<SourceSpanDraft> {
+    let (start_page, start_text) = raw.paragraphs.iter().find_map(|(page, paragraph)| {
+        sentences(paragraph)
+            .into_iter()
+            .find(|sentence| meaningful_sentence(sentence))
+            .map(|sentence| (*page, sentence))
+    })?;
+    let (end_page, end_text) = raw.paragraphs.iter().rev().find_map(|(page, paragraph)| {
+        sentences(paragraph)
+            .into_iter()
+            .rev()
+            .find(|sentence| meaningful_sentence(sentence))
+            .map(|sentence| (*page, sentence))
+    })?;
+    Some(SourceSpanDraft {
+        start_text,
+        start_page,
+        end_text,
+        end_page,
+    })
 }
 
 fn looks_like_heading(paragraph: &str) -> bool {
@@ -468,6 +492,15 @@ fn summarize(sentences: &[String], count: usize, maximum: usize) -> String {
         .collect::<Vec<_>>()
         .join(" ");
     shorten(&joined, maximum)
+}
+
+fn summarize_or_fallback(sentences: &[String], body: &str) -> String {
+    let summary = summarize(sentences, 2, 280);
+    if summary.is_empty() {
+        shorten(&compact_whitespace(body), 280)
+    } else {
+        summary
+    }
 }
 
 fn digest(title: &str, sentences: &[String]) -> String {
@@ -859,6 +892,7 @@ fn empty_section(paper: &ExtractedPaper) -> SectionDraft {
         },
         summary: "Text was extracted, but its structure requires manual review.".to_owned(),
         digest: "Open the PDF alongside this view to inspect the source.".to_owned(),
+        source_span: None,
         key_quotes: Vec::new(),
         related_terms: Vec::new(),
         tile_width: 2,
@@ -868,7 +902,7 @@ fn empty_section(paper: &ExtractedPaper) -> SectionDraft {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::{ExtractedPage, PaperMetadata};
+    use crate::domain::{DocumentLayout, ExtractedPage, PaperMetadata};
 
     use super::*;
 
@@ -886,6 +920,7 @@ mod tests {
                     text: paragraph.repeat(12),
                 })
                 .collect(),
+            layout: DocumentLayout::default(),
         };
         let analysis = HeuristicAnalyzer::analyze(&paper);
         assert!(analysis.sections.len() >= 3);

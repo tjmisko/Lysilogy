@@ -41,6 +41,74 @@ const unmappedPaper = {
   analyzed_at: null,
   one_line_summary: null,
 };
+const smokeSentence = (page, index, text, y, xMin = 55, xMax = 555) => ({
+  id: `p${String(page).padStart(4, "0")}-s${String(index).padStart(5, "0")}`,
+  page,
+  start_token: index - 1,
+  end_token: index - 1,
+  text,
+  rects: [{ x_min: xMin, y_min: y, x_max: xMax, y_max: y + 13 }],
+});
+const layoutPages = Array.from({ length: 4 }, (_, pageIndex) => {
+  const number = pageIndex + 1;
+  const sentences = number === 1
+    ? [
+        smokeSentence(number, 1, "First grounded sentence at the end of the left column.", 650, 55, 280),
+        smokeSentence(number, 2, "Second grounded sentence at the top of the right column.", 110, 330, 555),
+      ]
+    : [
+        smokeSentence(number, 1, `First grounded sentence on PDF page ${number}.`, 130),
+        smokeSentence(number, 2, `Second grounded sentence on PDF page ${number}.`, 154),
+      ];
+  return {
+    number,
+    width: 612,
+    height: 792,
+    tokens: sentences.map((sentence, index) => ({
+      index,
+      text: sentence.text,
+      line: index,
+      rects: sentence.rects,
+    })),
+    sentences,
+  };
+});
+const aiAnchor = {
+  page: 1,
+  start_token: 0,
+  end_token: 0,
+  sentence_ids: [layoutPages[0].sentences[0].id],
+  rects: layoutPages[0].sentences[0].rects,
+  exact_text: layoutPages[0].sentences[0].text,
+};
+if (analysis.sections[0]?.key_quotes[0] !== undefined) {
+  analysis.sections[0].key_quotes[0].anchor = aiAnchor;
+  analysis.sections[0].key_quotes[0].validation = "exact";
+  analysis.sections[0].source_span = {
+    start: aiAnchor,
+    end: {
+      page: 1,
+      start_token: 1,
+      end_token: 1,
+      sentence_ids: [layoutPages[0].sentences[1].id],
+      rects: layoutPages[0].sentences[1].rects,
+      exact_text: layoutPages[0].sentences[1].text,
+    },
+  };
+}
+let highlights = [{
+  id: "ai-smoke-0",
+  origin: { type: "ai", provider: "heuristic", section_id: analysis.sections[0].id, quote_index: 0 },
+  kind: "evidence",
+  anchor: aiAnchor,
+  text: aiAnchor.exact_text,
+  note: "Smoke-test evidence anchor",
+  created_at: analysis.generated_at,
+}];
+const paperMap = {
+  layout: { schema_version: 1, pages: layoutPages },
+  highlights,
+};
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -63,6 +131,38 @@ try {
       await route.fulfill({ json: { name: "Articles", papers: [paper, unmappedPaper] } });
     } else if (url.pathname === `/api/papers/${paperId}`) {
       await route.fulfill({ json: { paper, analysis } });
+    } else if (url.pathname === `/api/papers/${paperId}/map`) {
+      await route.fulfill({ json: paperMap });
+    } else if (url.pathname === `/api/papers/${paperId}/highlights` && request.method() === "POST") {
+      const payload = request.postDataJSON();
+      const start = layoutPages.flatMap((entry) => entry.sentences)
+        .find((sentence) => sentence.id === payload.start_sentence_id);
+      const end = layoutPages.flatMap((entry) => entry.sentences)
+        .find((sentence) => sentence.id === (payload.end_sentence_id ?? payload.start_sentence_id));
+      const highlight = {
+        id: "user-smoke-0",
+        origin: { type: "user" },
+        kind: payload.kind,
+        anchor: {
+          page: start.page,
+          start_token: Math.min(start.start_token, end.start_token),
+          end_token: Math.max(start.end_token, end.end_token),
+          sentence_ids: [start.id, end.id],
+          rects: [...start.rects, ...end.rects],
+          exact_text: `${start.text} ${end.text}`,
+        },
+        text: `${start.text} ${end.text}`,
+        note: payload.note,
+        created_at: new Date().toISOString(),
+      };
+      highlights = [...highlights, highlight];
+      paperMap.highlights = highlights;
+      await route.fulfill({ status: 201, json: highlight });
+    } else if (url.pathname.startsWith(`/api/papers/${paperId}/highlights/`) && request.method() === "DELETE") {
+      const id = decodeURIComponent(url.pathname.split("/").at(-1));
+      highlights = highlights.filter((highlight) => highlight.id !== id);
+      paperMap.highlights = highlights;
+      await route.fulfill({ status: 204, body: "" });
     } else if (url.pathname === `/api/papers/${paperId}/clarify`) {
       await route.fulfill({
         json: {
@@ -100,6 +200,30 @@ try {
   await page.locator(".section-tile").first().waitFor();
   const tiles = await page.locator(".section-tile").count();
   assert(tiles >= 5, `expected at least 5 atlas tiles, found ${tiles}`);
+  await page.locator(".source-page").first().waitFor();
+  await page.locator(".source-page").first().scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => {
+    const canvas = document.querySelector(".source-page-canvas canvas");
+    return canvas instanceof HTMLCanvasElement && canvas.width > 0;
+  });
+  assert((await page.locator(".highlight-rect.origin-ai").count()) > 0, "AI prehighlight was not rendered");
+  assert((await page.locator(".section-regions > .is-verified").count()) >= 2, "multi-column source span was not split into aligned blocks");
+  await page.keyboard.press("Shift+H");
+  assert((await page.locator(".highlight-rect.origin-ai").count()) === 0, "AI prehighlight toggle did not hide evidence");
+  await page.keyboard.press("Shift+H");
+  await page.keyboard.press("Shift+I");
+  assert(!(await page.locator(".source-page-canvas canvas").first().evaluate((canvas) => canvas.classList.contains("dark-ink"))), "capital I did not toggle atlas PDF inversion");
+  await page.keyboard.press("Shift+I");
+  await page.keyboard.press("v");
+  await page.locator(".sentence-layer").first().waitFor();
+  await page.waitForFunction(() => document.activeElement?.matches(".sentence-layer > button") === true);
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Space");
+  await page.locator(".highlight-rect.origin-user").first().waitFor();
+  await page.keyboard.press("Shift+U");
+  assert((await page.locator(".highlight-rect.origin-user").count()) === 0, "reader highlight toggle did not hide marks");
+  await page.keyboard.press("Shift+U");
+  await page.keyboard.press("Escape");
   await page.screenshot({ path: screenshot, fullPage: true });
 
   assert((await page.locator(".paper-list-item").count()) === 2, "library fixture did not load");
@@ -173,7 +297,7 @@ try {
   await page.keyboard.press("Escape");
   await page.locator(".help-card").waitFor({ state: "detached" });
 
-  console.log(`visual smoke passed: ${tiles} tiles, Markdown, mapped filter, F1/F10, PDF, selection, Gloss, and mobile keys; screenshot ${screenshot}`);
+  console.log(`visual smoke passed: ${tiles} tiles, aligned source pages, AI/user highlights, arrows, Markdown, mapped filter, F1/F10, PDF, selection, Gloss, and mobile keys; screenshot ${screenshot}`);
 } finally {
   await browser.close();
 }

@@ -14,7 +14,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["title", "kind", "family", "pages", "summary", "digest", "key_quotes", "related_terms", "tile_width", "tile_height"],
+        "required": ["title", "kind", "family", "pages", "summary", "digest", "source_span", "key_quotes", "related_terms", "tile_width", "tile_height"],
         "properties": {
           "title": { "type": "string" },
           "kind": { "enum": ["abstract", "background", "research_question", "theory", "methods", "data", "results", "discussion", "limitations", "conclusion", "references", "appendix", "other"] },
@@ -27,6 +27,17 @@
           },
           "summary": { "type": "string" },
           "digest": { "type": "string" },
+          "source_span": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["start_text", "start_page", "end_text", "end_page"],
+            "properties": {
+              "start_text": { "type": "string" },
+              "start_page": { "type": "integer", "minimum": 1 },
+              "end_text": { "type": "string" },
+              "end_page": { "type": "integer", "minimum": 1 }
+            }
+          },
           "key_quotes": {
             "type": "array",
             "maxItems": 4,

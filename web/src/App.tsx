@@ -14,7 +14,10 @@ import { api } from "./lib/api";
 import type {
   AnalysisProvider,
   Clarification,
+  Highlight,
+  LayoutSentence,
   LibraryResponse,
+  PaperMap,
   PaperOverview,
   PaperSection,
   PaperView,
@@ -83,6 +86,12 @@ export function App() {
   const [pdfPages, setPdfPages] = useState(1);
   const [pdfZoom, setPdfZoom] = useState(1);
   const [darkInk, setDarkInk] = useState(true);
+  const [paperMap, setPaperMap] = useState<PaperMap | null>(null);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [showAiHighlights, setShowAiHighlights] = useState(true);
+  const [showUserHighlights, setShowUserHighlights] = useState(true);
+  const [markMode, setMarkMode] = useState(false);
+  const [clarifySeed, setClarifySeed] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -181,6 +190,10 @@ export function App() {
       }
       setActiveSection(0);
       setPanel(null);
+      setClarifySeed("");
+      setPaperMap(null);
+      setMapLoading(false);
+      setMarkMode(false);
       setPdfPage(1);
       setSelectedId(id);
       setPaperView(null);
@@ -218,6 +231,7 @@ export function App() {
 
   const openSection = useCallback((_section?: PaperSection, index?: number): void => {
     if (index !== undefined) setActiveSection(index);
+    setClarifySeed("");
     setPanel("digest");
   }, []);
 
@@ -283,6 +297,9 @@ export function App() {
     onPrevious: previous,
     onNext: next,
     onInvert: () => setDarkInk((value) => !value),
+    onToggleAiHighlights: () => setShowAiHighlights((value) => !value),
+    onToggleUserHighlights: () => setShowUserHighlights((value) => !value),
+    onToggleMarkMode: () => setMarkMode((value) => !value),
     onZoom: (delta) => setPdfZoom((value) => Math.max(0.5, Math.min(2.5, value + delta))),
     onScroll: scrollMarkdown,
     onScrollTo: scrollMarkdownTo,
@@ -295,6 +312,77 @@ export function App() {
   }, [notice]);
 
   const relatedClaims = useMemo(() => paperView?.analysis?.claims ?? [], [paperView]);
+  const hasAnalysis = paperView?.analysis != null;
+  const analysisGeneratedAt = paperView?.analysis?.generated_at ?? null;
+
+  useEffect(() => {
+    if (selectedId === null || !hasAnalysis) return;
+    const controller = new AbortController();
+    window.queueMicrotask(() => {
+      if (!controller.signal.aborted) setMapLoading(true);
+    });
+    void api.paperMap(selectedId, controller.signal)
+      .then((next) => {
+        setPaperMap(next);
+      })
+      .catch((reason: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(reason instanceof Error ? reason.message : "Could not align source pages");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setMapLoading(false);
+      });
+    return () => controller.abort();
+  }, [analysisGeneratedAt, hasAnalysis, selectedId]);
+
+  const toggleHighlight = useCallback((start: LayoutSentence, end?: LayoutSentence): void => {
+    if (selectedId === null || paperMap === null) return;
+    const last = end ?? start;
+    const startToken = Math.min(start.start_token, last.start_token);
+    const endToken = Math.max(start.end_token, last.end_token);
+    const existing = paperMap.highlights.find((highlight): highlight is Highlight =>
+      highlight.origin.type === "user"
+        && highlight.anchor.page === start.page
+        && highlight.anchor.start_token === startToken
+        && highlight.anchor.end_token === endToken,
+    );
+    if (existing !== undefined) {
+      void api.deleteHighlight(selectedId, existing.id)
+        .then(() => {
+          setPaperMap((current) => current === null ? null : {
+            ...current,
+            highlights: current.highlights.filter((highlight) => highlight.id !== existing.id),
+          });
+          setNotice("Reader highlight removed from highlights.jsonl.");
+        })
+        .catch((reason: unknown) => {
+          setError(reason instanceof Error ? reason.message : "Could not remove highlight");
+        });
+      return;
+    }
+    void api.createHighlight(selectedId, start.id, end?.id ?? null)
+      .then((highlight) => {
+        setPaperMap((current) => current === null ? null : {
+          ...current,
+          highlights: [...current.highlights, highlight],
+        });
+        setNotice("Reader highlight saved to highlights.jsonl.");
+      })
+      .catch((reason: unknown) => {
+        setError(reason instanceof Error ? reason.message : "Could not save highlight");
+      });
+  }, [paperMap, selectedId]);
+
+  const clarifySentence = useCallback((text: string, page: number): void => {
+    const index = sections.findIndex(
+      (section) => page >= section.pages.start && page <= section.pages.end,
+    );
+    if (index >= 0) setActiveSection(index);
+    setClarifySeed(text);
+    setMarkMode(false);
+    setPanel("digest");
+  }, [sections]);
 
   const clarify = useCallback(
     async (
@@ -479,6 +567,20 @@ export function App() {
                     activeIndex={activeSection}
                     onActiveIndex={setActiveSection}
                     onOpen={openSection}
+                    sourceUrl={api.source(selectedId ?? currentPaper.id)}
+                    paperTitle={currentPaper.metadata.title}
+                    paperMap={paperMap}
+                    mapLoading={mapLoading}
+                    darkInk={darkInk}
+                    showAi={showAiHighlights}
+                    showUser={showUserHighlights}
+                    markMode={markMode}
+                    onShowAi={() => setShowAiHighlights((value) => !value)}
+                    onShowUser={() => setShowUserHighlights((value) => !value)}
+                    onMarkMode={() => setMarkMode((value) => !value)}
+                    onOpenPage={openPage}
+                    onToggleHighlight={toggleHighlight}
+                    onClarifySentence={clarifySentence}
                   />
                 )
               ) : selectedId === null ? null : view === "markdown" ? (
@@ -511,10 +613,14 @@ export function App() {
 
       {panel === "digest" && selectedSection !== null && (
         <DigestPanel
-          key={selectedSection.id}
+          key={`${selectedSection.id}:${clarifySeed}`}
           section={selectedSection}
           claims={relatedClaims}
-          onClose={() => setPanel(null)}
+          initialSelection={clarifySeed}
+          onClose={() => {
+            setClarifySeed("");
+            setPanel(null);
+          }}
           onGloss={() => setPanel("gloss")}
           onOpenPage={openPage}
           onClarify={clarify}

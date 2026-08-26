@@ -34,6 +34,8 @@ pub enum Error {
     ProgramUnavailable(String),
     #[error("PDF extraction produced no readable text for {0}")]
     EmptyExtraction(PathBuf),
+    #[error("PDF coordinate extraction was invalid: {0}")]
+    InvalidLayout(String),
     #[error("structured analysis was invalid: {0}")]
     InvalidAnalysis(String),
     #[error("JSON error: {0}")]
@@ -70,6 +72,7 @@ impl IntoResponse for Error {
             Self::Io { .. }
             | Self::CommandFailed { .. }
             | Self::EmptyExtraction(_)
+            | Self::InvalidLayout(_)
             | Self::Json(_)
             | Self::Task(_) => (StatusCode::INTERNAL_SERVER_ERROR, "internal_error"),
         };

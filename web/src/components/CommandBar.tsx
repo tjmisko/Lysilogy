@@ -29,8 +29,11 @@ export function CommandBar({ view, panelOpen }: CommandBarProps) {
             ["F10", "switch article"],
           ]
       : [
-          ["h j k l", "move"],
+          ["h j k l / arrows", "move"],
           ["↵", "digest"],
+          ["H", "AI evidence"],
+          ["U", "my marks"],
+          ["v", "mark source"],
           ["g", "gloss"],
           ["m", "Markdown"],
           ["p", "PDF"],

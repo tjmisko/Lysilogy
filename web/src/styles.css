@@ -525,6 +525,243 @@ code {
   font: 10px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.source-map-loading {
+  display: flex;
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 36px;
+  border: 1px solid var(--line);
+  color: var(--ink-faint);
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.source-map {
+  margin-top: 34px;
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+}
+
+.source-map-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.source-map-header h2 {
+  margin: 5px 0 0;
+  font: 500 clamp(20px, 2vw, 29px)/1.1 Georgia, serif;
+}
+
+.source-map-header p {
+  max-width: 750px;
+  margin: 8px 0 0;
+  color: var(--ink-faint);
+  font: 10px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.source-map-controls {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 5px;
+}
+
+.source-map-controls button {
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel);
+  color: var(--ink-faint);
+  font: 9px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.source-map-controls button.is-active {
+  border-color: color-mix(in srgb, var(--signal) 60%, var(--line));
+  color: var(--signal);
+}
+
+.source-map-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 15px 0 9px;
+  color: var(--ink-faint);
+  font: 9px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.source-map-status strong {
+  color: var(--signal);
+  font-weight: 550;
+}
+
+.source-pages {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 8px 8px 20px;
+  border: 1px solid var(--line);
+  background: #080909;
+  scroll-snap-type: x proximity;
+  scrollbar-color: var(--line-bright) transparent;
+}
+
+.source-page {
+  position: relative;
+  isolation: isolate;
+  flex: 0 0 clamp(255px, 26vw, 350px);
+  overflow: hidden;
+  border: 1px solid #626660;
+  background: #e9e8df;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  scroll-snap-align: start;
+}
+
+.source-page > .loader {
+  position: absolute;
+  top: calc(50% - 8px);
+  left: calc(50% - 8px);
+}
+
+.source-page-canvas,
+.source-page-canvas canvas,
+.section-regions,
+.highlight-layer,
+.sentence-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.source-page-canvas canvas {
+  display: block;
+  transition: filter 180ms ease;
+}
+
+.source-page-canvas canvas.dark-ink {
+  filter: invert(0.91) hue-rotate(180deg) brightness(0.82) contrast(1.08) sepia(0.08);
+}
+
+.section-regions {
+  z-index: 2;
+}
+
+.section-regions > button {
+  position: absolute;
+  left: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 1.5px solid color-mix(in srgb, var(--family) 80%, #111);
+  background: color-mix(in srgb, var(--family) 18%, transparent);
+  color: white;
+  text-align: left;
+}
+
+.section-regions > button.is-inferred {
+  border-style: dashed;
+}
+
+.section-regions > button.is-active,
+.section-regions > button:hover,
+.section-regions > button:focus-visible {
+  z-index: 2;
+  background: color-mix(in srgb, var(--family) 31%, transparent);
+  box-shadow: inset 0 0 0 1px var(--signal);
+}
+
+.section-regions > button > span {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  max-width: calc(100% - 8px);
+  overflow: hidden;
+  padding: 3px 5px;
+  border-left: 2px solid var(--family);
+  background: rgba(8, 10, 9, 0.84);
+  color: color-mix(in srgb, var(--family) 70%, white);
+  font: 650 8px/1.15 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.035em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.source-map.is-marking .section-regions {
+  pointer-events: none;
+}
+
+.highlight-layer {
+  z-index: 3;
+  pointer-events: none;
+}
+
+.highlight-rect {
+  position: absolute;
+  border-radius: 1px;
+  background: rgba(255, 218, 68, 0.46);
+  box-shadow: inset 0 -1px rgba(255, 225, 92, 0.9);
+  mix-blend-mode: multiply;
+}
+
+.highlight-rect.origin-user {
+  background: rgba(92, 229, 255, 0.47);
+  box-shadow: inset 0 -1px rgba(91, 235, 255, 0.95);
+}
+
+.highlight-rect.kind-thesis { background-color: rgba(255, 167, 68, 0.52); }
+.highlight-rect.kind-definition { background-color: rgba(188, 128, 255, 0.5); }
+.highlight-rect.kind-qualification { background-color: rgba(255, 112, 125, 0.48); }
+
+.sentence-layer {
+  z-index: 4;
+  pointer-events: none;
+}
+
+.sentence-layer > button {
+  position: absolute;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 1px;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.sentence-layer > button:hover {
+  border-color: rgba(216, 255, 99, 0.7);
+  background: rgba(216, 255, 99, 0.13);
+}
+
+.sentence-layer > button.is-active {
+  border-color: var(--signal);
+  background: rgba(216, 255, 99, 0.2);
+  box-shadow: 0 0 0 1px rgba(10, 12, 11, 0.8);
+}
+
+.sentence-layer > button.is-selected {
+  background: rgba(216, 255, 99, 0.3);
+}
+
+.sentence-layer > button.is-user-marked {
+  border-color: rgba(82, 223, 255, 0.8);
+  background: rgba(82, 223, 255, 0.24);
+}
+
+.source-page-number {
+  position: absolute;
+  z-index: 6;
+  right: 5px;
+  bottom: 5px;
+  padding: 4px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 2px;
+  background: rgba(7, 9, 8, 0.88);
+  color: var(--ink-soft);
+  font: 650 8px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 .command-bar {
   z-index: 30;
   display: flex;
@@ -1803,6 +2040,16 @@ code {
   .pdf-controls button span { display: none; }
   .pdf-viewport { padding: 14px; }
   .paper-switcher > footer span:first-child { display: none; }
+  .source-map-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .source-map-controls {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .source-map-controls button { flex: 0 0 auto; }
+  .source-page { flex-basis: min(78vw, 330px); }
 }
 
 @media (max-width: 500px) {
@@ -1852,6 +2099,7 @@ code {
   .markdown-document { font-size: 15px; }
   .switcher-backdrop { padding: max(10px, env(safe-area-inset-top)) 8px 8px; }
   .paper-switcher { max-height: calc(100vh - 18px); }
+  .source-map-status strong { flex-basis: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

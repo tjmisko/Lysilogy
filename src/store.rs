@@ -8,13 +8,16 @@ use tokio::fs;
 
 use crate::{
     Result,
-    domain::{ExtractedPage, ExtractedPaper, PaperAnalysis, PaperId, PaperMetadata},
+    domain::{
+        CitationStatus, DocumentLayout, ExtractedPage, ExtractedPaper, Highlight, HighlightOrigin,
+        PaperAnalysis, PaperId, PaperMetadata,
+    },
     error::Error,
     markdown,
 };
 
 static TEMP_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
-const EXTRACTION_SCHEMA_VERSION: u16 = 5;
+const EXTRACTION_SCHEMA_VERSION: u16 = 6;
 
 #[derive(Clone, Debug)]
 pub struct ArtifactStore {
@@ -57,7 +60,8 @@ impl ArtifactStore {
         let mut json = serde_json::to_vec_pretty(analysis)?;
         json.push(b'\n');
         write_atomic(&self.analysis_path(id), &json).await?;
-        write_atomic(&self.digest_path(id), render_digest(analysis).as_bytes()).await
+        write_atomic(&self.digest_path(id), render_digest(analysis).as_bytes()).await?;
+        self.sync_ai_highlights(id, analysis).await
     }
 
     pub async fn load_extraction(&self, id: &PaperId) -> Result<Option<ExtractedPaper>> {
@@ -87,9 +91,14 @@ impl ArtifactStore {
                 })
             })
             .collect();
+        let Some(layout) = read_json_if_present::<DocumentLayout>(&self.layout_path(id)).await?
+        else {
+            return Ok(None);
+        };
         Ok(Some(ExtractedPaper {
             metadata: manifest.metadata,
             pages,
+            layout,
         }))
     }
 
@@ -111,6 +120,9 @@ impl ArtifactStore {
             markdown::render_source(paper).as_bytes(),
         )
         .await?;
+        let mut layout = serde_json::to_vec_pretty(&paper.layout)?;
+        layout.push(b'\n');
+        write_atomic(&self.layout_path(id), &layout).await?;
 
         let manifest = ExtractionMetadata {
             schema_version: EXTRACTION_SCHEMA_VERSION,
@@ -139,6 +151,73 @@ impl ArtifactStore {
         Ok(markdown)
     }
 
+    pub async fn load_highlights(&self, id: &PaperId) -> Result<Vec<Highlight>> {
+        let path = self.highlights_path(id);
+        let contents = match fs::read_to_string(&path).await {
+            Ok(contents) => contents,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) => return Err(Error::io(path, error)),
+        };
+        contents
+            .lines()
+            .filter(|line| !line.trim().is_empty())
+            .map(serde_json::from_str)
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Error::from)
+    }
+
+    pub async fn save_highlights(&self, id: &PaperId, highlights: &[Highlight]) -> Result<()> {
+        let directory = self.paper_dir(id);
+        fs::create_dir_all(&directory)
+            .await
+            .map_err(|error| Error::io(&directory, error))?;
+        let mut ordered = highlights.to_vec();
+        ordered.sort_by(|left, right| left.id.cmp(&right.id));
+        let mut jsonl = String::new();
+        for highlight in &ordered {
+            jsonl.push_str(&serde_json::to_string(highlight)?);
+            jsonl.push('\n');
+        }
+        write_atomic(&self.highlights_path(id), jsonl.as_bytes()).await?;
+        write_atomic(
+            &self.highlights_markdown_path(id),
+            render_highlights(&ordered).as_bytes(),
+        )
+        .await
+    }
+
+    async fn sync_ai_highlights(&self, id: &PaperId, analysis: &PaperAnalysis) -> Result<()> {
+        let mut highlights = self.load_highlights(id).await?;
+        highlights.retain(|highlight| matches!(highlight.origin, HighlightOrigin::User));
+        for section in &analysis.sections {
+            for (index, quote) in section.key_quotes.iter().enumerate() {
+                if !matches!(
+                    quote.validation,
+                    CitationStatus::Exact | CitationStatus::Normalized
+                ) {
+                    continue;
+                }
+                let Some(anchor) = quote.anchor.clone() else {
+                    continue;
+                };
+                highlights.push(Highlight {
+                    id: format!("ai-{}-{index}", section.id),
+                    origin: HighlightOrigin::Ai {
+                        provider: analysis.provider,
+                        section_id: section.id.clone(),
+                        quote_index: u32::try_from(index).unwrap_or(u32::MAX),
+                    },
+                    kind: quote.significance.into(),
+                    anchor,
+                    text: quote.text.clone(),
+                    note: quote.explanation.clone(),
+                    created_at: analysis.generated_at,
+                });
+            }
+        }
+        self.save_highlights(id, &highlights).await
+    }
+
     #[must_use]
     pub fn paper_dir(&self, id: &PaperId) -> PathBuf {
         self.root.join("papers").join(id.as_str())
@@ -158,6 +237,18 @@ impl ArtifactStore {
 
     fn markdown_path(&self, id: &PaperId) -> PathBuf {
         self.paper_dir(id).join("source.md")
+    }
+
+    fn layout_path(&self, id: &PaperId) -> PathBuf {
+        self.paper_dir(id).join("layout.json")
+    }
+
+    fn highlights_path(&self, id: &PaperId) -> PathBuf {
+        self.paper_dir(id).join("highlights.jsonl")
+    }
+
+    fn highlights_markdown_path(&self, id: &PaperId) -> PathBuf {
+        self.paper_dir(id).join("highlights.md")
     }
 
     fn extraction_metadata_path(&self, id: &PaperId) -> PathBuf {
@@ -226,6 +317,40 @@ fn render_digest(analysis: &PaperAnalysis) -> String {
     markdown
 }
 
+fn render_highlights(highlights: &[Highlight]) -> String {
+    use std::fmt::Write;
+
+    let mut markdown = String::from(
+        "# Highlights\n\n<!-- Generated view. highlights.jsonl is the canonical, line-oriented plaintext record. -->\n\n",
+    );
+    for highlight in highlights {
+        let owner = match &highlight.origin {
+            HighlightOrigin::Ai {
+                provider,
+                section_id,
+                ..
+            } => format!("AI ({provider}, section `{section_id}`)"),
+            HighlightOrigin::User => "Reader".to_owned(),
+        };
+        let _ = write!(
+            markdown,
+            "## {} · p. {}\n\n> {}\n\n- Owner: {}\n- Kind: `{:?}`\n- Tokens: `{}`–`{}`\n",
+            highlight.id,
+            highlight.anchor.page,
+            highlight.text.replace('\n', " "),
+            owner,
+            highlight.kind,
+            highlight.anchor.start_token,
+            highlight.anchor.end_token,
+        );
+        if !highlight.note.trim().is_empty() {
+            let _ = writeln!(markdown, "- Note: {}", highlight.note.replace('\n', " "));
+        }
+        markdown.push('\n');
+    }
+    markdown
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
@@ -255,6 +380,10 @@ mod tests {
                     text: "Second page".to_owned(),
                 },
             ],
+            layout: DocumentLayout {
+                schema_version: 1,
+                pages: Vec::new(),
+            },
         };
         store.save_extraction(&id, &paper).await?;
         let loaded = store

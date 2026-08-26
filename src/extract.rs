@@ -4,8 +4,9 @@ use tokio::process::Command;
 
 use crate::{
     Result,
-    domain::{ExtractedPage, ExtractedPaper, PaperMetadata},
+    domain::{DocumentLayout, ExtractedPage, ExtractedPaper, PaperMetadata},
     error::Error,
+    layout::parse_bbox_layout,
 };
 
 const DEFAULT_MAX_EXTRACTED_BYTES: usize = 64 * 1024 * 1024;
@@ -43,8 +44,10 @@ impl PdfExtractor {
         fallback_metadata: &PaperMetadata,
     ) -> Result<ExtractedPaper> {
         let text_future = self.extract_text(source);
+        let layout_future = self.extract_layout(source);
         let metadata_future = self.extract_metadata(source);
-        let (text, extracted_metadata) = tokio::try_join!(text_future, metadata_future)?;
+        let (text, layout, extracted_metadata) =
+            tokio::try_join!(text_future, layout_future, metadata_future)?;
 
         if text.len() > self.max_extracted_bytes {
             return Err(Error::InvalidRequest(format!(
@@ -60,8 +63,15 @@ impl PdfExtractor {
         }
         let mut metadata = fallback_metadata.clone();
         merge_pdf_metadata(&mut metadata, &extracted_metadata);
-        metadata.page_count = u32::try_from(pages.len()).ok().or(metadata.page_count);
-        Ok(ExtractedPaper { metadata, pages })
+        metadata.page_count = u32::try_from(layout.pages.len())
+            .ok()
+            .or_else(|| u32::try_from(pages.len()).ok())
+            .or(metadata.page_count);
+        Ok(ExtractedPaper {
+            metadata,
+            pages,
+            layout,
+        })
     }
 
     async fn extract_text(&self, source: &Path) -> Result<String> {
@@ -81,6 +91,26 @@ impl PdfExtractor {
             .replace('\0', "")
             .replace("\r\n", "\n")
             .replace('\r', "\n"))
+    }
+
+    async fn extract_layout(&self, source: &Path) -> Result<DocumentLayout> {
+        let output = Command::new(&self.pdftotext)
+            .args(["-bbox-layout", "-enc", "UTF-8"])
+            .arg(source)
+            .arg("-")
+            .kill_on_drop(true)
+            .output()
+            .await
+            .map_err(|error| command_io_error(&self.pdftotext, error))?;
+        ensure_success(&self.pdftotext, &output)?;
+        if output.stdout.len() > self.max_extracted_bytes {
+            return Err(Error::InvalidRequest(format!(
+                "PDF coordinate text exceeds {} MiB safety limit for {}",
+                self.max_extracted_bytes / (1024 * 1024),
+                source.display()
+            )));
+        }
+        parse_bbox_layout(&String::from_utf8_lossy(&output.stdout))
     }
 
     async fn extract_metadata(&self, source: &Path) -> Result<PaperMetadata> {

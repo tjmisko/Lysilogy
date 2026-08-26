@@ -6,8 +6,8 @@
 PDF vault
    │ recursive, read-only discovery
    ▼
-Paper catalog ──► Poppler extraction ──► source.txt + source.md + extraction.json
-                                            │
+Paper catalog ──► Poppler raw + bbox extraction ──► source.txt + source.md + layout.json
+                                                        │
                          ┌──────────────────┼──────────────────┐
                          ▼                  ▼                  ▼
                     codex exec          claude -p        heuristic
@@ -17,7 +17,7 @@ Paper catalog ──► Poppler extraction ──► source.txt + source.md + ex
                                             │ normalize IDs,
                                             │ pages, dimensions
                                             ▼
-                                  analysis.json + digest.md
+                    analysis.json + digest.md + highlights.jsonl
                                             │
                                             ▼
                                      Axum JSON API
@@ -37,9 +37,14 @@ The public model lives in `src/domain.rs`. Its enums keep states and semantic di
 - `AnalysisProvider` makes provenance visible throughout the API and interface.
 - `SectionKind` describes conventional paper structure; `SectionFamily` groups those kinds into the atlas color language.
 - `QuoteSignificance` and `EvidenceStrength` prevent key quotations and claims from becoming untyped strings.
+- `DocumentLayout`, `LayoutToken`, and `LayoutSentence` preserve PDF-point geometry with stable page-local coordinates.
+- `CitationStatus` distinguishes exact, normalized, ambiguous, missing, and legacy-unverified evidence.
+- `Highlight` carries a typed AI/user origin, semantic kind, immutable text anchor, PDF rectangles, note, and timestamp.
 - `PageSpan::normalized` and analysis normalization keep model output inside the actual document.
 
-The local CLI produces an internal `AnalysisDraft`, not a persisted `PaperAnalysis`. Normalization supplies stable section IDs, repairs cross-references, clamps tile sizes, validates page numbers, and records provider/time metadata before anything is stored.
+The local CLI produces an internal `AnalysisDraft`, not a persisted `PaperAnalysis`. Normalization supplies stable section IDs, repairs cross-references, clamps tile sizes, validates page numbers, resolves exact section start/end excerpts, and records provider/time metadata before anything is stored.
+
+Poppler runs twice: raw mode supplies authored reading order for Markdown and model input, while bbox-layout mode supplies exact page dimensions and word rectangles. Bbox words are repaired into stable logical tokens, including common split-letter and line-hyphen artifacts. A deterministic punctuation-aware pass assigns page-local sentence IDs. Analyzer quotations are canonicalized only for matching (case, punctuation, whitespace, and common ligatures); they become trusted anchors only when a unique complete-token match exists. Missing or ambiguous citations remain visible in the digest but never become AI prehighlights.
 
 ## Analysis boundary
 
@@ -76,9 +81,11 @@ Expected faults have dedicated errors: missing PDF tools, unreadable vaults, emp
 
 The atlas is a CSS grid whose tile spans come from analysis rather than PDF page dimensions. That is the core product distinction: area expresses conceptual weight, while color expresses argumentative role.
 
-Focus is the single source of truth for mouse, touch, and keyboard navigation. The digest exposes real selectable DOM text. Keyboard visual mode stores an anchor and a moving character offset over that same text, so `v`, movement, `o`, `y`, and `c` parallel Vim without breaking native browser selection. `F1` owns the library rail, while `F10` opens a focused fuzzy switcher that searches titles, authors, and years.
+Focus is the single source of truth for mouse, touch, and keyboard navigation. Arrow keys mirror `h/j/k/l` in every spatial list. The digest exposes real selectable DOM text; its visual mode stores an anchor and a moving semantic-fragment cursor, so `v`, movement, `o`, `y`, and `c` parallel Vim without breaking native browser selection. The source map provides the same workflow over deterministic sentence segments: `Space` writes a same-page token range to `highlights.jsonl`, and `c` hands its exact text to the contextual clarifier. `F1` owns the library rail, while `F10` opens a focused fuzzy switcher that searches titles, authors, and years.
 
-PDF.js renders one page at a time. The default CSS filter produces light paper ink on a dark surface. `i` removes that filter, which is the reliable way to inspect figures, heatmaps, and photographs without color distortion.
+PDF.js renders a focused page in the reader and lazy page thumbnails in the atlas. Source overlays use the same PDF-point coordinate system and preserve each page's exact aspect ratio and boundary. Verified section spans are reconstructed from token-order runs, so multi-column sections split into separate aligned rectangles instead of assuming that vertical coordinates always increase. The default CSS filter produces light paper ink on a dark surface. Capital `I` toggles that filter everywhere, which is the reliable way to inspect figures, heatmaps, and photographs without color distortion.
+
+Highlights deliberately avoid a database. `highlights.jsonl` is canonical and atomically rewritten in stable ID order, one complete JSON object per line. Reader records survive reanalysis; AI records are regenerated from currently verified key quotes. `highlights.md` is a disposable human-readable projection. This gives tools and people a plain-text interface while retaining enough typed geometry for lossless rendering.
 
 ## Deliberate MVP boundaries
 

@@ -11,9 +11,10 @@ use crate::{
     domain::{
         AnalysisProvider, Claim, Clarification, EvidenceStrength, ExtractedPaper, GlossaryEntry,
         KeyQuote, PageSpan, PaperAnalysis, PaperSection, QuoteSignificance, SectionFamily,
-        SectionKind,
+        SectionKind, SectionSourceSpan,
     },
     error::Error,
+    layout::verify_quote,
 };
 
 pub use heuristic::HeuristicAnalyzer;
@@ -127,6 +128,8 @@ pub(crate) struct SectionDraft {
     pub summary: String,
     pub digest: String,
     #[serde(default)]
+    pub source_span: Option<SourceSpanDraft>,
+    #[serde(default)]
     pub key_quotes: Vec<KeyQuote>,
     #[serde(default)]
     pub related_terms: Vec<String>,
@@ -134,6 +137,14 @@ pub(crate) struct SectionDraft {
     pub tile_width: u8,
     #[serde(default = "one")]
     pub tile_height: u8,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub(crate) struct SourceSpanDraft {
+    pub start_text: String,
+    pub start_page: u32,
+    pub end_text: String,
+    pub end_page: u32,
 }
 
 const fn one() -> u8 {
@@ -178,6 +189,10 @@ fn normalize_analysis(
                 used_ids.insert(id.clone());
             }
             let pages = PageSpan::normalized(section.pages.start, section.pages.end, maximum_page);
+            let source_span = section
+                .source_span
+                .as_ref()
+                .and_then(|span| resolve_source_span(&paper.layout, pages, span));
             let key_quotes = section
                 .key_quotes
                 .into_iter()
@@ -198,6 +213,7 @@ fn normalize_analysis(
                 pages,
                 summary: clean_required("section summary", &section.summary)?,
                 digest: clean_required("section digest", &section.digest)?,
+                source_span,
                 key_quotes,
                 related_terms: clean_list(section.related_terms, 12),
                 tile_width: section.tile_width.clamp(1, 4),
@@ -227,8 +243,8 @@ fn normalize_analysis(
             .retain(|id| valid_ids.contains(id.as_str()));
     }
 
-    Ok(PaperAnalysis {
-        schema_version: 1,
+    let mut analysis = PaperAnalysis {
+        schema_version: 2,
         provider,
         generated_at: Utc::now(),
         thesis: draft.thesis,
@@ -239,7 +255,51 @@ fn normalize_analysis(
         glossary: deduplicate_glossary(draft.glossary),
         caveats: clean_list(draft.caveats, 12),
         reading_path: clean_list(draft.reading_path, 18),
-    })
+    };
+    validate_citations(&mut analysis, &paper.layout);
+    Ok(analysis)
+}
+
+fn resolve_source_span(
+    layout: &crate::domain::DocumentLayout,
+    pages: PageSpan,
+    span: &SourceSpanDraft,
+) -> Option<SectionSourceSpan> {
+    let start_page = span.start_page.clamp(pages.start, pages.end);
+    let end_page = span.end_page.clamp(start_page, pages.end);
+    let (start_status, start) = verify_quote(layout, &span.start_text, start_page);
+    let (end_status, end) = verify_quote(layout, &span.end_text, end_page);
+    if !matches!(
+        start_status,
+        crate::domain::CitationStatus::Exact | crate::domain::CitationStatus::Normalized
+    ) || !matches!(
+        end_status,
+        crate::domain::CitationStatus::Exact | crate::domain::CitationStatus::Normalized
+    ) {
+        return None;
+    }
+    let start = start?;
+    let end = end?;
+    let ordered =
+        start.page < end.page || (start.page == end.page && start.start_token <= end.start_token);
+    ordered.then_some(SectionSourceSpan { start, end })
+}
+
+/// Re-resolve every analyzer-supplied quote against deterministic PDF token
+/// coordinates. This also migrates analyses written before coordinate anchors
+/// became part of the schema.
+pub fn validate_citations(analysis: &mut PaperAnalysis, layout: &crate::domain::DocumentLayout) {
+    for section in &mut analysis.sections {
+        for quote in &mut section.key_quotes {
+            let (validation, anchor) = verify_quote(layout, &quote.text, quote.page);
+            if let Some(resolved) = &anchor {
+                quote.page = resolved.page;
+            }
+            quote.validation = validation;
+            quote.anchor = anchor;
+        }
+    }
+    analysis.schema_version = 2;
 }
 
 fn clean_required(field: &str, value: &str) -> Result<String> {
@@ -317,6 +377,8 @@ pub(crate) fn fallback_quote(text: String, page: u32) -> KeyQuote {
         explanation: "This sentence anchors the section's main move in the authors' own words."
             .to_owned(),
         significance: QuoteSignificance::TurningPoint,
+        anchor: None,
+        validation: crate::domain::CitationStatus::Unverified,
     }
 }
 

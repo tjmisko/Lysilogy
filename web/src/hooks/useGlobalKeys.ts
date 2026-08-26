@@ -19,6 +19,9 @@ type GlobalKeyOptions = {
   onPrevious: () => void;
   onNext: () => void;
   onInvert: () => void;
+  onToggleAiHighlights: () => void;
+  onToggleUserHighlights: () => void;
+  onToggleMarkMode: () => void;
   onZoom: (delta: number) => void;
   onScroll: (delta: number) => void;
   onScrollTo: (edge: "start" | "end") => void;
@@ -71,26 +74,36 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
         Math.max(0, Math.min(current.itemCount - 1, index));
       switch (event.key) {
         case "h":
+        case "ArrowLeft":
           if (current.view === "atlas") {
             event.preventDefault();
             current.onMove(clamp(current.activeIndex - 1));
+          } else if (current.view === "pdf") {
+            event.preventDefault();
+            current.onPrevious();
           }
           break;
         case "l":
+        case "ArrowRight":
           if (current.view === "atlas") {
             event.preventDefault();
             current.onMove(clamp(current.activeIndex + 1));
+          } else if (current.view === "pdf") {
+            event.preventDefault();
+            current.onNext();
           }
           break;
         case "j":
+        case "ArrowDown":
           event.preventDefault();
-          if (current.view === "markdown") current.onScroll(120);
-          else if (current.view === "atlas") current.onMove(clamp(current.activeIndex + columns));
+          if (current.view === "markdown" || current.view === "pdf") current.onScroll(120);
+          else current.onMove(clamp(current.activeIndex + columns));
           break;
         case "k":
+        case "ArrowUp":
           event.preventDefault();
-          if (current.view === "markdown") current.onScroll(-120);
-          else if (current.view === "atlas") current.onMove(clamp(current.activeIndex - columns));
+          if (current.view === "markdown" || current.view === "pdf") current.onScroll(-120);
+          else current.onMove(clamp(current.activeIndex - columns));
           break;
         case "G":
           event.preventDefault();
@@ -157,9 +170,25 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
           current.onNext();
           break;
         case "I":
-          if (current.view === "pdf") {
+          event.preventDefault();
+          current.onInvert();
+          break;
+        case "H":
+          if (current.view === "atlas") {
             event.preventDefault();
-            current.onInvert();
+            current.onToggleAiHighlights();
+          }
+          break;
+        case "U":
+          if (current.view === "atlas") {
+            event.preventDefault();
+            current.onToggleUserHighlights();
+          }
+          break;
+        case "v":
+          if (current.view === "atlas") {
+            event.preventDefault();
+            current.onToggleMarkMode();
           }
           break;
         case "=":
