@@ -124,6 +124,7 @@ export type PaperAnalysis = {
   generated_at: string;
   thesis: string;
   outsider_brief: string;
+  author_abstract?: string | null;
   prerequisites: string[];
   sections: PaperSection[];
   claims: Claim[];

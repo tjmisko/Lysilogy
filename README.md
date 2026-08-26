@@ -1,8 +1,8 @@
 # Lysilogos
 
-Lysilogos turns a vault of scientific PDFs into a keyboard-first visual atlas for readers who are intelligent outsiders to the field.
+Lysilogos turns a vault of scientific PDFs into a keyboard-first reading path for intelligent outsiders to the field.
 
-The main view maps a paper into conceptual tiles sized by argumentative weight, then lays the verified map directly over coordinate-aligned PDF pages. Focus or hover gives the short reading; opening a tile gives its contextual digest, key quotations, and page links. AI citations are prehighlighted only after deterministic text checks. Reader highlights use the same stable sentence/token anchors. A searchable **Gloss** explains technical language. A reconstructed Markdown tab provides a calm, selectable reading surface, while every PDF canvas defaults to dark rendering and can reveal figures in its original colors.
+The top bar deliberately increases detail in four steps: **Abstract** gives a generated one-sentence TL;DR, the authors' source-validated abstract, and a short contextual supplement; **Overview** maps the paper into conceptual tiles sized by argumentative weight and lays that map over coordinate-aligned PDF pages; **Glossary** teaches the load-bearing technical vocabulary to hold before reading; and **Text** provides both calm reconstructed Markdown and the source PDF. Opening an overview tile gives its contextual digest, key quotations, and page links. AI citations are prehighlighted only after deterministic text checks, and reader highlights use the same stable sentence/token anchors.
 
 The current demo has been exercised against the local `local-articles/Articles` corpus (118 PDFs) and includes a mapped copy of Dijkstra's “GOTO Statements Considered Harmful.”
 
@@ -89,9 +89,9 @@ Press `?` in the app for the complete, contextual key guide.
 | `g g` / `G` | First / last tile |
 | `Enter` or `o` | Open the focused section digest |
 | `d` | Toggle the digest |
-| `g` | Open Gloss after a short single-key delay |
-| `m` | Toggle atlas / reconstructed Markdown |
-| `p` | Toggle atlas / PDF |
+| `g` | Open the technical Glossary after a short single-key delay |
+| `m` | Toggle Overview / reconstructed Text |
+| `p` | Toggle Overview / source PDF |
 | `[` / `]` | Previous / next paper, or PDF page |
 | `/` | Search the active view |
 | `v` | Begin keyboard text selection in a digest, or enter sentence marking in the source map |
@@ -105,7 +105,7 @@ Press `?` in the app for the complete, contextual key guide.
 | `F1` | Toggle the library from anywhere |
 | `F10` | Open the fuzzy article switcher |
 | `f` | Toggle mapped-only filtering while the library is open |
-| `Esc` | Leave the current mode or close the top panel |
+| `Esc` | Return to Overview or close the top panel |
 
 Native pointer selection also works: select text in a digest, then choose **Clarify selection**. In the page map, `v` enters a coordinate-backed evidence cursor; a second `v` starts a same-page sentence range, movement extends it, `Space` stores it, and `c` sends the exact sentence text into clarification. Same-page ranges keep one compact, relocation-resistant token anchor; cross-page notes should be saved as separate highlights.
 
@@ -144,6 +144,6 @@ npm run build
 npm run smoke
 ```
 
-`npm run smoke` uses the real Dijkstra analysis, Markdown conversion, and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies atlas navigation, the mapped-only filter, F1/F10 switching, contextual digest, keyboard selection/clarification, Gloss, Markdown reading, PDF rendering, and capital-`I` inversion.
+`npm run smoke` uses the real Dijkstra analysis, Markdown conversion, and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies the four-level top-bar progression, abstract provenance, overview navigation, the mapped-only filter, F1/F10 switching, contextual digest, keyboard selection/clarification, the full Glossary, reconstructed Text, PDF rendering, and capital-`I` inversion.
 
 The implementation map and fault boundaries are described in [docs/architecture.md](docs/architecture.md).

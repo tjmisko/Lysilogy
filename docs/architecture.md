@@ -23,7 +23,7 @@ Paper catalog ──► Poppler raw + bbox extraction ──► source.txt + sou
                                      Axum JSON API
                                             │
                                             ▼
-                           React atlas / digest / Gloss / PDF
+                 React Abstract / Overview / Glossary / Text
 ```
 
 The Rust backend owns discovery, extraction, subprocess isolation, validation, persistence, and state transitions. React owns interaction and presentation. Neither frontend code nor a model process receives an arbitrary filesystem path from the browser.
@@ -78,6 +78,8 @@ Extraction and analysis artifacts are cached independently. A failed analysis re
 Expected faults have dedicated errors: missing PDF tools, unreadable vaults, empty image-only extractions, failed local commands, timeout, invalid model output, duplicate processing, unsafe paper IDs, oversized extraction, and missing frontend assets.
 
 ## Reader interaction
+
+The top-level information architecture is a monotonic reading ladder: Abstract → Overview → Glossary → Text. Abstract keeps generated orientation visibly separate from the authors' own words: `thesis` is the one-sentence TL;DR, `author_abstract` is retained only when its normalized text is present in the extraction, and `outsider_brief` is a one- or two-sentence supplement aimed at field history, reception, later interpretation, or another high-leverage implication the abstract omits. Overview owns the argument map, Glossary is a full pre-reading curriculum rather than a utility drawer, and Text owns both reconstructed Markdown and PDF formats.
 
 The atlas is a CSS grid whose tile spans come from analysis rather than PDF page dimensions. That is the core product distinction: area expresses conceptual weight, while color expresses argumentative role.
 

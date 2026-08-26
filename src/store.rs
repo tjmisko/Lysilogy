@@ -285,9 +285,14 @@ async fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
 fn render_digest(analysis: &PaperAnalysis) -> String {
     use std::fmt::Write;
 
-    let mut markdown = format!(
-        "# Paper digest\n\n> {}\n\n{}\n\n## Reading path\n\n",
-        analysis.thesis, analysis.outsider_brief
+    let mut markdown = format!("# Paper digest\n\n## TL;DR\n\n> {}\n\n", analysis.thesis);
+    if let Some(author_abstract) = &analysis.author_abstract {
+        let _ = write!(markdown, "## Author abstract\n\n{author_abstract}\n\n");
+    }
+    let _ = write!(
+        markdown,
+        "## Contextual supplement\n\n{}\n\n## Reading path\n\n",
+        analysis.outsider_brief
     );
     for item in &analysis.reading_path {
         let _ = writeln!(markdown, "- {item}");
@@ -413,6 +418,7 @@ mod tests {
             generated_at: Utc::now(),
             thesis: "A test thesis".to_owned(),
             outsider_brief: "A test brief".to_owned(),
+            author_abstract: Some("The authors' own test abstract is preserved here.".to_owned()),
             prerequisites: Vec::new(),
             sections: Vec::new(),
             claims: Vec::new(),
@@ -426,6 +432,7 @@ mod tests {
             .await
             .map_err(|error| Error::io("digest.md", error))?;
         assert!(digest.contains("A test thesis"));
+        assert!(digest.contains("The authors' own test abstract"));
         Ok(())
     }
 }

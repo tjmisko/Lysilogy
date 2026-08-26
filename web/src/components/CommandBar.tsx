@@ -1,44 +1,65 @@
 type CommandBarProps = {
-  view: "atlas" | "markdown" | "pdf";
+  view: "abstract" | "overview" | "glossary" | "text";
+  textMode: "markdown" | "pdf";
   panelOpen: boolean;
 };
 
-export function CommandBar({ view, panelOpen }: CommandBarProps) {
-  const commands = panelOpen
-    ? [
-        ["j k", "move"],
-        ["v", "visual"],
-        ["c", "clarify"],
-        ["y", "copy"],
-        ["esc", "close"],
-      ]
-    : view === "pdf"
-      ? [
-          ["[ ]", "page"],
-          ["I", "ink / colour"],
-          ["+ −", "zoom"],
-          ["p", "atlas"],
-          ["?", "keys"],
-        ]
-      : view === "markdown"
-        ? [
-            ["j k", "scroll"],
-            ["g g / G", "top / end"],
-            ["m", "atlas"],
-            ["p", "PDF"],
-            ["F10", "switch article"],
-          ]
-      : [
-          ["h j k l / arrows", "move"],
-          ["↵", "digest"],
-          ["H", "AI evidence"],
-          ["U", "my marks"],
-          ["v", "mark source"],
-          ["g", "gloss"],
-          ["m", "Markdown"],
-          ["p", "PDF"],
-          ["?", "keys"],
-        ];
+export function CommandBar({ view, textMode, panelOpen }: CommandBarProps) {
+  let commands: string[][];
+  if (panelOpen) {
+    commands = [
+      ["j k", "move"],
+      ["v", "visual"],
+      ["c", "clarify"],
+      ["y", "copy"],
+      ["esc", "close"],
+    ];
+  } else if (view === "text" && textMode === "pdf") {
+    commands = [
+      ["[ ]", "page"],
+      ["I", "ink / colour"],
+      ["+ −", "zoom"],
+      ["m", "reconstructed"],
+      ["p", "overview"],
+      ["?", "keys"],
+    ];
+  } else if (view === "text") {
+    commands = [
+      ["j k", "scroll"],
+      ["g g / G", "top / end"],
+      ["m", "overview"],
+      ["p", "PDF"],
+      ["F10", "switch article"],
+    ];
+  } else if (view === "glossary") {
+    commands = [
+      ["j k", "move"],
+      ["↵", "expand"],
+      ["/", "find concept"],
+      ["esc", "overview"],
+      ["F10", "switch article"],
+    ];
+  } else if (view === "abstract") {
+    commands = [
+      ["j k", "scroll"],
+      ["g", "glossary"],
+      ["m", "full text"],
+      ["p", "PDF"],
+      ["?", "keys"],
+    ];
+  } else {
+    commands = [
+      ["h j k l / arrows", "move"],
+      ["↵", "digest"],
+      ["H", "AI evidence"],
+      ["U", "my marks"],
+      ["v", "mark source"],
+      ["g", "glossary"],
+      ["m", "full text"],
+      ["p", "PDF"],
+      ["?", "keys"],
+    ];
+  }
 
   return (
     <nav className="command-bar" aria-label="Keyboard commands">

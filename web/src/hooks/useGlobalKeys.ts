@@ -4,7 +4,8 @@ type GlobalKeyOptions = {
   enabled: boolean;
   activeIndex: number;
   itemCount: number;
-  view: "atlas" | "markdown" | "pdf";
+  view: "abstract" | "overview" | "glossary" | "text";
+  textMode: "markdown" | "pdf";
   onMove: (index: number) => void;
   onOpen: () => void;
   onDigest: () => void;
@@ -75,20 +76,20 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
       switch (event.key) {
         case "h":
         case "ArrowLeft":
-          if (current.view === "atlas") {
+          if (current.view === "overview") {
             event.preventDefault();
             current.onMove(clamp(current.activeIndex - 1));
-          } else if (current.view === "pdf") {
+          } else if (current.view === "text" && current.textMode === "pdf") {
             event.preventDefault();
             current.onPrevious();
           }
           break;
         case "l":
         case "ArrowRight":
-          if (current.view === "atlas") {
+          if (current.view === "overview") {
             event.preventDefault();
             current.onMove(clamp(current.activeIndex + 1));
-          } else if (current.view === "pdf") {
+          } else if (current.view === "text" && current.textMode === "pdf") {
             event.preventDefault();
             current.onNext();
           }
@@ -96,27 +97,33 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
         case "j":
         case "ArrowDown":
           event.preventDefault();
-          if (current.view === "markdown" || current.view === "pdf") current.onScroll(120);
-          else current.onMove(clamp(current.activeIndex + columns));
+          if (current.view === "text" || current.view === "abstract") current.onScroll(120);
+          else if (current.view === "overview") current.onMove(clamp(current.activeIndex + columns));
           break;
         case "k":
         case "ArrowUp":
           event.preventDefault();
-          if (current.view === "markdown" || current.view === "pdf") current.onScroll(-120);
-          else current.onMove(clamp(current.activeIndex - columns));
+          if (current.view === "text" || current.view === "abstract") current.onScroll(-120);
+          else if (current.view === "overview") current.onMove(clamp(current.activeIndex - columns));
           break;
         case "G":
           event.preventDefault();
           clearPendingG();
-          if (current.view === "markdown") current.onScrollTo("end");
-          else if (current.view === "atlas") current.onMove(Math.max(0, current.itemCount - 1));
+          if (
+            current.view === "abstract"
+            || (current.view === "text" && current.textMode === "markdown")
+          ) current.onScrollTo("end");
+          else if (current.view === "overview") current.onMove(Math.max(0, current.itemCount - 1));
           break;
         case "g":
           event.preventDefault();
           if (pendingG.current !== null) {
             clearPendingG();
-            if (current.view === "markdown") current.onScrollTo("start");
-            else if (current.view === "atlas") current.onMove(0);
+            if (
+              current.view === "abstract"
+              || (current.view === "text" && current.textMode === "markdown")
+            ) current.onScrollTo("start");
+            else if (current.view === "overview") current.onMove(0);
           } else {
             pendingG.current = window.setTimeout(() => {
               pendingG.current = null;
@@ -126,13 +133,13 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
           break;
         case "Enter":
         case "o":
-          if (current.view === "atlas") {
+          if (current.view === "overview") {
             event.preventDefault();
             current.onOpen();
           }
           break;
         case "d":
-          if (current.view === "atlas") {
+          if (current.view === "overview") {
             event.preventDefault();
             current.onDigest();
           }
@@ -174,32 +181,32 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
           current.onInvert();
           break;
         case "H":
-          if (current.view === "atlas") {
+          if (current.view === "overview") {
             event.preventDefault();
             current.onToggleAiHighlights();
           }
           break;
         case "U":
-          if (current.view === "atlas") {
+          if (current.view === "overview") {
             event.preventDefault();
             current.onToggleUserHighlights();
           }
           break;
         case "v":
-          if (current.view === "atlas") {
+          if (current.view === "overview") {
             event.preventDefault();
             current.onToggleMarkMode();
           }
           break;
         case "=":
         case "+":
-          if (current.view === "pdf") {
+          if (current.view === "text" && current.textMode === "pdf") {
             event.preventDefault();
             current.onZoom(0.1);
           }
           break;
         case "-":
-          if (current.view === "pdf") {
+          if (current.view === "text" && current.textMode === "pdf") {
             event.preventDefault();
             current.onZoom(-0.1);
           }

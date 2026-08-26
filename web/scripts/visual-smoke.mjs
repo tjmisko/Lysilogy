@@ -15,6 +15,8 @@ const root = path.resolve("..");
 const analysis = JSON.parse(
   await readFile(path.join(root, ".lysilogos", "papers", paperId, "analysis.json"), "utf8"),
 );
+analysis.author_abstract = "For a number of years I have been familiar with the observation that the quality of programmers is a decreasing function of the density of go to statements in the programs they produce.";
+analysis.outsider_brief = "The letter helped turn structured programming from a design preference into a durable standard for reasoning about control flow. Its title later became shorthand for categorical prohibition, although Dijkstra's argument is more specifically about preserving intelligible coordinates for program execution.";
 const extraction = JSON.parse(
   await readFile(path.join(root, ".lysilogos", "papers", paperId, "extraction.json"), "utf8"),
 );
@@ -197,6 +199,17 @@ try {
   });
 
   await page.goto("http://lysilogos.test/", { waitUntil: "networkidle" });
+  await page.locator(".abstract-view").waitFor();
+  const viewLabels = await page.locator(".view-switch > button").allTextContents();
+  assert(
+    viewLabels.join("|").replaceAll(/\s+/gu, " ").includes("01 Abstract|02 Overview|03 Glossary|04 Text"),
+    `reading levels are out of order: ${viewLabels.join(", ")}`,
+  );
+  assert((await page.locator(".abstract-tldr").count()) === 1, "one-sentence TL;DR is missing");
+  assert((await page.locator(".authored-abstract").count()) === 1, "authored abstract is missing");
+  assert((await page.locator(".abstract-supplement").count()) === 1, "AI supplement is missing");
+  await page.screenshot({ path: screenshotVariant("abstract"), fullPage: true });
+  await page.getByRole("button", { name: /02 Overview/u }).click();
   await page.locator(".section-tile").first().waitFor();
   const tiles = await page.locator(".section-tile").count();
   assert(tiles >= 5, `expected at least 5 atlas tiles, found ${tiles}`);
@@ -249,6 +262,7 @@ try {
 
   await page.keyboard.press("m");
   await page.locator(".markdown-document").waitFor();
+  assert((await page.locator(".text-view-header").count()) === 1, "Text format chooser is missing");
   assert((await page.locator(".markdown-page-marker").count()) === 4, "Markdown page provenance is incomplete");
   await page.screenshot({ path: screenshotVariant("markdown"), fullPage: true });
   await page.keyboard.press("m");
@@ -265,8 +279,11 @@ try {
 
   await page.keyboard.press("g");
   await delay(500);
-  await page.locator(".gloss-panel").waitFor();
+  await page.locator(".glossary-view").waitFor();
+  assert((await page.locator(".glossary-view .gloss-entry").count()) > 0, "full glossary view is empty");
+  await page.screenshot({ path: screenshotVariant("glossary"), fullPage: true });
   await page.keyboard.press("Escape");
+  await page.locator(".section-atlas").waitFor();
 
   await page.keyboard.press("p");
   await page.locator(".pdf-canvas").waitFor();
@@ -281,6 +298,9 @@ try {
 
   await page.setViewportSize({ width: 390, height: 844 });
   await delay(100);
+  await page.getByRole("button", { name: /01 Abstract/u }).click();
+  await page.locator(".abstract-view").waitFor();
+  await page.screenshot({ path: screenshotVariant("abstract-mobile"), fullPage: true });
   await page.keyboard.press("b");
   await page.locator(".library-rail.is-open").waitFor();
   await page.keyboard.press("j");

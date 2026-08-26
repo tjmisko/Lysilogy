@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { AbstractView } from "./components/AbstractView";
 import { CommandBar } from "./components/CommandBar";
 import { DigestPanel } from "./components/DigestPanel";
-import { GlossPanel } from "./components/GlossPanel";
+import { GlossaryView } from "./components/GlossPanel";
 import { HelpOverlay } from "./components/HelpOverlay";
 import { LibraryRail } from "./components/LibraryRail";
 import { MarkdownReader } from "./components/MarkdownReader";
@@ -23,8 +24,9 @@ import type {
   PaperView,
 } from "./types";
 
-type Panel = "digest" | "gloss" | "help" | null;
-type ViewMode = "atlas" | "markdown" | "pdf";
+type Panel = "digest" | "help" | null;
+type ViewMode = "abstract" | "overview" | "glossary" | "text";
+type TextMode = "markdown" | "pdf";
 
 const PROCESSING_STATES = new Set(["queued", "extracting", "analyzing"]);
 
@@ -64,7 +66,7 @@ function statusLabel(paper: PaperOverview | null): string {
     case "analyzing":
       return `Reading · ${paper.status.provider}`;
     case "ready":
-      return "Atlas ready";
+      return "Analysis ready";
     case "failed":
       return `Failed · ${paper.status.stage}`;
   }
@@ -76,7 +78,8 @@ export function App() {
   const [paperView, setPaperView] = useState<PaperView | null>(null);
   const [activeSection, setActiveSection] = useState(0);
   const [panel, setPanel] = useState<Panel>(null);
-  const [view, setView] = useState<ViewMode>("atlas");
+  const [view, setView] = useState<ViewMode>("abstract");
+  const [textMode, setTextMode] = useState<TextMode>("markdown");
   const [compactLayout, setCompactLayout] = useState(() => window.innerWidth < 1180);
   const [libraryOpen, setLibraryOpen] = useState(() => window.innerWidth >= 1180);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -97,6 +100,10 @@ export function App() {
   const [notice, setNotice] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const mainStageRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    mainStageRef.current?.scrollTo({ top: 0 });
+  }, [selectedId, textMode, view]);
 
   const refreshLibrary = useCallback(async (): Promise<LibraryResponse> => {
     const next = await api.library();
@@ -171,6 +178,7 @@ export function App() {
 
   const processing =
     paperView !== null && PROCESSING_STATES.has(paperView.paper.status.state);
+  const analysisNeedsRefresh = paperView?.analysis != null && paperView.analysis.schema_version < 3;
 
   useEffect(() => {
     if (!processing || selectedId === null) return;
@@ -195,6 +203,8 @@ export function App() {
       setMapLoading(false);
       setMarkMode(false);
       setPdfPage(1);
+      setView("abstract");
+      setTextMode("markdown");
       setSelectedId(id);
       setPaperView(null);
       setError(null);
@@ -217,14 +227,28 @@ export function App() {
   const analyze = useCallback((): void => {
     if (selectedId === null || processing) return;
     setError(null);
-    setNotice(`Queued for ${provider}. You can keep browsing while it reads.`);
+    setNotice(
+      `${analysisNeedsRefresh ? "Refreshing" : "Queued"} for ${provider}. You can keep browsing while it reads.`,
+    );
     void api
-      .analyze(selectedId, provider, paperView?.paper.status.state === "failed")
+      .analyze(
+        selectedId,
+        provider,
+        paperView?.paper.status.state === "failed" || analysisNeedsRefresh,
+      )
       .then(() => Promise.all([loadPaper(selectedId), refreshLibrary()]))
       .catch((reason: unknown) => {
         setError(reason instanceof Error ? reason.message : "Could not start analysis");
       });
-  }, [loadPaper, paperView?.paper.status.state, processing, provider, refreshLibrary, selectedId]);
+  }, [
+    analysisNeedsRefresh,
+    loadPaper,
+    paperView?.paper.status.state,
+    processing,
+    provider,
+    refreshLibrary,
+    selectedId,
+  ]);
 
   const sections = useMemo(() => paperView?.analysis?.sections ?? [], [paperView?.analysis]);
   const selectedSection = sections[activeSection] ?? null;
@@ -238,7 +262,13 @@ export function App() {
   const openPage = useCallback((page: number): void => {
     setPdfPage(page);
     setPanel(null);
-    setView("pdf");
+    setTextMode("pdf");
+    setView("text");
+  }, []);
+
+  const openGlossary = useCallback((): void => {
+    setPanel(null);
+    setView("glossary");
   }, []);
 
   const movePaper = useCallback(
@@ -252,13 +282,15 @@ export function App() {
   );
 
   const previous = useCallback((): void => {
-    if (view === "pdf") setPdfPage((page) => Math.max(1, page - 1));
+    if (view === "text" && textMode === "pdf") setPdfPage((page) => Math.max(1, page - 1));
     else movePaper(-1);
-  }, [movePaper, view]);
+  }, [movePaper, textMode, view]);
   const next = useCallback((): void => {
-    if (view === "pdf") setPdfPage((page) => Math.min(pdfPages, page + 1));
+    if (view === "text" && textMode === "pdf") {
+      setPdfPage((page) => Math.min(pdfPages, page + 1));
+    }
     else movePaper(1);
-  }, [movePaper, pdfPages, view]);
+  }, [movePaper, pdfPages, textMode, view]);
 
   const scrollMarkdown = useCallback((delta: number): void => {
     mainStageRef.current?.scrollBy({ top: delta, behavior: "smooth" });
@@ -270,29 +302,44 @@ export function App() {
   }, []);
 
   useGlobalKeys({
-    enabled: panel === null && !switcherOpen && !(compactLayout && libraryOpen),
+    enabled:
+      panel === null && view !== "glossary" && !switcherOpen && !(compactLayout && libraryOpen),
     activeIndex: activeSection,
     itemCount: sections.length,
     view,
+    textMode,
     onMove: setActiveSection,
     onOpen: () => {
       if (selectedSection !== null) openSection(selectedSection, activeSection);
     },
     onDigest: () => selectedSection !== null && setPanel("digest"),
-    onGloss: () => paperView?.analysis != null && setPanel("gloss"),
+    onGloss: () => paperView?.analysis != null && openGlossary(),
     onHelp: () => setPanel("help"),
     onSearch: () => {
       setLibraryOpen(true);
       window.setTimeout(() => searchRef.current?.focus(), 0);
     },
     onToggleLibrary: () => setLibraryOpen((open) => !open),
-    onToggleView: () => setView((current) => (current === "atlas" ? "pdf" : "atlas")),
-    onToggleMarkdown: () =>
-      setView((current) => (current === "markdown" ? "atlas" : "markdown")),
+    onToggleView: () => {
+      if (view === "text" && textMode === "pdf") {
+        setView("overview");
+      } else {
+        setTextMode("pdf");
+        setView("text");
+      }
+    },
+    onToggleMarkdown: () => {
+      if (view === "text" && textMode === "markdown") {
+        setView("overview");
+      } else {
+        setTextMode("markdown");
+        setView("text");
+      }
+    },
     onAnalyze: analyze,
     onEscape: () => {
       setLibraryOpen(false);
-      if (view !== "atlas") setView("atlas");
+      if (view !== "overview") setView("overview");
     },
     onPrevious: previous,
     onNext: next,
@@ -409,6 +456,7 @@ export function App() {
       const index = sections.findIndex((section) => section.id === sectionId);
       if (index >= 0) {
         setActiveSection(index);
+        setView("overview");
         setPanel("digest");
       }
     },
@@ -435,6 +483,9 @@ export function App() {
   const currentPaper = paperView?.paper ??
     library?.papers.find((paper) => paper.id === selectedId) ??
     null;
+  const analysis = paperView?.analysis ?? null;
+  const abstractPage = analysis?.sections.find((section) => section.kind === "abstract")?.pages.start
+    ?? null;
 
   return (
     <div className="app-shell">
@@ -467,24 +518,44 @@ export function App() {
           <div className="view-switch" role="group" aria-label="Reader view">
             <button
               type="button"
-              className={view === "atlas" ? "is-active" : ""}
-              onClick={() => setView("atlas")}
+              className={view === "abstract" ? "is-active" : ""}
+              aria-current={view === "abstract" ? "page" : undefined}
+              onClick={() => {
+                setPanel(null);
+                setView("abstract");
+              }}
             >
-              Atlas
+              <span>01</span> Abstract
             </button>
             <button
               type="button"
-              className={view === "markdown" ? "is-active" : ""}
-              onClick={() => setView("markdown")}
+              className={view === "overview" ? "is-active" : ""}
+              aria-current={view === "overview" ? "page" : undefined}
+              onClick={() => {
+                setPanel(null);
+                setView("overview");
+              }}
             >
-              Markdown <kbd>m</kbd>
+              <span>02</span> Overview
             </button>
             <button
               type="button"
-              className={view === "pdf" ? "is-active" : ""}
-              onClick={() => setView("pdf")}
+              className={view === "glossary" ? "is-active" : ""}
+              aria-current={view === "glossary" ? "page" : undefined}
+              onClick={openGlossary}
             >
-              PDF <kbd>p</kbd>
+              <span>03</span> Glossary
+            </button>
+            <button
+              type="button"
+              className={view === "text" ? "is-active" : ""}
+              aria-current={view === "text" ? "page" : undefined}
+              onClick={() => {
+                setPanel(null);
+                setView("text");
+              }}
+            >
+              <span>04</span> Text
             </button>
           </div>
           <div className="topbar-actions">
@@ -502,7 +573,11 @@ export function App() {
               onClick={analyze}
               disabled={selectedId === null || processing}
             >
-              {processing ? <><span className="loader" /> Reading</> : <>Analyze <kbd>a</kbd></>}
+              {processing ? (
+                <><span className="loader" /> Reading</>
+              ) : (
+                <>{analysisNeedsRefresh ? "Refresh" : "Analyze"} <kbd>a</kbd></>
+              )}
             </button>
             <button className="icon-button" type="button" onClick={() => setPanel("help")} aria-label="Show key map">
               ?
@@ -541,74 +616,111 @@ export function App() {
                 </div>
               </section>
 
-              {view === "atlas" ? (
-                paperView?.analysis === null || paperView?.analysis === undefined ? (
-                  <section className="unanalyzed-state">
-                    <div className="unmapped-grid" aria-hidden="true">
-                      {Array.from({ length: 15 }, (_, index) => <i key={index} />)}
-                    </div>
-                    <div>
-                      <span className="eyebrow">Unmapped paper</span>
-                      <h2>Turn this PDF into a reading atlas.</h2>
-                      <p>
-                        Text is extracted locally. {provider === "heuristic" ? "The offline structural pass" : `${provider} in read-only plan mode`} builds the sections, quotes, context, and Gloss.
-                      </p>
-                      <button type="button" onClick={analyze} disabled={processing}>
-                        {processing ? "Reading the paper…" : `Analyze with ${provider}`} <kbd>a</kbd>
-                      </button>
-                      {currentPaper.status.state === "failed" && (
-                        <p className="inline-error">{currentPaper.status.message}</p>
-                      )}
-                    </div>
-                  </section>
-                ) : (
-                  <SectionAtlas
-                    analysis={paperView.analysis}
-                    activeIndex={activeSection}
-                    onActiveIndex={setActiveSection}
-                    onOpen={openSection}
-                    sourceUrl={api.source(selectedId ?? currentPaper.id)}
-                    paperTitle={currentPaper.metadata.title}
-                    paperMap={paperMap}
-                    mapLoading={mapLoading}
-                    darkInk={darkInk}
-                    showAi={showAiHighlights}
-                    showUser={showUserHighlights}
-                    markMode={markMode}
-                    onShowAi={() => setShowAiHighlights((value) => !value)}
-                    onShowUser={() => setShowUserHighlights((value) => !value)}
-                    onMarkMode={() => setMarkMode((value) => !value)}
-                    onOpenPage={openPage}
-                    onToggleHighlight={toggleHighlight}
-                    onClarifySentence={clarifySentence}
-                  />
-                )
-              ) : selectedId === null ? null : view === "markdown" ? (
-                <MarkdownReader
-                  key={selectedId}
-                  paperId={selectedId}
-                  title={currentPaper.metadata.title}
-                  onConverted={markdownConverted}
+              {view !== "text" && analysis === null ? (
+                <section className="unanalyzed-state">
+                  <div className="unmapped-grid" aria-hidden="true">
+                    {Array.from({ length: 15 }, (_, index) => <i key={index} />)}
+                  </div>
+                  <div>
+                    <span className="eyebrow">Unmapped paper</span>
+                    <h2>Build the path from abstract to source.</h2>
+                    <p>
+                      Text is extracted locally. {provider === "heuristic" ? "The offline structural pass" : `${provider} in read-only plan mode`} builds the orientation, overview, technical glossary, quotes, and context.
+                    </p>
+                    <button type="button" onClick={analyze} disabled={processing}>
+                      {processing ? "Reading the paper…" : `Analyze with ${provider}`} <kbd>a</kbd>
+                    </button>
+                    {currentPaper.status.state === "failed" && (
+                      <p className="inline-error">{currentPaper.status.message}</p>
+                    )}
+                  </div>
+                </section>
+              ) : view === "abstract" && analysis !== null ? (
+                <AbstractView
+                  analysis={analysis}
+                  abstractPage={abstractPage}
                   onOpenPage={openPage}
+                  onContinue={() => setView("overview")}
                 />
-              ) : (
-                <PdfReader
-                  key={selectedId}
-                  url={api.source(selectedId)}
-                  title={currentPaper.metadata.title}
-                  page={pdfPage}
-                  zoom={pdfZoom}
+              ) : view === "overview" && analysis !== null ? (
+                <SectionAtlas
+                  analysis={analysis}
+                  activeIndex={activeSection}
+                  onActiveIndex={setActiveSection}
+                  onOpen={openSection}
+                  sourceUrl={api.source(selectedId ?? currentPaper.id)}
+                  paperTitle={currentPaper.metadata.title}
+                  paperMap={paperMap}
+                  mapLoading={mapLoading}
                   darkInk={darkInk}
-                  onPage={setPdfPage}
-                  onPageCount={setPdfPages}
-                  onToggleInk={() => setDarkInk((value) => !value)}
+                  showAi={showAiHighlights}
+                  showUser={showUserHighlights}
+                  markMode={markMode}
+                  onShowAi={() => setShowAiHighlights((value) => !value)}
+                  onShowUser={() => setShowUserHighlights((value) => !value)}
+                  onMarkMode={() => setMarkMode((value) => !value)}
+                  onOpenPage={openPage}
+                  onToggleHighlight={toggleHighlight}
+                  onClarifySentence={clarifySentence}
                 />
+              ) : view === "glossary" && analysis !== null ? (
+                <GlossaryView
+                  entries={analysis.glossary}
+                  onBack={() => setView("overview")}
+                  onSection={openGlossSection}
+                />
+              ) : selectedId === null ? null : (
+                <section className="text-view" aria-label="Full paper text">
+                  <header className="text-view-header">
+                    <div>
+                      <span className="view-number">04</span>
+                      <span className="eyebrow">Read the paper</span>
+                    </div>
+                    <div className="mini-switch" role="group" aria-label="Text format">
+                      <button
+                        type="button"
+                        className={textMode === "markdown" ? "is-active" : ""}
+                        onClick={() => setTextMode("markdown")}
+                      >
+                        Reconstructed <kbd>m</kbd>
+                      </button>
+                      <button
+                        type="button"
+                        className={textMode === "pdf" ? "is-active" : ""}
+                        onClick={() => setTextMode("pdf")}
+                      >
+                        PDF <kbd>p</kbd>
+                      </button>
+                    </div>
+                  </header>
+                  {textMode === "markdown" ? (
+                    <MarkdownReader
+                      key={selectedId}
+                      paperId={selectedId}
+                      title={currentPaper.metadata.title}
+                      onConverted={markdownConverted}
+                      onOpenPage={openPage}
+                    />
+                  ) : (
+                    <PdfReader
+                      key={selectedId}
+                      url={api.source(selectedId)}
+                      title={currentPaper.metadata.title}
+                      page={pdfPage}
+                      zoom={pdfZoom}
+                      darkInk={darkInk}
+                      onPage={setPdfPage}
+                      onPageCount={setPdfPages}
+                      onToggleInk={() => setDarkInk((value) => !value)}
+                    />
+                  )}
+                </section>
               )}
             </>
           )}
         </main>
 
-        <CommandBar view={view} panelOpen={panel === "digest" || panel === "gloss"} />
+        <CommandBar view={view} textMode={textMode} panelOpen={panel === "digest"} />
       </div>
 
       {panel === "digest" && selectedSection !== null && (
@@ -621,16 +733,9 @@ export function App() {
             setClarifySeed("");
             setPanel(null);
           }}
-          onGloss={() => setPanel("gloss")}
+          onGloss={openGlossary}
           onOpenPage={openPage}
           onClarify={clarify}
-        />
-      )}
-      {panel === "gloss" && paperView?.analysis !== null && paperView?.analysis !== undefined && (
-        <GlossPanel
-          entries={paperView.analysis.glossary}
-          onClose={() => setPanel(null)}
-          onSection={openGlossSection}
         />
       )}
       {panel === "help" && <HelpOverlay onClose={() => setPanel(null)} />}

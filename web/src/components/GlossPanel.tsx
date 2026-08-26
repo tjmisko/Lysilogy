@@ -2,13 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { GlossaryEntry } from "../types";
 
-type GlossPanelProps = {
+type GlossaryViewProps = {
   entries: GlossaryEntry[];
-  onClose: () => void;
+  onBack: () => void;
   onSection: (sectionId: string) => void;
 };
 
-export function GlossPanel({ entries, onClose, onSection }: GlossPanelProps) {
+export function GlossaryView({ entries, onBack, onSection }: GlossaryViewProps) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export function GlossPanel({ entries, onClose, onSection }: GlossPanelProps) {
           searchInput.blur();
           setQuery("");
         } else {
-          onClose();
+          onBack();
         }
         return;
       }
@@ -74,17 +74,24 @@ export function GlossPanel({ entries, onClose, onSection }: GlossPanelProps) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [active, filtered, onClose]);
+  }, [active, filtered, onBack]);
 
   return (
-    <aside className="context-panel gloss-panel" aria-label="Glossary">
-      <header className="panel-header">
+    <section className="glossary-view" aria-label="Technical glossary">
+      <header className="view-introduction glossary-heading">
         <div>
-          <span className="eyebrow">Field guide</span>
-          <h2>Gloss</h2>
+          <div>
+            <span className="view-number">03</span>
+            <span className="eyebrow">Concepts to hold before reading</span>
+          </div>
+          <h2>Technical glossary</h2>
+          <p>
+            Learn the paper&apos;s load-bearing vocabulary now, so the full text can spend your
+            attention on the argument rather than terminology.
+          </p>
         </div>
-        <button className="icon-button" type="button" onClick={onClose} aria-label="Close Gloss">
-          ×
+        <button className="back-to-overview" type="button" onClick={onBack}>
+          ← Overview
         </button>
       </header>
       <label className="search-box gloss-search">
@@ -148,6 +155,6 @@ export function GlossPanel({ entries, onClose, onSection }: GlossPanelProps) {
         <span><kbd>↵</kbd> expand</span>
         <span>{filtered.length} terms</span>
       </footer>
-    </aside>
+    </section>
   );
 }

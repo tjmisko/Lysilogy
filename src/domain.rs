@@ -142,8 +142,15 @@ pub struct PaperAnalysis {
     pub schema_version: u16,
     pub provider: AnalysisProvider,
     pub generated_at: DateTime<Utc>,
+    /// A one-sentence, plain-language account of the paper's central contribution.
     pub thesis: String,
+    /// One or two high-leverage sentences that add context the authored abstract
+    /// does not provide, such as the field before/after or later reception.
     pub outsider_brief: String,
+    /// The authors' own abstract, accepted only when it can be found in the
+    /// extracted source text. Older analyses and papers without abstracts omit it.
+    #[serde(default)]
+    pub author_abstract: Option<String>,
     #[serde(default)]
     pub prerequisites: Vec<String>,
     #[serde(default)]

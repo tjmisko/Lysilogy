@@ -2,10 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["thesis", "outsider_brief", "prerequisites", "sections", "claims", "glossary", "caveats", "reading_path"],
+  "required": ["thesis", "outsider_brief", "author_abstract", "prerequisites", "sections", "claims", "glossary", "caveats", "reading_path"],
   "properties": {
-    "thesis": { "type": "string" },
-    "outsider_brief": { "type": "string" },
+    "thesis": { "type": "string", "maxLength": 600 },
+    "outsider_brief": { "type": "string", "maxLength": 1200 },
+    "author_abstract": { "type": ["string", "null"], "maxLength": 12000 },
     "prerequisites": { "type": "array", "items": { "type": "string" }, "maxItems": 12 },
     "sections": {
       "type": "array",

@@ -107,6 +107,8 @@ pub(crate) struct AnalysisDraft {
     pub thesis: String,
     pub outsider_brief: String,
     #[serde(default)]
+    pub author_abstract: Option<String>,
+    #[serde(default)]
     pub prerequisites: Vec<String>,
     pub sections: Vec<SectionDraft>,
     #[serde(default)]
@@ -166,6 +168,7 @@ fn normalize_analysis(
 ) -> Result<PaperAnalysis> {
     draft.thesis = clean_required("thesis", &draft.thesis)?;
     draft.outsider_brief = clean_required("outsider brief", &draft.outsider_brief)?;
+    let author_abstract = validated_author_abstract(draft.author_abstract, paper);
     if draft.sections.is_empty() {
         return Err(Error::InvalidAnalysis(
             "analysis did not contain any sections".to_owned(),
@@ -244,11 +247,12 @@ fn normalize_analysis(
     }
 
     let mut analysis = PaperAnalysis {
-        schema_version: 2,
+        schema_version: 3,
         provider,
         generated_at: Utc::now(),
         thesis: draft.thesis,
         outsider_brief: draft.outsider_brief,
+        author_abstract,
         prerequisites: clean_list(draft.prerequisites, 12),
         sections,
         claims: draft.claims.into_iter().take(16).collect(),
@@ -299,7 +303,25 @@ pub fn validate_citations(analysis: &mut PaperAnalysis, layout: &crate::domain::
             quote.anchor = anchor;
         }
     }
-    analysis.schema_version = 2;
+    analysis.schema_version = analysis.schema_version.max(2);
+}
+
+fn validated_author_abstract(candidate: Option<String>, paper: &ExtractedPaper) -> Option<String> {
+    let abstract_text = compact_whitespace(&candidate?);
+    if abstract_text.chars().count() < 30 || abstract_text.chars().count() > 12_000 {
+        return None;
+    }
+    let source_text = compact_whitespace(
+        &paper
+            .pages
+            .iter()
+            .map(|page| page.text.as_str())
+            .collect::<Vec<_>>()
+            .join(" "),
+    );
+    source_text
+        .contains(&abstract_text)
+        .then_some(abstract_text)
 }
 
 fn clean_required(field: &str, value: &str) -> Result<String> {
@@ -385,10 +407,36 @@ pub(crate) fn fallback_quote(text: String, page: u32) -> KeyQuote {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::{DocumentLayout, ExtractedPage, PaperMetadata};
 
     #[test]
     fn creates_stable_readable_slugs() {
         assert_eq!(slugify("Results & Limitations"), "results-limitations");
         assert_eq!(slugify("  A/B  "), "a-b");
+    }
+
+    #[test]
+    fn accepts_only_abstract_text_present_in_the_paper() {
+        let source = "The authored abstract explains the contribution in the authors' own words.";
+        let paper = ExtractedPaper {
+            metadata: PaperMetadata::default(),
+            pages: vec![ExtractedPage {
+                number: 1,
+                text: source.to_owned(),
+            }],
+            layout: DocumentLayout::default(),
+        };
+
+        assert_eq!(
+            validated_author_abstract(Some(source.to_owned()), &paper).as_deref(),
+            Some(source)
+        );
+        assert_eq!(
+            validated_author_abstract(
+                Some("A plausible but invented abstract that is not in the paper.".to_owned()),
+                &paper,
+            ),
+            None
+        );
     }
 }
