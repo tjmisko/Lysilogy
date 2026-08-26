@@ -1,0 +1,100 @@
+import { useEffect, useRef } from "react";
+
+type HelpOverlayProps = { onClose: () => void };
+
+const GROUPS = [
+  {
+    title: "Move",
+    commands: [
+      ["h j k l", "Move through section tiles"],
+      ["g g / G", "First / last tile"],
+      ["[ / ]", "Previous / next paper or PDF page"],
+      ["/", "Search the library or Gloss"],
+      ["b · j/k · ↵", "Open, move through, and choose from the mobile library"],
+    ],
+  },
+  {
+    title: "Read",
+    commands: [
+      ["↵ or o", "Open the focused section"],
+      ["d", "Open its contextual digest"],
+      ["g", "Open Gloss (pause after one g)"],
+      ["p", "Toggle atlas / PDF"],
+      ["i", "Toggle dark ink / true colour in PDF"],
+    ],
+  },
+  {
+    title: "Select & ask",
+    commands: [
+      ["v", "Start visual paragraph selection"],
+      ["j / k", "Extend the selection"],
+      ["o", "Swap the active end"],
+      ["c", "Clarify the selection in context"],
+      ["y", "Copy the selection"],
+    ],
+  },
+  {
+    title: "Application",
+    commands: [
+      ["b", "Toggle the library"],
+      ["a", "Analyze with the selected provider"],
+      ["esc", "Leave a mode or close a panel"],
+      ["?", "Show this reference"],
+    ],
+  },
+] as const;
+
+export function HelpOverlay({ onClose }: HelpOverlayProps) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
+      <section
+        className="help-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="keymap-heading"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header>
+          <div>
+            <span className="eyebrow">No mouse required</span>
+            <h2 id="keymap-heading">Key map</h2>
+          </div>
+          <button ref={closeRef} className="icon-button" type="button" onClick={onClose} aria-label="Close key map">
+            ×
+          </button>
+        </header>
+        <div className="key-groups">
+          {GROUPS.map((group) => (
+            <section key={group.title}>
+              <h3>{group.title}</h3>
+              {group.commands.map(([keys, action]) => (
+                <div key={keys}>
+                  <kbd>{keys}</kbd>
+                  <span>{action}</span>
+                </div>
+              ))}
+            </section>
+          ))}
+        </div>
+        <p>
+          In a digest, visual mode selects whole semantic fragments—digest paragraphs, quotes, and
+          explanations—so keyboard selection remains stable across responsive layouts.
+        </p>
+      </section>
+    </div>
+  );
+}
