@@ -339,7 +339,7 @@ pub fn render_tasklist(job: &AnalysisJob) -> String {
         AnalysisJobKind::Revision => "feedback revision",
     };
     let mut markdown = format!(
-        "# Analysis tasklist\n\n- Paper: {}\n- Provider: `{}`\n- Run: {kind}\n\n<!-- Lysilogos watches these checkboxes. Keep each backticked task ID unchanged. -->\n",
+        "# Analysis tasklist\n\n- Paper: {}\n- Provider: `{}`\n- Run: {kind}\n\n<!-- Lysilogy watches these checkboxes. Keep each backticked task ID unchanged. -->\n",
         compact_line(&job.paper_title),
         job.provider,
     );

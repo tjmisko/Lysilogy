@@ -678,7 +678,7 @@ export function App() {
             aria-label="Toggle library"
           >
             <span>Λ</span>
-            <strong>LYSILOGOS</strong>
+            <strong>LYSILOGY</strong>
             <small>paper atlas</small>
           </button>
           <div className="view-switch" role="group" aria-label="Reader view">

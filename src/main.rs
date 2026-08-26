@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, path::PathBuf, process::ExitCode};
 
 use clap::{Parser, Subcommand};
-use lysilogos::{
+use lysilogy::{
     AppState, Error, Result, build_router,
     domain::{AnalysisProvider, PaperId, ProcessingStatus},
 };
@@ -13,7 +13,7 @@ struct Cli {
     /// Directory containing the PDF library.
     #[arg(
         long,
-        env = "LYSILOGOS_LIBRARY",
+        env = "LYSILOGY_LIBRARY",
         default_value = "local-articles/Articles",
         global = true
     )]
@@ -22,8 +22,8 @@ struct Cli {
     /// Directory for portable text, Markdown, and JSON artifacts.
     #[arg(
         long,
-        env = "LYSILOGOS_DATA",
-        default_value = ".lysilogos",
+        env = "LYSILOGY_DATA",
+        default_value = ".lysilogy",
         global = true
     )]
     data: PathBuf,
@@ -141,7 +141,7 @@ async fn serve(state: AppState, bind: SocketAddr, web: &std::path::Path) -> Resu
     let listener = tokio::net::TcpListener::bind(bind)
         .await
         .map_err(|error| Error::io(bind.to_string(), error))?;
-    tracing::info!(address = %bind, "Lysilogos is listening");
+    tracing::info!(address = %bind, "Lysilogy is listening");
     axum::serve(listener, router)
         .with_graceful_shutdown(shutdown_signal())
         .await
@@ -216,7 +216,7 @@ async fn resolve_paper(state: &AppState, query: &str) -> Result<PaperId> {
 
 fn init_tracing() {
     let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("lysilogos=info,tower_http=info"));
+        .unwrap_or_else(|_| EnvFilter::new("lysilogy=info,tower_http=info"));
     tracing_subscriber::fmt().with_env_filter(filter).init();
 }
 

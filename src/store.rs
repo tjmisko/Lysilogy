@@ -453,7 +453,7 @@ fn render_digest(analysis: &PaperAnalysis) -> String {
             );
         }
         markdown.push_str(
-            "\n_Link verification means Lysilogos followed redirects to a public destination and received an HTTP success response at the recorded time. It does not independently establish that a source proves the contextual note._\n\n",
+            "\n_Link verification means Lysilogy followed redirects to a public destination and received an HTTP success response at the recorded time. It does not independently establish that a source proves the contextual note._\n\n",
         );
     }
     markdown.push_str("## Reading path\n\n");

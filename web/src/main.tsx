@@ -7,7 +7,7 @@ import "./styles.css";
 const root = document.getElementById("root");
 
 if (root === null) {
-  throw new Error("Lysilogos root element is missing");
+  throw new Error("Lysilogy root element is missing");
 }
 
 createRoot(root).render(
