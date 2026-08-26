@@ -2,7 +2,7 @@
 
 Lysilogos turns a vault of scientific PDFs into a keyboard-first reading path for intelligent outsiders to the field.
 
-The top bar deliberately increases detail in four steps: **Abstract** gives a generated one-sentence TL;DR, the authors' source-validated abstract, and a short contextual supplement; **Overview** maps the paper into conceptual tiles sized by argumentative weight and lays that map over coordinate-aligned PDF pages; **Glossary** teaches the load-bearing technical vocabulary to hold before reading; and **Text** provides both calm reconstructed Markdown and the source PDF. Reception, field history, and later interpretation appear only as cited notes tied to exact source records. Lysilogos independently follows each link to a successful public destination and records when it did so; the interface separately warns that reachability does not prove the source's semantic support. Opening an overview tile gives its contextual digest, key quotations, and page links. AI citations are prehighlighted only after deterministic text checks, and reader highlights use the same stable sentence/token anchors.
+The top bar deliberately increases detail in four steps: **Abstract** gives a generated one-sentence TL;DR, the authors' source-validated abstract, and a short contextual supplement; **Overview** leads with a resizable mosaic of every PDF page, then preserves a secondary chart sized by argumentative weight; **Glossary** teaches the load-bearing technical vocabulary to hold before reading; and **Text** provides both calm reconstructed Markdown and the source PDF. Within the Overview mosaic, section changes are projected left to right through each page cell, so the map expresses reading progress without pretending that conceptual boundaries are literal rectangles on the paper. Reception, field history, and later interpretation appear only as cited notes tied to exact source records. Lysilogos independently follows each link to a successful public destination and records when it did so; the interface separately warns that reachability does not prove the source's semantic support. Opening an overview section gives its contextual digest, key quotations, and page links. AI citations are prehighlighted only after deterministic text checks, and reader highlights use the same stable sentence/token anchors.
 
 The current demo has been exercised against the local `local-articles/Articles` corpus (118 PDFs) and includes a mapped copy of Dijkstra's “GOTO Statements Considered Harmful.”
 
@@ -81,7 +81,7 @@ External context uses a second, application-owned gate: every note must map to e
 
 Every analysis and feedback retry creates a live Markdown tasklist. Open the queue with `q` to watch the agent mark work active and complete; progress is calculated directly from those checkboxes. If a saved session cannot be resumed, the retry falls back to a fresh agent with `source.txt`, `analysis.json`, the tasklist, and the complete feedback available in its working directory.
 
-The heuristic provider is intentionally conservative. It supplies an immediate offline atlas and clearly labels itself; use a model-backed provider for interpretive reading and field context.
+The heuristic provider is intentionally conservative. It supplies an immediate offline Overview and clearly labels itself; use a model-backed provider for interpretive reading and field context.
 
 ## Keyboard model
 
@@ -97,6 +97,7 @@ Press `?` in the app for the complete, contextual key guide.
 | `m` | Toggle Overview / reconstructed Text |
 | `p` | Toggle Overview / source PDF |
 | `2` | Toggle one-page / two-page PDF view |
+| `+` / `-` | Show one fewer / one more page column in Overview (up to 10) |
 | `[` / `]` | Previous / next paper, or PDF page |
 | `Ctrl-d` / `Ctrl-u` | Page forward / back in PDF; half-screen down / up in text views |
 | `PageDown` / `PageUp` | Page forward / back in PDF; full-screen down / up in text views |
@@ -157,6 +158,6 @@ npm run build
 npm run smoke
 ```
 
-`npm run smoke` uses the real Dijkstra analysis, Markdown conversion, and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies the four-level top-bar progression, abstract provenance, exact contextual sources and link-check scope, overview navigation, the mapped-only filter, F1/F10 switching, the colon command menu, live tasklist progress, feedback retries, contextual digest, keyboard selection/clarification, the full Glossary, reconstructed Text, one/two-page PDF rendering and paging, and capital-`I` inversion.
+`npm run smoke` uses the real Dijkstra analysis, Markdown conversion, and PDF through an in-process browser route, so it works even in environments that block loopback networking. It verifies the four-level top-bar progression, abstract provenance, exact contextual sources and link-check scope, the Overview's all-page grid, horizontal section progress and integer-column zoom, the mapped-only filter, F1/F10 switching, the colon command menu, live tasklist progress, feedback retries, contextual digest, keyboard selection/clarification, the full Glossary, reconstructed Text, one/two-page PDF rendering and paging, and capital-`I` inversion.
 
 The implementation map and fault boundaries are described in [docs/architecture.md](docs/architecture.md).

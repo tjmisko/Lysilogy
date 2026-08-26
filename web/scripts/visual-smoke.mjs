@@ -87,8 +87,10 @@ const layoutPages = Array.from({ length: 4 }, (_, pageIndex) => {
   const number = pageIndex + 1;
   const sentences = number === 1
     ? [
-        smokeSentence(number, 1, "First grounded sentence at the end of the left column.", 650, 55, 280),
-        smokeSentence(number, 2, "Second grounded sentence at the top of the right column.", 110, 330, 555),
+        smokeSentence(number, 1, "First grounded sentence on the page.", 110),
+        smokeSentence(number, 2, "Second grounded sentence on the page.", 290),
+        smokeSentence(number, 3, "Third grounded sentence marks three quarters progress.", 470),
+        smokeSentence(number, 4, "Fourth grounded sentence begins the next section.", 650),
       ]
     : [
         smokeSentence(number, 1, `First grounded sentence on PDF page ${number}.`, 130),
@@ -115,20 +117,42 @@ const aiAnchor = {
   rects: layoutPages[0].sentences[0].rects,
   exact_text: layoutPages[0].sentences[0].text,
 };
-if (analysis.sections[0]?.key_quotes[0] !== undefined) {
-  analysis.sections[0].key_quotes[0].anchor = aiAnchor;
-  analysis.sections[0].key_quotes[0].validation = "exact";
-  analysis.sections[0].source_span = {
+const firstSection = analysis.sections[0];
+if (firstSection !== undefined) {
+  if (firstSection.key_quotes[0] !== undefined) {
+    firstSection.key_quotes[0].anchor = aiAnchor;
+    firstSection.key_quotes[0].validation = "exact";
+  }
+  firstSection.source_span = {
     start: aiAnchor,
     end: {
       page: 1,
-      start_token: 1,
-      end_token: 1,
-      sentence_ids: [layoutPages[0].sentences[1].id],
-      rects: layoutPages[0].sentences[1].rects,
-      exact_text: layoutPages[0].sentences[1].text,
+      start_token: 2,
+      end_token: 2,
+      sentence_ids: [layoutPages[0].sentences[2].id],
+      rects: layoutPages[0].sentences[2].rects,
+      exact_text: layoutPages[0].sentences[2].text,
     },
   };
+  firstSection.pages = { start: 1, end: 1 };
+}
+if (analysis.sections[1] !== undefined) {
+  const nextAnchor = {
+    page: 1,
+    start_token: 3,
+    end_token: 3,
+    sentence_ids: [layoutPages[0].sentences[3].id],
+    rects: layoutPages[0].sentences[3].rects,
+    exact_text: layoutPages[0].sentences[3].text,
+  };
+  analysis.sections[1].pages = { start: 1, end: 1 };
+  analysis.sections[1].source_span = { start: nextAnchor, end: nextAnchor };
+}
+for (const section of analysis.sections.slice(2)) {
+  if (section.pages.start === 1) {
+    section.pages.start = Math.min(4, Math.max(2, section.pages.end));
+    section.pages.end = Math.max(section.pages.start, section.pages.end);
+  }
 }
 let highlights = [{
   id: "ai-smoke-0",
@@ -289,17 +313,40 @@ try {
   await page.locator(".context-sources").scrollIntoViewIfNeeded();
   await page.screenshot({ path: screenshotVariant("abstract"), fullPage: true });
   await page.getByRole("button", { name: /02 Overview/u }).click();
+  await page.locator(".source-page").first().waitFor();
+  assert((await page.locator(".source-page").count()) === layoutPages.length, "the page map did not include every PDF page");
+  assert(await page.locator(".source-map").evaluate((map) => {
+    const chart = document.querySelector(".conceptual-atlas");
+    return chart !== null && Boolean(map.compareDocumentPosition(chart) & Node.DOCUMENT_POSITION_FOLLOWING);
+  }), "the page map does not lead the conceptual-weight chart");
+  const columnCount = async () => Number(await page.locator(".source-pages").evaluate((grid) =>
+    getComputedStyle(grid).getPropertyValue("--page-columns"),
+  ));
+  assert(await columnCount() === 4, "the page grid did not choose an integer default column count");
+  await page.keyboard.press("Shift+=");
+  assert(await columnCount() === 3, "plus did not zoom in by removing one page column");
+  await page.keyboard.press("-");
+  assert(await columnCount() === 4, "minus did not zoom out by adding one page column");
+
   await page.locator(".section-tile").first().waitFor();
   const tiles = await page.locator(".section-tile").count();
   assert(tiles >= 5, `expected at least 5 atlas tiles, found ${tiles}`);
-  await page.locator(".source-page").first().waitFor();
-  await page.locator(".source-page").first().scrollIntoViewIfNeeded();
   await page.waitForFunction(() => {
     const canvas = document.querySelector(".source-page-canvas canvas");
     return canvas instanceof HTMLCanvasElement && canvas.width > 0;
   });
   assert((await page.locator(".highlight-rect.origin-ai").count()) > 0, "AI prehighlight was not rendered");
-  assert((await page.locator(".section-regions > .is-verified").count()) >= 2, "multi-column source span was not split into aligned blocks");
+  const firstPageRegions = page.locator(".source-page").first().locator(".section-regions > button");
+  assert((await firstPageRegions.count()) === 2, "the shared page was not split into two section segments");
+  const firstRegion = await firstPageRegions.first().evaluate((region) => ({
+    left: Number.parseFloat(region.style.left),
+    width: Number.parseFloat(region.style.width),
+    top: getComputedStyle(region).top,
+    height: getComputedStyle(region).height,
+  }));
+  assert(Math.abs(firstRegion.left) < 0.01, "the first section segment did not begin at the page edge");
+  assert(Math.abs(firstRegion.width - 75) < 0.01, `three-quarter source progress rendered at ${firstRegion.width}% instead of 75%`);
+  assert(firstRegion.top === "0px", "section progress was incorrectly projected down the PDF page");
   await page.keyboard.press("Shift+H");
   assert((await page.locator(".highlight-rect.origin-ai").count()) === 0, "AI prehighlight toggle did not hide evidence");
   await page.keyboard.press("Shift+H");

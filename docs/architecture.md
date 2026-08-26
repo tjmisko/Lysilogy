@@ -38,7 +38,7 @@ The public model lives in `src/domain.rs`. Its enums keep states and semantic di
 - `ProcessingStatus` is a tagged state machine from discovery through ready or a structured failure.
 - `ProcessingStage` identifies where a fault occurred.
 - `AnalysisProvider` makes provenance visible throughout the API and interface.
-- `SectionKind` describes conventional paper structure; `SectionFamily` groups those kinds into the atlas color language.
+- `SectionKind` describes conventional paper structure; `SectionFamily` groups those kinds into the Overview's color language.
 - `QuoteSignificance` and `EvidenceStrength` prevent key quotations and claims from becoming untyped strings.
 - `DocumentLayout`, `LayoutToken`, and `LayoutSentence` preserve PDF-point geometry with stable page-local coordinates.
 - `CitationStatus` distinguishes exact, normalized, ambiguous, missing, and legacy-unverified evidence.
@@ -78,7 +78,7 @@ This makes the future switch to a different local agent—or an explicitly confi
 
 The heuristic provider follows the same typed output path. It identifies printed headings where reliable, falls back to conceptual chunks, scores thesis-like sentences, assigns semantic families, extracts bounded quotations, and builds a small technical gloss. It never presents itself as model interpretation.
 
-Markdown conversion is a separate, model-free derivative of extraction. It rejoins wrapped lines, infers common headings and labels, neutralizes embedded HTML, and emits explicit PDF page markers. Opening the Markdown tab lazily extracts an unmapped paper if necessary, but does not start a model analysis. The UI offers both a safe rendered view and the exact `.md` source.
+Markdown conversion is a separate, model-free derivative of extraction. It rejoins wrapped lines, infers common headings and labels, neutralizes embedded HTML, and emits explicit PDF page markers. Opening reconstructed Text lazily extracts an unmapped paper if necessary, but does not start a model analysis. The UI offers both a safe rendered view and the exact `.md` source.
 
 ## Fault behavior
 
@@ -99,11 +99,11 @@ Expected faults have dedicated errors: missing PDF tools, unreadable vaults, emp
 
 The top-level information architecture is a monotonic reading ladder: Abstract → Overview → Glossary → Text. Abstract keeps generated orientation visibly separate from the authors' own words: `thesis` is the one-sentence TL;DR, `author_abstract` is retained only when its normalized text is present in the extraction, and `context_notes` provide at most two high-leverage, externally sourced sentences about field history, reception, or later interpretation. Legacy unsourced model context is withheld until reanalysis; the heuristic supplement remains explicitly limited to what can be inferred from the source paper. Overview owns the argument map, Glossary is a full pre-reading curriculum rather than a utility drawer, and Text owns both reconstructed Markdown and PDF formats.
 
-The atlas is a CSS grid whose tile spans come from analysis rather than PDF page dimensions. That is the core product distinction: area expresses conceptual weight, while color expresses argumentative role.
+Within that ramp, Overview leads with a CSS page grid containing every PDF page. Its column count is an explicit integer from one to ten: `+` zooms in by removing a column and `-` zooms out by adding one. Within a page, source-anchor token progress is projected onto the horizontal axis. A section transition three quarters through the page therefore lands three quarters across its page cell. This intentionally abstract orientation distinguishes structural segmentation from coordinate highlights. A secondary CSS grid retains the analysis-provided tile spans, where area expresses conceptual weight and color expresses argumentative role.
 
 Focus is the single source of truth for mouse, touch, and keyboard navigation. Arrow keys mirror `h/j/k/l` in every spatial list. The digest exposes real selectable DOM text; its visual mode stores an anchor and a moving semantic-fragment cursor, so `v`, movement, `o`, `y`, and `c` parallel Vim without breaking native browser selection. The source map provides the same workflow over deterministic sentence segments: `Space` writes a same-page token range to `highlights.jsonl`, and `c` hands its exact text to the contextual clarifier. `F1` owns the library rail, while `F10` opens a focused fuzzy switcher that searches titles, authors, and years.
 
-PDF.js renders either a focused page or an aligned two-page spread in the reader and lazy page thumbnails in the atlas. A spread is one paging unit for `h/l`, arrow keys, Ctrl-u/d, and PageUp/PageDown. Source overlays use the same PDF-point coordinate system and preserve each page's exact aspect ratio and boundary. Verified section spans are reconstructed from token-order runs, so multi-column sections split into separate aligned rectangles instead of assuming that vertical coordinates always increase. The default CSS filter produces light paper ink on a dark surface. Capital `I` toggles that filter everywhere, which is the reliable way to inspect figures, heatmaps, and photographs without color distortion.
+PDF.js renders either a focused page or an aligned two-page spread in Text and lazy page thumbnails in Overview. A spread is one paging unit for `h/l`, arrow keys, Ctrl-u/d, and PageUp/PageDown. Page cells preserve each PDF page's exact aspect ratio and boundary; section overlays use stable token order only to estimate reading progress along the abstract horizontal axis. Evidence and reader highlights remain coordinate-aligned because they identify literal source lines rather than conceptual regions. The default CSS filter produces light paper ink on a dark surface. Capital `I` toggles that filter everywhere, which is the reliable way to inspect figures, heatmaps, and photographs without color distortion.
 
 Highlights deliberately avoid a database. `highlights.jsonl` is canonical and atomically rewritten in stable ID order, one complete JSON object per line. Reader records survive reanalysis; AI records are regenerated from currently verified key quotes. `highlights.md` is a disposable human-readable projection. This gives tools and people a plain-text interface while retaining enough typed geometry for lossless rendering.
 

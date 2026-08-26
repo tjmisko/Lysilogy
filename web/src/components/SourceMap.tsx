@@ -44,16 +44,19 @@ type PercentStyle = CSSProperties & {
   height: string;
 };
 
+type PageGridStyle = CSSProperties & {
+  "--page-columns": number;
+};
+
 type SectionRegion = {
   section: PaperSection;
   index: number;
   left: number;
   right: number;
-  top: number;
-  bottom: number;
   verified: boolean;
-  label: boolean;
 };
+
+const MAX_PAGE_COLUMNS = 10;
 
 function rectStyle(rect: TextRect, page: LayoutPage): PercentStyle {
   return {
@@ -64,88 +67,51 @@ function rectStyle(rect: TextRect, page: LayoutPage): PercentStyle {
   };
 }
 
-function inferredRegions(
+function anchorProgress(page: LayoutPage, tokenIndex: number, includeToken: boolean): number | null {
+  if (page.tokens.length === 0) return null;
+  const ordered = [...page.tokens].sort((left, right) => left.index - right.index);
+  const exact = ordered.findIndex((token) => token.index >= tokenIndex);
+  const position = exact < 0 ? ordered.length - 1 : exact;
+  return Math.max(0, Math.min(1, (position + (includeToken ? 1 : 0)) / ordered.length));
+}
+
+function transitionProgress(
   page: LayoutPage,
-  candidates: Array<{ section: PaperSection; index: number }>,
-): SectionRegion[] {
-  const count = candidates.length;
-  if (count === 0) return [];
-  const positions = candidates.map(({ section }, index) => {
-    const rectangles = section.key_quotes
-      .flatMap((quote) => quote.anchor?.page === page.number ? quote.anchor.rects : []);
-    if (rectangles.length === 0) return (index + 0.5) / count;
-    const center = rectangles.reduce((sum, rect) => sum + (rect.y_min + rect.y_max) / 2, 0)
-      / rectangles.length;
-    return Math.max(0.02, Math.min(0.98, center / page.height));
-  });
-  for (let index = 1; index < positions.length; index += 1) {
-    positions[index] = Math.max(positions[index] ?? 0, (positions[index - 1] ?? 0) + 0.025);
+  previous: PaperSection,
+  next: PaperSection,
+  fallback: number,
+): { progress: number; verified: boolean } {
+  const previousEnd = previous.source_span?.end.page === page.number
+    ? anchorProgress(page, previous.source_span.end.end_token, true)
+    : null;
+  const nextStart = next.source_span?.start.page === page.number
+    ? anchorProgress(page, next.source_span.start.start_token, false)
+    : null;
+  const estimates = [previousEnd, nextStart].filter((value): value is number => value !== null);
+  if (estimates.length > 0) {
+    return {
+      progress: estimates.reduce((sum, value) => sum + value, 0) / estimates.length,
+      verified: true,
+    };
   }
-  return candidates.map(({ section, index }, candidateIndex) => ({
-    section,
-    index,
-    left: 0,
-    right: 1,
-    top: candidateIndex === 0
-      ? 0
-      : ((positions[candidateIndex - 1] ?? 0) + (positions[candidateIndex] ?? 1)) / 2,
-    bottom: candidateIndex === count - 1
-      ? 1
-      : ((positions[candidateIndex] ?? 0) + (positions[candidateIndex + 1] ?? 1)) / 2,
+
+  const previousQuotes = previous.key_quotes.flatMap((quote) =>
+    quote.anchor?.page === page.number
+      ? [anchorProgress(page, quote.anchor.end_token, true)]
+      : [],
+  ).filter((value): value is number => value !== null);
+  const nextQuotes = next.key_quotes.flatMap((quote) =>
+    quote.anchor?.page === page.number
+      ? [anchorProgress(page, quote.anchor.start_token, false)]
+      : [],
+  ).filter((value): value is number => value !== null);
+  const inferred = [...previousQuotes, ...nextQuotes];
+  return {
+    progress: inferred.length === 0
+      ? fallback
+      : inferred.reduce((sum, value) => sum + value, 0) / inferred.length,
     verified: false,
-    label: true,
-  }));
-}
-
-function selectedLineRects(page: LayoutPage, startToken: number, endToken: number): TextRect[] {
-  const lines: TextRect[] = [];
-  for (const token of page.tokens) {
-    if (token.index < startToken || token.index > endToken) continue;
-    for (const rect of token.rects) {
-      const previous = lines.at(-1);
-      const sameLine = previous !== undefined
-        && previous.y_min <= rect.y_max
-        && rect.y_min <= previous.y_max;
-      if (sameLine) {
-        previous.x_min = Math.min(previous.x_min, rect.x_min);
-        previous.y_min = Math.min(previous.y_min, rect.y_min);
-        previous.x_max = Math.max(previous.x_max, rect.x_max);
-        previous.y_max = Math.max(previous.y_max, rect.y_max);
-      } else {
-        lines.push({ ...rect });
-      }
-    }
-  }
-  return lines;
-}
-
-function sourceBlocks(page: LayoutPage, startToken: number, endToken: number): TextRect[] {
-  const lines = selectedLineRects(page, startToken, endToken);
-  const blocks: Array<TextRect & { lastLine: TextRect }> = [];
-  for (const line of lines) {
-    const block = blocks.at(-1);
-    if (block === undefined) {
-      blocks.push({ ...line, lastLine: line });
-      continue;
-    }
-    const previous = block.lastLine;
-    const overlap = Math.max(0, Math.min(previous.x_max, line.x_max) - Math.max(previous.x_min, line.x_min));
-    const narrowWidth = Math.max(1, Math.min(previous.x_max - previous.x_min, line.x_max - line.x_min));
-    const sameColumn = overlap / narrowWidth >= 0.28
-      || Math.abs(previous.x_min - line.x_min) <= page.width * 0.08;
-    const readsDownward = line.y_min >= previous.y_min - 1;
-    const nearby = line.y_min - previous.y_max <= page.height * 0.075;
-    if (sameColumn && readsDownward && nearby) {
-      block.x_min = Math.min(block.x_min, line.x_min);
-      block.y_min = Math.min(block.y_min, line.y_min);
-      block.x_max = Math.max(block.x_max, line.x_max);
-      block.y_max = Math.max(block.y_max, line.y_max);
-      block.lastLine = line;
-    } else {
-      blocks.push({ ...line, lastLine: line });
-    }
-  }
-  return blocks.map(({ x_min, y_min, x_max, y_max }) => ({ x_min, y_min, x_max, y_max }));
+  };
 }
 
 function regionsForPage(page: LayoutPage, sections: PaperSection[]): SectionRegion[] {
@@ -155,37 +121,45 @@ function regionsForPage(page: LayoutPage, sections: PaperSection[]): SectionRegi
       : [],
   );
   if (candidates.length === 0) return [];
-  const verified = candidates.flatMap(({ section, index }) => {
-    const span = section.source_span;
-    if (span == null || page.number < span.start.page || page.number > span.end.page) return [];
-    const startToken = page.number === span.start.page ? span.start.start_token : 0;
-    const endToken = page.number === span.end.page
-      ? span.end.end_token
-      : (page.tokens.at(-1)?.index ?? 0);
-    const blocks = sourceBlocks(page, startToken, endToken);
-    const labelIndex = blocks.reduce(
-      (largest, rect, blockIndex) => {
-        const area = (rect.x_max - rect.x_min) * (rect.y_max - rect.y_min);
-        return area > largest.area ? { index: blockIndex, area } : largest;
-      },
-      { index: 0, area: -1 },
-    ).index;
-    return blocks.map((rect, blockIndex) => ({
+  const boundaries = candidates.slice(0, -1).map(({ section }, boundaryIndex) =>
+    transitionProgress(
+      page,
       section,
-      index,
-      left: Math.max(0, rect.x_min / page.width),
-      right: Math.min(1, rect.x_max / page.width),
-      top: Math.max(0, rect.y_min / page.height),
-      bottom: Math.min(1, rect.y_max / page.height),
-      verified: true,
-      label: blockIndex === labelIndex,
-    }));
-  });
-  const inferred = inferredRegions(
-    page,
-    candidates.filter(({ section }) => section.source_span == null),
+      candidates[boundaryIndex + 1]?.section ?? section,
+      (boundaryIndex + 1) / candidates.length,
+    ),
   );
-  return [...verified, ...inferred];
+  let prior = 0;
+  for (let index = 0; index < boundaries.length; index += 1) {
+    const remaining = boundaries.length - index;
+    const boundary = boundaries[index];
+    if (boundary === undefined) continue;
+    boundary.progress = Math.max(
+      prior + 0.015,
+      Math.min(1 - remaining * 0.015, boundary.progress),
+    );
+    prior = boundary.progress;
+  }
+
+  return candidates.map(({ section, index }, candidateIndex) => ({
+    section,
+    index,
+    left: candidateIndex === 0 ? 0 : (boundaries[candidateIndex - 1]?.progress ?? 0),
+    right: candidateIndex === candidates.length - 1
+      ? 1
+      : (boundaries[candidateIndex]?.progress ?? 1),
+    verified:
+      (candidateIndex === 0 || boundaries[candidateIndex - 1]?.verified === true)
+      && (candidateIndex === candidates.length - 1 || boundaries[candidateIndex]?.verified === true),
+  }));
+}
+
+function defaultColumnCount(pageCount: number): number {
+  const available = Math.max(1, Math.min(MAX_PAGE_COLUMNS, pageCount));
+  if (window.innerWidth < 560) return Math.min(2, available);
+  if (window.innerWidth < 860) return Math.min(3, available);
+  if (window.innerWidth < 1180) return Math.min(4, available);
+  return Math.min(6, available);
 }
 
 function PageCanvas({ document, page, darkInk }: {
@@ -275,22 +249,49 @@ export function SourceMap({
   const [error, setError] = useState<string | null>(null);
   const [activeSentence, setActiveSentence] = useState(0);
   const [visualAnchor, setVisualAnchor] = useState<number | null>(null);
+  const maxColumns = Math.max(1, Math.min(MAX_PAGE_COLUMNS, paperMap.layout.pages.length));
+  const [columns, setColumns] = useState(() => defaultColumnCount(paperMap.layout.pages.length));
   const sentenceRefs = useRef(new Map<string, HTMLButtonElement>());
 
-  const mappedPages = useMemo(() => {
+  const mappedPageNumbers = useMemo(() => {
     const pageNumbers = new Set<number>();
     for (const section of analysis.sections) {
       for (let page = section.pages.start; page <= section.pages.end; page += 1) {
         pageNumbers.add(page);
       }
     }
-    const selected = paperMap.layout.pages.filter((page) => pageNumbers.has(page.number));
-    return selected.length > 0 ? selected : paperMap.layout.pages;
-  }, [analysis.sections, paperMap.layout.pages]);
+    return pageNumbers;
+  }, [analysis.sections]);
+
+  const pages = paperMap.layout.pages;
+  const pageRegions = useMemo(
+    () => pages.map((page) => ({ page, regions: regionsForPage(page, analysis.sections) })),
+    [analysis.sections, pages],
+  );
+  const labelPages = useMemo(() => {
+    const widest = new Map<string, { page: number; width: number; midpointDistance: number }>();
+    for (const { page, regions } of pageRegions) {
+      for (const region of regions) {
+        const width = region.right - region.left;
+        const midpoint = (region.section.pages.start + region.section.pages.end) / 2;
+        const midpointDistance = Math.abs(page.number - midpoint);
+        const current = widest.get(region.section.id);
+        if (
+          current === undefined
+          || width > current.width
+          || (width === current.width && midpointDistance < current.midpointDistance)
+        ) {
+          widest.set(region.section.id, { page: page.number, width, midpointDistance });
+        }
+      }
+    }
+    return new Map([...widest].map(([sectionId, value]) => [sectionId, value.page]));
+  }, [pageRegions]);
+  const representedPages = pages.filter((page) => mappedPageNumbers.has(page.number)).length;
 
   const sentences = useMemo(
-    () => mappedPages.flatMap((page) => page.sentences.filter((sentence) => sentence.text.length > 1)),
-    [mappedPages],
+    () => pages.flatMap((page) => page.sentences.filter((sentence) => sentence.text.length > 1)),
+    [pages],
   );
   const safeActive = Math.max(0, Math.min(sentences.length - 1, activeSentence));
 
@@ -307,6 +308,28 @@ export function SourceMap({
       void task.destroy();
     };
   }, [url]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement
+        || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement
+        || (target instanceof HTMLElement && target.isContentEditable)
+      ) return;
+      if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        setColumns((value) => Math.max(1, value - 1));
+      } else if (event.key === "-") {
+        event.preventDefault();
+        setColumns((value) => Math.min(maxColumns, value + 1));
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [maxColumns]);
 
   useEffect(() => {
     if (!markMode) return;
@@ -354,17 +377,36 @@ export function SourceMap({
   };
 
   return (
-    <section className={`source-map ${markMode ? "is-marking" : ""}`} aria-label="Coordinate-aligned source map">
+    <section className={`source-map ${markMode ? "is-marking" : ""}`} aria-label="Paper page map">
       <header className="source-map-header">
         <div>
-          <span className="eyebrow">Coordinate source map</span>
-          <h2>Paper pages beneath the map</h2>
+          <span className="eyebrow">Paper map</span>
+          <h2>The whole paper at a glance</h2>
           <p>
-            PDF pages retain their exact aspect and boundaries. Solid section edges are verified
-            start/end lines; dashed edges are page-level estimates awaiting a fresh analysis.
+            Every cell is one PDF page. Section changes read left to right within a page, turning
+            source progress into an abstract map instead of pretending to mark exact page geometry.
           </p>
         </div>
-        <div className="source-map-controls" role="group" aria-label="Source map layers">
+        <div className="source-map-controls" aria-label="Paper map controls">
+          <div className="page-grid-zoom" role="group" aria-label="Page grid zoom">
+            <button
+              type="button"
+              disabled={columns <= 1}
+              onClick={() => setColumns((value) => Math.max(1, value - 1))}
+              aria-label="Zoom in: show one fewer page column"
+            >
+              +
+            </button>
+            <output aria-live="polite">{columns} col</output>
+            <button
+              type="button"
+              disabled={columns >= maxColumns}
+              onClick={() => setColumns((value) => Math.min(maxColumns, value + 1))}
+              aria-label="Zoom out: show one more page column"
+            >
+              −
+            </button>
+          </div>
           <button type="button" className={showAi ? "is-active" : ""} aria-pressed={showAi} onClick={onShowAi}>
             AI evidence <kbd>H</kbd>
           </button>
@@ -377,7 +419,8 @@ export function SourceMap({
         </div>
       </header>
       <div className="source-map-status">
-        <span>{mappedPages.length} mapped PDF pages</span>
+        <span>{pages.length} PDF pages · {representedPages} represented in the section model</span>
+        <span><kbd>+</kbd> fewer columns · <kbd>−</kbd> more columns · 10 maximum</span>
         <span>{anchored} / {citationCount} citations deterministically anchored</span>
         {markMode && (
           <strong>
@@ -386,13 +429,17 @@ export function SourceMap({
         )}
       </div>
       {error !== null && <p className="inline-error">{error}</p>}
-      <div className="source-pages" role="list" aria-label={`Mapped pages from ${title}`}>
-        {mappedPages.map((page) => {
+      <div
+        className="source-pages"
+        role="list"
+        aria-label={`All pages from ${title}`}
+        style={{ "--page-columns": columns } as PageGridStyle}
+      >
+        {pageRegions.map(({ page, regions }) => {
           const pageHighlights = paperMap.highlights.filter((highlight) =>
             highlight.anchor.page === page.number
               && ((highlight.origin.type === "ai" && showAi) || (highlight.origin.type === "user" && showUser)),
           );
-          const regions = regionsForPage(page, analysis.sections);
           return (
             <article
               key={page.number}
@@ -413,13 +460,13 @@ export function SourceMap({
                     style={{
                       left: `${region.left * 100}%`,
                       width: `${Math.max(0.8, (region.right - region.left) * 100)}%`,
-                      top: `${region.top * 100}%`,
-                      height: `${Math.max(0.8, (region.bottom - region.top) * 100)}%`,
                     }}
                     onClick={() => onOpenSection(region.section, region.index)}
-                    aria-label={`${region.section.title}; ${region.verified ? "verified" : "estimated"} source region`}
+                    aria-label={`${region.section.title}; ${region.verified ? "anchored" : "estimated"} share of page ${page.number}`}
                   >
-                    {region.label && <span>{region.section.title}</span>}
+                    {labelPages.get(region.section.id) === page.number && (
+                      <span>{region.section.title}</span>
+                    )}
                   </button>
                 ))}
               </div>
