@@ -679,7 +679,6 @@ export function App() {
           >
             <span>Λ</span>
             <strong>LYSILOGY</strong>
-            <small>paper atlas</small>
           </button>
           <div className="view-switch" role="group" aria-label="Reader view">
             <button
@@ -691,7 +690,7 @@ export function App() {
                 setView("abstract");
               }}
             >
-              <span>01</span> Abstract
+              Abstract
             </button>
             <button
               type="button"
@@ -702,7 +701,7 @@ export function App() {
                 setView("overview");
               }}
             >
-              <span>02</span> Overview
+              Overview
             </button>
             <button
               type="button"
@@ -710,7 +709,7 @@ export function App() {
               aria-current={view === "glossary" ? "page" : undefined}
               onClick={openGlossary}
             >
-              <span>03</span> Glossary
+              Glossary
             </button>
             <button
               type="button"
@@ -721,7 +720,7 @@ export function App() {
                 setView("text");
               }}
             >
-              <span>04</span> Text
+              Text
             </button>
           </div>
           <div className="topbar-actions">
@@ -734,7 +733,7 @@ export function App() {
                 void refreshQueue();
               }}
             >
-              Queue{activeJobCount > 0 ? ` ${activeJobCount}` : ""} <kbd>q</kbd>
+              Queue{activeJobCount > 0 ? ` ${activeJobCount}` : ""}
             </button>
             <label className="provider-select">
               <span>Reader</span>
@@ -753,11 +752,8 @@ export function App() {
               {processing ? (
                 <><span className="loader" /> Reading</>
               ) : (
-                <>{analysisNeedsRefresh ? "Refresh" : "Analyze"} <kbd>:analyze</kbd></>
+                <>{analysisNeedsRefresh ? "Refresh" : "Analyze"} </>
               )}
-            </button>
-            <button className="icon-button" type="button" onClick={() => setPanel("help")} aria-label="Show key map">
-              ?
             </button>
           </div>
         </header>
@@ -805,7 +801,7 @@ export function App() {
                       Text is extracted locally. {provider === "heuristic" ? "The offline structural pass" : `${provider}, with web research and write access only to its live tasklist`} builds the orientation, overview, technical glossary, quotes, and context.
                     </p>
                     <button type="button" onClick={() => analyze()} disabled={processing}>
-                      {processing ? "Reading the paper…" : `Analyze with ${provider}`} <kbd>:analyze</kbd>
+                      {processing ? "Reading the paper…" : `Analyze with ${provider}`}
                     </button>
                     {currentPaper.status.state === "failed" && (
                       <p className="inline-error">{currentPaper.status.message}</p>
@@ -859,14 +855,14 @@ export function App() {
                         className={textMode === "markdown" ? "is-active" : ""}
                         onClick={() => setTextMode("markdown")}
                       >
-                        Reconstructed <kbd>m</kbd>
+                        Reconstructed
                       </button>
                       <button
                         type="button"
                         className={textMode === "pdf" ? "is-active" : ""}
                         onClick={() => setTextMode("pdf")}
                       >
-                        PDF <kbd>p</kbd>
+                        PDF
                       </button>
                     </div>
                   </header>
