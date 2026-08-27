@@ -176,7 +176,9 @@ impl LocalCliAnalyzer {
     ) -> Result<AgentOutput> {
         match provider {
             AnalysisProvider::Codex => {
-                let output_path = request.working_directory.join(request.output_filename);
+                let output_path =
+                    canonical_output_path(request.working_directory, request.output_filename)
+                        .await?;
                 remove_stale_output(&output_path).await?;
                 let mut command = Command::new(&self.codex_command);
                 if let Some(session) = request.session {
@@ -352,6 +354,14 @@ impl LocalCliAnalyzer {
             })?
             .map_err(|error| command_io_error(program, error))?;
         if output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if !stderr.trim().is_empty() {
+                tracing::warn!(
+                    program = %program.to_string_lossy(),
+                    stderr = %truncate_error(&stderr),
+                    "analyzer exited successfully but wrote to stderr"
+                );
+            }
             Ok(output)
         } else {
             Err(Error::CommandFailed {
@@ -388,6 +398,17 @@ async fn write_schema(path: &Path, schema: &str) -> Result<()> {
     tokio::fs::write(path, schema)
         .await
         .map_err(|error| Error::io(path, error))
+}
+
+/// The agent subprocess runs with the artifact directory as its cwd, so any
+/// path handed to it must be absolute: a relative `.lysilogy/papers/<id>/…`
+/// would resolve against the child's cwd, not ours, and the agent's output
+/// would land somewhere we never read.
+async fn canonical_output_path(directory: &Path, filename: &str) -> Result<PathBuf> {
+    let directory = tokio::fs::canonicalize(directory)
+        .await
+        .map_err(|error| Error::io(directory, error))?;
+    Ok(directory.join(filename))
 }
 
 async fn canonical_schema(path: &Path) -> Result<PathBuf> {
@@ -597,6 +618,20 @@ mod tests {
             br#"{"structured_output":{"answer":"plain","connections":[],"limitation":null}}"#,
         )?;
         assert_eq!(value.answer, "plain");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_produce_an_absolute_output_path_when_the_artifact_directory_is_relative()
+    -> Result<()> {
+        // cargo runs tests with the crate root as cwd, so `src` is a real relative directory.
+        let path = canonical_output_path(Path::new("src"), "analysis-agent-output.json").await?;
+        assert!(path.is_absolute(), "{}", path.display());
+        assert!(
+            path.ends_with("src/analysis-agent-output.json"),
+            "{}",
+            path.display()
+        );
         Ok(())
     }
 
