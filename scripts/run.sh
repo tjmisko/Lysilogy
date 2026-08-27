@@ -37,11 +37,4 @@ echo "==> Starting frontend (npm run dev)"
 (cd web && npm run dev) &
 frontend_pid=$!
 
-if command -v xdg-open >/dev/null 2>&1; then
-  echo "==> Opening frontend at $FRONTEND_URL"
-  (sleep 1 && xdg-open "$FRONTEND_URL" >/dev/null 2>&1) &
-else
-  echo "==> xdg-open not found; open $FRONTEND_URL manually"
-fi
-
 wait -n "$backend_pid" "$frontend_pid"
