@@ -253,23 +253,11 @@ export function SourceMap({
   const [columns, setColumns] = useState(() => defaultColumnCount(paperMap.layout.pages.length));
   const sentenceRefs = useRef(new Map<string, HTMLButtonElement>());
 
-  const mappedPageNumbers = useMemo(() => {
-    const pageNumbers = new Set<number>();
-    for (const section of analysis.sections) {
-      for (let page = section.pages.start; page <= section.pages.end; page += 1) {
-        pageNumbers.add(page);
-      }
-    }
-    return pageNumbers;
-  }, [analysis.sections]);
-
   const pages = paperMap.layout.pages;
   const pageRegions = useMemo(
     () => pages.map((page) => ({ page, regions: regionsForPage(page, analysis.sections) })),
     [analysis.sections, pages],
   );
-  const representedPages = pages.filter((page) => mappedPageNumbers.has(page.number)).length;
-
   const sentences = useMemo(
     () => pages.flatMap((page) => page.sentences.filter((sentence) => sentence.text.length > 1)),
     [pages],
@@ -324,10 +312,6 @@ export function SourceMap({
     }
   }, [markMode, safeActive, sentences]);
 
-  const anchored = analysis.sections.flatMap((section) => section.key_quotes)
-    .filter((quote) => quote.validation === "exact" || quote.validation === "normalized").length;
-  const citationCount = analysis.sections.flatMap((section) => section.key_quotes).length;
-
   const moveSentence = (delta: number): void => {
     const currentPage = sentences[safeActive]?.page;
     const candidate = Math.max(0, Math.min(sentences.length - 1, safeActive + delta));
@@ -360,14 +344,6 @@ export function SourceMap({
   return (
     <section className={`source-map ${markMode ? "is-marking" : ""}`} aria-label="Paper page map">
       <header className="source-map-header">
-        <div>
-          <span className="eyebrow">Paper map</span>
-          <h2>The whole paper at a glance</h2>
-          <p>
-            Every cell is one PDF page. Section changes read left to right within a page, turning
-            source progress into an abstract map instead of pretending to mark exact page geometry.
-          </p>
-        </div>
         <div className="source-map-controls" aria-label="Paper map controls">
           <div className="page-grid-zoom" role="group" aria-label="Page grid zoom">
             <button
@@ -399,16 +375,13 @@ export function SourceMap({
           </button>
         </div>
       </header>
-      <div className="source-map-status">
-        <span>{pages.length} PDF pages · {representedPages} represented in the section model</span>
-        <span><kbd>+</kbd> fewer columns · <kbd>−</kbd> more columns · 10 maximum</span>
-        <span>{anchored} / {citationCount} citations deterministically anchored</span>
-        {markMode && (
+      {markMode && (
+        <div className="source-map-status">
           <strong>
             <kbd>h/j/k/l</kbd> or arrows move · <kbd>v</kbd> range · <kbd>space</kbd> save · <kbd>c</kbd> clarify
           </strong>
-        )}
-      </div>
+        </div>
+      )}
       {error !== null && <p className="inline-error">{error}</p>}
       <div
         className="source-pages"
@@ -436,7 +409,7 @@ export function SourceMap({
                   <button
                     key={`${region.section.id}-${regionIndex}`}
                     type="button"
-                    className={`${region.verified ? "is-verified" : "is-inferred"} ${region.index === activeSection ? "is-active" : ""}`}
+                    className={`${region.verified ? "is-verified" : "is-inferred"} ${region.index === activeSection ? "is-active" : ""} ${page.number > region.section.pages.start ? "joins-previous" : ""} ${page.number < region.section.pages.end ? "joins-next" : ""}`}
                     data-family={region.section.family}
                     style={{
                       left: `${region.left * 100}%`,

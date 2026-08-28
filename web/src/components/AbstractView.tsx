@@ -7,12 +7,6 @@ type AbstractViewProps = {
   onContinue: () => void;
 };
 
-function providerLabel(analysis: PaperAnalysis, hasSources: boolean): string {
-  if (analysis.provider === "heuristic") return "Offline digest · source paper";
-  const provider = analysis.provider === "codex" ? "Codex" : "Claude";
-  return `AI digest · ${provider}${hasSources ? " · cited" : ""}`;
-}
-
 function generationLabel(analysis: PaperAnalysis): string {
   return analysis.provider === "heuristic" ? "Offline-generated" : "AI-generated";
 }
@@ -105,13 +99,17 @@ export function AbstractView({
         )}
       </article>
 
-      <article className="abstract-supplement">
-        <div className="supplement-mark" aria-hidden="true">+</div>
-        <div className="supplement-content">
-          <span className="eyebrow">{providerLabel(analysis, hasSources)} · supplement</span>
-          <h2>What the abstract leaves out</h2>
+      <section className="reading-context" aria-label="Context before and after reading">
+        <article className="reading-context-card">
+          <span className="eyebrow">Before the paper</span>
+          <h2>What to bring in</h2>
+          <p className="context-note-text">{analysis.outsider_brief}</p>
+        </article>
+        <article className="reading-context-card">
+          <span className="eyebrow">After the paper</span>
+          <h2>What to carry forward</h2>
           {analysis.provider === "heuristic" ? (
-            <p className="context-note-text">{analysis.outsider_brief}</p>
+            <p className="context-empty">Run a cited analysis to add independently checked follow-up context.</p>
           ) : hasSources ? (
             <div className="context-notes">
               {context.notes.map((note, noteIndex) => (
@@ -144,53 +142,45 @@ export function AbstractView({
                 : "No field-history, reception, or later-interpretation note is shown because no complete citation set passed independent link checks."}
             </p>
           )}
+        </article>
+      </section>
 
-          {hasSources && (
-            <section className="context-sources" aria-labelledby="context-sources-heading">
-              <header>
+      {hasSources && (
+        <section className="context-sources" aria-labelledby="context-sources-heading">
+          <header>
+            <div>
+              <span className="eyebrow">Evidence trail</span>
+              <h2 id="context-sources-heading">Sources</h2>
+            </div>
+            <span>{context.sources.length} checked</span>
+          </header>
+          <ol>
+            {context.sources.map((source, index) => (
+              <li className="context-source" key={source.id}>
+                <span className="context-source-number">[{index + 1}]</span>
                 <div>
-                  <span className="eyebrow">Evidence trail</span>
-                  <h3 id="context-sources-heading">Exact sources</h3>
+                  <a className="context-source-title" href={source.url} rel="noreferrer" target="_blank">
+                    {source.title} ↗
+                  </a>
+                  <p className="context-source-record">
+                    {source.authors.length > 0 ? source.authors.join(", ") : "Author unknown"}
+                    {source.year == null ? "" : ` · ${source.year}`} · {sourceHost(source.url)}
+                  </p>
+                  <p className="context-source-support">
+                    <strong>Used for:</strong> {source.supports}
+                  </p>
+                  <span className="context-source-check">Link checked {checkedAt(source.verified_at)}</span>
                 </div>
-                <span>{context.sources.length} checked</span>
-              </header>
-              <ol>
-                {context.sources.map((source, index) => (
-                  <li className="context-source" key={source.id}>
-                    <span className="context-source-number">[{index + 1}]</span>
-                    <div>
-                      <a
-                        className="context-source-title"
-                        href={source.url}
-                        rel="noreferrer"
-                        target="_blank"
-                      >
-                        {source.title} ↗
-                      </a>
-                      <p className="context-source-record">
-                        {source.authors.length > 0 ? source.authors.join(", ") : "Author unknown"}
-                        {source.year == null ? "" : ` · ${source.year}`} · {sourceHost(source.url)}
-                      </p>
-                      <p className="context-source-support">
-                        <strong>Used for:</strong> {source.supports}
-                      </p>
-                      <span className="context-source-check">
-                        Link checked {checkedAt(source.verified_at)}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-              <p className="context-verification-scope">
-                Lysilogy resolved every redirect, rejected non-public destinations, and required
-                an HTTP success response. That verifies link reachability at the recorded time—not
-                that the source semantically proves the note. Open the exact record to inspect the
-                evidence.
-              </p>
-            </section>
-          )}
-        </div>
-      </article>
+              </li>
+            ))}
+          </ol>
+          <p className="context-verification-scope">
+            Lysilogy resolved every redirect, rejected non-public destinations, and required an
+            HTTP success response. That verifies link reachability at the recorded time—not that
+            the source semantically proves the note. Open the exact record to inspect the evidence.
+          </p>
+        </section>
+      )}
 
       <footer className="view-continuation">
         <div>

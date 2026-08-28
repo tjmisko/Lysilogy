@@ -882,7 +882,6 @@ export function App() {
                 <SectionAtlas
                   analysis={analysis}
                   activeIndex={activeSection}
-                  onActiveIndex={setActiveSection}
                   onOpen={openSection}
                   sourceUrl={api.source(selectedId ?? currentPaper.id)}
                   paperTitle={currentPaper.metadata.title}
