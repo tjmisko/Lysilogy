@@ -19,7 +19,6 @@ const COMMANDS = [
   ["atlas", "Open the argument overview"],
   ["glossary", "Open the technical glossary"],
   ["text", "Open the full paper text"],
-  ["markdown", "Open reconstructed text"],
   ["pdf", "Open the source PDF"],
   ["spread", "Toggle the two-page PDF spread"],
   ["ink", "Toggle dark ink / original colours"],

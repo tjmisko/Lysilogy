@@ -103,7 +103,7 @@ export function App() {
   const [activeSection, setActiveSection] = useState(0);
   const [panel, setPanel] = useState<Panel>(null);
   const [view, setView] = useState<ViewMode>(initialView);
-  const [textMode, setTextMode] = useState<TextMode>("markdown");
+  const [textMode, setTextMode] = useState<TextMode>("pdf");
   const [compactLayout, setCompactLayout] = useState(() => window.innerWidth < 1180);
   const [libraryOpen, setLibraryOpen] = useState(() => window.innerWidth >= 1180);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -297,7 +297,7 @@ export function App() {
       setMarkMode(false);
       setPdfPage(1);
       setView("abstract");
-      setTextMode("markdown");
+      setTextMode("pdf");
       setSelectedId(id);
       setPaperView(null);
       setError(null);
@@ -367,12 +367,12 @@ export function App() {
 
   const cycleView = useCallback((delta: -1 | 1): void => {
     setPanel(null);
-    setView((current) => {
-      const index = VIEW_ORDER.indexOf(current);
-      const nextIndex = (index + delta + VIEW_ORDER.length) % VIEW_ORDER.length;
-      return VIEW_ORDER[nextIndex] ?? current;
-    });
-  }, []);
+    const index = VIEW_ORDER.indexOf(view);
+    const nextIndex = (index + delta + VIEW_ORDER.length) % VIEW_ORDER.length;
+    const next = VIEW_ORDER[nextIndex] ?? view;
+    if (next === "text") setTextMode("pdf");
+    setView(next);
+  }, [view]);
 
   const movePaper = useCallback(
     (delta: number): void => {
@@ -480,10 +480,7 @@ export function App() {
         openGlossary();
         break;
       case "text":
-        setView("text");
-        break;
-      case "markdown":
-        setTextMode("markdown");
+        setTextMode("pdf");
         setView("text");
         break;
       case "pdf":
@@ -547,7 +544,7 @@ export function App() {
     },
     onToggleMarkdown: () => {
       if (view === "text" && textMode === "markdown") {
-        setView("overview");
+        setTextMode("pdf");
       } else {
         setTextMode("markdown");
         setView("text");
@@ -794,6 +791,7 @@ export function App() {
               aria-current={view === "text" ? "page" : undefined}
               onClick={() => {
                 setPanel(null);
+                setTextMode("pdf");
                 setView("text");
               }}
             >
@@ -960,21 +958,9 @@ export function App() {
                       <span className="view-number">04</span>
                       <span className="eyebrow">Read the paper</span>
                     </div>
-                    <div className="mini-switch" role="group" aria-label="Text format">
-                      <button
-                        type="button"
-                        className={textMode === "markdown" ? "is-active" : ""}
-                        onClick={() => setTextMode("markdown")}
-                      >
-                        Reconstructed
-                      </button>
-                      <button
-                        type="button"
-                        className={textMode === "pdf" ? "is-active" : ""}
-                        onClick={() => setTextMode("pdf")}
-                      >
-                        PDF
-                      </button>
+                    <div className="text-mode-status" aria-live="polite">
+                      <strong>{textMode === "pdf" ? "Source PDF" : "Markdown reconstruction"}</strong>
+                      <span><kbd>m</kbd> {textMode === "pdf" ? "reconstruct text" : "return to PDF"}</span>
                     </div>
                   </header>
                   {textMode === "markdown" ? (

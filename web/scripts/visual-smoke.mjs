@@ -306,7 +306,7 @@ try {
   await page.locator(".abstract-view").waitFor();
   const viewLabels = await page.locator(".view-switch > button").allTextContents();
   assert(
-    viewLabels.join("|").replaceAll(/\s+/gu, " ").includes("01 Abstract|02 Overview|03 Glossary|04 Text"),
+    viewLabels.join("|").replaceAll(/\s+/gu, " ").includes("Abstract|Overview|Glossary|Text"),
     `reading levels are out of order: ${viewLabels.join(", ")}`,
   );
   assert((await page.locator(".abstract-tldr").count()) === 1, "one-sentence TL;DR is missing");
@@ -330,7 +330,14 @@ try {
   );
   await page.locator(".context-sources").scrollIntoViewIfNeeded();
   await page.screenshot({ path: screenshotVariant("abstract"), fullPage: true });
-  await page.getByRole("button", { name: /02 Overview/u }).click();
+  await page.getByRole("button", { name: /^Text$/u }).click();
+  await page.locator(".pdf-canvas").waitFor();
+  assert((await page.locator(".markdown-reader").count()) === 0, "Text did not default to the source PDF");
+  assert(
+    (await page.locator(".text-mode-status strong").textContent()) === "Source PDF",
+    "the default Text mode was not identified as the source PDF",
+  );
+  await page.getByRole("button", { name: /^Overview$/u }).click();
   await page.locator(".source-page").first().waitFor();
   assert((await page.locator(".source-page").count()) === layoutPages.length, "the page map did not include every PDF page");
   assert(await page.locator(".source-map").evaluate((map) => {
@@ -384,9 +391,9 @@ try {
   await page.screenshot({ path: screenshot, fullPage: true });
 
   assert((await page.locator(".paper-list-item").count()) === 2, "library fixture did not load");
-  await page.locator(".library-counts button").click();
+  await page.locator(".library-counts button[aria-pressed]").click();
   assert((await page.locator(".paper-list-item").count()) === 1, "mapped-only filter did not narrow the library");
-  await page.locator(".library-counts button").click();
+  await page.locator(".library-counts button[aria-pressed]").click();
   await page.keyboard.press("f");
   assert((await page.locator(".paper-list-item").count()) === 1, "mapped-only keyboard filter failed");
   await page.keyboard.press("f");
@@ -406,10 +413,12 @@ try {
 
   await page.keyboard.press("m");
   await page.locator(".markdown-document").waitFor();
-  assert((await page.locator(".text-view-header").count()) === 1, "Text format chooser is missing");
+  assert((await page.locator(".text-view-header").count()) === 1, "Text view header is missing");
   assert((await page.locator(".markdown-page-marker").count()) === 4, "Markdown page provenance is incomplete");
   await page.screenshot({ path: screenshotVariant("markdown"), fullPage: true });
   await page.keyboard.press("m");
+  await page.locator(".pdf-canvas").waitFor();
+  await page.keyboard.press("p");
   await page.locator(".section-atlas").waitFor();
 
   await page.keyboard.press("Enter");
@@ -439,7 +448,7 @@ try {
   });
   const focusHeldStill = async () => page.evaluate(() => document.activeElement === window.__focusProbe);
 
-  await page.getByRole("button", { name: /01 Abstract/u }).click();
+  await page.getByRole("button", { name: /^Abstract$/u }).click();
   await page.locator(".abstract-view").waitFor();
   await rememberFocus();
   await page.keyboard.press("Tab");
@@ -593,7 +602,7 @@ try {
 
   await page.setViewportSize({ width: 390, height: 844 });
   await delay(100);
-  await page.getByRole("button", { name: /01 Abstract/u }).click();
+  await page.getByRole("button", { name: /^Abstract$/u }).click();
   await page.locator(".abstract-view").waitFor();
   await page.screenshot({ path: screenshotVariant("abstract-mobile"), fullPage: true });
   await page.keyboard.press("b");

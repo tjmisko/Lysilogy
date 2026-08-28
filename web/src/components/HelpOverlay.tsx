@@ -21,7 +21,7 @@ const GROUPS = [
       ["↵ or o", "Open the focused section"],
       ["d", "Open its contextual digest"],
       ["g", "Open the technical glossary (pause after one g)"],
-      ["m", "Toggle overview / reconstructed full text"],
+      ["m", "Toggle PDF / requested Markdown reconstruction"],
       ["p", "Toggle overview / source PDF"],
       ["2", "Toggle one-page / two-page PDF view"],
       ["+ / −", "Show one fewer / one more page column in Overview"],

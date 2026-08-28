@@ -16,7 +16,7 @@ The top bar is a monotonic ramp — each level is strictly more detailed than th
 | **Abstract** | A generated one-sentence thesis, the authors' own abstract, and at most two externally sourced context notes on field history, reception, or later interpretation. |
 | **Overview** | A resizable grid of every PDF page, with section transitions projected across each page cell, plus a secondary tile map where area expresses conceptual weight and color expresses argumentative role. |
 | **Glossary** | The load-bearing technical vocabulary to hold in your head before reading. |
-| **Text** | Calm reconstructed Markdown alongside the source PDF. |
+| **Text** | The selectable source PDF by default; reconstructed Markdown is available on request. |
 
 Two provenance rules hold everywhere:
 
@@ -146,7 +146,7 @@ Press `?` in the app for the complete, contextual guide.
 | `Enter` or `o` | Open the focused section digest |
 | `d` | Toggle the digest |
 | `g` | Open the Glossary after a short single-key delay |
-| `m` | Toggle Overview / reconstructed Text |
+| `m` | Toggle source PDF / requested Markdown reconstruction |
 | `p` | Toggle Overview / source PDF |
 | `2` | Toggle one-page / two-page PDF view |
 | `+` / `-` | One fewer / one more page column in Overview (up to 10) |
