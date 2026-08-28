@@ -36,18 +36,11 @@ type Fragment = {
   page?: number;
 };
 
-function digestParagraphs(digest: string): string[] {
-  const explicit = digest
-    .split(/\n{2,}/u)
-    .map((part) => part.trim())
-    .filter(Boolean);
-  if (explicit.length > 1) return explicit;
-  const sentences = digest.match(/[^.!?]+(?:[.!?]+|$)/gu) ?? [digest];
-  const grouped: string[] = [];
-  for (let index = 0; index < sentences.length; index += 2) {
-    grouped.push(sentences.slice(index, index + 2).join(" ").trim());
-  }
-  return grouped.filter(Boolean);
+function atAGlance(text: string): string {
+  const sentence = text.match(/^[\s\S]*?[.!?](?=\s|$)/u)?.[0] ?? text;
+  if (sentence.length <= 190) return sentence;
+  const clipped = sentence.slice(0, 187).replace(/\s+\S*$/u, "").trim();
+  return `${clipped}…`;
 }
 
 function isEditable(target: EventTarget | null): boolean {
@@ -64,12 +57,12 @@ export function DigestPanel({
   onClarify,
 }: DigestPanelProps) {
   const fragments = useMemo<Fragment[]>(() => {
-    const digest = digestParagraphs(section.digest).map((text, index) => ({
-      id: `digest-${index}`,
+    const digest = [{
+      id: "digest-0",
       type: "digest" as const,
-      label: index === 0 ? "Contextual digest" : "Continued",
-      text,
-    }));
+      label: "At a glance",
+      text: atAGlance(section.summary || section.digest),
+    }];
     const quotes = section.key_quotes.flatMap<Fragment>((quote, index) => [
       {
         id: `quote-${index}`,

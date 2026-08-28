@@ -268,25 +268,6 @@ export function SourceMap({
     () => pages.map((page) => ({ page, regions: regionsForPage(page, analysis.sections) })),
     [analysis.sections, pages],
   );
-  const labelPages = useMemo(() => {
-    const widest = new Map<string, { page: number; width: number; midpointDistance: number }>();
-    for (const { page, regions } of pageRegions) {
-      for (const region of regions) {
-        const width = region.right - region.left;
-        const midpoint = (region.section.pages.start + region.section.pages.end) / 2;
-        const midpointDistance = Math.abs(page.number - midpoint);
-        const current = widest.get(region.section.id);
-        if (
-          current === undefined
-          || width > current.width
-          || (width === current.width && midpointDistance < current.midpointDistance)
-        ) {
-          widest.set(region.section.id, { page: page.number, width, midpointDistance });
-        }
-      }
-    }
-    return new Map([...widest].map(([sectionId, value]) => [sectionId, value.page]));
-  }, [pageRegions]);
   const representedPages = pages.filter((page) => mappedPageNumbers.has(page.number)).length;
 
   const sentences = useMemo(
@@ -464,7 +445,7 @@ export function SourceMap({
                     onClick={() => onOpenSection(region.section, region.index)}
                     aria-label={`${region.section.title}; ${region.verified ? "anchored" : "estimated"} share of page ${page.number}`}
                   >
-                    {labelPages.get(region.section.id) === page.number && (
+                    {region.section.pages.start === page.number && (
                       <span>{region.section.title}</span>
                     )}
                   </button>

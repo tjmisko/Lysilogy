@@ -39,6 +39,13 @@ const FAMILY_LABELS = [
   ["reference", "Reference"],
 ] as const;
 
+function atAGlance(text: string): string {
+  const sentence = text.match(/^[\s\S]*?[.!?](?=\s|$)/u)?.[0] ?? text;
+  if (sentence.length <= 150) return sentence;
+  const clipped = sentence.slice(0, 147).replace(/\s+\S*$/u, "").trim();
+  return `${clipped}…`;
+}
+
 export function SectionAtlas({
   analysis,
   activeIndex,
@@ -150,7 +157,7 @@ export function SectionAtlas({
                   {section.pages.end === section.pages.start ? "" : `–${section.pages.end}`}
                 </span>
                 <strong>{section.title}</strong>
-                <span className="tile-summary">{section.summary}</span>
+                <span className="tile-summary">{atAGlance(section.summary)}</span>
                 <span className="tile-action">
                   Open Digest
                 </span>

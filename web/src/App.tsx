@@ -117,12 +117,17 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [authorsOpen, setAuthorsOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const mainStageRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     mainStageRef.current?.scrollTo({ top: 0 });
   }, [selectedId, textMode, view]);
+
+  useEffect(() => {
+    setAuthorsOpen(false);
+  }, [selectedId]);
 
   const refreshLibrary = useCallback(async (): Promise<LibraryResponse> => {
     const next = await api.library();
@@ -699,7 +704,7 @@ export function App() {
             onClick={() => setLibraryOpen((open) => !open)}
             aria-label="Toggle library"
           >
-            <span>Λ</span>
+            <img className="brand-mark" src="/lambda-mark.svg" alt="" />
             <strong>LYSILOGY</strong>
           </button>
           <div className="view-switch" role="group" aria-label="Reader view">
@@ -793,23 +798,59 @@ export function App() {
           )}
           {currentPaper !== null && (
             <>
-              <section className="paper-heading">
-                <div className="paper-kicker">
-                  <span className={`status-pip status-${currentPaper.status.state}`} />
-                  {statusLabel(currentPaper)}
-                  {paperView?.analysis !== null && paperView?.analysis !== undefined && (
-                    <> · {paperView.analysis.provider}</>
-                  )}
+              {view === "abstract" && (
+                <section className="paper-heading">
+                  <div className="paper-kicker">
+                    <span className={`status-pip status-${currentPaper.status.state}`} />
+                    {statusLabel(currentPaper)}
+                    {paperView?.analysis !== null && paperView?.analysis !== undefined && (
+                      <> · {paperView.analysis.provider}</>
+                    )}
+                  </div>
+                  <h1>{currentPaper.metadata.title}</h1>
+                  <div className="paper-byline">
+                    <span>
+                      {(currentPaper.metadata.authors.length > 5
+                        ? currentPaper.metadata.authors.slice(0, 5)
+                        : currentPaper.metadata.authors).join(", ") || "Unknown author"}
+                    </span>
+                    {currentPaper.metadata.authors.length > 5 && (
+                      <button type="button" onClick={() => setAuthorsOpen(true)} aria-haspopup="dialog">
+                        +{currentPaper.metadata.authors.length - 5} authors
+                      </button>
+                    )}
+                    {currentPaper.metadata.year !== null && <span>{currentPaper.metadata.year}</span>}
+                    {currentPaper.metadata.page_count !== null && (
+                      <span>{currentPaper.metadata.page_count} pages</span>
+                    )}
+                  </div>
+                </section>
+              )}
+
+              {authorsOpen && (
+                <div className="authors-modal-backdrop" role="presentation" onMouseDown={() => setAuthorsOpen(false)}>
+                  <section
+                    className="authors-modal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="authors-modal-heading"
+                    onMouseDown={(event) => event.stopPropagation()}
+                  >
+                    <header>
+                      <div>
+                        <span className="eyebrow">Paper authors</span>
+                        <h2 id="authors-modal-heading">{currentPaper.metadata.authors.length} contributors</h2>
+                      </div>
+                      <button className="icon-button" type="button" onClick={() => setAuthorsOpen(false)} aria-label="Close authors">
+                        ×
+                      </button>
+                    </header>
+                    <ol>
+                      {currentPaper.metadata.authors.map((author) => <li key={author}>{author}</li>)}
+                    </ol>
+                  </section>
                 </div>
-                <h1>{currentPaper.metadata.title}</h1>
-                <div className="paper-byline">
-                  <span>{currentPaper.metadata.authors.join(", ") || "Unknown author"}</span>
-                  {currentPaper.metadata.year !== null && <span>{currentPaper.metadata.year}</span>}
-                  {currentPaper.metadata.page_count !== null && (
-                    <span>{currentPaper.metadata.page_count} pages</span>
-                  )}
-                </div>
-              </section>
+              )}
 
               {view !== "text" && analysis === null ? (
                 <section className="unanalyzed-state">
