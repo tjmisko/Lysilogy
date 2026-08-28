@@ -55,6 +55,17 @@ type SectionRegion = {
   verified: boolean;
 };
 
+type SectionBox = {
+  id: string;
+  section: PaperSection;
+  index: number;
+  verified: boolean;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
 const MAX_PAGE_COLUMNS = 10;
 
 function rectStyle(rect: TextRect, page: LayoutPage): PercentStyle {
@@ -247,15 +258,67 @@ export function SourceMap({
   const [error, setError] = useState<string | null>(null);
   const [activeSentence, setActiveSentence] = useState(0);
   const [visualAnchor, setVisualAnchor] = useState<number | null>(null);
+  const [sectionBoxes, setSectionBoxes] = useState<SectionBox[]>([]);
   const maxColumns = Math.max(1, Math.min(MAX_PAGE_COLUMNS, paperMap.layout.pages.length));
   const [columns, setColumns] = useState(() => defaultColumnCount(paperMap.layout.pages.length));
   const sentenceRefs = useRef(new Map<string, HTMLButtonElement>());
+  const sourcePagesRef = useRef<HTMLDivElement>(null);
+  const pageRefs = useRef(new Map<number, HTMLElement>());
 
   const pages = paperMap.layout.pages;
   const pageRegions = useMemo(
     () => pages.map((page) => ({ page, regions: regionsForPage(page, analysis.sections) })),
     [analysis.sections, pages],
   );
+
+  useEffect(() => {
+    const grid = sourcePagesRef.current;
+    if (grid === null) return;
+    const updateBoxes = (): void => {
+      const gridRect = grid.getBoundingClientRect();
+      const fragments = pageRegions.flatMap(({ page, regions }) => {
+        const node = pageRefs.current.get(page.number);
+        if (node === undefined) return [];
+        const rect = node.getBoundingClientRect();
+        return regions.map((region) => ({ page, region, rect }));
+      });
+      const groups = new Map<string, Array<(typeof fragments)[number]>>();
+      for (const fragment of fragments) {
+        const row = Math.round((fragment.rect.top - gridRect.top) * 10) / 10;
+        const key = `${fragment.region.section.id}:${row}`;
+        const group = groups.get(key) ?? [];
+        group.push(fragment);
+        groups.set(key, group);
+      }
+      const next: SectionBox[] = [];
+      for (const [id, group] of groups) {
+        const first = group[0];
+        if (first === undefined) continue;
+        const left = Math.min(...group.map(({ rect, region }) => rect.left + rect.width * region.left));
+        const right = Math.max(...group.map(({ rect, region }) => rect.left + rect.width * region.right));
+        const top = Math.min(...group.map(({ rect }) => rect.top));
+        const bottom = Math.max(...group.map(({ rect }) => rect.bottom));
+        next.push({
+          id,
+          section: first.region.section,
+          index: first.region.index,
+          verified: group.every(({ region }) => region.verified),
+          left: left - gridRect.left,
+          top: top - gridRect.top,
+          width: right - left,
+          height: bottom - top,
+        });
+      }
+      setSectionBoxes(next);
+    };
+    const frame = window.requestAnimationFrame(updateBoxes);
+    const observer = new ResizeObserver(updateBoxes);
+    observer.observe(grid);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [columns, pageRegions]);
   const sentences = useMemo(
     () => pages.flatMap((page) => page.sentences.filter((sentence) => sentence.text.length > 1)),
     [pages],
@@ -383,11 +446,12 @@ export function SourceMap({
       {error !== null && <p className="inline-error">{error}</p>}
       <div
         className="source-pages"
+        ref={sourcePagesRef}
         role="list"
         aria-label={`All pages from ${title}`}
         style={{ "--page-columns": columns } as PageGridStyle}
       >
-        {pageRegions.map(({ page, regions }) => {
+        {pageRegions.map(({ page }) => {
           const pageHighlights = paperMap.highlights.filter((highlight) =>
             highlight.anchor.page === page.number
               && ((highlight.origin.type === "ai" && showAi) || (highlight.origin.type === "user" && showUser)),
@@ -395,6 +459,10 @@ export function SourceMap({
           return (
             <article
               key={page.number}
+              ref={(node) => {
+                if (node === null) pageRefs.current.delete(page.number);
+                else pageRefs.current.set(page.number, node);
+              }}
               className="source-page"
               role="listitem"
               style={{ aspectRatio: `${page.width} / ${page.height}` }}
@@ -402,24 +470,6 @@ export function SourceMap({
               {document === null ? <span className="loader" /> : (
                 <PageCanvas document={document} page={page} darkInk={darkInk} />
               )}
-              <div className="section-regions" aria-label={`Sections on PDF page ${page.number}`}>
-                {regions.map((region, regionIndex) => (
-                  <button
-                    key={`${region.section.id}-${regionIndex}`}
-                    type="button"
-                    className={`${region.verified ? "is-verified" : "is-inferred"} ${region.index === activeSection ? "is-active" : ""} ${page.number > region.section.pages.start ? "joins-previous" : ""} ${page.number < region.section.pages.end ? "joins-next" : ""}`}
-                    data-family={region.section.family}
-                    style={{
-                      left: `${region.left * 100}%`,
-                      width: `${Math.max(0.8, (region.right - region.left) * 100)}%`,
-                    }}
-                    onClick={() => onOpenSection(region.section, region.index)}
-                    aria-label={`${region.section.title}; ${region.verified ? "anchored" : "estimated"} share of page ${page.number}`}
-                  >
-                    <span>{region.section.title}</span>
-                  </button>
-                ))}
-              </div>
               <div className="highlight-layer" aria-hidden="true">
                 {pageHighlights.flatMap((highlight) => highlight.anchor.rects.map((rect, index) => (
                   <i
@@ -493,6 +543,26 @@ export function SourceMap({
             </article>
           );
         })}
+        <div className={`section-boxes ${markMode ? "is-disabled" : ""}`} aria-label="Paper sections">
+          {sectionBoxes.map((box) => (
+            <button
+              key={box.id}
+              type="button"
+              className={`${box.verified ? "is-verified" : "is-inferred"} ${box.index === activeSection ? "is-active" : ""}`}
+              data-family={box.section.family}
+              style={{
+                left: `${box.left}px`,
+                top: `${box.top}px`,
+                width: `${box.width}px`,
+                height: `${box.height}px`,
+              }}
+              onClick={() => onOpenSection(box.section, box.index)}
+              aria-label={`${box.section.title}; pages ${box.section.pages.start} to ${box.section.pages.end}`}
+            >
+              <span>{box.section.title}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );

@@ -1074,6 +1074,7 @@ code {
 }
 
 .source-pages {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(var(--page-columns), minmax(0, 1fr));
   align-items: flex-start;
@@ -1102,7 +1103,6 @@ code {
 
 .source-page-canvas,
 .source-page-canvas canvas,
-.section-regions,
 .highlight-layer,
 .sentence-layer {
   position: absolute;
@@ -1120,44 +1120,37 @@ code {
   filter: invert(0.91) hue-rotate(180deg) brightness(0.82) contrast(1.08) sepia(0.08);
 }
 
-.section-regions {
-  z-index: 2;
+.section-boxes {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  pointer-events: none;
 }
 
-.section-regions > button {
+.section-boxes > button {
   position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
   overflow: hidden;
   padding: 0;
   border: 2px solid color-mix(in srgb, var(--family) 66%, #060706);
   background: color-mix(in srgb, var(--family) 32%, transparent);
   color: white;
   text-align: center;
+  pointer-events: auto;
 }
 
-.section-regions > button.is-inferred {
+.section-boxes > button.is-inferred {
   border-style: dashed;
 }
 
-.section-regions > button.joins-previous {
-  border-left-color: transparent;
-}
-
-.section-regions > button.joins-next {
-  border-right-color: transparent;
-}
-
-.section-regions > button.is-active,
-.section-regions > button:hover,
-.section-regions > button:focus-visible {
+.section-boxes > button.is-active,
+.section-boxes > button:hover,
+.section-boxes > button:focus-visible {
   z-index: 2;
   background: color-mix(in srgb, var(--family) 45%, transparent);
   box-shadow: inset 0 0 0 1px var(--signal);
 }
 
-.section-regions > button > span {
+.section-boxes > button > span {
   position: absolute;
   inset: 7%;
   display: grid;
@@ -1175,7 +1168,7 @@ code {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 
-.source-map.is-marking .section-regions {
+.section-boxes.is-disabled {
   pointer-events: none;
 }
 
