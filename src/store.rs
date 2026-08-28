@@ -11,7 +11,7 @@ use crate::{
     domain::{
         AgentSession, AnalysisJob, AnalysisProvider, CitationStatus, DocumentLayout, ExtractedPage,
         ExtractedPaper, FeedbackRecord, Highlight, HighlightOrigin, PaperAnalysis, PaperId,
-        PaperMetadata,
+        PaperMetadata, RemotePdfSource,
     },
     error::Error,
     markdown,
@@ -94,6 +94,16 @@ impl ArtifactStore {
         let mut json = serde_json::to_vec_pretty(job)?;
         json.push(b'\n');
         write_atomic(&directory.join("job.json"), &json).await
+    }
+
+    pub async fn save_remote_source(&self, id: &PaperId, source: &RemotePdfSource) -> Result<()> {
+        let directory = self.paper_dir(id);
+        fs::create_dir_all(&directory)
+            .await
+            .map_err(|error| Error::io(&directory, error))?;
+        let mut json = serde_json::to_vec_pretty(source)?;
+        json.push(b'\n');
+        write_atomic(&directory.join("origin.json"), &json).await
     }
 
     pub async fn load_tasklist(&self, id: &PaperId) -> Result<Option<String>> {

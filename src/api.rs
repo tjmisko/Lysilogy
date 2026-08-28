@@ -5,6 +5,7 @@ use std::{
         Arc,
         atomic::{AtomicU64, Ordering},
     },
+    time::Duration,
 };
 
 use axum::{
@@ -16,9 +17,15 @@ use axum::{
     routing::{delete, get, post},
 };
 use chrono::Utc;
-use serde::Serialize;
+use percent_encoding::percent_decode_str;
+use reqwest::{
+    Url,
+    header::{ACCEPT, CONTENT_LENGTH, LOCATION},
+};
+use serde::{Deserialize, Serialize};
 use tokio::{
-    fs::File,
+    fs::{File, OpenOptions},
+    io::AsyncWriteExt,
     sync::{Mutex, RwLock},
 };
 use tokio_util::io::ReaderStream;
@@ -31,16 +38,22 @@ use crate::{
         CitationStatus, Clarification, ClarifyRequest, CreateHighlightRequest, ExtractedPaper,
         FeedbackRecord, FeedbackRequest, FeedbackStatus, Highlight, HighlightOrigin, PaperId,
         PaperMap, PaperOverview, PaperView, ProcessingQueue, ProcessingStage, ProcessingStatus,
+        RemotePdfSource,
     },
     error::Error,
     extract::PdfExtractor,
     jobs::JobTracker,
     library::LibraryCatalog,
+    remote::{MAX_PUBLIC_REDIRECTS, public_http_client},
     store::ArtifactStore,
 };
 
 static USER_HIGHLIGHT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 static FEEDBACK_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+static IMPORT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+const REMOTE_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
+const MAX_REMOTE_PDF_BYTES: u64 = 100 * 1024 * 1024;
+const MAX_REMOTE_URL_LENGTH: usize = 4_096;
 
 #[derive(Clone, Debug)]
 pub struct AppState {
@@ -51,6 +64,7 @@ pub struct AppState {
     analysis: AnalysisService,
     jobs: JobTracker,
     highlight_write: Arc<Mutex<()>>,
+    import_write: Arc<Mutex<()>>,
     frontend_root: Option<Arc<PathBuf>>,
 }
 
@@ -58,6 +72,18 @@ pub struct AppState {
 struct HealthResponse {
     status: &'static str,
     version: &'static str,
+}
+
+#[derive(Debug, Deserialize)]
+struct ImportPdfRequest {
+    url: String,
+}
+
+#[derive(Debug, Serialize)]
+struct ImportPdfResponse {
+    paper: PaperOverview,
+    library: LibraryResponse,
+    source: RemotePdfSource,
 }
 
 #[derive(Debug, Serialize)]
@@ -99,6 +125,7 @@ impl AppState {
             analysis,
             jobs,
             highlight_write: Arc::new(Mutex::new(())),
+            import_write: Arc::new(Mutex::new(())),
             frontend_root: None,
         })
     }
@@ -120,6 +147,77 @@ impl AppState {
         let replacement = LibraryCatalog::scan(self.library_root.as_ref(), &self.store).await?;
         self.catalog.write().await.replace_with(replacement);
         Ok(self.library().await)
+    }
+
+    async fn import_remote_pdf(&self, value: &str) -> Result<ImportPdfResponse> {
+        let original = parse_remote_pdf_url(value)?;
+        let import_guard = self.import_write.lock().await;
+        let temporary_path = self.library_root.join(format!(
+            ".lysilogy-import-{}-{}.tmp",
+            std::process::id(),
+            IMPORT_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let download = download_remote_pdf(&original, &temporary_path).await;
+        let (final_url, byte_length) = match download {
+            Ok(download) => download,
+            Err(error) => {
+                remove_temporary_import(&temporary_path).await;
+                return Err(error);
+            }
+        };
+        let imported = self
+            .finish_remote_import(&original, &final_url, byte_length, &temporary_path)
+            .await;
+        drop(import_guard);
+        if imported.is_err() {
+            remove_temporary_import(&temporary_path).await;
+        }
+        imported
+    }
+
+    async fn finish_remote_import(
+        &self,
+        original: &Url,
+        final_url: &Url,
+        byte_length: u64,
+        temporary_path: &Path,
+    ) -> Result<ImportPdfResponse> {
+        let filename = match available_import_filename(
+            self.library_root.as_ref(),
+            &remote_pdf_filename(final_url),
+        )
+        .await
+        {
+            Ok(filename) => filename,
+            Err(error) => return Err(error),
+        };
+        let final_path = self.library_root.join(&filename);
+        if let Err(error) = tokio::fs::rename(temporary_path, &final_path).await {
+            return Err(Error::io(&final_path, error));
+        }
+
+        let id = PaperId::from_relative_path(Path::new(&filename));
+        let source = RemotePdfSource {
+            original_url: original.to_string(),
+            final_url: final_url.to_string(),
+            imported_at: Utc::now(),
+            byte_length,
+        };
+        self.store.save_remote_source(&id, &source).await?;
+        let library = self.refresh().await?;
+        let paper = library
+            .papers
+            .iter()
+            .find(|paper| paper.id == id)
+            .cloned()
+            .ok_or_else(|| {
+                Error::Task("imported PDF was not discovered after rescan".to_owned())
+            })?;
+        Ok(ImportPdfResponse {
+            paper,
+            library,
+            source,
+        })
     }
 
     pub async fn paper(&self, id: &PaperId) -> Result<PaperView> {
@@ -898,6 +996,203 @@ fn validate_feedback_request(request: &FeedbackRequest) -> Result<String> {
     Ok(feedback.to_owned())
 }
 
+fn parse_remote_pdf_url(value: &str) -> Result<Url> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Err(Error::InvalidRequest("a PDF URL is required".to_owned()));
+    }
+    if trimmed.len() > MAX_REMOTE_URL_LENGTH {
+        return Err(Error::InvalidRequest(format!(
+            "remote PDF URLs are limited to {MAX_REMOTE_URL_LENGTH} bytes"
+        )));
+    }
+    let mut url = Url::parse(trimmed)
+        .map_err(|error| Error::InvalidRequest(format!("invalid PDF URL: {error}")))?;
+    url.set_fragment(None);
+    Ok(url)
+}
+
+async fn download_remote_pdf(original: &Url, path: &Path) -> Result<(Url, u64)> {
+    let mut current = original.clone();
+    for redirect_count in 0..=MAX_PUBLIC_REDIRECTS {
+        let client = public_http_client(&current, REMOTE_REQUEST_TIMEOUT).await?;
+        let mut response = client
+            .get(current.clone())
+            .header(ACCEPT, "application/pdf,application/octet-stream;q=0.8")
+            .send()
+            .await
+            .map_err(|error| Error::RemoteImport(format!("request failed: {error}")))?;
+
+        if response.status().is_redirection() {
+            if redirect_count == MAX_PUBLIC_REDIRECTS {
+                return Err(Error::RemoteImport(format!(
+                    "remote server exceeded {MAX_PUBLIC_REDIRECTS} redirects"
+                )));
+            }
+            let location = response
+                .headers()
+                .get(LOCATION)
+                .ok_or_else(|| Error::RemoteImport("redirect omitted its destination".to_owned()))?
+                .to_str()
+                .map_err(|_| Error::RemoteImport("redirect destination was not text".to_owned()))?;
+            current = current
+                .join(location)
+                .map_err(|error| Error::RemoteImport(format!("invalid redirect: {error}")))?;
+            current.set_fragment(None);
+            continue;
+        }
+        if !response.status().is_success() {
+            return Err(Error::RemoteImport(format!(
+                "remote server returned HTTP {}",
+                response.status()
+            )));
+        }
+        if response
+            .headers()
+            .get(CONTENT_LENGTH)
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.parse::<u64>().ok())
+            .is_some_and(|length| length > MAX_REMOTE_PDF_BYTES)
+        {
+            return Err(Error::InvalidRequest(format!(
+                "remote PDFs are limited to {} MiB",
+                MAX_REMOTE_PDF_BYTES / (1024 * 1024)
+            )));
+        }
+
+        let mut output = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(path)
+            .await
+            .map_err(|error| Error::io(path, error))?;
+        let mut byte_length = 0_u64;
+        let mut prefix = Vec::with_capacity(1_024);
+        while let Some(chunk) = response
+            .chunk()
+            .await
+            .map_err(|error| Error::RemoteImport(format!("download failed: {error}")))?
+        {
+            byte_length = byte_length
+                .checked_add(u64::try_from(chunk.len()).unwrap_or(u64::MAX))
+                .ok_or_else(|| Error::InvalidRequest("remote PDF is too large".to_owned()))?;
+            if byte_length > MAX_REMOTE_PDF_BYTES {
+                return Err(Error::InvalidRequest(format!(
+                    "remote PDFs are limited to {} MiB",
+                    MAX_REMOTE_PDF_BYTES / (1024 * 1024)
+                )));
+            }
+            if prefix.len() < 1_024 {
+                let remaining = 1_024 - prefix.len();
+                prefix.extend_from_slice(&chunk[..chunk.len().min(remaining)]);
+            }
+            output
+                .write_all(&chunk)
+                .await
+                .map_err(|error| Error::io(path, error))?;
+        }
+        output
+            .flush()
+            .await
+            .map_err(|error| Error::io(path, error))?;
+        output
+            .sync_all()
+            .await
+            .map_err(|error| Error::io(path, error))?;
+        if !contains_pdf_header(&prefix) {
+            return Err(Error::InvalidRequest(
+                "the downloaded resource is not a PDF".to_owned(),
+            ));
+        }
+        return Ok((current, byte_length));
+    }
+    Err(Error::RemoteImport(
+        "remote redirect handling ended unexpectedly".to_owned(),
+    ))
+}
+
+fn contains_pdf_header(prefix: &[u8]) -> bool {
+    prefix.windows(5).any(|window| window == b"%PDF-")
+}
+
+fn remote_pdf_filename(url: &Url) -> String {
+    let candidate = url
+        .path_segments()
+        .and_then(|mut segments| segments.rfind(|segment| !segment.is_empty()))
+        .map_or_else(
+            || "download.pdf".to_owned(),
+            |segment| percent_decode_str(segment).decode_utf8_lossy().into_owned(),
+        );
+    sanitize_import_filename(&candidate)
+}
+
+fn sanitize_import_filename(value: &str) -> String {
+    let mut sanitized = value
+        .chars()
+        .map(|character| {
+            if character.is_control()
+                || matches!(
+                    character,
+                    '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*'
+                )
+            {
+                '_'
+            } else {
+                character
+            }
+        })
+        .collect::<String>();
+    sanitized = sanitized
+        .trim_matches(|character| character == '.' || character == ' ')
+        .to_owned();
+    if sanitized.is_empty() {
+        "download".clone_into(&mut sanitized);
+    }
+    if sanitized.chars().count() > 180 {
+        sanitized = sanitized.chars().take(180).collect();
+        sanitized = sanitized.trim_end_matches(['.', ' ']).to_owned();
+    }
+    if !sanitized.to_ascii_lowercase().ends_with(".pdf") {
+        sanitized.push_str(".pdf");
+    }
+    sanitized
+}
+
+async fn available_import_filename(root: &Path, preferred: &str) -> Result<String> {
+    if !tokio::fs::try_exists(root.join(preferred))
+        .await
+        .map_err(|error| Error::io(root, error))?
+    {
+        return Ok(preferred.to_owned());
+    }
+    let stem = Path::new(preferred)
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .unwrap_or("download");
+    for suffix in 2..=10_000 {
+        let candidate = format!("{stem} ({suffix}).pdf");
+        if !tokio::fs::try_exists(root.join(&candidate))
+            .await
+            .map_err(|error| Error::io(root, error))?
+        {
+            return Ok(candidate);
+        }
+    }
+    Err(Error::Task(
+        "could not allocate a unique filename for the imported PDF".to_owned(),
+    ))
+}
+
+async fn remove_temporary_import(path: &Path) {
+    match tokio::fs::remove_file(path).await {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => {
+            tracing::warn!(path = %path.display(), %error, "could not clean temporary import");
+        }
+    }
+}
+
 impl std::fmt::Display for ProcessingStage {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter.write_str(match self {
@@ -915,6 +1210,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/health", get(health))
         .route("/api/library", get(library))
         .route("/api/library/scan", post(scan_library))
+        .route("/api/library/import", post(import_pdf))
         .route("/api/queue", get(processing_queue))
         .route("/api/papers/{id}", get(paper))
         .route("/api/papers/{id}/source", get(paper_source))
@@ -946,6 +1242,14 @@ async fn library(State(state): State<AppState>) -> Json<LibraryResponse> {
 
 async fn scan_library(State(state): State<AppState>) -> Result<Json<LibraryResponse>> {
     state.refresh().await.map(Json)
+}
+
+async fn import_pdf(
+    State(state): State<AppState>,
+    Json(request): Json<ImportPdfRequest>,
+) -> Result<(StatusCode, Json<ImportPdfResponse>)> {
+    let imported = state.import_remote_pdf(&request.url).await?;
+    Ok((StatusCode::CREATED, Json(imported)))
 }
 
 async fn processing_queue(State(state): State<AppState>) -> Result<Json<ProcessingQueue>> {
@@ -1165,6 +1469,89 @@ mod tests {
         let library: serde_json::Value = serde_json::from_slice(&body)?;
         assert_eq!(library["papers"].as_array().map(Vec::len), Some(1));
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn rejects_private_remote_imports_before_connecting() -> Result<()> {
+        let library = tempdir().map_err(|error| Error::io("library", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let state = AppState::new(library.path(), data.path()).await?;
+        let response = build_router(state, None)
+            .oneshot(
+                axum::http::Request::builder()
+                    .method("POST")
+                    .uri("/api/library/import")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(r#"{"url":"http://127.0.0.1/paper.pdf"}"#))
+                    .map_err(|error| Error::Task(error.to_string()))?,
+            )
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?;
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert!(
+            tokio::fs::read_dir(library.path())
+                .await
+                .map_err(|error| Error::io(library.path(), error))?
+                .next_entry()
+                .await
+                .map_err(|error| Error::io(library.path(), error))?
+                .is_none()
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn commits_a_complete_remote_pdf_and_origin_record() -> Result<()> {
+        let library = tempdir().map_err(|error| Error::io("library", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let state = AppState::new(library.path(), data.path()).await?;
+        let temporary_path = library.path().join(".import.tmp");
+        let bytes = b"%PDF-1.7\nfixture\n%%EOF\n";
+        tokio::fs::write(&temporary_path, bytes)
+            .await
+            .map_err(|error| Error::io(&temporary_path, error))?;
+        let original = Url::parse("https://example.com/redirect")
+            .map_err(|error| Error::Task(error.to_string()))?;
+        let final_url = Url::parse("https://cdn.example.com/A%20Paper.pdf")
+            .map_err(|error| Error::Task(error.to_string()))?;
+
+        let imported = state
+            .finish_remote_import(
+                &original,
+                &final_url,
+                u64::try_from(bytes.len()).unwrap_or(u64::MAX),
+                &temporary_path,
+            )
+            .await?;
+
+        assert_eq!(imported.paper.relative_path, "A Paper.pdf");
+        assert_eq!(imported.source.original_url, original.to_string());
+        assert_eq!(imported.source.final_url, final_url.to_string());
+        assert!(library.path().join("A Paper.pdf").is_file());
+        assert!(!temporary_path.exists());
+        let origin = data
+            .path()
+            .join("papers")
+            .join(imported.paper.id.as_str())
+            .join("origin.json");
+        let persisted = tokio::fs::read_to_string(&origin)
+            .await
+            .map_err(|error| Error::io(&origin, error))?;
+        assert!(persisted.contains(original.as_str()));
+        assert!(persisted.contains(final_url.as_str()));
+        Ok(())
+    }
+
+    #[test]
+    fn validates_pdf_headers_and_portable_import_names() {
+        assert!(contains_pdf_header(b"preamble\n%PDF-1.7\n"));
+        assert!(!contains_pdf_header(b"<!doctype html>"));
+        assert_eq!(sanitize_import_filename("../paper:name"), "_paper_name.pdf");
+        assert_eq!(sanitize_import_filename("article.PDF"), "article.PDF");
+
+        let encoded = Url::parse("https://example.com/A%20Readable%20Paper.pdf?download=1")
+            .expect("test URL should parse");
+        assert_eq!(remote_pdf_filename(&encoded), "A Readable Paper.pdf");
     }
 
     #[tokio::test]

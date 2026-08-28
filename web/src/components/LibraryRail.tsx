@@ -14,6 +14,7 @@ type LibraryRailProps = {
   onSelect: (id: string) => void;
   onClose: () => void;
   onScan: () => void;
+  onImport: (url: string) => Promise<void>;
   onVisiblePapersChange: (ids: string[]) => void;
 };
 
@@ -35,9 +36,14 @@ export function LibraryRail({
   onSelect,
   onClose,
   onScan,
+  onImport,
   onVisiblePapersChange,
 }: LibraryRailProps) {
   const [mappedOnly, setMappedOnly] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
   const filtered = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
     return papers
@@ -96,7 +102,7 @@ export function LibraryRail({
     };
     const onKeyDown = (event: KeyboardEvent): void => {
       if (
-        event.target === searchRef.current ||
+        isEditable(event.target) ||
         event.metaKey ||
         event.ctrlKey ||
         event.altKey
@@ -186,20 +192,74 @@ export function LibraryRail({
         </div>
         <div className="library-counts">
           <span>{papers.length} papers</span>
-          <button
-            type="button"
-            className={mappedOnly ? "is-active" : ""}
-            aria-pressed={mappedOnly}
-            aria-label={mappedOnly ? "Show all papers" : "Show mapped papers only"}
-            title={mappedOnly ? "Show all papers" : "Show mapped papers only"}
-            onClick={() => {
-              setActive(0);
-              setMappedOnly((value) => !value);
+          <span className="library-count-actions">
+            <button
+              type="button"
+              className={importOpen ? "is-active" : ""}
+              aria-expanded={importOpen}
+              onClick={() => {
+                setImportError(null);
+                setImportOpen((value) => !value);
+              }}
+            >
+              + URL
+            </button>
+            <button
+              type="button"
+              className={mappedOnly ? "is-active" : ""}
+              aria-pressed={mappedOnly}
+              aria-label={mappedOnly ? "Show all papers" : "Show mapped papers only"}
+              title={mappedOnly ? "Show all papers" : "Show mapped papers only"}
+              onClick={() => {
+                setActive(0);
+                setMappedOnly((value) => !value);
+              }}
+            >
+              <i aria-hidden="true" /> {mappedOnly ? "Mapped only" : `${readyCount} mapped`} <kbd>f</kbd>
+            </button>
+          </span>
+        </div>
+        {importOpen && (
+          <form
+            className="library-import"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const url = importUrl.trim();
+              if (url.length === 0 || importing) return;
+              setImporting(true);
+              setImportError(null);
+              void onImport(url)
+                .then(() => {
+                  setImportUrl("");
+                  setImportOpen(false);
+                })
+                .catch((reason: unknown) => {
+                  setImportError(reason instanceof Error ? reason.message : "Could not import PDF");
+                })
+                .finally(() => setImporting(false));
             }}
           >
-            <i aria-hidden="true" /> {mappedOnly ? "Mapped only" : `${readyCount} mapped`} <kbd>f</kbd>
-          </button>
-        </div>
+            <label htmlFor="remote-pdf-url">PDF URL</label>
+            <div>
+              <input
+                id="remote-pdf-url"
+                type="url"
+                inputMode="url"
+                autoComplete="url"
+                required
+                value={importUrl}
+                onChange={(event) => setImportUrl(event.target.value)}
+                placeholder="https://…/paper.pdf"
+                aria-describedby={importError === null ? undefined : "remote-pdf-error"}
+              />
+              <button type="submit" disabled={importing || importUrl.trim().length === 0}>
+                {importing ? "Importing…" : "Import"}
+              </button>
+            </div>
+            {importError !== null && <p id="remote-pdf-error">{importError}</p>}
+            <small>Public HTTP(S), up to 100 MiB. Redirects are checked.</small>
+          </form>
+        )}
         <label className="search-box">
           <span aria-hidden="true">/</span>
           <input

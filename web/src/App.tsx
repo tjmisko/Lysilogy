@@ -693,6 +693,24 @@ export function App() {
       );
   }, []);
 
+  const importRemotePdf = useCallback(async (url: string): Promise<void> => {
+    setError(null);
+    setNotice("Importing remote PDF into the vault…");
+    try {
+      const imported = await api.importPdf(url);
+      setLibrary(imported.library);
+      setLibraryQuery("");
+      selectPaper(imported.paper.id);
+      setTextMode("pdf");
+      setView("text");
+      setNotice(`Imported ${imported.paper.metadata.title}.`);
+    } catch (reason: unknown) {
+      const failure = reason instanceof Error ? reason : new Error("Could not import PDF");
+      setError(failure.message);
+      throw failure;
+    }
+  }, [selectPaper]);
+
   const markdownConverted = useCallback((): void => {
     if (selectedId === null) return;
     void Promise.all([loadPaper(selectedId), refreshLibrary()]).catch((reason: unknown) => {
@@ -724,6 +742,7 @@ export function App() {
         onSelect={selectPaper}
         onClose={() => setLibraryOpen(false)}
         onScan={scan}
+        onImport={importRemotePdf}
         onVisiblePapersChange={setSidebarPaperIds}
       />
 

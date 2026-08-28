@@ -205,6 +205,14 @@ try {
     const url = new URL(request.url());
     if (url.pathname === "/api/library") {
       await route.fulfill({ json: { name: "Articles", papers: [paper, unmappedPaper] } });
+    } else if (url.pathname === "/api/library/import" && request.method() === "POST") {
+      await route.fulfill({
+        status: 400,
+        json: {
+          error: "invalid_request",
+          message: "remote URLs must resolve only to public addresses",
+        },
+      });
     } else if (url.pathname === "/api/queue") {
       await route.fulfill({ json: { jobs: queueJobs } });
     } else if (url.pathname === `/api/papers/${paperId}`) {
@@ -306,6 +314,16 @@ try {
   assert((await page.locator(".abstract-supplement").count()) === 1, "AI supplement is missing");
   assert((await page.locator(".context-source").count()) === 2, "exact context sources are missing");
   assert((await page.locator(".context-source-check").count()) === 2, "link-check timestamps are missing");
+  await page.getByRole("button", { name: "+ URL" }).click();
+  await page.locator("#remote-pdf-url").fill("http://127.0.0.1/paper.pdf");
+  await page.locator(".library-import button[type=submit]").click();
+  await page.locator("#remote-pdf-error").waitFor();
+  assert(
+    (await page.locator("#remote-pdf-error").textContent())?.includes("public addresses"),
+    "remote import errors were not shown beside the URL form",
+  );
+  await page.getByRole("button", { name: "+ URL" }).click();
+  await page.getByRole("alert").getByRole("button").click();
   assert(
     (await page.locator(".context-verification-scope").textContent())?.includes("not that the source semantically proves"),
     "link verification is not distinguished from semantic support",

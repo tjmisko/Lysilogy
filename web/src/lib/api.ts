@@ -6,6 +6,7 @@ import type {
   PaperOverview,
   Highlight,
   HighlightKind,
+  ImportPdfResponse,
   PaperMap,
   PaperView,
   ProcessingQueue,
@@ -54,6 +55,11 @@ export const api = {
   library: (): Promise<LibraryResponse> => request("/api/library"),
   scan: (): Promise<LibraryResponse> =>
     request("/api/library/scan", { method: "POST" }),
+  importPdf: (url: string): Promise<ImportPdfResponse> =>
+    request("/api/library/import", {
+      method: "POST",
+      body: JSON.stringify({ url }),
+    }),
   queue: (): Promise<ProcessingQueue> => request("/api/queue"),
   paper: (id: string): Promise<PaperView> => request(`/api/papers/${id}`),
   paperMap: (id: string, signal?: AbortSignal): Promise<PaperMap> =>

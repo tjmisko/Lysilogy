@@ -3,8 +3,10 @@
 ## Shape of the system
 
 ```text
-PDF vault
-   │ recursive, read-only discovery
+Public PDF URL ──► bounded, address-pinned import ──► origin.json
+                                                      │ atomic PDF
+PDF vault ◄────────────────────────────────────────────┘
+   │ recursive discovery
    ▼
 Paper catalog ──► Poppler raw + bbox extraction ──► source.txt + source.md + layout.json
                                                         │
@@ -32,6 +34,15 @@ Paper catalog ──► Poppler raw + bbox extraction ──► source.txt + sou
 ```
 
 The Rust backend owns discovery, extraction, subprocess isolation, validation, persistence, and state transitions. React owns interaction and presentation. Neither frontend code nor a model process receives an arbitrary filesystem path from the browser.
+
+Remote imports cross a separate application-owned trust boundary. The backend accepts a public
+HTTP(S) URL, disables environment proxies, resolves and pins its destination, repeats that check
+for every redirect, and rejects credentials, nonstandard ports, and any DNS answer containing a
+private or reserved address. Downloads are streamed to a hidden sibling file, capped at 100 MiB,
+checked for a PDF header, synced, and renamed into the vault only when complete. The original URL,
+final URL, byte count, and import time remain in the paper's `origin.json`. Serving the resulting
+local file through `/api/papers/{id}/source` avoids dependence on browser CORS and remote range
+request support.
 
 ## Domain model
 
@@ -106,7 +117,7 @@ Within that ramp, Overview leads with a CSS page grid containing every PDF page.
 
 Focus is the single source of truth for mouse, touch, and keyboard navigation. Arrow keys mirror `h/j/k/l` in every spatial list. The digest exposes real selectable DOM text; its visual mode stores an anchor and a moving semantic-fragment cursor, so `v`, movement, `o`, `y`, and `c` parallel Vim without breaking native browser selection. The source map provides the same workflow over deterministic sentence segments: `Space` writes a same-page token range to `highlights.jsonl`, and `c` hands its exact text to the contextual clarifier. `F1` owns the library rail, while `F10` opens a focused fuzzy switcher that searches titles, authors, and years.
 
-PDF.js renders either a focused page or an aligned two-page spread in Text and lazy page thumbnails in Overview. A spread is one paging unit for `h/l`, arrow keys, Ctrl-u/d, and PageUp/PageDown. Page cells preserve each PDF page's exact aspect ratio and boundary; section overlays use stable token order only to estimate reading progress along the abstract horizontal axis. Evidence and reader highlights remain coordinate-aligned because they identify literal source lines rather than conceptual regions. The default CSS filter produces light paper ink on a dark surface. Capital `I` toggles that filter everywhere, which is the reliable way to inspect figures, heatmaps, and photographs without color distortion.
+PDF.js renders either a focused page or an aligned two-page spread in Text and lazy page thumbnails in Overview. Its official text-layer builder supplies native multi-line and cross-page selection over the canvas; Lysilogy records the selected text, PDF.js item offsets, pages, and rectangles converted back into PDF points. The resulting action bar can copy the passage or seed contextual clarification. A spread is one paging unit for `h/l`, arrow keys, Ctrl-u/d, and PageUp/PageDown. Page cells preserve each PDF page's exact aspect ratio and boundary; section overlays use stable token order only to estimate reading progress along the abstract horizontal axis. Evidence and reader highlights remain coordinate-aligned because they identify literal source lines rather than conceptual regions. The default CSS filter produces light paper ink on a dark surface. Capital `I` toggles that filter everywhere, which is the reliable way to inspect figures, heatmaps, and photographs without color distortion.
 
 Highlights deliberately avoid a database. `highlights.jsonl` is canonical and atomically rewritten in stable ID order, one complete JSON object per line. Reader records survive reanalysis; AI records are regenerated from currently verified key quotes. `highlights.md` is a disposable human-readable projection. This gives tools and people a plain-text interface while retaining enough typed geometry for lossless rendering.
 

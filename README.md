@@ -179,6 +179,13 @@ the two-page spread—to copy it or open **Ask about this** with the passage and
 filled in. Selections retain PDF-page coordinates and text-item offsets for future persistent marks.
 Image-only pages report that OCR is required instead of presenting an inert selection surface.
 
+Use **+ URL** in the library rail to import a PDF from the public web. Lysilogy downloads it on the
+server, checks every redirect and resolved address, rejects non-PDF responses and files over 100
+MiB, writes the completed file atomically into the vault, and opens it directly in PDF mode. Direct
+browser loading is deliberately avoided, so the source site does not need permissive CORS headers
+or byte-range behavior. Private, loopback, link-local, credentialed, and nonstandard-port URLs are
+rejected.
+
 ## Artifacts on disk
 
 Everything generated lives beneath the data root:
@@ -189,6 +196,7 @@ Everything generated lives beneath the data root:
     └── <stable-paper-id>/
         ├── source.txt           # UTF-8 extraction, form-feed page boundaries
         ├── source.md            # full-document Markdown with page markers
+        ├── origin.json          # original/final URL and byte count for remote imports
         ├── layout.json          # PDF points, stable page-local tokens, sentence segments
         ├── extraction.json      # extraction schema and normalized metadata
         ├── analysis.json        # typed, versioned application model

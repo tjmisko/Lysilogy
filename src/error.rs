@@ -42,6 +42,8 @@ pub enum Error {
     Json(#[from] serde_json::Error),
     #[error("task failed: {0}")]
     Task(String),
+    #[error("could not import remote PDF: {0}")]
+    RemoteImport(String),
 }
 
 impl Error {
@@ -74,6 +76,7 @@ impl IntoResponse for Error {
             }
             Self::AlreadyProcessing(_) => (StatusCode::CONFLICT, "already_processing"),
             Self::ProgramUnavailable(_) => (StatusCode::SERVICE_UNAVAILABLE, "program_unavailable"),
+            Self::RemoteImport(_) => (StatusCode::BAD_GATEWAY, "remote_import_failed"),
             Self::Io { .. }
             | Self::CommandFailed { .. }
             | Self::EmptyExtraction(_)

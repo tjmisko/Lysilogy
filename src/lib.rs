@@ -9,6 +9,7 @@ pub mod jobs;
 pub mod layout;
 pub mod library;
 pub mod markdown;
+mod remote;
 pub mod store;
 
 pub use api::{AppState, build_router};

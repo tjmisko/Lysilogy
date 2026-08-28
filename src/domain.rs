@@ -69,6 +69,14 @@ pub struct PaperOverview {
     pub one_line_summary: Option<String>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RemotePdfSource {
+    pub original_url: String,
+    pub final_url: String,
+    pub imported_at: DateTime<Utc>,
+    pub byte_length: u64,
+}
+
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(tag = "state", rename_all = "snake_case")]
 pub enum ProcessingStatus {

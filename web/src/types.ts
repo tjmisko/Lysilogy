@@ -36,6 +36,19 @@ export type LibraryResponse = {
   papers: PaperOverview[];
 };
 
+export type RemotePdfSource = {
+  original_url: string;
+  final_url: string;
+  imported_at: string;
+  byte_length: number;
+};
+
+export type ImportPdfResponse = {
+  paper: PaperOverview;
+  library: LibraryResponse;
+  source: RemotePdfSource;
+};
+
 export type AnalysisTaskStatus = "pending" | "active" | "completed" | "failed";
 
 export type AnalysisTask = {
