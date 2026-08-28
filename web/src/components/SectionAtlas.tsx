@@ -152,7 +152,7 @@ export function SectionAtlas({
                 <strong>{section.title}</strong>
                 <span className="tile-summary">{section.summary}</span>
                 <span className="tile-action">
-                  Open digest <kbd>↵</kbd>
+                  Open Digest
                 </span>
               </button>
             );

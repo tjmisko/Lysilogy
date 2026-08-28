@@ -113,7 +113,6 @@ export function CommandMenu({ onClose, onExecute }: CommandMenuProps) {
           ))}
           {matches.length === 0 && <p>No matching command. Press Enter to try it.</p>}
         </div>
-        <footer><kbd>↑ ↓</kbd> choose · <kbd>tab</kbd> complete · <kbd>↵</kbd> run</footer>
       </section>
     </div>
   );

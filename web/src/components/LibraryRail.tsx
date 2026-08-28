@@ -238,11 +238,10 @@ export function LibraryRail({
             >
               <span className={`status-pip status-${paper.status.state}`} aria-hidden="true" />
               <span className="paper-list-copy">
-                <strong>{paper.metadata.title}</strong>
-                <small>
-                  {paper.metadata.authors[0] ?? "Unknown author"}
-                  {paper.metadata.year === null ? "" : ` · ${paper.metadata.year}`}
-                </small>
+                <strong>
+                  {paper.metadata.authors[0] ?? "Unknown Author"}{" "}
+                  {paper.metadata.year === null ? "" : `- ${paper.metadata.year}`} - {paper.metadata.title}
+                </strong>
               </span>
             </button>
           ))}

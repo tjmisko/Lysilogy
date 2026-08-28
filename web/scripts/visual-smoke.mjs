@@ -411,6 +411,88 @@ try {
   await page.keyboard.press("Escape");
   await page.locator(".section-atlas").waitFor();
 
+  // Tab belongs to the reader: it steps through the phases of the current
+  // paper and never falls through to the browser's focus traversal.
+  const activePhase = async () =>
+    (await page.locator('.view-switch > button[aria-current="page"]').textContent())
+      ?.replaceAll(/\s+/gu, " ").trim();
+  const rememberFocus = async () => page.evaluate(() => {
+    window.__focusProbe = document.activeElement;
+  });
+  const focusHeldStill = async () => page.evaluate(() => document.activeElement === window.__focusProbe);
+
+  await page.getByRole("button", { name: /01 Abstract/u }).click();
+  await page.locator(".abstract-view").waitFor();
+  await rememberFocus();
+  await page.keyboard.press("Tab");
+  await page.locator(".section-atlas").waitFor();
+  assert(await activePhase() === "Overview", "Tab did not advance the abstract to the overview phase");
+  assert(await focusHeldStill(), "Tab moved browser focus instead of only changing the reading phase");
+  await page.keyboard.press("Tab");
+  await page.locator(".glossary-view").waitFor();
+  assert(await activePhase() === "Glossary", "Tab did not advance the overview to the glossary phase");
+  await page.keyboard.press("Tab");
+  await page.locator(".text-view").waitFor();
+  assert(await activePhase() === "Text", "Tab did not advance the glossary to the text phase");
+  await page.keyboard.press("Tab");
+  await page.locator(".abstract-view").waitFor();
+  assert(await activePhase() === "Abstract", "Tab did not wrap from the text phase back to the abstract");
+  await page.keyboard.press("Shift+Tab");
+  await page.locator(".text-view").waitFor();
+  assert(await activePhase() === "Text", "Shift+Tab did not step back to the previous phase");
+
+  // Panels and text fields are the states where a stray Tab used to escape.
+  await page.keyboard.press("?");
+  await page.locator(".help-card").waitFor();
+  await page.keyboard.press("Tab");
+  await page.locator(".help-card").waitFor({ state: "detached" });
+  assert(await activePhase() === "Abstract", "Tab did not change phase while the help overlay was open");
+  await page.keyboard.press("/");
+  await page.waitForFunction(() => document.activeElement?.matches(".library-rail .search-box input") === true);
+  await page.keyboard.press("Tab");
+  await page.locator(".section-atlas").waitFor();
+  assert(await activePhase() === "Overview", "Tab did not change phase from inside the library filter");
+  assert(
+    await page.evaluate(() => document.activeElement?.matches(".library-rail .search-box input") === true),
+    "Tab tabbed out of the library filter instead of changing the reading phase",
+  );
+  await page.keyboard.press("Escape");
+
+  // The switcher defines its own Tab, and still keeps it from the browser.
+  await page.keyboard.press("F10");
+  await page.locator(".paper-switcher").waitFor();
+  await rememberFocus();
+  await page.keyboard.press("Tab");
+  await delay(40);
+  assert((await page.locator(".paper-switcher").count()) === 1, "Tab closed the switcher instead of moving its selection");
+  assert(await activePhase() === "Overview", "Tab changed the reading phase while the switcher owned the key");
+  assert(await focusHeldStill(), "Tab moved browser focus out of the switcher");
+  assert(
+    await page.locator(".switcher-results > button").nth(1).evaluate((item) => item.classList.contains("is-active")),
+    "Tab did not move the switcher selection to the next paper",
+  );
+  await page.keyboard.press("Escape");
+  await page.locator(".paper-switcher").waitFor({ state: "detached" });
+
+  await page.keyboard.press(":");
+  await page.locator(".command-menu").waitFor();
+  await page.locator(".command-input input").fill("gl");
+  const expectedCompletion = (await page.locator(".command-results > button.is-active strong").textContent())
+    ?.replace(":", "");
+  await rememberFocus();
+  await page.keyboard.press("Tab");
+  await delay(60);
+  assert((await page.locator(".command-menu").count()) === 1, "Tab closed the command menu instead of completing");
+  assert(
+    await page.locator(".command-input input").inputValue() === expectedCompletion,
+    "Tab did not complete the typed command",
+  );
+  assert(await activePhase() === "Overview", "Tab changed the reading phase while the command menu owned the key");
+  assert(await focusHeldStill(), "Tab moved browser focus out of the command menu");
+  await page.keyboard.press("Escape");
+  await page.locator(".command-menu").waitFor({ state: "detached" });
+  await page.locator(".section-atlas").waitFor();
+
   await page.keyboard.press("p");
   await page.locator(".pdf-canvas").waitFor();
   await page.waitForFunction(() => {
@@ -488,7 +570,7 @@ try {
   await page.keyboard.press("Escape");
   await page.locator(".help-card").waitFor({ state: "detached" });
 
-  console.log(`visual smoke passed: cited context, ${tiles} tiles, aligned source pages, AI/user highlights, arrows and paging, two-page PDF, reconstructed text, mapped filter, F1/F10, :analyze, live queue, feedback retry, selection, glossary, and mobile keys; screenshot ${screenshot}`);
+  console.log(`visual smoke passed: cited context, ${tiles} tiles, aligned source pages, AI/user highlights, arrows and paging, two-page PDF, reconstructed text, mapped filter, Tab phase cycling, F1/F10, :analyze, live queue, feedback retry, selection, glossary, and mobile keys; screenshot ${screenshot}`);
 } finally {
   await browser.close();
 }

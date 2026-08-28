@@ -150,6 +150,9 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
           if (current.view === "overview") {
             event.preventDefault();
             current.onDigest();
+          } else if (current.view === "text" && current.textMode === "pdf") {
+            event.preventDefault();
+            current.onToggleSpread();
           }
           break;
         case "?":

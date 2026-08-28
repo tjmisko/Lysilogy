@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AbstractView } from "./components/AbstractView";
-import { CommandBar } from "./components/CommandBar";
 import { CommandMenu } from "./components/CommandMenu";
 import { DigestPanel } from "./components/DigestPanel";
 import { GlossaryView } from "./components/GlossPanel";
@@ -13,6 +12,7 @@ import { PdfReader } from "./components/PdfReader";
 import { QueuePanel } from "./components/QueuePanel";
 import { SectionAtlas } from "./components/SectionAtlas";
 import { useGlobalKeys } from "./hooks/useGlobalKeys";
+import { useTabPhase } from "./hooks/useTabPhase";
 import { api } from "./lib/api";
 import type {
   AnalysisProvider,
@@ -30,6 +30,8 @@ import type {
 type Panel = "digest" | "help" | null;
 type ViewMode = "abstract" | "overview" | "glossary" | "text";
 type TextMode = "markdown" | "pdf";
+
+const VIEW_ORDER: ViewMode[] = ["abstract", "overview", "glossary", "text"];
 
 const PROCESSING_STATES = new Set(["queued", "extracting", "analyzing"]);
 
@@ -333,6 +335,15 @@ export function App() {
     setView("glossary");
   }, []);
 
+  const cycleView = useCallback((delta: -1 | 1): void => {
+    setPanel(null);
+    setView((current) => {
+      const index = VIEW_ORDER.indexOf(current);
+      const nextIndex = (index + delta + VIEW_ORDER.length) % VIEW_ORDER.length;
+      return VIEW_ORDER[nextIndex] ?? current;
+    });
+  }, []);
+
   const movePaper = useCallback(
     (delta: number): void => {
       if (library === null || selectedId === null) return;
@@ -461,6 +472,17 @@ export function App() {
         setError(`Unknown command :${name}`);
     }
   }, [analyze, openGlossary, provider, refreshQueue]);
+
+  useTabPhase({
+    // The switcher and the command menu read Tab themselves; everywhere else
+    // Tab steps through the reading phases of the current paper.
+    overlayHandlesTab: switcherOpen || commandOpen,
+    onCycle: (delta) => {
+      setQueueOpen(false);
+      if (compactLayout) setLibraryOpen(false);
+      cycleView(delta);
+    },
+  });
 
   useGlobalKeys({
     enabled:
@@ -895,7 +917,6 @@ export function App() {
           )}
         </main>
 
-        <CommandBar view={view} textMode={textMode} panelOpen={panel === "digest"} />
       </div>
 
       {panel === "digest" && selectedSection !== null && (
