@@ -2180,7 +2180,19 @@ code {
   font: 9px ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.pdf-page-surface {
+  position: relative;
+  flex: 0 0 auto;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 3px 18px rgba(0, 0, 0, 0.32);
+}
+
 .pdf-canvas {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: block;
   align-self: flex-start;
   max-width: none;
   background: white;
@@ -2189,6 +2201,140 @@ code {
 
 .pdf-canvas.dark-ink {
   filter: invert(0.91) hue-rotate(180deg) brightness(0.82) contrast(1.08) sepia(0.08);
+}
+
+.pdf-text-layer-host,
+.pdf-text-layer {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+}
+
+.pdf-text-layer-host {
+  pointer-events: none;
+}
+
+.pdf-text-layer {
+  --min-font-size: 1;
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  overflow: clip;
+  color: transparent;
+  line-height: 1;
+  text-align: initial;
+  text-size-adjust: none;
+  transform-origin: 0 0;
+  user-select: text;
+  pointer-events: auto;
+}
+
+.pdf-text-layer :is(span, br) {
+  position: absolute;
+  color: transparent;
+  cursor: text;
+  white-space: pre;
+  transform-origin: 0 0;
+}
+
+.pdf-text-layer > :not(.markedContent),
+.pdf-text-layer .markedContent span:not(.markedContent) {
+  --font-height: 0;
+  --scale-x: 1;
+  --rotate: 0deg;
+  z-index: 1;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.pdf-text-layer .markedContent {
+  display: contents;
+}
+
+.pdf-text-layer ::-moz-selection {
+  background: color-mix(in srgb, var(--signal) 52%, transparent);
+  color: transparent;
+  text-shadow: none;
+}
+
+.pdf-text-layer ::selection {
+  background: color-mix(in srgb, var(--signal) 52%, transparent);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+.pdf-text-layer br::-moz-selection,
+.pdf-text-layer br::selection {
+  background: transparent;
+}
+
+.pdf-text-layer .endOfContent {
+  position: absolute;
+  z-index: 0;
+  display: block;
+  inset: 100% 0 0;
+  cursor: default;
+  user-select: none;
+}
+
+.pdf-text-layer.selecting .endOfContent {
+  top: 0;
+}
+
+.pdf-selection-menu {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100vw - 24px);
+  padding: 5px;
+  border: 1px solid var(--line-bright);
+  border-radius: 5px;
+  background: rgba(11, 12, 12, 0.97);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.48);
+  color: var(--ink-soft);
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  transform: translateX(-50%);
+}
+
+.pdf-selection-menu > span {
+  overflow: hidden;
+  max-width: 150px;
+  padding: 0 7px 0 4px;
+  color: var(--ink-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf-selection-menu button {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.pdf-selection-menu button:hover,
+.pdf-selection-menu button:focus-visible {
+  border-color: var(--line-bright);
+  color: var(--ink);
+}
+
+.pdf-selection-menu button.is-primary {
+  border-color: var(--signal);
+  background: var(--signal);
+  color: var(--signal-ink);
+  font-weight: 750;
+}
+
+.pdf-selection-menu button.pdf-selection-close {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 14px;
+  line-height: 1;
 }
 
 .pdf-mode-note {
@@ -2200,6 +2346,10 @@ code {
 
 .pdf-mode-note kbd + kbd {
   margin-left: 2px;
+}
+
+.pdf-mode-note.is-warning {
+  color: var(--context);
 }
 
 .reader-message {

@@ -174,6 +174,11 @@ movement extends it, `Space` stores it, and `c` sends the exact sentence text in
 Same-page ranges keep one compact, relocation-resistant token anchor; save cross-page notes as
 separate highlights.
 
+PDF mode renders a PDF.js text layer over the page image. Drag over a passage—even across lines or
+the two-page spread—to copy it or open **Ask about this** with the passage and its first page already
+filled in. Selections retain PDF-page coordinates and text-item offsets for future persistent marks.
+Image-only pages report that OCR is required instead of presenting an inert selection surface.
+
 ## Artifacts on disk
 
 Everything generated lives beneath the data root:
@@ -226,6 +231,7 @@ in-process browser route, so it works even where loopback networking is blocked.
 four-level top bar, abstract provenance, contextual sources and link-check scope, the all-page
 Overview grid, horizontal section progress and integer-column zoom, the mapped-only filter, F1/F10
 switching, the command menu, live tasklist progress, feedback retries, keyboard selection and
-clarification, the Glossary, reconstructed Text, one/two-page PDF paging, and capital-`I` inversion.
+clarification, the Glossary, reconstructed Text, selectable one/two-page PDF paging, and capital-`I`
+inversion.
 
 The implementation map and fault boundaries are in [docs/architecture.md](docs/architecture.md).

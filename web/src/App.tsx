@@ -145,7 +145,13 @@ export function App() {
   }, [view]);
 
   useEffect(() => {
-    setAuthorsOpen(false);
+    let cancelled = false;
+    window.queueMicrotask(() => {
+      if (!cancelled) setAuthorsOpen(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedId]);
 
   const refreshLibrary = useCallback(async (): Promise<LibraryResponse> => {
@@ -973,6 +979,7 @@ export function App() {
                       onPageCount={setPdfPages}
                       onToggleInk={() => setDarkInk((value) => !value)}
                       onToggleSpread={() => setPdfSpread((spread) => !spread)}
+                      onClarifySelection={clarifySentence}
                     />
                   )}
                 </section>

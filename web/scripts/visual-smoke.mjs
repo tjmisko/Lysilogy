@@ -499,6 +499,30 @@ try {
     const canvas = document.querySelector(".pdf-canvas");
     return canvas instanceof HTMLCanvasElement && canvas.width > 0;
   });
+  await page.locator(".pdf-text-layer[data-text-ready=true] span").first().waitFor();
+  assert(
+    (await page.locator(".pdf-text-layer span").count()) > 0,
+    "the PDF did not render a selectable text layer",
+  );
+  await page.locator(".pdf-text-layer span").evaluate((span) => {
+    const text = span.firstChild;
+    if (text === null || (text.textContent?.length ?? 0) === 0) {
+      throw new Error("the first PDF text item was empty");
+    }
+    const range = document.createRange();
+    range.setStart(text, 0);
+    range.setEnd(text, Math.min(12, text.textContent?.length ?? 0));
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    document.dispatchEvent(new Event("selectionchange"));
+  });
+  await page.locator(".pdf-selection-menu").waitFor();
+  assert(
+    (await page.locator(".pdf-selection-menu button").allTextContents()).includes("Ask about this"),
+    "the PDF selection did not expose clarification actions",
+  );
+  await page.locator(".pdf-selection-close").click();
   await page.keyboard.press("i");
   assert(await page.locator(".pdf-canvas").evaluate((canvas) => canvas.classList.contains("dark-ink")), "lowercase i should not invert the PDF");
   await page.keyboard.press("Shift+I");
