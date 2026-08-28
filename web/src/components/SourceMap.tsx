@@ -32,7 +32,6 @@ type SourceMapProps = {
   onShowUser: () => void;
   onMarkMode: () => void;
   onOpenSection: (section: PaperSection, index: number) => void;
-  onOpenPage: (page: number) => void;
   onToggleHighlight: (start: LayoutSentence, end?: LayoutSentence) => void;
   onClarify: (text: string, page: number) => void;
 };
@@ -241,7 +240,6 @@ export function SourceMap({
   onShowUser,
   onMarkMode,
   onOpenSection,
-  onOpenPage,
   onToggleHighlight,
   onClarify,
 }: SourceMapProps) {
@@ -418,9 +416,7 @@ export function SourceMap({
                     onClick={() => onOpenSection(region.section, region.index)}
                     aria-label={`${region.section.title}; ${region.verified ? "anchored" : "estimated"} share of page ${page.number}`}
                   >
-                    {region.section.pages.start === page.number && (
-                      <span>{region.section.title}</span>
-                    )}
+                    <span>{region.section.title}</span>
                   </button>
                 ))}
               </div>
@@ -494,9 +490,6 @@ export function SourceMap({
                   })}
                 </div>
               )}
-              <button className="source-page-number" type="button" onClick={() => onOpenPage(page.number)}>
-                PDF {page.number} ↗
-              </button>
             </article>
           );
         })}

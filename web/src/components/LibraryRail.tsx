@@ -14,6 +14,7 @@ type LibraryRailProps = {
   onSelect: (id: string) => void;
   onClose: () => void;
   onScan: () => void;
+  onVisiblePapersChange: (ids: string[]) => void;
 };
 
 const collator = new Intl.Collator(undefined, { sensitivity: "base" });
@@ -34,6 +35,7 @@ export function LibraryRail({
   onSelect,
   onClose,
   onScan,
+  onVisiblePapersChange,
 }: LibraryRailProps) {
   const [mappedOnly, setMappedOnly] = useState(false);
   const filtered = useMemo(() => {
@@ -53,6 +55,10 @@ export function LibraryRail({
       })
       .sort((left, right) => collator.compare(left.metadata.title, right.metadata.title));
   }, [mappedOnly, papers, query]);
+
+  useEffect(() => {
+    onVisiblePapersChange(filtered.map((paper) => paper.id));
+  }, [filtered, onVisiblePapersChange]);
 
   const readyCount = papers.filter((paper) => paper.status.state === "ready").length;
   const [active, setActive] = useState(0);

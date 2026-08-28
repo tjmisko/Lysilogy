@@ -118,6 +118,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [authorsOpen, setAuthorsOpen] = useState(false);
+  const [sidebarPaperIds, setSidebarPaperIds] = useState<string[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const mainStageRef = useRef<HTMLElement>(null);
 
@@ -352,11 +353,14 @@ export function App() {
   const movePaper = useCallback(
     (delta: number): void => {
       if (library === null || selectedId === null) return;
-      const index = library.papers.findIndex((paper) => paper.id === selectedId);
-      const next = library.papers[Math.max(0, Math.min(library.papers.length - 1, index + delta))];
-      if (next !== undefined) selectPaper(next.id);
+      const paperIds = sidebarPaperIds.length > 0
+        ? sidebarPaperIds
+        : library.papers.map((paper) => paper.id);
+      const index = paperIds.indexOf(selectedId);
+      const nextId = paperIds[Math.max(0, Math.min(paperIds.length - 1, index + delta))];
+      if (nextId !== undefined && index >= 0) selectPaper(nextId);
     },
-    [library, selectPaper, selectedId],
+    [library, selectPaper, selectedId, sidebarPaperIds],
   );
 
   const previous = useCallback((): void => {
@@ -532,6 +536,8 @@ export function App() {
     },
     onPrevious: previous,
     onNext: next,
+    onPreviousPaper: () => movePaper(-1),
+    onNextPaper: () => movePaper(1),
     onInvert: () => setDarkInk((value) => !value),
     onToggleAiHighlights: () => setShowAiHighlights((value) => !value),
     onToggleUserHighlights: () => setShowUserHighlights((value) => !value),
@@ -694,6 +700,7 @@ export function App() {
         onSelect={selectPaper}
         onClose={() => setLibraryOpen(false)}
         onScan={scan}
+        onVisiblePapersChange={setSidebarPaperIds}
       />
 
       <div className={`workspace ${libraryOpen ? "rail-visible" : ""}`}>
@@ -894,7 +901,6 @@ export function App() {
                   onShowAi={() => setShowAiHighlights((value) => !value)}
                   onShowUser={() => setShowUserHighlights((value) => !value)}
                   onMarkMode={() => setMarkMode((value) => !value)}
-                  onOpenPage={openPage}
                   onToggleHighlight={toggleHighlight}
                   onClarifySentence={clarifySentence}
                 />

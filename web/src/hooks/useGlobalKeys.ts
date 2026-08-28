@@ -19,6 +19,8 @@ type GlobalKeyOptions = {
   onEscape: () => void;
   onPrevious: () => void;
   onNext: () => void;
+  onPreviousPaper: () => void;
+  onNextPaper: () => void;
   onInvert: () => void;
   onToggleAiHighlights: () => void;
   onToggleUserHighlights: () => void;
@@ -71,7 +73,13 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
       }
       if (isEditable(event.target) || event.metaKey || event.altKey) return;
       if (event.ctrlKey) {
-        if (event.key === "d" || event.key === "u") {
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          current.onNextPaper();
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          current.onPreviousPaper();
+        } else if (event.key === "d" || event.key === "u") {
           event.preventDefault();
           current.onPage(event.key === "d" ? 1 : -1, "half");
         }

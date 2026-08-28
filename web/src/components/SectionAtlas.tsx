@@ -16,7 +16,6 @@ type AtlasProps = {
   onShowAi: () => void;
   onShowUser: () => void;
   onMarkMode: () => void;
-  onOpenPage: (page: number) => void;
   onToggleHighlight: (start: LayoutSentence, end?: LayoutSentence) => void;
   onClarifySentence: (text: string, page: number) => void;
 };
@@ -36,7 +35,6 @@ export function SectionAtlas({
   onShowAi,
   onShowUser,
   onMarkMode,
-  onOpenPage,
   onToggleHighlight,
   onClarifySentence,
 }: AtlasProps) {
@@ -60,7 +58,6 @@ export function SectionAtlas({
           onShowUser={onShowUser}
           onMarkMode={onMarkMode}
           onOpenSection={onOpen}
-          onOpenPage={onOpenPage}
           onToggleHighlight={onToggleHighlight}
           onClarify={onClarifySentence}
         />
