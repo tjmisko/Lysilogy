@@ -181,7 +181,7 @@ impl AppState {
             return Err(error);
         }
 
-        if let Err((stage, error)) = self.run_analysis(id, provider).await {
+        if let Err((stage, error)) = self.run_analysis(id, provider, force).await {
             if let Err(tracking_error) = self.jobs.fail(id, stage, &error).await {
                 tracing::error!(paper_id = %id, %tracking_error, "could not persist failed job state");
             }
@@ -239,7 +239,7 @@ impl AppState {
 
         let state = self.clone();
         tokio::spawn(async move {
-            if let Err((stage, error)) = state.run_analysis(&id, provider).await {
+            if let Err((stage, error)) = state.run_analysis(&id, provider, force).await {
                 tracing::error!(paper_id = %id, %stage, %error, "paper analysis failed");
                 if let Err(tracking_error) = state.jobs.fail(&id, stage, &error).await {
                     tracing::error!(paper_id = %id, %tracking_error, "could not persist failed job state");
@@ -254,6 +254,7 @@ impl AppState {
         &self,
         id: &PaperId,
         provider: AnalysisProvider,
+        reset_stages: bool,
     ) -> std::result::Result<(), (ProcessingStage, Error)> {
         self.jobs
             .transition(id, ProcessingStage::Extraction, "extract")
@@ -273,20 +274,42 @@ impl AppState {
             }
         }
         self.jobs
-            .transition(id, ProcessingStage::Analysis, "read")
+            .transition(id, ProcessingStage::Analysis, "prefetch")
             .await
             .map_err(|error| (ProcessingStage::Persistence, error))?;
+        for (task, detail) in [
+            ("orientation", "Fast orientation and abstract fallback"),
+            ("structure", "Structural map and exact paper evidence"),
+            ("context", "Independent live external-source research"),
+        ] {
+            self.jobs
+                .task_active(id, task, Some(detail.to_owned()))
+                .await
+                .map_err(|error| (ProcessingStage::Persistence, error))?;
+        }
         let outcome = self
             .analysis
-            .analyze(provider, &paper, &self.store.paper_dir(id))
+            .analyze(provider, &paper, &self.store.paper_dir(id), reset_stages)
             .await
             .map_err(|error| (ProcessingStage::Analysis, error))?;
-        for task in ["read", "structure", "evidence", "explain"] {
+        for task in ["prefetch", "orientation", "structure", "context"] {
             self.jobs
                 .task_completed(id, task)
                 .await
                 .map_err(|error| (ProcessingStage::Persistence, error))?;
         }
+        self.jobs
+            .task_active(
+                id,
+                "verify",
+                Some("Normalized model output and verified citations".to_owned()),
+            )
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
+        self.jobs
+            .task_completed(id, "verify")
+            .await
+            .map_err(|error| (ProcessingStage::Persistence, error))?;
         self.jobs
             .transition(id, ProcessingStage::Persistence, "persist")
             .await

@@ -109,17 +109,28 @@ To replace dashed legacy section extents with exact start/end spans, rerun that 
 
 ### How analysis runs
 
-Lysilogy drives the local command-line tools rather than an API. Each run starts an agent in the
-paper's artifact directory with the paper, the current analysis, and the output schema as read-only
-context; the agent may edit exactly one generated file, `analysis-tasklist.md`. Codex gets live
-search in a workspace-write sandbox; Claude gets paper-reading, tasklist-editing, and web-research
-tools. Sessions are persisted so reader feedback can continue the same conversation, and a session
-that cannot be resumed falls back to a fresh agent with `source.txt`, `analysis.json`, the tasklist,
-and the full feedback already in its working directory. Clarification requests stay ephemeral and
-read-only.
+Lysilogy drives local command-line tools rather than an API. There are five distinct prompt
+templates: three for an initial analysis (orientation, structure/evidence, and external context),
+one for feedback revision, and one for passage clarification. Initial analysis prefetches paper
+metadata, headings, page-marked text, opening/closing context, and a deterministic authored abstract
+once, then starts its three scoped calls concurrently. Only the external-context branch gets live
+web tools; the structure branch receives local read tools only when a very large paper had to be
+sampled.
 
-Every analysis and feedback retry writes a live Markdown tasklist. Press `q` to watch the agent mark
-work active and complete — progress is computed directly from those checkboxes.
+For Codex, the small orientation and clarification jobs use `gpt-5.6-luna` at low effort. Structural
+analysis, sourced context, and revision use `gpt-5.6-terra` at medium effort. Claude receives the
+same scoped tools and low/medium effort split while retaining its configured model. Abstract
+extraction normally costs no model call; when deterministic extraction finds no abstract, the fast
+orientation call may return an exact candidate, which still has to pass source-text verification.
+
+Each initial branch writes a typed stage artifact as soon as it succeeds. A retry reuses matching
+stages and reruns only missing or malformed ones; `--force` deliberately invalidates this stage
+cache. Only the structural call retains a resumable session for feedback. If that session cannot be
+resumed, revision falls back to a fresh read-only call with `source.txt`, `analysis.json`, and the
+feedback already present. Clarification stays ephemeral and uses prefetched local passage context.
+
+The backend owns `analysis-tasklist.md` and its typed `job.json` state; model processes are read-only
+and never edit progress. Press `q` to watch the three initial branches run in parallel.
 
 The heuristic provider is deliberately conservative. It gives you an immediate offline Overview and
 labels itself plainly; use a model-backed provider for interpretive reading and field context.
@@ -154,7 +165,7 @@ Press `?` in the app for the complete, contextual guide.
 | `F10` | Open the fuzzy article switcher |
 | `f` | Filter to mapped papers while the library is open |
 | `:` | Command menu (`:analyze`, `:queue`, `:feedback`, `:spread`, and more) |
-| `q` | Toggle the processing queue and live agent tasklists |
+| `q` | Toggle the processing queue and live analysis tasklists |
 | `Esc` | Return to Overview, or close the top panel |
 
 Pointer selection works too: select text in a digest, then choose **Clarify selection**. In the page
@@ -179,7 +190,9 @@ Everything generated lives beneath the data root:
         ├── digest.md            # portable human-readable digest
         ├── highlights.jsonl     # canonical one-highlight-per-line records (AI and reader)
         ├── highlights.md        # generated human-readable projection
-        ├── analysis-tasklist.md # live checklist edited by the local coding agent
+        ├── analysis-context.json # deterministic prompt context shared by stages
+        ├── analysis-*.json      # typed scoped-stage outputs and cache manifest
+        ├── analysis-tasklist.md # backend-generated live checklist
         ├── job.json             # typed queue/progress state for the latest run
         ├── agent-session.json   # resumable Codex or Claude session identity
         ├── feedback.jsonl       # one reader feedback record per line

@@ -8,12 +8,14 @@ PDF vault
    ▼
 Paper catalog ──► Poppler raw + bbox extraction ──► source.txt + source.md + layout.json
                                                         │
-                         ┌──────────────────┼──────────────────┐
-                         ▼                  ▼                  ▼
-                    codex exec          claude -p        heuristic
-                         └──────────────────┼──────────────────┘
-                                            ▼
-                                  validated AnalysisDraft
+                                      deterministic context prefetch
+                                                        │
+                               ┌────────────────┬────────┴────────┐
+                               ▼                ▼                 ▼
+                        fast orientation   structure/evidence   web context
+                               └────────────────┼─────────────────┘
+                                                ▼
+                                      merged AnalysisDraft
                                             │ normalize IDs, pages,
                                             │ dimensions, source mappings
                                             ▼
@@ -58,17 +60,18 @@ Poppler runs twice: raw mode supplies authored reading order for Markdown and mo
 Model-backed analysis is deliberately a subprocess boundary:
 
 1. Extracted UTF-8 text is written to the paper's artifact directory.
-2. A JSON Schema is written beside it.
-3. The backend initializes `analysis-tasklist.md`; extraction stages update it before the model starts.
-4. The analyzer starts in that directory. Its sandbox can edit the tasklist, and the prompt prohibits edits to every other artifact.
-5. The prompt points at `source.txt`; the PDF text itself is marked as untrusted data.
-6. The backend polls the tasklist through the queue endpoint, while Codex JSONL or Claude's JSON envelope supplies a resumable session ID.
-7. Standard input carries the prompt, the final message is captured separately, and standard error is bounded before reporting.
-8. A 20-minute timeout kills abandoned work; JSON is parsed, normalized, and evidence-checked before an atomic save.
+2. A deterministic pass writes `analysis-context.json`: metadata, authored abstract, heading candidates, page-marked structural text, and bounded orientation excerpts. The abstract is model-free unless the fast orientation branch supplies an exact fallback candidate, and normalization still requires that text to occur in the extraction.
+3. Three strict JSON Schemas are written beside it. Orientation, structure/evidence, and external-context subprocesses then start concurrently with disjoint prompts and tool access.
+4. Orientation and clarification use Codex Luna at low effort. Structure, context, and revision use Codex Terra at medium effort. Claude uses the same low/medium effort and tool partition while retaining its configured model.
+5. All model subprocesses are read-only. Structure gets local read/search tools only when needed; external context alone gets live web search. The PDF text is explicitly marked as untrusted data.
+6. Each successful branch immediately writes a typed cache artifact. The source/provider/model manifest lets an ordinary retry run only missing or malformed branches; a forced run invalidates all branches.
+7. The backend, not a model, updates `job.json` and its Markdown tasklist projection. Multiple analysis tasks may be active at once.
+8. Codex JSONL or Claude's JSON envelope supplies a session ID only for the structural branch. Standard input carries prompts, final messages are captured separately, and stderr is bounded before reporting.
+9. A 20-minute per-process timeout kills abandoned work. The three drafts are merged, normalized, source-mapped, and link-checked before an atomic final save.
 
-Codex analysis uses `codex exec --json --output-last-message`; feedback prefers `codex exec resume <SESSION_ID>`. Claude uses its persisted print-mode session and `--resume`. A resume failure is safe to retry fresh because `source.txt`, `analysis.json`, and the reader feedback are all durable context. Clarification is deliberately kept out of the analysis session and runs ephemerally with read-only tools.
+Codex calls use `codex exec --json --output-last-message`; feedback prefers `codex exec resume <SESSION_ID>`. Claude uses its persisted print-mode structural session and `--resume`. A resume failure is safe to retry fresh because `source.txt`, `analysis.json`, and reader feedback are durable context. Clarification is deliberately outside the analysis session and runs ephemerally against prefetched passage surroundings.
 
-Codex analysis enables live web search; Claude receives explicit web-search and fetch tools. The model contract allows at most two external-context notes and requires every note to name exact source records. Missing, duplicate, or malformed mappings invalidate the complete note rather than silently weakening its citation set.
+Only the external-context stage enables live search or web-fetch tools. Its contract allows at most two notes and requires every note to name exact source records. Missing, duplicate, or malformed mappings invalidate the complete note rather than silently weakening its citation set.
 
 Source-link verification remains application-owned. Only cited HTTP(S) URLs on default ports are considered. For the initial URL and every redirect, the backend resolves DNS itself, rejects credentials and localhost, requires every returned address to be public, disables proxies, pins the request to a previously checked address, and accepts only a 2xx response. Redirect depth and the complete link check are time-bounded. A note survives only when every source it cites succeeds; unchecked and unreferenced records are discarded.
 
@@ -91,7 +94,7 @@ discovered → queued → extracting → analyzing → ready
 
 Extraction and analysis artifacts are cached independently. A failed analysis retains valid extraction; an ingest run continues to later papers and reports an aggregate failure only after preserving successful results. Schema changes invalidate stale extraction caches. Writes use a temporary sibling followed by an atomic rename.
 
-`job.json` survives server restarts. A job that was active when the process stopped is converted to a retryable interrupted failure on the next boot instead of being shown as permanently running. The Markdown tasklist is the progress source of truth while an agent works; malformed or missing agent edits fall back to the backend's typed task definitions.
+`job.json` survives server restarts. A job that was active when the process stopped is converted to a retryable interrupted failure on the next boot instead of being shown as permanently running. Typed backend state is the progress source of truth; `analysis-tasklist.md` is a generated, human-readable projection and external edits are ignored.
 
 Expected faults have dedicated errors: missing PDF tools, unreadable vaults, empty image-only extractions, failed local commands, timeout, invalid model output, duplicate processing, unsafe paper IDs, oversized extraction, and missing frontend assets.
 
@@ -112,4 +115,4 @@ Highlights deliberately avoid a database. `highlights.jsonl` is canonical and at
 - Scanned, image-only papers report an empty extraction instead of silently inventing OCR text. OCR is the next extraction adapter.
 - Ingest is incremental but command-triggered. A filesystem watcher can later call the same refresh/queue path without changing the model.
 - The PDF view pages through one page or one two-page spread rather than virtualizing a continuous document. The later native-reader experiment can reuse the API and portable artifacts.
-- Analysis is single-paper and sequential during batch ingest to keep local CLI resource use predictable. Parallelism belongs behind an explicit concurrency limit.
+- Batch ingest remains sequential across papers to keep local CLI resource use predictable; the three scoped stages inside one paper run concurrently.

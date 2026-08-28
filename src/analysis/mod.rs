@@ -1,5 +1,6 @@
 mod heuristic;
 mod local_cli;
+mod prefetch;
 mod sources;
 
 use std::path::Path;
@@ -23,6 +24,9 @@ pub use local_cli::LocalCliAnalyzer;
 
 pub const ANALYSIS_SCHEMA: &str = include_str!("../../prompts/paper-analysis.schema.json");
 pub const CLARIFICATION_SCHEMA: &str = include_str!("../../prompts/clarification.schema.json");
+pub const ORIENTATION_SCHEMA: &str = include_str!("../../prompts/paper-orientation.schema.json");
+pub const STRUCTURE_SCHEMA: &str = include_str!("../../prompts/paper-structure.schema.json");
+pub const CONTEXT_SCHEMA: &str = include_str!("../../prompts/paper-context.schema.json");
 
 #[derive(Clone, Debug, Default)]
 pub struct AnalysisService {
@@ -46,13 +50,14 @@ impl AnalysisService {
         provider: AnalysisProvider,
         paper: &ExtractedPaper,
         artifact_directory: &Path,
+        reset_stages: bool,
     ) -> Result<AnalysisOutcome> {
         let (draft, session) = match provider {
             AnalysisProvider::Heuristic => (HeuristicAnalyzer::analyze(paper), None),
             AnalysisProvider::Codex | AnalysisProvider::Claude => {
                 let result = self
                     .local_cli
-                    .analyze(provider, paper, artifact_directory)
+                    .analyze(provider, paper, artifact_directory, reset_stages)
                     .await?;
                 (result.draft, result.session)
             }
@@ -160,6 +165,35 @@ pub(crate) struct AnalysisDraft {
     pub caveats: Vec<String>,
     #[serde(default)]
     pub reading_path: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub(crate) struct OrientationDraft {
+    pub thesis: String,
+    pub author_abstract: Option<String>,
+    #[serde(default)]
+    pub prerequisites: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub(crate) struct StructureDraft {
+    pub sections: Vec<SectionDraft>,
+    #[serde(default)]
+    pub claims: Vec<Claim>,
+    #[serde(default)]
+    pub glossary: Vec<GlossaryEntry>,
+    #[serde(default)]
+    pub caveats: Vec<String>,
+    #[serde(default)]
+    pub reading_path: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub(crate) struct ExternalContextDraft {
+    #[serde(default)]
+    pub context_notes: Vec<ContextNoteDraft>,
+    #[serde(default)]
+    pub context_sources: Vec<ContextSourceDraft>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

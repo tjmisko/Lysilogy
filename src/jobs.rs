@@ -24,17 +24,6 @@ impl JobTracker {
         let mut jobs = BTreeMap::new();
         for mut job in store.load_jobs().await? {
             if job.status.is_active() {
-                if let Some(markdown) = store.load_tasklist(&job.paper_id).await? {
-                    let mut tasks = parse_tasklist(&markdown);
-                    if !tasks.is_empty() {
-                        for fallback in &job.tasks {
-                            if !tasks.iter().any(|task| task.id == fallback.id) {
-                                tasks.push(fallback.clone());
-                            }
-                        }
-                        job.tasks = tasks;
-                    }
-                }
                 job.status = AnalysisJobStatus::Failed {
                     stage: ProcessingStage::Analysis,
                     message:
@@ -136,7 +125,7 @@ impl JobTracker {
     }
 
     pub async fn complete(&self, paper_id: &PaperId, resumable: bool) -> Result<()> {
-        let mut tasklist = self.tasks_from_disk_or_job(paper_id).await?;
+        let mut tasklist = self.tasks_from_job(paper_id).await?;
         for task in &mut tasklist {
             task.status = AnalysisTaskStatus::Completed;
             task.detail = None;
@@ -155,10 +144,10 @@ impl JobTracker {
         stage: ProcessingStage,
         error: &Error,
     ) -> Result<()> {
-        let mut tasklist = self.tasks_from_disk_or_job(paper_id).await?;
-        if let Some(task) = tasklist
+        let mut tasklist = self.tasks_from_job(paper_id).await?;
+        for task in tasklist
             .iter_mut()
-            .find(|task| task.status == AnalysisTaskStatus::Active)
+            .filter(|task| task.status == AnalysisTaskStatus::Active)
         {
             task.status = AnalysisTaskStatus::Failed;
             task.detail = Some(compact_line(&error.to_string()));
@@ -176,20 +165,6 @@ impl JobTracker {
 
     pub async fn queue(&self) -> Result<ProcessingQueue> {
         let mut jobs = self.jobs.read().await.values().cloned().collect::<Vec<_>>();
-        for job in &mut jobs {
-            if let Some(markdown) = self.store.load_tasklist(&job.paper_id).await? {
-                let mut tasks = parse_tasklist(&markdown);
-                if !tasks.is_empty() {
-                    for fallback in &job.tasks {
-                        if !tasks.iter().any(|task| task.id == fallback.id) {
-                            tasks.push(fallback.clone());
-                        }
-                    }
-                    job.tasks = tasks;
-                    job.progress = progress(&job.tasks, &job.status);
-                }
-            }
-        }
         jobs.sort_by(|left, right| {
             let left_active = left.status.is_active();
             let right_active = right.status.is_active();
@@ -207,7 +182,7 @@ impl JobTracker {
         status: AnalysisTaskStatus,
         detail: Option<String>,
     ) -> Result<()> {
-        let mut tasks = self.tasks_from_disk_or_job(paper_id).await?;
+        let mut tasks = self.tasks_from_job(paper_id).await?;
         let task = tasks
             .iter_mut()
             .find(|task| task.id == task_id)
@@ -217,26 +192,13 @@ impl JobTracker {
         self.save_tasks(paper_id, tasks).await
     }
 
-    async fn tasks_from_disk_or_job(&self, paper_id: &PaperId) -> Result<Vec<AnalysisTask>> {
-        let fallback = self
-            .jobs
+    async fn tasks_from_job(&self, paper_id: &PaperId) -> Result<Vec<AnalysisTask>> {
+        self.jobs
             .read()
             .await
             .get(paper_id)
             .map(|job| job.tasks.clone())
-            .ok_or_else(|| Error::Task(format!("analysis job for `{paper_id}` was not found")))?;
-        if let Some(markdown) = self.store.load_tasklist(paper_id).await? {
-            let mut parsed = parse_tasklist(&markdown);
-            if !parsed.is_empty() {
-                for task in fallback {
-                    if !parsed.iter().any(|candidate| candidate.id == task.id) {
-                        parsed.push(task);
-                    }
-                }
-                return Ok(parsed);
-            }
-        }
-        Ok(fallback)
+            .ok_or_else(|| Error::Task(format!("analysis job for `{paper_id}` was not found")))
     }
 
     async fn save_tasks(&self, paper_id: &PaperId, tasks: Vec<AnalysisTask>) -> Result<()> {
@@ -282,19 +244,14 @@ fn tasks_for(kind: AnalysisJobKind) -> Vec<AnalysisTask> {
     let tasks = match kind {
         AnalysisJobKind::Initial => [
             ("extract", "Extract text and exact PDF page coordinates"),
+            ("prefetch", "Build deterministic reusable paper context"),
             (
-                "read",
-                "Read the complete target paper and locate its boundaries",
+                "orientation",
+                "Extract the thesis and reading prerequisites",
             ),
-            ("structure", "Map the paper's argumentative sections"),
-            (
-                "evidence",
-                "Collect exact quotations and check their page evidence",
-            ),
-            (
-                "explain",
-                "Write the outsider digest, reading path, and Gloss",
-            ),
+            ("structure", "Map sections, claims, evidence, and Gloss"),
+            ("context", "Research independently sourced field context"),
+            ("verify", "Normalize output and verify source evidence"),
             ("persist", "Validate and save the finished paper atlas"),
         ]
         .as_slice(),
@@ -339,7 +296,7 @@ pub fn render_tasklist(job: &AnalysisJob) -> String {
         AnalysisJobKind::Revision => "feedback revision",
     };
     let mut markdown = format!(
-        "# Analysis tasklist\n\n- Paper: {}\n- Provider: `{}`\n- Run: {kind}\n\n<!-- Lysilogy watches these checkboxes. Keep each backticked task ID unchanged. -->\n",
+        "# Analysis tasklist\n\n- Paper: {}\n- Provider: `{}`\n- Run: {kind}\n\n<!-- Generated by the Lysilogy backend. Manual edits are overwritten. -->\n",
         compact_line(&job.paper_title),
         job.provider,
     );
@@ -453,11 +410,11 @@ mod tests {
         job.tasks[1].detail = Some("page 4 of 12".to_owned());
         let parsed = parse_tasklist(&render_tasklist(&job));
         assert_eq!(parsed, job.tasks);
-        assert_eq!(progress(&parsed, &job.status), 25);
+        assert_eq!(progress(&parsed, &job.status), 21);
     }
 
     #[tokio::test]
-    async fn queue_reads_progress_edits_from_the_agent_tasklist() -> Result<()> {
+    async fn queue_ignores_external_tasklist_edits() -> Result<()> {
         let directory = tempdir().map_err(|error| Error::io("tempdir", error))?;
         let store = ArtifactStore::new(directory.path());
         store.initialize().await?;
@@ -478,8 +435,8 @@ mod tests {
             .ok_or_else(|| Error::Task("tasklist was not written".to_owned()))?
             .replace("- [ ] `extract`", "- [x] `extract`")
             .replace(
-                "- [ ] `read` Read the complete target paper and locate its boundaries",
-                "- [~] `read` Read the complete target paper and locate its boundaries — page 4 of 12",
+                "- [ ] `prefetch` Build deterministic reusable paper context",
+                "- [~] `prefetch` Build deterministic reusable paper context — page 4 of 12",
             );
         store.save_tasklist(&id, &tasklist).await?;
         let queue = tracker.queue().await?;
@@ -487,10 +444,10 @@ mod tests {
             .jobs
             .first()
             .ok_or_else(|| Error::Task("queue was empty".to_owned()))?;
-        assert_eq!(job.progress, 25);
-        assert_eq!(job.tasks[0].status, AnalysisTaskStatus::Completed);
-        assert_eq!(job.tasks[1].status, AnalysisTaskStatus::Active);
-        assert_eq!(job.tasks[1].detail.as_deref(), Some("page 4 of 12"));
+        assert_eq!(job.progress, 0);
+        assert_eq!(job.tasks[0].status, AnalysisTaskStatus::Pending);
+        assert_eq!(job.tasks[1].status, AnalysisTaskStatus::Pending);
+        assert_eq!(job.tasks[1].detail, None);
         Ok(())
     }
 
@@ -511,7 +468,7 @@ mod tests {
             )
             .await?;
         tracker
-            .transition(&id, ProcessingStage::Analysis, "read")
+            .transition(&id, ProcessingStage::Analysis, "prefetch")
             .await?;
         let restarted = JobTracker::load(store).await?;
         let queue = restarted.queue().await?;
@@ -523,6 +480,47 @@ mod tests {
             }
         ));
         assert_eq!(queue.jobs[0].tasks[1].status, AnalysisTaskStatus::Failed);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn a_failure_marks_every_parallel_active_task_failed() -> Result<()> {
+        let directory = tempdir().map_err(|error| Error::io("tempdir", error))?;
+        let store = ArtifactStore::new(directory.path());
+        store.initialize().await?;
+        let tracker = JobTracker::load(store).await?;
+        let id = PaperId::from_relative_path(std::path::Path::new("paper.pdf"));
+        tracker
+            .begin(
+                id.clone(),
+                "A paper".to_owned(),
+                AnalysisProvider::Codex,
+                AnalysisJobKind::Initial,
+                None,
+            )
+            .await?;
+        tracker
+            .transition(&id, ProcessingStage::Analysis, "prefetch")
+            .await?;
+        for task in ["orientation", "structure", "context"] {
+            tracker.task_active(&id, task, None).await?;
+        }
+
+        tracker
+            .fail(
+                &id,
+                ProcessingStage::Analysis,
+                &Error::Task("one scoped call failed".to_owned()),
+            )
+            .await?;
+
+        let queue = tracker.queue().await?;
+        let failed = queue.jobs[0]
+            .tasks
+            .iter()
+            .filter(|task| task.status == AnalysisTaskStatus::Failed)
+            .count();
+        assert_eq!(failed, 4);
         Ok(())
     }
 }

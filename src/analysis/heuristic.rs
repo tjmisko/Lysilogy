@@ -9,7 +9,7 @@ use crate::domain::{
 
 use super::{
     AnalysisDraft, SectionDraft, SourceSpanDraft, compact_whitespace, fallback_claim,
-    fallback_quote, slugify,
+    fallback_quote, prefetch, slugify,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -28,7 +28,7 @@ impl HeuristicAnalyzer {
     pub(crate) fn analyze(paper: &ExtractedPaper) -> AnalysisDraft {
         let target_pages = target_document_pages(&paper.pages);
         let mut raw_sections = discover_sections(&target_pages);
-        let author_abstract = find_author_abstract(&raw_sections);
+        let author_abstract = prefetch::find_author_abstract(paper).map(|value| value.0);
         if raw_sections.len() < 5 {
             raw_sections = conceptual_chunks(&target_pages, 7);
         }
@@ -163,27 +163,6 @@ impl HeuristicAnalyzer {
             provider: crate::domain::AnalysisProvider::Heuristic,
         }
     }
-}
-
-fn find_author_abstract(sections: &[RawSection]) -> Option<String> {
-    let section = sections.iter().find(|section| {
-        section
-            .title
-            .trim()
-            .trim_start_matches(|character: char| {
-                character.is_ascii_digit() || character == '.' || character.is_whitespace()
-            })
-            .eq_ignore_ascii_case("abstract")
-    })?;
-    let text = compact_whitespace(
-        &section
-            .paragraphs
-            .iter()
-            .map(|(_, paragraph)| paragraph.as_str())
-            .collect::<Vec<_>>()
-            .join(" "),
-    );
-    (text.chars().count() >= 30 && text.chars().count() <= 12_000).then_some(text)
 }
 
 fn discover_sections(pages: &[ExtractedPage]) -> Vec<RawSection> {
