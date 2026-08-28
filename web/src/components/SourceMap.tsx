@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   GlobalWorkerOptions,
   getDocument,
@@ -170,6 +170,62 @@ function defaultColumnCount(pageCount: number): number {
   if (window.innerWidth < 860) return Math.min(3, available);
   if (window.innerWidth < 1180) return Math.min(4, available);
   return Math.min(6, available);
+}
+
+function SectionBoxButton({
+  box,
+  active,
+  onOpen,
+}: {
+  box: SectionBox;
+  active: boolean;
+  onOpen: (section: PaperSection, index: number) => void;
+}) {
+  const titleRef = useRef<HTMLSpanElement>(null);
+  const [fontSize, setFontSize] = useState(18);
+
+  useLayoutEffect(() => {
+    const title = titleRef.current;
+    if (title === null) return;
+    const fit = (): void => {
+      let low = 7;
+      let high = 58;
+      let best = low;
+      while (low <= high) {
+        const size = Math.floor((low + high) / 2);
+        title.style.fontSize = `${size}px`;
+        if (title.scrollWidth <= title.clientWidth + 1 && title.scrollHeight <= title.clientHeight + 1) {
+          best = size;
+          low = size + 1;
+        } else {
+          high = size - 1;
+        }
+      }
+      setFontSize((current) => current === best ? current : best);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(title.parentElement ?? title);
+    return () => observer.disconnect();
+  }, [box.height, box.section.title, box.width]);
+
+  return (
+    <button
+      type="button"
+      className={`${box.verified ? "is-verified" : "is-inferred"} ${active ? "is-active" : ""}`}
+      data-family={box.section.family}
+      style={{
+        left: `${box.left}px`,
+        top: `${box.top}px`,
+        width: `${box.width}px`,
+        height: `${box.height}px`,
+      }}
+      onClick={() => onOpen(box.section, box.index)}
+      aria-label={`${box.section.title}; pages ${box.section.pages.start} to ${box.section.pages.end}`}
+    >
+      <span ref={titleRef} style={{ fontSize: `${fontSize}px` }}>{box.section.title}</span>
+    </button>
+  );
 }
 
 function PageCanvas({ document, page, darkInk }: {
@@ -545,22 +601,12 @@ export function SourceMap({
         })}
         <div className={`section-boxes ${markMode ? "is-disabled" : ""}`} aria-label="Paper sections">
           {sectionBoxes.map((box) => (
-            <button
+            <SectionBoxButton
               key={box.id}
-              type="button"
-              className={`${box.verified ? "is-verified" : "is-inferred"} ${box.index === activeSection ? "is-active" : ""}`}
-              data-family={box.section.family}
-              style={{
-                left: `${box.left}px`,
-                top: `${box.top}px`,
-                width: `${box.width}px`,
-                height: `${box.height}px`,
-              }}
-              onClick={() => onOpenSection(box.section, box.index)}
-              aria-label={`${box.section.title}; pages ${box.section.pages.start} to ${box.section.pages.end}`}
-            >
-              <span>{box.section.title}</span>
-            </button>
+              box={box}
+              active={box.index === activeSection}
+              onOpen={onOpenSection}
+            />
           ))}
         </div>
       </div>
