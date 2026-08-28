@@ -32,6 +32,7 @@ type ViewMode = "abstract" | "overview" | "glossary" | "text";
 type TextMode = "markdown" | "pdf";
 
 const VIEW_ORDER: ViewMode[] = ["abstract", "overview", "glossary", "text"];
+const VIEW_STORAGE_KEY = "lysilogy.reader-view";
 
 const PROCESSING_STATES = new Set(["queued", "extracting", "analyzing"]);
 
@@ -47,6 +48,15 @@ function isEditableTarget(target: EventTarget | null): boolean {
 function initialPaperId(): string | null {
   const params = new URLSearchParams(window.location.hash.replace(/^#/u, ""));
   return params.get("paper");
+}
+
+function initialView(): ViewMode {
+  try {
+    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+    return VIEW_ORDER.includes(stored as ViewMode) ? stored as ViewMode : "abstract";
+  } catch {
+    return "abstract";
+  }
 }
 
 function paperByPreference(library: LibraryResponse, requested: string | null): PaperOverview | null {
@@ -92,7 +102,7 @@ export function App() {
   const [paperView, setPaperView] = useState<PaperView | null>(null);
   const [activeSection, setActiveSection] = useState(0);
   const [panel, setPanel] = useState<Panel>(null);
-  const [view, setView] = useState<ViewMode>("abstract");
+  const [view, setView] = useState<ViewMode>(initialView);
   const [textMode, setTextMode] = useState<TextMode>("markdown");
   const [compactLayout, setCompactLayout] = useState(() => window.innerWidth < 1180);
   const [libraryOpen, setLibraryOpen] = useState(() => window.innerWidth >= 1180);
@@ -125,6 +135,14 @@ export function App() {
   useEffect(() => {
     mainStageRef.current?.scrollTo({ top: 0 });
   }, [selectedId, textMode, view]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, view);
+    } catch {
+      // The reader remains usable when storage is unavailable.
+    }
+  }, [view]);
 
   useEffect(() => {
     setAuthorsOpen(false);

@@ -78,22 +78,6 @@ export function GlossaryView({ entries, onBack, onSection }: GlossaryViewProps) 
 
   return (
     <section className="glossary-view" aria-label="Technical glossary">
-      <header className="view-introduction glossary-heading">
-        <div>
-          <div>
-            <span className="view-number">03</span>
-            <span className="eyebrow">Concepts to hold before reading</span>
-          </div>
-          <h2>Technical glossary</h2>
-          <p>
-            Learn the paper&apos;s load-bearing vocabulary now, so the full text can spend your
-            attention on the argument rather than terminology.
-          </p>
-        </div>
-        <button className="back-to-overview" type="button" onClick={onBack}>
-          ← Overview
-        </button>
-      </header>
       <label className="search-box gloss-search">
         <span aria-hidden="true">/</span>
         <input

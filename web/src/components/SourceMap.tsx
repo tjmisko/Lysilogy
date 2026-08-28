@@ -191,7 +191,10 @@ function SectionBoxButton({
     if (title === null) return;
     const fit = (): void => {
       let low = MIN_SECTION_TITLE_SIZE;
-      let high = MAX_SECTION_TITLE_SIZE;
+      let high = Math.min(
+        MAX_SECTION_TITLE_SIZE,
+        Math.max(MIN_SECTION_TITLE_SIZE, Math.floor(Math.min(box.width, box.height) * 0.17)),
+      );
       let best: number | null = null;
       while (low <= high) {
         const size = Math.floor((low + high) / 2);
