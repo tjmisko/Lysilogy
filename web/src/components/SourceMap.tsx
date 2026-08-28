@@ -67,6 +67,8 @@ type SectionBox = {
 };
 
 const MAX_PAGE_COLUMNS = 10;
+const MIN_SECTION_TITLE_SIZE = 13;
+const MAX_SECTION_TITLE_SIZE = 34;
 
 function rectStyle(rect: TextRect, page: LayoutPage): PercentStyle {
   return {
@@ -182,15 +184,15 @@ function SectionBoxButton({
   onOpen: (section: PaperSection, index: number) => void;
 }) {
   const titleRef = useRef<HTMLSpanElement>(null);
-  const [fontSize, setFontSize] = useState(18);
+  const [fontSize, setFontSize] = useState<number | null>(null);
 
   useLayoutEffect(() => {
     const title = titleRef.current;
     if (title === null) return;
     const fit = (): void => {
-      let low = 7;
-      let high = 58;
-      let best = low;
+      let low = MIN_SECTION_TITLE_SIZE;
+      let high = MAX_SECTION_TITLE_SIZE;
+      let best: number | null = null;
       while (low <= high) {
         const size = Math.floor((low + high) / 2);
         title.style.fontSize = `${size}px`;
@@ -223,7 +225,15 @@ function SectionBoxButton({
       onClick={() => onOpen(box.section, box.index)}
       aria-label={`${box.section.title}; pages ${box.section.pages.start} to ${box.section.pages.end}`}
     >
-      <span ref={titleRef} style={{ fontSize: `${fontSize}px` }}>{box.section.title}</span>
+      <span
+        ref={titleRef}
+        style={{
+          fontSize: `${fontSize ?? MIN_SECTION_TITLE_SIZE}px`,
+          visibility: fontSize === null ? "hidden" : undefined,
+        }}
+      >
+        {box.section.title}
+      </span>
     </button>
   );
 }
