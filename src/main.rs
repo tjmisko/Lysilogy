@@ -11,8 +11,8 @@ use clap::{Parser, Subcommand};
 use lysilogy::{
     AppState, Error, Result, build_router,
     domain::{
-        AnalysisProvider, ExperimentArmScore, ExperimentRecord, ExperimentStatus, PaperId,
-        ProcessingStatus, StartExperimentRequest,
+        AnalysisProvider, ExperimentArmScore, ExperimentRecord, ExperimentStatus, LearningRamp,
+        PaperId, ProcessingStatus, StartExperimentRequest,
     },
 };
 use tokio::{sync::Semaphore, task::JoinSet};
@@ -100,6 +100,28 @@ enum Command {
         #[arg(long)]
         output: Option<PathBuf>,
     },
+    /// Prepare blind run records without invoking a model (for isolated external workers).
+    ExperimentPrepare {
+        #[arg(required = true, num_args = 1..)]
+        queries: Vec<String>,
+        #[arg(long, default_value = "conceptual-bridge")]
+        experiment: String,
+        #[arg(long, default_value = "codex")]
+        provider: AnalysisProvider,
+        #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..=20))]
+        repeat: u8,
+    },
+    /// Validate and import two independently generated JSON arms into a prepared run.
+    ExperimentImport {
+        /// Paper ID or unambiguous title fragment.
+        query: String,
+        #[arg(long)]
+        run: String,
+        #[arg(long)]
+        arm_a: PathBuf,
+        #[arg(long)]
+        arm_b: PathBuf,
+    },
 }
 
 #[tokio::main]
@@ -172,26 +194,103 @@ async fn run(cli: Cli) -> Result<()> {
         } => {
             experiment_campaign(&state, &queries, &experiment, provider, repeat, concurrency).await
         }
-        Command::ExperimentReport { output } => {
-            let report = render_experiment_report(&state.experiment_records().await?);
-            if let Some(path) = output {
-                if let Some(parent) = path.parent()
-                    && !parent.as_os_str().is_empty()
-                {
-                    tokio::fs::create_dir_all(parent)
-                        .await
-                        .map_err(|error| Error::io(parent, error))?;
-                }
-                tokio::fs::write(&path, report)
-                    .await
-                    .map_err(|error| Error::io(&path, error))?;
-                println!("Wrote experiment report to {}", path.display());
-            } else {
-                print!("{report}");
-            }
-            Ok(())
+        Command::ExperimentReport { output } => experiment_report_command(&state, output).await,
+        Command::ExperimentPrepare {
+            queries,
+            experiment,
+            provider,
+            repeat,
+        } => prepare_experiment_campaign(&state, &queries, &experiment, provider, repeat).await,
+        Command::ExperimentImport {
+            query,
+            run,
+            arm_a,
+            arm_b,
+        } => import_experiment_command(&state, &query, &run, &arm_a, &arm_b).await,
+    }
+}
+
+async fn experiment_report_command(state: &AppState, output: Option<PathBuf>) -> Result<()> {
+    let report = render_experiment_report(&state.experiment_records().await?);
+    if let Some(path) = output {
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            tokio::fs::create_dir_all(parent)
+                .await
+                .map_err(|error| Error::io(parent, error))?;
+        }
+        tokio::fs::write(&path, report)
+            .await
+            .map_err(|error| Error::io(&path, error))?;
+        println!("Wrote experiment report to {}", path.display());
+    } else {
+        print!("{report}");
+    }
+    Ok(())
+}
+
+async fn import_experiment_command(
+    state: &AppState,
+    query: &str,
+    run_id: &str,
+    arm_a_path: &std::path::Path,
+    arm_b_path: &std::path::Path,
+) -> Result<()> {
+    let id = resolve_paper(state, query).await?;
+    let outputs = tokio::try_join!(
+        read_learning_ramp(arm_a_path),
+        read_learning_ramp(arm_b_path)
+    )?;
+    let view = state
+        .import_experiment_outputs(&id, run_id, outputs.into())
+        .await?;
+    println!(
+        "Imported and verified {}: {:?}",
+        view.run.id, view.run.status
+    );
+    Ok(())
+}
+
+async fn prepare_experiment_campaign(
+    state: &AppState,
+    queries: &[String],
+    experiment: &str,
+    provider: AnalysisProvider,
+    repeat: u8,
+) -> Result<()> {
+    for query in queries {
+        let id = resolve_paper(state, query).await?;
+        for replication in 1..=repeat {
+            let run = state
+                .prepare_experiment_only(
+                    &id,
+                    &StartExperimentRequest {
+                        experiment_id: experiment.to_owned(),
+                        provider,
+                    },
+                )
+                .await?;
+            let assignments = run
+                .arms
+                .iter()
+                .map(|arm| format!("{}={}", arm.blind_label, arm.variant_id))
+                .collect::<Vec<_>>()
+                .join(", ");
+            println!(
+                "{} [{replication}/{repeat}] {}: {assignments}",
+                run.paper_title, run.id
+            );
         }
     }
+    Ok(())
+}
+
+async fn read_learning_ramp(path: &std::path::Path) -> Result<LearningRamp> {
+    let bytes = tokio::fs::read(path)
+        .await
+        .map_err(|error| Error::io(path, error))?;
+    serde_json::from_slice(&bytes).map_err(Error::from)
 }
 
 #[derive(Default)]

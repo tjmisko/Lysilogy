@@ -73,9 +73,7 @@ impl ArtifactStore {
                 .map_err(|error| Error::io(&experiments_directory, error))?
             {
                 let path = entry.path();
-                if path.extension().and_then(|value| value.to_str()) != Some("json")
-                    || path.file_name().and_then(|value| value.to_str()) == Some("judgments.json")
-                {
+                if !experiment_run_artifact(&path) {
                     continue;
                 }
                 let Some(mut run) = read_json_if_present::<ExperimentRun>(&path).await? else {
@@ -244,9 +242,7 @@ impl ArtifactStore {
             .map_err(|error| Error::io(&directory, error))?
         {
             let path = entry.path();
-            if path.extension().and_then(|value| value.to_str()) != Some("json")
-                || path.file_name().and_then(|value| value.to_str()) == Some("judgments.json")
-            {
+            if !experiment_run_artifact(&path) {
                 continue;
             }
             match read_json_if_present(&path).await {
@@ -519,6 +515,21 @@ fn valid_artifact_id(value: &str) -> bool {
         && value
             .chars()
             .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
+}
+
+fn experiment_run_artifact(path: &Path) -> bool {
+    let Some(name) = path.file_name().and_then(|value| value.to_str()) else {
+        return false;
+    };
+    let is_json = path
+        .extension()
+        .and_then(|value| value.to_str())
+        .is_some_and(|value| value.eq_ignore_ascii_case("json"));
+    let lower_name = name.to_ascii_lowercase();
+    name.starts_with("run-")
+        && is_json
+        && !lower_name.contains(".schema.")
+        && !lower_name.contains("-agent-output.")
 }
 
 async fn read_string_if_present(path: &Path) -> Result<Option<String>> {

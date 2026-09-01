@@ -737,6 +737,63 @@ impl AppState {
         self.experiment_view(run).await
     }
 
+    pub async fn prepare_experiment_only(
+        &self,
+        id: &PaperId,
+        request: &StartExperimentRequest,
+    ) -> Result<ExperimentRun> {
+        self.prepare_experiment(id, request).await
+    }
+
+    pub async fn import_experiment_outputs(
+        &self,
+        id: &PaperId,
+        run_id: &str,
+        outputs: [LearningRamp; 2],
+    ) -> Result<ExperimentView> {
+        let mut run = self
+            .store
+            .load_experiment_run(id, run_id)
+            .await?
+            .ok_or_else(|| Error::InvalidRequest("experiment run was not found".to_owned()))?;
+        if run.paper_id != *id || run.arms.len() != 2 {
+            return Err(Error::InvalidRequest(
+                "experiment import does not match a two-arm paper run".to_owned(),
+            ));
+        }
+        if self
+            .store
+            .load_experiment_judgments(id)
+            .await?
+            .iter()
+            .any(|judgment| judgment.run_id == run.id)
+        {
+            return Err(Error::InvalidRequest(
+                "cannot replace an experiment after blind judgment".to_owned(),
+            ));
+        }
+        let paper = self.load_or_extract(id).await.map_err(|(_, error)| error)?;
+        for (arm, output) in run.arms.iter_mut().zip(outputs) {
+            let normalized = crate::analysis::normalize_learning_ramp(output, &paper)?;
+            if arm.variant_id == "direct"
+                && normalized
+                    .concepts
+                    .iter()
+                    .any(|concept| concept.bridge.is_some() || concept.bridge_limit.is_some())
+            {
+                return Err(Error::InvalidAnalysis(
+                    "direct conceptual-bridge control contained an analogy".to_owned(),
+                ));
+            }
+            arm.output = Some(normalized);
+            arm.error = None;
+        }
+        run.status = ExperimentStatus::Completed;
+        run.completed_at = Some(Utc::now());
+        self.store.save_experiment_run(&run).await?;
+        self.experiment_view(run).await
+    }
+
     async fn prepare_experiment(
         &self,
         id: &PaperId,

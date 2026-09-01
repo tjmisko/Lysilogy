@@ -172,7 +172,10 @@ impl AnalysisService {
     }
 }
 
-fn normalize_learning_ramp(mut ramp: LearningRamp, paper: &ExtractedPaper) -> Result<LearningRamp> {
+pub(crate) fn normalize_learning_ramp(
+    mut ramp: LearningRamp,
+    paper: &ExtractedPaper,
+) -> Result<LearningRamp> {
     ramp.foothold.question = clean_required("experiment question", &ramp.foothold.question)?;
     ramp.foothold.answer = clean_required("experiment answer", &ramp.foothold.answer)?;
     ramp.foothold.why_care = clean_required("experiment importance", &ramp.foothold.why_care)?;
