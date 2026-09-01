@@ -363,5 +363,19 @@ export type ExperimentJudgment = {
   early_traction: "A" | "B" | "tie";
   rigor: "A" | "B" | "tie";
   confidence: number;
+  arm_scores: ExperimentArmScore[];
   note: string;
+};
+
+export type ExperimentArmScore = {
+  blind_label: "A" | "B";
+  paper_specificity_actionability: number;
+  early_traction: number;
+  fidelity_rigor: number;
+  dependency_flow: number;
+  economy: number;
+  provenance_uncertainty: number;
+  target_dimension: number | null;
+  hard_reject: boolean;
+  failure_tags: string[];
 };

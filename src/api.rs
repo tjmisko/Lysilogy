@@ -929,6 +929,7 @@ impl AppState {
             early_traction: request.early_traction,
             rigor: request.rigor,
             confidence: request.confidence,
+            arm_scores: request.arm_scores,
             note: request.note.trim().to_owned(),
             submitted_at: Utc::now(),
         });
@@ -1287,6 +1288,62 @@ fn validate_judgment(request: &ExperimentJudgmentRequest) -> Result<()> {
         return Err(Error::InvalidRequest(
             "experiment confidence must be between 1 and 5".to_owned(),
         ));
+    }
+    let valid_tags = [
+        "generic_restatement",
+        "coverage_dump",
+        "term_dump",
+        "contextless_highlight",
+        "surface_analogy",
+        "missing_breakpoint",
+        "generic_caveat",
+        "unsupported_field_claim",
+        "pseudo_actionability",
+        "false_precision",
+        "forward_reference",
+        "budget_violation",
+        "source_monoculture",
+    ];
+    if request.arm_scores.len() != 2
+        || !["A", "B"].iter().all(|label| {
+            request
+                .arm_scores
+                .iter()
+                .filter(|score| score.blind_label == *label)
+                .count()
+                == 1
+        })
+    {
+        return Err(Error::InvalidRequest(
+            "experiment judgments require one absolute scorecard for each arm".to_owned(),
+        ));
+    }
+    for score in &request.arm_scores {
+        let common_scores = [
+            score.paper_specificity_actionability,
+            score.early_traction,
+            score.fidelity_rigor,
+            score.dependency_flow,
+            score.economy,
+            score.provenance_uncertainty,
+        ];
+        if common_scores.iter().any(|value| *value > 4)
+            || score.target_dimension.is_some_and(|value| value > 4)
+        {
+            return Err(Error::InvalidRequest(
+                "absolute experiment scores must be between 0 and 4".to_owned(),
+            ));
+        }
+        if score.failure_tags.len() > valid_tags.len()
+            || score
+                .failure_tags
+                .iter()
+                .any(|tag| !valid_tags.contains(&tag.as_str()))
+        {
+            return Err(Error::InvalidRequest(
+                "experiment scorecard contains an unknown failure tag".to_owned(),
+            ));
+        }
     }
     if request.note.chars().count() > 4_000 {
         return Err(Error::InvalidRequest(
@@ -2186,6 +2243,7 @@ mod tests {
                 early_traction: "A".to_owned(),
                 rigor: "tie".to_owned(),
                 confidence: 4,
+                arm_scores: Vec::new(),
                 note: String::new(),
                 submitted_at: Utc::now(),
             }],
@@ -2202,6 +2260,32 @@ mod tests {
             early_traction: "tie".to_owned(),
             rigor: "B".to_owned(),
             confidence: 4,
+            arm_scores: vec![
+                crate::domain::ExperimentArmScore {
+                    blind_label: "A".to_owned(),
+                    paper_specificity_actionability: 3,
+                    early_traction: 3,
+                    fidelity_rigor: 4,
+                    dependency_flow: 2,
+                    economy: 3,
+                    provenance_uncertainty: 4,
+                    target_dimension: Some(3),
+                    hard_reject: false,
+                    failure_tags: Vec::new(),
+                },
+                crate::domain::ExperimentArmScore {
+                    blind_label: "B".to_owned(),
+                    paper_specificity_actionability: 2,
+                    early_traction: 2,
+                    fidelity_rigor: 3,
+                    dependency_flow: 2,
+                    economy: 2,
+                    provenance_uncertainty: 3,
+                    target_dimension: Some(2),
+                    hard_reject: false,
+                    failure_tags: vec!["generic_restatement".to_owned()],
+                },
+            ],
             note: "A gets to the mechanism sooner.".to_owned(),
         };
         assert!(validate_judgment(&valid).is_ok());

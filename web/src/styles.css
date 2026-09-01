@@ -168,7 +168,8 @@ code {
 }
 
 .experiment-toolbar select,
-.experiment-judgment textarea {
+.experiment-judgment textarea,
+.experiment-scorecard select {
   min-width: 0;
   border: 1px solid var(--line-bright);
   border-radius: 8px;
@@ -311,17 +312,65 @@ code {
 }
 
 .experiment-judgment {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
   display: grid;
   grid-template-columns: repeat(3, auto) minmax(120px, 0.6fr) minmax(220px, 1fr) auto;
   gap: 12px;
   align-items: end;
   padding: 16px 24px;
   border-top: 1px solid var(--line-bright);
-  background: color-mix(in srgb, var(--panel) 95%, transparent);
-  backdrop-filter: blur(10px);
+  background: var(--panel);
+}
+
+.experiment-eval-intro,
+.experiment-scorecards {
+  grid-column: 1 / -1;
+}
+
+.experiment-eval-intro {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.experiment-scorecards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.experiment-scorecard {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.experiment-scorecard > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.experiment-scorecard > label,
+.experiment-failure-tags label {
+  display: grid;
+  gap: 4px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.experiment-scorecard .experiment-hard-reject,
+.experiment-failure-tags label {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+}
+
+.experiment-failure-tags {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  padding-top: 8px;
 }
 
 .experiment-choice {
@@ -362,12 +411,9 @@ code {
 
   .experiment-toolbar,
   .experiment-arms,
-  .experiment-judgment {
+  .experiment-judgment,
+  .experiment-scorecards {
     grid-template-columns: 1fr;
-  }
-
-  .experiment-judgment {
-    position: static;
   }
 }
 

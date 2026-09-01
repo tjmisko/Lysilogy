@@ -148,10 +148,11 @@ counterarguments. The paper, model, reasoning effort, shared prompt, and output 
 within a run; only the named variant instruction changes.
 
 Open `:experiment` in the reader to start or inspect a run. Arms remain labeled only `A` and `B`
-until you record overall, early-traction, and rigor preferences. The revealed prompt identities and
-judgments persist beside the paper. Product intent, hypotheses, guardrails, and promotion criteria
-are recorded in [the learning-ramp experiment brief](docs/learning-ramp-experiments.md); editable
-experiment definitions live in [`experiments/catalog.json`](experiments/catalog.json).
+until you independently score both ramps, flag hard failures or anti-slop patterns, and record the
+comparative preference. The revealed prompt identities and judgments persist beside the paper.
+Product intent, hypotheses, guardrails, and promotion criteria are recorded in [the learning-ramp
+experiment brief](docs/learning-ramp-experiments.md); editable experiment definitions live in
+[`experiments/catalog.json`](experiments/catalog.json).
 
 The CLI accepts several paper IDs or quoted title fragments plus `--repeat`. Different papers run
 with bounded parallelism; replications for the same paper remain sequential so concurrent first-use

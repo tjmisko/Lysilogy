@@ -179,6 +179,7 @@ const paperMap = {
 let analyzeRequests = 0;
 let feedbackRequests = 0;
 let experimentJudged = false;
+let experimentJudgmentPayload = null;
 const experimentCatalog = {
   schema_version: 1,
   reader_baseline: ["mathematics", "economics", "AI"],
@@ -285,6 +286,7 @@ try {
     } else if (url.pathname === `/api/papers/${paperId}/experiments` && request.method() === "GET") {
       await route.fulfill({ json: [experimentView()] });
     } else if (url.pathname === `/api/papers/${paperId}/experiments/run-smoke/judgment`) {
+      experimentJudgmentPayload = request.postDataJSON();
       experimentJudged = true;
       await route.fulfill({ json: experimentView() });
     } else if (url.pathname === `/api/papers/${unmappedPaper.id}`) {
@@ -615,10 +617,13 @@ try {
   await page.locator(".experiment-panel").waitFor();
   await page.locator(".experiment-arm").first().waitFor();
   assert((await page.locator(".experiment-arm").count()) === 2, "the prompt lab did not render both blind arms");
+  assert((await page.locator(".experiment-scorecard").count()) === 2, "the prompt lab did not render both absolute scorecards");
   assert((await page.locator(".experiment-reveal").count()) === 0, "prompt identities were revealed before judgment");
   await page.screenshot({ path: screenshotVariant("experiment"), fullPage: true });
   await page.locator(".experiment-judgment button[type=submit]").click();
   await page.locator(".experiment-reveal").first().waitFor();
+  assert(experimentJudgmentPayload.arm_scores.length === 2, "judgment did not submit both absolute scorecards");
+  assert(experimentJudgmentPayload.arm_scores.every((score) => score.fidelity_rigor === 2), "judgment submitted unexpected default rubric scores");
   assert((await page.locator(".experiment-reveal").count()) === 2, "judgment did not reveal both prompt identities");
   await page.getByRole("button", { name: "Close experiments" }).click();
   await page.locator(".experiment-panel").waitFor({ state: "detached" });

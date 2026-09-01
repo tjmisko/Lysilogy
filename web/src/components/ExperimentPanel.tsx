@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
 import type {
   AnalysisProvider,
+  ExperimentArmScore,
   ExperimentCatalog,
   ExperimentJudgment,
   ExperimentView,
@@ -16,6 +17,103 @@ type ExperimentPanelProps = {
 };
 
 type Choice = "A" | "B" | "tie";
+
+type ScoreField = Exclude<keyof ExperimentArmScore, "blind_label" | "target_dimension" | "hard_reject" | "failure_tags">;
+
+const scoreLabels: Array<[ScoreField, string]> = [
+  ["paper_specificity_actionability", "Specific & actionable"],
+  ["early_traction", "Early traction"],
+  ["fidelity_rigor", "Fidelity & rigor"],
+  ["dependency_flow", "Dependency flow"],
+  ["economy", "Economy"],
+  ["provenance_uncertainty", "Provenance & uncertainty"],
+];
+
+const failureTags = [
+  "generic_restatement",
+  "coverage_dump",
+  "term_dump",
+  "contextless_highlight",
+  "surface_analogy",
+  "missing_breakpoint",
+  "generic_caveat",
+  "unsupported_field_claim",
+  "pseudo_actionability",
+  "false_precision",
+  "forward_reference",
+  "budget_violation",
+  "source_monoculture",
+] as const;
+
+function initialArmScore(label: "A" | "B"): ExperimentArmScore {
+  return {
+    blind_label: label,
+    paper_specificity_actionability: 2,
+    early_traction: 2,
+    fidelity_rigor: 2,
+    dependency_flow: 2,
+    economy: 2,
+    provenance_uncertainty: 2,
+    target_dimension: 2,
+    hard_reject: false,
+    failure_tags: [],
+  };
+}
+
+function ArmScorecard({
+  score,
+  onChange,
+}: {
+  score: ExperimentArmScore;
+  onChange: (score: ExperimentArmScore) => void;
+}) {
+  const updateScore = (field: ScoreField, value: number): void => {
+    onChange({ ...score, [field]: value });
+  };
+  const toggleTag = (tag: string): void => {
+    const failure_tags = score.failure_tags.includes(tag)
+      ? score.failure_tags.filter((item) => item !== tag)
+      : [...score.failure_tags, tag];
+    onChange({ ...score, failure_tags });
+  };
+  return (
+    <fieldset className="experiment-scorecard">
+      <legend>Ramp {score.blind_label} · absolute score</legend>
+      <p>0 absent/wrong · 2 useful with gaps · 4 precise, auditable, and actionable</p>
+      {scoreLabels.map(([field, label]) => (
+        <label key={field}>
+          <span>{label} · {score[field]}/4</span>
+          <input type="range" min="0" max="4" value={score[field]} onChange={(event) => updateScore(field, Number(event.target.value))} />
+        </label>
+      ))}
+      <label>
+        <span>Dial-specific quality · {score.target_dimension ?? "N/A"}</span>
+        <select
+          value={score.target_dimension ?? "na"}
+          onChange={(event) => onChange({ ...score, target_dimension: event.target.value === "na" ? null : Number(event.target.value) })}
+        >
+          <option value="na">N/A</option>
+          {[0, 1, 2, 3, 4].map((value) => <option key={value} value={value}>{value}</option>)}
+        </select>
+      </label>
+      <label className="experiment-hard-reject">
+        <input type="checkbox" checked={score.hard_reject} onChange={(event) => onChange({ ...score, hard_reject: event.target.checked })} />
+        <span>Hard reject: factuality, source, support, bridge, or missing-target failure</span>
+      </label>
+      <details>
+        <summary>Failure tags ({score.failure_tags.length})</summary>
+        <div className="experiment-failure-tags">
+          {failureTags.map((tag) => (
+            <label key={tag}>
+              <input type="checkbox" checked={score.failure_tags.includes(tag)} onChange={() => toggleTag(tag)} />
+              <span>{tag.replaceAll("_", " ")}</span>
+            </label>
+          ))}
+        </div>
+      </details>
+    </fieldset>
+  );
+}
 
 function ChoiceField({
   label,
@@ -148,11 +246,24 @@ export function ExperimentPanel({ paperId, provider, onClose }: ExperimentPanelP
   const [rigor, setRigor] = useState<Choice>("tie");
   const [confidence, setConfidence] = useState(3);
   const [note, setNote] = useState("");
+  const [armScores, setArmScores] = useState<Record<"A" | "B", ExperimentArmScore>>({
+    A: initialArmScore("A"),
+    B: initialArmScore("B"),
+  });
 
   const active = useMemo(
     () => runs.find((view) => view.run.id === selectedRun) ?? runs[0] ?? null,
     [runs, selectedRun],
   );
+
+  const resetJudgment = (): void => {
+    setOverall("tie");
+    setTraction("tie");
+    setRigor("tie");
+    setConfidence(3);
+    setNote("");
+    setArmScores({ A: initialArmScore("A"), B: initialArmScore("B") });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -190,6 +301,7 @@ export function ExperimentPanel({ paperId, provider, onClose }: ExperimentPanelP
       const next = await api.startExperiment(paperId, selectedExperiment, provider);
       setRuns((current) => [next, ...current]);
       setSelectedRun(next.run.id);
+      resetJudgment();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not start experiment");
     } finally {
@@ -206,6 +318,7 @@ export function ExperimentPanel({ paperId, provider, onClose }: ExperimentPanelP
       early_traction: traction,
       rigor,
       confidence,
+      arm_scores: [armScores.A, armScores.B],
       note,
     };
     try {
@@ -249,7 +362,7 @@ export function ExperimentPanel({ paperId, provider, onClose }: ExperimentPanelP
           </button>
           <label>
             <span>Saved run</span>
-            <select value={active?.run.id ?? ""} onChange={(event) => setSelectedRun(event.target.value)}>
+            <select value={active?.run.id ?? ""} onChange={(event) => { setSelectedRun(event.target.value); resetJudgment(); }}>
               {runs.map((view) => (
                 <option key={view.run.id} value={view.run.id}>
                   {view.run.experiment_name} · {view.run.status}
@@ -288,6 +401,16 @@ export function ExperimentPanel({ paperId, provider, onClose }: ExperimentPanelP
 
             {active.run.status === "completed" && !active.judged && (
               <form className="experiment-judgment" onSubmit={(event) => { event.preventDefault(); void judge(); }}>
+                <p className="experiment-eval-intro">Score each ramp on its own before choosing a winner. This catches “both bad” and “both good” results.</p>
+                <div className="experiment-scorecards">
+                  {(["A", "B"] as const).map((label) => (
+                    <ArmScorecard
+                      key={label}
+                      score={armScores[label]}
+                      onChange={(score) => setArmScores((current) => ({ ...current, [label]: score }))}
+                    />
+                  ))}
+                </div>
                 <ChoiceField label="Overall smoother ramp" value={overall} onChange={setOverall} />
                 <ChoiceField label="Earlier traction" value={traction} onChange={setTraction} />
                 <ChoiceField label="More rigorous" value={rigor} onChange={setRigor} />

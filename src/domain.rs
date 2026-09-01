@@ -759,8 +759,26 @@ pub struct ExperimentJudgmentRequest {
     pub early_traction: String,
     pub rigor: String,
     pub confidence: u8,
+    pub arm_scores: Vec<ExperimentArmScore>,
     #[serde(default)]
     pub note: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ExperimentArmScore {
+    pub blind_label: String,
+    pub paper_specificity_actionability: u8,
+    pub early_traction: u8,
+    pub fidelity_rigor: u8,
+    pub dependency_flow: u8,
+    pub economy: u8,
+    pub provenance_uncertainty: u8,
+    #[serde(default)]
+    pub target_dimension: Option<u8>,
+    #[serde(default)]
+    pub hard_reject: bool,
+    #[serde(default)]
+    pub failure_tags: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -771,6 +789,8 @@ pub struct ExperimentJudgment {
     pub early_traction: String,
     pub rigor: String,
     pub confidence: u8,
+    #[serde(default)]
+    pub arm_scores: Vec<ExperimentArmScore>,
     pub note: String,
     pub submitted_at: DateTime<Utc>,
 }

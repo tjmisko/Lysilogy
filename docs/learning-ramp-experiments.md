@@ -76,13 +76,13 @@ The first experiment catalog isolates five dials:
 | reception | influence summary | concrete use / misuse taxonomy | Which makes the paper's actual afterlife clearer? |
 | opposition | paper-local caveats | camp-aware steelmanned opposition | Which produces informed skepticism instead of generic limitations? |
 
-The interface's initial human eval asks for an overall preference, early-traction preference, rigor
-preference, confidence, and an optional note. This comparative vote is useful for blind inspection,
-but it cannot distinguish “both good” from “both bad.” Before interpreting a win, score each arm
-independently with the factuality gate and anchored dimensions in
-[`experiments/rubric.json`](../experiments/rubric.json). Record both-fail, both-good, tie,
-not-applicable, and confidence separately. Aggregates should segment results by paper distance and
-field: a prompt that works for a nearby economics paper may fail on a distant biology paper.
+The interface asks the evaluator to score each blind arm independently from 0–4 on specificity and
+actionability, early traction, fidelity and rigor, dependency flow, economy, provenance and
+uncertainty, plus the dial-specific target. It also records hard rejects and named failure tags from
+[`experiments/rubric.json`](../experiments/rubric.json) before asking for comparative overall,
+traction, and rigor preferences. This separates “both good” and “both bad” from an ordinary tie.
+Aggregates should segment results by paper distance and field: a prompt that works for a nearby
+economics paper may fail on a distant biology paper.
 
 The experiment name and research question are evaluator metadata. They must not appear in either
 generation prompt because treatment-oriented wording can teach the control arm what the treatment
