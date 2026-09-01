@@ -38,8 +38,8 @@ use crate::{
         CitationStatus, Clarification, ClarifyRequest, CreateHighlightRequest, ExperimentArm,
         ExperimentCatalog, ExperimentJudgment, ExperimentJudgmentRequest, ExperimentRecord,
         ExperimentRun, ExperimentStatus, ExperimentView, ExtractedPaper, FeedbackRecord,
-        FeedbackRequest, FeedbackStatus, Highlight, HighlightOrigin, PaperId, PaperMap,
-        PaperOverview, PaperView, ProcessingQueue, ProcessingStage, ProcessingStatus,
+        FeedbackRequest, FeedbackStatus, Highlight, HighlightOrigin, LearningRamp, PaperId,
+        PaperMap, PaperOverview, PaperView, ProcessingQueue, ProcessingStage, ProcessingStatus,
         PromptExperiment, RemotePdfSource, StartExperimentRequest,
     },
     error::Error,
@@ -831,37 +831,42 @@ impl AppState {
             label: run.arms[1].variant_label.clone(),
             instruction: run.arms[1].variant_instruction.clone(),
         };
-        let (first, second) = tokio::join!(
-            self.analysis.experiment_variant(
-                run.provider,
-                &paper,
-                &directory,
-                crate::analysis::ExperimentVariantRequest {
-                    experiment: &experiment,
-                    variant: &first_variant,
-                    reader_baseline: &run.reader_baseline,
-                    run_id: &run.id,
-                    blind_label: "A",
-                },
-            ),
-            self.analysis.experiment_variant(
-                run.provider,
-                &paper,
-                &directory,
-                crate::analysis::ExperimentVariantRequest {
-                    experiment: &experiment,
-                    variant: &second_variant,
-                    reader_baseline: &run.reader_baseline,
-                    run_id: &run.id,
-                    blind_label: "B",
-                },
-            )
-        );
-        let results: [Result<crate::domain::LearningRamp>; 2] = (first, second).into();
-        for (arm, result) in run.arms.iter_mut().zip(results) {
-            match result {
-                Ok(output) => arm.output = Some(output),
-                Err(error) => arm.error = Some(error.to_string()),
+        let reader_baseline = run.reader_baseline.clone();
+        let run_id = run.id.clone();
+        let mut first = Box::pin(self.analysis.experiment_variant(
+            run.provider,
+            &paper,
+            &directory,
+            crate::analysis::ExperimentVariantRequest {
+                experiment: &experiment,
+                variant: &first_variant,
+                reader_baseline: &reader_baseline,
+                run_id: &run_id,
+                blind_label: "A",
+            },
+        ));
+        let mut second = Box::pin(self.analysis.experiment_variant(
+            run.provider,
+            &paper,
+            &directory,
+            crate::analysis::ExperimentVariantRequest {
+                experiment: &experiment,
+                variant: &second_variant,
+                reader_baseline: &reader_baseline,
+                run_id: &run_id,
+                blind_label: "B",
+            },
+        ));
+        tokio::select! {
+            first_result = &mut first => {
+                apply_experiment_arm_result(&mut run.arms[0], first_result);
+                self.store.save_experiment_run(&run).await?;
+                apply_experiment_arm_result(&mut run.arms[1], second.await);
+            }
+            second_result = &mut second => {
+                apply_experiment_arm_result(&mut run.arms[1], second_result);
+                self.store.save_experiment_run(&run).await?;
+                apply_experiment_arm_result(&mut run.arms[0], first.await);
             }
         }
         run.status = if run.arms.iter().all(|arm| arm.output.is_some()) {
@@ -1260,6 +1265,13 @@ impl AppState {
                 &request.question,
             )
             .await
+    }
+}
+
+fn apply_experiment_arm_result(arm: &mut ExperimentArm, result: Result<LearningRamp>) {
+    match result {
+        Ok(output) => arm.output = Some(output),
+        Err(error) => arm.error = Some(error.to_string()),
     }
 }
 

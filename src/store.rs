@@ -682,7 +682,8 @@ mod tests {
     use super::*;
     use crate::domain::{
         AgentSession, AnalysisProvider, ContextNote, ContextSource, ExperimentArm, ExperimentRun,
-        ExperimentStatus, FeedbackRecord, FeedbackStatus, PaperAnalysis,
+        ExperimentStatus, FeedbackRecord, FeedbackStatus, LearningFoothold, LearningRamp,
+        PaperAnalysis,
     };
 
     #[tokio::test]
@@ -810,7 +811,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn running_experiments_become_failed_after_restart() -> Result<()> {
+    async fn running_experiments_preserve_finished_arms_after_restart() -> Result<()> {
         let directory = tempdir().map_err(|error| Error::io("tempdir", error))?;
         let store = ArtifactStore::new(directory.path());
         store.initialize().await?;
@@ -830,14 +831,36 @@ mod tests {
             reasoning_effort: "medium".to_owned(),
             created_at: Utc::now(),
             completed_at: None,
-            arms: vec![ExperimentArm {
-                blind_label: "A".to_owned(),
-                variant_id: "direct".to_owned(),
-                variant_label: "Direct".to_owned(),
-                variant_instruction: "Explain directly.".to_owned(),
-                output: None,
-                error: None,
-            }],
+            arms: vec![
+                ExperimentArm {
+                    blind_label: "A".to_owned(),
+                    variant_id: "direct".to_owned(),
+                    variant_label: "Direct".to_owned(),
+                    variant_instruction: "Explain directly.".to_owned(),
+                    output: Some(LearningRamp {
+                        foothold: LearningFoothold {
+                            question: "Question".to_owned(),
+                            answer: "Answer".to_owned(),
+                            why_care: "Why care".to_owned(),
+                            mechanism: "Mechanism".to_owned(),
+                        },
+                        concepts: Vec::new(),
+                        essential_passages: Vec::new(),
+                        reception: Vec::new(),
+                        counterarguments: Vec::new(),
+                        uncertainties: Vec::new(),
+                    }),
+                    error: None,
+                },
+                ExperimentArm {
+                    blind_label: "B".to_owned(),
+                    variant_id: "bridge".to_owned(),
+                    variant_label: "Bridge".to_owned(),
+                    variant_instruction: "Use a bridge.".to_owned(),
+                    output: None,
+                    error: None,
+                },
+            ],
         };
         store.save_experiment_run(&run).await?;
 
@@ -849,7 +872,10 @@ mod tests {
             .ok_or_else(|| Error::Task("missing recovered experiment".to_owned()))?;
         assert_eq!(recovered.status, ExperimentStatus::Failed);
         assert!(recovered.completed_at.is_some());
-        assert!(recovered.arms[0].error.is_some());
+        assert!(recovered.arms[0].output.is_some());
+        assert!(recovered.arms[0].error.is_none());
+        assert!(recovered.arms[1].output.is_none());
+        assert!(recovered.arms[1].error.is_some());
         Ok(())
     }
 }
