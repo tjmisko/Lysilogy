@@ -95,6 +95,10 @@ cargo run -- ingest --provider codex --limit 3
 # Run one blind, single-dial learning-ramp A/B experiment
 cargo run -- experiment "title fragment" --experiment conceptual-bridge --provider codex
 
+# Run three replications per paper; papers are processed in parallel
+cargo run -- experiment "economics title" "philosophy title" "vision title" \
+  --experiment conceptual-bridge --provider codex --repeat 3 --concurrency 3
+
 # Map everything not already ready; one failure does not discard other results
 cargo run -- ingest --provider codex
 
@@ -148,6 +152,11 @@ until you record overall, early-traction, and rigor preferences. The revealed pr
 judgments persist beside the paper. Product intent, hypotheses, guardrails, and promotion criteria
 are recorded in [the learning-ramp experiment brief](docs/learning-ramp-experiments.md); editable
 experiment definitions live in [`experiments/catalog.json`](experiments/catalog.json).
+
+The CLI accepts several paper IDs or quoted title fragments plus `--repeat`. Different papers run
+with bounded parallelism; replications for the same paper remain sequential so concurrent first-use
+extraction cannot corrupt its artifacts. Each run still generates its two arms concurrently with
+run- and arm-specific schema/output paths.
 
 The heuristic provider is deliberately conservative. It gives you an immediate offline Overview and
 labels itself plainly; use a model-backed provider for interpretive reading and field context.

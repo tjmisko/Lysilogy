@@ -95,6 +95,17 @@ changes in other sections can otherwise dominate preference. Reception and field
 also require a frozen evidence dossier shared by both arms; independent searches change both the
 prompt and the evidence corpus.
 
+For a local campaign, pass multiple quoted paper titles and a replication count to the CLI:
+
+```sh
+cargo run -- experiment "near paper" "edge paper" "beyond-edge paper" \
+  --experiment conceptual-bridge --repeat 3 --concurrency 3 --provider codex
+```
+
+Papers run with bounded parallelism. Replications for one paper remain sequential to avoid racing
+first-use extraction, while the two arms inside a run execute concurrently using isolated artifact
+paths. Successful artifacts remain available if a different paper or replication fails.
+
 ## Guardrails
 
 - Never invent an analogy merely to satisfy the format. “No useful bridge” is a valid result.

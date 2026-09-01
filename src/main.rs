@@ -1,10 +1,11 @@
-use std::{net::SocketAddr, path::PathBuf, process::ExitCode};
+use std::{net::SocketAddr, path::PathBuf, process::ExitCode, sync::Arc};
 
 use clap::{Parser, Subcommand};
 use lysilogy::{
     AppState, Error, Result, build_router,
     domain::{AnalysisProvider, PaperId, ProcessingStatus, StartExperimentRequest},
 };
+use tokio::{sync::Semaphore, task::JoinSet};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, Parser)]
@@ -66,15 +67,22 @@ enum Command {
         #[arg(long)]
         limit: Option<usize>,
     },
-    /// Run one blind A/B learning-ramp prompt experiment and persist both arms.
+    /// Run blind A/B learning-ramp experiments and persist both arms.
     Experiment {
-        /// Paper ID or an unambiguous title fragment.
-        query: String,
+        /// One or more paper IDs or unambiguous title fragments.
+        #[arg(required = true, num_args = 1..)]
+        queries: Vec<String>,
         /// Experiment ID from experiments/catalog.json.
         #[arg(long, default_value = "conceptual-bridge")]
         experiment: String,
         #[arg(long, default_value = "codex")]
         provider: AnalysisProvider,
+        /// Independent A/B replications for each paper.
+        #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..=20))]
+        repeat: u8,
+        /// Maximum papers processed concurrently; arms within each run are also parallel.
+        #[arg(long, default_value_t = 3, value_parser = clap::value_parser!(u8).range(1..=8))]
+        concurrency: u8,
     },
 }
 
@@ -140,27 +148,95 @@ async fn run(cli: Cli) -> Result<()> {
             limit,
         } => ingest(&state, provider, force, limit).await,
         Command::Experiment {
-            query,
+            queries,
             experiment,
             provider,
+            repeat,
+            concurrency,
         } => {
-            let id = resolve_paper(&state, &query).await?;
-            println!("Running blind A/B experiment `{experiment}` for {id} with {provider}…");
-            let view = state
-                .run_experiment_now(
-                    &id,
-                    StartExperimentRequest {
-                        experiment_id: experiment,
-                        provider,
-                    },
-                )
-                .await?;
-            println!(
-                "{}: {:?} (open :experiment in the reader to judge A/B)",
-                view.run.id, view.run.status
-            );
-            Ok(())
+            experiment_campaign(&state, &queries, &experiment, provider, repeat, concurrency).await
         }
+    }
+}
+
+async fn experiment_campaign(
+    state: &AppState,
+    queries: &[String],
+    experiment: &str,
+    provider: AnalysisProvider,
+    repeat: u8,
+    concurrency: u8,
+) -> Result<()> {
+    let mut papers = Vec::with_capacity(queries.len());
+    for query in queries {
+        let id = resolve_paper(state, query).await?;
+        if papers
+            .iter()
+            .all(|(existing, _): &(PaperId, String)| existing != &id)
+        {
+            let title = state.paper(&id).await?.paper.metadata.title;
+            papers.push((id, title));
+        }
+    }
+
+    let total = papers.len() * usize::from(repeat);
+    println!(
+        "Running {total} blind A/B `{experiment}` run(s) across {} paper(s) with {provider}; up to {concurrency} papers in parallel…",
+        papers.len()
+    );
+    let gate = Arc::new(Semaphore::new(usize::from(concurrency)));
+    let mut tasks = JoinSet::new();
+    for (id, title) in papers {
+        let state = state.clone();
+        let experiment = experiment.to_owned();
+        let gate = Arc::clone(&gate);
+        tasks.spawn(async move {
+            let _permit = gate.acquire_owned().await.map_err(|error| {
+                Error::Task(format!("experiment concurrency gate closed: {error}"))
+            })?;
+            let mut outcomes = Vec::with_capacity(usize::from(repeat));
+            for replication in 1..=repeat {
+                let result = state
+                    .run_experiment_now(
+                        &id,
+                        StartExperimentRequest {
+                            experiment_id: experiment.clone(),
+                            provider,
+                        },
+                    )
+                    .await;
+                outcomes.push((replication, result));
+            }
+            Ok::<_, Error>((title, outcomes))
+        });
+    }
+
+    let mut failures = Vec::new();
+    while let Some(task) = tasks.join_next().await {
+        let (title, outcomes) =
+            task.map_err(|error| Error::Task(format!("experiment worker failed: {error}")))??;
+        for (replication, outcome) in outcomes {
+            match outcome {
+                Ok(view) => println!(
+                    "[{replication}/{repeat}] {title}: {} {:?}",
+                    view.run.id, view.run.status
+                ),
+                Err(error) => {
+                    eprintln!("[{replication}/{repeat}] {title}: failed: {error}");
+                    failures.push(format!("{title} replication {replication}: {error}"));
+                }
+            }
+        }
+    }
+
+    if failures.is_empty() {
+        println!("Completed {total} run(s); open :experiment in the reader to judge blind arms.");
+        Ok(())
+    } else {
+        Err(Error::Task(format!(
+            "{} of {total} experiment runs failed; completed artifacts were preserved",
+            failures.len()
+        )))
     }
 }
 
