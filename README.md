@@ -99,6 +99,9 @@ cargo run -- experiment "title fragment" --experiment conceptual-bridge --provid
 cargo run -- experiment "economics title" "philosophy title" "vision title" \
   --experiment conceptual-bridge --provider codex --repeat 3 --concurrency 3
 
+# Aggregate persisted scorecards, preferences, failures, and run coverage
+cargo run -- experiment-report --output docs/experiment-reports/latest.md
+
 # Map everything not already ready; one failure does not discard other results
 cargo run -- ingest --provider codex
 
@@ -158,6 +161,10 @@ The CLI accepts several paper IDs or quoted title fragments plus `--repeat`. Dif
 with bounded parallelism; replications for the same paper remain sequential so concurrent first-use
 extraction cannot corrupt its artifacts. Each run still generates its two arms concurrently with
 run- and arm-specific schema/output paths.
+
+`experiment-report` converts persisted runs and judgments into Markdown tables for absolute quality,
+blind wins, hard rejects, recurring failure tags, and run coverage. It explicitly reports when no
+judged evidence exists instead of inferring a winner from incomplete runs.
 
 The heuristic provider is deliberately conservative. It gives you an immediate offline Overview and
 labels itself plainly; use a model-backed provider for interpretive reading and field context.

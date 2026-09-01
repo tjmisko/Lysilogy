@@ -36,11 +36,11 @@ use crate::{
     domain::{
         AgentSession, AnalysisJob, AnalysisJobKind, AnalysisProvider, AnalyzeRequest,
         CitationStatus, Clarification, ClarifyRequest, CreateHighlightRequest, ExperimentArm,
-        ExperimentCatalog, ExperimentJudgment, ExperimentJudgmentRequest, ExperimentRun,
-        ExperimentStatus, ExperimentView, ExtractedPaper, FeedbackRecord, FeedbackRequest,
-        FeedbackStatus, Highlight, HighlightOrigin, PaperId, PaperMap, PaperOverview, PaperView,
-        ProcessingQueue, ProcessingStage, ProcessingStatus, PromptExperiment, RemotePdfSource,
-        StartExperimentRequest,
+        ExperimentCatalog, ExperimentJudgment, ExperimentJudgmentRequest, ExperimentRecord,
+        ExperimentRun, ExperimentStatus, ExperimentView, ExtractedPaper, FeedbackRecord,
+        FeedbackRequest, FeedbackStatus, Highlight, HighlightOrigin, PaperId, PaperMap,
+        PaperOverview, PaperView, ProcessingQueue, ProcessingStage, ProcessingStatus,
+        PromptExperiment, RemotePdfSource, StartExperimentRequest,
     },
     error::Error,
     extract::PdfExtractor,
@@ -886,6 +886,36 @@ impl AppState {
             .into_iter()
             .map(|run| redact_experiment(run, &judgments))
             .collect())
+    }
+
+    pub async fn experiment_records(&self) -> Result<Vec<ExperimentRecord>> {
+        let paper_ids = self
+            .catalog
+            .read()
+            .await
+            .overviews()
+            .into_iter()
+            .map(|overview| overview.id)
+            .collect::<Vec<_>>();
+        let mut records = Vec::new();
+        for paper_id in paper_ids {
+            let judgments = self.store.load_experiment_judgments(&paper_id).await?;
+            for run in self.store.load_experiment_runs(&paper_id).await? {
+                let judgment = judgments
+                    .iter()
+                    .find(|judgment| judgment.run_id == run.id)
+                    .cloned();
+                records.push(ExperimentRecord { run, judgment });
+            }
+        }
+        records.sort_by(|left, right| {
+            right
+                .run
+                .created_at
+                .cmp(&left.run.created_at)
+                .then_with(|| left.run.id.cmp(&right.run.id))
+        });
+        Ok(records)
     }
 
     pub async fn experiment_run(&self, id: &PaperId, run_id: &str) -> Result<ExperimentView> {

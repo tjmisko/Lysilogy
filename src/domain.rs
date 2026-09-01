@@ -795,6 +795,12 @@ pub struct ExperimentJudgment {
     pub submitted_at: DateTime<Utc>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ExperimentRecord {
+    pub run: ExperimentRun,
+    pub judgment: Option<ExperimentJudgment>,
+}
+
 #[derive(Clone, Debug)]
 pub struct ExtractedPage {
     pub number: u32,

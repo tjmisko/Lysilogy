@@ -1,9 +1,19 @@
-use std::{net::SocketAddr, path::PathBuf, process::ExitCode, sync::Arc};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fmt::Write as _,
+    net::SocketAddr,
+    path::PathBuf,
+    process::ExitCode,
+    sync::Arc,
+};
 
 use clap::{Parser, Subcommand};
 use lysilogy::{
     AppState, Error, Result, build_router,
-    domain::{AnalysisProvider, PaperId, ProcessingStatus, StartExperimentRequest},
+    domain::{
+        AnalysisProvider, ExperimentArmScore, ExperimentRecord, ExperimentStatus, PaperId,
+        ProcessingStatus, StartExperimentRequest,
+    },
 };
 use tokio::{sync::Semaphore, task::JoinSet};
 use tracing_subscriber::EnvFilter;
@@ -84,6 +94,12 @@ enum Command {
         #[arg(long, default_value_t = 3, value_parser = clap::value_parser!(u8).range(1..=8))]
         concurrency: u8,
     },
+    /// Render an aggregate Markdown report from persisted runs and blind judgments.
+    ExperimentReport {
+        /// Write the report to this path instead of standard output.
+        #[arg(long)]
+        output: Option<PathBuf>,
+    },
 }
 
 #[tokio::main]
@@ -156,7 +172,327 @@ async fn run(cli: Cli) -> Result<()> {
         } => {
             experiment_campaign(&state, &queries, &experiment, provider, repeat, concurrency).await
         }
+        Command::ExperimentReport { output } => {
+            let report = render_experiment_report(&state.experiment_records().await?);
+            if let Some(path) = output {
+                if let Some(parent) = path.parent()
+                    && !parent.as_os_str().is_empty()
+                {
+                    tokio::fs::create_dir_all(parent)
+                        .await
+                        .map_err(|error| Error::io(parent, error))?;
+                }
+                tokio::fs::write(&path, report)
+                    .await
+                    .map_err(|error| Error::io(&path, error))?;
+                println!("Wrote experiment report to {}", path.display());
+            } else {
+                print!("{report}");
+            }
+            Ok(())
+        }
     }
+}
+
+#[derive(Default)]
+struct VariantReportStats {
+    label: String,
+    scored: u32,
+    score_sums: [u32; 6],
+    target_sum: u32,
+    target_count: u32,
+    hard_rejects: u32,
+    failure_tags: BTreeMap<String, u32>,
+    overall_wins: u32,
+    traction_wins: u32,
+    rigor_wins: u32,
+}
+
+#[derive(Default)]
+struct ExperimentComparison {
+    name: String,
+    judged: u32,
+    overall_ties: u32,
+    traction_ties: u32,
+    rigor_ties: u32,
+}
+
+fn render_experiment_report(records: &[ExperimentRecord]) -> String {
+    let mut report = String::new();
+    let papers = records
+        .iter()
+        .map(|record| record.run.paper_id.clone())
+        .collect::<BTreeSet<_>>();
+    let completed = records
+        .iter()
+        .filter(|record| record.run.status == ExperimentStatus::Completed)
+        .count();
+    let failed = records
+        .iter()
+        .filter(|record| record.run.status == ExperimentStatus::Failed)
+        .count();
+    let running = records
+        .iter()
+        .filter(|record| record.run.status == ExperimentStatus::Running)
+        .count();
+    let judged = records
+        .iter()
+        .filter(|record| record.judgment.is_some())
+        .count();
+    let _ = writeln!(
+        report,
+        "# Learning-ramp experiment report\n\nGenerated {}.\n",
+        chrono::Utc::now().to_rfc3339()
+    );
+    let _ = writeln!(
+        report,
+        "## Coverage\n\n- {} persisted runs across {} papers\n- {completed} completed, {failed} failed, {running} running\n- {judged} blind judgments\n",
+        records.len(),
+        papers.len()
+    );
+
+    let mut variants: BTreeMap<(String, String), VariantReportStats> = BTreeMap::new();
+    let mut comparisons: BTreeMap<String, ExperimentComparison> = BTreeMap::new();
+    let mut global_failure_tags: BTreeMap<String, u32> = BTreeMap::new();
+    for record in records {
+        initialize_variants(&mut variants, record);
+        let Some(judgment) = &record.judgment else {
+            continue;
+        };
+        let comparison = comparisons
+            .entry(record.run.experiment_id.clone())
+            .or_default();
+        comparison.name.clone_from(&record.run.experiment_name);
+        comparison.judged += 1;
+        record_preference(&mut variants, &record.run, &judgment.overall, |stats| {
+            stats.overall_wins += 1;
+        });
+        record_preference(
+            &mut variants,
+            &record.run,
+            &judgment.early_traction,
+            |stats| {
+                stats.traction_wins += 1;
+            },
+        );
+        record_preference(&mut variants, &record.run, &judgment.rigor, |stats| {
+            stats.rigor_wins += 1;
+        });
+        comparison.overall_ties += u32::from(judgment.overall == "tie");
+        comparison.traction_ties += u32::from(judgment.early_traction == "tie");
+        comparison.rigor_ties += u32::from(judgment.rigor == "tie");
+        for score in &judgment.arm_scores {
+            let Some(arm) = record
+                .run
+                .arms
+                .iter()
+                .find(|arm| arm.blind_label == score.blind_label)
+            else {
+                continue;
+            };
+            let stats = variants
+                .entry((record.run.experiment_id.clone(), arm.variant_id.clone()))
+                .or_default();
+            record_arm_score(stats, score, &mut global_failure_tags);
+        }
+    }
+
+    if judged == 0 {
+        let _ = writeln!(
+            report,
+            "## Evidence status\n\nNo completed blind judgment is available. Do not infer a prompt winner from failed or unjudged runs.\n"
+        );
+    } else {
+        render_quality_table(&mut report, &variants);
+        render_preference_table(&mut report, &variants, &comparisons);
+        render_failure_table(&mut report, &global_failure_tags);
+    }
+    render_run_log(&mut report, records);
+    report
+}
+
+fn initialize_variants(
+    variants: &mut BTreeMap<(String, String), VariantReportStats>,
+    record: &ExperimentRecord,
+) {
+    for arm in &record.run.arms {
+        variants
+            .entry((record.run.experiment_id.clone(), arm.variant_id.clone()))
+            .or_default()
+            .label
+            .clone_from(&arm.variant_label);
+    }
+}
+
+fn record_preference(
+    variants: &mut BTreeMap<(String, String), VariantReportStats>,
+    run: &lysilogy::domain::ExperimentRun,
+    choice: &str,
+    update: impl FnOnce(&mut VariantReportStats),
+) {
+    let Some(arm) = run.arms.iter().find(|arm| arm.blind_label == choice) else {
+        return;
+    };
+    let stats = variants
+        .entry((run.experiment_id.clone(), arm.variant_id.clone()))
+        .or_default();
+    update(stats);
+}
+
+fn record_arm_score(
+    stats: &mut VariantReportStats,
+    score: &ExperimentArmScore,
+    global_failure_tags: &mut BTreeMap<String, u32>,
+) {
+    let values = [
+        score.paper_specificity_actionability,
+        score.early_traction,
+        score.fidelity_rigor,
+        score.dependency_flow,
+        score.economy,
+        score.provenance_uncertainty,
+    ];
+    stats.scored += 1;
+    for (sum, value) in stats.score_sums.iter_mut().zip(values) {
+        *sum += u32::from(value);
+    }
+    if let Some(value) = score.target_dimension {
+        stats.target_sum += u32::from(value);
+        stats.target_count += 1;
+    }
+    stats.hard_rejects += u32::from(score.hard_reject);
+    for tag in &score.failure_tags {
+        *stats.failure_tags.entry(tag.clone()).or_default() += 1;
+        *global_failure_tags.entry(tag.clone()).or_default() += 1;
+    }
+}
+
+fn mean(sum: u32, count: u32) -> String {
+    if count == 0 {
+        "—".to_owned()
+    } else {
+        format!("{:.1}", f64::from(sum) / f64::from(count))
+    }
+}
+
+fn render_quality_table(
+    report: &mut String,
+    variants: &BTreeMap<(String, String), VariantReportStats>,
+) {
+    let _ = writeln!(report, "## Absolute quality by variant\n");
+    let _ = writeln!(
+        report,
+        "| Experiment | Variant | N | Specific / actionable | Traction | Fidelity | Dependency | Economy | Provenance | Target | Hard rejects |"
+    );
+    let _ = writeln!(
+        report,
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"
+    );
+    for ((experiment, variant), stats) in variants {
+        if stats.scored == 0 {
+            continue;
+        }
+        let _ = writeln!(
+            report,
+            "| {} | {} (`{}`) | {} | {} | {} | {} | {} | {} | {} | {} | {} |",
+            markdown_cell(experiment),
+            markdown_cell(&stats.label),
+            markdown_cell(variant),
+            stats.scored,
+            mean(stats.score_sums[0], stats.scored),
+            mean(stats.score_sums[1], stats.scored),
+            mean(stats.score_sums[2], stats.scored),
+            mean(stats.score_sums[3], stats.scored),
+            mean(stats.score_sums[4], stats.scored),
+            mean(stats.score_sums[5], stats.scored),
+            mean(stats.target_sum, stats.target_count),
+            stats.hard_rejects,
+        );
+    }
+    let _ = writeln!(
+        report,
+        "\nScores are 0–4. Treat fewer than three scored arms per variant as exploratory, and never promote a variant with an unresolved hard reject.\n"
+    );
+}
+
+fn render_preference_table(
+    report: &mut String,
+    variants: &BTreeMap<(String, String), VariantReportStats>,
+    comparisons: &BTreeMap<String, ExperimentComparison>,
+) {
+    let _ = writeln!(report, "## Blind comparative choices\n");
+    let _ = writeln!(
+        report,
+        "| Experiment | Variant | Overall wins | Traction wins | Rigor wins | Judged runs | Overall ties |"
+    );
+    let _ = writeln!(report, "| --- | --- | ---: | ---: | ---: | ---: | ---: |");
+    for ((experiment, variant), stats) in variants {
+        let Some(comparison) = comparisons.get(experiment) else {
+            continue;
+        };
+        let _ = writeln!(
+            report,
+            "| {} | {} (`{}`) | {} | {} | {} | {} | {} |",
+            markdown_cell(&comparison.name),
+            markdown_cell(&stats.label),
+            markdown_cell(variant),
+            stats.overall_wins,
+            stats.traction_wins,
+            stats.rigor_wins,
+            comparison.judged,
+            comparison.overall_ties,
+        );
+    }
+    let _ = writeln!(report);
+}
+
+fn render_failure_table(report: &mut String, tags: &BTreeMap<String, u32>) {
+    let _ = writeln!(report, "## Anti-slop failure patterns\n");
+    if tags.is_empty() {
+        let _ = writeln!(report, "No failure tags were recorded.\n");
+        return;
+    }
+    let _ = writeln!(report, "| Failure tag | Count |\n| --- | ---: |");
+    let mut ordered = tags.iter().collect::<Vec<_>>();
+    ordered.sort_by(|(left_tag, left_count), (right_tag, right_count)| {
+        right_count
+            .cmp(left_count)
+            .then_with(|| left_tag.cmp(right_tag))
+    });
+    for (tag, count) in ordered {
+        let _ = writeln!(report, "| {} | {count} |", markdown_cell(tag));
+    }
+    let _ = writeln!(report);
+}
+
+fn render_run_log(report: &mut String, records: &[ExperimentRecord]) {
+    let _ = writeln!(report, "## Run log\n");
+    let _ = writeln!(
+        report,
+        "| Created | Paper | Experiment | Provider | Status | Judged | Run |"
+    );
+    let _ = writeln!(report, "| --- | --- | --- | --- | --- | --- | --- |");
+    for record in records {
+        let _ = writeln!(
+            report,
+            "| {} | {} | {} | {} | {:?} | {} | `{}` |",
+            record.run.created_at.to_rfc3339(),
+            markdown_cell(&record.run.paper_title),
+            markdown_cell(&record.run.experiment_name),
+            record.run.provider,
+            record.run.status,
+            if record.judgment.is_some() {
+                "yes"
+            } else {
+                "no"
+            },
+            markdown_cell(&record.run.id),
+        );
+    }
+}
+
+fn markdown_cell(value: &str) -> String {
+    value.replace('|', "\\|").replace('\n', " ")
 }
 
 async fn experiment_campaign(

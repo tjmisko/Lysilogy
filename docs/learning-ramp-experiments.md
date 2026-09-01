@@ -106,6 +106,17 @@ Papers run with bounded parallelism. Replications for one paper remain sequentia
 first-use extraction, while the two arms inside a run execute concurrently using isolated artifact
 paths. Successful artifacts remain available if a different paper or replication fails.
 
+After judging runs in the interface, generate the aggregate report with:
+
+```sh
+cargo run -- experiment-report --output docs/experiment-reports/latest.md
+```
+
+The report groups scores and blind preferences by the revealed variant, counts hard rejects and
+anti-slop tags, and includes every persisted run in its coverage log. A variant with fewer than
+three scored arms is exploratory; failed and unjudged runs contribute to coverage but never to a
+claimed prompt win.
+
 ## Guardrails
 
 - Never invent an analogy merely to satisfy the format. “No useful bridge” is a valid result.
