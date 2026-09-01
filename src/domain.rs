@@ -615,6 +615,164 @@ pub struct Clarification {
     pub provider: AnalysisProvider,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ExperimentCatalog {
+    pub schema_version: u16,
+    #[serde(default)]
+    pub reader_baseline: Vec<String>,
+    #[serde(default)]
+    pub experiments: Vec<PromptExperiment>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct PromptExperiment {
+    pub id: String,
+    pub name: String,
+    pub question: String,
+    #[serde(default)]
+    pub live_web: bool,
+    pub variants: Vec<PromptVariant>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct PromptVariant {
+    pub id: String,
+    pub label: String,
+    pub instruction: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct StartExperimentRequest {
+    pub experiment_id: String,
+    #[serde(default)]
+    pub provider: AnalysisProvider,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct LearningRamp {
+    pub foothold: LearningFoothold,
+    #[serde(default)]
+    pub concepts: Vec<RampConcept>,
+    #[serde(default)]
+    pub essential_passages: Vec<EssentialPassage>,
+    #[serde(default)]
+    pub reception: Vec<ReceptionItem>,
+    #[serde(default)]
+    pub counterarguments: Vec<Counterargument>,
+    #[serde(default)]
+    pub uncertainties: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct LearningFoothold {
+    pub question: String,
+    pub answer: String,
+    pub why_care: String,
+    pub mechanism: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct RampConcept {
+    pub term: String,
+    pub plain_language: String,
+    pub technical_definition: String,
+    pub why_now: String,
+    pub bridge: Option<String>,
+    pub bridge_limit: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct EssentialPassage {
+    pub quote: String,
+    pub page: u32,
+    pub role: String,
+    #[serde(default)]
+    pub context_before: Vec<String>,
+    pub read_for: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ReceptionItem {
+    pub kind: String,
+    pub claim: String,
+    #[serde(default)]
+    pub source_urls: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Counterargument {
+    pub camp: Option<String>,
+    pub objection: String,
+    pub target: String,
+    pub likely_reply: String,
+    #[serde(default)]
+    pub source_urls: Vec<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExperimentStatus {
+    Running,
+    Completed,
+    Failed,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ExperimentArm {
+    pub blind_label: String,
+    pub variant_id: String,
+    pub variant_label: String,
+    pub variant_instruction: String,
+    pub output: Option<LearningRamp>,
+    pub error: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ExperimentRun {
+    pub schema_version: u16,
+    pub id: String,
+    pub paper_id: PaperId,
+    pub paper_title: String,
+    pub experiment_id: String,
+    pub experiment_name: String,
+    pub question: String,
+    pub provider: AnalysisProvider,
+    pub status: ExperimentStatus,
+    pub model: String,
+    pub reasoning_effort: String,
+    pub created_at: DateTime<Utc>,
+    pub completed_at: Option<DateTime<Utc>>,
+    pub arms: Vec<ExperimentArm>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ExperimentView {
+    pub run: ExperimentRun,
+    pub judged: bool,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct ExperimentJudgmentRequest {
+    pub overall: String,
+    pub early_traction: String,
+    pub rigor: String,
+    pub confidence: u8,
+    #[serde(default)]
+    pub note: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ExperimentJudgment {
+    pub run_id: String,
+    pub experiment_id: String,
+    pub overall: String,
+    pub early_traction: String,
+    pub rigor: String,
+    pub confidence: u8,
+    pub note: String,
+    pub submitted_at: DateTime<Utc>,
+}
+
 #[derive(Clone, Debug)]
 pub struct ExtractedPage {
     pub number: u32,

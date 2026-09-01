@@ -12,6 +12,7 @@ const COMMANDS = [
   ["analyze heuristic", "Run the offline structural pass"],
   ["queue", "Show live analysis jobs and feedback"],
   ["feedback", "Send feedback about the current atlas"],
+  ["experiment", "Compare two learning-ramp prompts blind"],
   ["library", "Toggle the paper library"],
   ["switch", "Fuzzy-find another article"],
   ["abstract", "Open the paper orientation"],

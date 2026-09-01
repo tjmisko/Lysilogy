@@ -35,10 +35,12 @@ use crate::{
     analysis::{AnalysisService, validate_citations},
     domain::{
         AgentSession, AnalysisJob, AnalysisJobKind, AnalysisProvider, AnalyzeRequest,
-        CitationStatus, Clarification, ClarifyRequest, CreateHighlightRequest, ExtractedPaper,
-        FeedbackRecord, FeedbackRequest, FeedbackStatus, Highlight, HighlightOrigin, PaperId,
-        PaperMap, PaperOverview, PaperView, ProcessingQueue, ProcessingStage, ProcessingStatus,
-        RemotePdfSource,
+        CitationStatus, Clarification, ClarifyRequest, CreateHighlightRequest, ExperimentArm,
+        ExperimentCatalog, ExperimentJudgment, ExperimentJudgmentRequest, ExperimentRun,
+        ExperimentStatus, ExperimentView, ExtractedPaper, FeedbackRecord, FeedbackRequest,
+        FeedbackStatus, Highlight, HighlightOrigin, PaperId, PaperMap, PaperOverview, PaperView,
+        ProcessingQueue, ProcessingStage, ProcessingStatus, PromptExperiment, RemotePdfSource,
+        StartExperimentRequest,
     },
     error::Error,
     extract::PdfExtractor,
@@ -51,6 +53,8 @@ use crate::{
 static USER_HIGHLIGHT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 static FEEDBACK_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 static IMPORT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+static EXPERIMENT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+const EXPERIMENT_CATALOG: &str = include_str!("../experiments/catalog.json");
 const REMOTE_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
 const MAX_REMOTE_PDF_BYTES: u64 = 100 * 1024 * 1024;
 const MAX_REMOTE_URL_LENGTH: usize = 4_096;
@@ -65,6 +69,7 @@ pub struct AppState {
     jobs: JobTracker,
     highlight_write: Arc<Mutex<()>>,
     import_write: Arc<Mutex<()>>,
+    experiment_write: Arc<Mutex<()>>,
     frontend_root: Option<Arc<PathBuf>>,
 }
 
@@ -126,6 +131,7 @@ impl AppState {
             jobs,
             highlight_write: Arc::new(Mutex::new(())),
             import_write: Arc::new(Mutex::new(())),
+            experiment_write: Arc::new(Mutex::new(())),
             frontend_root: None,
         })
     }
@@ -680,6 +686,247 @@ impl AppState {
         self.jobs.queue().await
     }
 
+    pub fn experiment_catalog(&self) -> Result<ExperimentCatalog> {
+        let catalog: ExperimentCatalog = serde_json::from_str(EXPERIMENT_CATALOG)?;
+        if catalog.experiments.iter().any(|experiment| {
+            experiment.id.trim().is_empty()
+                || experiment.variants.len() != 2
+                || experiment.variants.iter().any(|variant| {
+                    variant.id.trim().is_empty() || variant.instruction.trim().is_empty()
+                })
+        }) {
+            return Err(Error::Task(
+                "experiment catalog must define exactly two complete variants per experiment"
+                    .to_owned(),
+            ));
+        }
+        Ok(catalog)
+    }
+
+    pub async fn start_experiment(
+        &self,
+        id: &PaperId,
+        request: StartExperimentRequest,
+    ) -> Result<ExperimentView> {
+        let run = self.prepare_experiment(id, &request).await?;
+        let view = self.experiment_view(run.clone()).await?;
+        let state = self.clone();
+        tokio::spawn(async move {
+            let fallback = run.clone();
+            if let Err(error) = state.execute_experiment(run).await {
+                tracing::error!(%error, "learning-ramp experiment failed");
+                if let Err(save_error) = state.fail_experiment(fallback, &error).await {
+                    tracing::error!(%save_error, "could not persist failed experiment");
+                }
+            }
+        });
+        Ok(view)
+    }
+
+    pub async fn run_experiment_now(
+        &self,
+        id: &PaperId,
+        request: StartExperimentRequest,
+    ) -> Result<ExperimentView> {
+        let run = self.prepare_experiment(id, &request).await?;
+        let fallback = run.clone();
+        let run = match self.execute_experiment(run).await {
+            Ok(run) => run,
+            Err(error) => self.fail_experiment(fallback, &error).await?,
+        };
+        self.experiment_view(run).await
+    }
+
+    async fn prepare_experiment(
+        &self,
+        id: &PaperId,
+        request: &StartExperimentRequest,
+    ) -> Result<ExperimentRun> {
+        if request.provider == AnalysisProvider::Heuristic {
+            return Err(Error::InvalidRequest(
+                "prompt experiments require the Codex or Claude reader".to_owned(),
+            ));
+        }
+        let experiment = find_experiment(&self.experiment_catalog()?, &request.experiment_id)?;
+        let paper = self
+            .catalog
+            .read()
+            .await
+            .get(id)
+            .map(|entry| entry.overview.clone())
+            .ok_or_else(|| Error::PaperNotFound(id.to_string()))?;
+        let now = Utc::now();
+        let sequence = EXPERIMENT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let mut variants = experiment.variants.clone();
+        if (now.timestamp_micros().cast_unsigned() ^ sequence) & 1 == 1 {
+            variants.swap(0, 1);
+        }
+        let run = ExperimentRun {
+            schema_version: 1,
+            id: format!("run-{}-{sequence}", now.timestamp_micros()),
+            paper_id: id.clone(),
+            paper_title: paper.metadata.title,
+            experiment_id: experiment.id,
+            experiment_name: experiment.name,
+            question: experiment.question,
+            provider: request.provider,
+            status: ExperimentStatus::Running,
+            model: match request.provider {
+                AnalysisProvider::Codex => "gpt-5.6-terra".to_owned(),
+                AnalysisProvider::Claude => "configured Claude model".to_owned(),
+                AnalysisProvider::Heuristic => unreachable!(),
+            },
+            reasoning_effort: "medium".to_owned(),
+            created_at: now,
+            completed_at: None,
+            arms: variants
+                .into_iter()
+                .enumerate()
+                .map(|(index, variant)| ExperimentArm {
+                    blind_label: if index == 0 { "A" } else { "B" }.to_owned(),
+                    variant_id: variant.id,
+                    variant_label: variant.label,
+                    variant_instruction: variant.instruction,
+                    output: None,
+                    error: None,
+                })
+                .collect(),
+        };
+        self.store.save_experiment_run(&run).await?;
+        Ok(run)
+    }
+
+    async fn fail_experiment(
+        &self,
+        mut run: ExperimentRun,
+        error: &Error,
+    ) -> Result<ExperimentRun> {
+        run.status = ExperimentStatus::Failed;
+        run.completed_at = Some(Utc::now());
+        for arm in &mut run.arms {
+            if arm.output.is_none() && arm.error.is_none() {
+                arm.error = Some(error.to_string());
+            }
+        }
+        self.store.save_experiment_run(&run).await?;
+        Ok(run)
+    }
+
+    async fn execute_experiment(&self, mut run: ExperimentRun) -> Result<ExperimentRun> {
+        let _experiment_guard = self.experiment_write.lock().await;
+        let experiment = find_experiment(&self.experiment_catalog()?, &run.experiment_id)?;
+        let paper = self
+            .load_or_extract(&run.paper_id)
+            .await
+            .map_err(|(_, error)| error)?;
+        let directory = self.store.paper_dir(&run.paper_id);
+        let first_variant = crate::domain::PromptVariant {
+            id: run.arms[0].variant_id.clone(),
+            label: run.arms[0].variant_label.clone(),
+            instruction: run.arms[0].variant_instruction.clone(),
+        };
+        let second_variant = crate::domain::PromptVariant {
+            id: run.arms[1].variant_id.clone(),
+            label: run.arms[1].variant_label.clone(),
+            instruction: run.arms[1].variant_instruction.clone(),
+        };
+        let (first, second) = tokio::join!(
+            self.analysis.experiment_variant(
+                run.provider,
+                &paper,
+                &directory,
+                &experiment,
+                &first_variant,
+                "A",
+            ),
+            self.analysis.experiment_variant(
+                run.provider,
+                &paper,
+                &directory,
+                &experiment,
+                &second_variant,
+                "B",
+            )
+        );
+        let results: [Result<crate::domain::LearningRamp>; 2] = (first, second).into();
+        for (arm, result) in run.arms.iter_mut().zip(results) {
+            match result {
+                Ok(output) => arm.output = Some(output),
+                Err(error) => arm.error = Some(error.to_string()),
+            }
+        }
+        run.status = if run.arms.iter().all(|arm| arm.output.is_some()) {
+            ExperimentStatus::Completed
+        } else {
+            ExperimentStatus::Failed
+        };
+        run.completed_at = Some(Utc::now());
+        self.store.save_experiment_run(&run).await?;
+        Ok(run)
+    }
+
+    pub async fn experiment_runs(&self, id: &PaperId) -> Result<Vec<ExperimentView>> {
+        if self.catalog.read().await.get(id).is_none() {
+            return Err(Error::PaperNotFound(id.to_string()));
+        }
+        let judgments = self.store.load_experiment_judgments(id).await?;
+        Ok(self
+            .store
+            .load_experiment_runs(id)
+            .await?
+            .into_iter()
+            .map(|run| redact_experiment(run, &judgments))
+            .collect())
+    }
+
+    pub async fn experiment_run(&self, id: &PaperId, run_id: &str) -> Result<ExperimentView> {
+        let run = self
+            .store
+            .load_experiment_run(id, run_id)
+            .await?
+            .ok_or_else(|| Error::InvalidRequest("experiment run was not found".to_owned()))?;
+        self.experiment_view(run).await
+    }
+
+    async fn experiment_view(&self, run: ExperimentRun) -> Result<ExperimentView> {
+        let judgments = self.store.load_experiment_judgments(&run.paper_id).await?;
+        Ok(redact_experiment(run, &judgments))
+    }
+
+    pub async fn judge_experiment(
+        &self,
+        id: &PaperId,
+        run_id: &str,
+        request: ExperimentJudgmentRequest,
+    ) -> Result<ExperimentView> {
+        validate_judgment(&request)?;
+        let run = self
+            .store
+            .load_experiment_run(id, run_id)
+            .await?
+            .ok_or_else(|| Error::InvalidRequest("experiment run was not found".to_owned()))?;
+        if run.status != ExperimentStatus::Completed {
+            return Err(Error::InvalidRequest(
+                "wait for both experiment arms before judging".to_owned(),
+            ));
+        }
+        let _guard = self.experiment_write.lock().await;
+        let mut judgments = self.store.load_experiment_judgments(id).await?;
+        judgments.retain(|judgment| judgment.run_id != run.id);
+        judgments.push(ExperimentJudgment {
+            run_id: run.id.clone(),
+            experiment_id: run.experiment_id.clone(),
+            overall: request.overall,
+            early_traction: request.early_traction,
+            rigor: request.rigor,
+            confidence: request.confidence,
+            note: request.note.trim().to_owned(),
+            submitted_at: Utc::now(),
+        });
+        self.store.save_experiment_judgments(id, &judgments).await?;
+        Ok(redact_experiment(run, &judgments))
+    }
+
     async fn queue_feedback(&self, id: PaperId, request: FeedbackRequest) -> Result<AnalysisJob> {
         let feedback = validate_feedback_request(&request)?;
         if self.catalog.read().await.get(&id).is_none() {
@@ -996,6 +1243,50 @@ fn validate_feedback_request(request: &FeedbackRequest) -> Result<String> {
     Ok(feedback.to_owned())
 }
 
+fn find_experiment(catalog: &ExperimentCatalog, id: &str) -> Result<PromptExperiment> {
+    catalog
+        .experiments
+        .iter()
+        .find(|experiment| experiment.id == id.trim())
+        .cloned()
+        .ok_or_else(|| Error::InvalidRequest(format!("unknown experiment: {}", id.trim())))
+}
+
+fn redact_experiment(mut run: ExperimentRun, judgments: &[ExperimentJudgment]) -> ExperimentView {
+    let judged = judgments.iter().any(|judgment| judgment.run_id == run.id);
+    if !judged {
+        for arm in &mut run.arms {
+            arm.variant_id.clear();
+            arm.variant_label.clear();
+            arm.variant_instruction.clear();
+        }
+    }
+    ExperimentView { run, judged }
+}
+
+fn validate_judgment(request: &ExperimentJudgmentRequest) -> Result<()> {
+    let valid_choice = |value: &str| matches!(value, "A" | "B" | "tie");
+    if !valid_choice(&request.overall)
+        || !valid_choice(&request.early_traction)
+        || !valid_choice(&request.rigor)
+    {
+        return Err(Error::InvalidRequest(
+            "experiment preferences must be A, B, or tie".to_owned(),
+        ));
+    }
+    if !(1..=5).contains(&request.confidence) {
+        return Err(Error::InvalidRequest(
+            "experiment confidence must be between 1 and 5".to_owned(),
+        ));
+    }
+    if request.note.chars().count() > 4_000 {
+        return Err(Error::InvalidRequest(
+            "experiment notes are limited to 4,000 characters".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
 fn parse_remote_pdf_url(value: &str) -> Result<Url> {
     let trimmed = value.trim();
     if trimmed.is_empty() {
@@ -1212,6 +1503,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/library/scan", post(scan_library))
         .route("/api/library/import", post(import_pdf))
         .route("/api/queue", get(processing_queue))
+        .route("/api/experiments", get(experiment_catalog))
         .route("/api/papers/{id}", get(paper))
         .route("/api/papers/{id}/source", get(paper_source))
         .route("/api/papers/{id}/markdown", get(paper_markdown))
@@ -1224,6 +1516,18 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/papers/{id}/analyze", post(analyze_paper))
         .route("/api/papers/{id}/feedback", post(feedback_paper))
         .route("/api/papers/{id}/clarify", post(clarify_selection))
+        .route(
+            "/api/papers/{id}/experiments",
+            get(paper_experiments).post(start_paper_experiment),
+        )
+        .route(
+            "/api/papers/{id}/experiments/{run_id}",
+            get(paper_experiment),
+        )
+        .route(
+            "/api/papers/{id}/experiments/{run_id}/judgment",
+            post(judge_paper_experiment),
+        )
         .route("/", get(frontend_index))
         .route("/{*asset}", get(frontend_asset))
         .with_state(state)
@@ -1254,6 +1558,48 @@ async fn import_pdf(
 
 async fn processing_queue(State(state): State<AppState>) -> Result<Json<ProcessingQueue>> {
     state.processing_queue().await.map(Json)
+}
+
+async fn experiment_catalog(State(state): State<AppState>) -> Result<Json<ExperimentCatalog>> {
+    state.experiment_catalog().map(Json)
+}
+
+async fn paper_experiments(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+) -> Result<Json<Vec<ExperimentView>>> {
+    let id = parse_id(&id)?;
+    state.experiment_runs(&id).await.map(Json)
+}
+
+async fn start_paper_experiment(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+    Json(request): Json<StartExperimentRequest>,
+) -> Result<impl IntoResponse> {
+    let id = parse_id(&id)?;
+    let run = state.start_experiment(&id, request).await?;
+    Ok((StatusCode::ACCEPTED, Json(run)))
+}
+
+async fn paper_experiment(
+    State(state): State<AppState>,
+    AxumPath((id, run_id)): AxumPath<(String, String)>,
+) -> Result<Json<ExperimentView>> {
+    let id = parse_id(&id)?;
+    state.experiment_run(&id, &run_id).await.map(Json)
+}
+
+async fn judge_paper_experiment(
+    State(state): State<AppState>,
+    AxumPath((id, run_id)): AxumPath<(String, String)>,
+    Json(request): Json<ExperimentJudgmentRequest>,
+) -> Result<Json<ExperimentView>> {
+    let id = parse_id(&id)?;
+    state
+        .judge_experiment(&id, &run_id, request)
+        .await
+        .map(Json)
 }
 
 async fn paper(
@@ -1773,5 +2119,87 @@ mod tests {
             validate_feedback_request(&valid).as_deref(),
             Ok("Explain the result more plainly.")
         ));
+    }
+
+    #[test]
+    fn experiment_catalog_is_single_factor_and_two_armed() -> Result<()> {
+        let catalog: ExperimentCatalog = serde_json::from_str(EXPERIMENT_CATALOG)?;
+        assert_eq!(catalog.experiments.len(), 5);
+        assert!(catalog.experiments.iter().all(|experiment| {
+            !experiment.question.trim().is_empty() && experiment.variants.len() == 2
+        }));
+        let ids = catalog
+            .experiments
+            .iter()
+            .map(|experiment| experiment.id.as_str())
+            .collect::<std::collections::HashSet<_>>();
+        assert_eq!(ids.len(), catalog.experiments.len());
+        Ok(())
+    }
+
+    #[test]
+    fn prompt_identities_stay_blind_until_judgment() {
+        let run = ExperimentRun {
+            schema_version: 1,
+            id: "run-1".to_owned(),
+            paper_id: PaperId::from_relative_path(Path::new("paper.pdf")),
+            paper_title: "Paper".to_owned(),
+            experiment_id: "conceptual-bridge".to_owned(),
+            experiment_name: "Conceptual bridge".to_owned(),
+            question: "Which is smoother?".to_owned(),
+            provider: AnalysisProvider::Codex,
+            status: ExperimentStatus::Completed,
+            model: "fixed-model".to_owned(),
+            reasoning_effort: "medium".to_owned(),
+            created_at: Utc::now(),
+            completed_at: Some(Utc::now()),
+            arms: vec![ExperimentArm {
+                blind_label: "A".to_owned(),
+                variant_id: "bounded_bridge".to_owned(),
+                variant_label: "Bounded bridge".to_owned(),
+                variant_instruction: "Use one bounded bridge.".to_owned(),
+                output: None,
+                error: None,
+            }],
+        };
+        let blind = redact_experiment(run.clone(), &[]);
+        assert!(!blind.judged);
+        assert!(blind.run.arms[0].variant_id.is_empty());
+        assert!(blind.run.arms[0].variant_instruction.is_empty());
+
+        let revealed = redact_experiment(
+            run,
+            &[ExperimentJudgment {
+                run_id: "run-1".to_owned(),
+                experiment_id: "conceptual-bridge".to_owned(),
+                overall: "A".to_owned(),
+                early_traction: "A".to_owned(),
+                rigor: "tie".to_owned(),
+                confidence: 4,
+                note: String::new(),
+                submitted_at: Utc::now(),
+            }],
+        );
+        assert!(revealed.judged);
+        assert_eq!(revealed.run.arms[0].variant_id, "bounded_bridge");
+        assert!(!revealed.run.arms[0].variant_instruction.is_empty());
+    }
+
+    #[test]
+    fn experiment_judgments_require_complete_bounded_choices() {
+        let valid = ExperimentJudgmentRequest {
+            overall: "A".to_owned(),
+            early_traction: "tie".to_owned(),
+            rigor: "B".to_owned(),
+            confidence: 4,
+            note: "A gets to the mechanism sooner.".to_owned(),
+        };
+        assert!(validate_judgment(&valid).is_ok());
+        let invalid = ExperimentJudgmentRequest {
+            confidence: 9,
+            overall: "maybe".to_owned(),
+            ..valid
+        };
+        assert!(validate_judgment(&invalid).is_err());
     }
 }

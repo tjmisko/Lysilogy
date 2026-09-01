@@ -10,6 +10,9 @@ import type {
   PaperMap,
   PaperView,
   ProcessingQueue,
+  ExperimentCatalog,
+  ExperimentJudgment,
+  ExperimentView,
 } from "../types";
 
 type ErrorPayload = {
@@ -61,6 +64,29 @@ export const api = {
       body: JSON.stringify({ url }),
     }),
   queue: (): Promise<ProcessingQueue> => request("/api/queue"),
+  experimentCatalog: (): Promise<ExperimentCatalog> => request("/api/experiments"),
+  experiments: (id: string): Promise<ExperimentView[]> =>
+    request(`/api/papers/${id}/experiments`),
+  experiment: (id: string, runId: string): Promise<ExperimentView> =>
+    request(`/api/papers/${id}/experiments/${encodeURIComponent(runId)}`),
+  startExperiment: (
+    id: string,
+    experimentId: string,
+    provider: AnalysisProvider,
+  ): Promise<ExperimentView> =>
+    request(`/api/papers/${id}/experiments`, {
+      method: "POST",
+      body: JSON.stringify({ experiment_id: experimentId, provider }),
+    }),
+  judgeExperiment: (
+    id: string,
+    runId: string,
+    judgment: ExperimentJudgment,
+  ): Promise<ExperimentView> =>
+    request(`/api/papers/${id}/experiments/${encodeURIComponent(runId)}/judgment`, {
+      method: "POST",
+      body: JSON.stringify(judgment),
+    }),
   paper: (id: string): Promise<PaperView> => request(`/api/papers/${id}`),
   paperMap: (id: string, signal?: AbortSignal): Promise<PaperMap> =>
     request(`/api/papers/${id}/map`, { signal }),

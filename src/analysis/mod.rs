@@ -12,8 +12,9 @@ use crate::{
     Result,
     domain::{
         AgentSession, AnalysisProvider, Claim, Clarification, ContextNote, ContextSource,
-        EvidenceStrength, ExtractedPaper, GlossaryEntry, KeyQuote, PageSpan, PaperAnalysis,
-        PaperSection, QuoteSignificance, SectionFamily, SectionKind, SectionSourceSpan,
+        EvidenceStrength, ExtractedPaper, GlossaryEntry, KeyQuote, LearningRamp, PageSpan,
+        PaperAnalysis, PaperSection, PromptExperiment, PromptVariant, QuoteSignificance,
+        SectionFamily, SectionKind, SectionSourceSpan,
     },
     error::Error,
     layout::verify_quote,
@@ -27,6 +28,7 @@ pub const CLARIFICATION_SCHEMA: &str = include_str!("../../prompts/clarification
 pub const ORIENTATION_SCHEMA: &str = include_str!("../../prompts/paper-orientation.schema.json");
 pub const STRUCTURE_SCHEMA: &str = include_str!("../../prompts/paper-structure.schema.json");
 pub const CONTEXT_SCHEMA: &str = include_str!("../../prompts/paper-context.schema.json");
+pub const LEARNING_RAMP_SCHEMA: &str = include_str!("../../prompts/learning-ramp.schema.json");
 
 #[derive(Clone, Debug, Default)]
 pub struct AnalysisService {
@@ -141,6 +143,114 @@ impl AnalysisService {
             }
         }
     }
+
+    pub async fn experiment_variant(
+        &self,
+        provider: AnalysisProvider,
+        paper: &ExtractedPaper,
+        artifact_directory: &Path,
+        experiment: &PromptExperiment,
+        variant: &PromptVariant,
+        blind_label: &str,
+    ) -> Result<LearningRamp> {
+        if provider == AnalysisProvider::Heuristic {
+            return Err(Error::InvalidRequest(
+                "prompt experiments require the Codex or Claude reader".to_owned(),
+            ));
+        }
+        let ramp = self
+            .local_cli
+            .experiment_variant(
+                provider,
+                paper,
+                artifact_directory,
+                experiment,
+                variant,
+                blind_label,
+            )
+            .await?;
+        normalize_learning_ramp(ramp, paper)
+    }
+}
+
+fn normalize_learning_ramp(mut ramp: LearningRamp, paper: &ExtractedPaper) -> Result<LearningRamp> {
+    ramp.foothold.question = clean_required("experiment question", &ramp.foothold.question)?;
+    ramp.foothold.answer = clean_required("experiment answer", &ramp.foothold.answer)?;
+    ramp.foothold.why_care = clean_required("experiment importance", &ramp.foothold.why_care)?;
+    ramp.foothold.mechanism = clean_required("experiment mechanism", &ramp.foothold.mechanism)?;
+    for concept in &mut ramp.concepts {
+        concept.term = compact_whitespace(&concept.term);
+        concept.plain_language = compact_whitespace(&concept.plain_language);
+        concept.technical_definition = compact_whitespace(&concept.technical_definition);
+        concept.why_now = compact_whitespace(&concept.why_now);
+        concept.bridge = concept
+            .bridge
+            .take()
+            .map(|value| compact_whitespace(&value));
+        concept.bridge_limit = concept
+            .bridge_limit
+            .take()
+            .map(|value| compact_whitespace(&value));
+        if concept.bridge_limit.as_ref().is_none_or(String::is_empty) {
+            concept.bridge = None;
+            concept.bridge_limit = None;
+        }
+    }
+    ramp.concepts.retain(|concept| {
+        !concept.term.is_empty()
+            && !concept.plain_language.is_empty()
+            && !concept.technical_definition.is_empty()
+    });
+    ramp.concepts.truncate(10);
+
+    let mut seen_passages = std::collections::HashSet::new();
+    ramp.essential_passages.retain_mut(|passage| {
+        let (status, anchor) = verify_quote(&paper.layout, &passage.quote, passage.page);
+        let Some(anchor) = anchor else {
+            return false;
+        };
+        if !matches!(
+            status,
+            crate::domain::CitationStatus::Exact | crate::domain::CitationStatus::Normalized
+        ) {
+            return false;
+        }
+        passage.quote = anchor.exact_text;
+        passage.page = anchor.page;
+        passage.read_for = compact_whitespace(&passage.read_for);
+        passage.context_before = clean_list(std::mem::take(&mut passage.context_before), 4);
+        seen_passages.insert((anchor.page, anchor.start_token, anchor.end_token))
+    });
+    ramp.essential_passages.truncate(10);
+    if ramp.essential_passages.is_empty() {
+        return Err(Error::InvalidAnalysis(
+            "learning-ramp experiment returned no verifiable essential passage".to_owned(),
+        ));
+    }
+
+    for item in &mut ramp.reception {
+        item.claim = compact_whitespace(&item.claim);
+        item.source_urls.retain(|url| public_http_url(url));
+        item.source_urls.truncate(4);
+    }
+    ramp.reception.retain(|item| !item.claim.is_empty());
+    ramp.reception.truncate(6);
+    for item in &mut ramp.counterarguments {
+        item.camp = item.camp.take().map(|value| compact_whitespace(&value));
+        item.objection = compact_whitespace(&item.objection);
+        item.likely_reply = compact_whitespace(&item.likely_reply);
+        item.source_urls.retain(|url| public_http_url(url));
+        item.source_urls.truncate(4);
+    }
+    ramp.counterarguments
+        .retain(|item| !item.objection.is_empty() && !item.likely_reply.is_empty());
+    ramp.counterarguments.truncate(5);
+    ramp.uncertainties = clean_list(ramp.uncertainties, 8);
+    Ok(ramp)
+}
+
+fn public_http_url(value: &str) -> bool {
+    value.starts_with("https://") || value.starts_with("http://")
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -254,6 +364,8 @@ pub(crate) struct ClarificationDraft {
     pub limitation: Option<String>,
 }
 
+// The normalization sequence intentionally keeps all cross-field invariants in one transaction.
+#[allow(clippy::too_many_lines)]
 fn normalize_analysis(
     mut draft: AnalysisDraft,
     provider: AnalysisProvider,
@@ -478,8 +590,15 @@ fn resolve_source_span(
     ordered.then_some(SectionSourceSpan { start, end })
 }
 
-fn anchor_precedes(left: &crate::domain::TextAnchor, right: &crate::domain::TextAnchor) -> bool {
-    left.page < right.page || (left.page == right.page && left.end_token < right.start_token)
+const fn anchor_precedes(
+    left: &crate::domain::TextAnchor,
+    right: &crate::domain::TextAnchor,
+) -> bool {
+    if left.page == right.page {
+        left.end_token < right.start_token
+    } else {
+        left.page < right.page
+    }
 }
 
 fn validate_section_order(sections: &[PaperSection]) -> Result<()> {
@@ -488,18 +607,18 @@ fn validate_section_order(sections: &[PaperSection]) -> Result<()> {
         let Some(source_span) = &section.source_span else {
             continue;
         };
-        if let Some((prior_title, prior_span)) = previous {
-            if !anchor_precedes(&prior_span.end, &source_span.start) {
-                return Err(Error::InvalidAnalysis(format!(
-                    "section source spans overlap or are out of reading order: '{}' ends at page {} token {}, but '{}' starts at page {} token {}",
-                    prior_title,
-                    prior_span.end.page,
-                    prior_span.end.end_token,
-                    section.title,
-                    source_span.start.page,
-                    source_span.start.start_token,
-                )));
-            }
+        if let Some((prior_title, prior_span)) = previous
+            && !anchor_precedes(&prior_span.end, &source_span.start)
+        {
+            return Err(Error::InvalidAnalysis(format!(
+                "section source spans overlap or are out of reading order: '{}' ends at page {} token {}, but '{}' starts at page {} token {}",
+                prior_title,
+                prior_span.end.page,
+                prior_span.end.end_token,
+                section.title,
+                source_span.start.page,
+                source_span.start.start_token,
+            )));
         }
         previous = Some((&section.title, source_span));
     }

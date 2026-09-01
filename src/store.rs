@@ -3,15 +3,17 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::{
     Result,
     domain::{
-        AgentSession, AnalysisJob, AnalysisProvider, CitationStatus, DocumentLayout, ExtractedPage,
-        ExtractedPaper, FeedbackRecord, Highlight, HighlightOrigin, PaperAnalysis, PaperId,
-        PaperMetadata, RemotePdfSource,
+        AgentSession, AnalysisJob, AnalysisProvider, CitationStatus, DocumentLayout,
+        ExperimentJudgment, ExperimentRun, ExperimentStatus, ExtractedPage, ExtractedPaper,
+        FeedbackRecord, Highlight, HighlightOrigin, PaperAnalysis, PaperId, PaperMetadata,
+        RemotePdfSource,
     },
     error::Error,
     markdown,
@@ -45,7 +47,57 @@ impl ArtifactStore {
     pub async fn initialize(&self) -> Result<()> {
         fs::create_dir_all(self.root.join("papers"))
             .await
-            .map_err(|error| Error::io(&self.root, error))
+            .map_err(|error| Error::io(&self.root, error))?;
+        self.recover_running_experiments().await
+    }
+
+    async fn recover_running_experiments(&self) -> Result<()> {
+        let papers_directory = self.root.join("papers");
+        let mut paper_entries = fs::read_dir(&papers_directory)
+            .await
+            .map_err(|error| Error::io(&papers_directory, error))?;
+        while let Some(paper_entry) = paper_entries
+            .next_entry()
+            .await
+            .map_err(|error| Error::io(&papers_directory, error))?
+        {
+            let experiments_directory = paper_entry.path().join("experiments");
+            let mut entries = match fs::read_dir(&experiments_directory).await {
+                Ok(entries) => entries,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+                Err(error) => return Err(Error::io(&experiments_directory, error)),
+            };
+            while let Some(entry) = entries
+                .next_entry()
+                .await
+                .map_err(|error| Error::io(&experiments_directory, error))?
+            {
+                let path = entry.path();
+                if path.extension().and_then(|value| value.to_str()) != Some("json")
+                    || path.file_name().and_then(|value| value.to_str()) == Some("judgments.json")
+                {
+                    continue;
+                }
+                let Some(mut run) = read_json_if_present::<ExperimentRun>(&path).await? else {
+                    continue;
+                };
+                if run.status != ExperimentStatus::Running {
+                    continue;
+                }
+                run.status = ExperimentStatus::Failed;
+                run.completed_at = Some(Utc::now());
+                for arm in &mut run.arms {
+                    if arm.output.is_none() && arm.error.is_none() {
+                        arm.error = Some(
+                            "experiment process ended when the previous server or CLI stopped"
+                                .to_owned(),
+                        );
+                    }
+                }
+                self.save_experiment_run(&run).await?;
+            }
+        }
+        Ok(())
     }
 
     pub async fn load_analysis(&self, id: &PaperId) -> Result<Option<PaperAnalysis>> {
@@ -153,6 +205,83 @@ impl ArtifactStore {
             jsonl.push('\n');
         }
         write_atomic(&self.feedback_path(id), jsonl.as_bytes()).await
+    }
+
+    pub async fn save_experiment_run(&self, run: &ExperimentRun) -> Result<()> {
+        let directory = self.experiments_dir(&run.paper_id);
+        fs::create_dir_all(&directory)
+            .await
+            .map_err(|error| Error::io(&directory, error))?;
+        let mut json = serde_json::to_vec_pretty(run)?;
+        json.push(b'\n');
+        write_atomic(&directory.join(format!("{}.json", run.id)), &json).await
+    }
+
+    pub async fn load_experiment_run(
+        &self,
+        id: &PaperId,
+        run_id: &str,
+    ) -> Result<Option<ExperimentRun>> {
+        if !valid_artifact_id(run_id) {
+            return Err(Error::InvalidRequest(
+                "invalid experiment run ID".to_owned(),
+            ));
+        }
+        read_json_if_present(&self.experiments_dir(id).join(format!("{run_id}.json"))).await
+    }
+
+    pub async fn load_experiment_runs(&self, id: &PaperId) -> Result<Vec<ExperimentRun>> {
+        let directory = self.experiments_dir(id);
+        let mut entries = match fs::read_dir(&directory).await {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+            Err(error) => return Err(Error::io(&directory, error)),
+        };
+        let mut runs = Vec::new();
+        while let Some(entry) = entries
+            .next_entry()
+            .await
+            .map_err(|error| Error::io(&directory, error))?
+        {
+            let path = entry.path();
+            if path.extension().and_then(|value| value.to_str()) != Some("json")
+                || path.file_name().and_then(|value| value.to_str()) == Some("judgments.json")
+            {
+                continue;
+            }
+            match read_json_if_present(&path).await {
+                Ok(Some(run)) => runs.push(run),
+                Ok(None) => {}
+                Err(Error::Json(error)) => {
+                    tracing::warn!(path = %path.display(), %error, "ignoring malformed experiment run");
+                }
+                Err(error) => return Err(error),
+            }
+        }
+        runs.sort_by(|left: &ExperimentRun, right: &ExperimentRun| {
+            right.created_at.cmp(&left.created_at)
+        });
+        Ok(runs)
+    }
+
+    pub async fn load_experiment_judgments(&self, id: &PaperId) -> Result<Vec<ExperimentJudgment>> {
+        read_json_if_present(&self.experiment_judgments_path(id))
+            .await
+            .map(Option::unwrap_or_default)
+    }
+
+    pub async fn save_experiment_judgments(
+        &self,
+        id: &PaperId,
+        judgments: &[ExperimentJudgment],
+    ) -> Result<()> {
+        let directory = self.experiments_dir(id);
+        fs::create_dir_all(&directory)
+            .await
+            .map_err(|error| Error::io(&directory, error))?;
+        let mut json = serde_json::to_vec_pretty(judgments)?;
+        json.push(b'\n');
+        write_atomic(&self.experiment_judgments_path(id), &json).await
     }
 
     async fn load_feedback_text(&self, id: &PaperId) -> Result<Option<String>> {
@@ -374,6 +503,22 @@ impl ArtifactStore {
     fn feedback_path(&self, id: &PaperId) -> PathBuf {
         self.paper_dir(id).join("feedback.jsonl")
     }
+
+    fn experiments_dir(&self, id: &PaperId) -> PathBuf {
+        self.paper_dir(id).join("experiments")
+    }
+
+    fn experiment_judgments_path(&self, id: &PaperId) -> PathBuf {
+        self.experiments_dir(id).join("judgments.json")
+    }
+}
+
+fn valid_artifact_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
 }
 
 async fn read_string_if_present(path: &Path) -> Result<Option<String>> {
@@ -536,8 +681,8 @@ mod tests {
 
     use super::*;
     use crate::domain::{
-        AgentSession, AnalysisProvider, ContextNote, ContextSource, FeedbackRecord, FeedbackStatus,
-        PaperAnalysis,
+        AgentSession, AnalysisProvider, ContextNote, ContextSource, ExperimentArm, ExperimentRun,
+        ExperimentStatus, FeedbackRecord, FeedbackStatus, PaperAnalysis,
     };
 
     #[tokio::test]
@@ -661,6 +806,49 @@ mod tests {
             .await
             .map_err(|error| Error::io("feedback.jsonl", error))?;
         assert_eq!(jsonl.lines().count(), 1);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn running_experiments_become_failed_after_restart() -> Result<()> {
+        let directory = tempdir().map_err(|error| Error::io("tempdir", error))?;
+        let store = ArtifactStore::new(directory.path());
+        store.initialize().await?;
+        let id = PaperId::from_relative_path(Path::new("paper.pdf"));
+        let run = ExperimentRun {
+            schema_version: 1,
+            id: "run-restart".to_owned(),
+            paper_id: id.clone(),
+            paper_title: "Paper".to_owned(),
+            experiment_id: "conceptual-bridge".to_owned(),
+            experiment_name: "Conceptual bridge".to_owned(),
+            question: "Which ramp?".to_owned(),
+            provider: AnalysisProvider::Codex,
+            status: ExperimentStatus::Running,
+            model: "fixed-model".to_owned(),
+            reasoning_effort: "medium".to_owned(),
+            created_at: Utc::now(),
+            completed_at: None,
+            arms: vec![ExperimentArm {
+                blind_label: "A".to_owned(),
+                variant_id: "direct".to_owned(),
+                variant_label: "Direct".to_owned(),
+                variant_instruction: "Explain directly.".to_owned(),
+                output: None,
+                error: None,
+            }],
+        };
+        store.save_experiment_run(&run).await?;
+
+        let restarted = ArtifactStore::new(directory.path());
+        restarted.initialize().await?;
+        let recovered = restarted
+            .load_experiment_run(&id, &run.id)
+            .await?
+            .ok_or_else(|| Error::Task("missing recovered experiment".to_owned()))?;
+        assert_eq!(recovered.status, ExperimentStatus::Failed);
+        assert!(recovered.completed_at.is_some());
+        assert!(recovered.arms[0].error.is_some());
         Ok(())
     }
 }

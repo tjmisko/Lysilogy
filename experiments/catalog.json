@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "reader_baseline": ["mathematics", "economics", "physics", "finance", "AI and machine learning"],
+  "experiments": [
+    {
+      "id": "conceptual-bridge",
+      "name": "Conceptual bridge",
+      "question": "Do explicit, bounded analogies create earlier traction without distorting the paper?",
+      "live_web": false,
+      "variants": [
+        {"id": "direct", "label": "Direct explanation", "instruction": "Explain concepts directly in the paper's own terms. Do not add analogies unless the source itself relies on one."},
+        {"id": "bounded_bridge", "label": "Bounded bridge", "instruction": "For each load-bearing unfamiliar concept, look for a structurally useful bridge to the reader's baseline. Name the shared structure and the most important point where the mapping breaks. Omit a bridge when none is genuinely useful."}
+      ]
+    },
+    {
+      "id": "glossary-order",
+      "name": "Glossary order",
+      "question": "Should load-bearing terms arrive in paper order or prerequisite order?",
+      "live_web": false,
+      "variants": [
+        {"id": "encounter", "label": "Encounter order", "instruction": "Order concepts by the first essential passage in which the reader will encounter them. Define each immediately before that passage."},
+        {"id": "dependency", "label": "Dependency order", "instruction": "Order concepts as a prerequisite graph flattened into a learning sequence. Minimize forward references; explain a concept only after its dependencies."}
+      ]
+    },
+    {
+      "id": "essential-context",
+      "name": "Essential 10% context",
+      "question": "Does an explicit comprehension budget improve the passages selected as the essential 10%?",
+      "live_web": false,
+      "variants": [
+        {"id": "importance", "label": "Importance only", "instruction": "Choose the most important exact passages, up to roughly ten percent of the paper, then briefly explain why each matters."},
+        {"id": "comprehension_budget", "label": "Comprehension budget", "instruction": "Spend a roughly ten-percent reading budget on exact passages plus the minimum source context and prerequisite concepts required to understand them. Optimize the complete bundle for question, mechanism, evidence, and qualification—not quotability."}
+      ]
+    },
+    {
+      "id": "use-and-abuse",
+      "name": "Use and abuse",
+      "question": "Does tracing concrete downstream use make reception more legible than an influence summary?",
+      "live_web": true,
+      "variants": [
+        {"id": "influence", "label": "Influence summary", "instruction": "Research and summarize the paper's later influence and reception. Distinguish favorable, mixed, and critical reception where the evidence supports it."},
+        {"id": "use_abuse", "label": "Use / extension / abuse", "instruction": "Research what later authors concretely quote, cite, or reuse from this paper. Separate direct use, extension, conventional shorthand, and recurrent misuse or overclaiming. Support every external claim with a source URL."}
+      ]
+    },
+    {
+      "id": "field-opposition",
+      "name": "Field opposition",
+      "question": "Do camp-aware counterarguments create more informed skepticism than paper-local caveats?",
+      "live_web": true,
+      "variants": [
+        {"id": "local_caveats", "label": "Paper-local caveats", "instruction": "Build the skeptical view from limitations, assumptions, and qualifications visible in the paper. Do not impose a camp taxonomy."},
+        {"id": "opposing_camps", "label": "Opposing camps", "instruction": "Research whether the paper fits a recognizable camp. If it does, steelman the strongest opposing camp's objection to the mechanism, evidence, inference, or scope, then give the strongest likely reply. Cite the external basis; do not invent camps."}
+      ]
+    }
+  ]
+}

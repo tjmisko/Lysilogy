@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AbstractView } from "./components/AbstractView";
 import { CommandMenu } from "./components/CommandMenu";
 import { DigestPanel } from "./components/DigestPanel";
+import { ExperimentPanel } from "./components/ExperimentPanel";
 import { GlossaryView } from "./components/GlossPanel";
 import { HelpOverlay } from "./components/HelpOverlay";
 import { LibraryRail } from "./components/LibraryRail";
@@ -109,6 +110,7 @@ export function App() {
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [experimentOpen, setExperimentOpen] = useState(false);
   const [focusQueueFeedback, setFocusQueueFeedback] = useState(false);
   const [queue, setQueue] = useState<ProcessingQueue>({ jobs: [] });
   const [libraryQuery, setLibraryQuery] = useState("");
@@ -463,6 +465,13 @@ export function App() {
         setQueueOpen(true);
         void refreshQueue();
         break;
+      case "experiment":
+        if (selectedId === null) {
+          setError("Select a paper before opening the prompt lab.");
+        } else {
+          setExperimentOpen(true);
+        }
+        break;
       case "library":
         setLibraryOpen((open) => !open);
         break;
@@ -501,12 +510,12 @@ export function App() {
       default:
         setError(`Unknown command :${name}`);
     }
-  }, [analyze, openGlossary, provider, refreshQueue]);
+  }, [analyze, openGlossary, provider, refreshQueue, selectedId]);
 
   useTabPhase({
     // The switcher and the command menu read Tab themselves; everywhere else
     // Tab steps through the reading phases of the current paper.
-    overlayHandlesTab: switcherOpen || commandOpen,
+    overlayHandlesTab: switcherOpen || commandOpen || experimentOpen,
     onCycle: (delta) => {
       setQueueOpen(false);
       if (compactLayout) setLibraryOpen(false);
@@ -516,7 +525,7 @@ export function App() {
 
   useGlobalKeys({
     enabled:
-      panel === null && view !== "glossary" && !switcherOpen && !commandOpen && !queueOpen &&
+      panel === null && view !== "glossary" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen &&
       !(compactLayout && libraryOpen),
     activeIndex: activeSection,
     itemCount: sections.length,
@@ -1039,6 +1048,13 @@ export function App() {
             selectPaper(id);
           }}
           onFeedback={sendFeedback}
+        />
+      )}
+      {experimentOpen && selectedId !== null && (
+        <ExperimentPanel
+          paperId={selectedId}
+          provider={provider}
+          onClose={() => setExperimentOpen(false)}
         />
       )}
 

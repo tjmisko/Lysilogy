@@ -270,3 +270,97 @@ export type Clarification = {
   limitation: string | null;
   provider: AnalysisProvider;
 };
+
+export type PromptVariant = {
+  id: string;
+  label: string;
+  instruction: string;
+};
+
+export type PromptExperiment = {
+  id: string;
+  name: string;
+  question: string;
+  live_web: boolean;
+  variants: PromptVariant[];
+};
+
+export type ExperimentCatalog = {
+  schema_version: number;
+  reader_baseline: string[];
+  experiments: PromptExperiment[];
+};
+
+export type LearningRamp = {
+  foothold: {
+    question: string;
+    answer: string;
+    why_care: string;
+    mechanism: string;
+  };
+  concepts: Array<{
+    term: string;
+    plain_language: string;
+    technical_definition: string;
+    why_now: string;
+    bridge: string | null;
+    bridge_limit: string | null;
+  }>;
+  essential_passages: Array<{
+    quote: string;
+    page: number;
+    role: "question" | "mechanism" | "evidence" | "result" | "qualification";
+    context_before: string[];
+    read_for: string;
+  }>;
+  reception: Array<{
+    kind: "use" | "extension" | "shorthand" | "critique" | "misuse" | "unknown";
+    claim: string;
+    source_urls: string[];
+  }>;
+  counterarguments: Array<{
+    camp: string | null;
+    objection: string;
+    target: "assumption" | "method" | "evidence" | "inference" | "scope";
+    likely_reply: string;
+    source_urls: string[];
+  }>;
+  uncertainties: string[];
+};
+
+export type ExperimentRun = {
+  schema_version: number;
+  id: string;
+  paper_id: string;
+  paper_title: string;
+  experiment_id: string;
+  experiment_name: string;
+  question: string;
+  provider: AnalysisProvider;
+  status: "running" | "completed" | "failed";
+  model: string;
+  reasoning_effort: string;
+  created_at: string;
+  completed_at: string | null;
+  arms: Array<{
+    blind_label: string;
+    variant_id: string;
+    variant_label: string;
+    variant_instruction: string;
+    output: LearningRamp | null;
+    error: string | null;
+  }>;
+};
+
+export type ExperimentView = {
+  run: ExperimentRun;
+  judged: boolean;
+};
+
+export type ExperimentJudgment = {
+  overall: "A" | "B" | "tie";
+  early_traction: "A" | "B" | "tie";
+  rigor: "A" | "B" | "tie";
+  confidence: number;
+  note: string;
+};

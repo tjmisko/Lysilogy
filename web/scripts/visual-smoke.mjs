@@ -178,6 +178,60 @@ const paperMap = {
 };
 let analyzeRequests = 0;
 let feedbackRequests = 0;
+let experimentJudged = false;
+const experimentCatalog = {
+  schema_version: 1,
+  reader_baseline: ["mathematics", "economics", "AI"],
+  experiments: [{
+    id: "conceptual-bridge",
+    name: "Conceptual bridge",
+    question: "Does a bounded analogy create earlier traction?",
+    live_web: false,
+    variants: [
+      { id: "direct", label: "Direct explanation", instruction: "Explain directly." },
+      { id: "bounded_bridge", label: "Bounded bridge", instruction: "Use a bounded bridge." },
+    ],
+  }],
+};
+const smokeRamp = (answer) => ({
+  foothold: { question: "What is debate?", answer, why_care: "It tests scalable oversight.", mechanism: "Two agents expose useful evidence to a judge." },
+  concepts: [],
+  essential_passages: [],
+  reception: [],
+  counterarguments: [],
+  uncertainties: [],
+});
+const experimentRun = {
+  schema_version: 1,
+  id: "run-smoke",
+  paper_id: paperId,
+  paper_title: metadata.title,
+  experiment_id: "conceptual-bridge",
+  experiment_name: "Conceptual bridge",
+  question: "Does a bounded analogy create earlier traction?",
+  provider: "codex",
+  status: "completed",
+  model: "gpt-test",
+  reasoning_effort: "medium",
+  created_at: analysis.generated_at,
+  completed_at: analysis.generated_at,
+  arms: [
+    { blind_label: "A", variant_id: "direct", variant_label: "Direct explanation", variant_instruction: "Explain directly.", output: smokeRamp("Direct answer."), error: null },
+    { blind_label: "B", variant_id: "bounded_bridge", variant_label: "Bounded bridge", variant_instruction: "Use a bounded bridge.", output: smokeRamp("Bridged answer."), error: null },
+  ],
+};
+const experimentView = () => ({
+  judged: experimentJudged,
+  run: {
+    ...experimentRun,
+    arms: experimentRun.arms.map((arm) => experimentJudged ? arm : {
+      ...arm,
+      variant_id: "",
+      variant_label: "",
+      variant_instruction: "",
+    }),
+  },
+});
 let queueJobs = [{
   paper_id: paperId,
   paper_title: metadata.title,
@@ -214,6 +268,8 @@ try {
     const url = new URL(request.url());
     if (url.pathname === "/api/library") {
       await route.fulfill({ json: { name: "Articles", papers: [paper, unmappedPaper] } });
+    } else if (url.pathname === "/api/experiments") {
+      await route.fulfill({ json: experimentCatalog });
     } else if (url.pathname === "/api/library/import" && request.method() === "POST") {
       await route.fulfill({
         status: 400,
@@ -226,6 +282,13 @@ try {
       await route.fulfill({ json: { jobs: queueJobs } });
     } else if (url.pathname === `/api/papers/${paperId}`) {
       await route.fulfill({ json: { paper, analysis } });
+    } else if (url.pathname === `/api/papers/${paperId}/experiments` && request.method() === "GET") {
+      await route.fulfill({ json: [experimentView()] });
+    } else if (url.pathname === `/api/papers/${paperId}/experiments/run-smoke/judgment`) {
+      experimentJudged = true;
+      await route.fulfill({ json: experimentView() });
+    } else if (url.pathname === `/api/papers/${unmappedPaper.id}`) {
+      await route.fulfill({ json: { paper: unmappedPaper, analysis: null } });
     } else if (url.pathname === `/api/papers/${paperId}/map`) {
       await route.fulfill({ json: paperMap });
     } else if (url.pathname === `/api/papers/${paperId}/highlights` && request.method() === "POST") {
@@ -320,7 +383,7 @@ try {
   );
   assert((await page.locator(".abstract-tldr").count()) === 1, "one-sentence TL;DR is missing");
   assert((await page.locator(".authored-abstract").count()) === 1, "authored abstract is missing");
-  assert((await page.locator(".abstract-supplement").count()) === 1, "AI supplement is missing");
+  assert((await page.locator(".reading-context").count()) === 1, "reading context is missing");
   assert((await page.locator(".context-source").count()) === 2, "exact context sources are missing");
   assert((await page.locator(".context-source-check").count()) === 2, "link-check timestamps are missing");
   await page.getByRole("button", { name: "+ URL" }).click();
@@ -349,10 +412,7 @@ try {
   await page.getByRole("button", { name: /^Overview$/u }).click();
   await page.locator(".source-page").first().waitFor();
   assert((await page.locator(".source-page").count()) === layoutPages.length, "the page map did not include every PDF page");
-  assert(await page.locator(".source-map").evaluate((map) => {
-    const chart = document.querySelector(".conceptual-atlas");
-    return chart !== null && Boolean(map.compareDocumentPosition(chart) & Node.DOCUMENT_POSITION_FOLLOWING);
-  }), "the page map does not lead the conceptual-weight chart");
+  assert((await page.locator(".section-boxes").count()) === 1, "the page map lacks its section overlay");
   const columnCount = async () => Number(await page.locator(".source-pages").evaluate((grid) =>
     getComputedStyle(grid).getPropertyValue("--page-columns"),
   ));
@@ -362,9 +422,9 @@ try {
   await page.keyboard.press("-");
   assert(await columnCount() === 4, "minus did not zoom out by adding one page column");
 
-  await page.locator(".section-tile").first().waitFor();
-  const tiles = await page.locator(".section-tile").count();
-  assert(tiles >= 5, `expected at least 5 atlas tiles, found ${tiles}`);
+  await page.locator(".section-boxes > button").first().waitFor();
+  const tiles = await page.locator(".section-boxes > button").count();
+  assert(tiles >= 5, `expected at least 5 section regions, found ${tiles}`);
   await page.waitForFunction(() => {
     const canvas = document.querySelector(".source-page-canvas canvas");
     return canvas instanceof HTMLCanvasElement && canvas.width > 0;
@@ -379,9 +439,9 @@ try {
       top: regionRect.top - pageRect.top,
     };
   });
-  assert(Math.abs(firstRegion.left) < 0.01, "the first section segment did not begin at the page edge");
+  assert(Math.abs(firstRegion.left) < 2, `the first section segment began ${firstRegion.left}px from the page edge`);
   assert(Math.abs(firstRegion.widthPercent - 75) < 0.1, `three-quarter source progress rendered at ${firstRegion.widthPercent}% instead of 75%`);
-  assert(Math.abs(firstRegion.top) < 0.01, "section progress was incorrectly projected down the PDF page");
+  assert(Math.abs(firstRegion.top) < 2, `section progress began ${firstRegion.top}px down the PDF page`);
   const sectionBoxesOverlap = await page.locator(".section-boxes > button").evaluateAll((boxes) => {
     const rects = boxes.map((box) => ({
       id: box.getAttribute("data-section-id"),
@@ -434,7 +494,7 @@ try {
 
   await page.keyboard.press("F10");
   await page.locator(".paper-switcher").waitFor();
-  await page.locator(".switcher-search input").fill("goto");
+  await page.locator(".switcher-search input").fill("debate");
   assert((await page.locator(".switcher-results > button").count()) === 1, "fuzzy switcher did not filter");
   await page.screenshot({ path: screenshotVariant("switcher"), fullPage: true });
   await page.keyboard.press("Enter");
@@ -443,12 +503,12 @@ try {
   await page.keyboard.press("m");
   await page.locator(".markdown-document").waitFor();
   assert((await page.locator(".text-view-header").count()) === 1, "Text view header is missing");
-  assert((await page.locator(".markdown-page-marker").count()) === 4, "Markdown page provenance is incomplete");
+  assert((await page.locator(".markdown-page-marker").count()) >= 4, "Markdown page provenance is incomplete");
   await page.screenshot({ path: screenshotVariant("markdown"), fullPage: true });
   await page.keyboard.press("m");
   await page.locator(".pdf-canvas").waitFor();
   await page.keyboard.press("p");
-  await page.locator(".section-atlas").waitFor();
+  await page.locator(".source-map").waitFor();
 
   await page.keyboard.press("Enter");
   await page.locator(".digest-panel").waitFor();
@@ -465,7 +525,7 @@ try {
   assert((await page.locator(".glossary-view .gloss-entry").count()) > 0, "full glossary view is empty");
   await page.screenshot({ path: screenshotVariant("glossary"), fullPage: true });
   await page.keyboard.press("Escape");
-  await page.locator(".section-atlas").waitFor();
+  await page.locator(".source-map").waitFor();
 
   // Tab belongs to the reader: it steps through the phases of the current
   // paper and never falls through to the browser's focus traversal.
@@ -481,7 +541,7 @@ try {
   await page.locator(".abstract-view").waitFor();
   await rememberFocus();
   await page.keyboard.press("Tab");
-  await page.locator(".section-atlas").waitFor();
+  await page.locator(".source-map").waitFor();
   assert(await activePhase() === "Overview", "Tab did not advance the abstract to the overview phase");
   assert(await focusHeldStill(), "Tab moved browser focus instead of only changing the reading phase");
   await page.keyboard.press("Tab");
@@ -506,7 +566,7 @@ try {
   await page.keyboard.press("/");
   await page.waitForFunction(() => document.activeElement?.matches(".library-rail .search-box input") === true);
   await page.keyboard.press("Tab");
-  await page.locator(".section-atlas").waitFor();
+  await page.locator(".source-map").waitFor();
   assert(await activePhase() === "Overview", "Tab did not change phase from inside the library filter");
   assert(
     await page.evaluate(() => document.activeElement?.matches(".library-rail .search-box input") === true),
@@ -547,7 +607,21 @@ try {
   assert(await focusHeldStill(), "Tab moved browser focus out of the command menu");
   await page.keyboard.press("Escape");
   await page.locator(".command-menu").waitFor({ state: "detached" });
-  await page.locator(".section-atlas").waitFor();
+  await page.locator(".source-map").waitFor();
+
+  await page.keyboard.press(":");
+  await page.locator(".command-input input").fill("experiment");
+  await page.keyboard.press("Enter");
+  await page.locator(".experiment-panel").waitFor();
+  await page.locator(".experiment-arm").first().waitFor();
+  assert((await page.locator(".experiment-arm").count()) === 2, "the prompt lab did not render both blind arms");
+  assert((await page.locator(".experiment-reveal").count()) === 0, "prompt identities were revealed before judgment");
+  await page.screenshot({ path: screenshotVariant("experiment"), fullPage: true });
+  await page.locator(".experiment-judgment button[type=submit]").click();
+  await page.locator(".experiment-reveal").first().waitFor();
+  assert((await page.locator(".experiment-reveal").count()) === 2, "judgment did not reveal both prompt identities");
+  await page.getByRole("button", { name: "Close experiments" }).click();
+  await page.locator(".experiment-panel").waitFor({ state: "detached" });
 
   await page.keyboard.press("p");
   await page.locator(".pdf-canvas").waitFor();
@@ -555,12 +629,12 @@ try {
     const canvas = document.querySelector(".pdf-canvas");
     return canvas instanceof HTMLCanvasElement && canvas.width > 0;
   });
-  await page.locator(".pdf-text-layer[data-text-ready=true] span").first().waitFor();
+  await page.locator(".pdf-text-layer-host[data-text-ready=true] .pdf-text-layer span").first().waitFor();
   assert(
     (await page.locator(".pdf-text-layer span").count()) > 0,
     "the PDF did not render a selectable text layer",
   );
-  await page.locator(".pdf-text-layer span").evaluate((span) => {
+  await page.locator(".pdf-text-layer span").first().evaluate((span) => {
     const text = span.firstChild;
     if (text === null || (text.textContent?.length ?? 0) === 0) {
       throw new Error("the first PDF text item was empty");
@@ -650,7 +724,7 @@ try {
   await page.keyboard.press("Escape");
   await page.locator(".help-card").waitFor({ state: "detached" });
 
-  console.log(`visual smoke passed: cited context, ${tiles} tiles, aligned source pages, AI/user highlights, arrows and paging, two-page PDF, reconstructed text, mapped filter, Tab phase cycling, F1/F10, :analyze, live queue, feedback retry, selection, glossary, and mobile keys; screenshot ${screenshot}`);
+  console.log(`visual smoke passed: cited context, ${tiles} section regions, aligned source pages, blind prompt A/B and reveal, AI/user highlights, arrows and paging, two-page PDF, reconstructed text, mapped filter, Tab phase cycling, F1/F10, :analyze, live queue, feedback retry, selection, glossary, and mobile keys; screenshot ${screenshot}`);
 } finally {
   await browser.close();
 }

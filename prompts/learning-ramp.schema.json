@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["foothold", "concepts", "essential_passages", "reception", "counterarguments", "uncertainties"],
+  "properties": {
+    "foothold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question", "answer", "why_care", "mechanism"],
+      "properties": {
+        "question": {"type": "string"},
+        "answer": {"type": "string"},
+        "why_care": {"type": "string"},
+        "mechanism": {"type": "string"}
+      }
+    },
+    "concepts": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["term", "plain_language", "technical_definition", "why_now", "bridge", "bridge_limit"],
+        "properties": {
+          "term": {"type": "string"},
+          "plain_language": {"type": "string"},
+          "technical_definition": {"type": "string"},
+          "why_now": {"type": "string"},
+          "bridge": {"type": ["string", "null"]},
+          "bridge_limit": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "essential_passages": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["quote", "page", "role", "context_before", "read_for"],
+        "properties": {
+          "quote": {"type": "string"},
+          "page": {"type": "integer", "minimum": 1},
+          "role": {"type": "string", "enum": ["question", "mechanism", "evidence", "result", "qualification"]},
+          "context_before": {"type": "array", "items": {"type": "string"}, "maxItems": 4},
+          "read_for": {"type": "string"}
+        }
+      }
+    },
+    "reception": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "claim", "source_urls"],
+        "properties": {
+          "kind": {"type": "string", "enum": ["use", "extension", "shorthand", "critique", "misuse", "unknown"]},
+          "claim": {"type": "string"},
+          "source_urls": {"type": "array", "items": {"type": "string"}, "maxItems": 4}
+        }
+      }
+    },
+    "counterarguments": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["camp", "objection", "target", "likely_reply", "source_urls"],
+        "properties": {
+          "camp": {"type": ["string", "null"]},
+          "objection": {"type": "string"},
+          "target": {"type": "string", "enum": ["assumption", "method", "evidence", "inference", "scope"]},
+          "likely_reply": {"type": "string"},
+          "source_urls": {"type": "array", "items": {"type": "string"}, "maxItems": 4}
+        }
+      }
+    },
+    "uncertainties": {"type": "array", "items": {"type": "string"}, "maxItems": 8}
+  }
+}

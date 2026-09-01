@@ -3,7 +3,7 @@ use std::{net::SocketAddr, path::PathBuf, process::ExitCode};
 use clap::{Parser, Subcommand};
 use lysilogy::{
     AppState, Error, Result, build_router,
-    domain::{AnalysisProvider, PaperId, ProcessingStatus},
+    domain::{AnalysisProvider, PaperId, ProcessingStatus, StartExperimentRequest},
 };
 use tracing_subscriber::EnvFilter;
 
@@ -65,6 +65,16 @@ enum Command {
         /// Stop after this many matching papers (useful while evaluating prompts).
         #[arg(long)]
         limit: Option<usize>,
+    },
+    /// Run one blind A/B learning-ramp prompt experiment and persist both arms.
+    Experiment {
+        /// Paper ID or an unambiguous title fragment.
+        query: String,
+        /// Experiment ID from experiments/catalog.json.
+        #[arg(long, default_value = "conceptual-bridge")]
+        experiment: String,
+        #[arg(long, default_value = "codex")]
+        provider: AnalysisProvider,
     },
 }
 
@@ -129,6 +139,28 @@ async fn run(cli: Cli) -> Result<()> {
             force,
             limit,
         } => ingest(&state, provider, force, limit).await,
+        Command::Experiment {
+            query,
+            experiment,
+            provider,
+        } => {
+            let id = resolve_paper(&state, &query).await?;
+            println!("Running blind A/B experiment `{experiment}` for {id} with {provider}…");
+            let view = state
+                .run_experiment_now(
+                    &id,
+                    StartExperimentRequest {
+                        experiment_id: experiment,
+                        provider,
+                    },
+                )
+                .await?;
+            println!(
+                "{}: {:?} (open :experiment in the reader to judge A/B)",
+                view.run.id, view.run.status
+            );
+            Ok(())
+        }
     }
 }
 

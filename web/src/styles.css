@@ -99,6 +99,278 @@ code {
   font: 0.9em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+.experiment-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(7, 9, 8, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.experiment-panel {
+  width: min(1540px, 100%);
+  height: min(92vh, 1100px);
+  overflow: auto;
+  border: 1px solid var(--line-bright);
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.experiment-panel > header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.experiment-panel > header h2,
+.experiment-arm h3,
+.learning-ramp h4 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.experiment-panel > header > button {
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 30px;
+  cursor: pointer;
+}
+
+.experiment-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+  gap: 12px;
+  align-items: end;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.experiment-toolbar label,
+.experiment-judgment > label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.experiment-toolbar select,
+.experiment-judgment textarea {
+  min-width: 0;
+  border: 1px solid var(--line-bright);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: var(--panel-bright);
+  color: var(--ink);
+  font: inherit;
+}
+
+.experiment-toolbar button,
+.experiment-judgment > button,
+.experiment-choice button {
+  border: 1px solid var(--line-bright);
+  border-radius: 8px;
+  padding: 9px 13px;
+  background: var(--panel-bright);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.experiment-toolbar button:hover,
+.experiment-judgment > button:hover,
+.experiment-choice button.is-active {
+  border-color: var(--signal);
+  background: var(--signal);
+  color: var(--signal-ink);
+}
+
+.experiment-question {
+  display: grid;
+  gap: 4px;
+  padding: 16px 24px;
+  background: var(--panel-bright);
+}
+
+.experiment-question small,
+.experiment-arm > header span {
+  color: var(--ink-soft);
+}
+
+.experiment-arms {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+}
+
+.experiment-arm {
+  min-width: 0;
+  padding: 20px 24px 40px;
+  background: var(--panel);
+}
+
+.experiment-arm > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.experiment-reveal {
+  margin: -8px 0 18px;
+  padding: 10px;
+  border: 1px dashed var(--line-bright);
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.learning-ramp {
+  display: grid;
+  gap: 24px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.learning-ramp section {
+  display: grid;
+  gap: 9px;
+}
+
+.learning-ramp p,
+.learning-ramp ol,
+.learning-ramp ul,
+.learning-ramp blockquote {
+  margin: 0;
+}
+
+.learning-ramp li + li {
+  margin-top: 8px;
+}
+
+.learning-ramp details {
+  margin-top: 4px;
+  color: var(--ink-soft);
+}
+
+.experiment-passage {
+  padding: 12px;
+  border-left: 3px solid var(--signal);
+  background: var(--panel-bright);
+}
+
+.experiment-passage > span {
+  color: var(--signal);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.experiment-passage blockquote {
+  padding: 8px 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+}
+
+.experiment-sources {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 5px;
+}
+
+.experiment-sources a {
+  color: var(--signal);
+}
+
+.experiment-running,
+.experiment-notice,
+.experiment-error,
+.experiment-empty {
+  margin: 14px 24px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--panel-bright);
+}
+
+.experiment-error {
+  color: var(--danger);
+}
+
+.experiment-judgment {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, auto) minmax(120px, 0.6fr) minmax(220px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px 24px;
+  border-top: 1px solid var(--line-bright);
+  background: color-mix(in srgb, var(--panel) 95%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.experiment-choice {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.experiment-choice legend {
+  margin-bottom: 6px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.experiment-choice button {
+  padding: 7px 9px;
+}
+
+.experiment-note textarea {
+  min-height: 42px;
+  resize: vertical;
+}
+
+@media (max-width: 900px) {
+  .experiment-backdrop {
+    padding: 0;
+  }
+
+  .experiment-panel {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .experiment-toolbar,
+  .experiment-arms,
+  .experiment-judgment {
+    grid-template-columns: 1fr;
+  }
+
+  .experiment-judgment {
+    position: static;
+  }
+}
+
 .app-shell {
   width: 100%;
   height: 100%;

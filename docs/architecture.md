@@ -92,6 +92,19 @@ This makes the future switch to a different local agent—or an explicitly confi
 
 The heuristic provider follows the same typed output path. It identifies printed headings where reliable, falls back to conceptual chunks, scores thesis-like sentences, assigns semantic families, extracts bounded quotations, and builds a small technical gloss. It never presents itself as model interpretation.
 
+## Prompt experiment boundary
+
+Learning-ramp experiments are deliberately separate from canonical analysis. A catalog entry names
+one prompt dimension and exactly two variant instructions. The backend randomizes their `A`/`B`
+positions, runs both against the same extracted paper with the same model, effort, shared prompt,
+tools, and JSON Schema, and stores a typed run beneath the paper's `experiments/` directory.
+Neither arm can overwrite `analysis.json`, `digest.md`, or highlights.
+
+The API redacts variant IDs and labels until a judgment is stored. The interface records overall,
+early-traction, and rigor preferences plus confidence and a note, then reveals which prompt produced
+each arm. This makes the artifact useful both for immediate qualitative inspection and later
+aggregation across paper field and reader-rated distance.
+
 Markdown conversion is a separate, model-free derivative of extraction. It rejoins wrapped lines, infers common headings and labels, neutralizes embedded HTML, and emits explicit PDF page markers. Text opens the source PDF by default; pressing `m` explicitly requests the reconstruction, which lazily extracts an unmapped paper if necessary but does not start a model analysis. Pressing `m` again returns to the PDF. The reconstruction offers both a safe rendered view and the exact `.md` source.
 
 ## Fault behavior

@@ -92,6 +92,9 @@ cargo run -- convert "title fragment"
 # Evaluate a few prompts before committing to a full run
 cargo run -- ingest --provider codex --limit 3
 
+# Run one blind, single-dial learning-ramp A/B experiment
+cargo run -- experiment "title fragment" --experiment conceptual-bridge --provider codex
+
 # Map everything not already ready; one failure does not discard other results
 cargo run -- ingest --provider codex
 
@@ -132,6 +135,20 @@ feedback already present. Clarification stays ephemeral and uses prefetched loca
 The backend owns `analysis-tasklist.md` and its typed `job.json` state; model processes are read-only
 and never edit progress. Press `q` to watch the three initial branches run in parallel.
 
+### Learning-ramp prompt experiments
+
+The separate experiment lane compares two structured learning ramps without replacing the paper's
+canonical analysis. Its five initial single-factor tests cover conceptual bridges, glossary order,
+the context budget around the essential 10%, concrete downstream use/misuse, and camp-aware
+counterarguments. The paper, model, reasoning effort, shared prompt, and output schema stay fixed
+within a run; only the named variant instruction changes.
+
+Open `:experiment` in the reader to start or inspect a run. Arms remain labeled only `A` and `B`
+until you record overall, early-traction, and rigor preferences. The revealed prompt identities and
+judgments persist beside the paper. Product intent, hypotheses, guardrails, and promotion criteria
+are recorded in [the learning-ramp experiment brief](docs/learning-ramp-experiments.md); editable
+experiment definitions live in [`experiments/catalog.json`](experiments/catalog.json).
+
 The heuristic provider is deliberately conservative. It gives you an immediate offline Overview and
 labels itself plainly; use a model-backed provider for interpretive reading and field context.
 
@@ -165,6 +182,7 @@ Press `?` in the app for the complete, contextual guide.
 | `F10` | Open the fuzzy article switcher |
 | `f` | Filter to mapped papers while the library is open |
 | `:` | Command menu (`:analyze`, `:queue`, `:feedback`, `:spread`, and more) |
+| `:experiment` | Open the blind learning-ramp A/B prompt lab. |
 | `q` | Toggle the processing queue and live analysis tasklists |
 | `Esc` | Return to Overview, or close the top panel |
 
@@ -209,6 +227,7 @@ Everything generated lives beneath the data root:
         ├── job.json             # typed queue/progress state for the latest run
         ├── agent-session.json   # resumable Codex or Claude session identity
         ├── feedback.jsonl       # one reader feedback record per line
+        ├── experiments/         # blind A/B runs and durable human judgments
         └── *.schema.json        # exact local-CLI output contracts
 ```
 
