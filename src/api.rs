@@ -2289,7 +2289,7 @@ mod tests {
     #[test]
     fn experiment_catalog_is_single_factor_and_two_armed() -> Result<()> {
         let catalog: ExperimentCatalog = serde_json::from_str(EXPERIMENT_CATALOG)?;
-        assert_eq!(catalog.experiments.len(), 5);
+        assert_eq!(catalog.experiments.len(), 6);
         assert!(catalog.experiments.iter().all(|experiment| {
             !experiment.question.trim().is_empty() && experiment.variants.len() == 2
         }));

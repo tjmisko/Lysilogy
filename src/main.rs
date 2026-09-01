@@ -11,8 +11,8 @@ use clap::{Parser, Subcommand};
 use lysilogy::{
     AppState, Error, Result, build_router,
     domain::{
-        AnalysisProvider, ExperimentArmScore, ExperimentRecord, ExperimentStatus, LearningRamp,
-        PaperId, ProcessingStatus, StartExperimentRequest,
+        AnalysisProvider, ExperimentArmScore, ExperimentJudgmentRequest, ExperimentRecord,
+        ExperimentStatus, LearningRamp, PaperId, ProcessingStatus, StartExperimentRequest,
     },
 };
 use tokio::{sync::Semaphore, task::JoinSet};
@@ -122,6 +122,15 @@ enum Command {
         #[arg(long)]
         arm_b: PathBuf,
     },
+    /// Persist a blind evaluator's absolute scorecards and comparative judgment.
+    ExperimentJudge {
+        /// Paper ID or unambiguous title fragment.
+        query: String,
+        #[arg(long)]
+        run: String,
+        #[arg(long)]
+        input: PathBuf,
+    },
 }
 
 #[tokio::main]
@@ -207,6 +216,16 @@ async fn run(cli: Cli) -> Result<()> {
             arm_a,
             arm_b,
         } => import_experiment_command(&state, &query, &run, &arm_a, &arm_b).await,
+        Command::ExperimentJudge { query, run, input } => {
+            let id = resolve_paper(&state, &query).await?;
+            let bytes = tokio::fs::read(&input)
+                .await
+                .map_err(|error| Error::io(&input, error))?;
+            let judgment: ExperimentJudgmentRequest = serde_json::from_slice(&bytes)?;
+            let view = state.judge_experiment(&id, &run, judgment).await?;
+            println!("Judged and revealed {}: {}", view.run.id, view.judged);
+            Ok(())
+        }
     }
 }
 

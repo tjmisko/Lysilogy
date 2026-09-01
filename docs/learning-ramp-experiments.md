@@ -66,11 +66,13 @@ reasoning effort, output schema, and shared instructions remain fixed within a r
 are generated independently and presented under blind labels `A` and `B`; prompt identities are
 revealed only after judgment. Runs and judgments are plain JSON/JSONL artifacts beside the paper.
 
-The first experiment catalog isolates five dials:
+The experiment catalog isolates six dials. The sixth is a result-driven refinement added after the
+first conceptual-bridge campaign:
 
 | Dial | Variant A | Variant B | Main question |
 | --- | --- | --- | --- |
 | conceptual bridge | no analogy requirement | mapped analogy with a break point | Does prior-domain transfer improve traction without distortion? |
+| operational bridge dose | bridge each load-bearing concept | at most two inference-enabling bridges | Can stricter selection preserve transfer while improving economy? |
 | glossary order | paper encounter order | prerequisite/dependency order | Which order makes later explanations easiest to parse? |
 | essential passages | importance-only selection | comprehension-budget selection | Does budgeting context improve the value of the chosen 10%? |
 | reception | influence summary | concrete use / misuse taxonomy | Which makes the paper's actual afterlife clearer? |
@@ -137,6 +139,13 @@ dimension by at least one anchored point without a hard reject or a material los
 specificity, or economy. Use at least three generations per condition and paper and report paired
 median score changes plus failure rates, not only wins. Promote stable winners into the production
 prompts one dial at a time, then rerun the representative set.
+
+The first conceptual-bridge campaign found that “omit when none is useful” did not create meaningful
+selection pressure: the treatment bridged 50 of 54 concepts. The follow-up `operational-bridge` dial
+therefore holds the bridge idea fixed while testing dose and admission criteria. Its sparse arm must
+explain concepts directly first, may use no more than two bridges in the whole ramp, and admits a
+bridge only when it enables a concrete inference about a claim, equation, identification assumption,
+or method that direct prose does not.
 
 The dated reports in [`docs/experiment-reports/`](experiment-reports/) are the experiment log. A
 report must distinguish canonical-analysis audits, failed runs, exploratory component tests, and
