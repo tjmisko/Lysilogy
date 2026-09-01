@@ -288,11 +288,18 @@ fn normalize_analysis(
                 id = format!("{id}-{}", index + 1);
                 used_ids.insert(id.clone());
             }
-            let pages = PageSpan::normalized(section.pages.start, section.pages.end, maximum_page);
+            let declared_pages =
+                PageSpan::normalized(section.pages.start, section.pages.end, maximum_page);
             let source_span = section
                 .source_span
                 .as_ref()
-                .and_then(|span| resolve_source_span(&paper.layout, pages, span));
+                .and_then(|span| resolve_source_span(&paper.layout, span));
+            // Exact, deterministically resolved source anchors are authoritative.
+            // The analyzer's redundant page range is only a fallback for PDFs
+            // whose text cannot be anchored.
+            let pages = source_span.as_ref().map_or(declared_pages, |span| {
+                PageSpan::normalized(span.start.page, span.end.page, maximum_page)
+            });
             let key_quotes = section
                 .key_quotes
                 .into_iter()
@@ -321,6 +328,7 @@ fn normalize_analysis(
             })
         })
         .collect::<Result<Vec<_>>>()?;
+    validate_section_order(&sections)?;
 
     let valid_ids = sections
         .iter()
@@ -344,7 +352,7 @@ fn normalize_analysis(
     }
 
     let mut analysis = PaperAnalysis {
-        schema_version: 4,
+        schema_version: 5,
         provider,
         generated_at: Utc::now(),
         thesis: draft.thesis,
@@ -359,7 +367,7 @@ fn normalize_analysis(
         caveats: clean_list(draft.caveats, 12),
         reading_path: clean_list(draft.reading_path, 18),
     };
-    validate_citations(&mut analysis, &paper.layout);
+    validate_citations(&mut analysis, &paper.layout)?;
     Ok(analysis)
 }
 
@@ -442,11 +450,16 @@ fn normalize_context(
 
 fn resolve_source_span(
     layout: &crate::domain::DocumentLayout,
-    pages: PageSpan,
     span: &SourceSpanDraft,
 ) -> Option<SectionSourceSpan> {
-    let start_page = span.start_page.clamp(pages.start, pages.end);
-    let end_page = span.end_page.clamp(start_page, pages.end);
+    let maximum_page = layout
+        .pages
+        .iter()
+        .map(|page| page.number)
+        .max()
+        .unwrap_or(1);
+    let start_page = span.start_page.clamp(1, maximum_page);
+    let end_page = span.end_page.clamp(start_page, maximum_page);
     let (start_status, start) = verify_quote(layout, &span.start_text, start_page);
     let (end_status, end) = verify_quote(layout, &span.end_text, end_page);
     if !matches!(
@@ -465,11 +478,54 @@ fn resolve_source_span(
     ordered.then_some(SectionSourceSpan { start, end })
 }
 
+fn anchor_precedes(left: &crate::domain::TextAnchor, right: &crate::domain::TextAnchor) -> bool {
+    left.page < right.page || (left.page == right.page && left.end_token < right.start_token)
+}
+
+fn validate_section_order(sections: &[PaperSection]) -> Result<()> {
+    let mut previous: Option<(&str, &SectionSourceSpan)> = None;
+    for section in sections {
+        let Some(source_span) = &section.source_span else {
+            continue;
+        };
+        if let Some((prior_title, prior_span)) = previous {
+            if !anchor_precedes(&prior_span.end, &source_span.start) {
+                return Err(Error::InvalidAnalysis(format!(
+                    "section source spans overlap or are out of reading order: '{}' ends at page {} token {}, but '{}' starts at page {} token {}",
+                    prior_title,
+                    prior_span.end.page,
+                    prior_span.end.end_token,
+                    section.title,
+                    source_span.start.page,
+                    source_span.start.start_token,
+                )));
+            }
+        }
+        previous = Some((&section.title, source_span));
+    }
+    Ok(())
+}
+
 /// Re-resolve every analyzer-supplied quote against deterministic PDF token
 /// coordinates. This also migrates analyses written before coordinate anchors
 /// became part of the schema.
-pub fn validate_citations(analysis: &mut PaperAnalysis, layout: &crate::domain::DocumentLayout) {
+pub fn validate_citations(
+    analysis: &mut PaperAnalysis,
+    layout: &crate::domain::DocumentLayout,
+) -> Result<()> {
     for section in &mut analysis.sections {
+        if let Some(source_span) = &section.source_span {
+            section.pages = PageSpan::normalized(
+                source_span.start.page,
+                source_span.end.page,
+                layout
+                    .pages
+                    .iter()
+                    .map(|page| page.number)
+                    .max()
+                    .unwrap_or(1),
+            );
+        }
         for quote in &mut section.key_quotes {
             let (validation, anchor) = verify_quote(layout, &quote.text, quote.page);
             if let Some(resolved) = &anchor {
@@ -479,7 +535,9 @@ pub fn validate_citations(analysis: &mut PaperAnalysis, layout: &crate::domain::
             quote.anchor = anchor;
         }
     }
-    analysis.schema_version = analysis.schema_version.max(2);
+    validate_section_order(&analysis.sections)?;
+    analysis.schema_version = analysis.schema_version.max(5);
+    Ok(())
 }
 
 fn validated_author_abstract(candidate: Option<String>, paper: &ExtractedPaper) -> Option<String> {
@@ -583,7 +641,54 @@ pub(crate) fn fallback_quote(text: String, page: u32) -> KeyQuote {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{DocumentLayout, ExtractedPage, PaperMetadata};
+    use crate::domain::{DocumentLayout, ExtractedPage, LayoutPage, PaperMetadata, TextAnchor};
+
+    fn anchor(page: u32, start_token: u32, end_token: u32) -> TextAnchor {
+        TextAnchor {
+            page,
+            start_token,
+            end_token,
+            sentence_ids: Vec::new(),
+            rects: Vec::new(),
+            exact_text: "grounded excerpt".to_owned(),
+        }
+    }
+
+    fn section(title: &str, pages: PageSpan, start: TextAnchor, end: TextAnchor) -> PaperSection {
+        PaperSection {
+            id: slugify(title),
+            title: title.to_owned(),
+            kind: SectionKind::Other,
+            family: SectionFamily::Evidence,
+            pages,
+            summary: "Summary".to_owned(),
+            digest: "Digest".to_owned(),
+            source_span: Some(SectionSourceSpan { start, end }),
+            key_quotes: Vec::new(),
+            related_terms: Vec::new(),
+            tile_width: 1,
+            tile_height: 1,
+        }
+    }
+
+    fn analysis_with_sections(sections: Vec<PaperSection>) -> PaperAnalysis {
+        PaperAnalysis {
+            schema_version: 4,
+            provider: AnalysisProvider::Codex,
+            generated_at: Utc::now(),
+            thesis: "Thesis".to_owned(),
+            outsider_brief: String::new(),
+            author_abstract: None,
+            context_notes: Vec::new(),
+            context_sources: Vec::new(),
+            prerequisites: Vec::new(),
+            sections,
+            claims: Vec::new(),
+            glossary: Vec::new(),
+            caveats: Vec::new(),
+            reading_path: Vec::new(),
+        }
+    }
 
     #[test]
     fn creates_stable_readable_slugs() {
@@ -613,6 +718,59 @@ mod tests {
                 &paper,
             ),
             None
+        );
+    }
+
+    #[test]
+    fn verified_source_spans_override_analyzer_page_claims() -> Result<()> {
+        let mut analysis = analysis_with_sections(vec![section(
+            "Results",
+            PageSpan { start: 8, end: 10 },
+            anchor(10, 100, 105),
+            anchor(10, 180, 185),
+        )]);
+        let layout = DocumentLayout {
+            schema_version: 1,
+            pages: (1..=12)
+                .map(|number| LayoutPage {
+                    number,
+                    width: 612.0,
+                    height: 792.0,
+                    tokens: Vec::new(),
+                    sentences: Vec::new(),
+                })
+                .collect(),
+        };
+
+        validate_citations(&mut analysis, &layout)?;
+
+        assert_eq!(analysis.sections[0].pages, PageSpan { start: 10, end: 10 });
+        assert_eq!(analysis.schema_version, 5);
+        Ok(())
+    }
+
+    #[test]
+    fn rejects_overlapping_verified_section_spans() {
+        let sections = vec![
+            section(
+                "First",
+                PageSpan { start: 1, end: 2 },
+                anchor(1, 0, 2),
+                anchor(2, 20, 30),
+            ),
+            section(
+                "Second",
+                PageSpan { start: 2, end: 3 },
+                anchor(2, 25, 35),
+                anchor(3, 10, 20),
+            ),
+        ];
+
+        let error = validate_section_order(&sections).expect_err("overlap must be rejected");
+        assert!(
+            error
+                .to_string()
+                .contains("overlap or are out of reading order")
         );
     }
 

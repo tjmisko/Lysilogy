@@ -5,7 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import { chromium } from "playwright";
 
-const paperId = "a72b0e4a80ecd9db";
+const paperId = "4e1dd3dcea48280e";
 const screenshot = process.argv[2] ?? "/tmp/lysilogy-atlas.png";
 const screenshotVariant = (name) => {
   const parsed = path.parse(screenshot);
@@ -56,7 +56,7 @@ const metadata = extraction.metadata;
 const paper = {
   id: paperId,
   metadata,
-  relative_path: "Dijkstra - 1968 - GOTO Statements Considered Harmful.pdf",
+  relative_path: "Christiano, Irving, and Amodei - 2018 - AI Safety Via Debate.pdf",
   status: { state: "ready" },
   analyzed_at: analysis.generated_at,
   one_line_summary: analysis.thesis,
@@ -147,6 +147,15 @@ if (analysis.sections[1] !== undefined) {
   };
   analysis.sections[1].pages = { start: 1, end: 1 };
   analysis.sections[1].source_span = { start: nextAnchor, end: nextAnchor };
+}
+// Deliberately reproduce malformed analyzer ownership: two sections claim the
+// same multi-page range without verified anchors. The overview must partition
+// those pages without ever producing intersecting section buttons.
+if (analysis.sections[2] !== undefined && analysis.sections[3] !== undefined) {
+  analysis.sections[2].pages = { start: 2, end: 4 };
+  analysis.sections[2].source_span = null;
+  analysis.sections[3].pages = { start: 2, end: 4 };
+  analysis.sections[3].source_span = null;
 }
 for (const section of analysis.sections.slice(2)) {
   if (section.pages.start === 1) {
@@ -286,7 +295,7 @@ try {
           root,
           "local-articles",
           "Articles",
-          "Dijkstra - 1968 - GOTO Statements Considered Harmful.pdf",
+          "Christiano, Irving, and Amodei - 2018 - AI Safety Via Debate.pdf",
         ),
         contentType: "application/pdf",
       });
@@ -302,7 +311,7 @@ try {
     }
   });
 
-  await page.goto("http://lysilogy.test/", { waitUntil: "networkidle" });
+  await page.goto("http://lysilogy.test/", { waitUntil: "domcontentloaded" });
   await page.locator(".abstract-view").waitFor();
   const viewLabels = await page.locator(".view-switch > button").allTextContents();
   assert(
@@ -361,17 +370,37 @@ try {
     return canvas instanceof HTMLCanvasElement && canvas.width > 0;
   });
   assert((await page.locator(".highlight-rect.origin-ai").count()) > 0, "AI prehighlight was not rendered");
-  const firstPageRegions = page.locator(".source-page").first().locator(".section-regions > button");
-  assert((await firstPageRegions.count()) === 2, "the shared page was not split into two section segments");
-  const firstRegion = await firstPageRegions.first().evaluate((region) => ({
-    left: Number.parseFloat(region.style.left),
-    width: Number.parseFloat(region.style.width),
-    top: getComputedStyle(region).top,
-    height: getComputedStyle(region).height,
-  }));
+  const firstRegion = await page.locator(`[data-section-id="${firstSection.id}"]`).first().evaluate((region) => {
+    const regionRect = region.getBoundingClientRect();
+    const pageRect = document.querySelector(".source-page").getBoundingClientRect();
+    return {
+      left: regionRect.left - pageRect.left,
+      widthPercent: (regionRect.width / pageRect.width) * 100,
+      top: regionRect.top - pageRect.top,
+    };
+  });
   assert(Math.abs(firstRegion.left) < 0.01, "the first section segment did not begin at the page edge");
-  assert(Math.abs(firstRegion.width - 75) < 0.01, `three-quarter source progress rendered at ${firstRegion.width}% instead of 75%`);
-  assert(firstRegion.top === "0px", "section progress was incorrectly projected down the PDF page");
+  assert(Math.abs(firstRegion.widthPercent - 75) < 0.1, `three-quarter source progress rendered at ${firstRegion.widthPercent}% instead of 75%`);
+  assert(Math.abs(firstRegion.top) < 0.01, "section progress was incorrectly projected down the PDF page");
+  const sectionBoxesOverlap = await page.locator(".section-boxes > button").evaluateAll((boxes) => {
+    const rects = boxes.map((box) => ({
+      id: box.getAttribute("data-section-id"),
+      rect: box.getBoundingClientRect(),
+    }));
+    for (let left = 0; left < rects.length; left += 1) {
+      for (let right = left + 1; right < rects.length; right += 1) {
+        const first = rects[left];
+        const second = rects[right];
+        const width = Math.min(first.rect.right, second.rect.right)
+          - Math.max(first.rect.left, second.rect.left);
+        const height = Math.min(first.rect.bottom, second.rect.bottom)
+          - Math.max(first.rect.top, second.rect.top);
+        if (width > 0.5 && height > 0.5) return `${first.id} overlaps ${second.id}`;
+      }
+    }
+    return null;
+  });
+  assert(sectionBoxesOverlap === null, sectionBoxesOverlap ?? "section boxes overlapped");
   await page.keyboard.press("Shift+H");
   assert((await page.locator(".highlight-rect.origin-ai").count()) === 0, "AI prehighlight toggle did not hide evidence");
   await page.keyboard.press("Shift+H");

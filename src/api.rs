@@ -574,7 +574,7 @@ impl AppState {
         };
         let mut mapped_spans = Vec::new();
         if let Some(mut analysis) = self.store.load_analysis(id).await? {
-            let needs_validation = analysis.schema_version < 2
+            let needs_validation = analysis.schema_version < 5
                 || analysis.sections.iter().any(|section| {
                     section
                         .key_quotes
@@ -583,7 +583,7 @@ impl AppState {
                 });
             if needs_validation {
                 let highlight_guard = self.highlight_write.lock().await;
-                validate_citations(&mut analysis, &paper.layout);
+                validate_citations(&mut analysis, &paper.layout)?;
                 self.store.save_analysis(id, &analysis).await?;
                 drop(highlight_guard);
             }

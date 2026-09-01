@@ -60,6 +60,7 @@ type SectionBox = {
   section: PaperSection;
   index: number;
   verified: boolean;
+  showTitle: boolean;
   left: number;
   top: number;
   width: number;
@@ -126,12 +127,27 @@ function transitionProgress(
   };
 }
 
+function effectivePages(section: PaperSection): PaperSection["pages"] {
+  const span = section.source_span;
+  if (
+    span !== null
+    && span !== undefined
+    && (span.start.page < span.end.page
+      || (span.start.page === span.end.page
+        && span.start.start_token <= span.end.end_token))
+  ) {
+    return { start: span.start.page, end: span.end.page };
+  }
+  return section.pages;
+}
+
 function regionsForPage(page: LayoutPage, sections: PaperSection[]): SectionRegion[] {
-  const candidates = sections.flatMap((section, index) =>
-    page.number >= section.pages.start && page.number <= section.pages.end
+  const candidates = sections.flatMap((section, index) => {
+    const pages = effectivePages(section);
+    return page.number >= pages.start && page.number <= pages.end
       ? [{ section, index }]
-      : [],
-  );
+      : [];
+  });
   if (candidates.length === 0) return [];
   const boundaries = candidates.slice(0, -1).map(({ section }, boundaryIndex) =>
     transitionProgress(
@@ -218,6 +234,7 @@ function SectionBoxButton({
     <button
       type="button"
       className={`${box.verified ? "is-verified" : "is-inferred"} ${active ? "is-active" : ""}`}
+      data-section-id={box.section.id}
       data-family={box.section.family}
       style={{
         left: `${box.left}px`,
@@ -228,15 +245,17 @@ function SectionBoxButton({
       onClick={() => onOpen(box.section, box.index)}
       aria-label={`${box.section.title}; pages ${box.section.pages.start} to ${box.section.pages.end}`}
     >
-      <span
-        ref={titleRef}
-        style={{
-          fontSize: `${fontSize ?? MIN_SECTION_TITLE_SIZE}px`,
-          visibility: fontSize === null ? "hidden" : undefined,
-        }}
+      {box.showTitle && (
+        <span
+          ref={titleRef}
+          style={{
+            fontSize: `${fontSize ?? MIN_SECTION_TITLE_SIZE}px`,
+            visibility: fontSize === null ? "hidden" : undefined,
+          }}
       >
-        {box.section.title}
-      </span>
+          <b>{box.section.title}</b>
+        </span>
+      )}
     </button>
   );
 }
@@ -359,7 +378,11 @@ export function SourceMap({
         group.push(fragment);
         groups.set(key, group);
       }
-      const next: SectionBox[] = [];
+      const grouped: Array<{
+        key: string;
+        group: Array<(typeof fragments)[number]>;
+        box: SectionBox;
+      }> = [];
       for (const [id, group] of groups) {
         const first = group[0];
         if (first === undefined) continue;
@@ -367,17 +390,72 @@ export function SourceMap({
         const right = Math.max(...group.map(({ rect, region }) => rect.left + rect.width * region.right));
         const top = Math.min(...group.map(({ rect }) => rect.top));
         const bottom = Math.max(...group.map(({ rect }) => rect.bottom));
-        next.push({
-          id,
-          section: first.region.section,
-          index: first.region.index,
-          verified: group.every(({ region }) => region.verified),
-          left: left - gridRect.left,
-          top: top - gridRect.top,
-          width: right - left,
-          height: bottom - top,
+        grouped.push({
+          key: id,
+          group,
+          box: {
+            id,
+            section: first.region.section,
+            index: first.region.index,
+            verified: group.every(({ region }) => region.verified),
+            showTitle: true,
+            left: left - gridRect.left,
+            top: top - gridRect.top,
+            width: right - left,
+            height: bottom - top,
+          },
         });
       }
+      const colliding = new Set<string>();
+      for (let left = 0; left < grouped.length; left += 1) {
+        const first = grouped[left];
+        if (first === undefined) continue;
+        for (let right = left + 1; right < grouped.length; right += 1) {
+          const second = grouped[right];
+          if (second === undefined) continue;
+          const overlapWidth = Math.min(
+            first.box.left + first.box.width,
+            second.box.left + second.box.width,
+          ) - Math.max(first.box.left, second.box.left);
+          const overlapHeight = Math.min(
+            first.box.top + first.box.height,
+            second.box.top + second.box.height,
+          ) - Math.max(first.box.top, second.box.top);
+          if (overlapWidth > 0.5 && overlapHeight > 0.5) {
+            colliding.add(first.key);
+            colliding.add(second.key);
+          }
+        }
+      }
+      const next = grouped.flatMap(({ key, group, box }) => {
+        if (!colliding.has(key)) return [box];
+        const first = group[0];
+        if (first === undefined) return [];
+        const largest = group.reduce((winner, fragment) => {
+          const winnerArea = winner.rect.width
+            * (winner.region.right - winner.region.left)
+            * winner.rect.height;
+          const fragmentArea = fragment.rect.width
+            * (fragment.region.right - fragment.region.left)
+            * fragment.rect.height;
+          return fragmentArea > winnerArea ? fragment : winner;
+        }, first);
+        return group.map((fragment) => {
+          const left = fragment.rect.left + fragment.rect.width * fragment.region.left;
+          const right = fragment.rect.left + fragment.rect.width * fragment.region.right;
+          return {
+            id: `${key}:${fragment.page.number}`,
+            section: fragment.region.section,
+            index: fragment.region.index,
+            verified: fragment.region.verified,
+            showTitle: fragment === largest,
+            left: left - gridRect.left,
+            top: fragment.rect.top - gridRect.top,
+            width: right - left,
+            height: fragment.rect.height,
+          };
+        });
+      });
       setSectionBoxes(next);
     };
     const frame = window.requestAnimationFrame(updateBoxes);
