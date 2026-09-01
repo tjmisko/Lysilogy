@@ -76,9 +76,24 @@ The first experiment catalog isolates five dials:
 | reception | influence summary | concrete use / misuse taxonomy | Which makes the paper's actual afterlife clearer? |
 | opposition | paper-local caveats | camp-aware steelmanned opposition | Which produces informed skepticism instead of generic limitations? |
 
-The initial human eval asks for an overall preference, early-traction preference, rigor preference,
-confidence, and an optional note. A later aggregate should segment results by paper distance and
+The interface's initial human eval asks for an overall preference, early-traction preference, rigor
+preference, confidence, and an optional note. This comparative vote is useful for blind inspection,
+but it cannot distinguish “both good” from “both bad.” Before interpreting a win, score each arm
+independently with the factuality gate and anchored dimensions in
+[`experiments/rubric.json`](../experiments/rubric.json). Record both-fail, both-good, tie,
+not-applicable, and confidence separately. Aggregates should segment results by paper distance and
 field: a prompt that works for a nearby economics paper may fail on a distant biology paper.
+
+The experiment name and research question are evaluator metadata. They must not appear in either
+generation prompt because treatment-oriented wording can teach the control arm what the treatment
+is supposed to do. The catalog reader baseline is passed into generation, but its broad field names
+are only possible bridge domains—not proof that the reader knows every concept in those fields.
+
+Exploratory tests should compare the affected component over at least three generations per
+condition and paper. Full-ramp generations are a confirmatory test because unrelated stochastic
+changes in other sections can otherwise dominate preference. Reception and field-opposition tests
+also require a frozen evidence dossier shared by both arms; independent searches change both the
+prompt and the evidence corpus.
 
 ## Guardrails
 
@@ -96,6 +111,12 @@ field: a prompt that works for a nearby economics paper may fail on a distant bi
 
 Do not promote a prompt variant from one pleasing example. Use multiple papers spanning “near,”
 “edge,” and “beyond edge” difficulty, inspect failures, and prefer variants that improve the target
-dimension without a material loss in rigor. Promote stable winners into the production prompts one
-dial at a time, then rerun the representative set.
+dimension by at least one anchored point without a hard reject or a material loss in rigor,
+specificity, or economy. Use at least three generations per condition and paper and report paired
+median score changes plus failure rates, not only wins. Promote stable winners into the production
+prompts one dial at a time, then rerun the representative set.
 
+The dated reports in [`docs/experiment-reports/`](experiment-reports/) are the experiment log. A
+report must distinguish canonical-analysis audits, failed runs, exploratory component tests, and
+completed confirmatory A/B runs so that absence of evidence is not accidentally reported as a
+prompt result.

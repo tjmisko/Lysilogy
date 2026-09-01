@@ -736,6 +736,8 @@ pub struct ExperimentRun {
     pub experiment_id: String,
     pub experiment_name: String,
     pub question: String,
+    #[serde(default)]
+    pub reader_baseline: Vec<String>,
     pub provider: AnalysisProvider,
     pub status: ExperimentStatus,
     pub model: String,

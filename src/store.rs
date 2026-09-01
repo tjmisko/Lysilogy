@@ -823,6 +823,7 @@ mod tests {
             experiment_id: "conceptual-bridge".to_owned(),
             experiment_name: "Conceptual bridge".to_owned(),
             question: "Which ramp?".to_owned(),
+            reader_baseline: vec!["mathematics".to_owned()],
             provider: AnalysisProvider::Codex,
             status: ExperimentStatus::Running,
             model: "fixed-model".to_owned(),

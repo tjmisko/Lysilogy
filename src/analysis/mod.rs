@@ -41,6 +41,14 @@ pub struct AnalysisOutcome {
     pub session: Option<AgentSession>,
 }
 
+pub(crate) struct ExperimentVariantRequest<'a> {
+    pub experiment: &'a PromptExperiment,
+    pub variant: &'a PromptVariant,
+    pub reader_baseline: &'a [String],
+    pub run_id: &'a str,
+    pub blind_label: &'a str,
+}
+
 impl AnalysisService {
     #[must_use]
     pub const fn new(local_cli: LocalCliAnalyzer) -> Self {
@@ -144,14 +152,12 @@ impl AnalysisService {
         }
     }
 
-    pub async fn experiment_variant(
+    pub(crate) async fn experiment_variant(
         &self,
         provider: AnalysisProvider,
         paper: &ExtractedPaper,
         artifact_directory: &Path,
-        experiment: &PromptExperiment,
-        variant: &PromptVariant,
-        blind_label: &str,
+        request: ExperimentVariantRequest<'_>,
     ) -> Result<LearningRamp> {
         if provider == AnalysisProvider::Heuristic {
             return Err(Error::InvalidRequest(
@@ -160,14 +166,7 @@ impl AnalysisService {
         }
         let ramp = self
             .local_cli
-            .experiment_variant(
-                provider,
-                paper,
-                artifact_directory,
-                experiment,
-                variant,
-                blind_label,
-            )
+            .experiment_variant(provider, paper, artifact_directory, request)
             .await?;
         normalize_learning_ramp(ramp, paper)
     }

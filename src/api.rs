@@ -747,7 +747,8 @@ impl AppState {
                 "prompt experiments require the Codex or Claude reader".to_owned(),
             ));
         }
-        let experiment = find_experiment(&self.experiment_catalog()?, &request.experiment_id)?;
+        let catalog = self.experiment_catalog()?;
+        let experiment = find_experiment(&catalog, &request.experiment_id)?;
         let paper = self
             .catalog
             .read()
@@ -769,6 +770,7 @@ impl AppState {
             experiment_id: experiment.id,
             experiment_name: experiment.name,
             question: experiment.question,
+            reader_baseline: catalog.reader_baseline,
             provider: request.provider,
             status: ExperimentStatus::Running,
             model: match request.provider {
@@ -813,7 +815,6 @@ impl AppState {
     }
 
     async fn execute_experiment(&self, mut run: ExperimentRun) -> Result<ExperimentRun> {
-        let _experiment_guard = self.experiment_write.lock().await;
         let experiment = find_experiment(&self.experiment_catalog()?, &run.experiment_id)?;
         let paper = self
             .load_or_extract(&run.paper_id)
@@ -835,17 +836,25 @@ impl AppState {
                 run.provider,
                 &paper,
                 &directory,
-                &experiment,
-                &first_variant,
-                "A",
+                crate::analysis::ExperimentVariantRequest {
+                    experiment: &experiment,
+                    variant: &first_variant,
+                    reader_baseline: &run.reader_baseline,
+                    run_id: &run.id,
+                    blind_label: "A",
+                },
             ),
             self.analysis.experiment_variant(
                 run.provider,
                 &paper,
                 &directory,
-                &experiment,
-                &second_variant,
-                "B",
+                crate::analysis::ExperimentVariantRequest {
+                    experiment: &experiment,
+                    variant: &second_variant,
+                    reader_baseline: &run.reader_baseline,
+                    run_id: &run.id,
+                    blind_label: "B",
+                },
             )
         );
         let results: [Result<crate::domain::LearningRamp>; 2] = (first, second).into();
@@ -2147,6 +2156,7 @@ mod tests {
             experiment_id: "conceptual-bridge".to_owned(),
             experiment_name: "Conceptual bridge".to_owned(),
             question: "Which is smoother?".to_owned(),
+            reader_baseline: vec!["mathematics".to_owned()],
             provider: AnalysisProvider::Codex,
             status: ExperimentStatus::Completed,
             model: "fixed-model".to_owned(),

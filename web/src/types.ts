@@ -336,6 +336,7 @@ export type ExperimentRun = {
   experiment_id: string;
   experiment_name: string;
   question: string;
+  reader_baseline: string[];
   provider: AnalysisProvider;
   status: "running" | "completed" | "failed";
   model: string;

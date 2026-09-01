@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "name": "Learning-ramp anti-slop rubric",
+  "purpose": "Evaluate each arm independently before asking which arm wins. A fluent answer can still fail if it is generic, unfaithful, or unusable for deciding what to read next.",
+  "scale": {
+    "min": 0,
+    "max": 4,
+    "anchors": {
+      "0": "Absent, materially wrong, or generic enough to fit an unrelated paper.",
+      "1": "Some relevant content, but mostly labels, restatement, or unsupported confidence.",
+      "2": "Paper-specific and broadly useful, with important gaps or weak reading leverage.",
+      "3": "Strong, source-grounded, and actionable for a serious non-specialist reader.",
+      "4": "Exceptional: precise, economical, auditable, and capable of supporting a correct prediction, critique, or next reading action."
+    }
+  },
+  "hard_rejects": [
+    {
+      "id": "central_error",
+      "test": "A central claim, mechanism, result, or modality is materially misstated."
+    },
+    {
+      "id": "false_source_anchor",
+      "test": "An important paper quotation or page anchor is false."
+    },
+    {
+      "id": "unsupported_external_claim",
+      "test": "A consequential claim about reception, camps, use, or misuse is not entailed by a cited source."
+    },
+    {
+      "id": "distorting_bridge",
+      "test": "An analogy creates a false equivalence that changes the reader's understanding of a load-bearing idea."
+    },
+    {
+      "id": "missing_target",
+      "test": "The component targeted by the experiment is absent."
+    }
+  ],
+  "common_dimensions": [
+    {
+      "id": "paper_specificity_actionability",
+      "prompt": "Could this text be pasted onto another paper, or does it point to exact claims, methods, equations, figures, or passages and say what to inspect?",
+      "score_2": "Names real paper constructs or results but gives no concrete reading action.",
+      "score_4": "Enables a specific prediction, check, critique, or source-reading action."
+    },
+    {
+      "id": "early_traction",
+      "prompt": "After the first screen, can the reader accurately state the question, answer, mechanism chain, contribution, and main boundary?",
+      "score_2": "Provides a question and answer, but the mechanism remains a slogan.",
+      "score_4": "Provides a compact, faithful working model with an explicit scope boundary."
+    },
+    {
+      "id": "fidelity_rigor",
+      "prompt": "Does the ramp preserve what is asserted, derived, measured, inferred, and merely proposed?",
+      "score_2": "Broadly faithful but erases a material warrant, modality, or caveat.",
+      "score_4": "Preserves the evidence-to-claim warrant and strongest scope condition."
+    },
+    {
+      "id": "dependency_flow",
+      "prompt": "Are terms introduced before they are used, with no circular explanations or unresolved forward references?",
+      "score_2": "Mostly usable but contains forward references or unjustified glossary items.",
+      "score_4": "Every concept arrives before a specific downstream need and after its prerequisites."
+    },
+    {
+      "id": "economy",
+      "prompt": "How much paper-specific understanding or reading leverage is gained per sentence and per minute?",
+      "score_2": "Useful material is mixed with throat-clearing, repetition, or coverage for its own sake.",
+      "score_4": "Nearly every sentence adds a distinction, warrant, or next action."
+    },
+    {
+      "id": "provenance_uncertainty",
+      "prompt": "Can the reader distinguish paper claims, source-backed field context, analogy, and model inference?",
+      "score_2": "Uses hedges but leaves the source class or uncertainty vague.",
+      "score_4": "Labels consequential source classes and states what evidence would change the conclusion."
+    }
+  ],
+  "dial_dimensions": {
+    "conceptual-bridge": {
+      "id": "bridge_transfer",
+      "allow_not_applicable": true,
+      "score_0": "The bridge distorts the concept.",
+      "score_2": "Maps elements but enables no valid new inference.",
+      "score_4": "Maps structure, helps reason through a real claim or equation, and states a consequential breaking point."
+    },
+    "glossary-order": {
+      "id": "minimum_dependency_path",
+      "score_0": "Terms are circular, undefined, or unrelated to the reading path.",
+      "score_2": "Most terms help, but the sequence has forward references or unnecessary items.",
+      "score_4": "A minimal, auditable dependency path introduces every blocking term immediately before use."
+    },
+    "essential-context": {
+      "id": "essential_path",
+      "score_0": "A set of quotable snippets without a coherent argument path.",
+      "score_2": "Covers several roles but exceeds or does not audit the budget.",
+      "score_4": "Within a measured source-word budget, forms a question-to-mechanism-to-evidence-to-qualification sequence."
+    },
+    "use-and-abuse": {
+      "id": "reception_lineage",
+      "score_0": "Generic claims that the paper is influential or controversial.",
+      "score_2": "Names downstream works but gives a vague relationship.",
+      "score_4": "Names who reused which construct or result, for what operation, with sources that entail each claim."
+    },
+    "field-opposition": {
+      "id": "load_bearing_opposition",
+      "score_0": "Generic limitations or invented camps.",
+      "score_2": "A paper-specific objection without explaining its consequence.",
+      "score_4": "Targets a load-bearing inference, states what fails if it holds, and gives the strongest sourced reply."
+    }
+  },
+  "failure_tags": [
+    "generic_restatement",
+    "coverage_dump",
+    "term_dump",
+    "contextless_highlight",
+    "surface_analogy",
+    "missing_breakpoint",
+    "generic_caveat",
+    "unsupported_field_claim",
+    "pseudo_actionability",
+    "false_precision",
+    "forward_reference",
+    "budget_violation",
+    "source_monoculture"
+  ],
+  "professional_use_check": [
+    "State the paper's exact central claim.",
+    "Reconstruct its mechanism or argument chain.",
+    "Distinguish the strongest warranted claim from the tempting overclaim.",
+    "Name the first two source passages to inspect and why.",
+    "Name one load-bearing assumption and what observation would test it.",
+    "Name one concrete downstream use or critique when applicable.",
+    "State the next reading action."
+  ],
+  "decision_rule": {
+    "minimum_repetitions_per_condition_per_paper": 3,
+    "required_primary_dimension_gain": 1,
+    "maximum_common_dimension_drop": 0.5,
+    "blocking_score_below": 2,
+    "professional_ready_score": 3,
+    "requirements": [
+      "No hard reject.",
+      "Score each arm before making a comparative choice.",
+      "Record both-fail, both-good, tie, not-applicable, and evaluator confidence separately.",
+      "Report paired median deltas and failure rates across predeclared near, edge, and beyond-edge papers."
+    ]
+  }
+}
