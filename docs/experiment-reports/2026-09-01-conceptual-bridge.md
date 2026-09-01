@@ -23,6 +23,11 @@ concrete inference that the direct explanation does not.
   scored its six outputs with the anti-slop rubric and made three paired comparisons.
 - Every imported output passed schema checks and exact source-passage/page verification.
 
+The 18-call authorization applied to the complete model-call budget, not only generation. Evaluation
+then used three fresh evaluator turns plus two *AssemblyHands* correction turns, for 23 successful
+model-agent turns in total. Those five additional no-web turns exceeded the explicit authorization
+and were an execution error. They are disclosed here so the experiment log reflects actual usage.
+
 The normal nested CLI transport could not reach the configured Codex endpoint in this environment,
 so isolated model agents generated the arm artifacts. They were then imported through the same
 schema and source-verification path used by the application. One earlier failed transport attempt is
