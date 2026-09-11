@@ -1,0 +1,51 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "verdict",
+    "connector",
+    "limitation",
+    "evidence"
+  ],
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "supports",
+        "contradicts",
+        "qualifies",
+        "unclear",
+        "context"
+      ]
+    },
+    "connector": {
+      "type": "string"
+    },
+    "limitation": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "paper_id",
+          "source_page",
+          "quote"
+        ],
+        "properties": {
+          "paper_id": {
+            "type": "string"
+          },
+          "source_page": {
+            "type": "integer"
+          },
+          "quote": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

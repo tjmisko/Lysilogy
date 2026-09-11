@@ -49,6 +49,8 @@ const GROUPS = [
       ["F10", "Fuzzy-find and switch articles"],
       ["f", "Filter to mapped papers while the library is open"],
       [":analyze", "Analyze with the selected provider"],
+      [":supercut", "Create a source-verified cut with Lysilogos"],
+      [":references", "Save citations, find papers, and check claims"],
       [":", "Open the command menu"],
       ["q", "Toggle the live processing queue"],
       ["esc", "Return to Overview or close a panel"],

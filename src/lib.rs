@@ -9,6 +9,7 @@ pub mod jobs;
 pub mod layout;
 pub mod library;
 pub mod markdown;
+pub mod reader_tools;
 mod remote;
 pub mod store;
 

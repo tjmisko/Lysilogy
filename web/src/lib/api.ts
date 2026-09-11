@@ -40,7 +40,7 @@ async function apiError(response: Response): Promise<ApiError> {
   return new ApiError(response.status, payload.message ?? response.statusText);
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
   if (init?.body !== undefined) headers.set("Content-Type", "application/json");

@@ -1,8 +1,10 @@
 # Lysilogy
 
 Lysilogy turns a vault of scientific PDFs into a keyboard-first reading path for intelligent
-outsiders to a field. It reads the vault and never writes to it: every artifact it generates is
-plain, diffable text stored outside the source library.
+outsiders to a field. It preserves source PDFs and adds imported papers only on request. Every
+generated artifact is plain, diffable text stored outside the source library.
+
+**Lysilogos** is the agent who cuts papers and follows their references inside Lysilogy.
 
 The current demo has been exercised against a local corpus of 118 PDFs and ships with a mapped copy
 of Dijkstra's "GOTO Statements Considered Harmful."
@@ -54,7 +56,7 @@ cargo run -- serve
 
 Open <http://127.0.0.1:7319>.
 
-For frontend work, run `cargo run -- serve` and `npm run dev` (from `web/`) in separate terminals;
+For frontend work, run `cargo run -- serve --bind 127.0.0.1:7320` and `npm run dev` (from `web/`) in separate terminals;
 Vite proxies `/api` to the Rust server. For a local redeploy, rebuild both halves, stop the running
 server, and relaunch the release binary:
 
@@ -68,7 +70,7 @@ cargo build --release
 
 | Flag | Environment variable | Default |
 | --- | --- | --- |
-| `--library` | `LYSILOGY_LIBRARY` | `local-articles/Articles` |
+| `--library` | `LYSILOGY_LIBRARY` | `local-articles` |
 | `--data` | `LYSILOGY_DATA` | `.lysilogy` |
 | `--bind` (serve) | — | `127.0.0.1:7319` |
 | `--web` (serve) | — | `web/dist` |
@@ -169,6 +171,41 @@ judged evidence exists instead of inferring a winner from incomplete runs.
 The heuristic provider is deliberately conservative. It gives you an immediate offline Overview and
 labels itself plainly; use a model-backed provider for interpretive reading and field context.
 
+## Supercuts and reference tools
+
+Open **Lysilogos** in the toolbar, or use `:supercut` and `:references`.
+
+- **Supercut:** request exactly ten paragraphs or six printable Letter pages. Lysilogos selects a
+  coherent path through the question, mechanism, evidence, and qualifications. At least 80% of prose
+  words must be exact source text; generated connector sentences are visibly labeled. Every source
+  segment links to its PDF page. Download Markdown or use **Print / save PDF**.
+- **Saved references:** select a citation in the PDF and choose **Save citation**, or paste a title,
+  DOI, or bibliography entry into the References tab. The citation, optional page, and note persist.
+- **Find & fetch paper:** Lysilogos searches for the cited paper and returns a candidate with an
+  explanation. When it finds a public PDF, the backend imports it through the same bounded public-URL
+  checks as **+ URL** and links the imported paper. Unavailable copies remain saved for later.
+  You can also link a paper already in your library.
+- **Check claim / Explain connection:** after linking the cited paper, ask a question or request a
+  short connector. Lysilogos receives both extracted papers. Each saved answer includes verified
+  passages from both, a relationship verdict, and a limitation. Exact quotations establish provenance;
+  the relationship remains model interpretation.
+
+Saving, removing, and linking references work offline. Generation, search, and comparison require
+the selected Codex or Claude reader. Each explicit task starts one model call, with no automatic model
+retry; reference search alone enables web tools. Tasks continue when the panel closes. Failures are
+saved with a retry action, and an interrupted server marks unfinished tasks failed on restart.
+
+Supercuts enforce case-sensitive, complete-word source matches (allowing extraction whitespace),
+reject overlapping/repeated excerpts, and count source words against all prose words. Ten-paragraph
+cuts have a 2400-word ceiling. Six-page cuts use up to 420 words and 2800 characters per page; the print
+control also checks for page overflow. Source documents are limited to 180 KB of extracted context;
+two-paper comparisons are limited to 240 KB combined. Oversized or image-only sources fail visibly
+instead of silently using an incomplete paper.
+
+Saved work lives in `papers/<id>/reader-tools.json`; each model task has its own
+`reader-jobs/<job-id>/` schema and output directory. Existing analysis, digests, and highlights are
+preserved.
+
 ## Keyboard model
 
 Press `?` in the app for the complete, contextual guide.
@@ -268,6 +305,7 @@ npm run typecheck
 npm run lint
 npm run build
 npm run smoke
+npm run smoke:reader-tools
 ```
 
 `npm run smoke` drives the real Dijkstra analysis, Markdown conversion, and PDF through an
@@ -277,5 +315,12 @@ Overview grid, horizontal section progress and integer-column zoom, the mapped-o
 switching, the command menu, live tasklist progress, feedback retries, keyboard selection and
 clarification, the Glossary, reconstructed Text, selectable one/two-page PDF paging, and capital-`I`
 inversion.
+
+`smoke:reader-tools` uses self-contained browser fixtures to exercise both cut formats, six-page
+PDF output, Markdown export, saved citations, paper linking, search, comparison, retry, keyboard focus,
+and mobile layout. Backend tests use local stub CLIs to exercise task execution and source validation
+without model calls. For the original corpus-based smoke test in a worktree, set
+`LYSILOGY_SMOKE_FIXTURE_ROOT` to the checkout containing the cached paper. Set
+`LYSILOGY_SMOKE_PDF` as well if its PDF has moved from the default fixture path.
 
 The implementation map and fault boundaries are in [docs/architecture.md](docs/architecture.md).

@@ -11,6 +11,7 @@ import { MarkdownReader } from "./components/MarkdownReader";
 import { PaperSwitcher } from "./components/PaperSwitcher";
 import { PdfReader } from "./components/PdfReader";
 import { QueuePanel } from "./components/QueuePanel";
+import { ReaderToolsPanel } from "./components/ReaderToolsPanel";
 import { SectionAtlas } from "./components/SectionAtlas";
 import { useGlobalKeys } from "./hooks/useGlobalKeys";
 import { useTabPhase } from "./hooks/useTabPhase";
@@ -111,6 +112,8 @@ export function App() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
   const [experimentOpen, setExperimentOpen] = useState(false);
+  const [toolsTab, setToolsTab] = useState<"supercut" | "references" | null>(null);
+  const [referenceSeed, setReferenceSeed] = useState<{ text: string; page: number } | null>(null);
   const [focusQueueFeedback, setFocusQueueFeedback] = useState(false);
   const [queue, setQueue] = useState<ProcessingQueue>({ jobs: [] });
   const [libraryQuery, setLibraryQuery] = useState("");
@@ -133,6 +136,7 @@ export function App() {
   const [sidebarPaperIds, setSidebarPaperIds] = useState<string[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const mainStageRef = useRef<HTMLElement>(null);
+  const closeReaderTools = useCallback(() => setToolsTab(null), []);
 
   useEffect(() => {
     mainStageRef.current?.scrollTo({ top: 0 });
@@ -472,6 +476,11 @@ export function App() {
           setExperimentOpen(true);
         }
         break;
+      case "supercut":
+      case "references":
+        setReferenceSeed(null);
+        setToolsTab(name);
+        break;
       case "library":
         setLibraryOpen((open) => !open);
         break;
@@ -515,7 +524,7 @@ export function App() {
   useTabPhase({
     // The switcher and the command menu read Tab themselves; everywhere else
     // Tab steps through the reading phases of the current paper.
-    overlayHandlesTab: switcherOpen || commandOpen || experimentOpen,
+    overlayHandlesTab: switcherOpen || commandOpen || experimentOpen || toolsTab !== null,
     onCycle: (delta) => {
       setQueueOpen(false);
       if (compactLayout) setLibraryOpen(false);
@@ -525,7 +534,7 @@ export function App() {
 
   useGlobalKeys({
     enabled:
-      panel === null && view !== "glossary" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen &&
+      panel === null && view !== "glossary" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null &&
       !(compactLayout && libraryOpen),
     activeIndex: activeSection,
     itemCount: sections.length,
@@ -808,6 +817,10 @@ export function App() {
             </button>
           </div>
           <div className="topbar-actions">
+            <button className="reader-tools-button" type="button" disabled={selectedId === null} onClick={() => {
+              setReferenceSeed(null);
+              setToolsTab("supercut");
+            }}>Lysilogos</button>
             <button
               className={`queue-button ${activeJobCount > 0 ? "has-work" : ""}`}
               type="button"
@@ -984,6 +997,10 @@ export function App() {
                       onToggleInk={() => setDarkInk((value) => !value)}
                       onToggleSpread={() => setPdfSpread((spread) => !spread)}
                       onClarifySelection={clarifySentence}
+                      onSaveReference={(text, page) => {
+                        setReferenceSeed({ text, page });
+                        setToolsTab("references");
+                      }}
                     />
                   )}
                 </section>
@@ -1045,6 +1062,27 @@ export function App() {
           paperId={selectedId}
           provider={provider}
           onClose={() => setExperimentOpen(false)}
+        />
+      )}
+
+      {toolsTab !== null && selectedId !== null && (
+        <ReaderToolsPanel
+          key={selectedId}
+          paperId={selectedId}
+          title={currentPaper?.metadata.title ?? "Paper"}
+          papers={library?.papers ?? []}
+          provider={provider}
+          initialTab={toolsTab}
+          seed={referenceSeed}
+          onClose={closeReaderTools}
+          onLibraryChanged={refreshLibrary}
+          onSource={(id, page) => {
+            setToolsTab(null);
+            selectPaper(id);
+            setView("text");
+            setTextMode("pdf");
+            setPdfPage(page);
+          }}
         />
       )}
 
