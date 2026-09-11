@@ -36,15 +36,31 @@ analysis.sections[1].source_span = {start:anchor(2,5),end:anchor(3,12)};
 const paper={id,metadata:{title:'A synthetic paper about noisy proxies',authors:['Test Author', 'Second Author', 'Third Author', 'Fourth Author', 'Fifth Author', 'Sixth Author'],year:2018,page_count:4},relative_path:'synthetic.pdf',status:{state:'ready'},analyzed_at:now,one_line_summary:analysis.thesis};
 const root=path.resolve('dist');
 const refreshes=[]; let sourceRequests=0; let analyzed=true; const questions=[];
+let libraryPapers=[paper]; const paperRequests=[]; const analysisRequests=[];
+let paperGate=null;
+let pollingTest=false; let pollRequests=0;
 const browser=await chromium.launch({headless:true});
 try {
   const page=await browser.newPage({viewport:{width:1600,height:1000}});
   const errors=[]; page.on('pageerror',error=>errors.push(error.message));
   await page.route('http://lysilogy.test/**', async route=>{
-    const url=new URL(route.request().url()); const suffix=url.pathname.replace(`/api/papers/${id}`,'');
-    if(url.pathname==='/api/library')return route.fulfill({json:{name:'Synthetic library',papers:[paper]}});
+    const url=new URL(route.request().url()); const suffix=url.pathname.replace(/^\/api\/papers\/[^/]+/,'');
+    if(url.pathname==='/api/library')return route.fulfill({json:{name:'Synthetic library',papers:libraryPapers}});
     if(url.pathname==='/api/queue')return route.fulfill({json:{jobs:[]}});
-    if(url.pathname===`/api/papers/${id}`)return route.fulfill({json:{paper,analysis:analyzed?analysis:null}});
+    if(/^\/api\/papers\/[^/]+$/.test(url.pathname)) {
+      const selected=libraryPapers.find(item=>url.pathname.endsWith(item.id));
+      paperRequests.push(selected?.id);
+      if(pollingTest && selected?.id===id) {
+        const number=++pollRequests;
+        if(number>1) await new Promise(resolve=>setTimeout(resolve,1200));
+        return route.fulfill({json:{paper:{...paper,metadata:{...paper.metadata,title:number===1?'Waiting on analysis':'Refreshed through overlapping polls'},status:{state:number===1?'extracting':'ready'}},analysis:number===1?null:analysis}});
+      }
+      if(paperGate!==null && selected?.id===id){
+        const gate=paperGate; paperGate=null; gate.started.resolve(); await gate.finished.promise;
+      }
+      return route.fulfill({json:{paper:selected,analysis:analyzed&&selected?.status.state==='ready'?analysis:null}});
+    }
+    if(suffix==='/analyze'){analysisRequests.push(route.request().postDataJSON());return route.fulfill({status:500,json:{message:'Unexpected analysis request'}});}
     if(suffix==='/clarify'){ questions.push(route.request().postDataJSON()); return route.fulfill({json:{answer:'The selected source explains measurement error.',limitation:null}}); }
     if(suffix==='/map')return route.fulfill({json:{layout,highlights:[]}});
     if(suffix==='/source'){ sourceRequests++; return route.fulfill({body:pdf,contentType:'application/pdf'}); }
@@ -93,6 +109,41 @@ try {
   const columns=await page.locator('.page-grid-zoom output').innerText();
   assert.equal(await page.locator('.app-shell.has-library').count(),1);
   await page.screenshot({path:'/tmp/lysilogy-pipeline-overview.png'});
+  const escapeFrom = async (name, prepare) => {
+    await region.click();
+    await page.locator('.section-focus').waitFor();
+    await prepare();
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(()=>document.querySelector('.section-focus')===null);
+    await page.waitForFunction(()=>document.activeElement?.dataset.sectionId==='regressional');
+    assert.equal(await page.locator('.app-shell.has-library').count(),1,`${name}: library should be restored`);
+  };
+  await escapeFrom('source', () => page.locator('.section-source-scroll').focus());
+  await escapeFrom('digest', () => page.locator('.digest-fragment').first().focus());
+  await escapeFrom('source page selector', () => page.getByLabel('Source page',{exact:true}).focus());
+  await escapeFrom('section selector', () => page.getByLabel('Selected section',{exact:true}).focus());
+  await escapeFrom('digest selection', async () => {
+    await page.locator('.digest-fragment').first().focus();
+    await page.keyboard.press('v');
+    await page.locator('.is-visual-selected').first().waitFor();
+  });
+  await escapeFrom('inline question', async () => {
+    await page.locator('.digest-fragment').first().focus();
+    await page.keyboard.press('c');
+    await page.locator('.clarify-composer textarea').waitFor();
+    await page.locator('.clarify-composer textarea').fill('Explain the measurement error.');
+  });
+  await escapeFrom('body after focus loss', () => page.evaluate(()=>document.activeElement?.blur()));
+  await region.click();
+  await page.locator('.digest-fragment').first().focus();
+  await page.keyboard.press('q');
+  await page.getByRole('dialog').waitFor();
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>document.querySelector('[role="dialog"]')===null);
+  assert.equal(await page.locator('.section-focus').count(),1,'queue Escape must leave the section open');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>document.querySelector('.section-focus')===null);
+  await page.waitForFunction(()=>document.activeElement?.dataset.sectionId==='regressional');
   await region.click();
   await page.locator('.section-focus').waitFor();
   await page.waitForFunction(()=>document.querySelectorAll('.section-focus [data-text-ready="true"]').length>=1);
@@ -247,6 +298,93 @@ try {
   assert.equal(questions.length,1); assert.equal(questions[0].section_id,null);
   await page.keyboard.press('Escape');
   await question.waitFor({state:'hidden'});
+  // Home uses library metadata only; cards must never start analysis or fetch every PDF.
+  analyzed=true;
+  libraryPapers=[paper,...Array.from({length:11},(_,i)=>({
+    id:`home${String(i).padStart(12,'0')}`,
+    metadata:{title:i===0?'An unread paper on collective decisions':`Research into ${['measurement','learning','cooperation','causality'][i%4]} ${i+1}`,
+      authors:i===1?Array.from({length:24},(_,j)=>`Researcher ${j+1} Fullname`):[`Researcher ${i+1}`, 'Another Scientist'],year:2000+i,page_count:8+i},
+    relative_path:`synthetic-${i}.pdf`,status:{state:i%3===0?'discovered':'ready'},
+    analyzed_at:i%3===0?null:now,one_line_summary:i%3===0?null:'A concrete account of the mechanisms, evidence, and limitations behind this result.',
+  }))];
+  await page.getByRole('button',{name:'Lysilogy home',exact:true}).click();
+  await page.locator('.home-page').waitFor();
+  assert.equal(new URL(page.url()).hash,'#home');
+  const requestsBeforeHome=paperRequests.length;
+  await page.reload();
+  await page.locator('.paper-card').nth(11).waitFor();
+  assert.equal(paperRequests.length,requestsBeforeHome,'home must not load an arbitrary paper');
+  assert.equal(await page.locator('.view-switch').count(),0);
+  assert.equal(await page.getByRole('button',{name:'Analyze',exact:true}).count(),0);
+  assert.equal(await page.locator('.paper-card').count(),12);
+  await page.getByRole('button',{name:'Lysilogy home',exact:true}).focus();
+  await page.keyboard.press('/');
+  assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'Search papers');
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(()=>document.activeElement?.textContent),'All papers','home uses native Tab traversal');
+  await page.getByRole('button',{name:/^Mapped/}).click();
+  assert.equal(await page.locator('.paper-card').count(),8);
+  await page.getByRole('button',{name:/^Unmapped/}).click();
+  assert.equal(await page.locator('.paper-card').count(),4);
+  await page.getByRole('button',{name:/^All papers/}).click();
+  const homeSearch=page.getByRole('searchbox',{name:'Search papers',exact:true});
+  await homeSearch.fill('collective decisions');
+  assert.equal(await page.locator('.paper-card').count(),1);
+  await homeSearch.fill('there is no such title');
+  assert.equal(await page.locator('.paper-card').count(),0);
+  await homeSearch.fill('');
+  await page.setViewportSize({width:1280,height:850});
+  await page.screenshot({path:'/tmp/lysilogy-home-desktop.png'});
+  const cardColumns=await page.locator('.paper-card').evaluateAll(cards=>new Set(cards.map(card=>Math.round(card.getBoundingClientRect().left))).size);
+  assert.ok(cardColumns>=3,'desktop home must present a grid of papers');
+  await page.getByRole('button',{name:'Lysilogy home',exact:true}).focus();
+  await page.keyboard.press('q');
+  await page.getByRole('dialog',{name:'Processing queue'}).waitFor();
+  await page.keyboard.press('Escape');
+  await page.getByRole('dialog',{name:'Processing queue'}).waitFor({state:'hidden'});
+  await page.setViewportSize({width:390,height:844});
+  assert.ok(await page.locator('.home-page').evaluate(node=>node.scrollWidth<=node.clientWidth+1),'home should fit mobile width');
+  await page.screenshot({path:'/tmp/lysilogy-home-mobile.png'});
+  await homeSearch.fill('collective decisions');
+  await page.locator('.paper-card').click();
+  await page.waitForFunction(()=>document.querySelector('.text-view [data-text-ready="true"]'));
+  assert.equal(await page.getByRole('button',{name:'Analyze',exact:true}).count(),1);
+  await page.goBack();
+  await page.locator('.home-page').waitFor();
+  await page.goForward();
+  await page.locator('.text-view').waitFor();
+  await page.getByRole('button',{name:'Lysilogy home',exact:true}).click();
+  await page.locator('.home-page').waitFor();
+  await homeSearch.fill('noisy proxies');
+  await page.locator('.paper-card').click();
+  await page.getByRole('button',{name:'Overview',exact:true}).click();
+  await page.setViewportSize({width:1280,height:850});
+  await page.waitForTimeout(350);
+  await region.click();
+  await page.locator('.section-focus').waitFor();
+  await page.getByRole('button',{name:'Lysilogy home',exact:true}).click();
+  await page.locator('.home-page').waitFor();
+  assert.equal(await page.locator('.section-focus').count(),0);
+  assert.equal(await page.locator('.app-shell.has-library').count(),0);
+  // A slow detail request must not hold the home page hostage or replace it later.
+  const gate={started:Promise.withResolvers(),finished:Promise.withResolvers()};
+  paperGate=gate;
+  await page.goto(`http://lysilogy.test/?slow-load#paper=${id}`,{waitUntil:'domcontentloaded'});
+  await gate.started.promise;
+  assert.equal(await page.getByRole('button',{name:'Analyze',exact:true}).count(),0,'loading mapped paper must not flash Analyze');
+  await page.getByRole('button',{name:'Lysilogy home',exact:true}).click();
+  try { await page.locator('.home-page').waitFor({timeout:2000}); }
+  finally { gate.finished.resolve(); }
+  await page.waitForTimeout(100);
+  assert.equal(await page.locator('.home-page').count(),1,'late detail response must not replace home');
+  await page.evaluate(()=>{window.location.hash='paper=missing-paper';});
+  await page.waitForFunction(()=>window.location.hash==='#home');
+  assert.equal(await page.locator('.home-page').count(),1,'invalid links return to a usable library');
+  pollingTest=true;
+  await page.goto(`http://lysilogy.test/?slow-polls#paper=${id}`);
+  await page.waitForFunction(()=>document.querySelector('.current-paper-label')?.textContent?.includes('Refreshed through overlapping polls'),{},{timeout:6000});
+  assert.ok(pollRequests>=3,'test must overlap two poll requests before the first completes');
+  assert.deepEqual(analysisRequests,[],'browsing home and opening papers must not start analysis');
   assert.deepEqual(errors,[]);
   // Exercise a boundary inside one PDF.js text item. Canvas/CSS clipping alone
   // would leave the whole string available to copy, and trimming must not shift it.
@@ -277,5 +415,5 @@ try {
     assert.ok(result.shift<.1,`cropped selection shifted at zoom ${zoom}: ${result.shift}`);
   }
   await textPage.close();
-  console.log('Pipeline smoke passed: cited context, selective refresh, cropped native selection, compact layout, fit width/height, paged/continuous reading, both scroll axes, keyboard, map restoration, mobile panes, queue, and questions before analysis.');
+  console.log('Pipeline smoke passed: cited context, selective refresh, cropped native selection, PDF modes, Escape and map restoration, mobile layout, queue, source questions, home grid, browser history, and slow-request navigation.');
 } finally { await browser.close(); }

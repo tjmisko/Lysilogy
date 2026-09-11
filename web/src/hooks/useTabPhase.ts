@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 
 type TabPhaseOptions = {
+  /** Library browsing uses normal keyboard focus traversal. */
+  nativeTab?: boolean;
   /**
    * True while an overlay defines its own Tab behaviour (the paper switcher
    * moves its selection, the command menu completes). Tab is still kept away
@@ -31,8 +33,9 @@ export function useTabPhase(options: TabPhaseOptions): void {
       if (event.key !== "Tab") return;
       // Ctrl/Cmd/Alt+Tab belong to the browser and the window manager.
       if (event.ctrlKey || event.metaKey || event.altKey) return;
-      event.preventDefault();
       const current = optionsRef.current;
+      if (current.nativeTab === true) return;
+      event.preventDefault();
       if (current.overlayHandlesTab) return;
       current.onCycle(event.shiftKey ? -1 : 1);
     };

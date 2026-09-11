@@ -11,6 +11,11 @@ of Dijkstra's "GOTO Statements Considered Harmful."
 
 ## The reading ladder
 
+Click **Lysilogy** to return to the library home page. Its responsive paper grid shows titles,
+authors, years, mapping status, and saved summaries. Search the library, filter mapped or unmapped
+papers, and open a card to read it. The empty URL and `#home` open the grid; `#paper=<id>` remains
+a direct paper link. Browser Back and Forward work between the library and papers.
+
 The top bar is a monotonic ramp — each level is strictly more detailed than the one before it.
 
 | Level | What it gives you |
@@ -303,8 +308,25 @@ Paper details reload saved author metadata and upgrade older extractions on open
 Rust backend after backend changes; Vite only reloads the frontend. An older backend can rewrite
 the extraction cache using its older schema.
 
-See [Citation graph sources](docs/citation-graph-sources.md) for public graph APIs and the proposed
-document-level verification approach for research history and subsequent influence.
+Citation discovery uses a shared provider interface with OpenAlex, Semantic Scholar,
+OpenCitations, and Crossref adapters. Fetch a paper's neighborhood using its exact external ID:
+
+```sh
+cargo run -- --library local-articles --data .lysilogy citation-graph "title fragment" \
+  --identifier doi:10.1234/example --limit 100
+```
+
+Replace the example DOI with the paper's DOI. `--provider` and `--direction` narrow the request;
+the defaults query all four providers for references and citations. The same operation is exposed
+as `POST /api/papers/{id}/citation-graph`; `GET` reads the saved snapshot. Reports preserve provider
+identity, retrieval times, citation passages where available, and explicit coverage/error states.
+Crossref's unsupported incoming list is reported separately from an empty result.
+
+The saved `citation-graph.json` supplies discovery candidates to subsequent context research;
+the researcher and reviewer still verify original passages before publishing historical claims.
+Discovery is explicit and does not add network calls to offline analysis. See
+[Citation graph sources](docs/citation-graph-sources.md) for credentials, identifier support,
+limits, and the document-level verification approach.
 
 PDF mode renders a PDF.js text layer over the page image. Drag over a passage—even across lines or
 the two-page spread—to copy it or open **Ask about this** with the passage and its first page already
@@ -322,7 +344,9 @@ raised callout belongs to the selected section, including notes below its ending
 Missing geometry offers an
 explicit link to the full page. The page picker preserves original PDF numbering, and **Open full
 paper** takes the current page into Text. **Map** or `Esc` restores the map's scroll, columns,
-keyboard focus, and library state. Section navigation lives in the digest footer. Reduced-motion
+keyboard focus, and library state. Escape works from either reading pane, including controls,
+selected passages, and inline questions. A separate open dialog closes first. Section navigation
+lives in the digest footer. Reduced-motion
 settings skip the transition; narrow screens provide Source/Digest tabs. Overview and both readers
 share a PDF document, and scoped page canvases render lazily.
 Both readers offer fit width/height and paged/continuous modes. Continuous pages can scroll

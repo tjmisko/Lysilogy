@@ -11,6 +11,7 @@ import { DigestPanel } from "./components/DigestPanel";
 import { ExperimentPanel } from "./components/ExperimentPanel";
 import { GlossaryView } from "./components/GlossPanel";
 import { HelpOverlay } from "./components/HelpOverlay";
+import { HomePage } from "./components/HomePage";
 import { LibraryRail } from "./components/LibraryRail";
 import { MarkdownReader } from "./components/MarkdownReader";
 import { PaperSwitcher } from "./components/PaperSwitcher";
@@ -28,7 +29,6 @@ import type {
   LayoutSentence,
   LibraryResponse,
   PaperMap,
-  PaperOverview,
   PaperSection,
   PaperView,
   ProcessingQueue,
@@ -66,27 +66,12 @@ function initialView(): ViewMode {
   }
 }
 
-function paperByPreference(library: LibraryResponse, requested: string | null): PaperOverview | null {
-  if (requested !== null) {
-    const match = library.papers.find((paper) => paper.id === requested);
-    if (match !== undefined) return match;
-  }
-  return (
-    library.papers.find(
-      (paper) =>
-        paper.status.state === "ready" && paper.metadata.title.toLowerCase().includes("go to"),
-    ) ??
-    library.papers.find((paper) => paper.status.state === "ready") ??
-    library.papers.find((paper) => paper.metadata.title.toLowerCase().includes("go to")) ??
-    library.papers[0] ??
-    null
-  );
-}
-
 export function App() {
   const [library, setLibrary] = useState<LibraryResponse | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(initialPaperId);
   const selectedIdRef = useRef(selectedId);
+  const paperRequest = useRef(0);
+  const appliedPaperRequest = useRef(0);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
   const [paperView, setPaperView] = useState<PaperView | null>(null);
   const [pageSnapshots, setPageSnapshots] = useState<PageSnapshot[]>([]);
@@ -98,7 +83,7 @@ export function App() {
   const view: ViewMode = paperView?.analysis == null ? "text" : preferredView;
   const [textMode, setTextMode] = useState<TextMode>("pdf");
   const [compactLayout, setCompactLayout] = useState(() => window.innerWidth < 1180);
-  const [libraryOpen, setLibraryOpen] = useState(() => window.innerWidth >= 1180);
+  const [libraryOpen, setLibraryOpen] = useState(() => initialPaperId() !== null && window.innerWidth >= 1180);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
@@ -108,6 +93,7 @@ export function App() {
   const [focusQueueFeedback, setFocusQueueFeedback] = useState(false);
   const [queue, setQueue] = useState<ProcessingQueue>({ jobs: [] });
   const [libraryQuery, setLibraryQuery] = useState("");
+  const [homeQuery, setHomeQuery] = useState("");
   const [provider, setProvider] = useState<AnalysisProvider>("codex");
   const [pdfPage, setPdfPage] = useState(1);
   const [pdfPages, setPdfPages] = useState(1);
@@ -128,6 +114,7 @@ export function App() {
   const searchRef = useRef<HTMLInputElement>(null);
   const mainStageRef = useRef<HTMLElement>(null);
   const closeReaderTools = useCallback(() => setToolsTab(null), []);
+  const home = selectedId === null;
 
   useEffect(() => {
     mainStageRef.current?.scrollTo({ top: 0 });
@@ -154,8 +141,13 @@ export function App() {
   }, []);
 
   const loadPaper = useCallback(async (id: string): Promise<PaperView> => {
+    const request = ++paperRequest.current;
     const next = await api.paper(id);
-    setPaperView(next);
+    // A slower request may finish after navigation to another paper or home.
+    if (selectedIdRef.current === id && request > appliedPaperRequest.current) {
+      appliedPaperRequest.current = request;
+      setPaperView(next);
+    }
     setLibrary((current) => current === null ? null : { ...current,
       papers: current.papers.map((paper) => paper.id === id ? next.paper : paper) });
     return next;
@@ -170,13 +162,23 @@ export function App() {
     });
     void api
       .library()
-      .then(async (nextLibrary) => {
+      .then((nextLibrary) => {
         if (cancelled) return;
         setLibrary(nextLibrary);
-        const preferred = paperByPreference(nextLibrary, selectedId);
-        if (preferred === null) return;
-        setSelectedId(preferred.id);
-        await loadPaper(preferred.id);
+        setLoading(false);
+        const requested = selectedIdRef.current;
+        if (requested === null) return;
+        if (!nextLibrary.papers.some((paper) => paper.id === requested)) {
+          selectedIdRef.current = null;
+          setSelectedId(null);
+          setLibraryOpen(false);
+          window.history.replaceState(null, "", "#home");
+          setError("This paper is no longer in the library.");
+          return;
+        }
+        void loadPaper(requested).catch((reason: unknown) => {
+          if (!cancelled && selectedIdRef.current === requested) setError(reason instanceof Error ? reason.message : "Could not load paper");
+        });
       })
       .catch((reason: unknown) => {
         if (!cancelled) setError(reason instanceof Error ? reason.message : "Could not load library");
@@ -234,16 +236,11 @@ export function App() {
     const query = window.matchMedia("(max-width: 1179px)");
     const updateLayout = (event: MediaQueryListEvent | MediaQueryList): void => {
       setCompactLayout(event.matches);
-      setLibraryOpen(!event.matches);
+      setLibraryOpen(selectedIdRef.current !== null && !event.matches);
     };
     query.addEventListener("change", updateLayout);
     return () => query.removeEventListener("change", updateLayout);
   }, []);
-
-  useEffect(() => {
-    if (selectedId === null) return;
-    window.history.replaceState(null, "", `#paper=${selectedId}`);
-  }, [selectedId]);
 
   const processing =
     (paperView !== null && PROCESSING_STATES.has(paperView.paper.status.state)) ||
@@ -273,13 +270,22 @@ export function App() {
   }, [loadPaper, processing, queueHasActive, queueOpen, refreshLibrary, refreshQueue, selectedId]);
 
   const selectPaper = useCallback(
-    (id: string): void => {
-      if (id === selectedId) {
+    (id: string, updateHistory = true): void => {
+      if (id === selectedIdRef.current) {
         setLibraryOpen(false);
         return;
       }
+      if (updateHistory) window.history.pushState(null, "", `#paper=${encodeURIComponent(id)}`);
+      selectedIdRef.current = id;
+      appliedPaperRequest.current = ++paperRequest.current;
+      focusRestore.current = null;
       setActiveSection(0);
       setPanel(null);
+      setSwitcherOpen(false);
+      setCommandOpen(false);
+      setQueueOpen(false);
+      setExperimentOpen(false);
+      setToolsTab(null);
       setClarifySeed("");
       setSourceQuestion(null);
       setPaperMap(null);
@@ -293,11 +299,53 @@ export function App() {
       setError(null);
       setLibraryOpen(window.innerWidth >= 1180);
       void loadPaper(id).catch((reason: unknown) => {
-        setError(reason instanceof Error ? reason.message : "Could not load paper");
+        if (selectedIdRef.current === id) setError(reason instanceof Error ? reason.message : "Could not load paper");
       });
     },
-    [loadPaper, selectedId],
+    [loadPaper],
   );
+
+  const openHome = useCallback((updateHistory = true): void => {
+    if (updateHistory && window.location.hash !== "#home") window.history.pushState(null, "", "#home");
+    selectedIdRef.current = null;
+    appliedPaperRequest.current = ++paperRequest.current;
+    focusRestore.current = null;
+    setSelectedId(null);
+    setPaperView(null);
+    setPaperMap(null);
+    setMapLoading(false);
+    setActiveSection(0);
+    setPanel(null);
+    setClarifySeed("");
+    setSourceQuestion(null);
+    setLibraryOpen(false);
+    setSwitcherOpen(false);
+    setCommandOpen(false);
+    setQueueOpen(false);
+    setExperimentOpen(false);
+    setToolsTab(null);
+    setError(null);
+  }, []);
+
+  useEffect(() => {
+    const readRoute = (): void => {
+      const id = initialPaperId();
+      // Browsers emit both events for a single back/forward hash traversal.
+      if (id === selectedIdRef.current) return;
+      if (id === null) openHome(false);
+      else if (library !== null && !library.papers.some((paper) => paper.id === id)) {
+        openHome(false);
+        window.history.replaceState(null, "", "#home");
+        setError("This paper is no longer in the library.");
+      } else selectPaper(id, false);
+    };
+    window.addEventListener("popstate", readRoute);
+    window.addEventListener("hashchange", readRoute);
+    return () => {
+      window.removeEventListener("popstate", readRoute);
+      window.removeEventListener("hashchange", readRoute);
+    };
+  }, [library, openHome, selectPaper]);
 
   const selectFromSwitcher = useCallback(
     (id: string): void => {
@@ -476,7 +524,14 @@ export function App() {
       setError(`Too many arguments for :${name}`);
       return;
     }
+    if (selectedId === null && ["analyze", "feedback", "experiment", "supercut", "references", "refresh-abstract", "refresh-context", "refresh-structure", "abstract", "overview", "atlas", "glossary", "text", "pdf", "spread"].includes(name)) {
+      setError("Open a paper before using this command.");
+      return;
+    }
     switch (name) {
+      case "home":
+        openHome();
+        break;
       case "analyze": {
         const chosen = argument ?? provider;
         if (chosen !== "codex" && chosen !== "claude" && chosen !== "heuristic") {
@@ -556,12 +611,13 @@ export function App() {
       default:
         setError(`Unknown command :${name}`);
     }
-  }, [analyze, openGlossary, provider, refreshComponent, refreshQueue, selectedId]);
+  }, [analyze, openGlossary, openHome, provider, refreshComponent, refreshQueue, selectedId]);
 
   useTabPhase({
+    nativeTab: home,
     // The switcher and the command menu read Tab themselves; everywhere else
     // Tab steps through the reading phases of the current paper.
-    overlayHandlesTab: switcherOpen || commandOpen || queueOpen || sourceQuestion !== null || experimentOpen || toolsTab !== null || paperView?.analysis == null || (panel === "digest" && view === "overview"),
+    overlayHandlesTab: home || switcherOpen || commandOpen || queueOpen || sourceQuestion !== null || experimentOpen || toolsTab !== null || paperView?.analysis == null || (panel === "digest" && view === "overview"),
     onCycle: (delta) => {
       setQueueOpen(false);
       if (compactLayout) setLibraryOpen(false);
@@ -571,7 +627,7 @@ export function App() {
 
   useGlobalKeys({
     enabled:
-      panel === null && sourceQuestion === null && view !== "glossary" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null &&
+      !home && panel === null && sourceQuestion === null && view !== "glossary" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null &&
       !(compactLayout && libraryOpen),
     activeIndex: activeSection,
     itemCount: sections.length,
@@ -788,10 +844,10 @@ export function App() {
 
 
   return (
-    <div className={`app-shell ${sectionFocused ? "has-section-focus" : ""} ${libraryOpen ? "has-library" : ""}`}>
+    <div className={`app-shell ${home ? "is-home" : ""} ${sectionFocused ? "has-section-focus" : ""} ${libraryOpen ? "has-library" : ""}`}>
       <LibraryRail
         open={libraryOpen}
-        keyboardMode={compactLayout && libraryOpen}
+        keyboardMode={(compactLayout || home) && libraryOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && panel === null && sourceQuestion === null}
         name={library?.name ?? "Articles"}
         papers={library?.papers ?? []}
         selectedId={selectedId}
@@ -810,13 +866,13 @@ export function App() {
           <button
             className="brand"
             type="button"
-            onClick={() => setLibraryOpen((open) => !open)}
-            aria-label="Toggle library"
+            onClick={() => openHome()}
+            aria-label="Lysilogy home"
           >
             <img className="brand-mark" src="/lambda-mark.svg" alt="" />
             <strong>LYSILOGY</strong>
           </button>
-          <div className="view-switch" role="group" aria-label="Reader view">
+          {home ? <span className="home-topbar-label">Your reading library</span> : <div className="view-switch" role="group" aria-label="Reader view">
             {analysis === null ? <>
               <button type="button" className={textMode === "pdf" ? "is-active" : ""} onClick={() => setTextMode("pdf")}>PDF</button>
               <button type="button" className={textMode === "markdown" ? "is-active" : ""} onClick={() => setTextMode("markdown")}>Text</button>
@@ -864,9 +920,12 @@ export function App() {
               Text
             </button>
             </>}
-          </div>
+          </div>}
           <div className="topbar-actions">
-            {analysis !== null && currentPaper !== null ? <span className="current-paper-label" title={`${currentPaper.metadata.authors.join(", ")} — ${currentPaper.metadata.year ?? ""} — ${currentPaper.metadata.title}`}>
+            {home ? <>
+              <button className="queue-button" type="button" onClick={scan}>Rescan</button>
+              <button className={`queue-button ${queueHasActive ? "has-work" : ""}`} type="button" onClick={() => { setQueueOpen(true); void refreshQueue(); }}>Queue <kbd>q</kbd></button>
+            </> : paperView === null ? <span className="current-paper-label">Opening paper…</span> : analysis !== null && currentPaper !== null ? <span className="current-paper-label" title={`${currentPaper.metadata.authors.join(", ")} — ${currentPaper.metadata.year ?? ""} — ${currentPaper.metadata.title}`}>
               {currentPaper.metadata.authors.length > 2 ? `${currentPaper.metadata.authors[0]} et al.` : currentPaper.metadata.authors.join(" & ")}
               {currentPaper.metadata.year == null ? "" : ` — ${currentPaper.metadata.year}`} — {currentPaper.metadata.title}
             </span> : <>
@@ -882,7 +941,7 @@ export function App() {
               className="analyze-button"
               type="button"
               onClick={() => analyze()}
-              disabled={selectedId === null || processing}
+              disabled={processing}
             >
               {processing ? (
                 <><span className="loader" /> Reading</>
@@ -898,14 +957,12 @@ export function App() {
           {loading && (
             <div className="center-state"><span className="loader large" /><p>Opening the vault…</p></div>
           )}
-          {!loading && (library?.papers.length ?? 0) === 0 && (
-            <div className="center-state">
-              <span className="empty-glyph">∅</span>
-              <h1>No PDFs discovered</h1>
-              <p>Point <code>--library</code> at a directory containing papers, then rescan.</p>
-            </div>
-          )}
-          {currentPaper !== null && (
+          {!loading && home && <HomePage papers={library?.papers ?? []} name={library?.name ?? "Library"}
+            query={homeQuery} onQuery={setHomeQuery} onSelect={selectPaper}
+            keyboardEnabled={!libraryOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && toolsTab === null}
+            onImport={() => setLibraryOpen(true)} />}
+          {!loading && !home && paperView === null && <div className="center-state"><span className="loader large" /><p>Opening paper…</p></div>}
+          {!home && currentPaper !== null && paperView !== null && (
             <>
               {view === "abstract" && <PaperHeading metadata={currentPaper.metadata} />}
 
@@ -923,7 +980,7 @@ export function App() {
                   analysis={analysis}
                   activeIndex={activeSection}
                   onOpen={openSection}
-                  sourceUrl={api.source(selectedId ?? currentPaper.id)}
+                  sourceUrl={api.source(selectedId)}
                   paperTitle={currentPaper.metadata.title}
                   paperMap={paperMap}
                   mapLoading={mapLoading}
@@ -943,7 +1000,7 @@ export function App() {
                   onBack={() => setView("overview")}
                   onSection={openGlossSection}
                 />
-              ) : selectedId === null ? null : (
+              ) : (
                 <section className="text-view" aria-label="Full paper text">
                   {textMode === "markdown" ? (
                     <MarkdownReader
