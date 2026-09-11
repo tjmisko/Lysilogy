@@ -104,11 +104,13 @@ function statusLabel(paper: PaperOverview | null): string {
 export function App() {
   const [library, setLibrary] = useState<LibraryResponse | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(initialPaperId);
+  const selectedIdRef = useRef(selectedId);
+  useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
   const [paperView, setPaperView] = useState<PaperView | null>(null);
   const [pageSnapshots, setPageSnapshots] = useState<PageSnapshot[]>([]);
   const focusRestore = useRef<{ library: boolean; scroll: number } | null>(null);
   const [activeSection, setActiveSection] = useState(0);
-  const [refreshingComponent, setRefreshingComponent] = useState<"abstract" | "context" | null>(null);
+  const [refreshingComponent, setRefreshingComponent] = useState<"abstract" | "context" | "structure" | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [view, setView] = useState<ViewMode>(initialView);
   const [textMode, setTextMode] = useState<TextMode>("pdf");
@@ -480,13 +482,14 @@ export function App() {
     }
   }, [loadPaper, provider, refreshLibrary, refreshQueue, selectedId]);
 
-  const refreshComponent = useCallback((component: "abstract" | "context"): void => {
+  const refreshComponent = useCallback((component: "abstract" | "context" | "structure"): void => {
     if (selectedId === null || refreshingComponent !== null) return;
     setRefreshingComponent(component);
-    setNotice(component === "abstract" ? "Checking the authored abstract…" : "Researching the paper’s history and influence…");
+    setNotice(component === "structure" ? "Grouping the paper into coherent reading sections…" : component === "abstract" ? "Checking the authored abstract…" : "Researching the paper’s history and influence…");
     void api.refreshComponent(selectedId, provider, component).then((next) => {
       setPaperView((current) => current?.paper.id === next.paper.id ? next : current);
-      setNotice(component === "abstract" ? "Abstract refreshed." : "Historical context refreshed.");
+      if (component === "structure" && selectedIdRef.current === next.paper.id) setActiveSection(0);
+      setNotice(component === "structure" ? "Section map refreshed." : component === "abstract" ? "Abstract refreshed." : "Historical context refreshed.");
     }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Refresh failed"))
       .finally(() => { setRefreshingComponent(null); void refreshQueue(); });
     void refreshQueue();
@@ -543,6 +546,9 @@ export function App() {
         break;
       case "refresh-context":
         refreshComponent("context");
+        break;
+      case "refresh-structure":
+        refreshComponent("structure");
         break;
       case "abstract":
         setView("abstract");

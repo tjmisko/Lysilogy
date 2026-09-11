@@ -73,7 +73,7 @@ export type AnalysisJob = {
   paper_id: string;
   paper_title: string;
   provider: AnalysisProvider;
-  kind: "initial" | "revision" | "abstract_refresh" | "context_refresh";
+  kind: "initial" | "revision" | "abstract_refresh" | "context_refresh" | "structure_refresh";
   status: AnalysisJobStatus;
   progress: number;
   tasks: AnalysisTask[];

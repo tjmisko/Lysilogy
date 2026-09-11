@@ -115,6 +115,9 @@ cargo run -- ingest --provider heuristic
 
 # Re-run one paper after changing a prompt or analyzer
 cargo run -- analyze "title fragment" --provider codex --force
+
+# Regroup only the map, claims, and glossary into coherent reading units
+cargo run -- refresh-structure "title fragment" --provider codex --force
 ```
 
 Opening an older map lazily regenerates its coordinate extraction and revalidates existing quotes.
@@ -160,6 +163,27 @@ feedback already present. Clarification stays ephemeral and uses prefetched loca
 
 The backend owns `analysis-tasklist.md` and its typed `job.json` state; model processes are read-only
 and never edit progress. Press `q` to watch analysis progress.
+
+### Reading units in the map
+
+Sectioning favors coherent topics spanning 1–5 pages of content, usually 1–2 pages. Parent topics,
+their variants, and short examples stay together; internal distinctions belong in the digest.
+For example, Extremal Goodhart, Model Insufficiency, and Change in Regime should form one region
+titled **Extremal Goodhart**. A ten-page paper starts with a planning budget of roughly 5–7 main
+units, adjusted for actual topics and non-body material. The budget is guidance, not a quota.
+
+The shared instructions live in [`prompts/sectioning.md`](prompts/sectioning.md). After generation,
+source-token positions estimate occupied page fractions; short fragments across a page break do
+not count as two full pages. Unusually many small units, repeated parent/variant titles, or units
+over about five pages can trigger one consolidation pass. `sectioning-report.json` records the
+initial and final diagnostics. Remaining size warnings are advisory: semantic coherence and source
+coverage take priority over automatic merging or a forced count.
+
+Use `:refresh-structure` or the CLI command above to regenerate only the map, structural claims,
+glossary, caveats, and reading path. The authored abstract, thesis, prerequisites, and historical
+context are retained. AI evidence marks are rebuilt for the new sections while reader highlights
+are preserved. Failed generation or validation leaves the previous analysis available. Structural
+cache keys include the actual prompt/policy, schema, source/layout, provider, and model profile.
 
 ### Learning-ramp prompt experiments
 
@@ -301,6 +325,7 @@ Everything generated lives beneath the data root:
         ├── extraction.json      # extraction schema and normalized metadata
         ├── abstract.json        # source span, accepted/unresolved status, independent checks
         ├── context-assessment.json # claim/link support counts, reviews, and research gaps
+        ├── sectioning-report.json # initial/final size and parent-topic fragmentation checks
         ├── analysis.json        # typed, versioned application model
         ├── digest.md            # portable human-readable digest
         ├── highlights.jsonl     # canonical one-highlight-per-line records (AI and reader)

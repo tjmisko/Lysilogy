@@ -301,6 +301,7 @@ impl AppState {
         self.paper(id).await
     }
 
+    #[allow(clippy::too_many_lines)] // Keep reservation, component work, and status restoration together.
     pub async fn refresh_component(
         &self,
         id: &PaperId,
@@ -312,6 +313,7 @@ impl AppState {
         let (kind, task) = match component {
             AnalysisComponent::Abstract => (AnalysisJobKind::AbstractRefresh, "abstract"),
             AnalysisComponent::Context => (AnalysisJobKind::ContextRefresh, "context"),
+            AnalysisComponent::Structure => (AnalysisJobKind::StructureRefresh, "structure"),
         };
         let previous = {
             let mut catalog = self.catalog.write().await;
@@ -350,7 +352,25 @@ impl AppState {
                 .transition(id, ProcessingStage::Analysis, task)
                 .await?;
             let mut analysis = self.store.load_analysis(id).await?;
+            let mut structure_session = None;
             match component {
+                AnalysisComponent::Structure => {
+                    let analysis = analysis.as_mut().ok_or_else(|| {
+                        Error::InvalidRequest(
+                            "Analyze this paper before refreshing its section map".to_owned(),
+                        )
+                    })?;
+                    structure_session = self
+                        .analysis
+                        .refresh_structure(
+                            provider,
+                            &paper,
+                            &self.store.paper_dir(id),
+                            analysis,
+                            force,
+                        )
+                        .await?;
+                }
                 AnalysisComponent::Abstract => {
                     let result = self
                         .analysis
@@ -384,10 +404,17 @@ impl AppState {
                 .await?;
             let _guard = self.highlight_write.lock().await;
             if let Some(analysis) = analysis {
-                self.store.save_analysis_projection(id, &analysis).await?;
+                if component == AnalysisComponent::Structure {
+                    self.store.save_analysis(id, &analysis).await?;
+                    if let Some(session) = &structure_session {
+                        self.store.save_agent_session(id, session).await?;
+                    }
+                } else {
+                    self.store.save_analysis_projection(id, &analysis).await?;
+                }
             }
             self.jobs.task_completed(id, "persist").await?;
-            self.jobs.complete(id, false).await?;
+            self.jobs.complete(id, structure_session.is_some()).await?;
             Ok::<(), Error>(())
         }
         .await;
@@ -1793,6 +1820,10 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/papers/{id}/analyze", post(analyze_paper))
         .route("/api/papers/{id}/abstract/refresh", post(refresh_abstract))
         .route("/api/papers/{id}/context/refresh", post(refresh_context))
+        .route(
+            "/api/papers/{id}/structure/refresh",
+            post(refresh_structure),
+        )
         .route("/api/papers/{id}/feedback", post(feedback_paper))
         .route("/api/papers/{id}/clarify", post(clarify_selection))
         .route(
@@ -1928,6 +1959,22 @@ async fn refresh_context(
             request.provider,
             request.force,
             crate::domain::AnalysisComponent::Context,
+        )
+        .await
+        .map(Json)
+}
+
+async fn refresh_structure(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+    Json(request): Json<AnalyzeRequest>,
+) -> Result<Json<PaperView>> {
+    state
+        .refresh_component(
+            &parse_id(&id)?,
+            request.provider,
+            request.force,
+            crate::domain::AnalysisComponent::Structure,
         )
         .await
         .map(Json)

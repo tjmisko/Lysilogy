@@ -2,6 +2,7 @@ pub mod context;
 mod heuristic;
 mod local_cli;
 mod prefetch;
+mod sectioning;
 mod sources;
 
 use std::path::Path;
@@ -170,6 +171,32 @@ impl AnalysisService {
         Ok(())
     }
 
+    pub async fn refresh_structure(
+        &self,
+        provider: AnalysisProvider,
+        paper: &ExtractedPaper,
+        directory: &Path,
+        analysis: &mut PaperAnalysis,
+        force: bool,
+    ) -> Result<Option<AgentSession>> {
+        if provider == AnalysisProvider::Heuristic {
+            return Err(Error::InvalidRequest(
+                "Topic-based section refresh requires the Codex or Claude reader".to_owned(),
+            ));
+        }
+        let abstract_result = analysis
+            .abstract_extraction
+            .clone()
+            .unwrap_or_else(|| crate::abstracts::extract(paper));
+        let context = prefetch::PrefetchedPaperContext::with_abstract(paper, &abstract_result);
+        let (structure, session) = self
+            .local_cli
+            .run_structure_stage(provider, directory, &context, paper, force)
+            .await?;
+        apply_structure(analysis, structure, provider, paper)?;
+        Ok(session)
+    }
+
     pub async fn revise(
         &self,
         provider: AnalysisProvider,
@@ -276,6 +303,40 @@ impl AnalysisService {
             .await?;
         normalize_learning_ramp(ramp, paper)
     }
+}
+
+fn apply_structure(
+    analysis: &mut PaperAnalysis,
+    structure: StructureDraft,
+    provider: AnalysisProvider,
+    paper: &ExtractedPaper,
+) -> Result<()> {
+    let normalized = normalize_analysis(
+        AnalysisDraft {
+            thesis: analysis.thesis.clone(),
+            outsider_brief: String::new(),
+            author_abstract: None,
+            context_notes: Vec::new(),
+            context_sources: Vec::new(),
+            assessment: None,
+            prerequisites: Vec::new(),
+            sections: structure.sections,
+            claims: structure.claims,
+            glossary: structure.glossary,
+            caveats: structure.caveats,
+            reading_path: structure.reading_path,
+        },
+        provider,
+        paper,
+    )?;
+    // Only publish the structural projection after all source anchors and links validate.
+    analysis.sections = normalized.sections;
+    analysis.claims = normalized.claims;
+    analysis.glossary = normalized.glossary;
+    analysis.caveats = normalized.caveats;
+    analysis.reading_path = normalized.reading_path;
+    analysis.generated_at = normalized.generated_at;
+    Ok(())
 }
 
 pub(crate) fn normalize_learning_ramp(
@@ -1016,6 +1077,59 @@ mod tests {
     fn creates_stable_readable_slugs() {
         assert_eq!(slugify("Results & Limitations"), "results-limitations");
         assert_eq!(slugify("  A/B  "), "a-b");
+    }
+
+    #[test]
+    fn structure_refresh_preserves_orientation_and_history_and_rejects_invalid_changes()
+    -> Result<()> {
+        let paper = ExtractedPaper {
+            metadata: PaperMetadata::default(),
+            pages: vec![ExtractedPage {
+                number: 1,
+                text: "An argument and its evidence.".to_owned(),
+            }],
+            layout: DocumentLayout::default(),
+        };
+        let mut analysis = analysis_with_sections(Vec::new());
+        analysis.author_abstract = Some("Original authored abstract".to_owned());
+        analysis.outsider_brief = "Existing historical account".to_owned();
+        analysis.prerequisites = vec!["Existing prerequisite".to_owned()];
+        analysis.context_notes = vec![ContextNote {
+            kind: crate::domain::ContextKind::Before,
+            text: "Inspected prior work".to_owned(),
+            source_ids: vec!["source".to_owned()],
+        }];
+        let before = serde_json::to_value(&analysis)?;
+        let structure: StructureDraft = serde_json::from_value(serde_json::json!({
+            "sections":[{"title":"One complete argument","kind":"theory","family":"method",
+                "pages":{"start":1,"end":1},"summary":"The whole mechanism.","digest":"The mechanism and its qualifications."}],
+            "claims":[{"statement":"A claim","support":"Source evidence","strength":"supported","section_ids":["one-complete-argument"]}],
+            "reading_path":["One complete argument"]
+        }))?;
+        apply_structure(&mut analysis, structure, AnalysisProvider::Codex, &paper)?;
+        let after = serde_json::to_value(&analysis)?;
+        for key in [
+            "thesis",
+            "author_abstract",
+            "abstract_extraction",
+            "outsider_brief",
+            "context_notes",
+            "context_sources",
+            "context_assessment",
+            "prerequisites",
+            "provider",
+        ] {
+            assert_eq!(before[key], after[key], "changed {key}");
+        }
+        assert_eq!(analysis.sections.len(), 1);
+        assert_eq!(
+            analysis.claims[0].section_ids,
+            [analysis.sections[0].id.clone()]
+        );
+        let invalid: StructureDraft = serde_json::from_value(serde_json::json!({"sections":[]}))?;
+        assert!(apply_structure(&mut analysis, invalid, AnalysisProvider::Codex, &paper).is_err());
+        assert_eq!(serde_json::to_value(&analysis)?, after);
+        Ok(())
     }
 
     #[test]

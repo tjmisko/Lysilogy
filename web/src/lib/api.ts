@@ -99,7 +99,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ provider, force }),
     }),
-  refreshComponent: (id: string, provider: AnalysisProvider, component: "abstract" | "context"): Promise<PaperView> =>
+  refreshComponent: (id: string, provider: AnalysisProvider, component: "abstract" | "context" | "structure"): Promise<PaperView> =>
     request(`/api/papers/${id}/${component}/refresh`, {
       method: "POST", body: JSON.stringify({ provider, force: true }),
     }),

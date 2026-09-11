@@ -78,6 +78,14 @@ enum Command {
         #[arg(long)]
         force: bool,
     },
+    /// Regenerate only the section map, claims, and glossary as coherent reading units.
+    RefreshStructure {
+        query: String,
+        #[arg(long, default_value = "codex")]
+        provider: AnalysisProvider,
+        #[arg(long)]
+        force: bool,
+    },
     /// Convert one paper to Markdown and print it to standard output.
     Convert {
         /// Paper ID or an unambiguous title fragment.
@@ -244,6 +252,36 @@ async fn run(cli: Cli) -> Result<()> {
         Command::Convert { query } => {
             let id = resolve_paper(&state, &query).await?;
             print!("{}", state.markdown(&id).await?);
+            Ok(())
+        }
+        Command::RefreshStructure {
+            query,
+            provider,
+            force,
+        } => {
+            let id = resolve_paper(&state, &query).await?;
+            println!("Regrouping sections for {id} with {provider}…");
+            let view = state
+                .refresh_component(
+                    &id,
+                    provider,
+                    force,
+                    lysilogy::domain::AnalysisComponent::Structure,
+                )
+                .await?;
+            if let Some(analysis) = view.analysis {
+                println!(
+                    "{}: {} reading units",
+                    view.paper.metadata.title,
+                    analysis.sections.len()
+                );
+                for section in analysis.sections {
+                    println!(
+                        "Pages {}–{}: {}",
+                        section.pages.start, section.pages.end, section.title
+                    );
+                }
+            }
             Ok(())
         }
         Command::Ingest {

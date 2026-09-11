@@ -45,7 +45,7 @@ try {
     if(url.pathname===`/api/papers/${id}`)return route.fulfill({json:{paper,analysis}});
     if(suffix==='/map')return route.fulfill({json:{layout,highlights:[]}});
     if(suffix==='/source'){ sourceRequests++; return route.fulfill({body:pdf,contentType:'application/pdf'}); }
-    if(suffix==='/abstract/refresh'||suffix==='/context/refresh'){ refreshes.push(suffix);return route.fulfill({json:{paper,analysis}}); }
+    if(suffix==='/abstract/refresh'||suffix==='/context/refresh'||suffix==='/structure/refresh'){ refreshes.push(suffix);return route.fulfill({json:{paper,analysis}}); }
     if(suffix==='/reader-tools')return route.fulfill({json:{jobs:[],references:[],supercuts:[]}});
     if(url.pathname.startsWith('/api/'))return route.fulfill({status:404,json:{message:`Unexpected fixture request: ${url.pathname}`}});
     const file=path.join(root,url.pathname==='/'?'index.html':url.pathname.slice(1));
@@ -63,6 +63,13 @@ try {
   await page.getByRole('button',{name:'Research before and after',exact:true}).click();
   await page.getByRole('button',{name:'Research before and after',exact:true}).waitFor();
   assert.deepEqual(refreshes,['/abstract/refresh','/context/refresh']);
+  await page.waitForFunction(()=>!document.querySelector('.context-refresh')?.disabled);
+  await page.keyboard.press(':');
+  await page.getByRole('textbox',{name:'Command',exact:true}).fill('refresh-structure');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(()=>document.querySelector('.notice-toast')?.textContent?.includes('Section map refreshed') || document.body.textContent.includes('Section map refreshed.'));
+  assert.deepEqual(refreshes,['/abstract/refresh','/context/refresh','/structure/refresh']);
+  assert.match(await page.locator('[data-context-kind="before"]').innerText(),/Prior research/);
   await page.getByRole('button',{name:'Overview',exact:true}).click();
   const region=page.locator('.section-boxes button[data-section-id="regressional"]').first();
   await region.waitFor();

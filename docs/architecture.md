@@ -104,6 +104,22 @@ This deterministic gate proves a narrower fact than ground-truth interpretation:
 
 This makes the future switch to a different local agent—or an explicitly configured API adapter—an implementation detail behind `AnalysisService`.
 
+`analysis/sectioning.rs` and `prompts/sectioning.md` define the map's reading units: coherent topics
+of 1–5 occupied pages, with a preference for 1–2. The prompt supplies a page-aware planning budget
+and keeps parent topics with their short dependent subheadings. Verified source-token endpoints
+provide fractional page-size estimates. A prevalence of short units, repeated parent/variant titles,
+or overly long units triggers at most one additional structural call using the original source,
+first draft, and diagnostic feedback. The final report retains unresolved warnings rather than
+pretending size checks prove semantic coherence. Initial analysis and feedback prompts share the
+policy. The structure cache includes the actual prompt, schema, source/layout, and model profile.
+
+`refresh-structure` and `/api/papers/{id}/structure/refresh` run only that structural path, including
+claim/glossary references and source validation. The existing abstract, thesis, prerequisites, and
+external context are preserved. Publication uses the normal highlight synchronization under its
+write lock so reader-owned marks survive while AI marks follow new section IDs. A model or validation
+failure leaves the previous analysis in place. This operation uses the existing per-paper job
+reservation and is also available as `:refresh-structure` in the reader.
+
 The heuristic provider follows the same typed output path. It identifies printed headings where reliable, falls back to conceptual chunks, scores thesis-like sentences, assigns semantic families, extracts bounded quotations, and builds a small technical gloss. It never presents itself as model interpretation.
 
 ## Prompt experiment boundary

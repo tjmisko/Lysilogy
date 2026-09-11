@@ -6,7 +6,7 @@ type AbstractViewProps = {
   onOpenPage: (page: number) => void;
   onContinue: () => void;
   onRefresh?: (component: "abstract" | "context") => void;
-  refreshing?: "abstract" | "context" | null;
+  refreshing?: "abstract" | "context" | "structure" | null;
 };
 
 function generationLabel(analysis: PaperAnalysis): string {

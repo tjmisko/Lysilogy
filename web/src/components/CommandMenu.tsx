@@ -19,6 +19,7 @@ const COMMANDS = [
   ["switch", "Fuzzy-find another article"],
   ["refresh-context", "Research and review the paper’s history and subsequent influence"],
   ["refresh-abstract", "Re-extract and verify only the authored abstract"],
+  ["refresh-structure", "Regroup the paper into coherent reading sections"],
   ["abstract", "Open the paper orientation"],
   ["overview", "Open the argument overview"],
   ["atlas", "Open the argument overview"],

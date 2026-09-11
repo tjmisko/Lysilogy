@@ -242,6 +242,15 @@ impl JobTracker {
 
 fn tasks_for(kind: AnalysisJobKind) -> Vec<AnalysisTask> {
     let tasks = match kind {
+        AnalysisJobKind::StructureRefresh => [
+            ("extract", "Load the extracted source"),
+            (
+                "structure",
+                "Group coherent reading units and verify their source boundaries",
+            ),
+            ("persist", "Save the map and update AI evidence marks"),
+        ]
+        .as_slice(),
         AnalysisJobKind::ContextRefresh => [
             ("extract", "Load the extracted source"),
             (
@@ -313,6 +322,7 @@ pub fn render_tasklist(job: &AnalysisJob) -> String {
         AnalysisJobKind::Initial => "initial analysis",
         AnalysisJobKind::AbstractRefresh => "abstract refresh",
         AnalysisJobKind::ContextRefresh => "historical context refresh",
+        AnalysisJobKind::StructureRefresh => "section map refresh",
         AnalysisJobKind::Revision => "feedback revision",
     };
     let mut markdown = format!(

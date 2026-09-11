@@ -112,6 +112,7 @@ pub enum ProcessingStage {
 pub enum AnalysisComponent {
     Abstract,
     Context,
+    Structure,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -120,6 +121,7 @@ pub enum AnalysisJobKind {
     Initial,
     AbstractRefresh,
     ContextRefresh,
+    StructureRefresh,
     Revision,
 }
 
