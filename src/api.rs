@@ -8,6 +8,7 @@ use std::{
     time::Duration,
 };
 
+mod citation_graph;
 mod reader_tools;
 
 use axum::{
@@ -68,6 +69,7 @@ pub struct AppState {
     store: ArtifactStore,
     extractor: PdfExtractor,
     analysis: AnalysisService,
+    citation_http: crate::citation_graph::GraphHttp,
     jobs: JobTracker,
     highlight_write: Arc<Mutex<()>>,
     import_write: Arc<Mutex<()>>,
@@ -132,6 +134,7 @@ impl AppState {
             store,
             extractor,
             analysis,
+            citation_http: crate::citation_graph::GraphHttp::from_environment()?,
             jobs,
             highlight_write: Arc::new(Mutex::new(())),
             import_write: Arc::new(Mutex::new(())),
@@ -1818,6 +1821,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
     state.frontend_root = frontend_directory.map(|path| Arc::new(path.to_owned()));
     Router::new()
         .merge(reader_tools::routes())
+        .merge(citation_graph::routes())
         .route("/api/health", get(health))
         .route("/api/library", get(library))
         .route("/api/library/scan", post(scan_library))

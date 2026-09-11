@@ -599,13 +599,15 @@ impl LocalCliAnalyzer {
         force: bool,
     ) -> Result<ExternalContextDraft> {
         use super::context::{self, ContextReview, ContextWriting, EvidenceDossier};
+        let candidates = crate::citation_graph::research_candidates(directory).await?;
+        let evidence_prompt = format!("{}{candidates}", context::evidence_prompt(paper_context));
         let dossier: EvidenceDossier = self
             .cached_stage(
                 provider,
                 directory,
                 "context-evidence",
                 context::EVIDENCE_SCHEMA,
-                &context::evidence_prompt(paper_context),
+                &evidence_prompt,
                 PromptStage::ExternalContext.profile(),
                 force,
             )

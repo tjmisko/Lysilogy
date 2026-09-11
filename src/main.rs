@@ -86,6 +86,18 @@ enum Command {
         #[arg(long)]
         force: bool,
     },
+    /// Fetch public citation graph evidence for an exact paper identifier.
+    CitationGraph {
+        query: String,
+        #[arg(long)]
+        identifier: String,
+        #[arg(long, value_enum, value_delimiter = ',')]
+        provider: Vec<lysilogy::citation_graph::Provider>,
+        #[arg(long, value_enum, value_delimiter = ',')]
+        direction: Vec<lysilogy::citation_graph::Direction>,
+        #[arg(long, default_value_t = 100)]
+        limit: usize,
+    },
     /// Convert one paper to Markdown and print it to standard output.
     Convert {
         /// Paper ID or an unambiguous title fragment.
@@ -247,6 +259,33 @@ async fn run(cli: Cli) -> Result<()> {
                 "{}",
                 serde_json::to_string_pretty(&view.analysis.and_then(|a| a.context_assessment))?
             );
+            Ok(())
+        }
+        Command::CitationGraph {
+            query,
+            identifier,
+            provider,
+            direction,
+            limit,
+        } => {
+            use lysilogy::citation_graph::{Direction, GraphRequest, Provider};
+            let id = resolve_paper(&state, &query).await?;
+            let request = GraphRequest {
+                identifier,
+                providers: if provider.is_empty() {
+                    Provider::ALL.to_vec()
+                } else {
+                    provider
+                },
+                directions: if direction.is_empty() {
+                    vec![Direction::References, Direction::Citations]
+                } else {
+                    direction
+                },
+                limit,
+            };
+            let snapshot = state.fetch_citation_graph(&id, &request).await?;
+            println!("{}", serde_json::to_string_pretty(&snapshot)?);
             Ok(())
         }
         Command::Convert { query } => {
