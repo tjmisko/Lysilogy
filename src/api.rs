@@ -301,12 +301,18 @@ impl AppState {
         self.paper(id).await
     }
 
-    pub async fn refresh_abstract(
+    pub async fn refresh_component(
         &self,
         id: &PaperId,
         provider: AnalysisProvider,
         force: bool,
+        component: crate::domain::AnalysisComponent,
     ) -> Result<PaperView> {
+        use crate::domain::AnalysisComponent;
+        let (kind, task) = match component {
+            AnalysisComponent::Abstract => (AnalysisJobKind::AbstractRefresh, "abstract"),
+            AnalysisComponent::Context => (AnalysisJobKind::ContextRefresh, "context"),
+        };
         let previous = {
             let mut catalog = self.catalog.write().await;
             let entry = catalog
@@ -331,7 +337,7 @@ impl AppState {
                     id.clone(),
                     previous.metadata.title.clone(),
                     provider,
-                    AnalysisJobKind::AbstractRefresh,
+                    kind,
                     None,
                 )
                 .await?;
@@ -341,20 +347,43 @@ impl AppState {
             let paper = self.load_or_extract(id).await.map_err(|(_, error)| error)?;
             self.jobs.task_completed(id, "extract").await?;
             self.jobs
-                .transition(id, ProcessingStage::Analysis, "abstract")
+                .transition(id, ProcessingStage::Analysis, task)
                 .await?;
-            let result = self
-                .analysis
-                .extract_abstract(provider, &paper, &self.store.paper_dir(id), force)
-                .await?;
-            self.jobs.task_completed(id, "abstract").await?;
+            let mut analysis = self.store.load_analysis(id).await?;
+            match component {
+                AnalysisComponent::Abstract => {
+                    let result = self
+                        .analysis
+                        .extract_abstract(provider, &paper, &self.store.paper_dir(id), force)
+                        .await?;
+                    if let Some(analysis) = &mut analysis {
+                        analysis.author_abstract.clone_from(&result.text);
+                        analysis.abstract_extraction = Some(result);
+                    }
+                }
+                AnalysisComponent::Context => {
+                    let analysis = analysis.as_mut().ok_or_else(|| {
+                        Error::InvalidRequest(
+                            "Analyze this paper before refreshing its context".to_owned(),
+                        )
+                    })?;
+                    self.analysis
+                        .refresh_context(
+                            provider,
+                            &paper,
+                            &self.store.paper_dir(id),
+                            analysis,
+                            force,
+                        )
+                        .await?;
+                }
+            }
+            self.jobs.task_completed(id, task).await?;
             self.jobs
                 .transition(id, ProcessingStage::Persistence, "persist")
                 .await?;
             let _guard = self.highlight_write.lock().await;
-            if let Some(mut analysis) = self.store.load_analysis(id).await? {
-                analysis.author_abstract.clone_from(&result.text);
-                analysis.abstract_extraction = Some(result);
+            if let Some(analysis) = analysis {
                 self.store.save_analysis(id, &analysis).await?;
             }
             self.jobs.task_completed(id, "persist").await?;
@@ -1760,6 +1789,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         )
         .route("/api/papers/{id}/analyze", post(analyze_paper))
         .route("/api/papers/{id}/abstract/refresh", post(refresh_abstract))
+        .route("/api/papers/{id}/context/refresh", post(refresh_context))
         .route("/api/papers/{id}/feedback", post(feedback_paper))
         .route("/api/papers/{id}/clarify", post(clarify_selection))
         .route(
@@ -1874,7 +1904,28 @@ async fn refresh_abstract(
     Json(request): Json<AnalyzeRequest>,
 ) -> Result<Json<PaperView>> {
     state
-        .refresh_abstract(&parse_id(&id)?, request.provider, request.force)
+        .refresh_component(
+            &parse_id(&id)?,
+            request.provider,
+            request.force,
+            crate::domain::AnalysisComponent::Abstract,
+        )
+        .await
+        .map(Json)
+}
+
+async fn refresh_context(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+    Json(request): Json<AnalyzeRequest>,
+) -> Result<Json<PaperView>> {
+    state
+        .refresh_component(
+            &parse_id(&id)?,
+            request.provider,
+            request.force,
+            crate::domain::AnalysisComponent::Context,
+        )
         .await
         .map(Json)
 }

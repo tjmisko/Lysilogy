@@ -70,6 +70,14 @@ enum Command {
         #[arg(long)]
         force: bool,
     },
+    /// Refresh only cited research history and subsequent influence.
+    RefreshContext {
+        query: String,
+        #[arg(long, default_value = "codex")]
+        provider: AnalysisProvider,
+        #[arg(long)]
+        force: bool,
+    },
     /// Convert one paper to Markdown and print it to standard output.
     Convert {
         /// Paper ID or an unambiguous title fragment.
@@ -154,6 +162,7 @@ async fn main() -> ExitCode {
     }
 }
 
+#[allow(clippy::too_many_lines)] // Keep the CLI command dispatch in one match.
 async fn run(cli: Cli) -> Result<()> {
     let state = AppState::new(&cli.library, &cli.data).await?;
     match cli.command.unwrap_or(Command::Serve {
@@ -198,10 +207,37 @@ async fn run(cli: Cli) -> Result<()> {
             force,
         } => {
             let id = resolve_paper(&state, &query).await?;
-            let view = state.refresh_abstract(&id, provider, force).await?;
+            let view = state
+                .refresh_component(
+                    &id,
+                    provider,
+                    force,
+                    lysilogy::domain::AnalysisComponent::Abstract,
+                )
+                .await?;
             println!(
                 "{}",
                 serde_json::to_string_pretty(&view.analysis.and_then(|a| a.abstract_extraction))?
+            );
+            Ok(())
+        }
+        Command::RefreshContext {
+            query,
+            provider,
+            force,
+        } => {
+            let id = resolve_paper(&state, &query).await?;
+            let view = state
+                .refresh_component(
+                    &id,
+                    provider,
+                    force,
+                    lysilogy::domain::AnalysisComponent::Context,
+                )
+                .await?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&view.analysis.and_then(|a| a.context_assessment))?
             );
             Ok(())
         }

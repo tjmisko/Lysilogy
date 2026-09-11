@@ -1,3 +1,4 @@
+pub mod context;
 mod heuristic;
 mod local_cli;
 mod prefetch;
@@ -115,7 +116,58 @@ impl AnalysisService {
         analysis.author_abstract.clone_from(&abstract_result.text);
         analysis.abstract_extraction = Some(abstract_result);
         sources::verify_context_sources(&mut analysis).await;
+        if let Some(assessment) = &analysis.context_assessment {
+            crate::store::write_atomic(
+                &artifact_directory.join("context-assessment.json"),
+                &serde_json::to_vec_pretty(assessment)?,
+            )
+            .await?;
+        }
         Ok(AnalysisOutcome { analysis, session })
+    }
+
+    pub async fn refresh_context(
+        &self,
+        provider: AnalysisProvider,
+        paper: &ExtractedPaper,
+        directory: &Path,
+        analysis: &mut PaperAnalysis,
+        force: bool,
+    ) -> Result<()> {
+        if provider == AnalysisProvider::Heuristic {
+            return Err(Error::InvalidRequest(
+                "Historical context requires a model-backed reader".to_owned(),
+            ));
+        }
+        let abstract_result = analysis
+            .abstract_extraction
+            .clone()
+            .filter(|result| {
+                result.source_fingerprint == crate::abstracts::source_fingerprint(paper)
+            })
+            .unwrap_or_else(|| crate::abstracts::extract(paper));
+        let context = prefetch::PrefetchedPaperContext::with_abstract(paper, &abstract_result);
+        let draft = self
+            .local_cli
+            .research_context(provider, directory, &context.orientation_text, force)
+            .await?;
+        let (brief, notes, sources) =
+            normalize_context("", draft.context_notes, draft.context_sources);
+        analysis.outsider_brief = brief;
+        analysis.context_notes = notes;
+        analysis.context_sources = sources;
+        analysis.context_assessment = draft.assessment;
+        analysis.schema_version = 5;
+        // Context may be generated for a previously heuristic map.
+        sources::verify_context_sources_with_provider(analysis).await;
+        if let Some(assessment) = &analysis.context_assessment {
+            crate::store::write_atomic(
+                &directory.join("context-assessment.json"),
+                &serde_json::to_vec_pretty(assessment)?,
+            )
+            .await?;
+        }
+        Ok(())
     }
 
     pub async fn revise(
@@ -143,6 +195,13 @@ impl AnalysisService {
         analysis.author_abstract.clone_from(&abstract_result.text);
         analysis.abstract_extraction = Some(abstract_result);
         sources::verify_context_sources(&mut analysis).await;
+        if let Some(assessment) = &analysis.context_assessment {
+            crate::store::write_atomic(
+                &artifact_directory.join("context-assessment.json"),
+                &serde_json::to_vec_pretty(assessment)?,
+            )
+            .await?;
+        }
         Ok(AnalysisOutcome {
             analysis,
             session: result.session,
@@ -314,6 +373,8 @@ pub(crate) struct AnalysisDraft {
     #[serde(default)]
     pub context_sources: Vec<ContextSourceDraft>,
     #[serde(default)]
+    pub assessment: Option<context::ContextAssessment>,
+    #[serde(default)]
     pub prerequisites: Vec<String>,
     pub sections: Vec<SectionDraft>,
     #[serde(default)]
@@ -353,10 +414,14 @@ pub(crate) struct ExternalContextDraft {
     pub context_notes: Vec<ContextNoteDraft>,
     #[serde(default)]
     pub context_sources: Vec<ContextSourceDraft>,
+    #[serde(default)]
+    pub assessment: Option<context::ContextAssessment>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub(crate) struct ContextNoteDraft {
+    #[serde(default)]
+    pub kind: crate::domain::ContextKind,
     pub text: String,
     #[serde(default)]
     pub source_ids: Vec<String>,
@@ -371,6 +436,12 @@ pub(crate) struct ContextSourceDraft {
     pub year: Option<u16>,
     pub url: String,
     pub supports: String,
+    #[serde(default)]
+    pub excerpt: Option<String>,
+    #[serde(default)]
+    pub location: Option<String>,
+    #[serde(default)]
+    pub relationship: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -521,6 +592,7 @@ fn normalize_analysis(
         outsider_brief,
         author_abstract,
         abstract_extraction: Some(crate::abstracts::extract(paper)),
+        context_assessment: draft.assessment,
         context_notes,
         context_sources,
         prerequisites: clean_list(draft.prerequisites, 12),
@@ -566,12 +638,15 @@ fn normalize_context(
                 year: source.year.filter(|year| (1000..=2100).contains(year)),
                 url,
                 supports,
+                excerpt: source.excerpt,
+                location: source.location,
+                relationship: source.relationship,
                 // This is replaced by the independent link check before the
                 // analysis can be persisted or returned to a client.
                 verified_at: Utc::now(),
             })
         })
-        .take(6)
+        .take(8)
         .collect::<Vec<_>>();
 
     let notes = notes
@@ -592,9 +667,13 @@ fn normalize_context(
                 .iter()
                 .map(|id| id_map.get(id).cloned())
                 .collect::<Option<Vec<_>>>()?;
-            Some(ContextNote { text, source_ids })
+            Some(ContextNote {
+                kind: note.kind,
+                text,
+                source_ids,
+            })
         })
-        .take(2)
+        .take(6)
         .collect::<Vec<_>>();
 
     let generated_brief = notes
@@ -921,6 +1000,7 @@ mod tests {
             outsider_brief: String::new(),
             author_abstract: None,
             abstract_extraction: None,
+            context_assessment: None,
             context_notes: Vec::new(),
             context_sources: Vec::new(),
             prerequisites: Vec::new(),
@@ -1131,10 +1211,14 @@ mod tests {
         let (brief, notes, sources) = normalize_context(
             "Legacy context must not leak through.",
             vec![ContextNoteDraft {
+                kind: crate::domain::ContextKind::Legacy,
                 text: "A broad reception claim.".to_owned(),
                 source_ids: vec!["known".to_owned(), "missing".to_owned()],
             }],
             vec![ContextSourceDraft {
+                excerpt: None,
+                location: None,
+                relationship: None,
                 id: "known".to_owned(),
                 title: "Known source".to_owned(),
                 authors: vec!["Researcher".to_owned()],

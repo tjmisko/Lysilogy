@@ -109,9 +109,17 @@ pub enum ProcessingStage {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+pub enum AnalysisComponent {
+    Abstract,
+    Context,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum AnalysisJobKind {
     Initial,
     AbstractRefresh,
+    ContextRefresh,
     Revision,
 }
 
@@ -270,6 +278,8 @@ pub struct PaperAnalysis {
     #[serde(default)]
     pub context_sources: Vec<ContextSource>,
     #[serde(default)]
+    pub context_assessment: Option<crate::analysis::context::ContextAssessment>,
+    #[serde(default)]
     pub prerequisites: Vec<String>,
     #[serde(default)]
     pub sections: Vec<PaperSection>,
@@ -283,8 +293,19 @@ pub struct PaperAnalysis {
     pub reading_path: Vec<String>,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContextKind {
+    Before,
+    After,
+    #[default]
+    Legacy,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ContextNote {
+    #[serde(default)]
+    pub kind: ContextKind,
     pub text: String,
     #[serde(default)]
     pub source_ids: Vec<String>,
@@ -305,6 +326,12 @@ pub struct ContextSource {
     /// Time at which Lysilogy independently resolved redirects and received a
     /// successful response from this public URL.
     pub verified_at: DateTime<Utc>,
+    #[serde(default)]
+    pub excerpt: Option<String>,
+    #[serde(default)]
+    pub location: Option<String>,
+    #[serde(default)]
+    pub relationship: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

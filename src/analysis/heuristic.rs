@@ -118,6 +118,7 @@ impl HeuristicAnalyzer {
             author_abstract,
             context_notes: Vec::new(),
             context_sources: Vec::new(),
+            assessment: None,
             prerequisites,
             sections,
             claims: claims.into_iter().take(10).collect(),

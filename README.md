@@ -130,13 +130,22 @@ web tools; the structure branch receives local read tools only when a very large
 sampled.
 
 For Codex, the small orientation and clarification jobs use `gpt-5.6-luna` at low effort. Structural
-analysis, sourced context, and revision use `gpt-5.6-terra` at medium effort. Claude receives the
+analysis, context evidence gathering, and revision use `gpt-5.6-terra` at medium effort. Historical
+context writing uses `gpt-6-astra` at high effort, configurable with `LYSILOGY_CONTEXT_MODEL`; a
+separate Terra high-effort web pass checks the cited passages, chronology, and usefulness. Claude receives the
 same scoped tools and low/medium effort split while retaining its configured model. Abstract
 extraction has its own deterministic locator, model review, and independent source/boundary
 verifier. Structured abstract subheadings are retained. The result and check report are saved in
 `abstract.json`; orientation consumes the accepted result. An uncertain or unsupported proposal is
 withheld. `cargo run -- refresh-abstract "title fragment" --provider codex --force` (or
 `:refresh-abstract`) refreshes this component without regenerating the map or context.
+
+Context is now researched into a frozen evidence dossier, written as distinct before/after
+claims, then independently reviewed. `context-assessment.json` records citation coverage, supported
+links, fully supported claims, unassessed claims, and research gaps. These are model-assessed support
+metrics; successful URL checks remain a separate deterministic guarantee. Refresh only this component
+with `cargo run -- refresh-context "title fragment" --provider codex --force` or `:refresh-context`.
+The Abstract view also provides separate refresh buttons for abstract and context.
 
 Each initial branch writes a typed stage artifact as soon as it succeeds. A retry reuses matching
 stages and reruns only missing or malformed ones; `--force` deliberately invalidates this stage

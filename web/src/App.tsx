@@ -103,6 +103,7 @@ export function App() {
   const [selectedId, setSelectedId] = useState<string | null>(initialPaperId);
   const [paperView, setPaperView] = useState<PaperView | null>(null);
   const [activeSection, setActiveSection] = useState(0);
+  const [refreshingComponent, setRefreshingComponent] = useState<"abstract" | "context" | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [view, setView] = useState<ViewMode>(initialView);
   const [textMode, setTextMode] = useState<TextMode>("pdf");
@@ -441,6 +442,18 @@ export function App() {
     }
   }, [loadPaper, provider, refreshLibrary, refreshQueue, selectedId]);
 
+  const refreshComponent = useCallback((component: "abstract" | "context"): void => {
+    if (selectedId === null || refreshingComponent !== null) return;
+    setRefreshingComponent(component);
+    setNotice(component === "abstract" ? "Checking the authored abstract…" : "Researching the paper’s history and influence…");
+    void api.refreshComponent(selectedId, provider, component).then((next) => {
+      setPaperView((current) => current?.paper.id === next.paper.id ? next : current);
+      setNotice(component === "abstract" ? "Abstract refreshed." : "Historical context refreshed.");
+    }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Refresh failed"))
+      .finally(() => { setRefreshingComponent(null); void refreshQueue(); });
+    void refreshQueue();
+  }, [provider, refreshQueue, refreshingComponent, selectedId]);
+
   const executeCommand = useCallback((rawCommand: string): void => {
     const [name = "", argument, ...extra] = rawCommand.trim().toLocaleLowerCase().split(/\s+/u);
     setCommandOpen(false);
@@ -488,14 +501,10 @@ export function App() {
         setSwitcherOpen(true);
         break;
       case "refresh-abstract":
-        if (selectedId !== null) {
-          setNotice("Refreshing the authored abstract…");
-          void api.refreshAbstract(selectedId, provider).then((next) => {
-            setPaperView((current) => current?.paper.id === next.paper.id ? next : current);
-            void refreshQueue();
-            setNotice("Abstract refreshed.");
-          }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Abstract refresh failed"));
-        }
+        refreshComponent("abstract");
+        break;
+      case "refresh-context":
+        refreshComponent("context");
         break;
       case "abstract":
         setView("abstract");
@@ -529,7 +538,7 @@ export function App() {
       default:
         setError(`Unknown command :${name}`);
     }
-  }, [analyze, openGlossary, provider, refreshQueue, selectedId]);
+  }, [analyze, openGlossary, provider, refreshComponent, refreshQueue, selectedId]);
 
   useTabPhase({
     // The switcher and the command menu read Tab themselves; everywhere else
@@ -955,6 +964,8 @@ export function App() {
                 <AbstractView
                   analysis={analysis}
                   abstractPage={abstractPage}
+                  onRefresh={refreshComponent}
+                  refreshing={refreshingComponent}
                   onOpenPage={openPage}
                   onContinue={() => setView("overview")}
                 />

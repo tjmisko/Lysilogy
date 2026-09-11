@@ -632,7 +632,12 @@ fn render_digest(analysis: &PaperAnalysis) -> String {
                         .map(|index| format!("[{}]", index + 1))
                 })
                 .collect::<String>();
-            let _ = writeln!(markdown, "- {} {citations}", note.text);
+            let label = match note.kind {
+                crate::domain::ContextKind::Before => "Before the paper",
+                crate::domain::ContextKind::After => "After the paper",
+                crate::domain::ContextKind::Legacy => "Earlier context",
+            };
+            let _ = writeln!(markdown, "- **{label}:** {} {citations}", note.text);
         }
         markdown.push('\n');
     }
@@ -793,11 +798,16 @@ mod tests {
             outsider_brief: "A grounded contextual note".to_owned(),
             author_abstract: Some("The authors' own test abstract is preserved here.".to_owned()),
             abstract_extraction: None,
+            context_assessment: None,
             context_notes: vec![ContextNote {
+                kind: crate::domain::ContextKind::Legacy,
                 text: "A grounded contextual note".to_owned(),
                 source_ids: vec!["review".to_owned()],
             }],
             context_sources: vec![ContextSource {
+                excerpt: None,
+                location: None,
+                relationship: None,
                 id: "review".to_owned(),
                 title: "An exact source title".to_owned(),
                 authors: vec!["A. Researcher".to_owned()],

@@ -22,6 +22,10 @@ pub(super) async fn verify_context_sources(analysis: &mut PaperAnalysis) {
         analysis.context_sources.clear();
         return;
     }
+    verify_context_sources_with_provider(analysis).await;
+}
+
+pub(super) async fn verify_context_sources_with_provider(analysis: &mut PaperAnalysis) {
     verify_context_sources_with(
         analysis,
         |url| async move { verify_public_link(&url).await },
@@ -70,6 +74,9 @@ where
         .collect::<HashSet<_>>();
     verified.retain(|source| referenced_ids.contains(source.id.as_str()));
     analysis.context_sources = verified;
+    if let Some(assessment) = &mut analysis.context_assessment {
+        assessment.metrics.published_claims = analysis.context_notes.len();
+    }
 
     analysis.outsider_brief = if analysis.context_notes.is_empty() {
         NO_VERIFIED_CONTEXT.to_owned()
@@ -157,6 +164,9 @@ mod tests {
             url: format!("https://example.com/{id}"),
             supports: "Supports the contextual claim.".to_owned(),
             verified_at: Utc::now(),
+            excerpt: None,
+            location: None,
+            relationship: None,
         };
         PaperAnalysis {
             schema_version: 4,
@@ -166,7 +176,9 @@ mod tests {
             outsider_brief: "Temporary unverified context.".to_owned(),
             author_abstract: None,
             abstract_extraction: None,
+            context_assessment: None,
             context_notes: vec![ContextNote {
+                kind: crate::domain::ContextKind::Legacy,
                 text: "A grounded reception claim.".to_owned(),
                 source_ids: vec!["working".to_owned(), "broken".to_owned()],
             }],

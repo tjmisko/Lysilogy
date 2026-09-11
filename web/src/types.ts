@@ -73,7 +73,7 @@ export type AnalysisJob = {
   paper_id: string;
   paper_title: string;
   provider: AnalysisProvider;
-  kind: "initial" | "revision" | "abstract_refresh";
+  kind: "initial" | "revision" | "abstract_refresh" | "context_refresh";
   status: AnalysisJobStatus;
   progress: number;
   tasks: AnalysisTask[];
@@ -171,6 +171,7 @@ export type GlossaryEntry = {
 };
 
 export type ContextNote = {
+  kind?: "before" | "after" | "legacy";
   text: string;
   source_ids: string[];
 };
@@ -183,6 +184,9 @@ export type ContextSource = {
   url: string;
   supports: string;
   verified_at: string;
+  excerpt?: string | null;
+  location?: string | null;
+  relationship?: string | null;
 };
 
 export type PaperAnalysis = {
@@ -201,6 +205,14 @@ export type PaperAnalysis = {
   } | null;
   context_notes?: ContextNote[];
   context_sources?: ContextSource[];
+  context_assessment?: {
+    metrics: { proposed_claims: number; cited_claims: number; proposed_links: number;
+      supported_links: number; fully_supported_claims: number; unassessed_claims: number;
+      accepted_claims: number; published_claims: number; };
+    evidence_gaps: string[];
+    writer_model: string;
+    assessed_at: string;
+  } | null;
   prerequisites: string[];
   sections: PaperSection[];
   claims: Claim[];
