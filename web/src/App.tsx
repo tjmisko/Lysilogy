@@ -962,16 +962,6 @@ export function App() {
                 />
               ) : selectedId === null ? null : (
                 <section className="text-view" aria-label="Full paper text">
-                  <header className="text-view-header">
-                    <div>
-                      <span className="view-number">04</span>
-                      <span className="eyebrow">Read the paper</span>
-                    </div>
-                    <div className="text-mode-status" aria-live="polite">
-                      <strong>{textMode === "pdf" ? "Source PDF" : "Markdown reconstruction"}</strong>
-                      <span><kbd>m</kbd> {textMode === "pdf" ? "reconstruct text" : "return to PDF"}</span>
-                    </div>
-                  </header>
                   {textMode === "markdown" ? (
                     <MarkdownReader
                       key={selectedId}
