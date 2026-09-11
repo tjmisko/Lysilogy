@@ -14,7 +14,7 @@ const screenshotVariant = (name) => {
 const root = path.resolve("..");
 const fixtureRoot = process.env.LYSILOGY_SMOKE_FIXTURE_ROOT ?? root;
 const sourcePdf = process.env.LYSILOGY_SMOKE_PDF ?? path.join(
-  fixtureRoot, "local-articles", "Articles",
+  fixtureRoot, "local-articles",
   "Christiano, Irving, and Amodei - 2018 - AI Safety Via Debate.pdf",
 );
 const analysis = JSON.parse(
@@ -410,8 +410,8 @@ try {
   await page.locator(".pdf-canvas").waitFor();
   assert((await page.locator(".markdown-reader").count()) === 0, "Text did not default to the source PDF");
   assert(
-    (await page.locator(".text-mode-status strong").textContent()) === "Source PDF",
-    "the default Text mode was not identified as the source PDF",
+    (await page.locator(".pdf-reader").getAttribute("aria-label")) === `PDF: ${metadata.title}`,
+    "the default Text mode lacks its accessible PDF title",
   );
   await page.getByRole("button", { name: /^Overview$/u }).click();
   await page.locator(".source-page").first().waitFor();
@@ -506,7 +506,7 @@ try {
 
   await page.keyboard.press("m");
   await page.locator(".markdown-document").waitFor();
-  assert((await page.locator(".text-view-header").count()) === 1, "Text view header is missing");
+  assert((await page.locator(".markdown-reader").count()) === 1, "Markdown reconstruction is missing");
   assert((await page.locator(".markdown-page-marker").count()) >= 4, "Markdown page provenance is incomplete");
   await page.screenshot({ path: screenshotVariant("markdown"), fullPage: true });
   await page.keyboard.press("m");

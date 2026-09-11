@@ -70,7 +70,7 @@ cargo build --release
 
 | Flag | Environment variable | Default |
 | --- | --- | --- |
-| `--library` | `LYSILOGY_LIBRARY` | `local-articles/Articles` |
+| `--library` | `LYSILOGY_LIBRARY` | `local-articles` |
 | `--data` | `LYSILOGY_DATA` | `.lysilogy` |
 | `--bind` (serve) | — | `127.0.0.1:7319` |
 | `--web` (serve) | — | `web/dist` |

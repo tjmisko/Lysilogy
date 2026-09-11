@@ -25,7 +25,7 @@ struct Cli {
     #[arg(
         long,
         env = "LYSILOGY_LIBRARY",
-        default_value = "local-articles/Articles",
+        default_value = "local-articles",
         global = true
     )]
     library: PathBuf,

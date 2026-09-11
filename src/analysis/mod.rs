@@ -405,7 +405,7 @@ fn normalize_analysis(
 
     let maximum_page = u32::try_from(paper.pages.len()).unwrap_or(u32::MAX).max(1);
     let mut used_ids = std::collections::HashSet::new();
-    let sections = draft
+    let mut sections = draft
         .sections
         .into_iter()
         .enumerate()
@@ -459,6 +459,7 @@ fn normalize_analysis(
             })
         })
         .collect::<Result<Vec<_>>>()?;
+    repair_section_order(&mut sections, &paper.layout);
     validate_section_order(&sections)?;
 
     let valid_ids = sections
@@ -620,6 +621,47 @@ const fn anchor_precedes(
     }
 }
 
+/// Clip each verified section span so it ends before the next verified
+/// section's start. Analyzers sometimes cite the last text on a page rather
+/// than the last text of the section; the following section's verified start
+/// is the more reliable boundary, so the earlier span is trimmed to the
+/// sentence tail preceding it. Spans whose starts are themselves out of order
+/// are left for `validate_section_order` to reject.
+fn repair_section_order(sections: &mut [PaperSection], layout: &crate::domain::DocumentLayout) {
+    let maximum_page = layout
+        .pages
+        .iter()
+        .map(|page| page.number)
+        .max()
+        .unwrap_or(1);
+    let mut previous_index: Option<usize> = None;
+    for index in 0..sections.len() {
+        let Some(next_start) = sections[index]
+            .source_span
+            .as_ref()
+            .map(|span| span.start.clone())
+        else {
+            continue;
+        };
+        if let Some(previous_index) = previous_index {
+            let previous = &mut sections[previous_index];
+            if let Some(span) = previous.source_span.as_mut()
+                && !anchor_precedes(&span.end, &next_start)
+                && let Some(clipped) = crate::layout::anchor_before(
+                    layout,
+                    next_start.page,
+                    next_start.start_token,
+                    &span.start,
+                )
+            {
+                span.end = clipped;
+                previous.pages = PageSpan::normalized(span.start.page, span.end.page, maximum_page);
+            }
+        }
+        previous_index = Some(index);
+    }
+}
+
 fn validate_section_order(sections: &[PaperSection]) -> Result<()> {
     let mut previous: Option<(&str, &SectionSourceSpan)> = None;
     for section in sections {
@@ -651,6 +693,7 @@ pub fn validate_citations(
     analysis: &mut PaperAnalysis,
     layout: &crate::domain::DocumentLayout,
 ) -> Result<()> {
+    repair_section_order(&mut analysis.sections, layout);
     for section in &mut analysis.sections {
         if let Some(source_span) = &section.source_span {
             section.pages = PageSpan::normalized(
@@ -779,7 +822,10 @@ pub(crate) fn fallback_quote(text: String, page: u32) -> KeyQuote {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{DocumentLayout, ExtractedPage, LayoutPage, PaperMetadata, TextAnchor};
+    use crate::domain::{
+        DocumentLayout, ExtractedPage, LayoutPage, LayoutSentence, LayoutToken, PaperMetadata,
+        TextAnchor,
+    };
 
     fn anchor(page: u32, start_token: u32, end_token: u32) -> TextAnchor {
         TextAnchor {
@@ -806,6 +852,44 @@ mod tests {
             related_terms: Vec::new(),
             tile_width: 1,
             tile_height: 1,
+        }
+    }
+
+    /// One page whose tokens are `words`, segmented into a sentence at every
+    /// token ending with a period.
+    fn layout_page(number: u32, words: &[&str]) -> LayoutPage {
+        let tokens = words
+            .iter()
+            .enumerate()
+            .map(|(index, word)| LayoutToken {
+                index: u32::try_from(index).unwrap_or(u32::MAX),
+                text: (*word).to_owned(),
+                line: 0,
+                rects: Vec::new(),
+            })
+            .collect::<Vec<_>>();
+        let mut sentences = Vec::new();
+        let mut start = 0;
+        let last_index = tokens.last().map_or(0, |token| token.index);
+        for token in &tokens {
+            if token.text.ends_with('.') || token.index == last_index {
+                sentences.push(LayoutSentence {
+                    id: format!("p{number:04}-s{:05}", sentences.len() + 1),
+                    page: number,
+                    start_token: start,
+                    end_token: token.index,
+                    text: String::new(),
+                    rects: Vec::new(),
+                });
+                start = token.index + 1;
+            }
+        }
+        LayoutPage {
+            number,
+            width: 612.0,
+            height: 792.0,
+            tokens,
+            sentences,
         }
     }
 
@@ -905,6 +989,116 @@ mod tests {
         ];
 
         let error = validate_section_order(&sections).expect_err("overlap must be rejected");
+        assert!(
+            error
+                .to_string()
+                .contains("overlap or are out of reading order")
+        );
+    }
+
+    #[test]
+    fn clips_prior_span_to_the_sentence_before_the_next_verified_start() -> Result<()> {
+        let layout = DocumentLayout {
+            schema_version: 1,
+            pages: vec![layout_page(
+                7,
+                &[
+                    "Methods", "end", "here.", "3", "Results", "begin", "with", "a", "list.",
+                ],
+            )],
+        };
+        let mut analysis = analysis_with_sections(vec![
+            // The analyzer cited the last text on the page instead of the
+            // last text of the section.
+            section(
+                "Methods",
+                PageSpan { start: 6, end: 7 },
+                anchor(6, 0, 1),
+                anchor(7, 5, 8),
+            ),
+            section(
+                "Results",
+                PageSpan { start: 7, end: 9 },
+                anchor(7, 3, 4),
+                anchor(9, 10, 12),
+            ),
+        ]);
+
+        validate_citations(&mut analysis, &layout)?;
+
+        let end = &analysis.sections[0]
+            .source_span
+            .as_ref()
+            .ok_or_else(|| Error::Task("span dropped".to_owned()))?
+            .end;
+        assert_eq!((end.page, end.start_token, end.end_token), (7, 0, 2));
+        assert_eq!(end.exact_text, "Methods end here.");
+        assert_eq!(analysis.sections[0].pages, PageSpan { start: 6, end: 7 });
+        Ok(())
+    }
+
+    #[test]
+    fn clips_prior_span_back_to_the_previous_page_when_next_section_opens_a_page() -> Result<()> {
+        let layout = DocumentLayout {
+            schema_version: 1,
+            pages: vec![
+                layout_page(1, &["Intro", "closes", "here."]),
+                layout_page(2, &["2", "Methods", "start", "the", "page."]),
+            ],
+        };
+        let mut analysis = analysis_with_sections(vec![
+            section(
+                "Intro",
+                PageSpan { start: 1, end: 2 },
+                anchor(1, 0, 0),
+                anchor(2, 2, 4),
+            ),
+            section(
+                "Methods",
+                PageSpan { start: 2, end: 2 },
+                anchor(2, 0, 1),
+                anchor(2, 2, 4),
+            ),
+        ]);
+
+        validate_citations(&mut analysis, &layout)?;
+
+        let end = &analysis.sections[0]
+            .source_span
+            .as_ref()
+            .ok_or_else(|| Error::Task("span dropped".to_owned()))?
+            .end;
+        assert_eq!((end.page, end.start_token, end.end_token), (1, 0, 2));
+        assert_eq!(analysis.sections[0].pages, PageSpan { start: 1, end: 1 });
+        Ok(())
+    }
+
+    #[test]
+    fn still_rejects_sections_whose_starts_are_out_of_order() {
+        let layout = DocumentLayout {
+            schema_version: 1,
+            pages: vec![layout_page(
+                1,
+                &["First", "words.", "Second", "words.", "Third", "words."],
+            )],
+        };
+        let mut analysis = analysis_with_sections(vec![
+            section(
+                "Later",
+                PageSpan { start: 1, end: 1 },
+                anchor(1, 4, 4),
+                anchor(1, 5, 5),
+            ),
+            section(
+                "Earlier",
+                PageSpan { start: 1, end: 1 },
+                anchor(1, 0, 0),
+                anchor(1, 1, 1),
+            ),
+        ]);
+
+        let error = validate_citations(&mut analysis, &layout)
+            .expect_err("reversed sections must be rejected");
         assert!(
             error
                 .to_string()

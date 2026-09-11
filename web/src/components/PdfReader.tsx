@@ -402,7 +402,7 @@ export function PdfReader({
         </div>
         <div className="pdf-controls">
           <button type="button" onClick={() => onPage(Math.max(1, page - step))} disabled={page <= 1}>
-            ← <span>Prev</span>
+            <span>Prev</span>
           </button>
           <span>
             {spread && lastVisiblePage !== page ? `${page}–${lastVisiblePage}` : page} / {pageCount}
@@ -412,13 +412,13 @@ export function PdfReader({
             onClick={() => onPage(Math.min(pageCount, page + step))}
             disabled={lastVisiblePage >= pageCount}
           >
-            <span>Next</span> →
+            <span>Next</span>
           </button>
           <button type="button" className={spread ? "is-active" : ""} onClick={onToggleSpread}>
-            {spread ? "Two pages" : "One page"} <kbd>2</kbd>
+            {spread ? "Two pages" : "One page"}
           </button>
           <button type="button" className={darkInk ? "is-active" : ""} onClick={onToggleInk}>
-            {darkInk ? "Dark ink" : "True colour"} <kbd>I</kbd>
+            {darkInk ? "Dark" : "Light"}
           </button>
         </div>
       </div>

@@ -383,6 +383,54 @@ pub fn verify_quote(
     )
 }
 
+/// Anchor the sentence tail that immediately precedes `(page, token)`.
+///
+/// Walks back across pages that carry no tokens. Never reaches before
+/// `floor`, and returns `None` when nothing lies between `floor` and the
+/// requested position.
+#[must_use]
+pub fn anchor_before(
+    layout: &DocumentLayout,
+    page: u32,
+    token: u32,
+    floor: &TextAnchor,
+) -> Option<TextAnchor> {
+    let (page, last_token) = layout
+        .pages
+        .iter()
+        .filter(|candidate| candidate.number >= floor.page && candidate.number <= page)
+        .rev()
+        .find_map(|candidate| {
+            let limit = if candidate.number == page {
+                token
+            } else {
+                u32::MAX
+            };
+            candidate
+                .tokens
+                .iter()
+                .map(|token| token.index)
+                .filter(|index| *index < limit)
+                .max()
+                .map(|last| (candidate, last))
+        })?;
+    let on_floor_page = page.number == floor.page;
+    if on_floor_page && last_token < floor.start_token {
+        return None;
+    }
+    let sentence_start = page
+        .sentences
+        .iter()
+        .find(|sentence| sentence.start_token <= last_token && sentence.end_token >= last_token)
+        .map_or(last_token, |sentence| sentence.start_token);
+    let start = if on_floor_page {
+        sentence_start.max(floor.start_token)
+    } else {
+        sentence_start
+    };
+    anchor_from_token_range(page, start, last_token)
+}
+
 fn page_matches(page: &LayoutPage, needle: &[char]) -> Vec<TextAnchor> {
     let mut haystack = Vec::<char>::new();
     let mut owners = Vec::<u32>::new();
@@ -523,6 +571,43 @@ mod tests {
         let anchor = anchor.ok_or_else(|| Error::Task("missing anchor".to_owned()))?;
         assert_eq!(anchor.start_token, 0);
         assert_eq!(anchor.end_token, 4);
+        Ok(())
+    }
+
+    #[test]
+    fn anchors_the_sentence_tail_before_a_token() -> Result<()> {
+        let layout = parse_bbox_layout(BBOX)?;
+        let floor = TextAnchor {
+            page: 1,
+            start_token: 0,
+            end_token: 0,
+            sentence_ids: Vec::new(),
+            rects: Vec::new(),
+            exact_text: "The".to_owned(),
+        };
+        let anchor = anchor_before(&layout, 1, 3, &floor)
+            .ok_or_else(|| Error::Task("missing anchor".to_owned()))?;
+        assert_eq!(anchor.page, 1);
+        assert_eq!(anchor.start_token, 0);
+        assert_eq!(anchor.end_token, 2);
+        assert_eq!(anchor.exact_text, "The main claim");
+        assert_eq!(anchor.sentence_ids, vec!["p0001-s00001".to_owned()]);
+        Ok(())
+    }
+
+    #[test]
+    fn returns_nothing_before_the_floor_anchor() -> Result<()> {
+        let layout = parse_bbox_layout(BBOX)?;
+        let floor = TextAnchor {
+            page: 1,
+            start_token: 3,
+            end_token: 4,
+            sentence_ids: Vec::new(),
+            rects: Vec::new(),
+            exact_text: "is grounded.".to_owned(),
+        };
+        assert!(anchor_before(&layout, 1, 3, &floor).is_none());
+        assert!(anchor_before(&layout, 1, 0, &floor).is_none());
         Ok(())
     }
 
