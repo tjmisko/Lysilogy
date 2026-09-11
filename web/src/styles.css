@@ -2647,6 +2647,12 @@ code {
   filter: invert(0.91) hue-rotate(180deg) brightness(0.82) contrast(1.08) sepia(0.08);
 }
 
+/* PDF.js appends these helpers to body, outside the reader's text layer. */
+.hiddenCanvasElement,
+#hiddenCopyElement {
+  display: none;
+}
+
 .pdf-text-layer-host,
 .pdf-text-layer {
   position: absolute;
@@ -3443,6 +3449,10 @@ code {
 }
 
 @media (max-width: 1179px) {
+  .workspace {
+    /* The rail overlays compact screens; never animate desktop padding here. */
+    transition: none;
+  }
   .workspace.rail-visible {
     padding-left: 0;
   }

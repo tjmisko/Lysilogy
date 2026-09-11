@@ -40,6 +40,20 @@ export function SectionFocus({ url, title, analysis, section, index, paperMap, d
     scrollRef.current?.focus({ preventScroll: true });
   }, [jump.request]);
 
+  useEffect(() => {
+    if (!keyboardEnabled) return;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.isComposing) return;
+      // The section reader owns Escape, including from its controls and digest
+      // selections. Separate dialogs suspend this handler via keyboardEnabled.
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      onClose();
+    };
+    window.addEventListener("keydown", onEscape, true);
+    return () => window.removeEventListener("keydown", onEscape, true);
+  }, [keyboardEnabled, onClose]);
+
   useLayoutEffect(() => {
     let stop = () => {};
     let second = 0;
@@ -69,7 +83,6 @@ export function SectionFocus({ url, title, analysis, section, index, paperMap, d
       if (event.key === "I") { event.preventDefault(); event.stopPropagation(); onToggleInk(); return; }
       if (pane !== "source" || event.metaKey || event.altKey || (event.ctrlKey && !["d", "u"].includes(event.key))) return;
       let distance: number | null = null;
-      if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onClose(); return; }
       if (["j", "ArrowDown"].includes(event.key)) distance = 100;
       if (["k", "ArrowUp"].includes(event.key)) distance = -100;
       if (event.key === "PageDown" || (event.ctrlKey && event.key === "d")) distance = (host?.clientHeight ?? 700) * (event.ctrlKey ? .5 : .9);
@@ -103,7 +116,7 @@ export function SectionFocus({ url, title, analysis, section, index, paperMap, d
             onReturnToMap={onClose} onOpenFullPaper={onFullPaper} onClarifySelection={onClarify} onSaveReference={onSaveReference} />}
       </div>
       <div className="section-digest-slot" onPointerDownCapture={() => setPane("digest")} onFocusCapture={() => setPane("digest")}>
-        {digest(openPage, pane === "digest", <nav className="section-step" aria-label="Section navigation">
+        {digest(openPage, keyboardEnabled && pane === "digest", <nav className="section-step" aria-label="Section navigation">
           <button type="button" aria-label="Previous section" disabled={index === 0} onClick={() => selectSection(index - 1)}>←</button>
           <label className="section-picker"><span aria-hidden="true">{index + 1} / {analysis.sections.length} ⌄</span>
             <select aria-label="Selected section" value={index} onChange={(event) => selectSection(Number(event.target.value))}>
