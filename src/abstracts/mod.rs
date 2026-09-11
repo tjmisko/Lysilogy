@@ -136,6 +136,18 @@ pub fn source_lines(paper: &ExtractedPaper) -> Vec<SourceLine> {
         .collect::<Vec<_>>();
     let mut result = Vec::new();
     for page in &pages {
+        let notes = page
+            .text
+            .lines()
+            .filter_map(|line| {
+                let (marker, rest) = line.trim().split_once(' ')?;
+                (marker.len() == 1
+                    && marker.chars().all(|c| c.is_ascii_digit())
+                    && rest.split_whitespace().count() >= 5
+                    && !boundary(line))
+                .then_some(marker)
+            })
+            .collect::<Vec<_>>();
         let lines = page
             .text
             .lines()
@@ -155,10 +167,34 @@ pub fn source_lines(paper: &ExtractedPaper) -> Vec<SourceLine> {
             result.push(SourceLine {
                 id: result.len(),
                 page: page.number,
-                text: (*text).to_owned(),
+                text: text
+                    .chars()
+                    .filter(|c| {
+                        let digit = match c {
+                            '⁰' => "0",
+                            '¹' => "1",
+                            '²' => "2",
+                            '³' => "3",
+                            '⁴' => "4",
+                            '⁵' => "5",
+                            '⁶' => "6",
+                            '⁷' => "7",
+                            '⁸' => "8",
+                            '⁹' => "9",
+                            _ => "",
+                        };
+                        digit.is_empty() || !notes.contains(&digit)
+                    })
+                    .collect(),
                 running_matter: (repeated || page_number) && heading_remainder(text).is_none(),
-                section_heading: boundary(text)
-                    || (title_like(text) && heading_gap(paper, page.number, text)),
+                section_heading: !paper.metadata.authors.iter().any(|author| {
+                    normalize(text.trim_end_matches(['*', '∗', '†', '‡'])) == normalize(author)
+                }) && (boundary(text)
+                    || (text
+                        .chars()
+                        .all(|c| c.is_ascii_digit() || "*∗†‡. ".contains(c))
+                        && lines.get(index + 1).is_some_and(|next| boundary(next)))
+                    || (title_like(text) && heading_gap(paper, page.number, text))),
             });
         }
     }
@@ -247,6 +283,14 @@ pub(crate) fn heading_remainder(line: &str) -> Option<&str> {
 pub(crate) fn boundary(line: &str) -> bool {
     let text = line.trim();
     let lower = text.to_lowercase();
+    let compact = lower.replace(' ', "");
+    if matches!(
+        compact.as_str(),
+        "contents" | "tableofcontents" | "introduction" | "equalcontribution."
+    ) || lower.starts_with("contributions:")
+    {
+        return true;
+    }
     if ["keywords", "key words", "index terms", "jel classification"]
         .iter()
         .any(|word| lower == *word || lower.starts_with(&format!("{word}:")))
@@ -282,7 +326,7 @@ pub(crate) fn selected_text(lines: &[SourceLine], start: usize, end: usize) -> O
             })
             .filter(|text| !text.is_empty())
             .collect::<Vec<_>>()
-            .join("\n"),
+            .join(" "),
     )
 }
 

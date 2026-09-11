@@ -78,17 +78,6 @@ export function AbstractView({
 
   return (
     <section className="abstract-view" aria-label="Paper abstract and orientation">
-      <header className="view-introduction">
-        <div>
-          <span className="view-number">01</span>
-          <span className="eyebrow">Orient in under a minute</span>
-        </div>
-        <p>
-          Start with the shortest useful reading, then separate the authors&apos; own account from
-          generated context.
-        </p>
-      </header>
-
       <article className="abstract-tldr">
         <span className="eyebrow">{generationLabel(analysis)} · one-sentence TL;DR</span>
         <p>{analysis.thesis}</p>

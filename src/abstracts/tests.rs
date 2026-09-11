@@ -98,6 +98,26 @@ fn allows_ligatures_but_not_scientific_hyphen_changes() {
 }
 
 #[test]
+fn allows_source_preserving_spacing_repairs_but_rejects_changed_words() {
+    let p = paper(&[
+        "Abstract\nOur experiment increases optimizationpower while preserving all constraints.\nIntroduction",
+    ]);
+    let mut candidate = locate(&p).unwrap();
+    candidate.text = candidate
+        .text
+        .replace("optimizationpower", "optimization power");
+    assert_eq!(
+        verify(&p, Some(&candidate)).status,
+        AbstractStatus::Accepted
+    );
+    candidate.text = candidate.text.replace("increases", "reduces");
+    assert_eq!(
+        verify(&p, Some(&candidate)).status,
+        AbstractStatus::NeedsReview
+    );
+}
+
+#[test]
 fn unlabeled_opening_requires_independent_review_without_relaxing_source_fidelity() {
     let p = paper(&[
         "Target discovery\nA. Author\nFebruary 2019\nThere are several distinct mechanisms through which the measured proxy changes under optimization.\nThis paper explains those mechanisms and specifies the conditions under which they occur.\nThe result helps readers distinguish statistical noise from structural changes in the observed physical system.\n\nVarieties of Measurement Failure\nThe body develops the model.",

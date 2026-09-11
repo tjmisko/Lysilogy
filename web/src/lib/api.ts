@@ -114,7 +114,7 @@ export const api = {
     }),
   clarify: (
     id: string,
-    sectionId: string,
+    sectionId: string | null,
     selection: string,
     question: string,
     provider: AnalysisProvider,

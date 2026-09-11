@@ -132,11 +132,13 @@ impl HeuristicAnalyzer {
 
     #[must_use]
     pub fn clarify(
-        analysis: &crate::domain::PaperAnalysis,
+        analysis: Option<&crate::domain::PaperAnalysis>,
         selection: &str,
         question: &str,
     ) -> Clarification {
-        let concepts = super::matching_glossary(&analysis.glossary, selection);
+        let concepts = analysis.map_or_else(Vec::new, |a| {
+            super::matching_glossary(&a.glossary, selection)
+        });
         let concept_hint = concepts.first().map_or_else(String::new, |concept| {
             format!(
                 " In this paper, “{}” means {}",
@@ -151,12 +153,12 @@ impl HeuristicAnalyzer {
         Clarification {
             selection: selection.to_owned(),
             answer: format!(
-                "{requested}: {}{} The surrounding section digest gives the local context, while the page link is the authority for the exact wording.",
+                "{requested}: {}{} Read the surrounding source for its assumptions and qualifications.",
                 shorten(selection, 360),
                 concept_hint
             ),
             concepts,
-            connections: vec![analysis.thesis.clone()],
+            connections: analysis.map_or_else(Vec::new, |a| vec![a.thesis.clone()]),
             limitation: Some(
                 "This is an offline lexical explanation. Choose Codex or Claude when the answer depends on technical context outside the selected passage."
                     .to_owned(),

@@ -424,7 +424,7 @@ code {
 
 .workspace {
   display: grid;
-  grid-template-rows: var(--topbar-height) minmax(0, 1fr) var(--command-height);
+  grid-template-rows: var(--topbar-height) minmax(0, 1fr);
   width: 100%;
   height: 100%;
   transition: padding-left 220ms ease;
@@ -603,7 +603,7 @@ code {
 .paper-heading {
   max-width: 1480px;
   margin: 0 auto;
-  padding: 30px clamp(20px, 4vw, 56px) 24px;
+  padding: 20px clamp(18px, 2.5vw, 36px) 18px;
 }
 
 .paper-kicker {
@@ -620,7 +620,7 @@ code {
 .paper-heading h1 {
   max-width: 1120px;
   margin: 0;
-  font: 500 clamp(25px, 3vw, 43px)/1.09 Georgia, "Times New Roman", serif;
+  font: 500 clamp(25px, 2.4vw, 34px)/1.12 Georgia, "Times New Roman", serif;
   letter-spacing: -0.025em;
   text-wrap: balance;
 }
@@ -705,8 +705,8 @@ code {
 }
 
 .abstract-view {
-  max-width: 1240px;
-  padding-bottom: 48px;
+  max-width: 1480px;
+  padding: 0 clamp(18px, 2.5vw, 36px) 32px;
 }
 
 .view-introduction {
@@ -743,21 +743,11 @@ code {
 .abstract-tldr {
   position: relative;
   overflow: hidden;
-  padding: clamp(22px, 3vw, 34px);
+  padding: 16px 20px;
   border: 1px solid color-mix(in srgb, var(--signal) 42%, var(--line));
   background:
     linear-gradient(115deg, rgba(216, 255, 99, 0.09), transparent 58%),
     var(--panel);
-}
-
-.abstract-tldr::after {
-  position: absolute;
-  top: -35px;
-  right: 18px;
-  color: rgba(216, 255, 99, 0.055);
-  content: "01";
-  font: 700 150px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-  pointer-events: none;
 }
 
 .abstract-tldr p {
@@ -765,7 +755,7 @@ code {
   z-index: 1;
   max-width: 950px;
   margin: 12px 0 0;
-  font: 500 clamp(23px, 2.6vw, 36px)/1.15 Georgia, "Times New Roman", serif;
+  font: 500 clamp(20px, 1.75vw, 25px)/1.3 Georgia, "Times New Roman", serif;
   letter-spacing: -0.025em;
   text-wrap: balance;
 }
@@ -1076,9 +1066,10 @@ code {
 }
 
 .atlas-shell {
-  max-width: 1480px;
-  margin: 0 auto;
-  padding: 0 clamp(20px, 4vw, 56px) 62px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
 
 .atlas-intro {
@@ -1299,7 +1290,7 @@ code {
 }
 
 .source-map {
-  padding: clamp(14px, 2vw, 22px);
+  padding: 0;
   border: 1px solid var(--line);
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.018), transparent 45%);
 }
@@ -2274,7 +2265,8 @@ code {
 
 /* Full text */
 .text-view {
-  padding-bottom: 40px;
+  height: 100%;
+  min-height: 0;
 }
 
 .text-view-header {
@@ -2499,20 +2491,23 @@ code {
 
 /* PDF */
 .pdf-reader {
-  height: calc(100% - 1px);
-  min-height: 650px;
-  padding: 0 clamp(14px, 3vw, 45px) 40px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .pdf-toolbar {
+  flex-shrink: 0;
   position: sticky;
   z-index: 10;
   top: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 10px 15px;
+  gap: 8px;
+  padding: 6px 10px;
   border: 1px solid var(--line);
   background: rgba(17, 19, 18, 0.94);
   backdrop-filter: blur(12px);
@@ -2524,7 +2519,7 @@ code {
 
 .pdf-toolbar strong {
   display: block;
-  max-width: 46vw;
+  max-width: 24vw;
   overflow: hidden;
   margin-top: 3px;
   font: 500 12px Georgia, serif;
@@ -2534,13 +2529,15 @@ code {
 
 .pdf-controls {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: 6px;
   color: var(--ink-faint);
   font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-.pdf-controls button {
+.pdf-controls button, .pdf-controls select {
   padding: 6px 8px;
   border: 1px solid var(--line);
   border-radius: 3px;
@@ -2560,16 +2557,32 @@ code {
 .pdf-viewport {
   position: relative;
   display: flex;
-  min-height: 70vh;
-  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  align-items: flex-start;
+  justify-content: safe center;
+  gap: 12px;
   overflow: auto;
-  padding: 28px;
+  padding: 12px;
   border: 1px solid var(--line);
   border-top: 0;
   background:
     radial-gradient(circle at center, #292c2a 0, #171918 58%, #101212 100%);
   scrollbar-color: var(--line-bright) transparent;
 }
+
+.pdf-reader[data-flow="continuous"][data-axis="vertical"] .pdf-viewport {
+  flex-direction: column;
+  align-items: safe center;
+  justify-content: flex-start;
+}
+
+.pdf-reader[data-flow="continuous"][data-axis="horizontal"] .pdf-viewport {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.pdf-mode-note { flex-shrink: 0; }
 
 .pdf-viewport.is-spread {
   align-items: flex-start;
@@ -3525,7 +3538,6 @@ code {
   .markdown-controls { width: 100%; justify-content: space-between; }
   .pdf-toolbar strong { max-width: 80vw; }
   .pdf-controls { width: 100%; justify-content: space-between; }
-  .pdf-controls button span { display: none; }
   .pdf-viewport { padding: 14px; }
   .pdf-viewport.is-spread { gap: 10px; }
   .paper-switcher > footer span:first-child { display: none; }
@@ -3557,12 +3569,12 @@ code {
   .view-switch button > span { font-size: 7px; }
   .paper-heading h1 { font-size: 26px; }
   .paper-byline { font-size: 10px; }
-  .atlas-shell { padding-inline: 12px; }
+  .atlas-shell { padding-inline: 0; }
   .abstract-view,
   .glossary-view { padding-inline: 12px; }
   .abstract-tldr,
   .authored-abstract { padding: 20px; }
-  .abstract-tldr p { font-size: 24px; }
+  .abstract-tldr p { font-size: 21px; }
   .authored-abstract > header,
   .view-continuation {
     align-items: flex-start;
@@ -3655,14 +3667,13 @@ code {
 .has-library .section-focus { left: var(--rail-width); }
 .has-section-focus .main-stage { visibility: hidden; }
 .has-section-focus .command-bar { display: none; }
-.section-focus-columns { grid-row: 2; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) clamp(280px, 25vw, 320px); overflow: hidden; }
-.section-source-scroll { position: relative; min-width: 0; overflow: auto; scrollbar-color: var(--line-bright) transparent; outline-offset: -3px; background: #101312; }
-.section-source-scroll .pdf-reader { min-height: 100%; height: auto; padding: 0 12px 12px; }
-.section-source-scroll .pdf-toolbar { top: 0; gap: 8px; margin-inline: -12px; padding: 6px 12px; }
+.section-focus-columns { grid-row: 2; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) clamp(340px, 34vw, 520px); overflow: hidden; }
+.section-source-scroll { position: relative; min-width: 0; min-height: 0; overflow: hidden; outline-offset: -3px; background: #101312; }
+.section-source-scroll .pdf-toolbar { top: 0; gap: 8px; padding: 6px 8px; }
 .section-source-scroll .pdf-controls { min-width: 0; justify-content: flex-end; }
 .section-source-scroll .pdf-controls button, .section-source-scroll .pdf-controls select, .return-to-map { padding: 5px 7px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg-raised); color: var(--ink-soft); font: 10px ui-monospace, monospace; cursor: pointer; }
 .return-to-map { white-space: nowrap; }
-.section-source-scroll .pdf-viewport { display: flex; flex-direction: column; align-items: safe center; justify-content: flex-start; min-height: 0; gap: 14px; padding: 16px 0 0; border: 0; overflow: visible; background: transparent; }
+.section-source-scroll .pdf-viewport { border: 0; background: transparent; }
 .section-source-scroll .pdf-page-frame { flex: 0 0 auto; }
 .section-source-scroll .pdf-page-surface { overflow: clip; }
 .section-source-scroll .pdf-page-frame figcaption { margin-top: 8px; }
@@ -3708,3 +3719,17 @@ code {
   .section-digest-slot .panel-header h2 { font-size: 24px; }
 }
 @media (prefers-reduced-motion: reduce) { .page-transition-snapshot { display: none; } }
+
+.current-paper-label { display: block; max-width: min(36vw, 540px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-soft); font: 11px/1.4 ui-monospace, monospace; }
+.source-map-header { padding: 8px; }
+@media (max-width: 800px) { .current-paper-label { max-width: 56vw; font-size: 10px; } }
+.passage-question-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 16px; background: #0009; }
+.passage-question { width: min(620px, 100%); max-height: calc(100dvh - 32px); overflow: auto; border: 1px solid var(--line-bright); background: var(--panel); padding: 22px; box-shadow: 0 20px 70px #0008; }
+.passage-question header { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.passage-question h2 { margin: 6px 0 16px; font: 25px Georgia, serif; }
+.passage-question blockquote { margin: 0 0 20px; padding: 12px; max-height: 190px; overflow: auto; border-left: 2px solid var(--signal); background: var(--bg-raised); font: 15px/1.5 Georgia, serif; }
+.passage-question label { display: grid; gap: 8px; font-size: 12px; color: var(--ink-soft); }
+.passage-question textarea { resize: vertical; width: 100%; border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 10px; font: 14px/1.5 Georgia, serif; }
+.passage-question .clarify-controls { margin-top: 10px; }
+.passage-answer { margin-top: 20px; font: 16px/1.6 Georgia, serif; }
+.passage-answer small { color: var(--ink-faint); font-size: 12px; }

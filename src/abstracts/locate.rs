@@ -12,7 +12,11 @@ pub fn target_start_index(paper: &ExtractedPaper) -> usize {
     paper
         .pages
         .iter()
-        .position(|page| title_key(&page.text).contains(&title))
+        .position(|page| {
+            title_key(&page.text).contains(&title)
+                && !page.text.contains("Recommended Citation")
+                && !page.text.contains("This Article is brought to you")
+        })
         .unwrap_or(0)
 }
 

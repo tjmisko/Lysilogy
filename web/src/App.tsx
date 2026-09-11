@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AbstractView } from "./components/AbstractView";
 import { CommandMenu } from "./components/CommandMenu";
+import { PassageQuestion } from "./components/PassageQuestion";
 import { DigestPanel } from "./components/DigestPanel";
 import { ExperimentPanel } from "./components/ExperimentPanel";
 import { GlossaryView } from "./components/GlossPanel";
@@ -112,7 +113,8 @@ export function App() {
   const [activeSection, setActiveSection] = useState(0);
   const [refreshingComponent, setRefreshingComponent] = useState<"abstract" | "context" | "structure" | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
-  const [view, setView] = useState<ViewMode>(initialView);
+  const [preferredView, setView] = useState<ViewMode>(initialView);
+  const view: ViewMode = paperView?.analysis == null ? "text" : preferredView;
   const [textMode, setTextMode] = useState<TextMode>("pdf");
   const [compactLayout, setCompactLayout] = useState(() => window.innerWidth < 1180);
   const [libraryOpen, setLibraryOpen] = useState(() => window.innerWidth >= 1180);
@@ -137,10 +139,10 @@ export function App() {
   const [showUserHighlights, setShowUserHighlights] = useState(true);
   const [markMode, setMarkMode] = useState(false);
   const [clarifySeed, setClarifySeed] = useState("");
+  const [sourceQuestion, setSourceQuestion] = useState<{ text: string; page: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [authorsOpen, setAuthorsOpen] = useState(false);
   const [sidebarPaperIds, setSidebarPaperIds] = useState<string[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const mainStageRef = useRef<HTMLElement>(null);
@@ -152,21 +154,11 @@ export function App() {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(VIEW_STORAGE_KEY, view);
+      window.localStorage.setItem(VIEW_STORAGE_KEY, preferredView);
     } catch {
       // The reader remains usable when storage is unavailable.
     }
-  }, [view]);
-
-  useEffect(() => {
-    let cancelled = false;
-    window.queueMicrotask(() => {
-      if (!cancelled) setAuthorsOpen(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedId]);
+  }, [preferredView]);
 
   const refreshLibrary = useCallback(async (): Promise<LibraryResponse> => {
     const next = await api.library();
@@ -244,7 +236,6 @@ export function App() {
         setCommandOpen(true);
       } else if (event.key === "q" && !isEditableTarget(event.target)) {
         event.preventDefault();
-        setPanel(null);
         setSwitcherOpen(false);
         setCommandOpen(false);
         if (compactLayout) setLibraryOpen(false);
@@ -308,6 +299,7 @@ export function App() {
       setActiveSection(0);
       setPanel(null);
       setClarifySeed("");
+      setSourceQuestion(null);
       setPaperMap(null);
       setMapLoading(false);
       setMarkMode(false);
@@ -587,7 +579,7 @@ export function App() {
   useTabPhase({
     // The switcher and the command menu read Tab themselves; everywhere else
     // Tab steps through the reading phases of the current paper.
-    overlayHandlesTab: switcherOpen || commandOpen || experimentOpen || toolsTab !== null || (panel === "digest" && view === "overview"),
+    overlayHandlesTab: switcherOpen || commandOpen || queueOpen || sourceQuestion !== null || experimentOpen || toolsTab !== null || paperView?.analysis == null || (panel === "digest" && view === "overview"),
     onCycle: (delta) => {
       setQueueOpen(false);
       if (compactLayout) setLibraryOpen(false);
@@ -597,7 +589,7 @@ export function App() {
 
   useGlobalKeys({
     enabled:
-      panel === null && view !== "glossary" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null &&
+      panel === null && sourceQuestion === null && view !== "glossary" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null &&
       !(compactLayout && libraryOpen),
     activeIndex: activeSection,
     itemCount: sections.length,
@@ -720,6 +712,7 @@ export function App() {
   }, [paperMap, selectedId]);
 
   const clarifySentence = useCallback((text: string, page: number): void => {
+    if (sections.length === 0) { setSourceQuestion({ text, page }); return; }
     const index = sections.findIndex(
       (section) => page >= section.pages.start && page <= section.pages.end,
     );
@@ -810,9 +803,7 @@ export function App() {
     focusRestore.current = null;
     window.queueMicrotask(() => setLibraryOpen(restore.library));
   }, [sectionFocused]);
-  const activeJobCount = queue.jobs.filter(
-    (job) => job.status.state === "queued" || job.status.state === "running",
-  ).length;
+
 
   return (
     <div className={`app-shell ${sectionFocused ? "has-section-focus" : ""} ${libraryOpen ? "has-library" : ""}`}>
@@ -844,6 +835,10 @@ export function App() {
             <strong>LYSILOGY</strong>
           </button>
           <div className="view-switch" role="group" aria-label="Reader view">
+            {analysis === null ? <>
+              <button type="button" className={textMode === "pdf" ? "is-active" : ""} onClick={() => setTextMode("pdf")}>PDF</button>
+              <button type="button" className={textMode === "markdown" ? "is-active" : ""} onClick={() => setTextMode("markdown")}>Text</button>
+            </> : <>
             <button
               type="button"
               className={view === "abstract" ? "is-active" : ""}
@@ -886,23 +881,13 @@ export function App() {
             >
               Text
             </button>
+            </>}
           </div>
           <div className="topbar-actions">
-            <button className="reader-tools-button" type="button" disabled={selectedId === null} onClick={() => {
-              setReferenceSeed(null);
-              setToolsTab("supercut");
-            }}>Lysilogos</button>
-            <button
-              className={`queue-button ${activeJobCount > 0 ? "has-work" : ""}`}
-              type="button"
-              onClick={() => {
-                setFocusQueueFeedback(false);
-                setQueueOpen(true);
-                void refreshQueue();
-              }}
-            >
-              Queue{activeJobCount > 0 ? ` ${activeJobCount}` : ""}
-            </button>
+            {analysis !== null && currentPaper !== null ? <span className="current-paper-label" title={`${currentPaper.metadata.authors.join(", ")} — ${currentPaper.metadata.year ?? ""} — ${currentPaper.metadata.title}`}>
+              {currentPaper.metadata.authors.length > 2 ? `${currentPaper.metadata.authors[0]} et al.` : currentPaper.metadata.authors.join(" & ")}
+              {currentPaper.metadata.year == null ? "" : ` — ${currentPaper.metadata.year}`} — {currentPaper.metadata.title}
+            </span> : <>
             <label className="provider-select">
               <span>Reader</span>
               <select value={provider} onChange={(event) => setProvider(event.target.value as AnalysisProvider)}>
@@ -923,6 +908,7 @@ export function App() {
                 <>{analysisNeedsRefresh ? "Refresh" : "Analyze"} </>
               )}
             </button>
+            </>}
           </div>
         </header>
 
@@ -950,69 +936,13 @@ export function App() {
                   </div>
                   <h1>{currentPaper.metadata.title}</h1>
                   <div className="paper-byline">
-                    <span>
-                      {(currentPaper.metadata.authors.length > 5
-                        ? currentPaper.metadata.authors.slice(0, 5)
-                        : currentPaper.metadata.authors).join(", ") || "Unknown author"}
-                    </span>
-                    {currentPaper.metadata.authors.length > 5 && (
-                      <button type="button" onClick={() => setAuthorsOpen(true)} aria-haspopup="dialog">
-                        +{currentPaper.metadata.authors.length - 5} authors
-                      </button>
-                    )}
+                    <span>{currentPaper.metadata.authors.join(", ") || "Unknown author"}</span>
                     {currentPaper.metadata.year !== null && <span>{currentPaper.metadata.year}</span>}
-                    {currentPaper.metadata.page_count !== null && (
-                      <span>{currentPaper.metadata.page_count} pages</span>
-                    )}
                   </div>
                 </section>
               )}
 
-              {authorsOpen && (
-                <div className="authors-modal-backdrop" role="presentation" onMouseDown={() => setAuthorsOpen(false)}>
-                  <section
-                    className="authors-modal"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="authors-modal-heading"
-                    onMouseDown={(event) => event.stopPropagation()}
-                  >
-                    <header>
-                      <div>
-                        <span className="eyebrow">Paper authors</span>
-                        <h2 id="authors-modal-heading">{currentPaper.metadata.authors.length} contributors</h2>
-                      </div>
-                      <button className="icon-button" type="button" onClick={() => setAuthorsOpen(false)} aria-label="Close authors">
-                        ×
-                      </button>
-                    </header>
-                    <ol>
-                      {currentPaper.metadata.authors.map((author) => <li key={author}>{author}</li>)}
-                    </ol>
-                  </section>
-                </div>
-              )}
-
-              {view !== "text" && analysis === null ? (
-                <section className="unanalyzed-state">
-                  <div className="unmapped-grid" aria-hidden="true">
-                    {Array.from({ length: 15 }, (_, index) => <i key={index} />)}
-                  </div>
-                  <div>
-                    <span className="eyebrow">Unmapped paper</span>
-                    <h2>Build the path from abstract to source.</h2>
-                    <p>
-                      Text is extracted locally. {provider === "heuristic" ? "The offline structural pass" : `${provider}, with web research and write access only to its live tasklist`} builds the orientation, overview, technical glossary, quotes, and context.
-                    </p>
-                    <button type="button" onClick={() => analyze()} disabled={processing}>
-                      {processing ? "Reading the paper…" : `Analyze with ${provider}`}
-                    </button>
-                    {currentPaper.status.state === "failed" && (
-                      <p className="inline-error">{currentPaper.status.message}</p>
-                    )}
-                  </div>
-                </section>
-              ) : view === "abstract" && analysis !== null ? (
+              {view === "abstract" && analysis !== null ? (
                 <AbstractView
                   analysis={analysis}
                   abstractPage={abstractPage}
@@ -1065,6 +995,8 @@ export function App() {
                       zoom={pdfZoom}
                       darkInk={darkInk}
                       spread={pdfSpread}
+                      keyboardEnabled={panel === null && sourceQuestion === null && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && !(compactLayout && libraryOpen)}
+                      onZoom={(delta) => setPdfZoom((value) => Math.max(.5, Math.min(2.5, value + delta)))}
                       onPage={setPdfPage}
                       onPageCount={setPdfPages}
                       onToggleInk={() => setDarkInk((value) => !value)}
@@ -1087,6 +1019,7 @@ export function App() {
       {sectionFocused ? (
         <SectionFocus key={`${currentPaper.id}:${selectedSection.id}`} url={api.source(currentPaper.id)} title={currentPaper.metadata.title}
           analysis={analysis} section={selectedSection} index={activeSection} paperMap={paperMap} darkInk={darkInk}
+          keyboardEnabled={!switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && sourceQuestion === null}
           snapshots={pageSnapshots} onToggleInk={() => setDarkInk((value) => !value)} onSection={openSection} onClose={closeSection}
           onFullPaper={openPage} onClarify={clarifySentence}
           onSaveReference={(text, page) => { setReferenceSeed({ text, page }); setToolsTab("references"); }}
@@ -1099,6 +1032,9 @@ export function App() {
           initialSelection={clarifySeed} onClose={() => { setClarifySeed(""); setPanel(null); }}
           onGloss={openGlossary} onOpenPage={openPage} onClarify={clarify} />
       ) : null}
+      {sourceQuestion !== null && selectedId !== null && <PassageQuestion key={`${selectedId}:${sourceQuestion.page}:${sourceQuestion.text}`}
+        paperId={selectedId} text={sourceQuestion.text} page={sourceQuestion.page} provider={provider}
+        onClose={() => { setSourceQuestion(null); mainStageRef.current?.querySelector<HTMLElement>(".pdf-reader")?.focus(); }} />}
       {panel === "help" && <HelpOverlay onClose={() => setPanel(null)} />}
       {switcherOpen && (
         <PaperSwitcher

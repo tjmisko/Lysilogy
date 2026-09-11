@@ -13,6 +13,7 @@ type Props = {
   index: number;
   paperMap: PaperMap | null;
   darkInk: boolean;
+  keyboardEnabled: boolean;
   snapshots: PageSnapshot[];
   onToggleInk: () => void;
   onSection: (section: PaperSection, index: number) => void;
@@ -25,7 +26,7 @@ type Props = {
 
 const ignore = () => {};
 
-export function SectionFocus({ url, title, analysis, section, index, paperMap, darkInk, snapshots,
+export function SectionFocus({ url, title, analysis, section, index, paperMap, darkInk, keyboardEnabled, snapshots,
   onToggleInk, onSection, onClose, onFullPaper, onClarify, onSaveReference, digest }: Props) {
   const [pageCount, setPageCount] = useState(paperMap?.layout.pages.length ?? Math.max(1, section.pages.end));
   const pages = useMemo(() => sectionPages(section, pageCount), [pageCount, section]);
@@ -60,7 +61,9 @@ export function SectionFocus({ url, title, analysis, section, index, paperMap, d
 
   return <section className="section-focus" aria-label={`Read section: ${section.title}`} data-pane={pane}
     onKeyDown={(event) => {
+      if (!keyboardEnabled) return;
       const target = event.target;
+      const host = scrollRef.current?.querySelector<HTMLElement>(".pdf-viewport") ?? null;
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement
         || (target instanceof HTMLElement && target.isContentEditable)) return;
       if (event.key === "I") { event.preventDefault(); event.stopPropagation(); onToggleInk(); return; }
@@ -69,12 +72,11 @@ export function SectionFocus({ url, title, analysis, section, index, paperMap, d
       if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onClose(); return; }
       if (["j", "ArrowDown"].includes(event.key)) distance = 100;
       if (["k", "ArrowUp"].includes(event.key)) distance = -100;
-      if (event.key === "PageDown" || (event.ctrlKey && event.key === "d")) distance = (scrollRef.current?.clientHeight ?? 700) * (event.ctrlKey ? .5 : .9);
-      if (event.key === "PageUp" || (event.ctrlKey && event.key === "u")) distance = -(scrollRef.current?.clientHeight ?? 700) * (event.ctrlKey ? .5 : .9);
-      if (distance !== null) { event.preventDefault(); event.stopPropagation(); scrollRef.current?.scrollBy({ top: distance, behavior: "auto" }); }
+      if (event.key === "PageDown" || (event.ctrlKey && event.key === "d")) distance = (host?.clientHeight ?? 700) * (event.ctrlKey ? .5 : .9);
+      if (event.key === "PageUp" || (event.ctrlKey && event.key === "u")) distance = -(host?.clientHeight ?? 700) * (event.ctrlKey ? .5 : .9);
+      if (distance !== null) { event.preventDefault(); event.stopPropagation(); host?.scrollBy({ top: distance, behavior: "auto" }); }
       if (["h", "l", "ArrowLeft", "ArrowRight"].includes(event.key)) {
         event.preventDefault(); event.stopPropagation();
-        const host = scrollRef.current;
         const visible = host === null ? currentPage : visiblePdfPage(host) ?? currentPage;
         const offset = ["h", "ArrowLeft"].includes(event.key) ? -1 : 1;
         const next = pages[pages.indexOf(visible) + offset];
@@ -95,6 +97,7 @@ export function SectionFocus({ url, title, analysis, section, index, paperMap, d
         {pages.length === 0 ? <p className="reader-message">This section has no usable page range. <button type="button" onClick={() => onFullPaper(1)}>Open full paper</button></p> :
           <PdfReader url={url} title={title} page={currentPage} pageJump={jump.request} zoom={zoom} darkInk={darkInk} spread={false}
             pageSubset={pages} pageLayouts={paperMap?.layout.pages} section={section}
+            keyboardEnabled={keyboardEnabled && pane === "source"}
             onZoom={(delta) => setZoom((value) => Math.max(.6, Math.min(2, value + delta)))}
             onPage={openPage} onPageCount={setPageCount} onToggleInk={onToggleInk} onToggleSpread={ignore}
             onReturnToMap={onClose} onOpenFullPaper={onFullPaper} onClarifySelection={onClarify} onSaveReference={onSaveReference} />}

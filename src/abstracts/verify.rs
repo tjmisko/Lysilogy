@@ -34,7 +34,13 @@ pub fn verify(paper: &ExtractedPaper, candidate: Option<&AbstractCandidate>) -> 
     if !(30..=12_000).contains(&text.chars().count()) {
         result.checks.push("invalid_length".to_owned());
     }
-    if text != normalize(&source) {
+    let content = |value: &str| {
+        normalize(value)
+            .chars()
+            .filter(|c| !c.is_whitespace())
+            .collect::<String>()
+    };
+    if content(&text) != content(&source) {
         result.checks.push("source_text_mismatch".to_owned());
     }
     let first = &lines[candidate.start_line];
@@ -43,7 +49,8 @@ pub fn verify(paper: &ExtractedPaper, candidate: Option<&AbstractCandidate>) -> 
         .rev()
         .find(|line| !line.running_matter);
     let starts_at_heading = heading_remainder(&first.text).is_some()
-        || previous.is_some_and(|line| heading_remainder(&line.text).is_some_and(str::is_empty));
+        || previous.is_some_and(|line| heading_remainder(&line.text).is_some_and(str::is_empty))
+        || verified_unlabeled_opening(paper, &lines, candidate);
     if !starts_at_heading {
         result.checks.push("start_boundary_unconfirmed".to_owned());
     }
@@ -73,4 +80,60 @@ pub fn verify(paper: &ExtractedPaper, candidate: Option<&AbstractCandidate>) -> 
         ];
     }
     result
+}
+
+// An unlabeled opening needs independent front-matter and typographic evidence.
+// A title followed by an arbitrary introductory paragraph is insufficient.
+fn verified_unlabeled_opening(
+    paper: &ExtractedPaper,
+    lines: &[super::SourceLine],
+    candidate: &AbstractCandidate,
+) -> bool {
+    if paper.layout.pages.is_empty() || candidate.start_line == 0 {
+        return false;
+    }
+    let Some(first) = lines.get(candidate.start_line) else {
+        return false;
+    };
+    let Some(after) = lines.get(candidate.end_line + 1) else {
+        return false;
+    };
+    if first.page != after.page || !after.section_heading {
+        return false;
+    }
+    let before = &lines[..candidate.start_line];
+    let title = super::title_key(&paper.metadata.title);
+    let has_title = before
+        .iter()
+        .any(|line| super::title_key(&line.text) == title);
+    let has_authors = paper
+        .metadata
+        .authors
+        .iter()
+        .all(|author| before.iter().any(|line| line.text.contains(author)));
+    let preview = candidate.text.to_lowercase();
+    let words = preview.split_whitespace().count();
+    has_title
+        && !paper.metadata.authors.is_empty()
+        && has_authors
+        && (60..=600).contains(&words)
+        && (before
+            .iter()
+            .any(|line| line.text.contains('@') || line.text.contains("http"))
+            || after.text.to_lowercase().replace(' ', "") == "tableofcontents")
+        && !before
+            .iter()
+            .skip_while(|line| super::title_key(&line.text) != title)
+            .skip(1)
+            .any(|line| line.section_heading)
+        && [
+            "this paper",
+            "this article",
+            "we present",
+            "we propose",
+            "we show",
+            "this study",
+        ]
+        .iter()
+        .any(|cue| preview.contains(cue))
 }

@@ -1434,17 +1434,14 @@ impl AppState {
     }
 
     async fn clarify(&self, id: &PaperId, request: &ClarifyRequest) -> Result<Clarification> {
-        let paper = self.store.load_extraction(id).await?.ok_or_else(|| {
-            Error::InvalidRequest("analyze the paper before clarifying a passage".to_owned())
-        })?;
-        let analysis = self.store.load_analysis(id).await?.ok_or_else(|| {
-            Error::InvalidRequest("analyze the paper before clarifying a passage".to_owned())
-        })?;
+        let guard = self.tools_extract.lock().await;
+        let paper = self.load_or_extract(id).await.map_err(|(_, error)| error)?;
+        drop(guard);
+        let analysis = self.store.load_analysis(id).await?;
         if let Some(section_id) = &request.section_id
             && !analysis
-                .sections
-                .iter()
-                .any(|section| &section.id == section_id)
+                .as_ref()
+                .is_some_and(|a| a.sections.iter().any(|section| &section.id == section_id))
         {
             return Err(Error::InvalidRequest(format!(
                 "unknown section: {section_id}"
@@ -1454,7 +1451,7 @@ impl AppState {
             .clarify(
                 request.provider,
                 &paper,
-                &analysis,
+                analysis.as_ref(),
                 &self.store.paper_dir(id),
                 &request.selection,
                 &request.question,
@@ -2172,6 +2169,47 @@ mod tests {
             .to_bytes();
         let library: serde_json::Value = serde_json::from_slice(&body)?;
         assert_eq!(library["papers"].as_array().map(Vec::len), Some(1));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn answers_source_questions_without_creating_an_analysis() -> Result<()> {
+        let library = tempdir().map_err(|e| Error::io("library", e))?;
+        let data = tempdir().map_err(|e| Error::io("data", e))?;
+        let filename = "Ada - 1843 - Notes.pdf";
+        let fixture = library.path().join(filename);
+        tokio::fs::write(&fixture, b"source already extracted")
+            .await
+            .map_err(|e| Error::io(&fixture, e))?;
+        let state = AppState::new(library.path(), data.path()).await?;
+        let id = PaperId::from_relative_path(Path::new(filename));
+        state
+            .store
+            .save_extraction(
+                &id,
+                &ExtractedPaper {
+                    metadata: PaperMetadata::default(),
+                    pages: vec![ExtractedPage {
+                        number: 1,
+                        text: "The measurement depends on the sampling assumption.".to_owned(),
+                    }],
+                    layout: DocumentLayout::default(),
+                },
+            )
+            .await?;
+        let result = state
+            .clarify(
+                &id,
+                &ClarifyRequest {
+                    section_id: None,
+                    selection: "The measurement depends on the sampling assumption.".to_owned(),
+                    question: "What assumption?".to_owned(),
+                    provider: AnalysisProvider::Heuristic,
+                },
+            )
+            .await?;
+        assert!(!result.answer.is_empty());
+        assert!(state.store.load_analysis(&id).await?.is_none());
         Ok(())
     }
 

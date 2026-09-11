@@ -54,12 +54,15 @@ type PdfReaderProps = {
   onOpenFullPaper?: (page: number) => void;
   onZoom?: (delta: number) => void;
   onReturnToMap?: () => void;
+  keyboardEnabled?: boolean;
 };
 
 type PdfPageCanvasProps = {
   document: PDFDocumentProxy;
   page: number;
   slotWidth: number;
+  slotHeight: number;
+  fit: "width" | "height";
   zoom: number;
   darkInk: boolean;
   pageCount: number;
@@ -69,6 +72,7 @@ type PdfPageCanvasProps = {
   layout?: LayoutPage;
   crop?: SectionCrop;
   readingWidth?: number;
+  readingHeight?: number;
 };
 
 type SelectionState = {
@@ -103,6 +107,8 @@ function PdfPageCanvas({
   document,
   page,
   slotWidth,
+  slotHeight,
+  fit,
   zoom,
   darkInk,
   pageCount,
@@ -112,6 +118,7 @@ function PdfPageCanvas({
   layout,
   crop,
   readingWidth,
+  readingHeight,
 }: PdfPageCanvasProps) {
   const frameRef = useRef<HTMLElement>(null);
   const [visible, setVisible] = useState(!lazy);
@@ -123,7 +130,7 @@ function PdfPageCanvas({
     if (visible || frameRef.current === null) return;
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) setVisible(true);
-    }, { root: frameRef.current.closest(".section-source-scroll"), rootMargin: "700px" });
+    }, { root: frameRef.current.closest(".pdf-viewport"), rootMargin: "700px" });
     observer.observe(frameRef.current);
     return () => observer.disconnect();
   }, [visible]);
@@ -145,8 +152,9 @@ function PdfPageCanvas({
       .then(async (pdfPage) => {
         if (controller.signal.aborted) return;
         const base = pdfPage.getViewport({ scale: 1 });
-        const fitScale = Math.max(0.2, crop === undefined ? (slotWidth - 28) / base.width
-          : Math.min(2.2, (slotWidth - 28) / (readingWidth ?? base.width)));
+        const fitScale = Math.max(0.1, fit === "height"
+          ? (slotHeight - 40) / (crop === undefined ? base.height : readingHeight ?? base.height)
+          : (slotWidth - 28) / (crop === undefined ? base.width : readingWidth ?? base.width));
         const viewport = pdfPage.getViewport({ scale: fitScale * zoom });
         const scaleX = viewport.width / (layout?.width ?? base.width);
         const scaleY = viewport.height / (layout?.height ?? base.height);
@@ -227,7 +235,10 @@ function PdfPageCanvas({
       textLayer?.cancel();
       onTextLayer(page, null, false);
     };
-  }, [crop, document, layout, onError, onTextLayer, page, readingWidth, slotWidth, visible, zoom]);
+  }, [crop, document, fit, layout, onError, onTextLayer, page, readingHeight, readingWidth, slotHeight, slotWidth, visible, zoom]);
+
+  const placeholderScale = Math.max(.1, fit === "height" ? (slotHeight - 40) / (readingHeight ?? layout?.height ?? 792)
+    : (slotWidth - 28) / (readingWidth ?? layout?.width ?? 612)) * zoom;
 
   return (
     <figure className="pdf-page-frame" ref={frameRef} data-pdf-page={page} data-section-crop={crop === undefined ? undefined : "true"}
@@ -236,8 +247,7 @@ function PdfPageCanvas({
         width: (crop.bounds.x_max - crop.bounds.x_min) / layout.width, height: (crop.bounds.y_max - crop.bounds.y_min) / layout.height,
       })}>
       <div className="pdf-page-surface" ref={surfaceRef} style={lazy ? {
-        width: crop === undefined ? Math.max(100, (slotWidth - 28) * zoom)
-          : (crop.bounds.x_max - crop.bounds.x_min) * Math.max(.2, Math.min(2.2, (slotWidth - 28) / (readingWidth ?? 612))) * zoom,
+        width: (crop === undefined ? layout?.width ?? 612 : crop.bounds.x_max - crop.bounds.x_min) * placeholderScale,
         aspectRatio: crop === undefined ? `${layout?.width ?? 612} / ${layout?.height ?? 792}`
           : `${crop.bounds.x_max - crop.bounds.x_min} / ${crop.bounds.y_max - crop.bounds.y_min}`,
       } : undefined}>
@@ -277,10 +287,15 @@ export function PdfReader({
   onOpenFullPaper,
   onZoom,
   onReturnToMap,
+  keyboardEnabled = true,
 }: PdfReaderProps) {
   const { document: pdfDocument, loading, error: loadError } = usePdfDocument(url);
   const [error, setError] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(900);
+  const [containerHeight, setContainerHeight] = useState(650);
+  const [fit, setFit] = useState<"width" | "height">("width");
+  const [flow, setFlow] = useState<"paged" | "continuous">(pageSubset === undefined ? "paged" : "continuous");
+  const [axis, setAxis] = useState<"vertical" | "horizontal">("vertical");
   const [textPages, setTextPages] = useState<Record<number, boolean>>({});
   const [selectionState, setSelectionState] = useState<SelectionState | null>(null);
   const [copyLabel, setCopyLabel] = useState("Copy");
@@ -293,7 +308,7 @@ export function PdfReader({
   useEffect(() => {
     const node = containerRef.current;
     if (node === null) return;
-    const update = (): void => setContainerWidth(node.clientWidth);
+    const update = (): void => { setContainerWidth(node.clientWidth); setContainerHeight(node.clientHeight); };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(node);
@@ -308,22 +323,21 @@ export function PdfReader({
   const crops = useMemo(() => new Map(pageLayouts?.map((layout) => [layout.number,
     section === undefined ? null : sectionPageCrop(section, layout, pageCount)])), [pageCount, pageLayouts, section]);
   const readingWidth = Math.max(1, ...Array.from(crops.values()).flatMap((crop) => crop === null ? [] : [crop.bounds.x_max - crop.bounds.x_min]));
-  const step = spread ? 2 : 1;
-  const visiblePages = useMemo(
-    () => pageSubset !== undefined
+  const readingHeight = Math.max(1, ...Array.from(crops.values()).flatMap((crop) => crop === null ? [] : [crop.bounds.y_max - crop.bounds.y_min]));
+  const step = flow === "paged" && spread && pageSubset === undefined ? 2 : 1;
+  const availablePages = useMemo(() => pageSubset !== undefined
       ? [...new Set(pageSubset)].filter((value) => Number.isInteger(value) && value >= 1 && value <= pageCount).sort((a, b) => a - b)
-      : spread && page < pageCount ? [page, page + 1] : [page],
-    [page, pageCount, pageSubset, spread],
-  );
-  const slotWidth = spread ? Math.max(320, (containerWidth - 36) / 2) : containerWidth;
+      : Array.from({ length: pageCount }, (_, index) => index + 1), [pageCount, pageSubset]);
+  const visiblePages = flow === "continuous" ? availablePages : step === 2 && page < pageCount ? [page, page + 1] : [page];
+  const slotWidth = step === 2 ? Math.max(160, (containerWidth - 36) / 2) : containerWidth;
   const lastVisiblePage = visiblePages[visiblePages.length - 1] ?? page;
   const visibleTextStatus = visiblePages.map((visiblePage) => textPages[visiblePage]);
   const textLayersReady = visibleTextStatus.every((status) => status !== undefined);
   const hasSelectableText = visibleTextStatus.some(Boolean);
 
   useEffect(() => {
-    if (pageSubset === undefined) return;
-    const host = readerRef.current?.closest<HTMLElement>(".section-source-scroll");
+    if (flow !== "continuous") return;
+    const host = containerRef.current;
     if (host == null) return;
     const update = () => {
       const visible = visiblePdfPage(host);
@@ -331,19 +345,69 @@ export function PdfReader({
     };
     host.addEventListener("scroll", update, { passive: true });
     return () => host.removeEventListener("scroll", update);
-  }, [pageSubset]);
+  }, [flow]);
 
   useEffect(() => {
-    if (pageSubset === undefined || pdfDocument === null) return;
+    if (flow !== "continuous" || pdfDocument === null) return;
     const frame = window.requestAnimationFrame(() => {
-      const host = readerRef.current?.closest<HTMLElement>(".section-source-scroll");
+      const host = containerRef.current;
       const target = readerRef.current?.querySelector<HTMLElement>(`[data-pdf-page="${page}"]`);
       if (host == null || target == null) return;
-      const toolbarHeight = readerRef.current?.querySelector(".pdf-toolbar")?.getBoundingClientRect().height ?? 40;
-      host.scrollTop += target.getBoundingClientRect().top - host.getBoundingClientRect().top - toolbarHeight - 12;
+      if (axis === "vertical") host.scrollTop += target.getBoundingClientRect().top - host.getBoundingClientRect().top - 12;
+      else host.scrollLeft += target.getBoundingClientRect().left - host.getBoundingClientRect().left - 12;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [page, pageJump, pageSubset, pdfDocument]);
+  }, [axis, flow, page, pageJump, pdfDocument]);
+
+  const changeFit = useCallback((next: "width" | "height") => { setFit(next); onZoom?.(1 - zoom); }, [onZoom, zoom]);
+  const changeFlow = useCallback(() => { onPage(flow === "continuous" ? readingPage : page); setFlow((value) => value === "paged" ? "continuous" : "paged"); }, [flow, onPage, page, readingPage]);
+  const changeAxis = useCallback(() => { onPage(flow === "continuous" ? readingPage : page); setFlow("continuous"); setAxis((value) => value === "vertical" ? "horizontal" : "vertical"); }, [flow, onPage, page, readingPage]);
+
+  useEffect(() => {
+    const host = containerRef.current;
+    if (host === null || flow !== "continuous" || axis !== "horizontal") return;
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || event.deltaX !== 0 || event.deltaY === 0) return;
+      event.preventDefault();
+      host.scrollLeft += event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? host.clientWidth : 1);
+    };
+    host.addEventListener("wheel", onWheel, { passive: false });
+    return () => host.removeEventListener("wheel", onWheel);
+  }, [axis, flow]);
+
+  useEffect(() => {
+    if (!keyboardEnabled) return;
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (event.metaKey || event.altKey || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement || target instanceof HTMLElement && target.isContentEditable) return;
+      const host = containerRef.current;
+      let action: (() => void) | undefined;
+      if (!event.ctrlKey) {
+        if (event.key === "W" || event.key === "w") action = () => changeFit("width");
+        if (event.key === "H") action = () => changeFit("height");
+        if (event.key === "P") action = changeFlow;
+        if (event.key === "X") action = changeAxis;
+      }
+      if (host !== null) {
+        const direction = ["k", "ArrowUp", "ArrowLeft", "PageUp", "u"].includes(event.key) ? -1 : 1;
+        let distance = 0;
+        if (!event.ctrlKey && ["j", "k", "ArrowDown", "ArrowUp"].includes(event.key)) distance = 100;
+        if (["PageDown", "PageUp"].includes(event.key) || event.ctrlKey && ["d", "u"].includes(event.key)) distance = (axis === "vertical" ? host.clientHeight : host.clientWidth) * (event.ctrlKey ? .5 : .9);
+        if (distance !== 0) action = () => host.scrollBy(flow === "paged" || axis === "vertical" ? { top: direction * distance } : { left: direction * distance });
+      }
+      const turnPage = !event.ctrlKey && ["h", "l", "ArrowLeft", "ArrowRight"].includes(event.key)
+        || flow === "paged" && (["PageUp", "PageDown"].includes(event.key) || event.ctrlKey && ["d", "u"].includes(event.key));
+      if (turnPage) action = () => {
+        const current = flow === "continuous" && host !== null ? visiblePdfPage(host) ?? page : page;
+        const direction = ["h", "ArrowLeft", "PageUp", "u"].includes(event.key) ? -1 : 1;
+        onPage(availablePages[Math.max(0, Math.min(availablePages.length - 1, availablePages.indexOf(current) + direction * step))] ?? page);
+      };
+      if (action !== undefined) { event.preventDefault(); event.stopImmediatePropagation(); action(); }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [availablePages, axis, changeAxis, changeFit, changeFlow, flow, keyboardEnabled, onPage, page, step]);
 
   const handleTextLayer = useCallback(
     (pageNumber: number, viewport: PageViewport | null, hasText: boolean): void => {
@@ -465,14 +529,14 @@ export function PdfReader({
   }, []);
 
   return (
-    <section ref={readerRef} className="pdf-reader" aria-label={`PDF: ${title}`}>
+    <section ref={readerRef} className="pdf-reader" tabIndex={-1} aria-label={`PDF: ${title}`} data-flow={flow} data-axis={axis} data-fit={fit}>
       <div className="pdf-toolbar">
         {pageSubset === undefined ? <div>
           <span className="eyebrow">Source document</span>
           <strong>{title}</strong>
         </div> : <button className="return-to-map" type="button" onClick={onReturnToMap}>← Map</button>}
         <div className="pdf-controls">
-          {pageSubset === undefined && <><button type="button" onClick={() => onPage(Math.max(1, page - step))} disabled={page <= 1}>
+          {pageSubset === undefined && flow === "paged" && <><button type="button" onClick={() => onPage(Math.max(1, page - step))} disabled={page <= 1}>
             <span>Prev</span>
           </button>
           <span>
@@ -488,24 +552,28 @@ export function PdfReader({
           <button type="button" className={spread ? "is-active" : ""} onClick={onToggleSpread}>
             {spread ? "Two pages" : "One page"}
           </button></>}
-          {pageSubset !== undefined && <>
-            <select aria-label="Source page" value={visiblePages.includes(readingPage) ? readingPage : page} onChange={(event) => {
+          {(pageSubset !== undefined || flow === "continuous") && <>
+            <select aria-label="Source page" value={flow === "continuous" && availablePages.includes(readingPage) ? readingPage : page} onChange={(event) => {
               const next = Number(event.target.value); setReadingPage(next); onPage(next);
             }}>
-              {visiblePages.map((value) => <option key={value} value={value}>Page {value} / {pageCount}</option>)}
+              {availablePages.map((value) => <option key={value} value={value}>Page {value} / {pageCount}</option>)}
             </select>
             <button type="button" aria-label="Zoom out source pages" disabled={zoom <= .6} onClick={() => onZoom?.(-.1)}>−</button>
             <button type="button" aria-label="Zoom in source pages" disabled={zoom >= 2} onClick={() => onZoom?.(.1)}>+</button>
-            <button type="button" onClick={() => {
-              onOpenFullPaper?.(readingPage);
-            }}>Open full paper ↗</button>
+            {pageSubset !== undefined && <button type="button" onClick={() => {
+              onOpenFullPaper?.(flow === "continuous" ? readingPage : page);
+            }}>Open full paper ↗</button>}
           </>}
+          <button type="button" aria-label="Fit width" title="Fit width (W)" className={fit === "width" ? "is-active" : ""} onClick={() => changeFit("width")}>W</button>
+          <button type="button" aria-label="Fit height" title="Fit height (H)" className={fit === "height" ? "is-active" : ""} onClick={() => changeFit("height")}>H</button>
+          <button type="button" aria-label="Toggle paged or continuous reading" title="Paged / continuous (P)" onClick={changeFlow}>{flow === "paged" ? "Paged" : "Continuous"}</button>
+          <button type="button" aria-label="Toggle scroll direction" title="Vertical / horizontal scrolling (X)" onClick={changeAxis}>{axis === "vertical" ? "Vertical" : "Horizontal"}</button>
           <button type="button" className={darkInk ? "is-active" : ""} onClick={onToggleInk}>
             {darkInk ? "Dark" : "Light"}
           </button>
         </div>
       </div>
-      <div className={`pdf-viewport ${spread ? "is-spread" : ""}`} ref={containerRef}>
+      <div className={`pdf-viewport ${step === 2 ? "is-spread" : ""}`} ref={containerRef} tabIndex={0} aria-label="PDF pages">
         {loading && <div className="reader-message"><span className="loader" /> Rendering source…</div>}
         {(error ?? loadError) !== null && <div className="reader-message error-message">{error ?? loadError}</div>}
         {pdfDocument !== null && visiblePages.map((visiblePage) => pageSubset !== undefined && crops.get(visiblePage) == null
@@ -516,15 +584,18 @@ export function PdfReader({
             document={pdfDocument}
             page={visiblePage}
             slotWidth={slotWidth}
+            slotHeight={containerHeight}
+            fit={fit}
             zoom={zoom}
             darkInk={darkInk}
             pageCount={pageCount}
             onError={handleRenderError}
             onTextLayer={handleTextLayer}
-            lazy={pageSubset !== undefined}
+            lazy={flow === "continuous"}
             layout={pageLayouts?.find((item) => item.number === visiblePage)}
             crop={pageSubset === undefined ? undefined : crops.get(visiblePage) ?? undefined}
-            readingWidth={readingWidth}
+            readingWidth={pageSubset === undefined ? undefined : readingWidth}
+            readingHeight={pageSubset === undefined ? undefined : readingHeight}
           />
         ))}
       </div>
@@ -555,7 +626,7 @@ export function PdfReader({
           <button
             type="button"
             className="is-primary"
-            onClick={() => onClarifySelection(selectionState.value.text, selectionState.value.pages[0] ?? page)}
+            onClick={() => { onClarifySelection(selectionState.value.text, selectionState.value.pages[0] ?? page); clearSelection(); }}
           >
             Ask about this
           </button>

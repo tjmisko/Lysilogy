@@ -1,5 +1,6 @@
 import type { LayoutPage, PaperSection, TextRect } from "../types";
 import { sectionSourceSpan } from "./sectionScope.ts";
+import { sectionFootnotes } from "./sectionFootnotes.ts";
 
 export type SectionCrop = { bounds: TextRect; regions: TextRect[] };
 
@@ -35,6 +36,7 @@ export function sectionPageCrop(section: PaperSection, page: LayoutPage, pageCou
     && r.x_max <= page.width && r.y_max <= page.height && r.x_min < r.x_max && r.y_min < r.y_max;
   if (!page.tokens.some((t) => t.index === first) || (last !== Infinity && !page.tokens.some((t) => t.index === last))) return null;
   if (page.tokens.some((t) => t.rects.length === 0 || !t.rects.every(valid))) return null;
+  const { notes, retained } = sectionFootnotes(page, first, last);
   const lines = new Map<number, typeof page.tokens>();
   for (const token of page.tokens) {
     const line = lines.get(token.line) ?? [];
@@ -47,7 +49,7 @@ export function sectionPageCrop(section: PaperSection, page: LayoutPage, pageCou
     const box = bounds(rects);
     const folio = /^\d+$/u.test(tokens.map((t) => t.text).join("")) && box.y_min > page.height * .85
       && Math.abs((box.x_min + box.x_max) / 2 - page.width / 2) < page.width * .1;
-    const kept = tokens.filter((t) => !folio && t.index >= first && t.index <= last);
+    const kept = tokens.filter((t) => !folio && (retained.has(t.index) || !notes.has(t.index) && t.index >= first && t.index <= last));
     const keptRects = kept.flatMap((t) => t.rects);
     if (keptRects.length > 0) selected.push(bounds(keptRects));
     excluded.push(...tokens.filter((t) => !kept.includes(t)).flatMap((t) => t.rects).filter(valid));

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { sectionPages } from '../src/lib/sectionScope.ts';
 import { sectionPageCrop } from '../src/lib/sectionCrop.ts';
+import { sectionFootnotes } from '../src/lib/sectionFootnotes.ts';
 
 test('scopes whole boundary pages from verified anchors', () => {
   const section = {pages:{start:1,end:8},source_span:{start:{page:2,start_token:5},end:{page:3,end_token:9}}};
@@ -55,6 +56,22 @@ test('missing or invalid geometry cannot silently open a whole boundary page', (
   assert.equal(sectionPageCrop(span(0,7),page([token(0,40,100)]),3),null);
   assert.equal(sectionPageCrop(span(0,0),page([{...token(0,40,100),rects:[]}]),3),null);
   assert.equal(sectionPageCrop(span(0,0),page([token(0,NaN,100)]),3),null);
+});
+
+test('footnotes follow raised references, including notes beyond the section end', () => {
+  const tokens=Array.from({length:12},(_,i)=>token(i,40+(i%3)*60,100+Math.floor(i/3)*30));
+  tokens.forEach((t,i)=>{t.line=Math.floor(i/3);t.rects[0].x_max=t.rects[0].x_min+50;t.rects[0].y_max=t.rects[0].y_min+10;});
+  tokens[1].text='metric2';tokens[1].rects[0].y_min=98;
+  tokens.push({index:12,line:4,text:'2This',rects:[{x_min:40,y_min:610,x_max:65,y_max:618}]},
+    {index:13,line:4,text:'qualifies',rects:[{x_min:70,y_min:610,x_max:120,y_max:618}]},
+    {index:14,line:5,text:'the measurement.',rects:[{x_min:40,y_min:620,x_max:160,y_max:628}]});
+  const p=page(tokens);
+  assert.deepEqual([...sectionFootnotes(p,0,2).retained],[12,13,14]);
+  assert.equal(sectionFootnotes(p,3,14).retained.size,0,'an unrelated section must not inherit notes at its page bottom');
+  assert.ok(sectionPageCrop(span(0,2),p,3).bounds.y_max>620,'keep referenced notes even after the source-span endpoint');
+  assert.ok(sectionPageCrop(span(3,14),p,3).bounds.y_max<610);
+  tokens[1].rects[0].y_min=100;
+  assert.equal(sectionFootnotes(p,0,2).retained.size,0,'ordinary baseline numbers are not raised callouts');
 });
 test('legacy and malformed anchors use only valid document pages', () => {
   assert.deepEqual(sectionPages({pages:{start:3,end:9}},4),[3,4]);

@@ -6,7 +6,7 @@ use crate::{
     Result,
     domain::{DocumentLayout, ExtractedPage, ExtractedPaper, PaperMetadata},
     error::Error,
-    layout::parse_bbox_layout,
+    layout::{parse_bbox_layout, parse_verbatim_bbox_layout},
 };
 
 const DEFAULT_MAX_EXTRACTED_BYTES: usize = 64 * 1024 * 1024;
@@ -46,7 +46,7 @@ impl PdfExtractor {
         let text_future = self.extract_text(source);
         let layout_future = self.extract_layout(source);
         let metadata_future = self.extract_metadata(source);
-        let (text, layout, extracted_metadata) =
+        let (text, (layout, verbatim), extracted_metadata) =
             tokio::try_join!(text_future, layout_future, metadata_future)?;
 
         if text.len() > self.max_extracted_bytes {
@@ -57,12 +57,26 @@ impl PdfExtractor {
             )));
         }
 
-        let pages = split_pages(&text);
+        let pages = if verbatim.pages.iter().any(|p| !p.tokens.is_empty()) {
+            crate::frontmatter::readable_pages(&verbatim)
+                .into_iter()
+                .map(|page| ExtractedPage {
+                    number: page.number,
+                    text: clean_page(&page.text),
+                })
+                .collect()
+        } else {
+            split_pages(&text)
+        };
         if pages.iter().all(|page| page.text.trim().is_empty()) {
             return Err(Error::EmptyExtraction(source.to_owned()));
         }
         let mut metadata = fallback_metadata.clone();
         merge_pdf_metadata(&mut metadata, &extracted_metadata);
+        let authors = crate::frontmatter::authors(&verbatim, &metadata);
+        if !authors.is_empty() {
+            metadata.authors = authors;
+        }
         metadata.page_count = u32::try_from(layout.pages.len())
             .ok()
             .or_else(|| u32::try_from(pages.len()).ok())
@@ -93,7 +107,7 @@ impl PdfExtractor {
             .replace('\r', "\n"))
     }
 
-    async fn extract_layout(&self, source: &Path) -> Result<DocumentLayout> {
+    async fn extract_layout(&self, source: &Path) -> Result<(DocumentLayout, DocumentLayout)> {
         let output = Command::new(&self.pdftotext)
             .args(["-bbox-layout", "-enc", "UTF-8"])
             .arg(source)
@@ -110,7 +124,11 @@ impl PdfExtractor {
                 source.display()
             )));
         }
-        parse_bbox_layout(&String::from_utf8_lossy(&output.stdout))
+        let source = String::from_utf8_lossy(&output.stdout);
+        Ok((
+            parse_bbox_layout(&source)?,
+            parse_verbatim_bbox_layout(&source)?,
+        ))
     }
 
     async fn extract_metadata(&self, source: &Path) -> Result<PaperMetadata> {
@@ -187,7 +205,20 @@ fn clean_page(page: &str) -> String {
             && let Some(previous) = lines.last_mut()
             && previous.ends_with('-')
         {
-            previous.pop();
+            let last_word = previous
+                .split_whitespace()
+                .last()
+                .unwrap_or("")
+                .trim_end_matches('-')
+                .to_lowercase();
+            if ![
+                "hand", "high", "low", "multi", "single", "finite", "large", "small", "well",
+                "self", "cross", "out", "take", "user", "goal", "state", "real", "time",
+            ]
+            .contains(&last_word.as_str())
+            {
+                previous.pop();
+            }
             previous.push_str(line.trim_start());
         } else {
             lines.push(line);
@@ -270,6 +301,95 @@ fn is_container_title(title: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn extracts_real_frontmatter_without_merging_words_or_losing_authors() {
+        for (xml, title, expected_authors, expected_phrase) in [
+            (
+                include_str!("../tests/fixtures/goodhart-frontmatter.html"),
+                "Categorizing Variants of Goodhart's Law",
+                vec!["David Manheim", "Scott Garrabrant"],
+                "and partly because discussion using this ambiguous terminology ignores",
+            ),
+            (
+                include_str!("../tests/fixtures/assemblyhands-frontmatter.html"),
+                "AssemblyHands: Towards Egocentric Activity Understanding via 3D Hand Pose Estimation",
+                vec![
+                    "Takehiko Ohkawa",
+                    "Kun He",
+                    "Fadime Sener",
+                    "Tomas Hodan",
+                    "Luan Tran",
+                    "Cem Keskin",
+                ],
+                "facilitate the study of egocentric activities with challenging hand-object interactions",
+            ),
+            (
+                include_str!("../tests/fixtures/debate-frontmatter.html"),
+                "AI Safety Via Debate",
+                vec!["Geoffrey Irving", "Paul Christiano", "Dario Amodei"],
+                "we propose future human and computer experiments to test these properties.",
+            ),
+            (
+                include_str!("../tests/fixtures/scaling-frontmatter.html"),
+                "Scaling Laws for Neural Language Models",
+                vec![
+                    "Jared Kaplan",
+                    "Sam McCandlish",
+                    "Tom Henighan",
+                    "Tom B. Brown",
+                    "Benjamin Chess",
+                    "Rewon Child",
+                    "Scott Gray",
+                    "Alec Radford",
+                    "Jeffrey Wu",
+                    "Dario Amodei",
+                ],
+                "stopping significantly before convergence.",
+            ),
+            (
+                include_str!("../tests/fixtures/procedure-frontmatter.html"),
+                "The Procedure Fetish",
+                vec!["Nicholas Bagley"],
+                "Administrative law could achieve more by doing less.",
+            ),
+        ] {
+            let literal = parse_verbatim_bbox_layout(xml).unwrap();
+            let mut metadata = PaperMetadata {
+                title: title.to_owned(),
+                ..PaperMetadata::default()
+            };
+            metadata.authors = crate::frontmatter::authors(&literal, &metadata);
+            assert_eq!(metadata.authors, expected_authors);
+            let paper = ExtractedPaper {
+                metadata,
+                pages: crate::frontmatter::readable_pages(&literal)
+                    .into_iter()
+                    .map(|p| ExtractedPage {
+                        number: p.number,
+                        text: clean_page(&p.text),
+                    })
+                    .collect(),
+                layout: parse_bbox_layout(xml).unwrap(),
+            };
+            let result = crate::abstracts::extract(&paper);
+            assert_eq!(
+                result.status,
+                crate::abstracts::AbstractStatus::Accepted,
+                "{:?}",
+                result.checks
+            );
+            let text = result.text.unwrap();
+            assert!(text.contains(expected_phrase), "{text}");
+            assert!(!text.contains("Introduction"));
+            assert!(!text.contains("As a historical note"));
+            assert!(!text.contains("Law¹"));
+            assert!(!text.contains("Contents"));
+            assert!(!text.contains("Contributions:"));
+            assert!(!text.contains("Equal contribution"));
+            assert!(!text.ends_with(" 1"));
+        }
+    }
 
     #[test]
     fn reads_pdfinfo_fields() {

@@ -20,6 +20,16 @@ struct ParsedToken {
 /// coordinate model. Coordinates remain in PDF points so they can be scaled
 /// without losing alignment with the rendered page.
 pub fn parse_bbox_layout(input: &str) -> Result<DocumentLayout> {
+    parse_document(input, true)
+}
+
+/// Keep Poppler's word boundaries for authored prose and bibliographic metadata.
+/// The anchored layout retains its existing token numbering for saved maps.
+pub fn parse_verbatim_bbox_layout(input: &str) -> Result<DocumentLayout> {
+    parse_document(input, false)
+}
+
+fn parse_document(input: &str, merge_fragments: bool) -> Result<DocumentLayout> {
     let mut pages = Vec::new();
     let mut cursor = 0;
     while let Some(relative_start) = input[cursor..].find("<page ") {
@@ -42,7 +52,7 @@ pub fn parse_bbox_layout(input: &str) -> Result<DocumentLayout> {
         }
 
         let number = u32::try_from(pages.len() + 1).unwrap_or(u32::MAX);
-        let parsed = parse_page_tokens(&input[tag_end + 1..close], width, height)?;
+        let parsed = parse_page_tokens(&input[tag_end + 1..close], width, height, merge_fragments)?;
         let tokens = parsed
             .into_iter()
             .enumerate()
@@ -75,7 +85,12 @@ pub fn parse_bbox_layout(input: &str) -> Result<DocumentLayout> {
     })
 }
 
-fn parse_page_tokens(content: &str, page_width: f32, page_height: f32) -> Result<Vec<ParsedToken>> {
+fn parse_page_tokens(
+    content: &str,
+    page_width: f32,
+    page_height: f32,
+    merge_fragments: bool,
+) -> Result<Vec<ParsedToken>> {
     let mut output = Vec::<ParsedToken>::new();
     let mut cursor = 0;
     let mut line_number = 0_u32;
@@ -96,6 +111,7 @@ fn parse_page_tokens(content: &str, page_width: f32, page_height: f32) -> Result
             page_width,
             page_height,
             &mut output,
+            merge_fragments,
         )?;
         line_number = line_number.saturating_add(1);
         cursor = close + "</line>".len();
@@ -109,6 +125,7 @@ fn parse_line_tokens(
     page_width: f32,
     page_height: f32,
     output: &mut Vec<ParsedToken>,
+    merge_fragments: bool,
 ) -> Result<()> {
     let mut cursor = 0;
     while let Some(relative_start) = content[cursor..].find("<word ") {
@@ -134,14 +151,16 @@ fn parse_line_tokens(
         )?;
         let text = decode_xml_text(content[tag_end + 1..close].trim());
         if !text.is_empty() {
-            push_or_merge_token(
-                output,
-                ParsedToken {
-                    text,
-                    line,
-                    rects: vec![rect],
-                },
-            );
+            let token = ParsedToken {
+                text,
+                line,
+                rects: vec![rect],
+            };
+            if merge_fragments {
+                push_or_merge_token(output, token);
+            } else {
+                output.push(token);
+            }
         }
         cursor = close + "</word>".len();
     }

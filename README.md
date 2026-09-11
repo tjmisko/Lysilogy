@@ -140,7 +140,10 @@ separate Terra high-effort web pass checks the cited passages, chronology, and u
 receives the same scoped tools and effort levels while retaining its configured model. Abstract
 extraction has its own deterministic locator, model review, and independent source/boundary
 verifier. The repair pass runs even when deterministic extraction found text. Structured abstract
-subheadings are retained; unlabeled candidates need a separate boundary review. The result and check report are saved in
+subheadings are retained; unlabeled candidates need independent front-matter evidence or a separate
+boundary review. Source prose uses literal Poppler word boundaries; the merged coordinate index
+remains stable for existing citations. Author rows are extracted from the PDF, including names
+separated by affiliation markers or affiliation blocks. The result and check report are saved in
 `abstract.json`; orientation consumes the accepted result. An uncertain or unsupported proposal is
 withheld. `cargo run -- refresh-abstract "title fragment" --provider codex --force` (or
 `:refresh-abstract`) refreshes this component without regenerating the map or context.
@@ -214,7 +217,7 @@ labels itself plainly; use a model-backed provider for interpretive reading and 
 
 ## Supercuts and reference tools
 
-Open **Lysilogos** in the toolbar, or use `:supercut` and `:references`.
+Open Lysilogos with `:supercut` or `:references`.
 
 - **Supercut:** request exactly ten paragraphs or six printable Letter pages. Lysilogos selects a
   coherent path through the question, mechanism, evidence, and qualifications. At least 80% of prose
@@ -261,6 +264,9 @@ Press `?` in the app for the complete, contextual guide.
 | `m` | Toggle source PDF / requested Markdown reconstruction |
 | `p` | Toggle Overview / source PDF |
 | `2` | Toggle one-page / two-page PDF view |
+| `W` / `H` | Fit the PDF to viewport width / height and reset zoom |
+| `P` | Toggle paged / continuous PDF reading |
+| `X` | Toggle vertical / horizontal continuous scrolling |
 | `+` / `-` | One fewer / one more page column in Overview (up to 10) |
 | `[` / `]` | Previous / next paper, or PDF page |
 | `Ctrl-d` / `Ctrl-u` | Page forward / back in PDF; half-screen in text views |
@@ -271,7 +277,7 @@ Press `?` in the app for the complete, contextual guide.
 | `c` | Clarify the selection in paper context |
 | `y` | Copy the selection |
 | `Space` | Persist the selected source sentence range as a reader highlight |
-| `H` / `U` | Toggle AI-cited prehighlights / reader highlights |
+| `H` / `U` in Overview | Toggle AI-cited prehighlights / reader highlights |
 | `I` | Invert every PDF rendering between dark ink and true image colors |
 | `F1` | Toggle the library from anywhere |
 | `F10` | Open the fuzzy article switcher |
@@ -291,16 +297,24 @@ PDF mode renders a PDF.js text layer over the page image. Drag over a passage—
 the two-page spread—to copy it or open **Ask about this** with the passage and its first page already
 filled in. Selections retain PDF-page coordinates and text-item offsets for future persistent marks.
 Image-only pages report that OCR is required instead of presenting an inert selection surface.
+Unanalyzed papers open directly in source reading, with PDF/Text tabs and one Analyze action.
+Passage questions work before analysis; extraction runs on demand without creating an analysis.
+Analyzed papers display their author, year, and title in the app bar; `q` opens the queue.
 
 Opening an Overview region animates its source into a reading column with a compact digest on
 the right. Both panes fill the space below the app bar and scroll independently. The original PDF
 is cropped to the section's verified token bounds, including its first and last partial pages;
-surrounding text is excluded from rendering and native selection. Missing geometry offers an
+surrounding text is excluded from rendering and native selection. Footnotes are retained when a
+raised callout belongs to the selected section, including notes below its ending boundary.
+Missing geometry offers an
 explicit link to the full page. The page picker preserves original PDF numbering, and **Open full
 paper** takes the current page into Text. **Map** or `Esc` restores the map's scroll, columns,
 keyboard focus, and library state. Section navigation lives in the digest footer. Reduced-motion
 settings skip the transition; narrow screens provide Source/Digest tabs. Overview and both readers
 share a PDF document, and scoped page canvases render lazily.
+Both readers offer fit width/height and paged/continuous modes. Continuous pages can scroll
+vertically or horizontally; the mouse wheel follows the chosen direction. Uppercase `H`, `P`,
+and `X` distinguish reader controls from the existing lowercase navigation shortcuts.
 
 In the focused source pane, `j/k` or up/down scroll, `h/l` or left/right move between its pages,
 `Ctrl-d/u` and PageDown/PageUp scroll by screen increments, and `[`/`]` switch sections. `+`/`-`

@@ -239,7 +239,7 @@ impl AnalysisService {
         &self,
         provider: AnalysisProvider,
         paper: &ExtractedPaper,
-        analysis: &PaperAnalysis,
+        analysis: Option<&PaperAnalysis>,
         artifact_directory: &Path,
         selection: &str,
         question: &str,
@@ -272,7 +272,8 @@ impl AnalysisService {
                         question.trim(),
                     )
                     .await?;
-                let concepts = matching_glossary(&analysis.glossary, selection);
+                let concepts =
+                    analysis.map_or_else(Vec::new, |a| matching_glossary(&a.glossary, selection));
                 Ok(Clarification {
                     selection: selection.trim().to_owned(),
                     answer: draft.answer,

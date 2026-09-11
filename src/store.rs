@@ -20,7 +20,7 @@ use crate::{
 };
 
 static TEMP_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
-const EXTRACTION_SCHEMA_VERSION: u16 = 6;
+const EXTRACTION_SCHEMA_VERSION: u16 = 7;
 
 #[derive(Clone, Debug)]
 pub struct ArtifactStore {
