@@ -233,7 +233,7 @@ impl AppState {
     }
 
     pub async fn paper(&self, id: &PaperId) -> Result<PaperView> {
-        let overview = self
+        let mut overview = self
             .catalog
             .read()
             .await
@@ -241,6 +241,25 @@ impl AppState {
             .map(|entry| entry.overview.clone())
             .ok_or_else(|| Error::PaperNotFound(id.to_string()))?;
         let analysis = self.store.load_analysis(id).await?;
+        let metadata = if let Some(metadata) = self.store.load_extraction_metadata(id).await? {
+            Some(metadata)
+        } else if analysis.is_some() {
+            let _guard = self.tools_extract.lock().await;
+            Some(
+                self.load_or_extract(id)
+                    .await
+                    .map_err(|(_, error)| error)?
+                    .metadata,
+            )
+        } else {
+            None
+        };
+        if let Some(metadata) = metadata {
+            overview.metadata = metadata.clone();
+            if let Some(entry) = self.catalog.write().await.get_mut(id) {
+                entry.overview.metadata = metadata;
+            }
+        }
         Ok(PaperView {
             paper: overview,
             analysis,
@@ -2169,6 +2188,44 @@ mod tests {
             .to_bytes();
         let library: serde_json::Value = serde_json::from_slice(&body)?;
         assert_eq!(library["papers"].as_array().map(Vec::len), Some(1));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn paper_details_refresh_author_metadata_without_rescanning() -> Result<()> {
+        let library = tempdir().map_err(|e| Error::io("library", e))?;
+        let data = tempdir().map_err(|e| Error::io("data", e))?;
+        let filename = "Irving et al. - 2018 - AI safety via debate.pdf";
+        tokio::fs::write(library.path().join(filename), b"metadata fixture")
+            .await
+            .map_err(|e| Error::io("fixture", e))?;
+        let state = AppState::new(library.path(), data.path()).await?;
+        let id = PaperId::from_relative_path(Path::new(filename));
+        let mut metadata = state.paper(&id).await?.paper.metadata;
+        metadata.authors = vec![
+            "Geoffrey Irving".into(),
+            "Paul Christiano".into(),
+            "Dario Amodei".into(),
+        ];
+        state
+            .store
+            .save_extraction(
+                &id,
+                &ExtractedPaper {
+                    metadata: metadata.clone(),
+                    pages: Vec::new(),
+                    layout: DocumentLayout::default(),
+                },
+            )
+            .await?;
+        assert_eq!(
+            state.paper(&id).await?.paper.metadata.authors,
+            metadata.authors
+        );
+        assert_eq!(
+            state.library().await.papers[0].metadata.authors,
+            metadata.authors
+        );
         Ok(())
     }
 

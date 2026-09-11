@@ -61,6 +61,10 @@ try {
   assert.match(await page.locator('.current-paper-label').innerText(),/Test Author.*2018.*noisy proxies/);
   assert.match(await page.locator('.paper-byline').innerText(),/Sixth Author/);
   assert.equal(await page.locator('.view-introduction').count(),0);
+  assert.equal(await page.locator('.paper-kicker').count(),0);
+  assert.equal(await page.locator('.authored-abstract .eyebrow').count(),0);
+  assert.equal(await page.locator('.authored-abstract > p').evaluate(n=>getComputedStyle(n).textAlign),'justify');
+  assert.equal(await page.locator('[data-context-kind="before"] ul > li').count(),1);
   assert.match(await page.locator('[data-context-kind="before"]').innerText(),/Prior research/);
   assert.doesNotMatch(await page.locator('[data-context-kind="before"]').innerText(),/subsequent experiment|MERGED LEGACY/);
   assert.match(await page.locator('[data-context-kind="after"]').innerText(),/subsequent experiment/);
@@ -80,6 +84,11 @@ try {
   await page.getByRole('button',{name:'Overview',exact:true}).click();
   const region=page.locator('.section-boxes button[data-section-id="regressional"]').first();
   await region.waitFor();
+  await page.keyboard.press('ArrowRight');
+  await page.waitForFunction(()=>document.activeElement?.dataset.sectionId==='regressional');
+  assert.equal(await region.getAttribute('class'),'is-verified is-active');
+  await page.keyboard.press('ArrowLeft');
+  await page.waitForFunction(()=>document.activeElement?.dataset.sectionId==='opening');
   await page.waitForFunction(()=>document.querySelector('.source-page[data-page="2"] canvas')?.dataset.rendered === 'true');
   const columns=await page.locator('.page-grid-zoom output').innerText();
   assert.equal(await page.locator('.app-shell.has-library').count(),1);
@@ -200,6 +209,19 @@ try {
   await page.screenshot({path:'/tmp/lysilogy-pipeline-mobile.png'});
   await source.focus(); await page.keyboard.press('Escape');
   await page.waitForFunction(()=>document.querySelector('.section-focus')===null);
+  // Large author lists keep the header compact and reveal every full name.
+  paper.metadata.authors=Array.from({length:24},(_,i)=>`Researcher ${i+1} Fullname`);
+  await page.setViewportSize({width:1280,height:650});
+  await page.reload();
+  await page.getByRole('button',{name:'Abstract',exact:true}).click();
+  await page.locator('.paper-authors summary').waitFor();
+  assert.equal(await page.locator('.paper-authors').getAttribute('open'),null);
+  await page.locator('.paper-authors summary').click();
+  assert.equal(await page.getByRole('list',{name:'Full author list'}).locator('li').count(),24);
+  assert.match(await page.locator('.paper-authors').innerText(),/Researcher 24 Fullname/);
+  await page.setViewportSize({width:390,height:844});
+  assert.ok(await page.locator('.paper-heading').evaluate(n=>n.scrollWidth<=n.clientWidth+1));
+  await page.screenshot({path:'/tmp/lysilogy-long-authors-mobile.png'});
   // Unanalyzed papers open straight into source reading, with one analysis action.
   analyzed=false;
   await page.setViewportSize({width:1280,height:650});

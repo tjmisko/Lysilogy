@@ -233,6 +233,7 @@ function SectionBoxButton({
       type="button"
       className={`${box.verified ? "is-verified" : "is-inferred"} ${active ? "is-active" : ""}`}
       data-section-id={box.section.id}
+      data-section-index={box.index}
       data-family={box.section.family}
       style={{
         left: `${box.left}px`,

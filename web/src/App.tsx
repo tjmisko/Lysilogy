@@ -4,6 +4,7 @@ import { sectionPages } from "./lib/sectionScope";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AbstractView } from "./components/AbstractView";
+import { PaperHeading } from "./components/PaperHeading";
 import { CommandMenu } from "./components/CommandMenu";
 import { PassageQuestion } from "./components/PassageQuestion";
 import { DigestPanel } from "./components/DigestPanel";
@@ -82,26 +83,6 @@ function paperByPreference(library: LibraryResponse, requested: string | null): 
   );
 }
 
-function statusLabel(paper: PaperOverview | null): string {
-  if (paper === null) return "No paper";
-  switch (paper.status.state) {
-    case "discovered":
-      return "Not analyzed";
-    case "extracted":
-      return "Text ready";
-    case "queued":
-      return `Queued · ${paper.status.provider}`;
-    case "extracting":
-      return "Extracting text";
-    case "analyzing":
-      return `Reading · ${paper.status.provider}`;
-    case "ready":
-      return "Analysis ready";
-    case "failed":
-      return `Failed · ${paper.status.stage}`;
-  }
-}
-
 export function App() {
   const [library, setLibrary] = useState<LibraryResponse | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(initialPaperId);
@@ -175,6 +156,8 @@ export function App() {
   const loadPaper = useCallback(async (id: string): Promise<PaperView> => {
     const next = await api.paper(id);
     setPaperView(next);
+    setLibrary((current) => current === null ? null : { ...current,
+      papers: current.papers.map((paper) => paper.id === id ? next.paper : paper) });
     return next;
   }, []);
 
@@ -193,8 +176,7 @@ export function App() {
         const preferred = paperByPreference(nextLibrary, selectedId);
         if (preferred === null) return;
         setSelectedId(preferred.id);
-        const nextPaper = await api.paper(preferred.id);
-        setPaperView(nextPaper);
+        await loadPaper(preferred.id);
       })
       .catch((reason: unknown) => {
         if (!cancelled) setError(reason instanceof Error ? reason.message : "Could not load library");
@@ -925,22 +907,7 @@ export function App() {
           )}
           {currentPaper !== null && (
             <>
-              {view === "abstract" && (
-                <section className="paper-heading">
-                  <div className="paper-kicker">
-                    <span className={`status-pip status-${currentPaper.status.state}`} />
-                    {statusLabel(currentPaper)}
-                    {paperView?.analysis !== null && paperView?.analysis !== undefined && (
-                      <> · {paperView.analysis.provider}</>
-                    )}
-                  </div>
-                  <h1>{currentPaper.metadata.title}</h1>
-                  <div className="paper-byline">
-                    <span>{currentPaper.metadata.authors.join(", ") || "Unknown author"}</span>
-                    {currentPaper.metadata.year !== null && <span>{currentPaper.metadata.year}</span>}
-                  </div>
-                </section>
-              )}
+              {view === "abstract" && <PaperHeading metadata={currentPaper.metadata} />}
 
               {view === "abstract" && analysis !== null ? (
                 <AbstractView

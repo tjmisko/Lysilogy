@@ -100,7 +100,7 @@ pub fn authors(layout: &DocumentLayout, metadata: &PaperMetadata) -> Vec<String>
         .collect::<Vec<_>>();
     let mut found = Vec::new();
     let mut saw_title = false;
-    for line in lines(page).iter().take(60) {
+    for line in lines(page).iter().take(120) {
         let text = line
             .iter()
             .map(|t| t.text.as_str())
@@ -153,7 +153,7 @@ pub fn authors(layout: &DocumentLayout, metadata: &PaperMetadata) -> Vec<String>
         }
         if line
             .iter()
-            .any(|t| t.rects.iter().any(|r| r.y_min > page.height * 0.5))
+            .any(|t| t.rects.iter().any(|r| r.y_min > page.height * 0.85))
         {
             break;
         }
@@ -209,4 +209,57 @@ fn names_on_line(line: &[&LayoutToken]) -> Option<Vec<String>> {
         valid = false;
     }
     (valid && !candidates.is_empty()).then_some(candidates)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn keeps_long_author_lists_below_the_middle_of_the_title_page() {
+        let expected = ('a'..='x')
+            .map(|letter| format!("Ada Author{letter}"))
+            .collect::<Vec<_>>();
+        let rows = std::iter::once("Collaborative Discoveries".to_owned())
+            .chain(expected.iter().cloned())
+            .chain(std::iter::once("Abstract".to_owned()));
+        let mut tokens = Vec::new();
+        for (row, text) in rows.enumerate() {
+            for (column, word) in text.split_whitespace().enumerate() {
+                let x = f32::from(u16::try_from(column).unwrap()).mul_add(70.0, 40.0);
+                let y = f32::from(u16::try_from(row).unwrap()).mul_add(20.0, 80.0);
+                tokens.push(LayoutToken {
+                    index: u32::try_from(tokens.len()).unwrap(),
+                    text: word.to_owned(),
+                    line: u32::try_from(row).unwrap(),
+                    rects: vec![crate::domain::TextRect {
+                        x_min: x,
+                        x_max: x + 60.0,
+                        y_min: y,
+                        y_max: y + 12.0,
+                    }],
+                });
+            }
+        }
+        let layout = DocumentLayout {
+            schema_version: 1,
+            pages: vec![LayoutPage {
+                number: 1,
+                width: 600.0,
+                height: 800.0,
+                tokens,
+                sentences: Vec::new(),
+            }],
+        };
+        assert_eq!(
+            authors(
+                &layout,
+                &PaperMetadata {
+                    title: "Collaborative Discoveries".to_owned(),
+                    ..PaperMetadata::default()
+                }
+            ),
+            expected
+        );
+    }
 }

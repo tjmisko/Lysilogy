@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { moveInSectionMap, type Direction } from "../lib/spatialNavigation";
 
 type GlobalKeyOptions = {
   enabled: boolean;
@@ -40,13 +41,6 @@ function isEditable(target: EventTarget | null): boolean {
   );
 }
 
-function columnCount(): number {
-  if (window.innerWidth >= 1500) return 5;
-  if (window.innerWidth >= 1100) return 4;
-  if (window.innerWidth >= 720) return 3;
-  return 1;
-}
-
 export function useGlobalKeys(options: GlobalKeyOptions): void {
   const optionsRef = useRef(options);
   const pendingG = useRef<number | null>(null);
@@ -86,15 +80,16 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
         return;
       }
 
-      const columns = columnCount();
-      const clamp = (index: number): number =>
-        Math.max(0, Math.min(current.itemCount - 1, index));
+      const move = (direction: Direction) => {
+        const next = moveInSectionMap(current.activeIndex, direction);
+        if (next !== null) current.onMove(next);
+      };
       switch (event.key) {
         case "h":
         case "ArrowLeft":
           if (current.view === "overview") {
             event.preventDefault();
-            current.onMove(clamp(current.activeIndex - 1));
+            move("left");
           } else if (current.view === "text" && current.textMode === "pdf") {
             event.preventDefault();
             current.onPrevious();
@@ -104,7 +99,7 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
         case "ArrowRight":
           if (current.view === "overview") {
             event.preventDefault();
-            current.onMove(clamp(current.activeIndex + 1));
+            move("right");
           } else if (current.view === "text" && current.textMode === "pdf") {
             event.preventDefault();
             current.onNext();
@@ -114,13 +109,13 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
         case "ArrowDown":
           event.preventDefault();
           if (current.view === "text" || current.view === "abstract") current.onScroll(120);
-          else if (current.view === "overview") current.onMove(clamp(current.activeIndex + columns));
+          else if (current.view === "overview") move("down");
           break;
         case "k":
         case "ArrowUp":
           event.preventDefault();
           if (current.view === "text" || current.view === "abstract") current.onScroll(-120);
-          else if (current.view === "overview") current.onMove(clamp(current.activeIndex - columns));
+          else if (current.view === "overview") move("up");
           break;
         case "G":
           event.preventDefault();

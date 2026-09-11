@@ -63,8 +63,8 @@ export function AbstractView({
   const hasSources = context.notes.length > 0 && context.sources.length > 0;
   const legacyNotes = context.notes.filter((note) => note.kind == null || note.kind === "legacy");
   const assessment = analysis.context_assessment;
-  const renderNotes = (notes: ContextNote[]) => notes.map((note, index) => (
-    <p className="context-note-text" key={`${note.text}-${index}`}>
+  const renderNotes = (notes: ContextNote[]) => <ul className="context-note-list">{notes.map((note, index) => (
+    <li className="context-note-text" key={`${note.text}-${index}`}>
       {note.text}{" "}
       <span className="context-note-citations" aria-label="Supporting sources">
         {note.source_ids.map((id) => {
@@ -73,8 +73,8 @@ export function AbstractView({
             aria-label={`Source ${sourceNumbers.get(id)}: ${source.title}`}>[{sourceNumbers.get(id)}]</a>;
         })}
       </span>
-    </p>
-  ));
+    </li>
+  ))}</ul>;
 
   return (
     <section className="abstract-view" aria-label="Paper abstract and orientation">
@@ -86,7 +86,6 @@ export function AbstractView({
       <article className="authored-abstract">
         <header>
           <div>
-            <span className="eyebrow">Authors&apos; words</span>
             <h2>Abstract</h2>
           </div>
           {onRefresh != null && <button type="button" disabled={refreshing !== null}

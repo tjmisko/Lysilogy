@@ -293,6 +293,19 @@ movement extends it, `Space` stores it, and `c` sends the exact sentence text in
 Same-page ranges keep one compact, relocation-resistant token anchor; save cross-page notes as
 separate highlights.
 
+Overview arrows follow the actual screen rectangles rather than assuming equally sized tiles:
+Down chooses the region beneath the current region, and navigation adapts to the chosen page
+columns. Title, authors, and year share a compact header where space permits. Large author lists
+expand to show every extracted name in a bounded, scrollable list. The authored abstract is
+justified, and each verified context note is a bullet with its supporting citations.
+
+Paper details reload saved author metadata and upgrade older extractions on opening. Restart the
+Rust backend after backend changes; Vite only reloads the frontend. An older backend can rewrite
+the extraction cache using its older schema.
+
+See [Citation graph sources](docs/citation-graph-sources.md) for public graph APIs and the proposed
+document-level verification approach for research history and subsequent influence.
+
 PDF mode renders a PDF.js text layer over the page image. Drag over a passage—even across lines or
 the two-page spread—to copy it or open **Ask about this** with the passage and its first page already
 filled in. Selections retain PDF-page coordinates and text-item offsets for future persistent marks.

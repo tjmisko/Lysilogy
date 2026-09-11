@@ -20,7 +20,7 @@ use crate::{
 };
 
 static TEMP_FILE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
-const EXTRACTION_SCHEMA_VERSION: u16 = 7;
+const EXTRACTION_SCHEMA_VERSION: u16 = 8;
 
 #[derive(Clone, Debug)]
 pub struct ArtifactStore {
@@ -345,7 +345,7 @@ impl ArtifactStore {
         write_atomic(&self.digest_path(id), render_digest(analysis).as_bytes()).await
     }
 
-    pub async fn load_extraction(&self, id: &PaperId) -> Result<Option<ExtractedPaper>> {
+    pub async fn load_extraction_metadata(&self, id: &PaperId) -> Result<Option<PaperMetadata>> {
         let metadata_path = self.extraction_metadata_path(id);
         let Some(manifest) = read_json_if_present::<ExtractionMetadata>(&metadata_path).await?
         else {
@@ -354,6 +354,13 @@ impl ArtifactStore {
         if manifest.schema_version != EXTRACTION_SCHEMA_VERSION {
             return Ok(None);
         }
+        Ok(Some(manifest.metadata))
+    }
+
+    pub async fn load_extraction(&self, id: &PaperId) -> Result<Option<ExtractedPaper>> {
+        let Some(metadata) = self.load_extraction_metadata(id).await? else {
+            return Ok(None);
+        };
 
         let text_path = self.text_path(id);
         let text = match fs::read_to_string(&text_path).await {
@@ -377,7 +384,7 @@ impl ArtifactStore {
             return Ok(None);
         };
         Ok(Some(ExtractedPaper {
-            metadata: manifest.metadata,
+            metadata,
             pages,
             layout,
         }))

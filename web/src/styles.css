@@ -601,9 +601,13 @@ code {
 }
 
 .paper-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 20px;
   max-width: 1480px;
   margin: 0 auto;
-  padding: 20px clamp(18px, 2.5vw, 36px) 18px;
+  padding: 16px clamp(18px, 2.5vw, 36px);
 }
 
 .paper-kicker {
@@ -620,7 +624,7 @@ code {
 .paper-heading h1 {
   max-width: 1120px;
   margin: 0;
-  font: 500 clamp(25px, 2.4vw, 34px)/1.12 Georgia, "Times New Roman", serif;
+  font: 500 clamp(23px, 2vw, 30px)/1.15 Georgia, "Times New Roman", serif;
   letter-spacing: -0.025em;
   text-wrap: balance;
 }
@@ -628,11 +632,21 @@ code {
 .paper-byline {
   display: flex;
   flex-wrap: wrap;
-  gap: 0;
-  margin-top: 13px;
+  gap: 4px 10px;
+  align-items: baseline;
+  min-width: 0;
+  margin-top: 0;
   color: var(--ink-soft);
   font-size: 12px;
 }
+
+.paper-year { white-space: nowrap; }
+.paper-authors { min-width: 0; max-width: 100%; }
+.paper-authors summary { cursor: pointer; overflow-wrap: anywhere; }
+.author-count { color: var(--signal); white-space: nowrap; }
+.paper-authors ol { display: flex; flex-wrap: wrap; gap: 6px 20px; list-style: none; margin: 12px 0 0;
+  padding: 12px; max-height: 180px; overflow: auto; border: 1px solid var(--line); background: var(--panel); }
+.paper-authors li { flex: 0 1 auto; overflow-wrap: anywhere; }
 
 .paper-byline span + span::before {
   padding: 0 9px;
@@ -796,13 +810,17 @@ code {
 }
 
 .authored-abstract > p {
-  max-width: 880px;
+  max-width: none;
   margin: 0;
   color: #d3d2c9;
   font: 17px/1.55 Georgia, "Times New Roman", serif;
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
 }
 
 .authored-abstract > .missing-abstract {
+  text-align: start;
   color: var(--ink-faint);
   font-size: 15px;
   font-style: italic;
@@ -869,6 +887,9 @@ code {
   color: var(--ink-soft);
   font: 17px/1.6 Georgia, "Times New Roman", serif;
 }
+
+.context-note-list { margin: 12px 0 0; padding-left: 1.15em; }
+.context-note-list li::marker { color: var(--interpretation); }
 
 .context-notes {
   display: grid;
