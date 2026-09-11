@@ -487,6 +487,16 @@ export function App() {
       case "switch":
         setSwitcherOpen(true);
         break;
+      case "refresh-abstract":
+        if (selectedId !== null) {
+          setNotice("Refreshing the authored abstract…");
+          void api.refreshAbstract(selectedId, provider).then((next) => {
+            setPaperView((current) => current?.paper.id === next.paper.id ? next : current);
+            void refreshQueue();
+            setNotice("Abstract refreshed.");
+          }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Abstract refresh failed"));
+        }
+        break;
       case "abstract":
         setView("abstract");
         break;
@@ -737,7 +747,7 @@ export function App() {
     library?.papers.find((paper) => paper.id === selectedId) ??
     null;
   const analysis = paperView?.analysis ?? null;
-  const abstractPage = analysis?.sections.find((section) => section.kind === "abstract")?.pages.start
+  const abstractPage = analysis?.abstract_extraction?.start_page ?? analysis?.sections.find((section) => section.kind === "abstract")?.pages.start
     ?? null;
   const activeJobCount = queue.jobs.filter(
     (job) => job.status.state === "queued" || job.status.state === "running",

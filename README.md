@@ -132,8 +132,11 @@ sampled.
 For Codex, the small orientation and clarification jobs use `gpt-5.6-luna` at low effort. Structural
 analysis, sourced context, and revision use `gpt-5.6-terra` at medium effort. Claude receives the
 same scoped tools and low/medium effort split while retaining its configured model. Abstract
-extraction normally costs no model call; when deterministic extraction finds no abstract, the fast
-orientation call may return an exact candidate, which still has to pass source-text verification.
+extraction has its own deterministic locator, model review, and independent source/boundary
+verifier. Structured abstract subheadings are retained. The result and check report are saved in
+`abstract.json`; orientation consumes the accepted result. An uncertain or unsupported proposal is
+withheld. `cargo run -- refresh-abstract "title fragment" --provider codex --force` (or
+`:refresh-abstract`) refreshes this component without regenerating the map or context.
 
 Each initial branch writes a typed stage artifact as soon as it succeeds. A retry reuses matching
 stages and reruns only missing or malformed ones; `--force` deliberately invalidates this stage

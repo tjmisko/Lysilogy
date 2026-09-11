@@ -111,6 +111,7 @@ pub enum ProcessingStage {
 #[serde(rename_all = "snake_case")]
 pub enum AnalysisJobKind {
     Initial,
+    AbstractRefresh,
     Revision,
 }
 
@@ -258,6 +259,8 @@ pub struct PaperAnalysis {
     /// extracted source text. Older analyses and papers without abstracts omit it.
     #[serde(default)]
     pub author_abstract: Option<String>,
+    #[serde(default)]
+    pub abstract_extraction: Option<crate::abstracts::AbstractResult>,
     /// Externally grounded field-history or reception claims. Every note is
     /// retained only when all of its source IDs pass independent URL checks.
     #[serde(default)]

@@ -72,6 +72,18 @@ impl AnalysisService {
         Self { local_cli }
     }
 
+    pub async fn extract_abstract(
+        &self,
+        provider: AnalysisProvider,
+        paper: &ExtractedPaper,
+        directory: &Path,
+        force: bool,
+    ) -> Result<crate::abstracts::AbstractResult> {
+        self.local_cli
+            .extract_abstract(provider, paper, directory, force)
+            .await
+    }
+
     pub async fn analyze(
         &self,
         provider: AnalysisProvider,
@@ -79,17 +91,29 @@ impl AnalysisService {
         artifact_directory: &Path,
         reset_stages: bool,
     ) -> Result<AnalysisOutcome> {
+        let abstract_result = self
+            .local_cli
+            .extract_abstract(provider, paper, artifact_directory, reset_stages)
+            .await?;
         let (draft, session) = match provider {
             AnalysisProvider::Heuristic => (HeuristicAnalyzer::analyze(paper), None),
             AnalysisProvider::Codex | AnalysisProvider::Claude => {
                 let result = self
                     .local_cli
-                    .analyze(provider, paper, artifact_directory, reset_stages)
+                    .analyze(
+                        provider,
+                        paper,
+                        artifact_directory,
+                        reset_stages,
+                        &abstract_result,
+                    )
                     .await?;
                 (result.draft, result.session)
             }
         };
         let mut analysis = normalize_analysis(draft, provider, paper)?;
+        analysis.author_abstract.clone_from(&abstract_result.text);
+        analysis.abstract_extraction = Some(abstract_result);
         sources::verify_context_sources(&mut analysis).await;
         Ok(AnalysisOutcome { analysis, session })
     }
@@ -112,6 +136,12 @@ impl AnalysisService {
             .revise(provider, paper, artifact_directory, feedback, session)
             .await?;
         let mut analysis = normalize_analysis(result.draft, provider, paper)?;
+        let abstract_result = self
+            .local_cli
+            .extract_abstract(provider, paper, artifact_directory, false)
+            .await?;
+        analysis.author_abstract.clone_from(&abstract_result.text);
+        analysis.abstract_extraction = Some(abstract_result);
         sources::verify_context_sources(&mut analysis).await;
         Ok(AnalysisOutcome {
             analysis,
@@ -490,6 +520,7 @@ fn normalize_analysis(
         thesis: draft.thesis,
         outsider_brief,
         author_abstract,
+        abstract_extraction: Some(crate::abstracts::extract(paper)),
         context_notes,
         context_sources,
         prerequisites: clean_list(draft.prerequisites, 12),
@@ -722,21 +753,9 @@ pub fn validate_citations(
 }
 
 fn validated_author_abstract(candidate: Option<String>, paper: &ExtractedPaper) -> Option<String> {
-    let abstract_text = compact_whitespace(&candidate?);
-    if abstract_text.chars().count() < 30 || abstract_text.chars().count() > 12_000 {
-        return None;
-    }
-    let source_text = compact_whitespace(
-        &paper
-            .pages
-            .iter()
-            .map(|page| page.text.as_str())
-            .collect::<Vec<_>>()
-            .join(" "),
-    );
-    source_text
-        .contains(&abstract_text)
-        .then_some(abstract_text)
+    let mut proposed = crate::abstracts::locate(paper)?;
+    proposed.text = candidate?;
+    crate::abstracts::verify(paper, Some(&proposed)).text
 }
 
 fn clean_required(field: &str, value: &str) -> Result<String> {
@@ -901,6 +920,7 @@ mod tests {
             thesis: "Thesis".to_owned(),
             outsider_brief: String::new(),
             author_abstract: None,
+            abstract_extraction: None,
             context_notes: Vec::new(),
             context_sources: Vec::new(),
             prerequisites: Vec::new(),
@@ -925,7 +945,7 @@ mod tests {
             metadata: PaperMetadata::default(),
             pages: vec![ExtractedPage {
                 number: 1,
-                text: source.to_owned(),
+                text: format!("Abstract\n{source}\nIntroduction"),
             }],
             layout: DocumentLayout::default(),
         };

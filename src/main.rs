@@ -62,6 +62,14 @@ enum Command {
         #[arg(long)]
         force: bool,
     },
+    /// Refresh only the authored abstract, preserving the map and context.
+    RefreshAbstract {
+        query: String,
+        #[arg(long, default_value = "codex")]
+        provider: AnalysisProvider,
+        #[arg(long)]
+        force: bool,
+    },
     /// Convert one paper to Markdown and print it to standard output.
     Convert {
         /// Paper ID or an unambiguous title fragment.
@@ -182,6 +190,19 @@ async fn run(cli: Cli) -> Result<()> {
                 Error::Task("analysis completed without a stored artifact".to_owned())
             })?;
             println!("Ready: {}\n{}", view.paper.metadata.title, analysis.thesis);
+            Ok(())
+        }
+        Command::RefreshAbstract {
+            query,
+            provider,
+            force,
+        } => {
+            let id = resolve_paper(&state, &query).await?;
+            let view = state.refresh_abstract(&id, provider, force).await?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&view.analysis.and_then(|a| a.abstract_extraction))?
+            );
             Ok(())
         }
         Command::Convert { query } => {

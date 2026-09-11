@@ -301,6 +301,79 @@ impl AppState {
         self.paper(id).await
     }
 
+    pub async fn refresh_abstract(
+        &self,
+        id: &PaperId,
+        provider: AnalysisProvider,
+        force: bool,
+    ) -> Result<PaperView> {
+        let previous = {
+            let mut catalog = self.catalog.write().await;
+            let entry = catalog
+                .get_mut(id)
+                .ok_or_else(|| Error::PaperNotFound(id.to_string()))?;
+            if matches!(
+                entry.overview.status,
+                ProcessingStatus::Queued { .. }
+                    | ProcessingStatus::Extracting
+                    | ProcessingStatus::Analyzing { .. }
+            ) {
+                return Err(Error::AlreadyProcessing(id.to_string()));
+            }
+            let previous = entry.overview.clone();
+            entry.overview.status = ProcessingStatus::Analyzing { provider };
+            drop(catalog);
+            previous
+        };
+        let outcome = async {
+            self.jobs
+                .begin(
+                    id.clone(),
+                    previous.metadata.title.clone(),
+                    provider,
+                    AnalysisJobKind::AbstractRefresh,
+                    None,
+                )
+                .await?;
+            self.jobs
+                .transition(id, ProcessingStage::Extraction, "extract")
+                .await?;
+            let paper = self.load_or_extract(id).await.map_err(|(_, error)| error)?;
+            self.jobs.task_completed(id, "extract").await?;
+            self.jobs
+                .transition(id, ProcessingStage::Analysis, "abstract")
+                .await?;
+            let result = self
+                .analysis
+                .extract_abstract(provider, &paper, &self.store.paper_dir(id), force)
+                .await?;
+            self.jobs.task_completed(id, "abstract").await?;
+            self.jobs
+                .transition(id, ProcessingStage::Persistence, "persist")
+                .await?;
+            let _guard = self.highlight_write.lock().await;
+            if let Some(mut analysis) = self.store.load_analysis(id).await? {
+                analysis.author_abstract.clone_from(&result.text);
+                analysis.abstract_extraction = Some(result);
+                self.store.save_analysis(id, &analysis).await?;
+            }
+            self.jobs.task_completed(id, "persist").await?;
+            self.jobs.complete(id, false).await?;
+            Ok::<(), Error>(())
+        }
+        .await;
+        if let Some(entry) = self.catalog.write().await.get_mut(id) {
+            entry.overview.status = previous.status;
+        }
+        if let Err(error) = outcome {
+            self.jobs
+                .fail(id, ProcessingStage::Analysis, &error)
+                .await?;
+            return Err(error);
+        }
+        self.paper(id).await
+    }
+
     async fn queue_analysis(
         &self,
         id: PaperId,
@@ -1686,6 +1759,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
             delete(delete_highlight),
         )
         .route("/api/papers/{id}/analyze", post(analyze_paper))
+        .route("/api/papers/{id}/abstract/refresh", post(refresh_abstract))
         .route("/api/papers/{id}/feedback", post(feedback_paper))
         .route("/api/papers/{id}/clarify", post(clarify_selection))
         .route(
@@ -1792,6 +1866,17 @@ async fn analyze_paper(
         .queue_analysis(id, request.provider, request.force)
         .await?;
     Ok((StatusCode::ACCEPTED, Json(overview)))
+}
+
+async fn refresh_abstract(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+    Json(request): Json<AnalyzeRequest>,
+) -> Result<Json<PaperView>> {
+    state
+        .refresh_abstract(&parse_id(&id)?, request.provider, request.force)
+        .await
+        .map(Json)
 }
 
 async fn feedback_paper(

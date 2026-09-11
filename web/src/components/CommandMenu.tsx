@@ -17,6 +17,7 @@ const COMMANDS = [
   ["references", "Save citations, find papers, and connect evidence"],
   ["library", "Toggle the paper library"],
   ["switch", "Fuzzy-find another article"],
+  ["refresh-abstract", "Re-extract and verify only the authored abstract"],
   ["abstract", "Open the paper orientation"],
   ["overview", "Open the argument overview"],
   ["atlas", "Open the argument overview"],

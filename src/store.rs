@@ -593,7 +593,7 @@ where
         .map_err(Error::from)
 }
 
-async fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
+pub(crate) async fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
     let sequence = TEMP_FILE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
     let extension = format!("tmp-{}-{sequence}", std::process::id());
     let temporary = path.with_extension(extension);
@@ -792,6 +792,7 @@ mod tests {
             thesis: "A test thesis".to_owned(),
             outsider_brief: "A grounded contextual note".to_owned(),
             author_abstract: Some("The authors' own test abstract is preserved here.".to_owned()),
+            abstract_extraction: None,
             context_notes: vec![ContextNote {
                 text: "A grounded contextual note".to_owned(),
                 source_ids: vec!["review".to_owned()],

@@ -99,6 +99,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ provider, force }),
     }),
+  refreshAbstract: (id: string, provider: AnalysisProvider): Promise<PaperView> =>
+    request(`/api/papers/${id}/abstract/refresh`, {
+      method: "POST", body: JSON.stringify({ provider, force: true }),
+    }),
   feedback: (
     id: string,
     feedback: string,

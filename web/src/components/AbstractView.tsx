@@ -91,8 +91,11 @@ export function AbstractView({
         </header>
         {analysis.author_abstract == null ? (
           <p className="missing-abstract">
-            No authored abstract was identified in the extracted paper. Lysilogy leaves this
-            space empty rather than substituting generated prose.
+            {analysis.abstract_extraction?.status === "needs_review"
+              ? "The abstract’s boundaries or text could not be verified. Open the source to read it."
+              : analysis.abstract_extraction?.status === "needs_ocr"
+                ? "This paper needs text recognition before its abstract can be extracted."
+                : "No authored abstract was identified in the extracted paper."}
           </p>
         ) : (
           <p>{analysis.author_abstract}</p>

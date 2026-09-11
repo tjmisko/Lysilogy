@@ -165,6 +165,7 @@ mod tests {
             thesis: "A thesis.".to_owned(),
             outsider_brief: "Temporary unverified context.".to_owned(),
             author_abstract: None,
+            abstract_extraction: None,
             context_notes: vec![ContextNote {
                 text: "A grounded reception claim.".to_owned(),
                 source_ids: vec!["working".to_owned(), "broken".to_owned()],

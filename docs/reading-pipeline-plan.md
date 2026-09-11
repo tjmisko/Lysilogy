@@ -8,7 +8,7 @@ measurement preceding changes to generation. The suggested delivery order is abs
 cited context, then the focused reader. The reader has no dependency on either model pipeline and
 can ship earlier if desired.
 
-Working interpretation: “Before” means the research situation leading up to the paper. “After”
+Confirmed scope: “Before” means the research situation leading up to the paper. “After”
 means subsequent uses, extensions, critiques, and changes in interpretation. These are distinct
 from prerequisites and from the neighboring paragraphs of a selected section.
 

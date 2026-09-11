@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::domain::ExtractedPaper;
+use crate::{abstracts::target_start_index, domain::ExtractedPaper};
 
 use super::compact_whitespace;
 
@@ -26,9 +26,16 @@ pub(super) struct PrefetchedPaperContext {
 impl PrefetchedPaperContext {
     #[must_use]
     pub fn from_paper(paper: &ExtractedPaper) -> Self {
+        Self::with_abstract(paper, &crate::abstracts::extract(paper))
+    }
+
+    pub fn with_abstract(
+        paper: &ExtractedPaper,
+        abstract_result: &crate::abstracts::AbstractResult,
+    ) -> Self {
         let target_start = target_start_index(paper);
-        let (author_abstract, abstract_page) = find_author_abstract(paper)
-            .map_or((None, None), |(text, page)| (Some(text), Some(page)));
+        let author_abstract = abstract_result.text.clone();
+        let abstract_page = abstract_result.start_page;
         let heading_candidates = heading_candidates(paper, target_start);
         let full_text = page_marked_text(paper);
         let target_window = page_marked_pages(
@@ -71,61 +78,8 @@ impl PrefetchedPaperContext {
 
 #[must_use]
 pub(super) fn find_author_abstract(paper: &ExtractedPaper) -> Option<(String, u32)> {
-    let target_start = target_start_index(paper);
-    for (page_index, page) in paper.pages.iter().enumerate().skip(target_start).take(3) {
-        let lines = page
-            .text
-            .lines()
-            .map(str::trim)
-            .filter(|line| !line.is_empty())
-            .collect::<Vec<_>>();
-        for (line_index, line) in lines.iter().enumerate() {
-            let Some(inline) = abstract_heading_remainder(line) else {
-                continue;
-            };
-            let mut parts = Vec::new();
-            if !inline.is_empty() {
-                parts.push(inline.to_owned());
-            }
-
-            let mut reached_boundary = false;
-            for candidate in lines.iter().skip(line_index + 1) {
-                if abstract_boundary(candidate) {
-                    reached_boundary = true;
-                    break;
-                }
-                parts.push((*candidate).to_owned());
-            }
-            if !reached_boundary {
-                for following_page in paper.pages.iter().skip(page_index + 1).take(2) {
-                    if parts.iter().map(String::len).sum::<usize>() >= 12_000 {
-                        break;
-                    }
-                    for candidate in following_page
-                        .text
-                        .lines()
-                        .map(str::trim)
-                        .filter(|line| !line.is_empty())
-                    {
-                        if abstract_boundary(candidate) {
-                            reached_boundary = true;
-                            break;
-                        }
-                        parts.push(candidate.to_owned());
-                    }
-                    if reached_boundary {
-                        break;
-                    }
-                }
-            }
-
-            let text = compact_whitespace(&parts.join(" "));
-            if (30..=12_000).contains(&text.chars().count()) {
-                return Some((text, page.number));
-            }
-        }
-    }
-    None
+    let result = crate::abstracts::extract(paper);
+    Some((result.text?, result.start_page?))
 }
 
 #[must_use]
@@ -163,61 +117,6 @@ pub(super) fn clarification_context(paper: &ExtractedPaper, selection: &str) -> 
         })
         .collect::<Vec<_>>()
         .join("\n\n")
-}
-
-fn abstract_heading_remainder(line: &str) -> Option<&str> {
-    let trimmed = line.trim();
-    if trimmed.eq_ignore_ascii_case("abstract") {
-        return Some("");
-    }
-    let lowered = trimmed.to_ascii_lowercase();
-    let remainder = lowered.strip_prefix("abstract")?;
-    let consumed = trimmed.len() - remainder.len();
-    let remainder = &trimmed[consumed..];
-    let first = remainder.chars().next()?;
-    if first.is_whitespace() || matches!(first, ':' | '-' | '—' | '–' | '.') {
-        Some(remainder.trim_start_matches([' ', '\t', ':', '-', '—', '–', '.']))
-    } else {
-        None
-    }
-}
-
-fn abstract_boundary(line: &str) -> bool {
-    let cleaned = line
-        .trim()
-        .trim_start_matches(|character: char| {
-            character.is_ascii_digit()
-                || character.is_whitespace()
-                || matches!(character, '.' | ':' | ')' | '(')
-        })
-        .trim();
-    let lowered = cleaned.to_ascii_lowercase();
-    let known = [
-        "introduction",
-        "background",
-        "keywords",
-        "key words",
-        "index terms",
-        "résumé",
-        "resume",
-        "methods",
-        "materials and methods",
-    ];
-    if known.iter().any(|heading| {
-        lowered == *heading
-            || lowered
-                .strip_prefix(heading)
-                .is_some_and(|tail| tail.starts_with(':'))
-            || (line.chars().count() <= 120 && lowered.ends_with(heading))
-    }) {
-        return true;
-    }
-    let has_numbered_prefix = line
-        .trim_start()
-        .chars()
-        .next()
-        .is_some_and(|character| character.is_ascii_digit());
-    has_numbered_prefix && line.chars().count() <= 120 && !line.ends_with('.')
 }
 
 fn heading_candidates(paper: &ExtractedPaper, target_start: usize) -> Vec<String> {
@@ -304,52 +203,6 @@ fn page_marked_pages(pages: &[&crate::domain::ExtractedPage]) -> String {
         .map(|page| format!("[PDF page {}]\n{}", page.number, page.text.trim()))
         .collect::<Vec<_>>()
         .join("\n\n")
-}
-
-fn target_start_index(paper: &ExtractedPaper) -> usize {
-    let title = compact_whitespace(&paper.metadata.title).to_ascii_lowercase();
-    if !title.is_empty()
-        && let Some(index) = paper.pages.iter().position(|page| {
-            compact_whitespace(&page.text)
-                .to_ascii_lowercase()
-                .contains(&title)
-        })
-    {
-        return index;
-    }
-
-    let title_prefix = title
-        .split_whitespace()
-        .filter(|word| word.chars().count() > 2)
-        .take(6)
-        .collect::<Vec<_>>()
-        .join(" ");
-    if !title_prefix.is_empty()
-        && let Some(index) = paper.pages.iter().position(|page| {
-            compact_whitespace(&page.text)
-                .to_ascii_lowercase()
-                .contains(&title_prefix)
-        })
-    {
-        return index;
-    }
-
-    paper
-        .metadata
-        .authors
-        .iter()
-        .filter_map(|author| author.split_whitespace().last())
-        .find_map(|surname| {
-            let surname = surname.to_ascii_lowercase();
-            (surname.chars().count() >= 4).then(|| {
-                paper.pages.iter().position(|page| {
-                    compact_whitespace(&page.text)
-                        .to_ascii_lowercase()
-                        .contains(&surname)
-                })
-            })?
-        })
-        .unwrap_or(0)
 }
 
 fn sampled_page_text(paper: &ExtractedPaper, maximum: usize) -> String {

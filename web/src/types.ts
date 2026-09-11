@@ -73,7 +73,7 @@ export type AnalysisJob = {
   paper_id: string;
   paper_title: string;
   provider: AnalysisProvider;
-  kind: "initial" | "revision";
+  kind: "initial" | "revision" | "abstract_refresh";
   status: AnalysisJobStatus;
   progress: number;
   tasks: AnalysisTask[];
@@ -192,6 +192,13 @@ export type PaperAnalysis = {
   thesis: string;
   outsider_brief: string;
   author_abstract?: string | null;
+  abstract_extraction?: {
+    status: "accepted" | "not_found" | "needs_review" | "needs_ocr";
+    start_page: number | null;
+    end_page: number | null;
+    checks: string[];
+    review: string | null;
+  } | null;
   context_notes?: ContextNote[];
   context_sources?: ContextSource[];
   prerequisites: string[];
