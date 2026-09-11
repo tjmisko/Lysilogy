@@ -324,3 +324,5 @@ without model calls. For the original corpus-based smoke test in a worktree, set
 `LYSILOGY_SMOKE_PDF` as well if its PDF has moved from the default fixture path.
 
 The implementation map and fault boundaries are in [docs/architecture.md](docs/architecture.md).
+The proposed delivery phases for abstract fidelity, cited before/after context, and a focused
+section reader are in [the reading pipeline plan](docs/reading-pipeline-plan.md).
