@@ -13,6 +13,8 @@ const COMMANDS = [
   ["queue", "Show live analysis jobs and feedback"],
   ["feedback", "Send feedback about the current atlas"],
   ["experiment", "Compare two learning-ramp prompts blind"],
+  ["supercut", "Ask Lysilogos for a ten-paragraph or six-page cut"],
+  ["references", "Save citations, find papers, and connect evidence"],
   ["library", "Toggle the paper library"],
   ["switch", "Fuzzy-find another article"],
   ["abstract", "Open the paper orientation"],

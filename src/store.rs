@@ -51,6 +51,33 @@ impl ArtifactStore {
         self.recover_running_experiments().await
     }
 
+    pub async fn load_reader_tools(
+        &self,
+        id: &PaperId,
+    ) -> Result<crate::reader_tools::ReaderTools> {
+        Ok(
+            read_json_if_present(&self.paper_dir(id).join("reader-tools.json"))
+                .await?
+                .unwrap_or_default(),
+        )
+    }
+
+    pub async fn save_reader_tools(
+        &self,
+        id: &PaperId,
+        tools: &crate::reader_tools::ReaderTools,
+    ) -> Result<()> {
+        let directory = self.paper_dir(id);
+        fs::create_dir_all(&directory)
+            .await
+            .map_err(|error| Error::io(&directory, error))?;
+        write_atomic(
+            &directory.join("reader-tools.json"),
+            &serde_json::to_vec_pretty(tools)?,
+        )
+        .await
+    }
+
     async fn recover_running_experiments(&self) -> Result<()> {
         let papers_directory = self.root.join("papers");
         let mut paper_entries = fs::read_dir(&papers_directory)
@@ -61,6 +88,18 @@ impl ArtifactStore {
             .await
             .map_err(|error| Error::io(&papers_directory, error))?
         {
+            let tools_path = paper_entry.path().join("reader-tools.json");
+            if let Some(mut tools) =
+                read_json_if_present::<crate::reader_tools::ReaderTools>(&tools_path).await?
+            {
+                for job in &mut tools.jobs {
+                    if job.status == crate::reader_tools::ToolJobStatus::Running {
+                        job.status = crate::reader_tools::ToolJobStatus::Failed;
+                        job.error = Some("Lysilogos was interrupted; retry this task.".to_owned());
+                    }
+                }
+                write_atomic(&tools_path, &serde_json::to_vec_pretty(&tools)?).await?;
+            }
             let experiments_directory = paper_entry.path().join("experiments");
             let mut entries = match fs::read_dir(&experiments_directory).await {
                 Ok(entries) => entries,

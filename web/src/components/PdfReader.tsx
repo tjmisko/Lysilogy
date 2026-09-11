@@ -46,6 +46,7 @@ type PdfReaderProps = {
   onToggleInk: () => void;
   onToggleSpread: () => void;
   onClarifySelection: (text: string, page: number) => void;
+  onSaveReference: (text: string, page: number) => void;
 };
 
 type PdfPageCanvasProps = {
@@ -208,6 +209,7 @@ export function PdfReader({
   onToggleInk,
   onToggleSpread,
   onClarifySelection,
+  onSaveReference,
 }: PdfReaderProps) {
   const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null);
   const [loading, setLoading] = useState(true);
@@ -457,6 +459,10 @@ export function PdfReader({
               : `pages ${selectionState.value.pages[0]}–${selectionState.value.pages.at(-1)}`}
           </span>
           <button type="button" onClick={copySelection}>{copyLabel}</button>
+          <button type="button" onClick={() => {
+            onSaveReference(selectionState.value.text, selectionState.value.pages[0] ?? page);
+            clearSelection();
+          }}>Save citation</button>
           <button
             type="button"
             className="is-primary"

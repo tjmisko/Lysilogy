@@ -12,8 +12,13 @@ const screenshotVariant = (name) => {
   return path.join(parsed.dir, `${parsed.name}-${name}${parsed.ext}`);
 };
 const root = path.resolve("..");
+const fixtureRoot = process.env.LYSILOGY_SMOKE_FIXTURE_ROOT ?? root;
+const sourcePdf = process.env.LYSILOGY_SMOKE_PDF ?? path.join(
+  fixtureRoot, "local-articles", "Articles",
+  "Christiano, Irving, and Amodei - 2018 - AI Safety Via Debate.pdf",
+);
 const analysis = JSON.parse(
-  await readFile(path.join(root, ".lysilogy", "papers", paperId, "analysis.json"), "utf8"),
+  await readFile(path.join(fixtureRoot, ".lysilogy", "papers", paperId, "analysis.json"), "utf8"),
 );
 analysis.author_abstract = "For a number of years I have been familiar with the observation that the quality of programmers is a decreasing function of the density of go to statements in the programs they produce.";
 analysis.schema_version = 4;
@@ -50,7 +55,7 @@ analysis.context_sources = [
   },
 ];
 const extraction = JSON.parse(
-  await readFile(path.join(root, ".lysilogy", "papers", paperId, "extraction.json"), "utf8"),
+  await readFile(path.join(fixtureRoot, ".lysilogy", "papers", paperId, "extraction.json"), "utf8"),
 );
 const metadata = extraction.metadata;
 const paper = {
@@ -271,6 +276,8 @@ try {
       await route.fulfill({ json: { name: "Articles", papers: [paper, unmappedPaper] } });
     } else if (url.pathname === "/api/experiments") {
       await route.fulfill({ json: experimentCatalog });
+    } else if (url.pathname === `/api/papers/${paperId}/reader-tools`) {
+      await route.fulfill({ json: { supercuts: [], references: [], jobs: [] } });
     } else if (url.pathname === "/api/library/import" && request.method() === "POST") {
       await route.fulfill({
         status: 400,
@@ -356,17 +363,12 @@ try {
       await route.fulfill({ status: 202, json: job });
     } else if (url.pathname === `/api/papers/${paperId}/source`) {
       await route.fulfill({
-        path: path.join(
-          root,
-          "local-articles",
-          "Articles",
-          "Christiano, Irving, and Amodei - 2018 - AI Safety Via Debate.pdf",
-        ),
+        path: sourcePdf,
         contentType: "application/pdf",
       });
     } else if (url.pathname === `/api/papers/${paperId}/markdown`) {
       await route.fulfill({
-        path: path.join(root, ".lysilogy", "papers", paperId, "source.md"),
+        path: path.join(fixtureRoot, ".lysilogy", "papers", paperId, "source.md"),
         contentType: "text/markdown; charset=utf-8",
       });
     } else {
@@ -657,7 +659,12 @@ try {
     (await page.locator(".pdf-selection-menu button").allTextContents()).includes("Ask about this"),
     "the PDF selection did not expose clarification actions",
   );
-  await page.locator(".pdf-selection-close").click();
+  const selectedCitation = await page.evaluate(() => window.getSelection()?.toString() ?? "");
+  await page.getByRole("button", { name: "Save citation", exact: true }).click();
+  await page.getByRole("dialog", { name: "Lysilogos reader tools" }).waitFor();
+  assert(await page.getByLabel("Citation", { exact: true }).inputValue() === selectedCitation, "PDF citation text was not preserved");
+  assert(await page.getByLabel("PDF page (optional)").inputValue() === "1", "PDF citation page was not preserved");
+  await page.keyboard.press("Escape");
   await page.keyboard.press("i");
   assert(await page.locator(".pdf-canvas").evaluate((canvas) => canvas.classList.contains("dark-ink")), "lowercase i should not invert the PDF");
   await page.keyboard.press("Shift+I");

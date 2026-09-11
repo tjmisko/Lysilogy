@@ -152,6 +152,39 @@ impl Default for LocalCliAnalyzer {
 }
 
 impl LocalCliAnalyzer {
+    pub(crate) async fn reader_tool<T: DeserializeOwned>(
+        &self,
+        provider: AnalysisProvider,
+        directory: &Path,
+        request: super::ReaderToolRequest<'_>,
+    ) -> Result<T> {
+        let schema_path = directory.join("output.schema.json");
+        write_schema(&schema_path, request.schema).await?;
+        let schema_path = canonical_schema(&schema_path).await?;
+        let mut profile = PromptStage::Experiment.profile();
+        profile.live_web = request.live_web;
+        profile.claude_tools = if request.live_web {
+            "WebSearch,WebFetch"
+        } else {
+            ""
+        };
+        let output = self
+            .run_agent(
+                provider,
+                AgentRequest {
+                    working_directory: directory,
+                    schema_path: &schema_path,
+                    schema: request.schema,
+                    prompt: request.prompt,
+                    session: None,
+                    output_filename: "agent-output.json",
+                    profile,
+                },
+            )
+            .await?;
+        parse_structured_output(provider, &output.result)
+    }
+
     #[must_use]
     pub fn with_commands(
         codex_command: impl Into<OsString>,

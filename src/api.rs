@@ -8,6 +8,8 @@ use std::{
     time::Duration,
 };
 
+mod reader_tools;
+
 use axum::{
     Json, Router,
     body::Body,
@@ -70,6 +72,8 @@ pub struct AppState {
     highlight_write: Arc<Mutex<()>>,
     import_write: Arc<Mutex<()>>,
     experiment_write: Arc<Mutex<()>>,
+    tools_write: Arc<Mutex<()>>,
+    tools_extract: Arc<Mutex<()>>,
     frontend_root: Option<Arc<PathBuf>>,
 }
 
@@ -132,6 +136,8 @@ impl AppState {
             highlight_write: Arc::new(Mutex::new(())),
             import_write: Arc::new(Mutex::new(())),
             experiment_write: Arc::new(Mutex::new(())),
+            tools_write: Arc::new(Mutex::new(())),
+            tools_extract: Arc::new(Mutex::new(())),
             frontend_root: None,
         })
     }
@@ -1663,6 +1669,7 @@ impl std::fmt::Display for ProcessingStage {
 pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> Router {
     state.frontend_root = frontend_directory.map(|path| Arc::new(path.to_owned()));
     Router::new()
+        .merge(reader_tools::routes())
         .route("/api/health", get(health))
         .route("/api/library", get(library))
         .route("/api/library/scan", post(scan_library))

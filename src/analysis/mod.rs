@@ -49,7 +49,24 @@ pub(crate) struct ExperimentVariantRequest<'a> {
     pub blind_label: &'a str,
 }
 
+pub(crate) struct ReaderToolRequest<'a> {
+    pub schema: &'a str,
+    pub prompt: &'a str,
+    pub live_web: bool,
+}
+
 impl AnalysisService {
+    pub(crate) async fn reader_tool<T: serde::de::DeserializeOwned>(
+        &self,
+        provider: AnalysisProvider,
+        directory: &Path,
+        request: ReaderToolRequest<'_>,
+    ) -> Result<T> {
+        self.local_cli
+            .reader_tool(provider, directory, request)
+            .await
+    }
+
     #[must_use]
     pub const fn new(local_cli: LocalCliAnalyzer) -> Self {
         Self { local_cli }
