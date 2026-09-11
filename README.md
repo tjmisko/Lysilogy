@@ -15,16 +15,18 @@ The top bar is a monotonic ramp — each level is strictly more detailed than th
 
 | Level | What it gives you |
 | --- | --- |
-| **Abstract** | A generated one-sentence thesis, the authors' own abstract, and at most two externally sourced context notes on field history, reception, or later interpretation. |
-| **Overview** | A resizable grid of every PDF page, with section transitions projected across each page cell, plus a secondary tile map where area expresses conceptual weight and color expresses argumentative role. |
+| **Abstract** | A generated one-sentence thesis, a source-verified authored abstract, and separate cited accounts of research before the paper and its subsequent influence. |
+| **Overview** | A resizable whole-paper page map and conceptual tiles. Opening a region brings its source pages into a scrollable left column beside the contextual digest. |
 | **Glossary** | The load-bearing technical vocabulary to hold in your head before reading. |
 | **Text** | The selectable source PDF by default; reconstructed Markdown is available on request. |
 
 Two provenance rules hold everywhere:
 
-- The authors' abstract is retained only when its normalized text is actually present in the
-  extraction. Generated orientation stays visibly separate from the authors' words.
-- Every context note maps to exact source records, and every cited URL must pass bounded DNS,
+- Abstract proposals must match an entire source span under narrow typographic normalization and
+  pass separate boundary checks. Ambiguous boundaries need independent model review; unresolved
+  text is withheld. Generated orientation stays visibly separate from the authors' words.
+- Every new context claim maps to inspected excerpts and passes an independent model review of
+  support, chronology, and usefulness. Every cited URL must also pass bounded DNS,
   redirect, public-address, and HTTP-success checks before the note or its sources are persisted.
   One failed citation withholds the whole note. The interface states the limit of that guarantee:
   reachability at a recorded time is not evidence that a source semantically supports the claim.
@@ -121,21 +123,21 @@ To replace dashed legacy section extents with exact start/end spans, rerun that 
 
 ### How analysis runs
 
-Lysilogy drives local command-line tools rather than an API. There are five distinct prompt
-templates: three for an initial analysis (orientation, structure/evidence, and external context),
-one for feedback revision, and one for passage clarification. Initial analysis prefetches paper
-metadata, headings, page-marked text, opening/closing context, and a deterministic authored abstract
-once, then starts its three scoped calls concurrently. Only the external-context branch gets live
-web tools; the structure branch receives local read tools only when a very large paper had to be
-sampled.
+Lysilogy drives local command-line tools rather than an API. Initial analysis first runs the
+standalone abstract pipeline, then prefetches metadata, headings, page-marked text, and bounded
+opening/closing context. Orientation, structure/evidence, and historical context run concurrently.
+The context branch sequences three separate calls: evidence research, writing from that frozen
+evidence, and independent review. Research and review have web tools; the writer receives only the
+dossier. Structure receives local read tools when a very large paper had to be sampled.
 
 For Codex, the small orientation and clarification jobs use `gpt-5.6-luna` at low effort. Structural
 analysis, context evidence gathering, and revision use `gpt-5.6-terra` at medium effort. Historical
 context writing uses `gpt-6-astra` at high effort, configurable with `LYSILOGY_CONTEXT_MODEL`; a
-separate Terra high-effort web pass checks the cited passages, chronology, and usefulness. Claude receives the
-same scoped tools and low/medium effort split while retaining its configured model. Abstract
+separate Terra high-effort web pass checks the cited passages, chronology, and usefulness. Claude
+receives the same scoped tools and effort levels while retaining its configured model. Abstract
 extraction has its own deterministic locator, model review, and independent source/boundary
-verifier. Structured abstract subheadings are retained. The result and check report are saved in
+verifier. The repair pass runs even when deterministic extraction found text. Structured abstract
+subheadings are retained; unlabeled candidates need a separate boundary review. The result and check report are saved in
 `abstract.json`; orientation consumes the accepted result. An uncertain or unsupported proposal is
 withheld. `cargo run -- refresh-abstract "title fragment" --provider codex --force` (or
 `:refresh-abstract`) refreshes this component without regenerating the map or context.
@@ -145,16 +147,19 @@ claims, then independently reviewed. `context-assessment.json` records citation 
 links, fully supported claims, unassessed claims, and research gaps. These are model-assessed support
 metrics; successful URL checks remain a separate deterministic guarantee. Refresh only this component
 with `cargo run -- refresh-context "title fragment" --provider codex --force` or `:refresh-context`.
-The Abstract view also provides separate refresh buttons for abstract and context.
+The Abstract view also provides separate refresh buttons for abstract and context. These refreshes
+preserve section maps and saved highlights. A failed context-only refresh preserves the existing
+analysis; an initial analysis can still save its map with an explicit context research gap.
 
 Each initial branch writes a typed stage artifact as soon as it succeeds. A retry reuses matching
-stages and reruns only missing or malformed ones; `--force` deliberately invalidates this stage
-cache. Only the structural call retains a resumable session for feedback. If that session cannot be
+stages and reruns only missing or malformed ones. Keys include the source/prompt, schema, provider,
+profile, and effective model; `--force` deliberately invalidates the stage cache. Only the structural
+call retains a resumable session for feedback. If that session cannot be
 resumed, revision falls back to a fresh read-only call with `source.txt`, `analysis.json`, and the
 feedback already present. Clarification stays ephemeral and uses prefetched local passage context.
 
 The backend owns `analysis-tasklist.md` and its typed `job.json` state; model processes are read-only
-and never edit progress. Press `q` to watch the three initial branches run in parallel.
+and never edit progress. Press `q` to watch analysis progress.
 
 ### Learning-ramp prompt experiments
 
@@ -226,7 +231,7 @@ Press `?` in the app for the complete, contextual guide.
 | --- | --- |
 | `h j k l` or arrows | Move through tiles, panels, pages, or a visual text selection |
 | `g g` / `G` | First / last tile |
-| `Enter` or `o` | Open the focused section digest |
+| `Enter` or `o` | Open the section's source pages beside its digest |
 | `d` | Toggle the digest |
 | `g` | Open the Glossary after a short single-key delay |
 | `m` | Toggle source PDF / requested Markdown reconstruction |
@@ -263,6 +268,17 @@ the two-page spread—to copy it or open **Ask about this** with the passage and
 filled in. Selections retain PDF-page coordinates and text-item offsets for future persistent marks.
 Image-only pages report that OCR is required instead of presenting an inert selection surface.
 
+Opening an Overview region animates its pages into one source column on the left, with the digest
+on the right. Both panes scroll independently. The whole-paper locator retains the region's
+position, and **Open full paper** takes the current original page into Text. **Whole paper** or
+`Esc` restores the map's scroll, columns, keyboard focus, and library state. Reduced-motion settings
+skip the transition; narrow screens provide Source/Digest tabs. Overview and both readers share a
+PDF document, and scoped page canvases render lazily.
+
+In the focused source pane, `j/k` or up/down scroll, `h/l` or left/right move between its pages,
+`Ctrl-d/u` and PageDown/PageUp scroll by screen increments, and `[`/`]` switch sections. `+`/`-`
+zoom the source. Native selection supports Copy, Save citation, and Ask about this.
+
 Use **+ URL** in the library rail to import a PDF from the public web. Lysilogy downloads it on the
 server, checks every redirect and resolved address, rejects non-PDF responses and files over 100
 MiB, writes the completed file atomically into the vault, and opens it directly in PDF mode. Direct
@@ -283,6 +299,8 @@ Everything generated lives beneath the data root:
         ├── origin.json          # original/final URL and byte count for remote imports
         ├── layout.json          # PDF points, stable page-local tokens, sentence segments
         ├── extraction.json      # extraction schema and normalized metadata
+        ├── abstract.json        # source span, accepted/unresolved status, independent checks
+        ├── context-assessment.json # claim/link support counts, reviews, and research gaps
         ├── analysis.json        # typed, versioned application model
         ├── digest.md            # portable human-readable digest
         ├── highlights.jsonl     # canonical one-highlight-per-line records (AI and reader)
@@ -316,8 +334,11 @@ cd web
 npm run typecheck
 npm run lint
 npm run build
-npm run smoke
+npm run test:section-scope
+npm run smoke:pipeline
 npm run smoke:reader-tools
+# Optional: requires access to the existing corpus fixture and original PDF
+npm run smoke
 ```
 
 `npm run smoke` drives the real Dijkstra analysis, Markdown conversion, and PDF through an
@@ -328,6 +349,11 @@ switching, the command menu, live tasklist progress, feedback retries, keyboard 
 clarification, the Glossary, reconstructed Text, selectable one/two-page PDF paging, and capital-`I`
 inversion.
 
+`test:section-scope` checks exact and legacy section page ranges. `smoke:pipeline` uses a synthetic
+PDF and API fixtures to check distinct before/after context, component refresh requests, scoped
+source pages, independent scrolling, selection, shared PDF loading, map restoration, full-paper
+spreads, reduced motion, and mobile layout without reading the library or calling a model.
+
 `smoke:reader-tools` uses self-contained browser fixtures to exercise both cut formats, six-page
 PDF output, Markdown export, saved citations, paper linking, search, comparison, retry, keyboard focus,
 and mobile layout. Backend tests use local stub CLIs to exercise task execution and source validation
@@ -336,5 +362,7 @@ without model calls. For the original corpus-based smoke test in a worktree, set
 `LYSILOGY_SMOKE_PDF` as well if its PDF has moved from the default fixture path.
 
 The implementation map and fault boundaries are in [docs/architecture.md](docs/architecture.md).
-The proposed delivery phases for abstract fidelity, cited before/after context, and a focused
-section reader are in [the reading pipeline plan](docs/reading-pipeline-plan.md).
+The delivery phases for abstract fidelity, cited before/after context, and a focused section reader
+are in [the reading pipeline plan](docs/reading-pipeline-plan.md). The implemented scope, checks,
+and outstanding model-quality evaluation are recorded in the
+[validation report](docs/experiment-reports/2026-09-11-reading-pipeline.md).

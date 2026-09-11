@@ -1,6 +1,16 @@
 # Abstract fidelity, cited context, and section reading
 
-Status: implementation plan. The tasks below are proposed; they are not completed features.
+Status: the core implementation of all three phases is delivered. See the
+[implementation and validation report](experiment-reports/2026-09-11-reading-pipeline.md) for the
+tested scope and remaining evaluation work. The original design and extended acceptance checklist
+below are retained for follow-up; an unchecked combined item may contain both delivered behavior
+and an outstanding benchmark or extension.
+
+| Phase | Delivered | Remaining evaluation/extensions |
+| --- | --- | --- |
+| Abstract | Standalone locator and independent verifier, model repair and boundary review, source artifact, selective refresh | Held-out gold corpus; general two-column reconstruction; OCR |
+| Context | Frozen evidence, configurable stronger writer, independent review and metrics, distinct historical cards, selective refresh | Live model-quality evaluation; blind repeated writer comparison; measured cost/latency campaign |
+| Reader | Shared PDF lifecycle, scoped continuous pages beside digest, locator, selection, restoration, animated transitions, mobile and reduced motion | Broader device and long-document usability evaluation |
 
 The goal is to make the first screen dependable and let a reader move from a mapped region
 directly into its source pages. Ship this as three independently reviewable tracks, with quality
@@ -12,7 +22,7 @@ Confirmed scope: “Before” means the research situation leading up to the pap
 means subsequent uses, extensions, critiques, and changes in interpretation. These are distinct
 from prerequisites and from the neighboring paragraphs of a selected section.
 
-## What the code does today
+## Baseline before this work
 
 - [`prefetch.rs`](../src/analysis/prefetch.rs) locates an `Abstract` heading, gathers text until a
   heuristic boundary, and passes it to orientation. Its boundary list includes `Methods` and

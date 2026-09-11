@@ -10,11 +10,17 @@ PDF vault ◄──────────────────────�
    ▼
 Paper catalog ──► Poppler raw + bbox extraction ──► source.txt + source.md + layout.json
                                                         │
+                               abstract locate → repair → verify
+                                                        │
                                       deterministic context prefetch
                                                         │
                                ┌────────────────┬────────┴────────┐
                                ▼                ▼                 ▼
-                        fast orientation   structure/evidence   web context
+                        fast orientation   structure/evidence   research
+                               │                │                 ▼
+                               │                │            context writer
+                               │                │                 ▼
+                               │                │          independent review
                                └────────────────┼─────────────────┘
                                                 ▼
                                       merged AnalysisDraft
@@ -55,7 +61,8 @@ The public model lives in `src/domain.rs`. Its enums keep states and semantic di
 - `QuoteSignificance` and `EvidenceStrength` prevent key quotations and claims from becoming untyped strings.
 - `DocumentLayout`, `LayoutToken`, and `LayoutSentence` preserve PDF-point geometry with stable page-local coordinates.
 - `CitationStatus` distinguishes exact, normalized, ambiguous, missing, and legacy-unverified evidence.
-- `ContextNote` maps each external-context sentence to one or more source IDs; `ContextSource` preserves the exact title/authors/year record, the narrowly supported point, final checked URL, and verification time.
+- `ContextNote` assigns a before/after/legacy role and maps each claim to source IDs. `ContextSource` preserves bibliographic metadata, an inspected excerpt/location, the claimed relationship, final checked URL, and verification time. `ContextAssessment` records independent review verdicts, citation metrics, and gaps.
+- `AbstractResult` preserves a candidate's source lines/pages, fingerprint, accepted or unresolved status, and check report independently of generated orientation.
 - `Highlight` carries a typed AI/user origin, semantic kind, immutable text anchor, PDF rectangles, note, and timestamp.
 - `AnalysisJob`, `AnalysisTask`, and their enums make queue state and checkbox-derived progress explicit.
 - `AgentSession` records the provider-specific resumable session without exposing it through browser commands.
@@ -71,18 +78,25 @@ Poppler runs twice: raw mode supplies authored reading order for Markdown and mo
 Model-backed analysis is deliberately a subprocess boundary:
 
 1. Extracted UTF-8 text is written to the paper's artifact directory.
-2. A deterministic pass writes `analysis-context.json`: metadata, authored abstract, heading candidates, page-marked structural text, and bounded orientation excerpts. The abstract is model-free unless the fast orientation branch supplies an exact fallback candidate, and normalization still requires that text to occur in the extraction.
-3. Three strict JSON Schemas are written beside it. Orientation, structure/evidence, and external-context subprocesses then start concurrently with disjoint prompts and tool access.
-4. Orientation and clarification use Codex Luna at low effort. Structure, context, and revision use Codex Terra at medium effort. Claude uses the same low/medium effort and tool partition while retaining its configured model.
-5. All model subprocesses are read-only. Structure gets local read/search tools only when needed; external context alone gets live web search. The PDF text is explicitly marked as untrusted data.
-6. Each successful branch immediately writes a typed cache artifact. The source/provider/model manifest lets an ordinary retry run only missing or malformed branches; a forced run invalidates all branches.
+2. `src/abstracts/` locates source lines, retains structured subheadings, and conservatively removes running matter. A dedicated model pass proposes source boundaries even when a deterministic candidate exists. The independent verifier checks the whole span, narrow typographic normalization, and contamination without invoking the locator. A fresh model review can resolve uncertain boundaries but cannot waive provenance failures. `abstract.json` records the result.
+3. Prefetch writes `analysis-context.json` with the accepted abstract, metadata, heading candidates, page-marked structural text, and bounded orientation excerpts. Orientation, structure/evidence, and historical context start concurrently with strict schemas and disjoint prompts. Context itself sequences evidence research, dossier-only writing, and independent review.
+4. Orientation and clarification use Codex Luna at low effort. Structure, abstract repair, evidence gathering, and revision use Terra at medium effort. Context writing uses Astra at high effort (`LYSILOGY_CONTEXT_MODEL` overrides it); context review uses Terra at high effort. Claude retains its configured model with the same effort and tool partition.
+5. All model subprocesses are read-only. Structure gets local read/search tools only when needed; context research and independent context review get live web tools. The writer sees frozen evidence. PDF and retrieved text are explicitly untrusted data.
+6. Each successful stage immediately writes a typed cache artifact. Keys include source/prompt, schema, provider, profile, and effective model. An ordinary retry reuses matching stages; a forced run invalidates them. Malformed cached JSON is ignored.
 7. The backend, not a model, updates `job.json` and its Markdown tasklist projection. Multiple analysis tasks may be active at once.
 8. Codex JSONL or Claude's JSON envelope supplies a session ID only for the structural branch. Standard input carries prompts, final messages are captured separately, and stderr is bounded before reporting.
 9. A 20-minute per-process timeout kills abandoned work. The three drafts are merged, normalized, source-mapped, and link-checked before an atomic final save.
 
 Codex calls use `codex exec --json --output-last-message`; feedback prefers `codex exec resume <SESSION_ID>`. Claude uses its persisted print-mode structural session and `--resume`. A resume failure is safe to retry fresh because `source.txt`, `analysis.json`, and reader feedback are durable context. Clarification is deliberately outside the analysis session and runs ephemerally against prefetched passage surroundings.
 
-Only the external-context stage enables live search or web-fetch tools. Its contract allows at most two notes and requires every note to name exact source records. Missing, duplicate, or malformed mappings invalidate the complete note rather than silently weakening its citation set.
+`src/analysis/context/` owns the evidence, writing, review, and admission contracts. It permits up
+to eight sources and six atomic claims, with the writer asked for at most three per temporal role.
+Sources must include a short inspected excerpt, its location, and the relationship it supports.
+The reviewer receives proposed claims and the dossier without the writer's reasoning and checks
+passage provenance, complete support, chronology, and usefulness. Missing/duplicate mappings or
+reviews, partial support, unsupported relationships, and duplicated/generic prose withhold the
+claim. Runtime metrics count proposed/cited/published claims, proposed/supported links, fully
+supported claims, and unassessed claims. They report model assessment, not semantic ground truth.
 
 Source-link verification remains application-owned. Only cited HTTP(S) URLs on default ports are considered. For the initial URL and every redirect, the backend resolves DNS itself, rejects credentials and localhost, requires every returned address to be public, disables proxies, pins the request to a previously checked address, and accepts only a 2xx response. Redirect depth and the complete link check are time-bounded. A note survives only when every source it cites succeeds; unchecked and unreferenced records are discarded.
 
@@ -124,11 +138,34 @@ Expected faults have dedicated errors: missing PDF tools, unreadable vaults, emp
 
 ## Reader interaction
 
-The top-level information architecture is a monotonic reading ladder: Abstract → Overview → Glossary → Text. Abstract keeps generated orientation visibly separate from the authors' own words: `thesis` is the one-sentence TL;DR, `author_abstract` is retained only when its normalized text is present in the extraction, and `context_notes` provide at most two high-leverage, externally sourced sentences about field history, reception, or later interpretation. Legacy unsourced model context is withheld until reanalysis; the heuristic supplement remains explicitly limited to what can be inferred from the source paper. Overview owns the argument map, Glossary is a full pre-reading curriculum rather than a utility drawer, and Text owns both reconstructed Markdown and PDF formats.
+The top-level reading ladder is Abstract → Overview → Glossary → Text. Abstract separates generated
+orientation from the source-verified authored abstract. It shows explicit unresolved extraction
+states and distinct **Before the paper** and **After the paper** cards with claim-level citations,
+inspected excerpts, and an evidence assessment. Legacy cited notes remain readable in a separate
+card and are never inferred to be historical before/after context. The heuristic supplement remains
+limited to the paper. Abstract/context refresh actions have independent CLI/API/job entry points;
+they preserve section maps and never rewrite highlights. A failed context-only refresh leaves the
+previous analysis intact. Overview owns the argument map, Glossary is the pre-reading curriculum,
+and Text owns reconstructed Markdown and full-paper PDF views.
 
 Within that ramp, Overview leads with a CSS page grid containing every PDF page. Its column count is an explicit integer from one to ten: `+` zooms in by removing a column and `-` zooms out by adding one. Within a page, source-anchor token progress is projected onto the horizontal axis. A section transition three quarters through the page therefore lands three quarters across its page cell. This intentionally abstract orientation distinguishes structural segmentation from coordinate highlights. A secondary CSS grid retains the analysis-provided tile spans, where area expresses conceptual weight and color expresses argumentative role.
 
 Focus is the single source of truth for mouse, touch, and keyboard navigation. Arrow keys mirror `h/j/k/l` in every spatial list. The digest exposes real selectable DOM text; its visual mode stores an anchor and a moving semantic-fragment cursor, so `v`, movement, `o`, `y`, and `c` parallel Vim without breaking native browser selection. The source map provides the same workflow over deterministic sentence segments: `Space` writes a same-page token range to `highlights.jsonl`, and `c` hands its exact text to the contextual clarifier. `F1` owns the library rail, while `F10` opens a focused fuzzy switcher that searches titles, authors, and years.
+
+Opening a region mounts `SectionFocus`: a continuous column of only its original PDF pages on the
+left and an independently scrollable digest on the right. The pure `sectionScope` helper validates
+anchor endpoints before using them, otherwise uses a clamped legacy page range. Valid token spans
+produce coordinate section marks; fallback ranges do not imply precise text boundaries. A compact
+whole-paper locator keeps the selected pages in context. Source links scroll within the subset or
+open the matching page in the full Text reader.
+
+`usePdfDocument` shares a reference-counted PDF.js loading task across map and reader surfaces.
+Scoped pages reserve their final dimensions and render canvases/text layers near the viewport.
+Temporary page snapshots animate measured map rectangles into the source column; the actual text
+layer stays at its final size. Transitions can cancel, and reduced motion skips them. The hidden
+map remains mounted and inert, preserving its columns and scroll for close; focus and prior library
+state are restored. Narrow screens switch between Source/Digest tabs. Keyboard scrolling targets
+the active pane, with brackets switching sections.
 
 PDF.js renders either a focused page or an aligned two-page spread in Text and lazy page thumbnails in Overview. Its official text-layer builder supplies native multi-line and cross-page selection over the canvas; Lysilogy records the selected text, PDF.js item offsets, pages, and rectangles converted back into PDF points. The resulting action bar can copy the passage or seed contextual clarification. A spread is one paging unit for `h/l`, arrow keys, Ctrl-u/d, and PageUp/PageDown. Page cells preserve each PDF page's exact aspect ratio and boundary; section overlays use stable token order only to estimate reading progress along the abstract horizontal axis. Evidence and reader highlights remain coordinate-aligned because they identify literal source lines rather than conceptual regions. The default CSS filter produces light paper ink on a dark surface. Capital `I` toggles that filter everywhere, which is the reliable way to inspect figures, heatmaps, and photographs without color distortion.
 
@@ -138,5 +175,7 @@ Highlights deliberately avoid a database. `highlights.jsonl` is canonical and at
 
 - Scanned, image-only papers report an empty extraction instead of silently inventing OCR text. OCR is the next extraction adapter.
 - Ingest is incremental but command-triggered. A filesystem watcher can later call the same refresh/queue path without changing the model.
-- The PDF view pages through one page or one two-page spread rather than virtualizing a continuous document. The later native-reader experiment can reuse the API and portable artifacts.
+- The full-paper Text view pages through one page or one two-page spread. The focused section view is continuous and renders nearby pages lazily; it does not unload every offscreen page after rendering.
+- Abstract extraction uses existing raw reading order and layout boundary hints. General two-column reconstruction and OCR remain outside this module. Uncertain unlabeled candidates require independent review.
+- Runtime citation review is model judgment. A held-out abstract corpus and a blind, repeated context-quality comparison remain outstanding; passing orchestration tests does not establish generation quality.
 - Batch ingest remains sequential across papers to keep local CLI resource use predictable; the three scoped stages inside one paper run concurrently.
