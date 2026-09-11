@@ -1,3 +1,6 @@
+import { SectionFocus } from "./components/SectionFocus";
+import { capturePages, animatePages, type PageSnapshot } from "./lib/pageTransition";
+import { sectionPages } from "./lib/sectionScope";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AbstractView } from "./components/AbstractView";
@@ -102,6 +105,8 @@ export function App() {
   const [library, setLibrary] = useState<LibraryResponse | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(initialPaperId);
   const [paperView, setPaperView] = useState<PaperView | null>(null);
+  const [pageSnapshots, setPageSnapshots] = useState<PageSnapshot[]>([]);
+  const focusRestore = useRef<{ library: boolean; scroll: number } | null>(null);
   const [activeSection, setActiveSection] = useState(0);
   const [refreshingComponent, setRefreshingComponent] = useState<"abstract" | "context" | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
@@ -214,6 +219,8 @@ export function App() {
     const onFunctionKey = (event: KeyboardEvent): void => {
       if (event.key === "F1") {
         event.preventDefault();
+        // F1 explicitly changes the rail preference instead of restoring it on exit.
+        focusRestore.current = null;
         setPanel(null);
         setSwitcherOpen(false);
         setCommandOpen(false);
@@ -354,13 +361,44 @@ export function App() {
   const sections = useMemo(() => paperView?.analysis?.sections ?? [], [paperView?.analysis]);
   const selectedSection = sections[activeSection] ?? null;
 
-  const openSection = useCallback((_section?: PaperSection, index?: number): void => {
+  const openSection = useCallback((section?: PaperSection, index?: number): void => {
+    const target = section ?? sections[activeSection];
+    if (target === undefined) return;
+    if (view === "overview") {
+      const alreadyFocused = panel === "digest";
+      if (!alreadyFocused) focusRestore.current = { library: libraryOpen, scroll: mainStageRef.current?.scrollTop ?? 0 };
+      const count = paperMap?.layout.pages.length ?? Math.max(1, target.pages.end);
+      setPageSnapshots(capturePages(sectionPages(target, count), alreadyFocused));
+      setLibraryOpen(false);
+    }
     if (index !== undefined) setActiveSection(index);
+    setMarkMode(false);
     setClarifySeed("");
     setPanel("digest");
-  }, []);
+  }, [activeSection, libraryOpen, panel, paperMap, sections, view]);
+
+  const closeSection = useCallback((): void => {
+    const target = sections[activeSection];
+    const snapshots = target === undefined ? [] : capturePages(sectionPages(target, paperMap?.layout.pages.length ?? target.pages.end), true);
+    setClarifySeed("");
+    setPanel(null);
+    const restore = focusRestore.current;
+    focusRestore.current = null;
+    if (restore !== null) setLibraryOpen(restore.library);
+    window.requestAnimationFrame(() => {
+      if (restore !== null && mainStageRef.current !== null) mainStageRef.current.scrollTop = restore.scroll;
+      const button = Array.from(document.querySelectorAll<HTMLButtonElement>(".section-boxes button"))
+        .find((node) => node.dataset.sectionId === target?.id);
+      button?.focus({ preventScroll: true });
+      animatePages(snapshots, false);
+    });
+  }, [activeSection, paperMap, sections]);
 
   const openPage = useCallback((page: number): void => {
+    if (focusRestore.current !== null) {
+      setLibraryOpen(focusRestore.current.library);
+      focusRestore.current = null;
+    }
     setPdfPage(page);
     setPanel(null);
     setTextMode("pdf");
@@ -543,7 +581,7 @@ export function App() {
   useTabPhase({
     // The switcher and the command menu read Tab themselves; everywhere else
     // Tab steps through the reading phases of the current paper.
-    overlayHandlesTab: switcherOpen || commandOpen || experimentOpen || toolsTab !== null,
+    overlayHandlesTab: switcherOpen || commandOpen || experimentOpen || toolsTab !== null || (panel === "digest" && view === "overview"),
     onCycle: (delta) => {
       setQueueOpen(false);
       if (compactLayout) setLibraryOpen(false);
@@ -563,7 +601,7 @@ export function App() {
     onOpen: () => {
       if (selectedSection !== null) openSection(selectedSection, activeSection);
     },
-    onDigest: () => selectedSection !== null && setPanel("digest"),
+    onDigest: () => selectedSection !== null && openSection(selectedSection, activeSection),
     onGloss: () => paperView?.analysis != null && openGlossary(),
     onHelp: () => setPanel("help"),
     onSearch: () => {
@@ -758,12 +796,20 @@ export function App() {
   const analysis = paperView?.analysis ?? null;
   const abstractPage = analysis?.abstract_extraction?.start_page ?? analysis?.sections.find((section) => section.kind === "abstract")?.pages.start
     ?? null;
+  const sectionFocused = panel === "digest" && view === "overview" && selectedSection !== null && analysis !== null && currentPaper !== null;
+  useEffect(() => {
+    if (sectionFocused || focusRestore.current === null) return;
+    // Tabs, the article switcher, and other overlays can also leave the focused reader.
+    const restore = focusRestore.current;
+    focusRestore.current = null;
+    window.queueMicrotask(() => setLibraryOpen(restore.library));
+  }, [sectionFocused]);
   const activeJobCount = queue.jobs.filter(
     (job) => job.status.state === "queued" || job.status.state === "running",
   ).length;
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${sectionFocused ? "has-section-focus" : ""} ${libraryOpen ? "has-library" : ""}`}>
       <LibraryRail
         open={libraryOpen}
         keyboardMode={compactLayout && libraryOpen}
@@ -874,7 +920,7 @@ export function App() {
           </div>
         </header>
 
-        <main className="main-stage" ref={mainStageRef}>
+        <main className="main-stage" ref={mainStageRef} inert={sectionFocused} aria-hidden={sectionFocused || undefined}>
           {loading && (
             <div className="center-state"><span className="loader large" /><p>Opening the vault…</p></div>
           )}
@@ -1032,21 +1078,21 @@ export function App() {
 
       </div>
 
-      {panel === "digest" && selectedSection !== null && (
-        <DigestPanel
-          key={`${selectedSection.id}:${clarifySeed}`}
-          section={selectedSection}
-          claims={relatedClaims}
-          initialSelection={clarifySeed}
-          onClose={() => {
-            setClarifySeed("");
-            setPanel(null);
-          }}
-          onGloss={openGlossary}
-          onOpenPage={openPage}
-          onClarify={clarify}
+      {sectionFocused ? (
+        <SectionFocus key={`${currentPaper.id}:${selectedSection.id}`} url={api.source(currentPaper.id)} title={currentPaper.metadata.title}
+          analysis={analysis} section={selectedSection} index={activeSection} paperMap={paperMap} darkInk={darkInk}
+          snapshots={pageSnapshots} onToggleInk={() => setDarkInk((value) => !value)} onSection={openSection} onClose={closeSection}
+          onFullPaper={openPage} onClarify={clarifySentence}
+          onSaveReference={(text, page) => { setReferenceSeed({ text, page }); setToolsTab("references"); }}
+          digest={(onPage, keyboardEnabled) => <DigestPanel key={`${selectedSection.id}:${clarifySeed}`}
+            section={selectedSection} claims={relatedClaims} initialSelection={clarifySeed} keyboardEnabled={keyboardEnabled && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null}
+            onClose={closeSection} onGloss={openGlossary} onOpenPage={onPage} onClarify={clarify} />}
         />
-      )}
+      ) : panel === "digest" && selectedSection !== null ? (
+        <DigestPanel key={`${selectedSection.id}:${clarifySeed}`} section={selectedSection} claims={relatedClaims}
+          initialSelection={clarifySeed} onClose={() => { setClarifySeed(""); setPanel(null); }}
+          onGloss={openGlossary} onOpenPage={openPage} onClarify={clarify} />
+      ) : null}
       {panel === "help" && <HelpOverlay onClose={() => setPanel(null)} />}
       {switcherOpen && (
         <PaperSwitcher

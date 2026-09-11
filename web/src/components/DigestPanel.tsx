@@ -18,6 +18,7 @@ type DigestPanelProps = {
   section: PaperSection;
   claims: Claim[];
   initialSelection?: string;
+  keyboardEnabled?: boolean;
   onClose: () => void;
   onGloss: () => void;
   onOpenPage: (page: number) => void;
@@ -51,6 +52,7 @@ export function DigestPanel({
   section,
   claims,
   initialSelection = "",
+  keyboardEnabled = true,
   onClose,
   onGloss,
   onOpenPage,
@@ -149,6 +151,7 @@ export function DigestPanel({
       if (visualAnchor !== null) setVisualCursor(next);
     };
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (!keyboardEnabled) return;
       if (event.key === "Escape") {
         event.preventDefault();
         if (clarifySelection.length > 0 || clarification !== null) {
@@ -240,6 +243,7 @@ export function DigestPanel({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [
     active,
+    keyboardEnabled,
     beginClarification,
     clarification,
     clarifySelection,

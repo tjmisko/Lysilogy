@@ -1,11 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
-  GlobalWorkerOptions,
-  getDocument,
   type PDFDocumentProxy,
   type RenderTask,
 } from "pdfjs-dist";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { usePdfDocument } from "../hooks/usePdfDocument";
 
 import type {
   LayoutPage,
@@ -16,7 +14,7 @@ import type {
   TextRect,
 } from "../types";
 
-GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+
 
 type SourceMapProps = {
   url: string;
@@ -298,7 +296,7 @@ function PageCanvas({ document, page, darkInk }: {
       canvas.width = Math.floor(viewport.width);
       canvas.height = Math.floor(viewport.height);
       renderTask = pdfPage.render({ canvas, canvasContext: context, viewport });
-      return renderTask.promise;
+      return renderTask.promise.then(() => { if (!cancelled) canvas.dataset.rendered = "true"; });
     }).catch((reason: unknown) => {
       if (!cancelled && reason instanceof Error && reason.name !== "RenderingCancelledException") {
         // Keep the page frame and coordinate overlays usable when a thumbnail fails.
@@ -342,8 +340,7 @@ export function SourceMap({
   onToggleHighlight,
   onClarify,
 }: SourceMapProps) {
-  const [document, setDocument] = useState<PDFDocumentProxy | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { document, error } = usePdfDocument(url);
   const [activeSentence, setActiveSentence] = useState(0);
   const [visualAnchor, setVisualAnchor] = useState<number | null>(null);
   const [sectionBoxes, setSectionBoxes] = useState<SectionBox[]>([]);
@@ -473,22 +470,8 @@ export function SourceMap({
   const safeActive = Math.max(0, Math.min(sentences.length - 1, activeSentence));
 
   useEffect(() => {
-    const task = getDocument({ url });
-    let cancelled = false;
-    void task.promise.then((loaded) => {
-      if (!cancelled) setDocument(loaded);
-    }).catch((reason: unknown) => {
-      if (!cancelled) setError(reason instanceof Error ? reason.message : "Could not render source pages");
-    });
-    return () => {
-      cancelled = true;
-      void task.destroy();
-    };
-  }, [url]);
-
-  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.metaKey || event.ctrlKey || event.altKey || sourcePagesRef.current?.closest("[inert]") != null) return;
       const target = event.target;
       if (
         target instanceof HTMLInputElement
@@ -611,6 +594,7 @@ export function SourceMap({
                 else pageRefs.current.set(page.number, node);
               }}
               className="source-page"
+              data-page={page.number}
               role="listitem"
               style={{ aspectRatio: `${page.width} / ${page.height}` }}
             >

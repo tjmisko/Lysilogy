@@ -1,16 +1,14 @@
+import { sectionSourceSpan } from "../lib/sectionScope";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  GlobalWorkerOptions,
-  getDocument,
   type PDFDocumentProxy,
   type PageViewport,
   type RenderTask,
   type TextLayerImages,
 } from "pdfjs-dist";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { usePdfDocument } from "../hooks/usePdfDocument";
+import type { LayoutPage, PaperSection, TextRect } from "../types";
 import { TextLayerBuilder } from "pdfjs-dist/web/pdf_viewer.mjs";
-
-GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 export type PdfSelectionEndpoint = {
   page: number;
@@ -47,6 +45,12 @@ type PdfReaderProps = {
   onToggleSpread: () => void;
   onClarifySelection: (text: string, page: number) => void;
   onSaveReference: (text: string, page: number) => void;
+  pageSubset?: number[];
+  pageJump?: number;
+  pageLayouts?: LayoutPage[];
+  section?: PaperSection;
+  onOpenFullPaper?: (page: number) => void;
+  onZoom?: (delta: number) => void;
 };
 
 type PdfPageCanvasProps = {
@@ -58,6 +62,9 @@ type PdfPageCanvasProps = {
   pageCount: number;
   onError: (message: string) => void;
   onTextLayer: (page: number, viewport: PageViewport | null, hasText: boolean) => void;
+  lazy?: boolean;
+  layout?: LayoutPage;
+  marks?: TextRect[];
 };
 
 type SelectionState = {
@@ -97,16 +104,30 @@ function PdfPageCanvas({
   pageCount,
   onError,
   onTextLayer,
+  lazy = false,
+  layout,
+  marks = [],
 }: PdfPageCanvasProps) {
+  const frameRef = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(!lazy);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (visible || frameRef.current === null) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) setVisible(true);
+    }, { rootMargin: "700px" });
+    observer.observe(frameRef.current);
+    return () => observer.disconnect();
+  }, [visible]);
+
+  useEffect(() => {
     const surface = surfaceRef.current;
     const canvas = canvasRef.current;
     const textLayerContainer = textLayerRef.current;
-    if (surface === null || canvas === null || textLayerContainer === null) return;
+    if (!visible || surface === null || canvas === null || textLayerContainer === null) return;
     const controller = new AbortController();
     let renderTask: RenderTask | null = null;
     let textLayer: TextLayerBuilder | null = null;
@@ -155,6 +176,7 @@ function PdfPageCanvas({
           }),
         ]);
         controller.signal.throwIfAborted();
+        canvas.dataset.rendered = "true";
 
         const textDivs = Array.from(textLayer.div.querySelectorAll<HTMLElement>("span"));
         textDivs.forEach((textDiv, index) => {
@@ -176,16 +198,23 @@ function PdfPageCanvas({
       textLayer?.cancel();
       onTextLayer(page, null, false);
     };
-  }, [document, onError, onTextLayer, page, slotWidth, zoom]);
+  }, [document, onError, onTextLayer, page, slotWidth, visible, zoom]);
 
   return (
-    <figure className="pdf-page-frame">
-      <div className="pdf-page-surface" ref={surfaceRef}>
+    <figure className="pdf-page-frame" ref={frameRef} data-pdf-page={page}>
+      <div className="pdf-page-surface" ref={surfaceRef} style={lazy ? {
+        width: Math.max(100, (slotWidth - 28) * zoom),
+        aspectRatio: `${layout?.width ?? 612} / ${layout?.height ?? 792}`,
+      } : undefined}>
         <canvas
           ref={canvasRef}
           className={darkInk ? "pdf-canvas dark-ink" : "pdf-canvas"}
           aria-label={`Page ${page} of ${pageCount}`}
         />
+        {layout != null && marks.length > 0 && <div className="section-text-marks" aria-hidden="true">
+          {marks.map((rect, index) => <i key={index} style={{ left: `${rect.x_min / layout.width * 100}%`, top: `${rect.y_min / layout.height * 100}%`,
+            width: `${(rect.x_max - rect.x_min) / layout.width * 100}%`, height: `${(rect.y_max - rect.y_min) / layout.height * 100}%` }} />)}
+        </div>}
         <div
           ref={textLayerRef}
           className="pdf-text-layer-host"
@@ -210,9 +239,14 @@ export function PdfReader({
   onToggleSpread,
   onClarifySelection,
   onSaveReference,
+  pageSubset,
+  pageJump = 0,
+  pageLayouts,
+  section,
+  onOpenFullPaper,
+  onZoom,
 }: PdfReaderProps) {
-  const [pdfDocument, setPdfDocument] = useState<PDFDocumentProxy | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { document: pdfDocument, loading, error: loadError } = usePdfDocument(url);
   const [error, setError] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(900);
   const [textPages, setTextPages] = useState<Record<number, boolean>>({});
@@ -234,45 +268,39 @@ export function PdfReader({
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    viewportsRef.current.clear();
-    window.queueMicrotask(() => {
-      if (cancelled) return;
-      setLoading(true);
-      setError(null);
-      setSelectionState(null);
-      setTextPages({});
-    });
-    const task = getDocument({ url });
-    void task.promise
-      .then((loaded) => {
-        if (cancelled) return;
-        setPdfDocument(loaded);
-        onPageCount(loaded.numPages);
-        setLoading(false);
-      })
-      .catch((reason: unknown) => {
-        if (cancelled) return;
-        setError(reason instanceof Error ? reason.message : "Could not load the PDF");
-        setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-      void task.destroy();
-    };
-  }, [onPageCount, url]);
+    if (pdfDocument !== null) onPageCount(pdfDocument.numPages);
+  }, [onPageCount, pdfDocument]);
 
   const pageCount = pdfDocument?.numPages ?? 1;
+  const verifiedSpan = section === undefined ? null : sectionSourceSpan(section, pageCount);
   const step = spread ? 2 : 1;
   const visiblePages = useMemo(
-    () => spread && page < pageCount ? [page, page + 1] : [page],
-    [page, pageCount, spread],
+    () => pageSubset !== undefined
+      ? [...new Set(pageSubset)].filter((value) => Number.isInteger(value) && value >= 1 && value <= pageCount).sort((a, b) => a - b)
+      : spread && page < pageCount ? [page, page + 1] : [page],
+    [page, pageCount, pageSubset, spread],
   );
   const slotWidth = spread ? Math.max(320, (containerWidth - 36) / 2) : containerWidth;
   const lastVisiblePage = visiblePages[visiblePages.length - 1] ?? page;
   const visibleTextStatus = visiblePages.map((visiblePage) => textPages[visiblePage]);
   const textLayersReady = visibleTextStatus.every((status) => status !== undefined);
   const hasSelectableText = visibleTextStatus.some(Boolean);
+
+  useEffect(() => {
+    if (pageSubset === undefined || pdfDocument === null) return;
+    const frame = window.requestAnimationFrame(() => {
+      const host = readerRef.current?.closest<HTMLElement>(".section-source-scroll");
+      const target = readerRef.current?.querySelector<HTMLElement>(`[data-pdf-page="${page}"]`);
+      if (host == null || target == null) return;
+      const layout = pageLayouts?.find((item) => item.number === page);
+      const anchor = verifiedSpan?.start;
+      const offset = anchor?.page === page ? (anchor.rects[0]?.y_min ?? 0) : 0;
+      const sourceHeight = layout?.height ?? 792;
+      const renderedHeight = target.querySelector(".pdf-page-surface")?.getBoundingClientRect().height ?? 0;
+      host.scrollTop += target.getBoundingClientRect().top - host.getBoundingClientRect().top + offset / sourceHeight * renderedHeight - 64;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [page, pageJump, pageLayouts, pageSubset, pdfDocument, verifiedSpan]);
 
   const handleTextLayer = useCallback(
     (pageNumber: number, viewport: PageViewport | null, hasText: boolean): void => {
@@ -401,7 +429,7 @@ export function PdfReader({
           <strong>{title}</strong>
         </div>
         <div className="pdf-controls">
-          <button type="button" onClick={() => onPage(Math.max(1, page - step))} disabled={page <= 1}>
+          {pageSubset === undefined && <><button type="button" onClick={() => onPage(Math.max(1, page - step))} disabled={page <= 1}>
             <span>Prev</span>
           </button>
           <span>
@@ -416,7 +444,18 @@ export function PdfReader({
           </button>
           <button type="button" className={spread ? "is-active" : ""} onClick={onToggleSpread}>
             {spread ? "Two pages" : "One page"}
-          </button>
+          </button></>}
+          {pageSubset !== undefined && <>
+            <span>Pages {visiblePages[0]}–{visiblePages.at(-1)} / {pageCount}</span>
+            <button type="button" aria-label="Zoom out source pages" disabled={zoom <= .6} onClick={() => onZoom?.(-.1)}>−</button>
+            <button type="button" aria-label="Zoom in source pages" disabled={zoom >= 2} onClick={() => onZoom?.(.1)}>+</button>
+            <button type="button" onClick={() => {
+              const top = readerRef.current?.closest(".section-source-scroll")?.getBoundingClientRect().top ?? 0;
+              const visible = Array.from(readerRef.current?.querySelectorAll<HTMLElement>("[data-pdf-page]") ?? [])
+                .find((frame) => frame.getBoundingClientRect().bottom > top + 80);
+              onOpenFullPaper?.(Number(visible?.dataset.pdfPage ?? page));
+            }}>Open full paper ↗</button>
+          </>}
           <button type="button" className={darkInk ? "is-active" : ""} onClick={onToggleInk}>
             {darkInk ? "Dark" : "Light"}
           </button>
@@ -424,7 +463,7 @@ export function PdfReader({
       </div>
       <div className={`pdf-viewport ${spread ? "is-spread" : ""}`} ref={containerRef}>
         {loading && <div className="reader-message"><span className="loader" /> Rendering source…</div>}
-        {error !== null && <div className="reader-message error-message">{error}</div>}
+        {(error ?? loadError) !== null && <div className="reader-message error-message">{error ?? loadError}</div>}
         {pdfDocument !== null && visiblePages.map((visiblePage) => (
           <PdfPageCanvas
             key={visiblePage}
@@ -436,6 +475,12 @@ export function PdfReader({
             pageCount={pageCount}
             onError={handleRenderError}
             onTextLayer={handleTextLayer}
+            lazy={pageSubset !== undefined}
+            layout={pageLayouts?.find((item) => item.number === visiblePage)}
+            marks={verifiedSpan === null ? [] : pageLayouts?.find((item) => item.number === visiblePage)?.tokens
+              .filter((token) => (visiblePage !== verifiedSpan.start.page || token.index >= verifiedSpan.start.start_token)
+                && (visiblePage !== verifiedSpan.end.page || token.index <= verifiedSpan.end.end_token))
+              .flatMap((token) => token.rects)}
           />
         ))}
       </div>
@@ -443,7 +488,7 @@ export function PdfReader({
         {textLayersReady && !hasSelectableText
           ? "This page has no embedded text. It needs OCR before passages can be selected."
           : "Select any passage to copy it or ask for an explanation."}
-        {" "}<kbd>Ctrl-d</kbd> / <kbd>PageDown</kbd> page forward; <kbd>Ctrl-u</kbd> / <kbd>PageUp</kbd> page back.
+        {pageSubset === undefined && <>{" "}<kbd>Ctrl-d</kbd> / <kbd>PageDown</kbd> page forward; <kbd>Ctrl-u</kbd> / <kbd>PageUp</kbd> page back.</>}
       </div>
       {selectionState !== null && (
         <div
