@@ -266,7 +266,7 @@ Press `?` in the app for the complete, contextual guide.
 | `2` | Toggle one-page / two-page PDF view |
 | `W` / `H` | Fit the PDF to viewport width / height and reset zoom |
 | `P` | Toggle paged / continuous PDF reading |
-| `X` | Toggle vertical / horizontal continuous scrolling |
+| `R` | Rotate continuous scrolling: vertical / horizontal |
 | `+` / `-` | One fewer / one more page column in Overview (up to 10) |
 | `[` / `]` | Previous / next paper, or PDF page |
 | `Ctrl-d` / `Ctrl-u` | Page forward / back in PDF; half-screen in text views |
@@ -314,7 +314,7 @@ settings skip the transition; narrow screens provide Source/Digest tabs. Overvie
 share a PDF document, and scoped page canvases render lazily.
 Both readers offer fit width/height and paged/continuous modes. Continuous pages can scroll
 vertically or horizontally; the mouse wheel follows the chosen direction. Uppercase `H`, `P`,
-and `X` distinguish reader controls from the existing lowercase navigation shortcuts.
+and `R` distinguish reader controls from the existing lowercase navigation shortcuts.
 
 In the focused source pane, `j/k` or up/down scroll, `h/l` or left/right move between its pages,
 `Ctrl-d/u` and PageDown/PageUp scroll by screen increments, and `[`/`]` switch sections. `+`/`-`

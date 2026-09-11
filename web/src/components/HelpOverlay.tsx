@@ -26,7 +26,7 @@ const GROUPS = [
       ["2", "Toggle one-page / two-page PDF view"],
       ["W / H", "Fit PDF width / height (resets zoom)"],
       ["P", "Toggle paged / continuous PDF reading"],
-      ["X", "Toggle vertical / horizontal continuous scrolling"],
+      ["R", "Rotate continuous scrolling: vertical / horizontal"],
       ["+ / −", "Show one fewer / one more page column in Overview"],
       ["I", "Toggle dark ink / true colour for every rendered PDF page"],
     ],

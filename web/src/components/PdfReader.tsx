@@ -387,7 +387,7 @@ export function PdfReader({
         if (event.key === "W" || event.key === "w") action = () => changeFit("width");
         if (event.key === "H") action = () => changeFit("height");
         if (event.key === "P") action = changeFlow;
-        if (event.key === "X") action = changeAxis;
+        if (event.key === "R") action = changeAxis;
       }
       if (host !== null) {
         const direction = ["k", "ArrowUp", "ArrowLeft", "PageUp", "u"].includes(event.key) ? -1 : 1;
@@ -567,7 +567,7 @@ export function PdfReader({
           <button type="button" aria-label="Fit width" title="Fit width (W)" className={fit === "width" ? "is-active" : ""} onClick={() => changeFit("width")}>W</button>
           <button type="button" aria-label="Fit height" title="Fit height (H)" className={fit === "height" ? "is-active" : ""} onClick={() => changeFit("height")}>H</button>
           <button type="button" aria-label="Toggle paged or continuous reading" title="Paged / continuous (P)" onClick={changeFlow}>{flow === "paged" ? "Paged" : "Continuous"}</button>
-          <button type="button" aria-label="Toggle scroll direction" title="Vertical / horizontal scrolling (X)" onClick={changeAxis}>{axis === "vertical" ? "Vertical" : "Horizontal"}</button>
+          <button type="button" aria-label="Toggle scroll direction" title="Rotate scrolling: vertical / horizontal (R)" onClick={changeAxis}>{axis === "vertical" ? "Vertical" : "Horizontal"}</button>
           <button type="button" className={darkInk ? "is-active" : ""} onClick={onToggleInk}>
             {darkInk ? "Dark" : "Light"}
           </button>

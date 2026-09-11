@@ -172,13 +172,13 @@ try {
   await page.waitForFunction(()=>document.querySelectorAll('.text-view [data-pdf-page]').length===4);
   const fullViewport=page.locator('.text-view .pdf-viewport');
   assert.ok(await fullViewport.evaluate(node=>node.scrollHeight>node.clientHeight));
-  await page.keyboard.press('X');
+  await page.keyboard.press('R');
   await page.waitForFunction(()=>document.querySelector('.text-view .pdf-reader')?.dataset.axis==='horizontal');
   assert.ok(await fullViewport.evaluate(node=>node.scrollWidth>node.clientWidth));
   await fullViewport.hover(); await page.mouse.wheel(0,500);
   await page.waitForFunction(()=>document.querySelector('.text-view .pdf-viewport').scrollLeft>100);
   await page.keyboard.press('l');
-  await page.keyboard.press('X');
+  await page.keyboard.press('R');
   await page.waitForFunction(()=>document.querySelector('.text-view .pdf-reader')?.dataset.axis==='vertical');
   await page.keyboard.press('P');
   await page.waitForFunction(()=>document.querySelector('.text-view .pdf-reader')?.dataset.flow==='paged');
