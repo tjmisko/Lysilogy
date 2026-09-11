@@ -1,6 +1,6 @@
 use super::{
-    AbstractCandidate, AbstractResult, AbstractStatus, boundary, heading_remainder, normalize,
-    selected_text, source_lines,
+    AbstractCandidate, AbstractResult, AbstractStatus, heading_remainder, normalize, selected_text,
+    source_lines,
 };
 use crate::domain::ExtractedPaper;
 
@@ -50,12 +50,12 @@ pub fn verify(paper: &ExtractedPaper, candidate: Option<&AbstractCandidate>) -> 
     let after = lines[candidate.end_line + 1..]
         .iter()
         .find(|line| !line.running_matter);
-    if !after.is_some_and(|line| boundary(&line.text)) {
+    if !after.is_some_and(|line| line.section_heading) {
         result.checks.push("end_boundary_unconfirmed".to_owned());
     }
     if lines[candidate.start_line..=candidate.end_line]
         .iter()
-        .any(|line| !line.running_matter && boundary(&line.text))
+        .any(|line| !line.running_matter && line.section_heading)
     {
         result
             .checks

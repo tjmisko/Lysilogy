@@ -324,6 +324,16 @@ impl ArtifactStore {
     }
 
     pub async fn save_analysis(&self, id: &PaperId, analysis: &PaperAnalysis) -> Result<()> {
+        self.save_analysis_projection(id, analysis).await?;
+        self.sync_ai_highlights(id, analysis).await
+    }
+
+    /// Component refreshes preserve highlight records byte-for-byte.
+    pub(crate) async fn save_analysis_projection(
+        &self,
+        id: &PaperId,
+        analysis: &PaperAnalysis,
+    ) -> Result<()> {
         let directory = self.paper_dir(id);
         fs::create_dir_all(&directory)
             .await
@@ -332,8 +342,7 @@ impl ArtifactStore {
         let mut json = serde_json::to_vec_pretty(analysis)?;
         json.push(b'\n');
         write_atomic(&self.analysis_path(id), &json).await?;
-        write_atomic(&self.digest_path(id), render_digest(analysis).as_bytes()).await?;
-        self.sync_ai_highlights(id, analysis).await
+        write_atomic(&self.digest_path(id), render_digest(analysis).as_bytes()).await
     }
 
     pub async fn load_extraction(&self, id: &PaperId) -> Result<Option<ExtractedPaper>> {
@@ -780,6 +789,32 @@ mod tests {
             .ok_or_else(|| Error::Task("missing source.md".to_owned()))?;
         assert!(markdown.contains("# Test paper"));
         assert!(markdown.contains("## PDF page 2"));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn component_projection_never_reads_or_rewrites_highlights() -> Result<()> {
+        let directory = tempdir().map_err(|error| Error::io("tempdir", error))?;
+        let store = ArtifactStore::new(directory.path());
+        let id = PaperId::from_relative_path(Path::new("fixture.pdf"));
+        let analysis: PaperAnalysis = serde_json::from_value(serde_json::json!({
+            "schema_version":5,"provider":"heuristic","generated_at":Utc::now(),
+            "thesis":"A test claim.","outsider_brief":"A source-local orientation."
+        }))?;
+        fs::create_dir_all(store.paper_dir(&id))
+            .await
+            .map_err(|error| Error::io("fixture", error))?;
+        let owned = b"reader-owned records in a format this stage need not understand\n";
+        fs::write(store.highlights_path(&id), owned)
+            .await
+            .map_err(|error| Error::io("fixture", error))?;
+        store.save_analysis_projection(&id, &analysis).await?;
+        assert_eq!(
+            fs::read(store.highlights_path(&id))
+                .await
+                .map_err(|error| Error::io("fixture", error))?,
+            owned
+        );
         Ok(())
     }
 

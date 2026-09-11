@@ -96,3 +96,34 @@ fn allows_ligatures_but_not_scientific_hyphen_changes() {
         AbstractStatus::NeedsReview
     );
 }
+
+#[test]
+fn unlabeled_opening_requires_independent_review_without_relaxing_source_fidelity() {
+    let p = paper(&[
+        "Target discovery\nA. Author\nFebruary 2019\nThere are several distinct mechanisms through which the measured proxy changes under optimization.\nThis paper explains those mechanisms and specifies the conditions under which they occur.\nThe result helps readers distinguish statistical noise from structural changes in the observed physical system.\n\nVarieties of Measurement Failure\nThe body develops the model.",
+    ]);
+    let candidate = locate(&p).expect("unlabeled candidate");
+    assert!(candidate.text.starts_with("There are several"));
+    assert!(candidate.text.ends_with("system."));
+    assert_eq!(
+        verify(&p, Some(&candidate)).status,
+        AbstractStatus::NeedsReview
+    );
+    let review = BoundaryReview {
+        complete_abstract: true,
+        excludes_body: true,
+        reason: "Reviewed separately.".to_owned(),
+    };
+    assert_eq!(
+        admit_boundary_review(&p, &candidate, &review).status,
+        AbstractStatus::Accepted
+    );
+    let mut invented = candidate;
+    invented
+        .text
+        .push_str(" This fabricated sentence must fail.");
+    assert_eq!(
+        admit_boundary_review(&p, &invented, &review).status,
+        AbstractStatus::NeedsReview
+    );
+}

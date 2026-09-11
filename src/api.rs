@@ -384,7 +384,7 @@ impl AppState {
                 .await?;
             let _guard = self.highlight_write.lock().await;
             if let Some(analysis) = analysis {
-                self.store.save_analysis(id, &analysis).await?;
+                self.store.save_analysis_projection(id, &analysis).await?;
             }
             self.jobs.task_completed(id, "persist").await?;
             self.jobs.complete(id, false).await?;
@@ -490,9 +490,12 @@ impl AppState {
             .await
             .map_err(|error| (ProcessingStage::Persistence, error))?;
         for (task, detail) in [
-            ("orientation", "Fast orientation and abstract fallback"),
+            ("orientation", "Thesis and reading prerequisites"),
             ("structure", "Structural map and exact paper evidence"),
-            ("context", "Independent live external-source research"),
+            (
+                "context",
+                "Research evidence, write history and influence, then review citations",
+            ),
         ] {
             self.jobs
                 .task_active(id, task, Some(detail.to_owned()))

@@ -240,7 +240,41 @@ impl LocalCliAnalyzer {
             match proposal {
                 Ok(proposal) => {
                     let mut reviewed = crate::abstracts::verify(paper, proposal.candidate.as_ref());
-                    reviewed.review = Some(proposal.reason);
+                    if reviewed.status == crate::abstracts::AbstractStatus::NeedsReview
+                        && reviewed.checks.iter().all(|check| {
+                            matches!(
+                                check.as_str(),
+                                "start_boundary_unconfirmed" | "end_boundary_unconfirmed"
+                            )
+                        })
+                        && let Some(candidate) = proposal.candidate.as_ref()
+                    {
+                        match self
+                            .cached_stage::<crate::abstracts::BoundaryReview>(
+                                provider,
+                                directory,
+                                "abstract-boundaries",
+                                crate::abstracts::BOUNDARY_SCHEMA,
+                                &crate::abstracts::boundary_review_prompt(paper, candidate),
+                                PromptStage::AbstractReview.profile(),
+                                force,
+                            )
+                            .await
+                        {
+                            Ok(review) => {
+                                reviewed = crate::abstracts::admit_boundary_review(
+                                    paper, candidate, &review,
+                                );
+                            }
+                            Err(error) => {
+                                reviewed.review =
+                                    Some(format!("Boundary review unavailable: {error}"));
+                            }
+                        }
+                    }
+                    if reviewed.review.is_none() {
+                        reviewed.review = Some(proposal.reason);
+                    }
                     if reviewed.text.is_some() || result.text.is_none() {
                         result = reviewed;
                     } else {
@@ -254,6 +288,32 @@ impl LocalCliAnalyzer {
                     result.review = Some(format!("Model review unavailable: {error}"));
                 }
             }
+        }
+        if result.text.is_none()
+            && let Some(mut previous) =
+                read_cached::<crate::abstracts::AbstractResult>(&directory.join("abstract.json"))
+                    .await?
+            && previous.status == crate::abstracts::AbstractStatus::Accepted
+            && previous.source_fingerprint == result.source_fingerprint
+            && let Some(candidate) = previous.candidate.as_ref()
+            && crate::abstracts::verify(paper, Some(candidate))
+                .checks
+                .iter()
+                .all(|check| {
+                    matches!(
+                        check.as_str(),
+                        "source_text_verified"
+                            | "boundaries_verified"
+                            | "start_boundary_unconfirmed"
+                            | "end_boundary_unconfirmed"
+                    )
+                })
+        {
+            previous.review = Some(format!(
+                "Retained the previously accepted abstract; latest refresh unresolved: {}",
+                result.review.unwrap_or_else(|| result.checks.join(", "))
+            ));
+            result = previous;
         }
         write_json(&directory.join("abstract.json"), &result).await?;
         Ok(result)
@@ -1403,6 +1463,92 @@ printf 'run\n' >> calls
         Ok(())
     }
 
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn context_pipeline_sequences_research_writing_and_review() -> Result<()> {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().expect("temporary directory");
+        let script = dir.path().join("stub-codex");
+        std::fs::write(&script, r#"#!/bin/sh
+cat >/dev/null
+printf '%s\n' "$*" >> arguments
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+case "$output" in
+  *context-evidence-agent-output.json) cat evidence.json > "$output"; printf 'evidence\n' >> calls ;;
+  *context-writing-agent-output.json) cat writing.json > "$output"; printf 'writing\n' >> calls ;;
+  *context-review-agent-output.json) cat review.json > "$output"; printf 'review\n' >> calls ;;
+  *) exit 2 ;;
+esac
+"#).expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        let evidence = serde_json::json!({"sources":[{"id":"s","title":"A later extension","authors":[],"year":2024,
+            "url":"https://example.org/extension","supports":"The demonstrated extension.",
+            "excerpt":"We extend the earlier method to correlated outcomes.","location":"Methods","relationship":"extension"}],
+            "search_summary":"Inspected the later work.","gaps":[]});
+        let writing = serde_json::json!({"context_notes":[{"kind":"after","text":"Later work extended the method to correlated outcomes.","source_ids":["s"]}]});
+        let mut review = serde_json::json!({"notes":[{"note_index":0,"supported_source_ids":["s"],"passages_found":true,
+            "fully_supported":true,"chronology_correct":true,"adds_useful_context":true,"reason":"The cited method states the extension."}]});
+        for (name, value) in [
+            ("evidence", &evidence),
+            ("writing", &writing),
+            ("review", &review),
+        ] {
+            std::fs::write(
+                dir.path().join(format!("{name}.json")),
+                serde_json::to_vec(value)?,
+            )
+            .expect("fixture");
+        }
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        for _ in 0..2 {
+            let result = cli
+                .research_context(
+                    AnalysisProvider::Codex,
+                    dir.path(),
+                    "Target paper, 2018",
+                    false,
+                )
+                .await?;
+            assert_eq!(result.context_notes.len(), 1);
+            assert_eq!(
+                result
+                    .assessment
+                    .expect("assessment")
+                    .metrics
+                    .accepted_claims,
+                1
+            );
+        }
+        let calls = std::fs::read_to_string(dir.path().join("calls")).expect("calls");
+        assert_eq!(
+            calls.lines().collect::<Vec<_>>(),
+            ["evidence", "writing", "review"]
+        );
+        let arguments = std::fs::read_to_string(dir.path().join("arguments")).expect("arguments");
+        let arguments = arguments.lines().collect::<Vec<_>>();
+        assert!(arguments[0].contains("--search"));
+        assert!(arguments[1].contains(&effective_model(PromptStage::ContextWriter.profile())));
+        assert!(!arguments[1].contains("--search"));
+        assert!(arguments[2].contains("--search"));
+        review["notes"][0]["fully_supported"] = false.into();
+        std::fs::write(dir.path().join("review.json"), serde_json::to_vec(&review)?)
+            .expect("review fixture");
+        let withheld = cli
+            .research_context(
+                AnalysisProvider::Codex,
+                dir.path(),
+                "Target paper, 2018",
+                true,
+            )
+            .await?;
+        assert!(withheld.context_notes.is_empty());
+        Ok(())
+    }
+
     #[test]
     fn routes_fast_and_primary_codex_models_by_stage() {
         assert_eq!(
@@ -1446,6 +1592,11 @@ printf 'run\n' >> calls
             STRUCTURE_SCHEMA,
             CONTEXT_SCHEMA,
             LEARNING_RAMP_SCHEMA,
+            crate::abstracts::REVIEW_SCHEMA,
+            crate::abstracts::BOUNDARY_SCHEMA,
+            super::super::context::EVIDENCE_SCHEMA,
+            super::super::context::WRITING_SCHEMA,
+            super::super::context::REVIEW_SCHEMA,
         ] {
             serde_json::from_str::<serde_json::Value>(schema).expect("valid schema JSON");
         }
