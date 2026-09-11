@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type SyntheticEvent,
+  type ReactNode,
 } from "react";
 
 import type {
@@ -19,6 +20,7 @@ type DigestPanelProps = {
   claims: Claim[];
   initialSelection?: string;
   keyboardEnabled?: boolean;
+  navigation?: ReactNode;
   onClose: () => void;
   onGloss: () => void;
   onOpenPage: (page: number) => void;
@@ -45,7 +47,7 @@ function atAGlance(text: string): string {
 }
 
 function isEditable(target: EventTarget | null): boolean {
-  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
 }
 
 export function DigestPanel({
@@ -53,6 +55,7 @@ export function DigestPanel({
   claims,
   initialSelection = "",
   keyboardEnabled = true,
+  navigation,
   onClose,
   onGloss,
   onOpenPage,
@@ -405,7 +408,7 @@ export function DigestPanel({
 
       <footer className="panel-footer">
         <button type="button" onClick={onGloss}>Gloss <kbd>g</kbd></button>
-        <span>{copied ? "Copied" : `${active + 1} / ${fragments.length}`}</span>
+        {navigation ?? <span>{copied ? "Copied" : `${active + 1} / ${fragments.length}`}</span>}
       </footer>
     </aside>
   );

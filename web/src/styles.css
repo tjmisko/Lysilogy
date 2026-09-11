@@ -3650,51 +3650,61 @@ code {
 .context-source-excerpt cite { display: block; font-size: 11px; }
 .legacy-context { margin-bottom: 20px; }
 
-/* A section opens into two independent reading panes, with whole-paper orientation retained. */
-.section-focus { position: fixed; z-index: 40; inset: var(--topbar-height) 0 var(--command-height) 0; display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); background: var(--bg); }
+/* The focused reader fills the space below the app bar. */
+.section-focus { position: fixed; z-index: 40; inset: var(--topbar-height) 0 0; display: grid; grid-template-rows: auto minmax(0, 1fr); background: var(--bg); }
 .has-library .section-focus { left: var(--rail-width); }
 .has-section-focus .main-stage { visibility: hidden; }
-.section-focus-header { display: flex; align-items: center; gap: 22px; padding: 14px 24px; border-bottom: 1px solid var(--line); background: var(--bg-raised); }
-.section-focus-header button, .section-step button { padding: 8px 11px; border: 1px solid var(--line); background: transparent; color: var(--ink-soft); cursor: pointer; }
-.section-focus-header button:disabled { opacity: .35; cursor: default; }
-.section-choice { min-width: 0; flex: 1; display: grid; gap: 4px; }
-.section-choice select { width: 100%; min-width: 0; padding: 3px 0; border: 0; background: var(--bg-raised); color: var(--ink); font: 19px Georgia, serif; }
-.section-step { display: flex; align-items: center; gap: 10px; font: 11px ui-monospace, monospace; color: var(--ink-faint); }
-.paper-position { display: flex; align-items: center; gap: 18px; padding: 10px 24px; border-bottom: 1px solid var(--line); }
-.paper-position > span { flex: 0 0 auto; }
-.paper-position > div { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: thin; }
-.paper-position button { flex: 0 0 24px; height: 32px; border: 1px solid var(--line); color: var(--ink-faint); background: var(--bg-raised); font: 10px ui-monospace, monospace; cursor: pointer; }
-.paper-position button.is-selected { border-color: var(--signal); color: var(--signal); background: color-mix(in srgb, var(--signal) 10%, var(--bg)); }
-.section-focus-columns { grid-row: 4; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(340px, .85fr); overflow: hidden; }
+.has-section-focus .command-bar { display: none; }
+.section-focus-columns { grid-row: 2; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) clamp(280px, 25vw, 320px); overflow: hidden; }
 .section-source-scroll { position: relative; min-width: 0; overflow: auto; scrollbar-color: var(--line-bright) transparent; outline-offset: -3px; background: #101312; }
-.section-source-scroll .pdf-reader { min-height: 100%; height: auto; padding: 0 20px 40px; }
-.section-source-scroll .pdf-toolbar { top: 0; gap: 8px; margin-inline: -20px; padding: 10px 16px; }
-.section-source-scroll .pdf-toolbar strong { max-width: 18vw; }
-.section-source-scroll .pdf-controls { flex-wrap: wrap; justify-content: flex-end; }
-.section-source-scroll .pdf-viewport { display: flex; flex-direction: column; align-items: safe center; overflow: visible; }
+.section-source-scroll .pdf-reader { min-height: 100%; height: auto; padding: 0 12px 12px; }
+.section-source-scroll .pdf-toolbar { top: 0; gap: 8px; margin-inline: -12px; padding: 6px 12px; }
+.section-source-scroll .pdf-controls { min-width: 0; justify-content: flex-end; }
+.section-source-scroll .pdf-controls button, .section-source-scroll .pdf-controls select, .return-to-map { padding: 5px 7px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg-raised); color: var(--ink-soft); font: 10px ui-monospace, monospace; cursor: pointer; }
+.return-to-map { white-space: nowrap; }
+.section-source-scroll .pdf-viewport { display: flex; flex-direction: column; align-items: safe center; justify-content: flex-start; min-height: 0; gap: 14px; padding: 16px 0 0; border: 0; overflow: visible; background: transparent; }
 .section-source-scroll .pdf-page-frame { flex: 0 0 auto; }
+.section-source-scroll .pdf-page-surface { overflow: clip; }
+.section-source-scroll .pdf-page-frame figcaption { margin-top: 8px; }
+.section-source-scroll .pdf-mode-note:not(.is-warning) { display: none; }
 .section-digest-slot { min-width: 0; min-height: 0; }
-.section-digest-slot .context-panel { position: relative; inset: auto; width: 100%; height: 100%; z-index: auto; box-shadow: none; animation: none; }
-.section-digest-slot .panel-header { padding: 20px 24px 16px; }
-.section-digest-slot .panel-header h2 { font-size: clamp(24px, 2.4vw, 36px); }
-.section-text-marks { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
-.section-text-marks i { position: absolute; background: rgba(208, 236, 111, .12); border-bottom: 1px solid rgba(208, 236, 111, .25); }
+.section-digest-slot .context-panel { position: relative; inset: auto; display: flex; flex-direction: column; width: 100%; height: 100%; z-index: auto; box-shadow: none; animation: none; }
+.section-digest-slot .panel-header { flex-shrink: 0; gap: 8px; padding: 14px 14px 10px; }
+.section-digest-slot .panel-header > div { min-width: 0; }
+.section-digest-slot .panel-header .eyebrow { font-size: 8px; }
+.section-digest-slot .panel-header h2 { margin: 6px 0; font-size: 23px; line-height: 1.12; overflow-wrap: anywhere; }
+.section-digest-slot .panel-header .icon-button { width: 26px; height: 26px; flex-shrink: 0; }
+.section-digest-slot .page-jump { font-size: 9px; }
+.section-digest-slot .selection-instructions:not([data-visual="true"]) { display: none; }
+.section-digest-slot .selection-instructions { flex-shrink: 0; padding: 8px 14px; }
+.section-digest-slot .digest-scroll { flex: 1; min-height: 0; padding: 12px 14px 20px; }
+.section-digest-slot .digest-fragment { margin: 0 0 10px; padding: 10px 11px; }
+.section-digest-slot .digest-fragment > span { margin-bottom: 6px; font-size: 8px; }
+.section-digest-slot .digest-fragment p { font-size: 14px; line-height: 1.5; }
+.section-digest-slot .fragment-digest p { font-size: 17px; line-height: 1.45; }
+.section-digest-slot .fragment-explanation { margin: -2px 0 12px 8px; padding-block: 6px; }
+.section-digest-slot .digest-fragment button { margin-top: 7px; font-size: 9px; }
+.section-digest-slot .panel-footer { flex-shrink: 0; min-height: 38px; padding: 8px 14px; gap: 8px; }
+.section-digest-slot .selection-actions { flex-shrink: 0; padding: 8px 14px; }
+.section-digest-slot .clarify-composer { flex-shrink: 0; max-height: 55%; overflow: auto; padding: 12px 14px; }
+.section-step { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
+.section-step button, .section-step select { padding: 3px 5px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg-raised); color: var(--ink-soft); font: 10px ui-monospace, monospace; cursor: pointer; }
+.section-picker { position: relative; padding: 3px 7px; border: 1px solid var(--line); border-radius: 3px; font: 10px ui-monospace, monospace; color: var(--ink-soft); }
+.section-picker select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+.section-picker:focus-within { outline: 1px solid var(--signal); }
+.section-step button:disabled { opacity: .35; cursor: default; }
 .section-pane-tabs { display: none; }
 @media (max-width: 1180px) { .has-library .section-focus { left: 0; } }
 @media (max-width: 800px) {
-  .section-focus-header { padding: 10px 12px; gap: 10px; }
-  .section-choice select { font-size: 15px; }
-  .section-step span { display: none; }
-  .return-to-map { font-size: 11px; white-space: nowrap; }
-  .paper-position { padding: 8px 12px; gap: 10px; }
-  .section-pane-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); }
-  .section-pane-tabs button { flex: 1; padding: 10px; border: 0; background: var(--bg-raised); color: var(--ink-soft); cursor: pointer; }
+  .section-pane-tabs { display: flex; border-bottom: 1px solid var(--line); }
+  .section-pane-tabs button { flex: 1; padding: 8px; border: 0; background: var(--bg-raised); color: var(--ink-soft); cursor: pointer; }
   .section-pane-tabs button[aria-pressed="true"] { color: var(--signal); box-shadow: inset 0 -2px var(--signal); }
   .section-focus-columns { display: block; }
   .section-source-scroll, .section-digest-slot { height: 100%; }
   .section-focus[data-pane="source"] .section-digest-slot, .section-focus[data-pane="digest"] .section-source-scroll { display: none; }
-  .section-source-scroll .pdf-toolbar strong { max-width: 30vw; }
-  .section-source-scroll .pdf-reader { padding-inline: 10px; }
-  .section-source-scroll .pdf-toolbar { margin-inline: -10px; }
+  .section-source-scroll .pdf-toolbar { flex-direction: row; align-items: center; padding: 6px; gap: 4px; }
+  .section-source-scroll .pdf-controls { gap: 3px; flex-wrap: wrap; }
+  .section-source-scroll .pdf-controls button, .section-source-scroll .pdf-controls select { padding-inline: 5px; }
+  .section-digest-slot .panel-header h2 { font-size: 24px; }
 }
 @media (prefers-reduced-motion: reduce) { .page-transition-snapshot { display: none; } }

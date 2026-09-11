@@ -1090,7 +1090,7 @@ export function App() {
           snapshots={pageSnapshots} onToggleInk={() => setDarkInk((value) => !value)} onSection={openSection} onClose={closeSection}
           onFullPaper={openPage} onClarify={clarifySentence}
           onSaveReference={(text, page) => { setReferenceSeed({ text, page }); setToolsTab("references"); }}
-          digest={(onPage, keyboardEnabled) => <DigestPanel key={`${selectedSection.id}:${clarifySeed}`}
+          digest={(onPage, keyboardEnabled, navigation) => <DigestPanel key={`${selectedSection.id}:${clarifySeed}`} navigation={navigation}
             section={selectedSection} claims={relatedClaims} initialSelection={clarifySeed} keyboardEnabled={keyboardEnabled && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null}
             onClose={closeSection} onGloss={openGlossary} onOpenPage={onPage} onClarify={clarify} />}
         />

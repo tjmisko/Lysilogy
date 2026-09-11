@@ -1,4 +1,6 @@
-import { sectionSourceSpan } from "../lib/sectionScope";
+import { sectionPageCrop, type SectionCrop } from "../lib/sectionCrop";
+import { cropTextLayer } from "../lib/cropTextLayer";
+import { visiblePdfPage } from "../lib/pdfViewport";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type PDFDocumentProxy,
@@ -7,7 +9,7 @@ import {
   type TextLayerImages,
 } from "pdfjs-dist";
 import { usePdfDocument } from "../hooks/usePdfDocument";
-import type { LayoutPage, PaperSection, TextRect } from "../types";
+import type { LayoutPage, PaperSection } from "../types";
 import { TextLayerBuilder } from "pdfjs-dist/web/pdf_viewer.mjs";
 
 export type PdfSelectionEndpoint = {
@@ -51,6 +53,7 @@ type PdfReaderProps = {
   section?: PaperSection;
   onOpenFullPaper?: (page: number) => void;
   onZoom?: (delta: number) => void;
+  onReturnToMap?: () => void;
 };
 
 type PdfPageCanvasProps = {
@@ -64,7 +67,8 @@ type PdfPageCanvasProps = {
   onTextLayer: (page: number, viewport: PageViewport | null, hasText: boolean) => void;
   lazy?: boolean;
   layout?: LayoutPage;
-  marks?: TextRect[];
+  crop?: SectionCrop;
+  readingWidth?: number;
 };
 
 type SelectionState = {
@@ -84,7 +88,7 @@ function selectionEndpoint(node: Node, offset: number): PdfSelectionEndpoint | n
   if (!Number.isInteger(page) || !Number.isInteger(itemIndex)) return null;
   const textLength = textItem.textContent.length;
   const itemOffset = node.nodeType === Node.TEXT_NODE ? offset : offset === 0 ? 0 : textLength;
-  return { page, itemIndex, offset: Math.max(0, Math.min(textLength, itemOffset)) };
+  return { page, itemIndex, offset: Math.max(0, Math.min(textLength, itemOffset)) + Number(textItem.dataset.textOffset ?? 0) };
 }
 
 function selectionText(selection: Selection): string {
@@ -106,7 +110,8 @@ function PdfPageCanvas({
   onTextLayer,
   lazy = false,
   layout,
-  marks = [],
+  crop,
+  readingWidth,
 }: PdfPageCanvasProps) {
   const frameRef = useRef<HTMLElement>(null);
   const [visible, setVisible] = useState(!lazy);
@@ -118,7 +123,7 @@ function PdfPageCanvas({
     if (visible || frameRef.current === null) return;
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) setVisible(true);
-    }, { rootMargin: "700px" });
+    }, { root: frameRef.current.closest(".section-source-scroll"), rootMargin: "700px" });
     observer.observe(frameRef.current);
     return () => observer.disconnect();
   }, [visible]);
@@ -140,25 +145,47 @@ function PdfPageCanvas({
       .then(async (pdfPage) => {
         if (controller.signal.aborted) return;
         const base = pdfPage.getViewport({ scale: 1 });
-        const fitScale = Math.max(0.2, (slotWidth - 28) / base.width);
+        const fitScale = Math.max(0.2, crop === undefined ? (slotWidth - 28) / base.width
+          : Math.min(2.2, (slotWidth - 28) / (readingWidth ?? base.width)));
         const viewport = pdfPage.getViewport({ scale: fitScale * zoom });
+        const scaleX = viewport.width / (layout?.width ?? base.width);
+        const scaleY = viewport.height / (layout?.height ?? base.height);
+        const left = (crop?.bounds.x_min ?? 0) * scaleX;
+        const top = (crop?.bounds.y_min ?? 0) * scaleY;
+        const width = crop === undefined ? viewport.width : (crop.bounds.x_max - crop.bounds.x_min) * scaleX;
+        const height = crop === undefined ? viewport.height : (crop.bounds.y_max - crop.bounds.y_min) * scaleY;
         const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
         const context = canvas.getContext("2d", { alpha: false });
         if (context === null) throw new Error("Canvas rendering is unavailable");
 
-        surface.style.width = `${Math.floor(viewport.width)}px`;
-        surface.style.height = `${Math.floor(viewport.height)}px`;
+        surface.style.width = `${width}px`;
+        surface.style.height = `${height}px`;
         surface.style.setProperty("--total-scale-factor", String(viewport.scale));
-        canvas.width = Math.floor(viewport.width * pixelRatio);
-        canvas.height = Math.floor(viewport.height * pixelRatio);
-        canvas.style.width = `${Math.floor(viewport.width)}px`;
-        canvas.style.height = `${Math.floor(viewport.height)}px`;
+        canvas.width = Math.ceil(width * pixelRatio);
+        canvas.height = Math.ceil(height * pixelRatio);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        textLayerContainer.style.width = `${viewport.width}px`;
+        textLayerContainer.style.height = `${viewport.height}px`;
+        textLayerContainer.style.left = `${-left}px`;
+        textLayerContainer.style.top = `${-top}px`;
+        // Render directly into the cropped canvas. No hidden full page can be
+        // revealed by scrolling, and transition snapshots contain only the crop.
+        context.save();
+        if (crop !== undefined) {
+          context.fillStyle = "white";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.beginPath();
+          for (const r of crop.regions) context.rect((r.x_min * scaleX - left) * pixelRatio,
+            (r.y_min * scaleY - top) * pixelRatio, (r.x_max - r.x_min) * scaleX * pixelRatio, (r.y_max - r.y_min) * scaleY * pixelRatio);
+          context.clip();
+        }
 
         renderTask = pdfPage.render({
           canvas,
           canvasContext: context,
           viewport,
-          transform: pixelRatio === 1 ? undefined : [pixelRatio, 0, 0, pixelRatio, 0, 0],
+          transform: [pixelRatio, 0, 0, pixelRatio, -left * pixelRatio, -top * pixelRatio],
         });
         textLayer = new TextLayerBuilder({
           pdfPage,
@@ -176,13 +203,15 @@ function PdfPageCanvas({
           }),
         ]);
         controller.signal.throwIfAborted();
+        context.restore();
         canvas.dataset.rendered = "true";
 
         const textDivs = Array.from(textLayer.div.querySelectorAll<HTMLElement>("span"));
         textDivs.forEach((textDiv, index) => {
           textDiv.dataset.textIndex = String(index);
         });
-        const hasText = textDivs.some((textDiv) => textDiv.textContent.trim().length > 0);
+        if (crop !== undefined) cropTextLayer(textLayer.div, crop.regions, scaleX, scaleY);
+        const hasText = Array.from(textLayer.div.querySelectorAll("span")).some((textDiv) => textDiv.textContent.trim().length > 0);
         textLayerContainer.dataset.textReady = "true";
         onTextLayer(page, viewport, hasText);
       })
@@ -198,23 +227,25 @@ function PdfPageCanvas({
       textLayer?.cancel();
       onTextLayer(page, null, false);
     };
-  }, [document, onError, onTextLayer, page, slotWidth, visible, zoom]);
+  }, [crop, document, layout, onError, onTextLayer, page, readingWidth, slotWidth, visible, zoom]);
 
   return (
-    <figure className="pdf-page-frame" ref={frameRef} data-pdf-page={page}>
+    <figure className="pdf-page-frame" ref={frameRef} data-pdf-page={page} data-section-crop={crop === undefined ? undefined : "true"}
+      data-page-crop={crop === undefined || layout === undefined ? undefined : JSON.stringify({
+        x: crop.bounds.x_min / layout.width, y: crop.bounds.y_min / layout.height,
+        width: (crop.bounds.x_max - crop.bounds.x_min) / layout.width, height: (crop.bounds.y_max - crop.bounds.y_min) / layout.height,
+      })}>
       <div className="pdf-page-surface" ref={surfaceRef} style={lazy ? {
-        width: Math.max(100, (slotWidth - 28) * zoom),
-        aspectRatio: `${layout?.width ?? 612} / ${layout?.height ?? 792}`,
+        width: crop === undefined ? Math.max(100, (slotWidth - 28) * zoom)
+          : (crop.bounds.x_max - crop.bounds.x_min) * Math.max(.2, Math.min(2.2, (slotWidth - 28) / (readingWidth ?? 612))) * zoom,
+        aspectRatio: crop === undefined ? `${layout?.width ?? 612} / ${layout?.height ?? 792}`
+          : `${crop.bounds.x_max - crop.bounds.x_min} / ${crop.bounds.y_max - crop.bounds.y_min}`,
       } : undefined}>
         <canvas
           ref={canvasRef}
           className={darkInk ? "pdf-canvas dark-ink" : "pdf-canvas"}
           aria-label={`Page ${page} of ${pageCount}`}
         />
-        {layout != null && marks.length > 0 && <div className="section-text-marks" aria-hidden="true">
-          {marks.map((rect, index) => <i key={index} style={{ left: `${rect.x_min / layout.width * 100}%`, top: `${rect.y_min / layout.height * 100}%`,
-            width: `${(rect.x_max - rect.x_min) / layout.width * 100}%`, height: `${(rect.y_max - rect.y_min) / layout.height * 100}%` }} />)}
-        </div>}
         <div
           ref={textLayerRef}
           className="pdf-text-layer-host"
@@ -245,6 +276,7 @@ export function PdfReader({
   section,
   onOpenFullPaper,
   onZoom,
+  onReturnToMap,
 }: PdfReaderProps) {
   const { document: pdfDocument, loading, error: loadError } = usePdfDocument(url);
   const [error, setError] = useState<string | null>(null);
@@ -252,6 +284,7 @@ export function PdfReader({
   const [textPages, setTextPages] = useState<Record<number, boolean>>({});
   const [selectionState, setSelectionState] = useState<SelectionState | null>(null);
   const [copyLabel, setCopyLabel] = useState("Copy");
+  const [readingPage, setReadingPage] = useState(page);
   const readerRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportsRef = useRef(new Map<number, PageViewport>());
@@ -272,7 +305,9 @@ export function PdfReader({
   }, [onPageCount, pdfDocument]);
 
   const pageCount = pdfDocument?.numPages ?? 1;
-  const verifiedSpan = section === undefined ? null : sectionSourceSpan(section, pageCount);
+  const crops = useMemo(() => new Map(pageLayouts?.map((layout) => [layout.number,
+    section === undefined ? null : sectionPageCrop(section, layout, pageCount)])), [pageCount, pageLayouts, section]);
+  const readingWidth = Math.max(1, ...Array.from(crops.values()).flatMap((crop) => crop === null ? [] : [crop.bounds.x_max - crop.bounds.x_min]));
   const step = spread ? 2 : 1;
   const visiblePages = useMemo(
     () => pageSubset !== undefined
@@ -287,20 +322,28 @@ export function PdfReader({
   const hasSelectableText = visibleTextStatus.some(Boolean);
 
   useEffect(() => {
+    if (pageSubset === undefined) return;
+    const host = readerRef.current?.closest<HTMLElement>(".section-source-scroll");
+    if (host == null) return;
+    const update = () => {
+      const visible = visiblePdfPage(host);
+      if (visible !== null) setReadingPage(visible);
+    };
+    host.addEventListener("scroll", update, { passive: true });
+    return () => host.removeEventListener("scroll", update);
+  }, [pageSubset]);
+
+  useEffect(() => {
     if (pageSubset === undefined || pdfDocument === null) return;
     const frame = window.requestAnimationFrame(() => {
       const host = readerRef.current?.closest<HTMLElement>(".section-source-scroll");
       const target = readerRef.current?.querySelector<HTMLElement>(`[data-pdf-page="${page}"]`);
       if (host == null || target == null) return;
-      const layout = pageLayouts?.find((item) => item.number === page);
-      const anchor = verifiedSpan?.start;
-      const offset = anchor?.page === page ? (anchor.rects[0]?.y_min ?? 0) : 0;
-      const sourceHeight = layout?.height ?? 792;
-      const renderedHeight = target.querySelector(".pdf-page-surface")?.getBoundingClientRect().height ?? 0;
-      host.scrollTop += target.getBoundingClientRect().top - host.getBoundingClientRect().top + offset / sourceHeight * renderedHeight - 64;
+      const toolbarHeight = readerRef.current?.querySelector(".pdf-toolbar")?.getBoundingClientRect().height ?? 40;
+      host.scrollTop += target.getBoundingClientRect().top - host.getBoundingClientRect().top - toolbarHeight - 12;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [page, pageJump, pageLayouts, pageSubset, pdfDocument, verifiedSpan]);
+  }, [page, pageJump, pageSubset, pdfDocument]);
 
   const handleTextLayer = useCallback(
     (pageNumber: number, viewport: PageViewport | null, hasText: boolean): void => {
@@ -424,10 +467,10 @@ export function PdfReader({
   return (
     <section ref={readerRef} className="pdf-reader" aria-label={`PDF: ${title}`}>
       <div className="pdf-toolbar">
-        <div>
+        {pageSubset === undefined ? <div>
           <span className="eyebrow">Source document</span>
           <strong>{title}</strong>
-        </div>
+        </div> : <button className="return-to-map" type="button" onClick={onReturnToMap}>← Map</button>}
         <div className="pdf-controls">
           {pageSubset === undefined && <><button type="button" onClick={() => onPage(Math.max(1, page - step))} disabled={page <= 1}>
             <span>Prev</span>
@@ -446,14 +489,15 @@ export function PdfReader({
             {spread ? "Two pages" : "One page"}
           </button></>}
           {pageSubset !== undefined && <>
-            <span>Pages {visiblePages[0]}–{visiblePages.at(-1)} / {pageCount}</span>
+            <select aria-label="Source page" value={visiblePages.includes(readingPage) ? readingPage : page} onChange={(event) => {
+              const next = Number(event.target.value); setReadingPage(next); onPage(next);
+            }}>
+              {visiblePages.map((value) => <option key={value} value={value}>Page {value} / {pageCount}</option>)}
+            </select>
             <button type="button" aria-label="Zoom out source pages" disabled={zoom <= .6} onClick={() => onZoom?.(-.1)}>−</button>
             <button type="button" aria-label="Zoom in source pages" disabled={zoom >= 2} onClick={() => onZoom?.(.1)}>+</button>
             <button type="button" onClick={() => {
-              const top = readerRef.current?.closest(".section-source-scroll")?.getBoundingClientRect().top ?? 0;
-              const visible = Array.from(readerRef.current?.querySelectorAll<HTMLElement>("[data-pdf-page]") ?? [])
-                .find((frame) => frame.getBoundingClientRect().bottom > top + 80);
-              onOpenFullPaper?.(Number(visible?.dataset.pdfPage ?? page));
+              onOpenFullPaper?.(readingPage);
             }}>Open full paper ↗</button>
           </>}
           <button type="button" className={darkInk ? "is-active" : ""} onClick={onToggleInk}>
@@ -464,7 +508,9 @@ export function PdfReader({
       <div className={`pdf-viewport ${spread ? "is-spread" : ""}`} ref={containerRef}>
         {loading && <div className="reader-message"><span className="loader" /> Rendering source…</div>}
         {(error ?? loadError) !== null && <div className="reader-message error-message">{error ?? loadError}</div>}
-        {pdfDocument !== null && visiblePages.map((visiblePage) => (
+        {pdfDocument !== null && visiblePages.map((visiblePage) => pageSubset !== undefined && crops.get(visiblePage) == null
+          ? <p className="reader-message" key={visiblePage}>Exact section bounds are unavailable for page {visiblePage}.{" "}
+            <button type="button" onClick={() => onOpenFullPaper?.(visiblePage)}>Open full page ↗</button></p> : (
           <PdfPageCanvas
             key={visiblePage}
             document={pdfDocument}
@@ -477,10 +523,8 @@ export function PdfReader({
             onTextLayer={handleTextLayer}
             lazy={pageSubset !== undefined}
             layout={pageLayouts?.find((item) => item.number === visiblePage)}
-            marks={verifiedSpan === null ? [] : pageLayouts?.find((item) => item.number === visiblePage)?.tokens
-              .filter((token) => (visiblePage !== verifiedSpan.start.page || token.index >= verifiedSpan.start.start_token)
-                && (visiblePage !== verifiedSpan.end.page || token.index <= verifiedSpan.end.end_token))
-              .flatMap((token) => token.rects)}
+            crop={pageSubset === undefined ? undefined : crops.get(visiblePage) ?? undefined}
+            readingWidth={readingWidth}
           />
         ))}
       </div>

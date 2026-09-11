@@ -292,12 +292,15 @@ the two-page spread—to copy it or open **Ask about this** with the passage and
 filled in. Selections retain PDF-page coordinates and text-item offsets for future persistent marks.
 Image-only pages report that OCR is required instead of presenting an inert selection surface.
 
-Opening an Overview region animates its pages into one source column on the left, with the digest
-on the right. Both panes scroll independently. The whole-paper locator retains the region's
-position, and **Open full paper** takes the current original page into Text. **Whole paper** or
-`Esc` restores the map's scroll, columns, keyboard focus, and library state. Reduced-motion settings
-skip the transition; narrow screens provide Source/Digest tabs. Overview and both readers share a
-PDF document, and scoped page canvases render lazily.
+Opening an Overview region animates its source into a reading column with a compact digest on
+the right. Both panes fill the space below the app bar and scroll independently. The original PDF
+is cropped to the section's verified token bounds, including its first and last partial pages;
+surrounding text is excluded from rendering and native selection. Missing geometry offers an
+explicit link to the full page. The page picker preserves original PDF numbering, and **Open full
+paper** takes the current page into Text. **Map** or `Esc` restores the map's scroll, columns,
+keyboard focus, and library state. Section navigation lives in the digest footer. Reduced-motion
+settings skip the transition; narrow screens provide Source/Digest tabs. Overview and both readers
+share a PDF document, and scoped page canvases render lazily.
 
 In the focused source pane, `j/k` or up/down scroll, `h/l` or left/right move between its pages,
 `Ctrl-d/u` and PageDown/PageUp scroll by screen increments, and `[`/`]` switch sections. `+`/`-`

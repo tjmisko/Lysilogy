@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import ts from 'typescript';
 
 // All source material is synthetic; this suite never opens a reading-library path.
 function makePdf() {
@@ -31,6 +32,7 @@ const analysis={schema_version:5,provider:'codex',generated_at:now,thesis:'Selec
   context_notes:[{kind:'before',text:'Prior research distinguished measurement error from changes in the goal.',source_ids:['prior']},{kind:'after',text:'A subsequent experiment extended the model to correlated observations.',source_ids:['later']}],
   context_sources:[{id:'prior',title:'Earlier measurement study',authors:['A. Researcher'],year:2010,url:'https://example.org/prior',supports:'The prior measurement problem.',verified_at:now,excerpt:'Measurement error changes the observed proxy.',location:'Introduction',relationship:'antecedent'},{id:'later',title:'Later correlated observations',authors:['B. Researcher'],year:2024,url:'https://example.org/later',supports:'The demonstrated extension.',verified_at:now,excerpt:'We extend this model to correlated observations.',location:'Methods',relationship:'extension'}],
   context_assessment:{metrics:{proposed_claims:2,cited_claims:2,proposed_links:2,supported_links:2,fully_supported_claims:2,unassessed_claims:0,accepted_claims:2,published_claims:2},evidence_gaps:[],writer_model:'fixture',assessed_at:now},prerequisites:[],sections:[section('opening','Introduction',1,1),section('regressional','Regressional Goodhart',2,3),section('conclusion','Conclusion',4,4)],claims:[],glossary:[],caveats:[],reading_path:[]};
+analysis.sections[1].source_span = {start:anchor(2,5),end:anchor(3,12)};
 const paper={id,metadata:{title:'A synthetic paper about noisy proxies',authors:['Test Author'],year:2018,page_count:4},relative_path:'synthetic.pdf',status:{state:'ready'},analyzed_at:now,one_line_summary:analysis.thesis};
 const root=path.resolve('dist');
 const refreshes=[]; let sourceRequests=0;
@@ -82,18 +84,50 @@ try {
   await page.waitForFunction(()=>document.querySelectorAll('.section-focus [data-text-ready="true"]').length>=1);
   assert.deepEqual(await page.locator('.section-focus [data-pdf-page]').evaluateAll(nodes=>nodes.map(n=>Number(n.dataset.pdfPage))),[2,3]);
   assert.equal(sourceRequests,1,'the map and focused reader must share the PDF');
-  assert.equal(await page.locator('.paper-position .is-selected').count(),2);
+  assert.equal(await page.locator('.paper-position, .section-focus-header, .section-text-marks').count(),0);
+  assert.equal(await page.locator('.section-focus [data-section-crop="true"]').count(),2);
   const source=page.locator('.section-source-scroll'); const digest=page.locator('.section-digest-slot');
   const [left,right]=await Promise.all([source.boundingBox(),digest.boundingBox()]);
   assert.ok(left.x+left.width<=right.x+1,'source and digest must be beside one another');
+  assert.ok(right.width<=320 && right.width<left.width/2,'digest should leave most width for source');
+  const appbar = await page.locator('.topbar').boundingBox();
+  assert.equal(right.y,appbar.y+appbar.height,'digest must begin immediately below app bar');
+  assert.equal(right.y+right.height,1000,'digest must reach the bottom of the window');
+  await page.waitForFunction(()=>document.querySelectorAll('.section-focus [data-text-ready="true"]').length===2);
+  const croppedText=await page.locator('.section-focus .pdf-text-layer').evaluateAll(layers=>layers.map(layer=>{
+    const range=document.createRange();range.selectNodeContents(layer);
+    const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+    const text=selection.toString();selection.removeAllRanges();return text;
+  }));
+  assert.match(croppedText[0],/Sentence 6 on page 2/);
+  assert.match(croppedText[0],/Sentence 22 on page 2/);
+  assert.doesNotMatch(croppedText[0],/Source page|Sentence [1-5] on page 2/);
+  assert.match(croppedText[1],/Sentence 1 on page 3/);
+  assert.match(croppedText[1],/Sentence 13 on page 3/);
+  assert.doesNotMatch(croppedText[1],/Source page|Sentence (1[4-9]|2[0-2]) on page 3/);
+  const surface=page.locator('.section-focus .pdf-page-surface').first();
+  await surface.evaluate(node=>{node.scrollTop=10000;node.scrollLeft=10000;});
+  assert.equal(await surface.evaluate(node=>node.scrollTop+node.scrollLeft),0,'the clipped page itself must not scroll');
   const before=await source.evaluate(node=>node.scrollTop);
   await source.focus(); await page.keyboard.press('PageDown');
   assert.ok(await source.evaluate(node=>node.scrollTop)>before,'keyboard must scroll the source pane');
   assert.equal(await page.locator('.digest-scroll').evaluate(node=>node.scrollTop),0);
-  await page.getByLabel('PDF page 2, in selected section').click();
+  await page.getByLabel('Source page',{exact:true}).selectOption('3');
+  await page.getByLabel('Source page',{exact:true}).selectOption('2');
   await page.waitForFunction(()=>document.querySelector('.section-source-scroll').scrollTop<150);
   await page.waitForTimeout(500);
   await page.screenshot({path:'/tmp/lysilogy-pipeline-focus.png'});
+  await page.setViewportSize({width:1280,height:650});
+  await page.waitForFunction(()=>document.querySelectorAll('.section-focus [data-text-ready="true"]').length===2
+    && document.querySelector('.section-focus canvas')?.getBoundingClientRect().width<950);
+  await page.screenshot({path:'/tmp/lysilogy-pipeline-focus-compact.png'});
+  const compactDigest=await digest.boundingBox();
+  assert.equal(compactDigest.y+compactDigest.height,650);
+  assert.ok(compactDigest.width<=320);
+  assert.ok((await source.boundingBox()).width>=940);
+  await page.setViewportSize({width:1600,height:1000});
+  await page.waitForFunction(()=>document.querySelectorAll('.section-focus [data-text-ready="true"]').length===2
+    && document.querySelector('.section-focus canvas')?.getBoundingClientRect().width>1000);
   await page.evaluate(()=>{
     const span=document.querySelector('.section-focus .pdf-text-layer span');
     const range=document.createRange();range.selectNodeContents(span);
@@ -106,7 +140,7 @@ try {
   await page.waitForFunction(()=>document.querySelector('.section-focus [data-pdf-page]')?.dataset.pdfPage==='4');
   assert.equal(await page.locator('.section-focus [data-pdf-page]').count(),1);
   await page.getByLabel('Selected section',{exact:true}).selectOption('1');
-  await page.getByRole('button',{name:'← Whole paper',exact:true}).click();
+  await page.getByRole('button',{name:'← Map',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('.section-focus')===null);
   assert.equal(await page.locator('.page-grid-zoom output').innerText(),columns);
   await page.waitForFunction(()=>document.activeElement?.dataset.sectionId==='regressional');
@@ -116,7 +150,7 @@ try {
   await page.waitForFunction(()=>document.querySelector('.app-shell.has-library')!==null);
   await page.getByRole('button',{name:'Overview',exact:true}).click();
   await region.click();
-  await page.getByLabel('PDF page 3, in selected section').click();
+  await page.getByLabel('Source page',{exact:true}).selectOption('3');
   await page.getByRole('button',{name:'Open full paper ↗',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('.text-view [data-pdf-page]')?.dataset.pdfPage==='3');
   await page.getByRole('button',{name:'One page',exact:true}).click();
@@ -140,5 +174,34 @@ try {
   await source.focus(); await page.keyboard.press('Escape');
   await page.waitForFunction(()=>document.querySelector('.section-focus')===null);
   assert.deepEqual(errors,[]);
-  console.log('Pipeline smoke passed: distinct cited context, selective refresh, scoped source pages, shared PDF loading, selection, keyboard scrolling, map restoration, mobile panes, reduced motion.');
+  // Exercise a boundary inside one PDF.js text item. Canvas/CSS clipping alone
+  // would leave the whole string available to copy, and trimming must not shift it.
+  const textPage=await browser.newPage();
+  await textPage.setContent('<div id="layer" style="position:relative;width:900px;height:400px"></div>');
+  const textCropCode=ts.transpileModule(await readFile('src/lib/cropTextLayer.ts','utf8'),
+    {compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText.replace('export function','function');
+  await textPage.addScriptTag({content:textCropCode});
+  for (const zoom of [.7,1,1.8]) {
+    const result=await textPage.evaluate(zoom=>{
+      const layer=document.querySelector('#layer');
+      const span=document.createElement('span');span.dataset.textIndex='12';
+      span.style.cssText=`position:absolute;left:${20*zoom}px;top:${30*zoom}px;font:${20*zoom}px/1 Courier;transform:scaleX(.85);transform-origin:left top;white-space:pre`;
+      const prefix='The introduction. ',chosen='Chosen passage.';
+      span.textContent=prefix+chosen+' Next topic.';layer.replaceChildren(span);
+      const range=document.createRange();range.setStart(span.firstChild,prefix.length);range.setEnd(span.firstChild,prefix.length+chosen.length);
+      const expected=range.getBoundingClientRect(),origin=layer.getBoundingClientRect();
+      window.cropTextLayer(layer,[{x_min:(expected.left-origin.left)/zoom,x_max:(expected.right-origin.left)/zoom,
+        y_min:(expected.top-origin.top)/zoom,y_max:(expected.bottom-origin.top)/zoom}],zoom,zoom);
+      range.selectNodeContents(layer.firstChild);
+      const actual=range.getBoundingClientRect();
+      const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+      return {text:selection.toString(),offset:layer.firstChild.dataset.textOffset,item:layer.firstChild.dataset.textIndex,
+        shift:Math.abs(actual.left-expected.left)+Math.abs(actual.top-expected.top)};
+    },zoom);
+    assert.equal(result.text,'Chosen passage.');
+    assert.equal(result.offset,'18');assert.equal(result.item,'12');
+    assert.ok(result.shift<.1,`cropped selection shifted at zoom ${zoom}: ${result.shift}`);
+  }
+  await textPage.close();
+  console.log('Pipeline smoke passed: cited context, selective refresh, cropped PDF boundaries, native copy and partial text items, compact layout, shared loading, page navigation, keyboard scrolling, map restoration, mobile panes, reduced motion.');
 } finally { await browser.close(); }
