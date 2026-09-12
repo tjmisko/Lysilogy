@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import type { TextRect } from "../types";
 import type { SectionCrop } from "../lib/sectionCrop";
-import { nearestToken, objectAt, readingIndexUrl, tokensInSpan, type ReadingIndex, type TextSpan } from "../lib/readingIndex";
+import { nearestToken, objectAt, readingIndexUrl, sourceSpaceAt, tokensInSpan, type ReadingIndex, type TextSpan } from "../lib/readingIndex";
 import type { RegexResult } from "../lib/regexSearch";
+import { inclusiveSourceSpan, moveSourceCursor, moveSourceLine, sourceCursor, sourceGrapheme } from "../lib/sourceMotions";
+import { resolveSourceMarks, type SourceMark } from "../lib/sourceGeometry";
 import "./PdfSourceTools.css";
 
-export type SourceMark = { page: number; rect: TextRect; kind: "match" | "current" | "visual" | "cursor"; start: number };
+export type { SourceMark } from "../lib/sourceGeometry";
 type Options = {
   url: string;
   page: number;
@@ -21,14 +22,6 @@ type Options = {
 type Resume = { query: string; matches: TextSpan[]; cursor: number; current: number };
 const indices = new Map<string, ReadingIndex>();
 const resumes = new Map<string, Resume>();
-
-function boundedSpan(start: number, end: number, text: string): TextSpan {
-  let first = Math.max(0, Math.min(start, end, text.length - 1));
-  let last = Math.min(text.length, Math.max(start, end) + 1);
-  if (first > 0 && text.charCodeAt(first) >= 0xdc00 && text.charCodeAt(first) <= 0xdfff) first--;
-  if (last < text.length && text.charCodeAt(last - 1) >= 0xd800 && text.charCodeAt(last - 1) <= 0xdbff) last++;
-  return { start: first, end: last };
-}
 
 export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPages, onPage, onOpenFullPaper, onClarify, onSave }: Options) {
   const [resume] = useState(() => resumes.get(url));
@@ -47,6 +40,8 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
   const [manualCopy, setManualCopy] = useState<string | null>(null);
   const [jump, setJump] = useState(0);
   const anchor = useRef<number | null>(null);
+  const motionCount = useRef("");
+  const motionPrefix = useRef("");
   const input = useRef<HTMLInputElement>(null);
   const controller = useRef<AbortController | null>(null);
   const request = useRef<Promise<ReadingIndex> | null>(null);
@@ -72,7 +67,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     request.current = fetch(readingIndexUrl(url), { signal: abort.signal }).then(async (response) => {
       if (!response.ok) throw new Error(`Source indexing failed (${response.status}). Try again after extraction finishes.`);
       const data = await response.json() as ReadingIndex;
-      if (typeof data.text !== "string" || !Array.isArray(data.tokens) || data.schema_version !== 1) throw new Error("The source index is unavailable. Restart the backend to enable paper search.");
+      if (typeof data.text !== "string" || !Array.isArray(data.tokens) || ![1, 2].includes(data.schema_version)) throw new Error("The source index is unavailable. Restart the backend to enable paper search.");
       if (indices.size >= 4) indices.delete(indices.keys().next().value ?? "");
       indices.set(url, data);
       if (mounted.current) setIndex(data);
@@ -84,6 +79,10 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
   const inside = useCallback((data: ReadingIndex, span: TextSpan) => {
     if (pageSubset === undefined) return true;
     const tokens = tokensInSpan(data, span);
+    if (tokens.length === 0) {
+      const space = sourceSpaceAt(data, span.start);
+      if (space !== null && span.end <= space.end) tokens.push(space);
+    }
     return tokens.length > 0 && tokens.every((token) => pageSubset.includes(token.page) && token.rects.every((rect) =>
       crops.get(token.page)?.regions.some((region) => rect.x_min >= region.x_min - 1 && rect.x_max <= region.x_max + 1 && rect.y_min >= region.y_min - 1 && rect.y_max <= region.y_max + 1)));
   }, [crops, pageSubset]);
@@ -100,6 +99,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
   const submit = useCallback((pattern: string) => {
     const nextGeneration = ++generation.current;
     worker.current?.terminate();
+    motionPrefix.current = ""; motionCount.current = "";
     if (deadline.current !== null) clearTimeout(deadline.current);
     setError(""); setMessage(""); setVisual(null); setPendingObject(null);
     if (pattern.length === 0) { setMatches([]); setBusy(false); return; }
@@ -136,6 +136,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
   }, [cursor, land, loadIndex, page, root]);
 
   const quit = useCallback((): boolean => {
+    if (motionPrefix.current || motionCount.current) { motionPrefix.current = ""; motionCount.current = ""; return true; }
     if (manualCopy !== null) { setManualCopy(null); return true; }
     if (pendingObject !== null) { setPendingObject(null); return true; }
     if (visual !== null) { setVisual(null); return true; }
@@ -155,6 +156,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
 
   const moveMatch = useCallback((direction: number) => {
     if (index === null || matches.length === 0) return;
+    motionPrefix.current = ""; motionCount.current = "";
     const next = (current + direction + matches.length) % matches.length;
     setCurrent(next); setVisual(null); setPendingObject(null); setMessage(next < current && direction > 0 || next > current && direction < 0 ? "Search wrapped" : "");
     const span = matches[next]; if (span !== undefined) land(index, span);
@@ -168,13 +170,14 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     if (["q", "Escape"].includes(event.key)) return quit();
     if (event.key === "n" || event.key === "N") { moveMatch(event.key === "n" ? 1 : -1); return matches.length > 0; }
     if (event.key === "v") {
+      motionPrefix.current = ""; motionCount.current = "";
       if (visual !== null) { setVisual(null); setPendingObject(null); return true; }
       setError("");
       void loadIndex().then((data) => {
         if (!mounted.current) return;
         if (data.text.length === 0) { setError("No searchable source text is available. Check the extraction limits below."); return; }
-        const at = cursor ?? data.pages.find((item) => item.number === page)?.start ?? 0;
-        const span = boundedSpan(at, at, data.text);
+        const at = sourceCursor(data.text, cursor ?? data.pages.find((item) => item.number === page)?.start ?? 0);
+        const span = sourceGrapheme(data.text, at);
         if (!inside(data, span)) { land(data, span); return; }
         window.getSelection()?.removeAllRanges();
         anchor.current = at; setCursor(at); setVisual(span);
@@ -182,37 +185,36 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
       return true;
     }
     if (visual === null || index === null || cursor === null) return false;
-    if (event.key === "a" || event.key === "i") { setPendingObject(event.key); return true; }
+    if (event.key === "a" || event.key === "i") { motionPrefix.current = ""; motionCount.current = ""; setPendingObject(event.key); return true; }
     if (pendingObject !== null) {
       const span = objectAt(index, cursor, event.key, pendingObject === "a");
       setPendingObject(null);
-      if (span !== null) { if (!inside(index, span)) land(index, span); else { anchor.current = span.start; setCursor(span.end - 1); setVisual(span); } }
+      if (span !== null) { if (!inside(index, span)) land(index, span); else { anchor.current = span.start; setCursor(sourceCursor(index.text, span.end - 1)); setVisual(span); } }
       return true;
     }
-    if (event.key === "y") { yank(); return true; }
-    let next = cursor;
-    if (["h", "ArrowLeft"].includes(event.key)) next--;
-    else if (["l", "ArrowRight"].includes(event.key)) next++;
-    else if (event.key === "w" || event.key === "W") next = index.objects[event.key === "w" ? "word" : "WORD"].find((span) => span.start > cursor)?.start ?? cursor;
-    else if (event.key === "b" || event.key === "B") next = index.objects[event.key === "b" ? "word" : "WORD"].filter((span) => span.start < cursor).at(-1)?.start ?? cursor;
-    else if (["j", "k", "ArrowDown", "ArrowUp"].includes(event.key)) {
-      const token = tokensInSpan(index, { start: cursor, end: cursor + 1 })[0];
-      const box = token?.rects[0];
-      if (token !== undefined && box !== undefined) {
-        const direction = ["k", "ArrowUp"].includes(event.key) ? -1 : 1;
-        const candidates = index.tokens.filter((item) => item.page === token.page && item.rects.some((rect) => direction * (rect.y_min - box.y_min) > 2));
-        let distance = Infinity;
-        for (const candidate of candidates) for (const rect of candidate.rects) {
-          const cost = Math.abs(rect.y_min - box.y_min) * 10 + Math.abs(rect.x_min - box.x_min);
-          if (cost < distance) { next = candidate.start; distance = cost; }
-        }
-        if (next === cursor) next = direction > 0 ? index.pages.find((item) => item.number > token.page)?.start ?? cursor : index.pages.filter((item) => item.number < token.page).at(-1)?.end ?? cursor;
-      }
-    } else return false;
-    next = Math.max(0, Math.min(index.text.length - 1, next));
-    const span = boundedSpan(anchor.current ?? cursor, next, index.text);
+    if (event.key === "y") { motionPrefix.current = ""; motionCount.current = ""; yank(); return true; }
+    if (/^[0-9]$/u.test(event.key) && (event.key !== "0" || motionCount.current !== "")) { motionCount.current = (motionCount.current + event.key).slice(0, 3); return true; }
+    if (event.key === "g" && motionPrefix.current === "") { motionPrefix.current = "g"; return true; }
+    if (event.key === "o") {
+      motionPrefix.current = ""; motionCount.current = "";
+      const first = anchor.current ?? cursor;
+      anchor.current = cursor; setCursor(first); setJump((value) => value + 1); return true;
+    }
+    const key = motionPrefix.current + event.key;
+    motionPrefix.current = "";
+    const count = Number(motionCount.current || 1); motionCount.current = "";
+    let next = moveSourceCursor(index, cursor, key, count);
+    if (next === null && ["j", "k", "ArrowDown", "ArrowUp"].includes(key)) {
+      next = moveSourceLine(index, cursor, ["k", "ArrowUp"].includes(key) ? -1 : 1, count) ?? cursor;
+    }
+    if (next === null) return false;
+    next = sourceCursor(index.text, next);
+    const span = inclusiveSourceSpan(index.text, anchor.current ?? cursor, next);
     if (!inside(index, span)) { land(index, span); return true; }
-    setCursor(next); setVisual(span); onPage(tokensInSpan(index, { start: next, end: next + 1 })[0]?.page ?? page); setJump((value) => value + 1);
+    const destination = tokensInSpan(index, { start: next, end: next + 1 })[0] ?? sourceSpaceAt(index, next);
+    setCursor(next); setVisual(span);
+    onPage(destination?.page ?? index.pages.find((item) => item.start <= next && item.end > next)?.number ?? page);
+    setJump((value) => value + 1);
     return true;
   }, [cursor, index, inside, land, loadIndex, matches.length, moveMatch, onPage, page, pendingObject, quit, visual, yank]);
 
@@ -220,9 +222,25 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     void loadIndex().then((data) => {
       if (!mounted.current) return;
       const token = nearestToken(data, pageNumber, x, y);
-      if (token !== null) { setCursor(token.start); setVisual(null); setPendingObject(null); }
+      if (token !== null) {
+        const dimension = data.pages.find((item) => item.number === pageNumber);
+        const glyphs: SourceMark[] = [];
+        for (let at = token.start; at < token.end;) {
+          const span = sourceGrapheme(data.text, at);
+          for (const rect of token.rects) glyphs.push({ ...span, page: pageNumber, rect, token, kind: "cursor", group: at });
+          at = span.end;
+        }
+        const host = root.current?.querySelector<HTMLElement>(`.pdf-text-layer-host[data-page="${pageNumber}"]`) ?? null;
+        const resolved = resolveSourceMarks(glyphs, host, dimension?.width ?? 612, dimension?.height ?? 792, data.text);
+        const nearest = resolved.reduce<SourceMark | null>((best, mark) => {
+          const distance = (value: SourceMark) => Math.max(value.rect.x_min - x, x - value.rect.x_max, 0) ** 2 + 4 * Math.max(value.rect.y_min - y, y - value.rect.y_max, 0) ** 2;
+          return best === null || distance(mark) < distance(best) ? mark : best;
+        }, null);
+        setCursor(nearest?.start ?? token.start); setVisual(null); setPendingObject(null);
+        motionPrefix.current = ""; motionCount.current = "";
+      }
     }).catch(() => { /* Native selection remains available when indexing fails. */ });
-  }, [loadIndex]);
+  }, [loadIndex, root]);
 
   const markPagesKey = markPages.join(",");
   const marks = useMemo<SourceMark[]>(() => {
@@ -232,11 +250,18 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     const result: SourceMark[] = [];
     const add = (span: TextSpan, kind: SourceMark["kind"]) => {
       if (!intervals.some((item) => item.end > span.start && item.start < span.end)) return;
-      for (const token of tokensInSpan(index, span)) {
+      const selected = tokensInSpan(index, span);
+      // Interior word spaces are filled when line rectangles merge. Include
+      // endpoint spaces explicitly so a character cursor can also land on them.
+      const firstSpace = sourceSpaceAt(index, span.start);
+      const lastSpace = sourceSpaceAt(index, span.end - 1);
+      if (firstSpace !== null) selected.unshift(firstSpace);
+      if (lastSpace !== null && lastSpace.start !== firstSpace?.start) selected.push(lastSpace);
+      for (const token of selected) {
         if (!pages.has(token.page)) continue;
         for (const rect of token.rects) {
           if (kind === "match" && result.length >= 4000) return;
-          result.push({ page: token.page, rect, kind, start: token.start });
+          result.push({ page: token.page, rect, kind, start: Math.max(token.start, span.start), end: Math.min(token.end, span.end), token, group: span.start });
         }
       }
     };
@@ -244,14 +269,16 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     const active = matches[current];
     if (active !== undefined && outside === null) add(active, "current");
     if (visual !== null) add(visual, "visual");
-    if (cursor !== null && visual !== null) add({ start: cursor, end: cursor + 1 }, "cursor");
+    if (cursor !== null && visual !== null) add(sourceGrapheme(index.text, cursor), "cursor");
     return result;
   }, [current, cursor, index, markPagesKey, matches, outside, visual]);
 
   useEffect(() => {
     if (cursor === null || outside !== null) return;
     const reveal = () => {
-      const mark = root.current?.querySelector<HTMLElement>(".pdf-source-mark.is-cursor, .pdf-source-mark.is-current");
+      const mark = visual !== null
+        ? root.current?.querySelector<HTMLElement>(`.pdf-source-mark.is-cursor[data-source-offset="${cursor}"]`)
+        : root.current?.querySelector<HTMLElement>(`.pdf-source-mark.is-current[data-source-offset="${cursor}"]`);
       const viewport = root.current?.querySelector<HTMLElement>(".pdf-viewport");
       if (mark === null || mark === undefined || viewport === null || viewport === undefined) return false;
       const a = mark.getBoundingClientRect(); const b = viewport.getBoundingClientRect();
@@ -266,7 +293,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     if (host !== null) observer.observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "data-rendered"] });
     const timeout = setTimeout(() => observer.disconnect(), 5000);
     return () => { cancelAnimationFrame(frame); observer.disconnect(); clearTimeout(timeout); };
-  }, [cursor, jump, outside, root]);
+  }, [cursor, jump, outside, root, visual]);
 
   const currentMatch = matches[current];
   const matchToken = index !== null && currentMatch !== undefined ? tokensInSpan(index, currentMatch)[0] : undefined;
@@ -295,5 +322,5 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     {index !== null && index.gaps.length > 0 && <p className="pdf-source-gap">Search incomplete: {index.gaps.map((gap) => `p. ${gap.page}: ${gap.reason}`).join("; ")}</p>}
     {manualCopy !== null && <textarea aria-label="Text to copy manually" value={manualCopy} readOnly onFocus={(event) => event.target.select()} autoFocus />}
   </div> : null;
-  return { panel, marks, index, onKey, pointerCursor, quit, localMode: panel !== null };
+  return { panel, marks, index, onKey, pointerCursor, quit, localMode: panel !== null, visualMode: visual !== null };
 }

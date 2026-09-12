@@ -39,7 +39,7 @@ let libraryPapers=[paper]; const paperRequests=[]; const analysisRequests=[];
 let paperGate=null;
 let pollingTest=false; let pollRequests=0;
 
-const readingIndex={schema_version:1,text:'',pages:[],tokens:[],objects:{word:[],WORD:[],sentence:[],paragraph:[]},figures:[],gaps:[]};
+const readingIndex={schema_version:2,text:'',pages:[],tokens:[],objects:{word:[],WORD:[],sentence:[],paragraph:[]},figures:[],gaps:[]};
 for(let number=1;number<=4;number++) {
   const start=readingIndex.text.length;
   for(let j=0;j<22;j++) {
@@ -57,6 +57,66 @@ for(let number=1;number<=4;number++) {
   }
   readingIndex.pages.push({number,width:612,height:792,start,end:readingIndex.text.length,provenance:'native',confidence:null});
 }
+
+function selectionFixture() {
+  // Courier's fixed advance makes native PDF.js character geometry measurable.
+  // ToUnicode maps two font glyphs to an astral character and a combining cluster.
+  const runs=[
+    {text:'Measurement anti-noise proves useful.',x:48,y:72,paragraph:0},
+    {text:'Second sentence follows. Third sentence closes.',x:48,y:100,paragraph:0},
+    {text:'Different paragraph starts here.',x:48,y:160,paragraph:1},
+    {text:'alpha beta',x:48,y:230,paragraph:2},
+    {text:'gamma delta',x:360,y:230,paragraph:2},
+    {text:'A😀e\u0301Z',encoded:'A~^Z',x:48,y:290,paragraph:3},
+  ];
+  const index={schema_version:2,text:'',pages:[],tokens:[],objects:{word:[],WORD:[],sentence:[],paragraph:[]},figures:[],gaps:[]};
+  let paragraphStart=0;
+  for(let i=0;i<runs.length;i++) {
+    const run=runs[i]; const start=index.text.length;
+    for(const match of run.text.matchAll(/\S+/gu)) {
+      const prefix=run.text.slice(0,match.index);
+      const graphemes=text=>Array.from(new Intl.Segmenter('en',{granularity:'grapheme'}).segment(text)).length;
+      const x=run.x+graphemes(prefix)*7.2;
+      index.tokens.push({start:start+match.index,end:start+match.index+match[0].length,text:match[0],page:1,provenance:'native',
+        rects:[{x_min:x,x_max:x+graphemes(match[0])*7.2,y_min:run.y-10,y_max:run.y+2}]});
+    }
+    index.text+=run.text;
+    if(runs[i+1]?.paragraph===run.paragraph)index.text+=' ';
+    else {
+      index.objects.paragraph.push({start:paragraphStart,end:index.text.length,kind:'body'});
+      index.text+='\n\n'; paragraphStart=index.text.length;
+    }
+  }
+  for(const match of index.text.matchAll(/[\p{L}\p{M}\p{N}_]+|[^\s\p{L}\p{M}\p{N}_]+/gu))index.objects.word.push({start:match.index,end:match.index+match[0].length});
+  for(const match of index.text.matchAll(/\S+/gu))index.objects.WORD.push({start:match.index,end:match.index+match[0].length});
+  for(const paragraph of index.objects.paragraph) {
+    const text=index.text.slice(paragraph.start,paragraph.end);
+    for(const match of text.matchAll(/[^.!?]+[.!?]|[^.!?]+$/gu)) {
+      const leading=match[0].length-match[0].trimStart().length;
+      index.objects.sentence.push({start:paragraph.start+match.index+leading,end:paragraph.start+match.index+match[0].trimEnd().length});
+    }
+  }
+  index.pages.push({number:1,width:612,height:792,start:0,end:index.text.length,provenance:'native',confidence:null});
+  const mappings=Array.from({length:95},(_,i)=>{
+    const code=i+32;const unicode=code===126?'D83DDE00':code===94?'00650301':code.toString(16).padStart(4,'0');
+    return `<${code.toString(16).padStart(2,'0')}> <${unicode}>`;
+  }).join('\n');
+  const cmap=`/CIDInit /ProcSet findresource begin 12 dict begin begincmap\n/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n/CMapName /FixtureUnicode def /CMapType 2 def\n1 begincodespacerange <00> <FF> endcodespacerange\n95 beginbfchar\n${mappings}\nendbfchar\nendcmap CMapName currentdict /CMap defineresource pop end end`;
+  const content=runs.map(run=>`BT /F1 12 Tf 1 0 0 1 ${run.x} ${792-run.y} Tm (${run.encoded??run.text}) Tj ET`).join('\n');
+  const objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [5 0 R] /Count 1 >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Courier /ToUnicode 4 0 R >>',
+    `<< /Length ${Buffer.byteLength(cmap)} >>\nstream\n${cmap}\nendstream`,
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 6 0 R >>',
+    `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`];
+  let source='%PDF-1.4\n';const offsets=[0];
+  objects.forEach((object,i)=>{offsets.push(Buffer.byteLength(source));source+=`${i+1} 0 obj\n${object}\nendobj\n`;});
+  const xref=Buffer.byteLength(source);
+  source+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \n`+offsets.slice(1).map(offset=>`${String(offset).padStart(10,'0')} 00000 n \n`).join('');
+  source+=`trailer\n<< /Size ${objects.length+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return {pdf:Buffer.from(source),index};
+}
+const preciseSelection=selectionFixture();
+let usePreciseSelection=false;
 
 const browser=await chromium.launch({headless:true});
 try {
@@ -78,13 +138,13 @@ try {
       if(paperGate!==null && selected?.id===id){
         const gate=paperGate; paperGate=null; gate.started.resolve(); await gate.finished.promise;
       }
-      return route.fulfill({json:{paper:selected,analysis:analyzed&&selected?.status.state==='ready'?analysis:null}});
+      return route.fulfill({json:{paper:usePreciseSelection?{...selected,metadata:{...selected.metadata,page_count:1}}:selected,analysis:analyzed&&selected?.status.state==='ready'?analysis:null}});
     }
     if(suffix==='/analyze'){analysisRequests.push(route.request().postDataJSON());return route.fulfill({status:500,json:{message:'Unexpected analysis request'}});}
     if(suffix==='/clarify'){ questions.push(route.request().postDataJSON()); return route.fulfill({json:{answer:'The selected source explains measurement error.',limitation:null}}); }
     if(suffix==='/map')return route.fulfill({json:{layout,highlights:[]}});
-    if(suffix==='/reading-index')return route.fulfill({json:readingIndex});
-    if(suffix==='/source'){ sourceRequests++; return route.fulfill({body:pdf,contentType:'application/pdf'}); }
+    if(suffix==='/reading-index')return route.fulfill({json:usePreciseSelection?preciseSelection.index:readingIndex});
+    if(suffix==='/source'){ sourceRequests++; return route.fulfill({body:usePreciseSelection?preciseSelection.pdf:pdf,contentType:'application/pdf'}); }
     if(suffix==='/abstract/refresh'||suffix==='/context/refresh'||suffix==='/structure/refresh'){ refreshes.push(suffix);return route.fulfill({json:{paper,analysis:analyzed?analysis:null}}); }
     if(suffix==='/reader-tools')return route.fulfill({json:{jobs:[],references:[],supercuts:[]}});
     if(url.pathname.startsWith('/api/'))return route.fulfill({status:404,json:{message:`Unexpected fixture request: ${url.pathname}`}});
@@ -103,7 +163,7 @@ try {
   await page.keyboard.press('n');await page.keyboard.press('n');
   await page.waitForFunction(()=>document.querySelector('.pdf-source-status')?.textContent.includes('3 / 88'));
   await page.keyboard.press('v');await page.keyboard.press('a');await page.keyboard.press('p');
-  await page.locator('.pdf-source-mark.is-visual').first().waitFor();
+  await page.waitForFunction(offset=>document.querySelector('.pdf-source-mark.is-visual')?.getAttribute('data-source-offset')===String(offset),readingIndex.objects.paragraph[2].start);
   const paragraph=await page.locator('.pdf-source-mark.is-visual').first().getAttribute('data-source-offset');
   assert.equal(Number(paragraph),readingIndex.objects.paragraph[2].start);
   await page.keyboard.press('y');
@@ -178,6 +238,105 @@ try {
   await page.getByRole('button',{name:'Overview',exact:true}).click();
   await page.keyboard.press('/');await search.waitFor();
 
+  // A separate real PDF provides character mappings and predictable line geometry.
+  usePreciseSelection=true;analyzed=false;await page.reload();
+  await page.waitForFunction(()=>document.querySelector('[data-pdf-page="1"] [data-text-ready="true"]'));
+  assert.match(await page.locator('.pdf-text-layer').innerText(),/A😀e\u0301Z/,'PDF.js must expose the fixture’s real Unicode mapping');
+  const precise=preciseSelection.index;
+  const land=async(pattern,offset)=>{
+    await page.keyboard.press('/');await search.fill(pattern);await search.press('Enter');
+    await page.waitForFunction(({pattern,offset})=>document.querySelector('.pdf-source-status')?.textContent.includes(`/${pattern} · 1 / 1`)
+      &&document.querySelector('.pdf-source-mark.is-current')?.getAttribute('data-source-offset')===String(offset),{pattern,offset});
+  };
+  const visual=async(keys='')=>{
+    await page.keyboard.press('v');
+    await page.waitForFunction(()=>document.querySelector('.pdf-source-status')?.textContent.includes('VISUAL'));
+    if(keys)await page.keyboard.type(keys);
+  };
+  const yank=async(expected)=>{
+    await page.evaluate(()=>{window.copiedSource=null;});await page.keyboard.press('y');
+    await page.waitForFunction(expected=>window.copiedSource===expected,expected,{timeout:3000});
+  };
+  const marks=async()=>page.locator('.pdf-source-mark.is-visual').evaluateAll(nodes=>nodes.map(node=>({
+    start:Number(node.dataset.sourceOffset),left:parseFloat(node.style.left)*612/100,
+    width:parseFloat(node.style.width)*612/100,top:parseFloat(node.style.top)*792/100,
+  })).sort((a,b)=>a.top-b.top||a.left-b.left));
+
+  await land('sure',3);await visual('ll');
+  await page.waitForFunction(()=>{
+    const mark=document.querySelector('.pdf-source-mark.is-visual');
+    return mark?.getAttribute('data-geometry')==='native'&&mark.getAttribute('data-source-end')==='6';
+  });
+  const partial=await marks();
+  assert.equal(partial.length,1);
+  assert.equal(partial[0].start,3,'the mark starts at the selected character, not the word boundary');
+  assert.ok(partial[0].width<11*7.2/2,'a three-character selection must not shade all of Measurement');
+  const alignment=await page.evaluate(()=>{
+    const span=Array.from(document.querySelectorAll('.pdf-text-layer span')).find(node=>node.textContent.startsWith('Measurement'));
+    const range=document.createRange();range.setStart(span.firstChild,3);range.setEnd(span.firstChild,6);
+    const expected=range.getBoundingClientRect(),actual=document.querySelector('.pdf-source-mark.is-visual').getBoundingClientRect();
+    return {left:Math.abs(actual.left-expected.left),width:Math.abs(actual.width-expected.width)};
+  });
+  assert.ok(alignment.left<1.5&&alignment.width<1.5,`selection must follow the native glyph range: ${JSON.stringify(alignment)}`);
+  await yank('sur');
+
+  const compound=precise.text.indexOf('anti-noise');
+  await land('anti-noise',compound);await visual('e');await yank('anti');
+  await land('anti-noise',compound);await visual('E');
+  assert.equal(await page.locator('.notes-panel').count(),0,'Visual E is a word-end motion, not the global Notes shortcut');
+  await yank('anti-noise');
+  await land('anti-noise',compound);await visual('h');
+  await page.waitForFunction(offset=>document.querySelector('.pdf-source-mark.is-cursor')?.getAttribute('data-source-offset')===String(offset),compound-1);
+  const spaceWidth=await page.locator('.pdf-source-mark.is-cursor').evaluate(node=>parseFloat(node.style.width)*612/100);
+  assert.ok(spaceWidth>0&&spaceWidth<8,'the cursor on an inter-word space must have character-sized geometry');
+  await yank(' a');
+  await land('Measurement',0);await visual(')');
+  await yank(precise.text.slice(0,precise.text.indexOf('Second')+1));
+  await land('Third',precise.text.indexOf('Third'));await visual('(');
+  await yank(precise.text.slice(precise.text.indexOf('Second'),precise.text.indexOf('Third')+1));
+
+  const firstParagraph=precise.objects.paragraph[0],secondParagraph=precise.objects.paragraph[1];
+  await land('Second',precise.text.indexOf('Second'));await visual('ip');
+  await yank(precise.text.slice(firstParagraph.start,firstParagraph.end));
+  await land('Second',precise.text.indexOf('Second'));await visual('ap');
+  await yank(precise.text.slice(firstParagraph.start,firstParagraph.end)+'\n\n');
+  await land('Second',precise.text.indexOf('Second'));await visual('apj');
+  await page.waitForFunction(({start,end})=>{
+    const offset=Number(document.querySelector('.pdf-source-mark.is-cursor')?.getAttribute('data-source-offset'));
+    return offset>=start&&offset<end;
+  },secondParagraph);
+  assert.equal(await page.locator('.pdf-reader').getAttribute('data-source-visual'),'true','j after vap stays in Visual mode');
+  await yank(precise.text.slice(firstParagraph.start,secondParagraph.end));
+  await land('Measurement',0);await visual('2j');
+  await page.waitForFunction(offset=>document.querySelector('.pdf-source-mark.is-cursor')?.getAttribute('data-source-offset')===String(offset),secondParagraph.start);
+  assert.equal(await page.locator('.pdf-reader').getAttribute('data-source-visual'),'true','2j advances two lines within Visual mode');
+  assert.equal(await page.locator('.pdf-viewport.is-spread').count(),0,'a motion count must not toggle two-page reading');
+  await yank(precise.text.slice(0,secondParagraph.start+1));
+  await land('Different',secondParagraph.start);await visual('ip');
+  await yank(precise.text.slice(secondParagraph.start,secondParagraph.end));
+  await land('Different',secondParagraph.start);await visual('ap');
+  await yank(precise.text.slice(secondParagraph.start,secondParagraph.end)+'\n\n');
+
+  const unicode=precise.text.indexOf('A😀e\u0301Z');
+  await land('A😀e\u0301Z',unicode);await visual('lll');await yank('A😀e\u0301Z');
+  await land('Z',unicode+5);await visual('hh');await yank('😀e\u0301Z');
+  await land('😀',unicode+1);await visual();await yank('😀');
+  await land('e\u0301',unicode+3);await visual('h');await yank('😀e\u0301');
+
+  const columns=precise.objects.paragraph[2];
+  await land('alpha beta',columns.start);await visual('ip');
+  await page.waitForFunction(()=>{
+    const marks=Array.from(document.querySelectorAll('.pdf-source-mark.is-visual'));
+    return marks.length===2&&marks.every(mark=>mark.getAttribute('data-geometry')==='native');
+  });
+  const lines=await marks();
+  assert.equal(lines.length,2,'each contiguous line is one highlight, with separate boxes for the two columns');
+  assert.ok(lines[0].left<49&&lines[0].left+lines[0].width>119,'left highlight includes both words and their intervening space');
+  assert.ok(lines[1].left>359&&lines[1].left+lines[1].width>438,'right highlight includes both words and their intervening space');
+  assert.ok(lines.every(box=>box.left>200||box.left+box.width<200),'selection must not paint the column gutter');
+  await page.screenshot({path:'/tmp/lysilogy-source-selection.png'});
+  await yank(precise.text.slice(columns.start,columns.end));
+
   assert.deepEqual(errors,[]);
-  console.log('PASS source regex search, cross-page navigation, visual text objects, exact paragraph yank, errors, q/Escape, continuous horizontal reading');
+  console.log('PASS source regex search, cross-page navigation, word-end/sentence motions, Unicode character yanks, distinct paragraphs, native partial-word geometry, merged line highlights without column bridges, errors, q/Escape, continuous horizontal reading');
 } finally {await browser.close();}

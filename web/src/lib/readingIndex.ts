@@ -50,6 +50,28 @@ export function tokensInSpan(index: ReadingIndex, span: TextSpan): ReadingToken[
   return result;
 }
 
+/** A real inter-word gap can host the visual cursor even though it is not a word token. */
+export function sourceSpaceAt(index: ReadingIndex, offset: number): ReadingToken | null {
+  let low = 0, high = index.tokens.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if ((index.tokens[middle]?.start ?? Infinity) <= offset) low = middle + 1;
+    else high = middle;
+  }
+  const before = index.tokens[low - 1], after = index.tokens[low];
+  if (before === undefined || after === undefined || offset < before.end || before.page !== after.page) return null;
+  const text = index.text.slice(before.end, after.start);
+  if (!/^[\t ]+$/u.test(text)) return null;
+  const left = before.rects.at(-1), right = after.rects[0];
+  if (left === undefined || right === undefined) return null;
+  const height = Math.min(left.y_max - left.y_min, right.y_max - right.y_min);
+  const top = Math.max(left.y_min, right.y_min), bottom = Math.min(left.y_max, right.y_max);
+  if (bottom - top < height * .65 || right.x_min <= left.x_max || right.x_min - left.x_max > height * 2) return null;
+  return { start: before.end, end: after.start, text, page: before.page,
+    provenance: before.provenance === "native" && after.provenance === "native" ? "native" : "ocr",
+    rects: [{ x_min: left.x_max, x_max: right.x_min, y_min: top, y_max: bottom }] };
+}
+
 export function nearestToken(index: ReadingIndex, page: number, x: number, y: number): ReadingToken | null {
   let best: ReadingToken | null = null;
   let distance = Infinity;

@@ -38,6 +38,8 @@ const GROUPS = [
       ["/ pattern ↵ · n / N", "Search source text and move through matches"],
       ["v · ap / ip", "Select around / inside a source paragraph"],
       ["aw / iw · aW / iW · as / is", "Word, whitespace-delimited WORD, or sentence objects"],
+      ["h / l · w / b · e / E", "Select by character, word start, or word end"],
+      ["( / )", "Extend to the previous / next sentence start"],
       ["j / k", "Extend the selection"],
       ["o", "Swap the active end"],
       ["c", "Clarify the selection in context"],

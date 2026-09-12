@@ -79,6 +79,7 @@ type PdfPageCanvasProps = {
   readingWidth?: number;
   readingHeight?: number;
   sourceMarks: SourceMark[];
+  sourceText: string;
   sourceDimensions?: { width: number; height: number };
 };
 
@@ -127,6 +128,7 @@ function PdfPageCanvas({
   readingWidth,
   readingHeight,
   sourceMarks,
+  sourceText,
   sourceDimensions,
 }: PdfPageCanvasProps) {
   const frameRef = useRef<HTMLElement>(null);
@@ -267,7 +269,7 @@ function PdfPageCanvas({
           className={darkInk ? "pdf-canvas dark-ink" : "pdf-canvas"}
           aria-label={`Page ${page} of ${pageCount}`}
         />
-        <PdfSourceMarks marks={sourceMarks} page={page} width={sourceDimensions?.width ?? layout?.width ?? 612} height={sourceDimensions?.height ?? layout?.height ?? 792} crop={crop} />
+        <PdfSourceMarks marks={sourceMarks} text={sourceText} page={page} width={sourceDimensions?.width ?? layout?.width ?? 612} height={sourceDimensions?.height ?? layout?.height ?? 792} crop={crop} />
         <div
           ref={textLayerRef}
           className="pdf-text-layer-host"
@@ -546,6 +548,7 @@ export function PdfReader({
   return (
     <section ref={readerRef} className="pdf-reader" tabIndex={-1} aria-label={`PDF: ${title}`} data-flow={flow} data-axis={axis} data-fit={fit}
       data-source-local-mode={sourceTools.localMode || selectionState !== null ? "true" : undefined}
+      data-source-visual={keyboardEnabled && sourceTools.visualMode ? "true" : undefined}
       onPointerUp={(event) => {
         let surface = event.target instanceof Element ? event.target.closest<HTMLElement>(".pdf-page-surface") : null;
         const selection = window.getSelection();
@@ -635,6 +638,7 @@ export function PdfReader({
             readingWidth={pageSubset === undefined ? undefined : readingWidth}
             readingHeight={pageSubset === undefined ? undefined : readingHeight}
             sourceMarks={sourceTools.marks}
+            sourceText={sourceTools.index?.text ?? ""}
             sourceDimensions={sourceTools.index?.pages.find((item) => item.number === visiblePage)}
           />
         ))}

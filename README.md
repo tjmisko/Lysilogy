@@ -464,7 +464,10 @@ unwind the current mode before closing the reader. The footer hint is removed.
 In a paper, `/` opens regex search over source text. Enter runs the pattern; `n` / `N` move forward /
 backward. `/optimization`, Enter, `n`, `n`, `v`, `a`, `p`, `y` searches, selects a paragraph and copies
 it. Visual selection supports `iw` / `aw`, `iW` / `aW`, `is` / `as`, and `ip` / `ap`, plus source
-cursor placement by clicking. Clipboard denial exposes selectable copy text. Out-of-section matches
+cursor placement by clicking. `h/l` select individual characters, `e/E` move to word ends, and
+`(`/`)` move to sentence starts. Native PDF character positions keep partial-word highlights precise,
+and selected words share continuous line highlights. See [source selection](docs/source-selection.md)
+for the complete motion and text-object behavior. Clipboard denial exposes selectable copy text. Out-of-section matches
 offer an explicit jump to the full paper, preserving section bounds. Library and Glossary filters
 remain local when their inputs are focused.
 
