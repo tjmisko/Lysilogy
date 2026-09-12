@@ -39,6 +39,10 @@ struct Cli {
     )]
     data: PathBuf,
 
+    /// Directory for paper Markdown notes, separate from generated artifacts.
+    #[arg(long, env = "LYSILOGY_NOTES", default_value = "Notes", global = true)]
+    notes: PathBuf,
+
     #[command(subcommand)]
     command: Option<Command>,
 }
@@ -184,7 +188,9 @@ async fn main() -> ExitCode {
 
 #[allow(clippy::too_many_lines)] // Keep the CLI command dispatch in one match.
 async fn run(cli: Cli) -> Result<()> {
-    let state = AppState::new(&cli.library, &cli.data).await?;
+    let state = AppState::new(&cli.library, &cli.data)
+        .await?
+        .with_notes_root(&cli.notes);
     match cli.command.unwrap_or(Command::Serve {
         bind: "127.0.0.1:7319"
             .parse()

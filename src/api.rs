@@ -9,7 +9,9 @@ use std::{
 };
 
 mod citation_graph;
+mod notes;
 mod reader_tools;
+mod source_index;
 
 use axum::{
     Json, Router,
@@ -71,6 +73,7 @@ pub struct AppState {
     analysis: AnalysisService,
     citation_http: crate::citation_graph::GraphHttp,
     jobs: JobTracker,
+    notes: crate::notes::NotesStore,
     highlight_write: Arc<Mutex<()>>,
     import_write: Arc<Mutex<()>>,
     experiment_write: Arc<Mutex<()>>,
@@ -136,6 +139,7 @@ impl AppState {
             analysis,
             citation_http: crate::citation_graph::GraphHttp::from_environment()?,
             jobs,
+            notes: crate::notes::NotesStore::new(PathBuf::from("Notes")),
             highlight_write: Arc::new(Mutex::new(())),
             import_write: Arc::new(Mutex::new(())),
             experiment_write: Arc::new(Mutex::new(())),
@@ -143,6 +147,12 @@ impl AppState {
             tools_extract: Arc::new(Mutex::new(())),
             frontend_root: None,
         })
+    }
+
+    #[must_use]
+    pub fn with_notes_root(mut self, root: impl Into<PathBuf>) -> Self {
+        self.notes = crate::notes::NotesStore::new(root.into());
+        self
     }
 
     pub async fn library(&self) -> LibraryResponse {
@@ -1822,6 +1832,8 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
     Router::new()
         .merge(reader_tools::routes())
         .merge(citation_graph::routes())
+        .merge(source_index::routes())
+        .merge(notes::routes())
         .route("/api/health", get(health))
         .route("/api/library", get(library))
         .route("/api/library/scan", post(scan_library))
