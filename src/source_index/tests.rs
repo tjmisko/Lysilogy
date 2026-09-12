@@ -36,7 +36,13 @@ fn paragraph_texts(index: &ReadingIndex) -> Vec<String> {
         .objects
         .paragraph
         .iter()
-        .map(|paragraph| figures::utf16_slice(&index.text, paragraph.start, paragraph.end))
+        .map(|paragraph| {
+            paragraphs::pieces(paragraph)
+                .iter()
+                .map(|span| figures::utf16_slice(&index.text, span.start, span.end))
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
         .collect()
 }
 
@@ -669,4 +675,172 @@ async fn real_image_only_pdf_uses_local_ocr_then_the_source_keyed_cache() {
         .await
         .unwrap();
     assert!(load_or_build(&scan_path, &cache, false).await.is_err());
+}
+
+fn floating_continuation_pages() -> Vec<SourcePage> {
+    let first = page(vec![
+        prose_line(
+            "We compare the single-view hand pose estimator",
+            0,
+            334.0,
+            690.0,
+        ),
+        prose_line("with the UmeTrack baseline [11], which", 1, 330.0, 704.0),
+    ]);
+    let mut table = prose_line(
+        "Method   MPJPE   Accuracy   32.91   50.3   54.7",
+        0,
+        50.0,
+        65.0,
+    );
+    table.rect.x_max = 550.0;
+    let mut caption = prose_line(
+        "Table 5. Evaluation of action classification from hand poses.",
+        1,
+        50.0,
+        100.0,
+    );
+    caption.block = 1;
+    caption.rect.x_max = 550.0;
+    let mut label = prose_line(
+        "pick up put down position remove screw unscrew",
+        2,
+        50.0,
+        220.0,
+    );
+    label.block = 2;
+    let mut figure = prose_line(
+        "Figure 6. Confusion matrices of verb classification.",
+        3,
+        50.0,
+        260.0,
+    );
+    figure.block = 3;
+    figure.rect.x_max = 550.0;
+    let mut continuation = vec![
+        prose_line(
+            "was used to provide the original annotations.",
+            4,
+            50.0,
+            310.0,
+        ),
+        prose_line(
+            "Our classifier outperforms the comparison using",
+            5,
+            50.0,
+            324.0,
+        ),
+        prose_line("poses estimated with UmeTrack.", 6, 50.0, 338.0),
+        prose_line(
+            "Additionally, we present classification confusion",
+            7,
+            54.0,
+            352.0,
+        ),
+        prose_line("matrices and discuss remaining errors.", 8, 50.0, 366.0),
+    ];
+    for line in &mut continuation {
+        line.block = 4;
+    }
+    let mut second = page(vec![table, caption, label, figure]);
+    second.number = 2;
+    second.words.extend(continuation);
+    vec![first, second]
+}
+
+#[test]
+fn logical_paragraph_skips_floating_tables_figures_and_captions_across_pages() {
+    let index = assemble(&floating_continuation_pages());
+    let paragraphs = paragraph_texts(&index);
+    assert_eq!(
+        paragraphs[0],
+        "We compare the single-view hand pose estimator with the UmeTrack baseline [11], which was used to provide the original annotations. Our classifier outperforms the comparison using poses estimated with UmeTrack."
+    );
+    assert_eq!(index.objects.paragraph[0].spans.len(), 2);
+    assert!(paragraphs.last().unwrap().starts_with("Additionally,"));
+    assert_eq!(
+        index
+            .objects
+            .paragraph
+            .iter()
+            .filter(|p| p.kind == "caption")
+            .count(),
+        2
+    );
+    assert_eq!(
+        index
+            .objects
+            .paragraph
+            .iter()
+            .filter(|p| p.kind == "float")
+            .count(),
+        2
+    );
+    // Every original token belongs to exactly one paragraph, including floats.
+    for token in &index.tokens {
+        assert_eq!(
+            index
+                .objects
+                .paragraph
+                .iter()
+                .filter(|p| paragraphs::pieces(p)
+                    .iter()
+                    .any(|span| span.start <= token.start && token.end <= span.end))
+                .count(),
+            1,
+            "{}",
+            token.text
+        );
+    }
+    assert!(
+        index
+            .tokens
+            .windows(2)
+            .all(|pair| pair[0].end <= pair[1].start)
+    );
+    assert!(
+        index
+            .pages
+            .windows(2)
+            .all(|pair| pair[0].end <= pair[1].start)
+    );
+}
+
+#[test]
+fn floating_paragraph_link_rejects_new_indents_headings_prose_and_missing_pages() {
+    for variant in 0..6 {
+        let mut pages = floating_continuation_pages();
+        match variant {
+            0 => pages[0].words.last_mut().unwrap().text.push('.'),
+            1 => pages[1].words[4].rect.x_min += 5.0,
+            2 => pages[1].words[4].text = "Introduction".into(),
+            3 => pages[1].number = 3,
+            4 => {
+                pages[1].words[4].rect.y_max += 4.0;
+                pages[1].words[5].rect.y_max += 4.0;
+                pages[1].words[6].rect.y_max += 4.0;
+            },
+            _ => pages[1].words[0].text = "Unrelated prose provides a complete explanation of another mechanism before the table.".into(),
+        }
+        let index = assemble(&pages);
+        assert!(
+            index.objects.paragraph[0].spans.is_empty(),
+            "variant {variant}: {:?}",
+            paragraph_texts(&index)
+        );
+    }
+}
+
+#[test]
+fn logical_paragraph_can_continue_through_more_than_two_pages() {
+    let mut pages = floating_continuation_pages();
+    pages[1].words.truncate(7);
+    pages[1].words[6].text = "poses estimated with UmeTrack, which".into();
+    let mut third = pages[1].clone();
+    third.number = 3;
+    third.words[4].text = "provides a further independent comparison.".into();
+    pages.push(third);
+    let index = assemble(&pages);
+    assert_eq!(index.objects.paragraph[0].spans.len(), 3);
+    assert!(paragraph_texts(&index)[0].contains("which provides a further"));
 }

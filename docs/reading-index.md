@@ -41,7 +41,12 @@ queued same-paper job; readers sharing an existing warmup simply await that requ
 ## Source representation
 
 The response contains canonical `text`, ordered `tokens`, `pages`, text `objects` (`word`,
-`WORD`, `sentence`, `paragraph`), `figures`, and explicit `gaps`. All ranges are half-open UTF-16
+`WORD`, `sentence`, `paragraph`), `figures`, and explicit `gaps`. A paragraph may have an optional
+`spans` array of ordered, disjoint pieces. Its `start`/`end` bound those pieces; text between them
+(such as a floating table or caption) is **not** part of the paragraph. Consumers must use `spans`
+for membership, highlighting, copying, questions, and citation saves; a plain slice of the
+bounding interval is incorrect for these paragraphs. Other text objects and page ranges remain
+in original extraction order. All ranges are half-open UTF-16
 offsets into `text`, matching JavaScript string indexing. Every token retains its original
 page, PDF-point rectangles, and `native` or `ocr` provenance. Page dimensions use the same
 coordinate system. OCR page confidence is the mean score of retained Tesseract words;
@@ -54,11 +59,16 @@ Paragraphs use blocks, local column margins and line spacing, first-line indenta
 This recognizes small recurring indents even when Poppler places several paragraphs in one block,
 while preserving hanging definitions and double-spaced prose. Line-leading hyphens and en/em dashes
 continue unfinished prose when the surrounding layout agrees; list lead-ins, repeated bullets, and
-hanging list items stay separate. Index schema 3 invalidates older cached boundaries automatically;
-it keeps the same response fields. Headings, captions,
-lists, and small bottom-page footnotes stay separate; folios and rotated repository stamps
-are excluded. Clear lowercase prose continuations across a page break can share a paragraph,
-but a footnote/header boundary prevents an unsafe join. Unicode word/sentence boundaries and
+hanging list items stay separate. Index schema 4 invalidates older cached boundaries automatically.
+Headings, captions, lists, and small bottom-page footnotes stay separate; folios and rotated
+repository stamps are excluded. A continuation pass connects unfinished body prose to the first
+substantive block on the next page when lowercase text, font size, and indentation agree.
+It can skip headers, footnotes, captions, and nearby table values/chart labels identified from
+caption geometry. Those blocks remain searchable and independently selectable. Headings,
+intervening prose, new indents, changed fonts, and missing pages block the join. Sparse text is
+not treated as a float without a nearby caption; ambiguous layouts retain separate paragraphs.
+The browser joins selected pieces with a space and preserves the exclusions when visual
+endpoints move. `ip`/`ap` work from either piece; `ap` adds the final paragraph whitespace. Unicode word/sentence boundaries and
 Vim punctuation groups distinguish `iw` from `iW`.
 
 Pages with sparse or unusable native text receive a local fallback via `pdftoppm` and
@@ -91,7 +101,11 @@ subprocess output, and cache invalidation when the PDF changes.
 Cache/job tests also cover conditional HTTP responses, refresh validators, legacy cache reuse,
 canceled clients, shared builds, queue priority, and cached reads while extraction is busy.
 `npm run test:reading-index-cache` checks client deduplication, bounded memory, validators, and
-failure recovery; `npm run smoke:source-search` exercises quiet warming, leaving and returning
+failure recovery; `npm run smoke:paragraph-selection` uses real Poppler output from a synthetic
+two-page PDF to verify `/compare`, `vap`/`vip`, excluded table/figure geometry, endpoint motions,
+and independent caption/following-paragraph selection. It runs the Rust integration fixture
+locally and intercepts browser HTTP requests, without a server or personal library.
+`npm run smoke:source-search` exercises quiet warming, leaving and returning
 during a build, conditional reuse on a later visit, and retry after background failure.
 
 ## Proposed boundary audit
@@ -105,7 +119,8 @@ The proposed audit should accept the immutable source tokens, page images, and c
 boundaries, and return only split/join proposals expressed as token IDs. Each proposal should carry
 the source/index revision and evidence for the boundary. A separate validator must reject reordered,
 overlapping, missing, or invented tokens and require every accepted paragraph to reference an exact
-contiguous source span. Render Markdown from those validated spans, preserving bidirectional
+ordered set of source spans (explicitly excluding floats where necessary). Render Markdown from
+those validated spans, preserving bidirectional
 token-to-Markdown mappings. Uncertain boundaries should retain the deterministic result and an
 explicit unresolved status. This keeps yanking faithful to the PDF while allowing an agent to improve
 paragraph membership without rewriting the authors' words.

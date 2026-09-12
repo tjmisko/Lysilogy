@@ -177,8 +177,12 @@ fn figure_region(
         {
             continue;
         }
-        let text = tokens(index, paragraph.start, paragraph.end);
-        if text.first().is_none_or(|token| token.page != page) {
+        let text = super::paragraphs::pieces(paragraph)
+            .iter()
+            .flat_map(|span| tokens(index, span.start, span.end))
+            .filter(|token| token.page == page)
+            .collect::<Vec<_>>();
+        if text.is_empty() {
             continue;
         }
         let rect = union(text.iter().flat_map(|token| token.rects.iter().copied()));

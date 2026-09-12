@@ -219,3 +219,27 @@ test('sourceSpaceAt supplies ordinary source gaps but never fabricates newline o
   const pages=geometricIndex([{page:1,y:10,words:[{text:'left',x:40,width:40}]},{page:2,y:10,words:[{text:'right',x:90,width:50}]}]);
   assert.equal(sourceSpaceAt(pages,pages.tokens[0].end),null);
 });
+
+const { selectionText, selectionWithinSpan, skipSelectionGap, selectionSpans } = await import('../src/lib/readingIndex.ts');
+
+test('logical paragraph selection skips floats from either page and keeps captions independently selectable', () => {
+  const chunks = ['We compare the estimator, which', 'Table 5. Accuracy 50.3', 'Figure 6. Confusion matrices.', 'was used to provide annotations with UmeTrack.', 'Additionally, another paragraph.'];
+  const text = chunks.join('\n\n');
+  const parts = chunks.map(chunk=>({start:text.indexOf(chunk),end:text.indexOf(chunk)+chunk.length}));
+  const paragraph = {...parts[0],end:parts[3].end,spans:[parts[0],parts[3]],kind:'body'};
+  const index = {text,objects:{word:[],WORD:[],sentence:[],paragraph:[paragraph,{...parts[1],kind:'float'},{...parts[2],kind:'caption'},{...parts[4],kind:'body'}]},tokens:parts.map((part,i)=>({...part,text:chunks[i],page:i===0?1:2}))};
+  const inner = objectAt(index, text.indexOf('compare'), 'p', false);
+  assert.equal(selectionText(index,inner),chunks[0]+' '+chunks[3]);
+  assert.deepEqual(objectAt(index,text.indexOf('provide'),'p',false),inner,'the continuation resolves to the same whole paragraph');
+  assert.equal(selectionText(index,objectAt(index,text.indexOf('Confusion'),'p',false)),chunks[2]);
+  const around = objectAt(index,text.indexOf('compare'),'p',true);
+  assert.equal(selectionText(index,around),chunks[0]+' '+chunks[3]+'\n\n');
+  assert.deepEqual(tokensInSpan(index,around).map(token=>token.text),[chunks[0],chunks[3]]);
+  assert.equal(selectionText(index,selectionWithinSpan(around,{start:around.start,end:parts[3].end-1})),chunks[0]+' '+chunks[3].slice(0,-1),'shrinking the endpoint does not include floats');
+  assert.equal(selectionText(index,selectionWithinSpan(around,{start:parts[0].start,end:parts[0].end})),chunks[0]);
+  assert.equal(skipSelectionGap(around,parts[0].end,true),parts[3].start);
+  assert.equal(skipSelectionGap(around,parts[3].start-1,false),parts[0].end-1);
+  assert.equal(skipSelectionGap(around,parts[4].start,true),parts[4].start,'explicit motions may extend beyond the object');
+  const extended=selectionWithinSpan(around,{start:parts[0].start,end:text.length});
+  assert.deepEqual(selectionSpans(extended),[parts[0],{start:parts[3].start,end:text.length}]);
+});

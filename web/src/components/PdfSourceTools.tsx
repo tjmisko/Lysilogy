@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { SectionCrop } from "../lib/sectionCrop";
-import { nearestToken, objectAt, sourceSpaceAt, tokensInSpan, type ReadingIndex, type TextSpan } from "../lib/readingIndex";
+import { nearestToken, objectAt, selectionSpans, selectionText, selectionWithinSpan, skipSelectionGap, sourceSpaceAt, tokensInSpan, type ReadingIndex, type SourceSelection, type TextSpan } from "../lib/readingIndex";
 import { loadReadingIndex, peekReadingIndex } from "../lib/readingIndexCache";
 import type { RegexResult } from "../lib/regexSearch";
 import { inclusiveSourceSpan, moveSourceCursor, moveSourceLine, sourceCursor, sourceGrapheme } from "../lib/sourceMotions";
@@ -32,7 +32,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
   const [matches, setMatches] = useState<TextSpan[]>(resume?.matches ?? []);
   const [current, setCurrent] = useState(resume?.current ?? 0);
   const [cursor, setCursor] = useState<number | null>(resume?.cursor ?? null);
-  const [visual, setVisual] = useState<TextSpan | null>(null);
+  const [visual, setVisual] = useState<SourceSelection | null>(null);
   const [pendingObject, setPendingObject] = useState<"a" | "i" | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -41,6 +41,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
   const [manualCopy, setManualCopy] = useState<string | null>(null);
   const [jump, setJump] = useState(0);
   const anchor = useRef<number | null>(null);
+  const visualObject = useRef<SourceSelection | null>(null);
   const motionCount = useRef("");
   const motionPrefix = useRef("");
   const input = useRef<HTMLInputElement>(null);
@@ -83,7 +84,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     return () => window.clearTimeout(handle);
   }, [loadIndex, prefetchReady]);
 
-  const inside = useCallback((data: ReadingIndex, span: TextSpan) => {
+  const inside = useCallback((data: ReadingIndex, span: SourceSelection) => {
     if (pageSubset === undefined) return true;
     const tokens = tokensInSpan(data, span);
     if (tokens.length === 0) {
@@ -155,7 +156,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
 
   const yank = useCallback(() => {
     if (index === null || visual === null) return;
-    const text = index.text.slice(visual.start, visual.end);
+    const text = selectionText(index, visual);
     void navigator.clipboard.writeText(text).then(() => { setMessage(`Yanked ${text.length} characters`); setVisual(null); }).catch(() => {
       setManualCopy(text); setError("Clipboard access was denied. Copy the selected text below.");
     });
@@ -187,6 +188,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
         const span = sourceGrapheme(data.text, at);
         if (!inside(data, span)) { land(data, span); return; }
         window.getSelection()?.removeAllRanges();
+        visualObject.current = null;
         anchor.current = at; setCursor(at); setVisual(span);
       }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Source indexing failed"));
       return true;
@@ -196,7 +198,11 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     if (pendingObject !== null) {
       const span = objectAt(index, cursor, event.key, pendingObject === "a");
       setPendingObject(null);
-      if (span !== null) { if (!inside(index, span)) land(index, span); else { anchor.current = span.start; setCursor(sourceCursor(index.text, span.end - 1)); setVisual(span); } }
+      if (span !== null) { if (!inside(index, span)) land(index, span); else {
+        visualObject.current = span;
+        anchor.current = span.start; setCursor(sourceCursor(index.text, span.end - 1)); setVisual(span);
+        if (span.spans?.length) { onPage(tokensInSpan(index, span).at(-1)?.page ?? page); setJump((value) => value + 1); }
+      } }
       return true;
     }
     if (event.key === "y") { motionPrefix.current = ""; motionCount.current = ""; yank(); return true; }
@@ -205,18 +211,29 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     if (event.key === "o") {
       motionPrefix.current = ""; motionCount.current = "";
       const first = anchor.current ?? cursor;
-      anchor.current = cursor; setCursor(first); setJump((value) => value + 1); return true;
+      anchor.current = cursor; setCursor(first);
+      onPage(tokensInSpan(index, sourceGrapheme(index.text, first))[0]?.page
+        ?? index.pages.find((item) => item.start <= first && item.end > first)?.number ?? page);
+      setJump((value) => value + 1); return true;
     }
     const key = motionPrefix.current + event.key;
     motionPrefix.current = "";
     const count = Number(motionCount.current || 1); motionCount.current = "";
-    let next = moveSourceCursor(index, cursor, key, count);
+    let next: number | null = cursor;
+    for (let step = 0; step < count; step++) {
+      const moved = moveSourceCursor(index, next, key);
+      if (moved === null) { next = null; break; }
+      const destination = skipSelectionGap(visualObject.current, moved, moved > next);
+      if (destination === next) break;
+      next = sourceCursor(index.text, destination);
+    }
     if (next === null && ["j", "k", "ArrowDown", "ArrowUp"].includes(key)) {
       next = moveSourceLine(index, cursor, ["k", "ArrowUp"].includes(key) ? -1 : 1, count) ?? cursor;
     }
     if (next === null) return false;
     next = sourceCursor(index.text, next);
-    const span = inclusiveSourceSpan(index.text, anchor.current ?? cursor, next);
+    next = sourceCursor(index.text, skipSelectionGap(visualObject.current, next, next > cursor));
+    const span = selectionWithinSpan(visualObject.current, inclusiveSourceSpan(index.text, anchor.current ?? cursor, next));
     if (!inside(index, span)) { land(index, span); return true; }
     const destination = tokensInSpan(index, { start: next, end: next + 1 })[0] ?? sourceSpaceAt(index, next);
     setCursor(next); setVisual(span);
@@ -275,7 +292,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     for (const match of matches.slice(0, 10000)) add(match, "match");
     const active = matches[current];
     if (active !== undefined && outside === null) add(active, "current");
-    if (visual !== null) add(visual, "visual");
+    if (visual !== null) for (const part of selectionSpans(visual)) add(part, "visual");
     if (cursor !== null && visual !== null) add(sourceGrapheme(index.text, cursor), "cursor");
     return result;
   }, [current, cursor, index, markPagesKey, matches, outside, visual]);
@@ -305,6 +322,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
   const currentMatch = matches[current];
   const matchToken = index !== null && currentMatch !== undefined ? tokensInSpan(index, currentMatch)[0] : undefined;
   const selectedTokens = index !== null && visual !== null ? tokensInSpan(index, visual) : [];
+  const selectedText = index !== null && visual !== null ? selectionText(index, visual) : "";
   const selectedPage = selectedTokens[0]?.page ?? page;
   const provenance = selectedTokens.some((token) => token.provenance === "ocr") ? "OCR" : "Source";
   const openOutside = () => {
@@ -321,7 +339,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
       }} /></label><button type="submit" disabled={busy}>Search</button>
     </form>}
     <div className="pdf-source-status" role="status">
-      {busy ? <span>Indexing and searching source…</span> : visual !== null ? <><strong>VISUAL{pendingObject !== null ? ` ${pendingObject}` : ""}</strong><span>{visual.end - visual.start} chars · {provenance} · p. {selectedPage}</span><button type="button" onClick={yank}>Yank</button><button type="button" onClick={() => { if (index !== null) onClarify(index.text.slice(visual.start, visual.end), selectedPage); }}>Ask</button><button type="button" onClick={() => { if (index !== null) onSave(index.text.slice(visual.start, visual.end), selectedPage); }}>Save citation</button></> : matches.length > 0 ? <><span>/{query} · {current + 1} / {matches.length}{matchToken !== undefined ? ` · ${matchToken.provenance === "ocr" ? "OCR · " : ""}p. ${matchToken.page}` : ""}</span><button type="button" aria-label="Previous search match" onClick={() => moveMatch(-1)}>↑</button><button type="button" aria-label="Next search match" onClick={() => moveMatch(1)}>↓</button></> : null}
+      {busy ? <span>Indexing and searching source…</span> : visual !== null ? <><strong>VISUAL{pendingObject !== null ? ` ${pendingObject}` : ""}</strong><span>{selectedText.length} chars · {provenance} · p. {selectedPage}</span><button type="button" onClick={yank}>Yank</button><button type="button" onClick={() => { if (index !== null) onClarify(selectedText, selectedPage); }}>Ask</button><button type="button" onClick={() => { if (index !== null) onSave(selectedText, selectedPage); }}>Save citation</button></> : matches.length > 0 ? <><span>/{query} · {current + 1} / {matches.length}{matchToken !== undefined ? ` · ${matchToken.provenance === "ocr" ? "OCR · " : ""}p. ${matchToken.page}` : ""}</span><button type="button" aria-label="Previous search match" onClick={() => moveMatch(-1)}>↑</button><button type="button" aria-label="Next search match" onClick={() => moveMatch(1)}>↓</button></> : null}
       {message && <span>{message}</span>}{error && <span className="pdf-source-error">{error}</span>}
       <button type="button" aria-label="Close paper search or selection" onClick={quit}>×</button>
     </div>

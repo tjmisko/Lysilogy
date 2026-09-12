@@ -7,6 +7,7 @@ mod cache;
 mod figures;
 mod native;
 mod ocr;
+mod paragraphs;
 
 #[cfg(test)]
 pub(crate) mod test_support;
@@ -21,7 +22,7 @@ use crate::{Error, Result, domain::TextRect};
 
 pub use cache::{IndexDocument, load_cached, load_or_build, load_or_build_priority};
 
-pub const SCHEMA_VERSION: u16 = 3;
+pub const SCHEMA_VERSION: u16 = 4;
 const MAX_PAGES: usize = 400;
 const MAX_OCR_PAGES: usize = 12;
 const MAX_TEXT_BYTES: usize = 4 * 1024 * 1024;
@@ -89,6 +90,10 @@ pub struct Paragraph {
     pub start: usize,
     pub end: usize,
     pub kind: String,
+    /// Ordered pieces of one logical paragraph; omitted for contiguous text.
+    /// The bounding start/end may contain floats that are NOT paragraph members.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub spans: Vec<TextRange>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -395,6 +400,7 @@ fn assemble(pages: &[SourcePage]) -> ReadingIndex {
                     start: paragraph_start,
                     end: offset,
                     kind: paragraph.kind,
+                    spans: Vec::new(),
                 });
                 paragraph_bytes.push((byte_start, index.text.len(), paragraph_start));
             }
@@ -412,6 +418,7 @@ fn assemble(pages: &[SourcePage]) -> ReadingIndex {
     for (start, end, offset) in paragraph_bytes {
         objects(&index.text[start..end], offset, &mut index.objects);
     }
+    paragraphs::link_continuations(&mut index);
     index
 }
 

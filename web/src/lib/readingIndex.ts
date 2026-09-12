@@ -1,6 +1,7 @@
 import type { TextRect } from "../types";
 
 export type TextSpan = { start: number; end: number };
+export type SourceSelection = TextSpan & { spans?: TextSpan[] };
 export type ReadingToken = TextSpan & { text: string; page: number; rects: TextRect[]; provenance: "native" | "ocr" };
 export type ReadingPage = TextSpan & { number: number; width: number; height: number; provenance: "native" | "ocr" | "unavailable"; confidence: number | null };
 export type ReadingIndex = {
@@ -8,7 +9,7 @@ export type ReadingIndex = {
   text: string;
   pages: ReadingPage[];
   tokens: ReadingToken[];
-  objects: Record<"word" | "WORD" | "sentence", TextSpan[]> & { paragraph: (TextSpan & { kind: string })[] };
+  objects: Record<"word" | "WORD" | "sentence", TextSpan[]> & { paragraph: (SourceSelection & { kind: string })[] };
   figures: { id: string; label: string; page: number; caption: string; start: number; end: number; rect: TextRect | null; confidence: string; references: (TextSpan & { page: number; rects: TextRect[] })[] }[];
   gaps: { page: number; reason: string }[];
 };
@@ -17,12 +18,51 @@ export function readingIndexUrl(sourceUrl: string): string {
   return sourceUrl.replace(/\/source(?:\?.*)?$/u, "/reading-index");
 }
 
-export function objectAt(index: ReadingIndex, cursor: number, key: string, around: boolean): TextSpan | null {
+export function selectionSpans(selection: SourceSelection): TextSpan[] {
+  return selection.spans?.length ? selection.spans : [{ start: selection.start, end: selection.end }];
+}
+
+export function selectionText(index: Pick<ReadingIndex, "text">, selection: SourceSelection): string {
+  return selectionSpans(selection).map((span) => index.text.slice(span.start, span.end)).join(" ");
+}
+
+/** Keep an object's excluded floats excluded when its visual endpoints move. */
+export function selectionWithinSpan(scope: SourceSelection | null, bounds: TextSpan): SourceSelection {
+  if (!scope?.spans?.length) return bounds;
+  const spans: TextSpan[] = [];
+  let start = bounds.start;
+  for (let at = 1; at < scope.spans.length; at++) {
+    const before = scope.spans[at - 1], after = scope.spans[at];
+    if (before === undefined || after === undefined || before.end >= bounds.end || after.start <= start) continue;
+    if (start < before.end) spans.push({ start, end: before.end });
+    start = Math.max(start, after.start);
+  }
+  if (start < bounds.end) spans.push({ start, end: bounds.end });
+  return spans.length > 1 ? { ...bounds, spans } : spans[0] ?? { start: bounds.start, end: bounds.start };
+}
+
+export function skipSelectionGap(scope: SourceSelection | null, cursor: number, forward: boolean): number {
+  const spans = scope?.spans;
+  if (spans === undefined) return cursor;
+  for (let at = 1; at < spans.length; at++) {
+    const before = spans[at - 1], after = spans[at];
+    if (before !== undefined && after !== undefined && cursor >= before.end && cursor < after.start) {
+      return forward ? after.start : before.end - 1;
+    }
+  }
+  return cursor;
+}
+
+export function objectAt(index: ReadingIndex, cursor: number, key: string, around: boolean): SourceSelection | null {
   const kinds: Record<string, keyof ReadingIndex["objects"] | undefined> = { w: "word", W: "WORD", s: "sentence", p: "paragraph" };
   const kind = kinds[key];
   if (kind === undefined) return null;
   const spans = index.objects[kind];
-  const found = spans.find((span) => span.start <= cursor && span.end > cursor) ?? spans.find((span) => span.start > cursor) ?? spans.at(-1);
+  // Bounding paragraph ranges can overlap captions: membership uses the pieces.
+  const found = spans.find((span) => selectionSpans(span).some((part) => part.start <= cursor && part.end > cursor))
+    ?? spans.flatMap((object) => selectionSpans(object).map((part) => ({ object, ...part })))
+      .filter((part) => part.start > cursor).sort((a, b) => a.start - b.start)[0]?.object
+    ?? spans.slice().sort((a, b) => a.end - b.end).at(-1);
   if (found === undefined) return null;
   let { start, end } = found;
   if (around) {
@@ -30,10 +70,13 @@ export function objectAt(index: ReadingIndex, cursor: number, key: string, aroun
     while (end < index.text.length && boundary.test(index.text[end] ?? "")) end++;
     if (end === found.end) while (start > 0 && boundary.test(index.text[start - 1] ?? "")) start--;
   }
+  const parts = selectionSpans(found);
+  if (parts.length > 1) return { start, end, spans: parts.map((part, at) => ({ start: at === 0 ? start : part.start, end: at === parts.length - 1 ? end : part.end })) };
   return { start, end };
 }
 
-export function tokensInSpan(index: ReadingIndex, span: TextSpan): ReadingToken[] {
+export function tokensInSpan(index: ReadingIndex, span: SourceSelection): ReadingToken[] {
+  if (span.spans?.length) return span.spans.flatMap((part) => tokensInSpan(index, part));
   let low = 0;
   let high = index.tokens.length;
   while (low < high) {
