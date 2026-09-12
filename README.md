@@ -276,6 +276,7 @@ Press `?` in the app for the complete, contextual guide.
 | `p` | Toggle Overview / source PDF |
 | `2` | Toggle one-page / two-page PDF view |
 | `W` / `H` | Fit the PDF to viewport width / height and reset zoom |
+| `gW` / `gH` | Fit visible PDF content width / height with a small margin and reset zoom |
 | `P` | Toggle paged / continuous PDF reading |
 | `R` | Rotate continuous scrolling: vertical / horizontal |
 | `+` / `-` | One fewer / one more page column in Overview (up to 10) |
@@ -357,9 +358,12 @@ selected passages, and inline questions. A selection or inline question closes b
 lives in the digest footer. Reduced-motion
 settings skip the transition; narrow screens provide Source/Digest tabs. Overview and both readers
 share a PDF document, and scoped page canvases render lazily.
-Both readers offer fit width/height and paged/continuous modes. Continuous pages can scroll
-vertically or horizontally; the mouse wheel follows the chosen direction. Uppercase `H`, `P`,
-and `R` distinguish reader controls from the existing lowercase navigation shortcuts.
+Both readers offer fit width/height and paged/continuous modes. `gW` and `gH` trim blank paper
+around the visible text and figures, leaving a small visual margin; `W` and `H` restore the
+full page bounds. Press `g` then Shift-W or Shift-H within the glossary's short prefix delay.
+A lone `g` still opens the glossary in the full reader. Continuous pages can scroll vertically
+or horizontally; the mouse wheel follows the chosen direction. Uppercase `H`, `P`, and `R`
+distinguish reader controls from the existing lowercase navigation shortcuts.
 
 In the focused source pane, `j/k` or up/down scroll, `h/l` or left/right move between its pages,
 `Ctrl-d/u` and PageDown/PageUp scroll by screen increments, and `[`/`]` switch sections. `+`/`-`

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { checkPdfFits, checkVisualFitPages, pressVisualFit } from './pdf-fit-checks.mjs';
 
 // All source material is synthetic; this suite never opens a reading-library path.
 function makePdf() {
@@ -180,6 +181,7 @@ try {
     });
   };
   await expectReaderDefaults();
+  await checkPdfFits(page);
   await page.keyboard.press('F1');
   await page.locator('.app-shell.has-library').waitFor();
   await page.keyboard.press('F1');
@@ -278,11 +280,24 @@ try {
   // A cropped section reports outside matches without leaking that source into its crop.
   analyzed=true;await page.reload();
   await page.getByRole('button',{name:'Overview',exact:true}).click();
+  await page.locator('.section-boxes').waitFor();
+  await page.keyboard.press('p');
+  await page.waitForFunction(()=>document.querySelector('.pdf-reader .pdf-canvas')?.dataset.rendered==='true');
+  await pressVisualFit(page,'W');
+  await page.waitForTimeout(500);
+  assert.equal(await page.locator('.glossary-view').count(),0,'gW must cancel the delayed glossary');
+  assert.equal(await page.locator('.pdf-reader').getAttribute('data-fit-bounds'),'visual');
+  await page.keyboard.press('g');
+  await page.locator('.glossary-view').waitFor();
+  await page.getByRole('button',{name:'Text',exact:true}).click();
+  await page.keyboard.press('H');
+  await page.getByRole('button',{name:'Overview',exact:true}).click();
   await page.keyboard.press('F1');
   await page.locator('.app-shell.has-library').waitFor();
   await page.locator('.section-boxes button[data-section-id="regressional"]').first().click();
   await page.locator('.section-focus').waitFor();
   await expectReaderDefaults();
+  await checkPdfFits(page,{cropped:true});
   await page.keyboard.press('/');await search.fill('Sentence 1 on page 1');await search.press('Enter');
   await page.getByRole('button',{name:'Open match in full paper'}).waitFor();
   assert.equal(await page.locator('.section-focus [data-pdf-page="1"]').count(),0);
@@ -331,6 +346,7 @@ try {
   })).sort((a,b)=>a.top-b.top||a.left-b.left));
 
   await land('sure',3);
+  await pressVisualFit(page,'W');
   assert.equal(indexRequests.length,beforeRetry+1,'a real search retries failed warming');
   assert.equal(indexRequests.at(-1).priority,'interactive');
   await visual('ll');
@@ -408,6 +424,9 @@ try {
   await page.screenshot({path:'/tmp/lysilogy-source-selection.png'});
   await yank(precise.text.slice(columns.start,columns.end));
 
+  usePreciseSelection=false;
+  await checkVisualFitPages(page,`http://lysilogy.test/api/papers/${id}/source`);
+
   assert.deepEqual(errors,[]);
-  console.log('PASS quiet background indexing, request survival across visits, shared searches, conditional cache reuse, retry after background failure, source regex search, cross-page navigation, word-end/sentence motions, Unicode character yanks, distinct paragraphs, native partial-word geometry, merged line highlights without column bridges, errors, q/Escape, continuous horizontal reading');
+  console.log('PASS gH/gW visual fitting, prefix cancellation, glossary fallback, figures/scans/rotation/blank pages, spread and continuous fitting, quiet background indexing, request survival across visits, shared searches, conditional cache reuse, retry after background failure, source regex search, cross-page navigation, word-end/sentence motions, Unicode character yanks, distinct paragraphs, native partial-word geometry, merged line highlights without column bridges, errors, q/Escape, continuous horizontal reading');
 } finally {await browser.close();}

@@ -973,7 +973,7 @@ export function App() {
           return handled;
         };
         if (quitLocal(".section-figure-view", "figure-quit")
-          || quitLocal('.pdf-reader[data-source-local-mode="true"]', "source-quit")
+          || quitLocal('.pdf-reader[data-source-local-mode="true"], .pdf-reader[data-key-prefix="g"]', "source-quit")
           || quitLocal('.context-panel[data-local-selection="true"]', "digest-quit")) {
           event.preventDefault(); event.stopImmediatePropagation(); return;
         }
@@ -1177,6 +1177,7 @@ export function App() {
                       onZoom={(delta) => setPdfZoom((value) => Math.max(.5, Math.min(2.5, value + delta)))}
                       onPage={setPdfPage}
                       onPageCount={setPdfPages}
+                      onGloss={() => paperView.analysis != null && openGlossary()}
                       onToggleInk={() => setDarkInk((value) => !value)}
                       onToggleSpread={() => setPdfSpread((spread) => !spread)}
                       onClarifySelection={clarifySentence}
