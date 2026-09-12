@@ -84,6 +84,7 @@ cargo build --release
 | `--library` | `LYSILOGY_LIBRARY` | `local-articles` |
 | `--data` | `LYSILOGY_DATA` | `.lysilogy` |
 | `--notes` | `LYSILOGY_NOTES` | `Notes` |
+| `--config` | `LYSILOGY_CONFIG` | Optional `lysilogy.config.json` |
 | `--bind` (serve) | — | `127.0.0.1:7319` |
 | `--web` (serve) | — | `web/dist` |
 
@@ -481,7 +482,7 @@ image segmentation.
 
 `E` opens an actual CodeMirror 6 Markdown buffer. Notes map the PDF’s relative filename to `.md`
 beneath `Notes/` (for example `local-articles/topic/Paper.pdf` → `Notes/topic/Paper.md`). Set another
-root with `--notes /path/to/paper-notes`. Missing notes open empty and are created on the first save.
+root with `--notes /path/to/paper-notes`. Opening a missing note creates it from the configured Markdown template, with local date/time, the `paper` tag, and a link to its source PDF. Existing files are preserved.
 Ctrl/Cmd-S saves atomically; a content revision check reports external edits instead of overwriting
 a stale file. Unsaved changes prompt on close/navigation. `q`, `/`, and ordinary editor keys remain
 inside the editor. The initial buffer provides Markdown styling, wrapping, and undo/redo; it does
@@ -489,3 +490,11 @@ not embed a Neovim process.
 
 The requests were recorded before implementation in [navigation issue #8](https://github.com/tjmisko/Lysilogy/issues/8)
 and [source-search issue #9](https://github.com/tjmisko/Lysilogy/issues/9).
+
+Note templates are configured in [`lysilogy.config.json`](lysilogy.config.json). The default uses
+`YYYY-MM-DD` dates, `HH:mm` times, and `tags: ["paper"]` (rendered as a Markdown/YAML block list).
+Edit the tags or template there and restart the backend; use `--config /path/to/settings.json` for
+another settings file. Opening notes uses an idempotent `POST /api/papers/{id}/notes/open` operation,
+so repeated `E` presses reuse the file. `GET /notes` remains read-only for checking external changes.
+If the notes UI reports an unavailable API or an HTML response, restart the Rust backend as well as
+updating the frontend. With Vite, the backend command is `cargo run -- serve --bind 127.0.0.1:7320`.

@@ -43,6 +43,10 @@ struct Cli {
     #[arg(long, env = "LYSILOGY_NOTES", default_value = "Notes", global = true)]
     notes: PathBuf,
 
+    /// JSON settings file; defaults to optional ./lysilogy.config.json.
+    #[arg(long, env = "LYSILOGY_CONFIG", global = true)]
+    config: Option<PathBuf>,
+
     #[command(subcommand)]
     command: Option<Command>,
 }
@@ -188,9 +192,17 @@ async fn main() -> ExitCode {
 
 #[allow(clippy::too_many_lines)] // Keep the CLI command dispatch in one match.
 async fn run(cli: Cli) -> Result<()> {
+    let config = lysilogy::config::AppConfig::load(
+        cli.config
+            .as_deref()
+            .unwrap_or_else(|| std::path::Path::new("lysilogy.config.json")),
+        cli.config.is_some(),
+    )
+    .await?;
     let state = AppState::new(&cli.library, &cli.data)
         .await?
-        .with_notes_root(&cli.notes);
+        .with_notes_root(&cli.notes)
+        .with_notes_template(config.notes)?;
     match cli.command.unwrap_or(Command::Serve {
         bind: "127.0.0.1:7319"
             .parse()

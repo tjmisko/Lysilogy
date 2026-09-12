@@ -19,7 +19,7 @@ use axum::{
     extract::{Path as AxumPath, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{IntoResponse, Response},
-    routing::{delete, get, post},
+    routing::{any, delete, get, post},
 };
 use chrono::Utc;
 use percent_encoding::percent_decode_str;
@@ -153,6 +153,17 @@ impl AppState {
     pub fn with_notes_root(mut self, root: impl Into<PathBuf>) -> Self {
         self.notes = crate::notes::NotesStore::new(root.into());
         self
+    }
+
+    pub fn with_notes_template(
+        mut self,
+        template: crate::notes::NoteTemplateConfig,
+    ) -> Result<Self> {
+        self.notes = self
+            .notes
+            .with_template(template)
+            .map_err(|error| Error::InvalidRequest(error.to_string()))?;
+        Ok(self)
     }
 
     pub async fn library(&self) -> LibraryResponse {
@@ -1870,9 +1881,21 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
             "/api/papers/{id}/experiments/{run_id}/judgment",
             post(judge_paper_experiment),
         )
+        .route("/api", any(unknown_api))
+        .route("/api/{*path}", any(unknown_api))
         .route("/", get(frontend_index))
         .route("/{*asset}", get(frontend_asset))
         .with_state(state)
+}
+
+async fn unknown_api() -> impl IntoResponse {
+    (
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({
+            "error": "unknown_api_route",
+            "message": "This API endpoint is unavailable. Restart the Lysilogy backend after updating the app."
+        })),
+    )
 }
 
 async fn health() -> Json<HealthResponse> {
@@ -2175,6 +2198,56 @@ mod tests {
         CreateHighlightRequest, DocumentLayout, ExtractedPage, ExtractedPaper, HighlightKind,
         HighlightOrigin, LayoutPage, LayoutSentence, LayoutToken, PaperMetadata, TextRect,
     };
+
+    #[tokio::test]
+    async fn unknown_api_routes_return_json_instead_of_the_frontend() -> Result<()> {
+        let library = tempdir().map_err(|error| Error::io("library", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let web = tempdir().map_err(|error| Error::io("web", error))?;
+        tokio::fs::write(
+            web.path().join("index.html"),
+            "<!doctype html><title>SPA</title>",
+        )
+        .await
+        .map_err(|error| Error::io(web.path(), error))?;
+        let state = AppState::new(library.path(), data.path()).await?;
+        let app = build_router(state, Some(web.path()));
+        for method in ["GET", "POST"] {
+            let response = app
+                .clone()
+                .oneshot(
+                    axum::http::Request::builder()
+                        .method(method)
+                        .uri("/api/papers/1234567890abcdef/unknown-feature")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::NOT_FOUND);
+            assert_eq!(response.headers()[header::CONTENT_TYPE], "application/json");
+            let body: serde_json::Value =
+                serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes())?;
+            assert_eq!(body["error"], "unknown_api_route");
+        }
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/a-reader-route")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(
+            response.headers()[header::CONTENT_TYPE]
+                .to_str()
+                .unwrap()
+                .starts_with("text/html")
+        );
+        Ok(())
+    }
 
     #[tokio::test]
     async fn lists_discovered_papers_without_extraction() -> Result<()> {

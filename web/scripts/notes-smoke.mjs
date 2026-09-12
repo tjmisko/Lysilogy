@@ -59,10 +59,11 @@ for(let number=1;number<=4;number++) {
 }
 
 let storedNote={filename:'synthetic.md',text:'',revision:null};
-const noteWrites=[];
+const noteWrites=[]; const noteOpens=[]; let noteCreations=0; let notesLegacyResponse=true;
 const browser=await chromium.launch({headless:true});
 try {
-  const page=await browser.newPage({viewport:{width:1280,height:800}});
+  const page=await browser.newPage({viewport:{width:1280,height:800},timezoneId:'America/Los_Angeles'});
+  await page.clock.setFixedTime(new Date('2026-09-11T22:49:00Z'));
   await page.addInitScript(()=>{window.copiedSource='';Object.defineProperty(navigator,'clipboard',{value:{writeText:async(text)=>{window.copiedSource=text;}}});});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.route('http://lysilogy.test/**', async route=>{
@@ -85,6 +86,16 @@ try {
     if(suffix==='/analyze'){analysisRequests.push(route.request().postDataJSON());return route.fulfill({status:500,json:{message:'Unexpected analysis request'}});}
     if(suffix==='/clarify'){ questions.push(route.request().postDataJSON()); return route.fulfill({json:{answer:'The selected source explains measurement error.',limitation:null}}); }
     if(suffix==='/map')return route.fulfill({json:{layout,highlights:[]}});
+    if(suffix==='/notes/open') {
+      assert.equal(route.request().method(),'POST');
+      const body=route.request().postDataJSON(); noteOpens.push(body);
+      if(notesLegacyResponse)return route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><html><body>PRIVATE SPA CONTENT</body></html>'});
+      if(storedNote.revision===null) {
+        noteCreations++;
+        storedNote={...storedNote,text:`---\ndate: ${body.created_at.slice(0,10)}\ntime: ${body.created_at.slice(11,16)}\ntags:\n  - paper\n---\n\n## Sources\n- [synthetic](<file:///synthetic-library/synthetic.pdf>)\n`,revision:'created-template'};
+      }
+      return route.fulfill({json:storedNote});
+    }
     if(suffix==='/notes') {
       if(route.request().method()==='PUT') {
         const body=route.request().postDataJSON(); noteWrites.push(body);
@@ -109,8 +120,32 @@ try {
   await page.keyboard.press('E');
   const editor=page.locator('.notes-panel .cm-content');
   const editorText=()=>editor.locator('.cm-line').evaluateAll(lines=>lines.map(line=>line.textContent).join('\n'));
+  await page.getByText('Notes unavailable',{exact:true}).waitFor();
+  assert.match(await page.locator('.notes-error').innerText(),/Restart the Lysilogy backend/);
+  assert.match(await page.locator('.notes-error').innerText(),/\/api proxy/);
+  assert.doesNotMatch(await page.locator('.notes-panel').innerText(),/JSON\.parse|PRIVATE SPA CONTENT|Opening Markdown|Saved to Markdown/);
+  assert.equal(await editor.count(),0);
+  assert.equal(noteCreations,0);
+  await page.screenshot({path:'/tmp/lysilogy-notes-unavailable.png'});
+  notesLegacyResponse=false;
+  await page.getByRole('button',{name:'Retry',exact:true}).click();
   await editor.waitFor();
-  assert.equal(noteWrites.length,0,'opening missing notes must not create a file');
+  assert.equal(noteCreations,1,'opening a missing note creates its template immediately');
+  assert.equal(noteWrites.length,0,'creating the initial template requires no Ctrl-S');
+  assert.equal(noteOpens.at(-1).created_at,'2026-09-11T15:49:00-07:00');
+  const template='---\ndate: 2026-09-11\ntime: 15:49\ntags:\n  - paper\n---\n\n## Sources\n- [synthetic](<file:///synthetic-library/synthetic.pdf>)\n';
+  assert.equal(storedNote.text,template);
+  assert.equal(await editorText(),template,'the created template must appear in the Markdown editor');
+  await editor.press('Escape'); await page.locator('.notes-panel').waitFor({state:'hidden'});
+  await page.keyboard.press('E'); await editor.waitFor();
+  assert.equal(storedNote.text,template,'reopening an existing note does not change its template');
+  assert.equal(noteCreations,1);
+  await editor.press('Escape'); await page.locator('.notes-panel').waitFor({state:'hidden'});
+  storedNote={...storedNote,text:'',revision:'existing-empty'};
+  await page.keyboard.press('E'); await editor.waitFor();
+  assert.equal(storedNote.text,'','an existing empty note stays empty');
+  assert.equal(noteCreations,1);
+  assert.equal(noteWrites.length,0);
   await editor.fill('# Reading notes\n\nq / notes **strong**');
   assert.equal(await page.locator('.notes-md-heading').count(),1);
   assert.equal(await page.locator('.notes-md-strong').count(),1);
@@ -174,5 +209,5 @@ try {
   await editor.fill('# Questions while reading\n\n- What assumptions does the result need?\n- How does this relate to earlier evidence?\n\nA **working note**, with `inline code` and a [source link](https://example.org).\n\n> Keep the important qualification alongside the claim.');
   await page.screenshot({path:'/tmp/lysilogy-notes-editor.png'});
   assert.deepEqual(errors,[]);
-  console.log('PASS notes: CodeMirror, Markdown styling, local keys, undo/redo, exact save, conflicts, dirty-close choices, and deferred home navigation.');
+  console.log('PASS notes: HTML fallback diagnosis, retry, create-on-open template, local date, existing-note preservation, CodeMirror, Markdown styling, local keys, undo/redo, exact save, conflicts, dirty-close choices, and deferred home navigation.');
 } finally {await browser.close();}

@@ -15,43 +15,57 @@ import type {
   ExperimentView,
 } from "../types";
 
-type ErrorPayload = {
-  error?: string;
-  message?: string;
-};
-
 export class ApiError extends Error {
   readonly status: number;
+  readonly kind: "http" | "invalid_response";
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, kind: "http" | "invalid_response" = "http") {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.kind = kind;
   }
 }
 
-async function apiError(response: Response): Promise<ApiError> {
-  let payload: ErrorPayload = {};
-  try {
-    payload = (await response.json()) as ErrorPayload;
-  } catch {
-    // The status text remains a useful fallback for a non-JSON proxy error.
+function responseError(response: Response, description: string): ApiError {
+  return new ApiError(response.status, `${description} Restart the Lysilogy backend and check that the frontend’s /api proxy reaches it.`, "invalid_response");
+}
+
+async function responsePayload(response: Response): Promise<unknown> {
+  const body = await response.text();
+  // Older servers may serve the app shell for an unknown API endpoint with 200.
+  // Report that deployment mismatch without exposing HTML or a JSON parser error.
+  if (response.headers.get("Content-Type")?.toLowerCase().includes("text/html") === true || /^\s*</u.test(body)) {
+    throw responseError(response, "The API returned a web page instead of JSON.");
   }
-  return new ApiError(response.status, payload.message ?? response.statusText);
+  try { return JSON.parse(body) as unknown; }
+  catch { throw responseError(response, "The API returned an invalid JSON response."); }
+}
+
+function httpError(response: Response, payload: unknown): ApiError {
+  const message = typeof payload === "object" && payload !== null && "message" in payload && typeof payload.message === "string"
+    ? payload.message : `API request failed (HTTP ${response.status}).`;
+  return new ApiError(response.status, message);
+}
+
+async function apiError(response: Response): Promise<ApiError> {
+  try { return httpError(response, await responsePayload(response)); }
+  catch (reason: unknown) {
+    if (reason instanceof ApiError) return reason;
+    throw reason;
+  }
 }
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
   if (init?.body !== undefined) headers.set("Content-Type", "application/json");
-  const response = await fetch(path, {
-    ...init,
-    headers,
-  });
+  const response = await fetch(path, { ...init, headers });
+  const payload = await responsePayload(response);
   if (!response.ok) {
-    throw await apiError(response);
+    throw httpError(response, payload);
   }
-  return (await response.json()) as T;
+  return payload as T;
 }
 
 export const api = {

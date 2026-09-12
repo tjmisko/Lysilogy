@@ -319,11 +319,15 @@ try {
   await page.getByRole('dialog',{name:'Processing queue'}).waitFor();
   await page.keyboard.press('Q');
   await page.getByRole('dialog',{name:'Processing queue'}).waitFor({state:'hidden'});
-  await page.evaluate(()=>{
-    const span=document.querySelector('.text-view .pdf-text-layer span');
+  // Pinning reader controls can rebuild the text layer after its initial render.
+  // Select only once the replacement layer contains native source text.
+  await page.waitForFunction(()=>{
+    const span=document.querySelector('.text-view [data-text-ready="true"] .pdf-text-layer span');
+    if (!span?.textContent) return false;
     const range=document.createRange(); range.selectNodeContents(span);
     const selection=window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
     document.dispatchEvent(new Event('selectionchange'));
+    return true;
   });
   await page.getByRole('button',{name:'Ask about this',exact:true}).click();
   const question=page.getByRole('dialog',{name:'Ask about this passage'});

@@ -81,7 +81,7 @@ export function NotesPanel({ paperId, onClose, onDirtyChange }: NotesPanelProps)
 
   useEffect(() => {
     const controller = new AbortController();
-    void notesApi.read(paperId, controller.signal).then((note) => {
+    void notesApi.open(paperId, controller.signal).then((note) => {
       if (controller.signal.aborted) return;
       savedRef.current = note;
       textRef.current = note.text;
@@ -150,7 +150,7 @@ export function NotesPanel({ paperId, onClose, onDirtyChange }: NotesPanelProps)
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); void save(); }
   }}>
     <header className="notes-header">
-      <div><h2>Notes</h2><span title={document?.filename}>{document?.filename ?? "Opening Markdown…"}</span></div>
+      <div><h2>Notes</h2><span title={document?.filename}>{document?.filename ?? (error === null ? "Opening Markdown…" : "Notes unavailable")}</span></div>
       <button type="button" className="notes-save" disabled={document === null || !dirty || saving} onClick={() => { void save(); }}>{saving ? "Saving…" : "Save"}</button>
       <button type="button" className="notes-close-button" aria-label="Close notes" onClick={() => requestClose()}>×</button>
     </header>
@@ -159,11 +159,11 @@ export function NotesPanel({ paperId, onClose, onDirtyChange }: NotesPanelProps)
       <div><button type="button" disabled={saving} onClick={() => { void save(true); }}>Save and close</button><button type="button" disabled={saving} onClick={finishClose}>Discard changes</button><button type="button" onClick={() => { setClosing(false); afterCloseRef.current = undefined; editorRef.current?.focus(); }}>Keep editing</button></div>
     </div>}
     {error !== null && <div className="notes-error" role="alert"><p>{error}</p>
-      {document === null && <button type="button" onClick={() => setLoadAttempt((value) => value + 1)}>Retry</button>}
+      {document === null && <button type="button" onClick={() => { setError(null); setLoadAttempt((value) => value + 1); }}>Retry</button>}
       {conflict && <button type="button" onClick={() => { void compare(); }}>Compare with disk</button>}
     </div>}
     {diskVersion !== null && <div className="notes-disk-version"><p>Current file on disk</p><pre>{diskVersion.text || "(Empty file)"}</pre><p>Your draft is still in the editor.</p><button type="button" onClick={useDiskVersion}>Discard draft and use disk version</button><button type="button" onClick={() => setDiskVersion(null)}>Keep my draft</button></div>}
     <div className="notes-editor" ref={hostRef} />
-    <footer className="notes-footer"><span role="status">{dirty ? "Unsaved changes" : savedNotice ? "Saved" : document?.revision == null ? "New note · saved when you write" : "Saved to Markdown"}</span><span>Markdown <kbd>Ctrl S</kbd></span></footer>
+    <footer className="notes-footer"><span role="status">{document === null ? error === null ? "Opening notes…" : "Not opened" : dirty ? "Unsaved changes" : savedNotice ? "Saved" : "Saved to Markdown"}</span><span>Markdown <kbd>Ctrl S</kbd></span></footer>
   </aside>;
 }

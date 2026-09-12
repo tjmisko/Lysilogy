@@ -1,5 +1,8 @@
 //! Markdown files owned by the reader, separate from generated paper artifacts.
 
+mod template;
+pub use template::NoteTemplateConfig;
+
 use std::{
     fs::File,
     io::{Read, Write},
@@ -28,6 +31,7 @@ static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 pub struct NotesStore {
     root: Arc<PathBuf>,
     write: Arc<Mutex<()>>,
+    template: Arc<NoteTemplateConfig>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -52,6 +56,8 @@ pub enum NotesError {
     TooLarge,
     #[error("{0}")]
     InvalidPath(String),
+    #[error("Invalid notes template: {0}")]
+    InvalidTemplate(String),
     #[error("Could not access the notes file: {0}")]
     Storage(#[from] std::io::Error),
     #[error("Could not complete the notes operation: {0}")]
@@ -64,6 +70,7 @@ impl IntoResponse for NotesError {
             Self::Conflict => (StatusCode::CONFLICT, "notes_conflict"),
             Self::TooLarge => (StatusCode::PAYLOAD_TOO_LARGE, "notes_too_large"),
             Self::InvalidPath(_) => (StatusCode::BAD_REQUEST, "invalid_notes_path"),
+            Self::InvalidTemplate(_) => (StatusCode::BAD_REQUEST, "invalid_notes_template"),
             Self::Storage(_) | Self::Task(_) => (StatusCode::INTERNAL_SERVER_ERROR, "notes_error"),
         };
         (
@@ -87,7 +94,50 @@ impl NotesStore {
         Self {
             root: Arc::new(root.into()),
             write: Arc::new(Mutex::new(())),
+            template: Arc::new(NoteTemplateConfig::default()),
         }
+    }
+
+    /// Validates configuration without reading or creating any note files.
+    pub fn with_template(mut self, config: NoteTemplateConfig) -> Result<Self, NotesError> {
+        config.validate()?;
+        self.template = Arc::new(config);
+        Ok(self)
+    }
+
+    /// Open an existing note, or atomically initialize a missing note once.
+    pub async fn open(
+        &self,
+        relative_pdf: &str,
+        source_path: &Path,
+        created_at: Option<chrono::DateTime<chrono::FixedOffset>>,
+    ) -> Result<NoteDocument, NotesError> {
+        let path = note_path(relative_pdf)?;
+        let current = self.read(relative_pdf).await?;
+        if current.revision.is_some() {
+            return Ok(current);
+        }
+        let instant = created_at.unwrap_or_else(|| chrono::Local::now().fixed_offset());
+        let text = self.template.render(relative_pdf, source_path, instant)?;
+        let store = self.clone();
+        tokio::task::spawn_blocking(move || {
+            // Missing-file saves use an atomic hard-link operation. A concurrent creator
+            // wins unchanged, including an external editor creating an empty file.
+            match store.save_sync(&path, &text, None) {
+                Ok(document) => Ok(document),
+                Err(NotesError::Conflict) => {
+                    let winner = store.read_sync(&path)?;
+                    if winner.revision.is_some() {
+                        Ok(winner)
+                    } else {
+                        Err(NotesError::Conflict)
+                    }
+                }
+                Err(error) => Err(error),
+            }
+        })
+        .await
+        .map_err(|error| NotesError::Task(error.to_string()))?
     }
 
     pub async fn read(&self, relative_pdf: &str) -> Result<NoteDocument, NotesError> {
@@ -237,7 +287,10 @@ impl NotesStore {
                         if !create {
                             return Ok(None);
                         }
-                        mkdirat(&directory, name, Mode::RUSR | Mode::WUSR | Mode::XUSR)?;
+                        match mkdirat(&directory, name, Mode::RUSR | Mode::WUSR | Mode::XUSR) {
+                            Ok(()) | Err(rustix::io::Errno::EXIST) => (),
+                            Err(error) => return Err(error.into()),
+                        }
                     }
                     Err(error) => return Err(error.into()),
                 }
@@ -384,6 +437,115 @@ mod tests {
         assert_ne!(a.is_ok(), b.is_ok());
         let conflict = if a.is_err() { a } else { b };
         assert!(matches!(conflict, Err(NotesError::Conflict)));
+    }
+
+    #[tokio::test]
+    async fn opening_creates_once_and_preserves_existing_empty_or_edited_notes() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().join("notes");
+        let store = NotesStore::new(&root);
+        let created_at = chrono::DateTime::parse_from_rfc3339("2026-09-09T15:34:00-07:00").unwrap();
+        let note = store
+            .open(
+                "folder/Author - Paper.pdf",
+                Path::new("/source/Author - Paper.pdf"),
+                Some(created_at),
+            )
+            .await
+            .unwrap();
+        assert_eq!(note.filename, "folder/Author - Paper.md");
+        assert!(
+            note.text
+                .starts_with("---\ndate: 2026-09-09\ntime: 15:34\ntags:\n  - paper\n---")
+        );
+        assert!(note.revision.is_some());
+        let later = chrono::DateTime::parse_from_rfc3339("2026-09-10T10:00:00+03:00").unwrap();
+        let reopened = store
+            .open(
+                "folder/Author - Paper.pdf",
+                Path::new("/changed/source.pdf"),
+                Some(later),
+            )
+            .await
+            .unwrap();
+        assert_eq!(note.text, reopened.text);
+        assert_eq!(note.revision, reopened.revision);
+        for content in ["", "# Existing notes\n\nMy own work.\n"] {
+            std::fs::write(root.join("folder/Author - Paper.md"), content).unwrap();
+            let existing = store
+                .open(
+                    "folder/Author - Paper.pdf",
+                    Path::new("/changed/source.pdf"),
+                    Some(later),
+                )
+                .await
+                .unwrap();
+            assert_eq!(existing.text, content);
+            assert!(existing.revision.is_some());
+            assert_eq!(
+                std::fs::read_to_string(root.join("folder/Author - Paper.md")).unwrap(),
+                content
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn independent_store_open_races_return_the_winner_without_overwriting() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = directory.path().join("notes");
+        let first = NotesStore::new(&root)
+            .with_template(NoteTemplateConfig {
+                template: "First template".into(),
+                ..NoteTemplateConfig::default()
+            })
+            .unwrap();
+        let second = NotesStore::new(&root)
+            .with_template(NoteTemplateConfig {
+                template: "Second template".into(),
+                ..NoteTemplateConfig::default()
+            })
+            .unwrap();
+        let (a, b) = tokio::join!(
+            first.open("nested/Paper.pdf", Path::new("/Paper.pdf"), None),
+            second.open("nested/Paper.pdf", Path::new("/Paper.pdf"), None)
+        );
+        let a = a.unwrap();
+        let b = b.unwrap();
+        assert_eq!(a.text, b.text);
+        assert_eq!(a.revision, b.revision);
+        assert!(matches!(
+            a.text.as_str(),
+            "First template" | "Second template"
+        ));
+        assert_eq!(
+            std::fs::read_to_string(root.join("nested/Paper.md")).unwrap(),
+            a.text
+        );
+        assert_eq!(std::fs::read_dir(root.join("nested")).unwrap().count(), 1);
+    }
+
+    #[tokio::test]
+    async fn create_only_open_never_overwrites_a_concurrent_save() {
+        let root = tempfile::tempdir().unwrap();
+        let reader = NotesStore::new(root.path());
+        let writer = NotesStore::new(root.path());
+        let (opened, saved) = tokio::join!(
+            reader.open("Paper.pdf", Path::new("/Paper.pdf"), None),
+            writer.save("Paper.pdf", "External winner".into(), None)
+        );
+        let opened = opened.unwrap();
+        match saved {
+            Ok(saved) => {
+                assert_eq!(opened.text, "External winner");
+                assert_eq!(saved.text, opened.text);
+            }
+            Err(NotesError::Conflict) => assert!(opened.text.contains("## Sources")),
+            Err(error) => panic!("unexpected save result: {error}"),
+        }
+        assert_eq!(
+            std::fs::read_to_string(root.path().join("Paper.md")).unwrap(),
+            opened.text
+        );
     }
 
     #[tokio::test]

@@ -4,6 +4,7 @@ pub mod abstracts;
 pub mod analysis;
 pub mod api;
 pub mod citation_graph;
+pub mod config;
 pub mod domain;
 pub mod error;
 pub mod extract;
