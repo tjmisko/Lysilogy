@@ -4,6 +4,7 @@ import { usePdfSourceTools, type SourceMark } from "./PdfSourceTools";
 import { sectionPageCrop, type SectionCrop } from "../lib/sectionCrop";
 import { cropTextLayer } from "../lib/cropTextLayer";
 import { visiblePdfPage } from "../lib/pdfViewport";
+import { pdfVisualBounds } from "../lib/pdfVisualBounds";
 import { handleNotesPaneKey } from "../lib/notesPaneKeys";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
@@ -58,6 +59,7 @@ type PdfReaderProps = {
   onOpenFullPaper?: (page: number) => void;
   onZoom?: (delta: number) => void;
   onReturnToMap?: () => void;
+  onGloss?: () => void;
   keyboardEnabled?: boolean;
   toolbarVisible?: boolean;
 };
@@ -68,6 +70,7 @@ type PdfPageCanvasProps = {
   slotWidth: number;
   slotHeight: number;
   fit: "width" | "height";
+  visualFit: boolean;
   zoom: number;
   darkInk: boolean;
   pageCount: number;
@@ -117,6 +120,7 @@ function PdfPageCanvas({
   slotWidth,
   slotHeight,
   fit,
+  visualFit,
   zoom,
   darkInk,
   pageCount,
@@ -134,6 +138,7 @@ function PdfPageCanvas({
   const frameRef = useRef<HTMLElement>(null);
   const [visible, setVisible] = useState(!lazy);
   const surfaceRef = useRef<HTMLDivElement>(null);
+  const windowRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
 
@@ -148,14 +153,16 @@ function PdfPageCanvas({
 
   useEffect(() => {
     const surface = surfaceRef.current;
+    const pageWindow = windowRef.current;
     const canvas = canvasRef.current;
     const textLayerContainer = textLayerRef.current;
-    if (!visible || surface === null || canvas === null || textLayerContainer === null) return;
+    if (!visible || surface === null || pageWindow === null || canvas === null || textLayerContainer === null) return;
     const controller = new AbortController();
     let renderTask: RenderTask | null = null;
     let textLayer: TextLayerBuilder | null = null;
     textLayerContainer.replaceChildren();
     textLayerContainer.removeAttribute("data-text-ready");
+    canvas.removeAttribute("data-rendered");
     onTextLayer(page, null, false);
 
     void document
@@ -163,11 +170,24 @@ function PdfPageCanvas({
       .then(async (pdfPage) => {
         if (controller.signal.aborted) return;
         const base = pdfPage.getViewport({ scale: 1 });
+        const measured = visualFit ? await pdfVisualBounds(pdfPage, crop, layout) : null;
+        controller.signal.throwIfAborted();
+        const full = crop === undefined ? { x_min: 0, y_min: 0, x_max: 1, y_max: 1 } : {
+          x_min: crop.bounds.x_min / (layout?.width ?? base.width), x_max: crop.bounds.x_max / (layout?.width ?? base.width),
+          y_min: crop.bounds.y_min / (layout?.height ?? base.height), y_max: crop.bounds.y_max / (layout?.height ?? base.height),
+        };
+        const visual = measured === null ? full : {
+          x_min: Math.max(full.x_min, measured.x_min), x_max: Math.min(full.x_max, measured.x_max),
+          y_min: Math.max(full.y_min, measured.y_min), y_max: Math.min(full.y_max, measured.y_max),
+        };
         surface.dataset.pdfWidth = String(layout?.width ?? base.width);
         surface.dataset.pdfHeight = String(layout?.height ?? base.height);
+        const fitWidth = visualFit ? (visual.x_max - visual.x_min) * base.width
+          : crop === undefined ? base.width : readingWidth ?? base.width;
+        const fitHeight = visualFit ? (visual.y_max - visual.y_min) * base.height
+          : crop === undefined ? base.height : readingHeight ?? base.height;
         const fitScale = Math.max(0.1, fit === "height"
-          ? (slotHeight - 40) / (crop === undefined ? base.height : readingHeight ?? base.height)
-          : (slotWidth - 28) / (crop === undefined ? base.width : readingWidth ?? base.width));
+          ? (slotHeight - 40) / fitHeight : (slotWidth - 28) / fitWidth);
         const viewport = pdfPage.getViewport({ scale: fitScale * zoom });
         const scaleX = viewport.width / (layout?.width ?? base.width);
         const scaleY = viewport.height / (layout?.height ?? base.height);
@@ -175,17 +195,32 @@ function PdfPageCanvas({
         const top = (crop?.bounds.y_min ?? 0) * scaleY;
         const width = crop === undefined ? viewport.width : (crop.bounds.x_max - crop.bounds.x_min) * scaleX;
         const height = crop === undefined ? viewport.height : (crop.bounds.y_max - crop.bounds.y_min) * scaleY;
+        const renderLeft = visual.x_min * viewport.width, renderTop = visual.y_min * viewport.height;
+        const renderWidth = (visual.x_max - visual.x_min) * viewport.width;
+        const renderHeight = (visual.y_max - visual.y_min) * viewport.height;
         const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
         const context = canvas.getContext("2d", { alpha: false });
         if (context === null) throw new Error("Canvas rendering is unavailable");
 
         surface.style.width = `${width}px`;
         surface.style.height = `${height}px`;
+        // Clip only the surrounding paper. The surface and all text/highlight
+        // coordinates retain their original geometry inside this window.
+        pageWindow.style.width = `${renderWidth}px`;
+        pageWindow.style.height = `${renderHeight}px`;
+        surface.style.left = `${left - renderLeft}px`;
+        surface.style.top = `${top - renderTop}px`;
         surface.style.setProperty("--total-scale-factor", String(viewport.scale));
-        canvas.width = Math.ceil(width * pixelRatio);
-        canvas.height = Math.ceil(height * pixelRatio);
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
+        // Allocate only visible pixels, even when a sparse page fits at a large scale.
+        canvas.width = Math.ceil(renderWidth * pixelRatio);
+        canvas.height = Math.ceil(renderHeight * pixelRatio);
+        canvas.style.width = `${renderWidth}px`;
+        canvas.style.height = `${renderHeight}px`;
+        canvas.style.left = `${renderLeft - left}px`;
+        canvas.style.top = `${renderTop - top}px`;
+        if (visualFit) canvas.dataset.pageCrop = JSON.stringify({ x: visual.x_min, y: visual.y_min,
+          width: visual.x_max - visual.x_min, height: visual.y_max - visual.y_min });
+        else delete canvas.dataset.pageCrop;
         textLayerContainer.style.width = `${viewport.width}px`;
         textLayerContainer.style.height = `${viewport.height}px`;
         textLayerContainer.style.left = `${-left}px`;
@@ -197,8 +232,8 @@ function PdfPageCanvas({
           context.fillStyle = "white";
           context.fillRect(0, 0, canvas.width, canvas.height);
           context.beginPath();
-          for (const r of crop.regions) context.rect((r.x_min * scaleX - left) * pixelRatio,
-            (r.y_min * scaleY - top) * pixelRatio, (r.x_max - r.x_min) * scaleX * pixelRatio, (r.y_max - r.y_min) * scaleY * pixelRatio);
+          for (const r of crop.regions) context.rect((r.x_min * scaleX - renderLeft) * pixelRatio,
+            (r.y_min * scaleY - renderTop) * pixelRatio, (r.x_max - r.x_min) * scaleX * pixelRatio, (r.y_max - r.y_min) * scaleY * pixelRatio);
           context.clip();
         }
 
@@ -206,7 +241,7 @@ function PdfPageCanvas({
           canvas,
           canvasContext: context,
           viewport,
-          transform: [pixelRatio, 0, 0, pixelRatio, -left * pixelRatio, -top * pixelRatio],
+          transform: [pixelRatio, 0, 0, pixelRatio, -renderLeft * pixelRatio, -renderTop * pixelRatio],
         });
         textLayer = new TextLayerBuilder({
           pdfPage,
@@ -248,7 +283,7 @@ function PdfPageCanvas({
       textLayer?.cancel();
       onTextLayer(page, null, false);
     };
-  }, [crop, document, fit, layout, onError, onTextLayer, page, readingHeight, readingWidth, slotHeight, slotWidth, visible, zoom]);
+  }, [crop, document, fit, layout, onError, onTextLayer, page, readingHeight, readingWidth, slotHeight, slotWidth, visible, visualFit, zoom]);
 
   const placeholderScale = Math.max(.1, fit === "height" ? (slotHeight - 40) / (readingHeight ?? layout?.height ?? 792)
     : (slotWidth - 28) / (readingWidth ?? layout?.width ?? 612)) * zoom;
@@ -259,22 +294,24 @@ function PdfPageCanvas({
         x: crop.bounds.x_min / layout.width, y: crop.bounds.y_min / layout.height,
         width: (crop.bounds.x_max - crop.bounds.x_min) / layout.width, height: (crop.bounds.y_max - crop.bounds.y_min) / layout.height,
       })}>
-      <div className="pdf-page-surface" ref={surfaceRef} style={lazy ? {
+      <div className="pdf-page-window" ref={windowRef} style={lazy ? {
         width: (crop === undefined ? layout?.width ?? 612 : crop.bounds.x_max - crop.bounds.x_min) * placeholderScale,
         aspectRatio: crop === undefined ? `${layout?.width ?? 612} / ${layout?.height ?? 792}`
           : `${crop.bounds.x_max - crop.bounds.x_min} / ${crop.bounds.y_max - crop.bounds.y_min}`,
       } : undefined}>
-        <canvas
-          ref={canvasRef}
-          className={darkInk ? "pdf-canvas dark-ink" : "pdf-canvas"}
-          aria-label={`Page ${page} of ${pageCount}`}
-        />
-        <PdfSourceMarks marks={sourceMarks} text={sourceText} page={page} width={sourceDimensions?.width ?? layout?.width ?? 612} height={sourceDimensions?.height ?? layout?.height ?? 792} crop={crop} />
-        <div
-          ref={textLayerRef}
-          className="pdf-text-layer-host"
-          data-page={page}
-        />
+        <div className="pdf-page-surface" ref={surfaceRef}>
+          <canvas
+            ref={canvasRef}
+            className={darkInk ? "pdf-canvas dark-ink" : "pdf-canvas"}
+            aria-label={`Page ${page} of ${pageCount}`}
+          />
+          <PdfSourceMarks marks={sourceMarks} text={sourceText} page={page} width={sourceDimensions?.width ?? layout?.width ?? 612} height={sourceDimensions?.height ?? layout?.height ?? 792} crop={crop} />
+          <div
+            ref={textLayerRef}
+            className="pdf-text-layer-host"
+            data-page={page}
+          />
+        </div>
       </div>
       <figcaption>{page}</figcaption>
     </figure>
@@ -301,6 +338,7 @@ export function PdfReader({
   onOpenFullPaper,
   onZoom,
   onReturnToMap,
+  onGloss,
   keyboardEnabled = true,
   toolbarVisible = true,
 }: PdfReaderProps) {
@@ -309,6 +347,7 @@ export function PdfReader({
   const [containerWidth, setContainerWidth] = useState(900);
   const [containerHeight, setContainerHeight] = useState(650);
   const [fit, setFit] = useState<"width" | "height">("height");
+  const [visualFit, setVisualFit] = useState(false);
   const [flow, setFlow] = useState<"paged" | "continuous">(pageSubset === undefined ? "paged" : "continuous");
   const [axis, setAxis] = useState<"vertical" | "horizontal">("vertical");
   const [selectionState, setSelectionState] = useState<SelectionState | null>(null);
@@ -317,6 +356,12 @@ export function PdfReader({
   const readerRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportsRef = useRef(new Map<number, PageViewport>());
+  const pendingG = useRef<number | null>(null);
+  const clearPendingG = useCallback(() => {
+    if (pendingG.current !== null) window.clearTimeout(pendingG.current);
+    pendingG.current = null;
+    readerRef.current?.removeAttribute("data-key-prefix");
+  }, []);
   const handleRenderError = useCallback((message: string): void => setError(message), []);
 
   useEffect(() => {
@@ -373,7 +418,7 @@ export function PdfReader({
     return () => window.cancelAnimationFrame(frame);
   }, [axis, flow, page, pageJump, pdfDocument]);
 
-  const changeFit = useCallback((next: "width" | "height") => { setFit(next); onZoom?.(1 - zoom); }, [onZoom, zoom]);
+  const changeFit = useCallback((next: "width" | "height", visual = false) => { setFit(next); setVisualFit(visual); onZoom?.(1 - zoom); }, [onZoom, zoom]);
   const changeFlow = useCallback(() => { onPage(flow === "continuous" ? readingPage : page); setFlow((value) => value === "paged" ? "continuous" : "paged"); }, [flow, onPage, page, readingPage]);
   const changeAxis = useCallback(() => { onPage(flow === "continuous" ? readingPage : page); setFlow("continuous"); setAxis((value) => value === "vertical" ? "horizontal" : "vertical"); }, [flow, onPage, page, readingPage]);
 
@@ -390,15 +435,45 @@ export function PdfReader({
   }, [axis, flow]);
 
   useLayoutEffect(() => {
+    // A prefix belongs to this reading context, never to a later page or pane.
+    window.addEventListener("blur", clearPendingG);
+    window.addEventListener("pointerdown", clearPendingG, true);
+    window.addEventListener("focusin", clearPendingG, true);
+    return () => {
+      clearPendingG();
+      window.removeEventListener("blur", clearPendingG);
+      window.removeEventListener("pointerdown", clearPendingG, true);
+      window.removeEventListener("focusin", clearPendingG, true);
+    };
+  }, [clearPendingG, keyboardEnabled, page, url, flow]);
+
+  useLayoutEffect(() => {
     if (!keyboardEnabled) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || handleNotesPaneKey(event)) return;
-      if (window.document.querySelector(".section-figure-view") !== null || event.target instanceof Element && event.target.closest(".notes-panel") !== null) return;
+      if (event.key === "Shift") return;
+      if (event.defaultPrevented || handleNotesPaneKey(event)) { clearPendingG(); return; }
+      if (window.document.querySelector(".section-figure-view") !== null || event.target instanceof Element && event.target.closest(".notes-panel") !== null) { clearPendingG(); return; }
+      const target = event.target;
+      if (event.isComposing || event.metaKey || event.altKey || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement || target instanceof HTMLElement && target.isContentEditable) { clearPendingG(); return; }
+      if (event.repeat && ["g", "H", "W", "w"].includes(event.key) && !event.ctrlKey) {
+        event.preventDefault(); event.stopImmediatePropagation(); return;
+      }
+      const prefixed = pendingG.current !== null;
+      clearPendingG();
+      if (prefixed && !event.ctrlKey && ["H", "W", "g", "Escape"].includes(event.key)) {
+        event.preventDefault(); event.stopImmediatePropagation();
+        if (event.key === "H" || event.key === "W") changeFit(event.key === "H" ? "height" : "width", true);
+        return;
+      }
       const sourceHandled = event.key === "q" || event.key === "Escape" ? flushSync(() => sourceKey(event)) : sourceKey(event);
       if (sourceHandled) { event.preventDefault(); event.stopImmediatePropagation(); return; }
-      const target = event.target;
-      if (event.metaKey || event.altKey || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
-        || target instanceof HTMLSelectElement || target instanceof HTMLElement && target.isContentEditable) return;
+      if (!event.ctrlKey && event.key === "g") {
+        event.preventDefault(); event.stopImmediatePropagation();
+        readerRef.current?.setAttribute("data-key-prefix", "g");
+        pendingG.current = window.setTimeout(() => { clearPendingG(); onGloss?.(); }, 420);
+        return;
+      }
       const host = containerRef.current;
       let action: (() => void) | undefined;
       if (!event.ctrlKey) {
@@ -425,7 +500,7 @@ export function PdfReader({
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [availablePages, axis, changeAxis, changeFit, changeFlow, flow, keyboardEnabled, onPage, page, sourceKey, step]);
+  }, [availablePages, axis, changeAxis, changeFit, changeFlow, clearPendingG, flow, keyboardEnabled, onGloss, onPage, page, sourceKey, step]);
 
   const handleTextLayer = useCallback(
     (pageNumber: number, viewport: PageViewport | null): void => {
@@ -537,16 +612,18 @@ export function PdfReader({
     const node = readerRef.current;
     if (node === null) return;
     const quit = (event: Event) => {
+      if (pendingG.current !== null) { clearPendingG(); event.preventDefault(); return; }
       const closed = flushSync(sourceQuit);
       if (closed) { event.preventDefault(); return; }
       if (selectionState !== null) { clearSelection(); event.preventDefault(); }
     };
     node.addEventListener("source-quit", quit);
     return () => node.removeEventListener("source-quit", quit);
-  }, [clearSelection, selectionState, sourceQuit]);
+  }, [clearPendingG, clearSelection, selectionState, sourceQuit]);
 
   return (
     <section ref={readerRef} className="pdf-reader" tabIndex={-1} aria-label={`PDF: ${title}`} data-flow={flow} data-axis={axis} data-fit={fit}
+      data-fit-bounds={visualFit ? "visual" : "page"}
       data-source-local-mode={sourceTools.localMode || selectionState !== null ? "true" : undefined}
       data-source-visual={keyboardEnabled && sourceTools.visualMode ? "true" : undefined}
       onPointerUp={(event) => {
@@ -605,8 +682,8 @@ export function PdfReader({
               onOpenFullPaper?.(flow === "continuous" ? readingPage : page);
             }}>Open full paper ↗</button>}
           </>}
-          <button type="button" aria-label="Fit width" title="Fit width (W)" className={fit === "width" ? "is-active" : ""} onClick={() => changeFit("width")}>W</button>
-          <button type="button" aria-label="Fit height" title="Fit height (H)" className={fit === "height" ? "is-active" : ""} onClick={() => changeFit("height")}>H</button>
+          <button type="button" aria-label="Fit width" title="Fit page width (W); fit content width (gW)" className={fit === "width" && !visualFit ? "is-active" : ""} onClick={() => changeFit("width")}>W</button>
+          <button type="button" aria-label="Fit height" title="Fit page height (H); fit content height (gH)" className={fit === "height" && !visualFit ? "is-active" : ""} onClick={() => changeFit("height")}>H</button>
           <button type="button" aria-label="Toggle paged or continuous reading" title="Paged / continuous (P)" onClick={changeFlow}>{flow === "paged" ? "Paged" : "Continuous"}</button>
           <button type="button" aria-label="Toggle scroll direction" title="Rotate scrolling: vertical / horizontal (R)" onClick={changeAxis}>{axis === "vertical" ? "Vertical" : "Horizontal"}</button>
           <button type="button" className={darkInk ? "is-active" : ""} onClick={onToggleInk}>
@@ -627,6 +704,7 @@ export function PdfReader({
             slotWidth={slotWidth}
             slotHeight={containerHeight}
             fit={fit}
+            visualFit={visualFit}
             zoom={zoom}
             darkInk={darkInk}
             pageCount={pageCount}

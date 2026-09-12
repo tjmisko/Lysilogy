@@ -26,6 +26,7 @@ const GROUPS = [
       ["p", "Toggle overview / source PDF"],
       ["2", "Toggle one-page / two-page PDF view"],
       ["W / H", "Fit PDF width / height (resets zoom)"],
+      ["g W / g H", "Fit visible PDF content width / height with a small margin (resets zoom)"],
       ["P", "Toggle paged / continuous PDF reading"],
       ["R", "Rotate continuous scrolling: vertical / horizontal"],
       ["+ / −", "Show one fewer / one more page column in Overview"],
