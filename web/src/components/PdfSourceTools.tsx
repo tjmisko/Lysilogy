@@ -67,7 +67,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     request.current = fetch(readingIndexUrl(url), { signal: abort.signal }).then(async (response) => {
       if (!response.ok) throw new Error(`Source indexing failed (${response.status}). Try again after extraction finishes.`);
       const data = await response.json() as ReadingIndex;
-      if (typeof data.text !== "string" || !Array.isArray(data.tokens) || ![1, 2].includes(data.schema_version)) throw new Error("The source index is unavailable. Restart the backend to enable paper search.");
+      if (typeof data.text !== "string" || !Array.isArray(data.tokens) || ![1, 2, 3].includes(data.schema_version)) throw new Error("The source index is unavailable. Restart the backend to enable paper search.");
       if (indices.size >= 4) indices.delete(indices.keys().next().value ?? "");
       indices.set(url, data);
       if (mounted.current) setIndex(data);

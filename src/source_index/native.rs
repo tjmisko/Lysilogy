@@ -121,7 +121,7 @@ fn source_lines(page: &SourcePage) -> Vec<Line<'_>> {
 }
 
 fn group_lines<'a>(lines: &[Line<'a>], page: &SourcePage, font: f32) -> Vec<SourceParagraph<'a>> {
-    let kinds = lines
+    let mut kinds = lines
         .iter()
         .map(|line| kind(line, page, font))
         .collect::<Vec<_>>();
@@ -129,8 +129,16 @@ fn group_lines<'a>(lines: &[Line<'a>], page: &SourcePage, font: f32) -> Vec<Sour
     let mut previous: Option<&Line<'_>> = None;
     for (index, line) in lines.iter().enumerate() {
         let profile = local_profile(lines, &kinds, index, font);
-        let inferred_kind = kinds[index];
         let next = lines.get(index + 1);
+        if kinds[index] == "list"
+            && previous.is_some_and(|previous| {
+                kinds[index - 1] == "body"
+                    && dash_continues_prose(previous, line, next, profile, font)
+            })
+        {
+            kinds[index] = "body";
+        }
+        let inferred_kind = kinds[index];
         let indented = previous.is_some_and(|previous| {
             first_line_indent(previous, line, next, profile, font)
                 && !hanging_continuation(previous, line, next, kinds[index - 1], font)
@@ -208,6 +216,38 @@ fn group_lines<'a>(lines: &[Line<'a>], page: &SourcePage, font: f32) -> Vec<Sour
 struct ColumnProfile {
     left: f32,
     line_gap: f32,
+}
+
+fn starts_with_dash(line: &Line<'_>) -> bool {
+    matches!(line.text.split_whitespace().next(), Some("-" | "–" | "—"))
+}
+
+// A line wrap can put a parenthetical dash at the left margin. It continues
+// unfinished prose when the surrounding layout agrees, rather than starting
+// a list. Explicit bullets, separate blocks, list lead-ins ending in a colon,
+// repeated dash items, and hanging list continuations keep their list kind.
+fn dash_continues_prose(
+    previous: &Line<'_>,
+    line: &Line<'_>,
+    next: Option<&Line<'_>>,
+    profile: ColumnProfile,
+    font: f32,
+) -> bool {
+    let gap = line.rect.y_min - previous.rect.y_max;
+    let list_follows = next.is_some_and(|next| {
+        next.block == line.block
+            && (starts_with_dash(next)
+                || !ends_sentence(&line.text) && next.rect.x_min - line.rect.x_min > font * 0.3)
+    });
+    starts_with_dash(line)
+        && previous.block == line.block
+        && !ends_sentence(&previous.text)
+        && same_column(previous, line, font)
+        && (line.height - previous.height).abs() < font * 0.15
+        && (line.rect.x_min - profile.left).abs() < font * 0.25
+        && gap >= -font * 0.2
+        && gap <= font.mul_add(0.35, profile.line_gap)
+        && !list_follows
 }
 
 impl ColumnProfile {

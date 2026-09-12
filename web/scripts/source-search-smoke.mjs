@@ -69,7 +69,7 @@ function selectionFixture() {
     {text:'gamma delta',x:360,y:230,paragraph:2},
     {text:'A😀e\u0301Z',encoded:'A~^Z',x:48,y:290,paragraph:3},
   ];
-  const index={schema_version:2,text:'',pages:[],tokens:[],objects:{word:[],WORD:[],sentence:[],paragraph:[]},figures:[],gaps:[]};
+  const index={schema_version:3,text:'',pages:[],tokens:[],objects:{word:[],WORD:[],sentence:[],paragraph:[]},figures:[],gaps:[]};
   let paragraphStart=0;
   for(let i=0;i<runs.length;i++) {
     const run=runs[i]; const start=index.text.length;

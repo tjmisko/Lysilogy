@@ -301,6 +301,105 @@ fn native_block_structure_retains_a_complete_real_abstract() {
 }
 
 #[test]
+fn wrapped_dash_variants_continue_prose_and_keep_the_next_indent_separate() {
+    for dash in ["-", "–", "—"] {
+        let index = assemble(&[page(vec![
+            prose_line("Some relationships remain implicit", 0, 50.0, 100.0),
+            prose_line(
+                &format!("{dash} others are encoded in the hierarchy."),
+                1,
+                50.0,
+                114.0,
+            ),
+            prose_line("A different paragraph begins here", 2, 54.0, 128.0),
+            prose_line("and continues at the body margin.", 3, 50.0, 142.0),
+        ])]);
+        let paragraphs = paragraph_texts(&index);
+        assert_eq!(paragraphs.len(), 2, "{dash}: {paragraphs:?}");
+        assert!(paragraphs[0].ends_with("encoded in the hierarchy."));
+        assert!(paragraphs[1].starts_with("A different paragraph"));
+        assert!(
+            index
+                .objects
+                .paragraph
+                .iter()
+                .all(|span| span.kind == "body")
+        );
+    }
+}
+
+#[test]
+fn real_dash_lists_keep_their_boundaries() {
+    for marker in ["-", "–", "—", "•", "●"] {
+        let index = assemble(&[page(vec![
+            prose_line("We evaluate two distinct settings:", 0, 50.0, 100.0),
+            prose_line(&format!("{marker} The first setting uses"), 1, 50.0, 114.0),
+            prose_line("a hanging continuation on this line.", 2, 60.0, 128.0),
+            prose_line(
+                &format!("{marker} The second setting differs."),
+                3,
+                50.0,
+                142.0,
+            ),
+        ])]);
+        let kinds = index
+            .objects
+            .paragraph
+            .iter()
+            .map(|span| span.kind.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            kinds,
+            vec!["body", "list", "list"],
+            "{marker}: {:?}",
+            paragraph_texts(&index)
+        );
+    }
+    let index = assemble(&[page(vec![
+        prose_line("An unfinished lead-in introduces", 0, 50.0, 100.0),
+        prose_line("— a first parallel item", 1, 50.0, 114.0),
+        prose_line("— a second parallel item", 2, 50.0, 128.0),
+    ])]);
+    assert_eq!(index.objects.paragraph.len(), 3);
+    assert_eq!(index.objects.paragraph[1].kind, "list");
+    assert_eq!(index.objects.paragraph[2].kind, "list");
+}
+
+#[test]
+fn native_dash_wrapped_hierarchy_paragraph_reaches_desai_citation() {
+    let pages = native::parse(include_str!(
+        "../../tests/fixtures/hierarchy-introduction.html"
+    ))
+    .unwrap();
+    let index = assemble(&pages);
+    let paragraphs = paragraph_texts(&index);
+    let humans = index.text[..index.text.find("humans").unwrap()]
+        .encode_utf16()
+        .count();
+    let paragraph = index
+        .objects
+        .paragraph
+        .iter()
+        .find(|span| span.start <= humans && span.end > humans)
+        .unwrap();
+    let selected = figures::utf16_slice(&index.text, paragraph.start, paragraph.end);
+    assert!(selected.starts_with("As humans,"), "{selected}");
+    assert!(selected.contains("explicit — ImageNet"), "{selected}");
+    assert!(selected.ends_with("(Desai et al., 2021)."), "{selected}");
+    assert_eq!(paragraphs.len(), 4, "{paragraphs:#?}");
+    assert!(paragraphs[1].starts_with("As a result,"));
+    assert!(paragraphs[2].starts_with("The task of learning"));
+    assert!(paragraphs[3].starts_with("In this paper,"));
+    assert!(
+        index
+            .objects
+            .paragraph
+            .iter()
+            .all(|span| span.kind == "body")
+    );
+}
+
+#[test]
 fn real_goodhart_prose_definition_and_numbered_footnotes_have_independent_boundaries() {
     let pages = native::parse(include_str!(
         "../../tests/fixtures/goodhart-paragraphs.html"

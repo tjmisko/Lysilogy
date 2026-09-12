@@ -17,8 +17,10 @@ normalizes common ligatures, soft hyphens, and line-wrap hyphenation, keeping co
 for both pieces of a joined word. Common scientific compound prefixes retain their hyphens.
 Paragraphs use blocks, local column margins and line spacing, first-line indentation, and column discontinuities.
 This recognizes small recurring indents even when Poppler places several paragraphs in one block,
-while preserving hanging definitions and double-spaced prose. Index schema 2 invalidates older cached
-boundaries automatically; it keeps the same response fields. Headings, captions,
+while preserving hanging definitions and double-spaced prose. Line-leading hyphens and en/em dashes
+continue unfinished prose when the surrounding layout agrees; list lead-ins, repeated bullets, and
+hanging list items stay separate. Index schema 3 invalidates older cached boundaries automatically;
+it keeps the same response fields. Headings, captions,
 lists, and small bottom-page footnotes stay separate; folios and rotated repository stamps
 are excluded. Clear lowercase prose continuations across a page break can share a paragraph,
 but a footnote/header boundary prevents an unsafe join. Unicode word/sentence boundaries and
