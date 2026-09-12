@@ -308,7 +308,7 @@ export function PdfReader({
   const [error, setError] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(900);
   const [containerHeight, setContainerHeight] = useState(650);
-  const [fit, setFit] = useState<"width" | "height">("width");
+  const [fit, setFit] = useState<"width" | "height">("height");
   const [flow, setFlow] = useState<"paged" | "continuous">(pageSubset === undefined ? "paged" : "continuous");
   const [axis, setAxis] = useState<"vertical" | "horizontal">("vertical");
   const [selectionState, setSelectionState] = useState<SelectionState | null>(null);

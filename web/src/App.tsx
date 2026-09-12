@@ -94,7 +94,7 @@ export function App() {
   const view: ViewMode = paperView?.analysis == null ? "text" : preferredView;
   const [textMode, setTextMode] = useState<TextMode>("pdf");
   const [compactLayout, setCompactLayout] = useState(() => window.innerWidth < 1180);
-  const [libraryOpen, setLibraryOpen] = useState(() => initialPaperId() !== null && window.innerWidth >= 1180);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
@@ -281,7 +281,7 @@ export function App() {
     const query = window.matchMedia("(max-width: 1179px)");
     const updateLayout = (event: MediaQueryListEvent | MediaQueryList): void => {
       setCompactLayout(event.matches);
-      setLibraryOpen(selectedIdRef.current !== null && !event.matches);
+      if (event.matches) setLibraryOpen(false);
     };
     query.addEventListener("change", updateLayout);
     return () => query.removeEventListener("change", updateLayout);
@@ -343,7 +343,7 @@ export function App() {
       setSelectedId(id);
       setPaperView(null);
       setError(null);
-      setLibraryOpen(window.innerWidth >= 1180);
+      setLibraryOpen(false);
       void loadPaper(id).catch((reason: unknown) => {
         if (selectedIdRef.current === id) setError(reason instanceof Error ? reason.message : "Could not load paper");
       });
@@ -476,10 +476,8 @@ export function App() {
   }, [activeSection, paperMap, sections]);
 
   const openPage = useCallback((page: number): void => {
-    if (focusRestore.current !== null) {
-      setLibraryOpen(focusRestore.current.library);
-      focusRestore.current = null;
-    }
+    focusRestore.current = null;
+    setLibraryOpen(false);
     setPdfPage(page);
     setPanel(null);
     setTextMode("pdf");
@@ -893,15 +891,21 @@ export function App() {
   const abstractPage = analysis?.abstract_extraction?.start_page ?? analysis?.sections.find((section) => section.kind === "abstract")?.pages.start
     ?? null;
   const sectionFocused = panel === "digest" && view === "overview" && selectedSection !== null && analysis !== null && currentPaper !== null;
+  const readingPdf = !home && paperView !== null && (sectionFocused || (view === "text" && textMode === "pdf"));
   useEffect(() => {
     if (sectionFocused || focusRestore.current === null) return;
     // Tabs, the article switcher, and other overlays can also leave the focused reader.
     const restore = focusRestore.current;
     focusRestore.current = null;
-    window.queueMicrotask(() => setLibraryOpen(restore.library));
-  }, [sectionFocused]);
+    window.queueMicrotask(() => setLibraryOpen(readingPdf ? false : restore.library));
+  }, [readingPdf, sectionFocused]);
 
-  const readingPdf = !home && paperView !== null && (sectionFocused || (view === "text" && textMode === "pdf"));
+  useLayoutEffect(() => {
+    if (!readingPdf) return;
+    // Apply defaults on reader entry, while allowing manual sidebar/zoom changes inside it.
+    setLibraryOpen(false);
+    setPdfZoom(1);
+  }, [readingPdf, sectionFocused, selectedId]);
   const toolbarVisible = !readingPdf || toolbarPinned || toolbarPeek;
   useLayoutEffect(() => {
     const header = topbarRef.current;

@@ -170,6 +170,25 @@ try {
   await page.goto(`http://lysilogy.test/#paper=${id}`);
   await page.locator('.pdf-reader').waitFor();
   await page.waitForFunction(()=>document.querySelector('.pdf-canvas')?.dataset.rendered==='true');
+  const expectReaderDefaults=async()=>{
+    assert.equal(await page.locator('.app-shell.has-library').count(),0,'PDF entry keeps the library closed');
+    assert.equal(await page.locator('.pdf-reader').getAttribute('data-fit'),'height');
+    await page.waitForFunction(()=>{
+      const canvas=document.querySelector('.pdf-canvas');
+      const viewport=document.querySelector('.pdf-viewport');
+      return canvas?.dataset.rendered==='true'&&viewport&&canvas.getBoundingClientRect().height<=viewport.clientHeight;
+    });
+  };
+  await expectReaderDefaults();
+  await page.keyboard.press('F1');
+  await page.locator('.app-shell.has-library').waitFor();
+  await page.keyboard.press('F1');
+  await page.setViewportSize({width:900,height:800});
+  await page.setViewportSize({width:1280,height:800});
+  await expectReaderDefaults();
+  await page.keyboard.press('W');
+  assert.equal(await page.locator('.pdf-reader').getAttribute('data-fit'),'width','manual fitting still works');
+  await page.keyboard.press('+');
   await initialIndexStarted.promise;
   assert.equal(indexRequests.length,1,'opening the PDF warms its index before any search');
   assert.equal(indexRequests[0].priority,'background');
@@ -184,6 +203,7 @@ try {
   await page.locator('.home-page').waitFor();
   await page.locator('.paper-card').click();await page.locator('.pdf-reader').waitFor();
   await page.waitForFunction(()=>document.querySelector('.pdf-canvas')?.dataset.rendered==='true');
+  await expectReaderDefaults();
   await page.evaluate(()=>new Promise(resolve=>requestIdleCallback(resolve,{timeout:1500})));
   assert.equal(indexRequests.length,1,'returning to the PDF shares its unfinished index request');
   const warmed=page.waitForResponse(response=>new URL(response.url()).pathname.endsWith('/reading-index'));
@@ -258,14 +278,18 @@ try {
   // A cropped section reports outside matches without leaking that source into its crop.
   analyzed=true;await page.reload();
   await page.getByRole('button',{name:'Overview',exact:true}).click();
+  await page.keyboard.press('F1');
+  await page.locator('.app-shell.has-library').waitFor();
   await page.locator('.section-boxes button[data-section-id="regressional"]').first().click();
   await page.locator('.section-focus').waitFor();
+  await expectReaderDefaults();
   await page.keyboard.press('/');await search.fill('Sentence 1 on page 1');await search.press('Enter');
   await page.getByRole('button',{name:'Open match in full paper'}).waitFor();
   assert.equal(await page.locator('.section-focus [data-pdf-page="1"]').count(),0);
   await page.getByRole('button',{name:'Open match in full paper'}).click();
   await page.waitForFunction(()=>document.querySelector('.section-focus')===null);
   await page.waitForFunction(()=>document.querySelector('[data-pdf-page="1"] canvas')?.dataset.rendered==='true');
+  await expectReaderDefaults();
   assert.match(await page.locator('.pdf-source-status').innerText(),/Sentence 1 on page 1/);
   // Clipboard denial leaves the exact source passage available for manual copy.
   await page.evaluate(()=>{navigator.clipboard.writeText=async()=>{throw Error('Denied');};});
