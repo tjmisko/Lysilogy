@@ -77,14 +77,31 @@ struct Line<'a> {
     block: u32,
     rect: TextRect,
     text: String,
+    height: f32,
 }
 
 pub(super) fn paragraphs(page: &SourcePage) -> Vec<SourceParagraph<'_>> {
+    let mut heights = page
+        .words
+        .iter()
+        .map(|word| word.rect.y_max - word.rect.y_min)
+        .filter(|height| *height > 3.0 && *height < page.height * 0.07)
+        .collect::<Vec<_>>();
+    heights.sort_by(f32::total_cmp);
+    let font = heights.get(heights.len() / 2).copied().unwrap_or(10.0);
+    let lines = source_lines(page)
+        .into_iter()
+        .filter(|line| !omit(line, page, font))
+        .collect::<Vec<_>>();
+    group_lines(&lines, page, font)
+}
+
+fn source_lines(page: &SourcePage) -> Vec<Line<'_>> {
     let mut by_line = BTreeMap::<u32, Vec<&SourceWord>>::new();
     for word in &page.words {
         by_line.entry(word.line).or_default().push(word);
     }
-    let lines = by_line
+    by_line
         .into_values()
         .filter_map(|words| {
             let first = words.first()?;
@@ -96,28 +113,37 @@ pub(super) fn paragraphs(page: &SourcePage) -> Vec<SourceParagraph<'_>> {
                     .map(|word| word.text.as_str())
                     .collect::<Vec<_>>()
                     .join(" "),
+                height: median_height(&words),
                 words,
             })
         })
-        .collect::<Vec<_>>();
-    let mut heights = page
-        .words
+        .collect()
+}
+
+fn group_lines<'a>(lines: &[Line<'a>], page: &SourcePage, font: f32) -> Vec<SourceParagraph<'a>> {
+    let kinds = lines
         .iter()
-        .map(|word| word.rect.y_max - word.rect.y_min)
-        .filter(|height| *height > 3.0 && *height < page.height * 0.07)
+        .map(|line| kind(line, page, font))
         .collect::<Vec<_>>();
-    heights.sort_by(f32::total_cmp);
-    let font = heights.get(heights.len() / 2).copied().unwrap_or(10.0);
     let mut result = Vec::<SourceParagraph<'_>>::new();
     let mut previous: Option<&Line<'_>> = None;
-    for line in &lines {
-        // Folios and rotated repository stamps are navigational furniture, not prose.
-        if omit(line, page, font) {
-            continue;
-        }
-        let inferred_kind = kind(line, page, font);
+    for (index, line) in lines.iter().enumerate() {
+        let profile = local_profile(lines, &kinds, index, font);
+        let inferred_kind = kinds[index];
+        let next = lines.get(index + 1);
+        let indented = previous.is_some_and(|previous| {
+            first_line_indent(previous, line, next, profile, font)
+                && !hanging_continuation(previous, line, next, kinds[index - 1], font)
+        });
         let inherited = inferred_kind == "body"
-            && previous.is_some_and(|previous| previous.block == line.block)
+            && !indented
+            && previous.is_some_and(|previous| {
+                previous.block == line.block
+                    && same_column(previous, line, font)
+                    && line.rect.y_min - previous.rect.y_max <= profile.paragraph_gap(font)
+                    && line.rect.x_min >= font.mul_add(-0.25, previous.rect.x_min)
+                    && (line.height - previous.height).abs() < font * 0.15
+            })
             && result.last().is_some_and(|paragraph| {
                 matches!(paragraph.kind.as_str(), "caption" | "list" | "footnote")
             });
@@ -134,34 +160,33 @@ pub(super) fn paragraphs(page: &SourcePage) -> Vec<SourceParagraph<'_>> {
             let gap = line.rect.y_min - previous.rect.y_max;
             let shift = line.rect.x_min - previous.rect.x_min;
             let block_changed = line.block != previous.block;
-            let hanging = !block_changed
-                && shift > 0.0
-                && shift < font * 4.0
-                && !previous.text.ends_with(['.', '!', '?', ':', ';'])
-                && line.text.chars().next().is_some_and(char::is_lowercase);
-            let same_column = shift.abs() < font * 2.2 || hanging;
             let continuation = block_changed
-                && same_column
-                && (-font * 0.2..font * 0.75).contains(&gap)
-                && !previous.text.ends_with(['.', '!', '?', ':'])
+                && same_column(previous, line, font)
+                && shift.abs() < font * 0.25
+                && gap >= -font * 0.2
+                && gap < font.mul_add(0.35, profile.line_gap).max(font * 0.75)
+                && !ends_sentence(&previous.text)
+                && line.text.chars().next().is_some_and(char::is_lowercase)
                 && kind == "body"
                 && result
                     .last()
                     .is_some_and(|paragraph| paragraph.kind == "body");
-            let indented = !inherited
-                && !hanging
-                && shift > font * 0.7
-                && shift < font * 3.5
-                && gap > -font * 0.2;
+            let ended_hanging = shift < -font * 0.25
+                && ends_sentence(&previous.text)
+                && result
+                    .last()
+                    .and_then(|paragraph| paragraph.words.first())
+                    .is_some_and(|first| previous.rect.x_min - first.rect.x_min > font * 0.5);
             let new_kind = result
                 .last()
                 .is_some_and(|paragraph| paragraph.kind != kind);
             new_kind
                 || (!continuation && block_changed)
-                || gap > font * 0.9
+                || gap > profile.paragraph_gap(font)
                 || gap < -font * 0.65
-                || !same_column
+                || !same_column(previous, line, font)
                 || indented
+                || ended_hanging
                 || kind == "heading"
                 || inferred_kind == "list"
         });
@@ -179,6 +204,147 @@ pub(super) fn paragraphs(page: &SourcePage) -> Vec<SourceParagraph<'_>> {
     result
 }
 
+#[derive(Clone, Copy)]
+struct ColumnProfile {
+    left: f32,
+    line_gap: f32,
+}
+
+impl ColumnProfile {
+    fn paragraph_gap(self, font: f32) -> f32 {
+        font.mul_add(0.55, self.line_gap).max(font * 0.9)
+    }
+}
+
+// Poppler can put many indented paragraphs into one block. Infer the recurring
+// prose margin in a bounded reading-order neighborhood, not the previous line's
+// x position: a new paragraph can even outdent from a hanging definition.
+fn local_profile(lines: &[Line<'_>], kinds: &[&str], index: usize, font: f32) -> ColumnProfile {
+    let line = &lines[index];
+    let start = index.saturating_sub(16);
+    let end = (index + 17).min(lines.len());
+    let candidates = (start..end)
+        .filter(|&other| {
+            let other_line = &lines[other];
+            (kinds[other] == "body" || kinds[index] == "footnote" && kinds[other] == "footnote")
+                && same_column(line, other_line, font)
+                && (line.height - other_line.height).abs() < font * 0.15
+                && other_line
+                    .text
+                    .chars()
+                    .filter(|ch| ch.is_alphabetic())
+                    .count()
+                    >= 12
+        })
+        .collect::<Vec<_>>();
+    let same_block = candidates
+        .iter()
+        .copied()
+        .filter(|&other| lines[other].block == line.block)
+        .collect::<Vec<_>>();
+    let candidates = if same_block.len() >= 3 {
+        &same_block
+    } else {
+        &candidates
+    };
+    let mut margins = candidates
+        .iter()
+        .map(|&other| lines[other].rect.x_min)
+        .collect::<Vec<_>>();
+    margins.sort_by(f32::total_cmp);
+    let tolerance = (font * 0.12).max(0.7);
+    let left = margins
+        .windows(2)
+        .find(|pair| pair[1] - pair[0] <= tolerance)
+        .map_or_else(
+            || margins.first().copied().unwrap_or(line.rect.x_min),
+            |pair| pair[0],
+        );
+    let mut gaps = candidates
+        .windows(2)
+        .filter_map(|pair| {
+            if pair[1] != pair[0] + 1 {
+                return None;
+            }
+            let gap = lines[pair[1]].rect.y_min - lines[pair[0]].rect.y_max;
+            (gap >= -font * 0.2 && gap <= font * 2.2).then_some(gap)
+        })
+        .collect::<Vec<_>>();
+    gaps.sort_by(f32::total_cmp);
+    ColumnProfile {
+        left,
+        // The lower median avoids mistaking a paragraph gap for normal leading.
+        line_gap: gaps
+            .get(gaps.len().saturating_sub(1) / 2)
+            .copied()
+            .unwrap_or(font * 0.3),
+    }
+}
+
+fn same_column(left: &Line<'_>, right: &Line<'_>, font: f32) -> bool {
+    let shift = (left.rect.x_min - right.rect.x_min).abs();
+    let overlap = left.rect.x_max.min(right.rect.x_max) - left.rect.x_min.max(right.rect.x_min);
+    shift < font * 4.0 && (overlap > 0.0 || shift < font * 0.25)
+}
+
+fn first_line_indent(
+    previous: &Line<'_>,
+    line: &Line<'_>,
+    next: Option<&Line<'_>>,
+    profile: ColumnProfile,
+    font: f32,
+) -> bool {
+    let threshold = (font * 0.25).max(1.8);
+    let indent = line.rect.x_min - profile.left;
+    if indent < threshold || indent >= font * 4.0 {
+        return false;
+    }
+    let next_returns = next.is_some_and(|next| {
+        same_column(line, next, font)
+            && next.rect.y_min > line.rect.y_min
+            && (next.rect.x_min - profile.left).abs() < threshold
+    });
+    next_returns
+        || line.rect.x_min - previous.rect.x_min >= threshold && ends_sentence(&previous.text)
+}
+
+fn hanging_continuation(
+    previous: &Line<'_>,
+    line: &Line<'_>,
+    next: Option<&Line<'_>>,
+    previous_kind: &str,
+    font: f32,
+) -> bool {
+    let shift = line.rect.x_min - previous.rect.x_min;
+    let label = [" - ", " – ", " — ", ": "]
+        .iter()
+        .any(|separator| previous.text.contains(separator));
+    let keeps_hanging = next.is_some_and(|next| {
+        next.block == line.block
+            && next.rect.y_min > line.rect.y_min
+            && (next.rect.x_min - line.rect.x_min).abs() < font * 0.2
+    });
+    previous.block == line.block
+        && shift > 0.0
+        && shift < font * 4.0
+        && !ends_sentence(&previous.text)
+        && (label || previous_kind == "list" || keeps_hanging)
+}
+
+fn ends_sentence(text: &str) -> bool {
+    text.trim_end_matches(['\"', '\'', '”', '’', ')', ']'])
+        .ends_with(['.', '!', '?', ':', ';'])
+}
+
+fn median_height(words: &[&SourceWord]) -> f32 {
+    let mut heights = words
+        .iter()
+        .map(|word| word.rect.y_max - word.rect.y_min)
+        .collect::<Vec<_>>();
+    heights.sort_by(f32::total_cmp);
+    heights.get(heights.len() / 2).copied().unwrap_or(10.0)
+}
+
 fn omit(line: &Line<'_>, page: &SourcePage, font: f32) -> bool {
     let folio = line.text.trim().chars().all(|ch| ch.is_ascii_digit())
         && line.text.len() <= 5
@@ -192,16 +358,7 @@ fn omit(line: &Line<'_>, page: &SourcePage, font: f32) -> bool {
 
 fn kind(line: &Line<'_>, page: &SourcePage, font: f32) -> &'static str {
     // Superscripts/subscripts must not make an ordinary prose line look like a heading.
-    let mut word_heights = line
-        .words
-        .iter()
-        .map(|word| word.rect.y_max - word.rect.y_min)
-        .collect::<Vec<_>>();
-    word_heights.sort_by(f32::total_cmp);
-    let height = word_heights
-        .get(word_heights.len() / 2)
-        .copied()
-        .unwrap_or(font);
+    let height = line.height;
     let lower = line.text.to_ascii_lowercase();
     if ["figure ", "fig.", "fig ", "table "]
         .iter()
@@ -222,6 +379,9 @@ fn kind(line: &Line<'_>, page: &SourcePage, font: f32) -> &'static str {
     if height > font * 1.16 && line.words.len() < 24 {
         return "heading";
     }
+    if named_heading(&lower) {
+        return "heading";
+    }
     let first = line.text.split_whitespace().next().unwrap_or("");
     if matches!(first, "•" | "●" | "–" | "—" | "-")
         || first.ends_with([')', '.'])
@@ -233,6 +393,28 @@ fn kind(line: &Line<'_>, page: &SourcePage, font: f32) -> &'static str {
         return "list";
     }
     "body"
+}
+
+fn named_heading(text: &str) -> bool {
+    let title =
+        text.trim_start_matches(|ch: char| ch.is_ascii_digit() || ch == '.' || ch.is_whitespace());
+    matches!(
+        title,
+        "abstract"
+            | "introduction"
+            | "background"
+            | "related work"
+            | "methods"
+            | "methodology"
+            | "results"
+            | "discussion"
+            | "conclusion"
+            | "conclusions"
+            | "references"
+            | "acknowledgments"
+            | "acknowledgements"
+            | "appendix"
+    )
 }
 
 pub(super) fn union(rects: impl Iterator<Item = TextRect>) -> TextRect {

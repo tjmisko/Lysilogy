@@ -15,7 +15,10 @@ native pages have no invented confidence score.
 Poppler's literal word boundaries and block/line order provide the native layout. The index
 normalizes common ligatures, soft hyphens, and line-wrap hyphenation, keeping coordinate maps
 for both pieces of a joined word. Common scientific compound prefixes retain their hyphens.
-Paragraphs use blocks, line gaps, indentation, and column discontinuities. Headings, captions,
+Paragraphs use blocks, local column margins and line spacing, first-line indentation, and column discontinuities.
+This recognizes small recurring indents even when Poppler places several paragraphs in one block,
+while preserving hanging definitions and double-spaced prose. Index schema 2 invalidates older cached
+boundaries automatically; it keeps the same response fields. Headings, captions,
 lists, and small bottom-page footnotes stay separate; folios and rotated repository stamps
 are excluded. Clear lowercase prose continuations across a page break can share a paragraph,
 but a footnote/header boundary prevents an unsafe join. Unicode word/sentence boundaries and
@@ -48,3 +51,19 @@ Tests cover a real paper abstract as one complete paragraph, columns/indentation
 page continuation, ligature and UTF-16 offset fidelity, figure mentions across pages,
 OCR confidence/coordinate conversion, an actual image-only PDF and mixed PDF, bounded
 subprocess output, and cache invalidation when the PDF changes.
+
+## Proposed boundary audit
+
+An agent-audited Markdown view would be useful for ambiguous layouts, but is not implemented by
+this deterministic index. A freely rewritten transcription cannot safely drive PDF selection:
+even a small omission or paraphrase would break word-to-coordinate alignment. The existing
+Markdown reconstruction also has no exact token mapping.
+
+The proposed audit should accept the immutable source tokens, page images, and candidate paragraph
+boundaries, and return only split/join proposals expressed as token IDs. Each proposal should carry
+the source/index revision and evidence for the boundary. A separate validator must reject reordered,
+overlapping, missing, or invented tokens and require every accepted paragraph to reference an exact
+contiguous source span. Render Markdown from those validated spans, preserving bidirectional
+token-to-Markdown mappings. Uncertain boundaries should retain the deterministic result and an
+explicit unresolved status. This keeps yanking faithful to the PDF while allowing an agent to improve
+paragraph membership without rewriting the authors' words.

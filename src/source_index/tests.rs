@@ -25,6 +25,181 @@ fn page(words: Vec<SourceWord>) -> SourcePage {
     }
 }
 
+fn prose_line(text: &str, line: u32, x: f32, y: f32) -> SourceWord {
+    let mut word = word(text, line, 0, x, y);
+    word.rect.x_max = x + 225.0;
+    word
+}
+
+fn paragraph_texts(index: &ReadingIndex) -> Vec<String> {
+    index
+        .objects
+        .paragraph
+        .iter()
+        .map(|paragraph| figures::utf16_slice(&index.text, paragraph.start, paragraph.end))
+        .collect()
+}
+
+#[test]
+fn modest_first_line_indents_split_successive_paragraphs_inside_one_poppler_block() {
+    let index = assemble(&[page(vec![
+        prose_line(
+            "First paragraph begins with a modest indent",
+            0,
+            54.0,
+            100.0,
+        ),
+        prose_line(
+            "and continues at the body margin. A new sentence",
+            1,
+            50.0,
+            114.0,
+        ),
+        prose_line(
+            "on the next line is still the same paragraph.",
+            2,
+            50.0,
+            128.0,
+        ),
+        prose_line(
+            "Second paragraph has no extra vertical space",
+            3,
+            54.0,
+            142.0,
+        ),
+        prose_line("and ends at exactly the same body margin.", 4, 50.0, 156.0),
+        prose_line(
+            "optimization can begin a lowercase paragraph",
+            5,
+            54.0,
+            170.0,
+        ),
+        prose_line(
+            "without being mistaken for a hanging continuation.",
+            6,
+            50.0,
+            184.0,
+        ),
+    ])]);
+    assert_eq!(
+        paragraph_texts(&index),
+        vec![
+            "First paragraph begins with a modest indent and continues at the body margin. A new sentence on the next line is still the same paragraph.",
+            "Second paragraph has no extra vertical space and ends at exactly the same body margin.",
+            "optimization can begin a lowercase paragraph without being mistaken for a hanging continuation.",
+        ]
+    );
+}
+
+#[test]
+fn local_margins_keep_two_columns_separate_and_split_paragraphs_in_each() {
+    let index = assemble(&[page(vec![
+        prose_line("The first column has a paragraph", 0, 54.0, 100.0),
+        prose_line("that continues on a second line.", 1, 50.0, 114.0),
+        prose_line("Another left column paragraph follows", 2, 54.0, 128.0),
+        prose_line("with no blank vertical line.", 3, 50.0, 142.0),
+        prose_line("The right column has its own margin", 4, 334.0, 100.0),
+        prose_line("that is independent of the left column.", 5, 330.0, 114.0),
+        prose_line("A second right paragraph begins here", 6, 334.0, 128.0),
+        prose_line("and continues to the column margin.", 7, 330.0, 142.0),
+    ])]);
+    let paragraphs = paragraph_texts(&index);
+    assert_eq!(paragraphs.len(), 4, "{paragraphs:?}");
+    assert!(paragraphs[1].starts_with("Another left"));
+    assert!(paragraphs[2].starts_with("The right"));
+    assert!(paragraphs[3].starts_with("A second right"));
+}
+
+#[test]
+fn body_paragraph_after_a_hanging_definition_uses_body_margin_instead_of_previous_line() {
+    let index = assemble(&[page(vec![
+        prose_line(
+            "Goodhart definition - When selecting a proxy, select not",
+            0,
+            50.0,
+            100.0,
+        ),
+        prose_line(
+            "only the true goal but also the error of the proxy",
+            1,
+            75.0,
+            114.0,
+        ),
+        prose_line(
+            "which leads to a different optimization result.",
+            2,
+            75.0,
+            128.0,
+        ),
+        prose_line(
+            "optimization can then introduce a new paragraph",
+            3,
+            54.0,
+            142.0,
+        ),
+        prose_line("that should be selected on its own.", 4, 50.0, 156.0),
+    ])]);
+    let paragraphs = paragraph_texts(&index);
+    assert_eq!(paragraphs.len(), 2, "{paragraphs:?}");
+    assert!(paragraphs[0].contains("select not only the true goal"));
+    assert!(paragraphs[0].ends_with("optimization result."));
+    assert!(paragraphs[1].starts_with("optimization can then"));
+}
+
+#[test]
+fn blank_lines_are_measured_against_local_leading_in_double_spaced_prose() {
+    let index = assemble(&[page(vec![
+        prose_line("The first paragraph uses double spacing", 0, 50.0, 100.0),
+        prose_line(
+            "and wraps normally despite larger line gaps",
+            1,
+            50.0,
+            122.0,
+        ),
+        prose_line("until the actual paragraph ending.", 2, 50.0, 144.0),
+        prose_line(
+            "An additional blank line starts this paragraph",
+            3,
+            50.0,
+            176.0,
+        ),
+        prose_line("which uses the same double spaced leading", 4, 50.0, 198.0),
+        prose_line("and should remain one complete paragraph.", 5, 50.0, 220.0),
+    ])]);
+    let paragraphs = paragraph_texts(&index);
+    assert_eq!(paragraphs.len(), 2, "{paragraphs:?}");
+    assert!(paragraphs[1].starts_with("An additional blank line"));
+}
+
+#[test]
+fn headings_and_hanging_lists_do_not_absorb_neighboring_body_paragraphs() {
+    let index = assemble(&[page(vec![
+        prose_line("The first prose paragraph ends here.", 0, 50.0, 100.0),
+        prose_line("2 Related work", 1, 50.0, 114.0),
+        prose_line("Our research follows these earlier ideas.", 2, 50.0, 128.0),
+        prose_line("1. A list item begins and wraps onto", 3, 50.0, 142.0),
+        prose_line("another line with a hanging indent.", 4, 60.0, 156.0),
+        prose_line("The body paragraph returns to its margin", 5, 50.0, 170.0),
+        prose_line(
+            "and does not inherit the preceding list kind.",
+            6,
+            50.0,
+            184.0,
+        ),
+    ])]);
+    assert_eq!(
+        index
+            .objects
+            .paragraph
+            .iter()
+            .map(|paragraph| paragraph.kind.as_str())
+            .collect::<Vec<_>>(),
+        vec!["body", "heading", "body", "list", "body"]
+    );
+    assert!(paragraph_texts(&index)[3].ends_with("hanging indent."));
+    assert!(paragraph_texts(&index)[4].starts_with("The body paragraph"));
+}
+
 #[test]
 fn wraps_words_and_preserves_utf16_geometry_across_ligatures_and_hyphens() {
     let page = page(vec![
@@ -123,6 +298,28 @@ fn native_block_structure_retains_a_complete_real_abstract() {
     assert!(text.contains("89%") || text.contains("88.9%"));
     assert!(text.ends_with("these properties."), "{text}");
     assert!(!text.contains("arXiv"));
+}
+
+#[test]
+fn real_goodhart_prose_definition_and_numbered_footnotes_have_independent_boundaries() {
+    let pages = native::parse(include_str!(
+        "../../tests/fixtures/goodhart-paragraphs.html"
+    ))
+    .unwrap();
+    let index = assemble(&pages);
+    let paragraphs = paragraph_texts(&index);
+    assert_eq!(paragraphs.len(), 6, "{paragraphs:#?}");
+    assert!(paragraphs[0].starts_with("proxy necessarily"));
+    assert!(paragraphs[0].ends_with("subcategories which differ in important ways."));
+    assert!(paragraphs[1].starts_with("To formalize the intuitive description"));
+    assert!(paragraphs[2].starts_with("Regressional Goodhart - When selecting"));
+    assert!(paragraphs[2].contains("select not only for the true goal"));
+    assert!(paragraphs[2].ends_with("“Tails come apart.” [5]"));
+    assert!(paragraphs[3].starts_with("Due to the noise"));
+    assert!(paragraphs[4].starts_with("2 In general"));
+    assert!(paragraphs[5].starts_with("3 This restriction"));
+    assert_eq!(index.objects.paragraph[4].kind, "footnote");
+    assert_eq!(index.objects.paragraph[5].kind, "footnote");
 }
 
 #[test]

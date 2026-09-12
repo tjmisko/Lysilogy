@@ -15,7 +15,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{Error, Result, domain::TextRect, store::write_atomic};
 
-pub const SCHEMA_VERSION: u16 = 1;
+pub const SCHEMA_VERSION: u16 = 2;
 const MAX_PAGES: usize = 400;
 const MAX_OCR_PAGES: usize = 12;
 const MAX_TEXT_BYTES: usize = 4 * 1024 * 1024;
