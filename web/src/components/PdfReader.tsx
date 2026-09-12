@@ -4,6 +4,7 @@ import { usePdfSourceTools, type SourceMark } from "./PdfSourceTools";
 import { sectionPageCrop, type SectionCrop } from "../lib/sectionCrop";
 import { cropTextLayer } from "../lib/cropTextLayer";
 import { visiblePdfPage } from "../lib/pdfViewport";
+import { handleNotesPaneKey } from "../lib/notesPaneKeys";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   type PDFDocumentProxy,
@@ -389,6 +390,7 @@ export function PdfReader({
   useLayoutEffect(() => {
     if (!keyboardEnabled) return;
     const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || handleNotesPaneKey(event)) return;
       if (window.document.querySelector(".section-figure-view") !== null || event.target instanceof Element && event.target.closest(".notes-panel") !== null) return;
       const sourceHandled = event.key === "q" || event.key === "Escape" ? flushSync(() => sourceKey(event)) : sourceKey(event);
       if (sourceHandled) { event.preventDefault(); event.stopImmediatePropagation(); return; }

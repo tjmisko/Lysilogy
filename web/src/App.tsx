@@ -3,6 +3,7 @@ import { NotesPanel } from "./components/NotesPanel";
 import { SectionFocus } from "./components/SectionFocus";
 import { capturePages, animatePages, type PageSnapshot } from "./lib/pageTransition";
 import { sectionPages } from "./lib/sectionScope";
+import { handleNotesPaneKey } from "./lib/notesPaneKeys";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { AbstractView } from "./components/AbstractView";
@@ -52,6 +53,14 @@ function isEditableTarget(target: EventTarget | null): boolean {
     target instanceof HTMLSelectElement ||
     (target instanceof HTMLElement && target.isContentEditable)
   );
+}
+
+function focusReaderPane(): void {
+  const reader = document.querySelector<HTMLElement>(".section-focus .pdf-reader")
+    ?? document.querySelector<HTMLElement>(".main-stage .pdf-reader")
+    ?? document.querySelector<HTMLElement>(".section-boxes button.is-active")
+    ?? document.querySelector<HTMLElement>(".main-stage");
+  reader?.focus({ preventScroll: true });
 }
 
 function initialPaperId(): string | null {
@@ -129,6 +138,7 @@ export function App() {
     setNotesOpen(false);
     if (notesRailRestore.current !== null) setLibraryOpen(notesRailRestore.current);
     notesRailRestore.current = null;
+    requestAnimationFrame(focusReaderPane);
   }, []);
   const [toolbarPinned, setToolbarPinned] = useState(false);
   const [toolbarPeek, setToolbarPeek] = useState(false);
@@ -221,6 +231,7 @@ export function App() {
   useEffect(() => {
     const onFunctionKey = (event: KeyboardEvent): void => {
       if (event.defaultPrevented) return;
+      if (event.target instanceof Element && event.target.closest(".notes-panel") !== null) return;
       if (event.key === "F1") {
         event.preventDefault();
         // F1 explicitly changes the rail preference instead of restoring it on exit.
@@ -258,6 +269,13 @@ export function App() {
     window.addEventListener("keydown", onFunctionKey, true);
     return () => window.removeEventListener("keydown", onFunctionKey, true);
   }, [compactLayout, refreshQueue]);
+
+  useEffect(() => {
+    if (!notesOpen) return;
+    const onPaneKey = (event: KeyboardEvent): void => { handleNotesPaneKey(event); };
+    window.addEventListener("keydown", onPaneKey, true);
+    return () => window.removeEventListener("keydown", onPaneKey, true);
+  }, [notesOpen]);
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 1179px)");
@@ -1081,7 +1099,7 @@ export function App() {
           </div>
         </header>
 
-        <main className="main-stage" ref={mainStageRef} inert={sectionFocused} aria-hidden={sectionFocused || undefined}>
+        <main className="main-stage" ref={mainStageRef} tabIndex={-1} inert={sectionFocused} aria-hidden={sectionFocused || undefined}>
           {loading && (
             <div className="center-state"><span className="loader large" /><p>Opening the vault…</p></div>
           )}
@@ -1186,7 +1204,7 @@ export function App() {
           initialSelection={clarifySeed} onClose={() => { setClarifySeed(""); setPanel(null); }}
           onGloss={openGlossary} onOpenPage={openPage} onClarify={clarify} />
       ) : null}
-      {notesOpen && selectedId !== null && <NotesPanel key={selectedId} paperId={selectedId} onClose={closeNotes} />}
+      {notesOpen && selectedId !== null && <NotesPanel key={selectedId} paperId={selectedId} onClose={closeNotes} onFocusReader={focusReaderPane} />}
       {sourceQuestion !== null && selectedId !== null && <PassageQuestion key={`${selectedId}:${sourceQuestion.page}:${sourceQuestion.text}`}
         paperId={selectedId} text={sourceQuestion.text} page={sourceQuestion.page} provider={provider}
         onClose={() => { setSourceQuestion(null); mainStageRef.current?.querySelector<HTMLElement>(".pdf-reader")?.focus(); }} />}

@@ -6,10 +6,10 @@ import { notesApi, type NoteDocument } from "../lib/notesApi";
 import { createNotesEditor } from "../lib/notesEditor";
 import "./NotesPanel.css";
 
-type NotesPanelProps = { paperId: string; onClose: () => void; onDirtyChange?: (dirty: boolean) => void };
+type NotesPanelProps = { paperId: string; onClose: () => void; onFocusReader: () => void; onDirtyChange?: (dirty: boolean) => void };
 type NotesCloseDetail = { afterClose?: () => void };
 
-export function NotesPanel({ paperId, onClose, onDirtyChange }: NotesPanelProps) {
+export function NotesPanel({ paperId, onClose, onFocusReader, onDirtyChange }: NotesPanelProps) {
   const panelRef = useRef<HTMLElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<EditorView | null>(null);
@@ -18,6 +18,7 @@ export function NotesPanel({ paperId, onClose, onDirtyChange }: NotesPanelProps)
   const savingRef = useRef(false);
   const afterCloseRef = useRef<(() => void) | undefined>(undefined);
   const closeRef = useRef(onClose);
+  const focusReaderRef = useRef(onFocusReader);
   const dirtyCallbackRef = useRef(onDirtyChange);
   const [document, setDocument] = useState<NoteDocument | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -29,7 +30,7 @@ export function NotesPanel({ paperId, onClose, onDirtyChange }: NotesPanelProps)
   const [savedNotice, setSavedNotice] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
 
-  useEffect(() => { closeRef.current = onClose; dirtyCallbackRef.current = onDirtyChange; }, [onClose, onDirtyChange]);
+  useEffect(() => { closeRef.current = onClose; focusReaderRef.current = onFocusReader; dirtyCallbackRef.current = onDirtyChange; }, [onClose, onFocusReader, onDirtyChange]);
 
   const reportDirty = useCallback((value: boolean): void => {
     setDirty(value);
@@ -51,16 +52,32 @@ export function NotesPanel({ paperId, onClose, onDirtyChange }: NotesPanelProps)
     else finishClose();
   }, [finishClose]);
 
-  const save = useCallback(async (closeAfter = false): Promise<void> => {
+  const cancelClose = useCallback((): void => {
+    setClosing(false);
+    afterCloseRef.current = undefined;
+    editorRef.current?.focus();
+  }, []);
+
+  const quit = useCallback((discard = false): void => {
+    if (discard && !savingRef.current) finishClose();
+    else requestClose();
+  }, [finishClose, requestClose]);
+  const quitRef = useRef(quit);
+  useEffect(() => { quitRef.current = quit; }, [quit]);
+
+  const save = useCallback(async (closeAfter = false, force = false): Promise<void> => {
     const saved = savedRef.current;
     if (savingRef.current || saved === null) return;
-    if (textRef.current === saved.text) { if (closeAfter) finishClose(); return; }
+    if (!force && textRef.current === saved.text) { if (closeAfter) finishClose(); return; }
     const submitted = textRef.current;
     savingRef.current = true;
     setSaving(true);
     setError(null);
     try {
-      const next = await notesApi.save(paperId, submitted, saved.revision);
+      // Explicit :w! accepts the current disk revision. The following write
+      // still checks it, so another edit during this request is not overwritten.
+      const revision = force ? (await notesApi.read(paperId)).revision : saved.revision;
+      const next = await notesApi.save(paperId, submitted, revision);
       savedRef.current = next;
       setConflict(false);
       setDiskVersion(null);
@@ -96,7 +113,12 @@ export function NotesPanel({ paperId, onClose, onDirtyChange }: NotesPanelProps)
 
   useEffect(() => {
     if (document === null || hostRef.current === null) return;
-    const editor = createNotesEditor({ text: document.text, parent: hostRef.current, onSave: () => { void saveRef.current(); }, onChange: (text) => {
+    const editor = createNotesEditor({ text: document.text, parent: hostRef.current,
+      onSave: (closeAfter, force) => { void saveRef.current(closeAfter, force); },
+      onQuit: (discard) => quitRef.current(discard),
+      onFocusReader: () => { requestAnimationFrame(() => focusReaderRef.current()); },
+      onCommandError: (message) => { setError(message); setConflict(false); },
+      onChange: (text) => {
       textRef.current = text;
       setSavedNotice(false);
       reportDirty(text !== savedRef.current?.text);
@@ -115,7 +137,9 @@ export function NotesPanel({ paperId, onClose, onDirtyChange }: NotesPanelProps)
       requestClose((event as CustomEvent<NotesCloseDetail | null>).detail?.afterClose);
     };
     panel.addEventListener("notes-close", close);
-    return () => panel.removeEventListener("notes-close", close);
+    const focus = (): void => { editorRef.current?.focus(); };
+    panel.addEventListener("notes-focus", focus);
+    return () => { panel.removeEventListener("notes-close", close); panel.removeEventListener("notes-focus", focus); };
   }, [requestClose]);
 
   useEffect(() => {
@@ -142,9 +166,20 @@ export function NotesPanel({ paperId, onClose, onDirtyChange }: NotesPanelProps)
     reportDirty(false);
   };
 
-  return <aside ref={panelRef} className="notes-panel" aria-label="Paper notes" data-dirty={dirty} onKeyDown={(event) => {
-    // Keep q, /, arrows, and editor commands inside the buffer.
+  return <aside ref={panelRef} className="notes-panel" aria-label="Paper notes" data-dirty={dirty} onKeyDownCapture={(event) => {
+    // A pending close belongs above the editor, so Escape cancels that prompt.
+    if (event.key === "Escape" && closing) {
+      event.preventDefault(); event.stopPropagation(); cancelClose();
+    } else if (event.key === "Escape" && event.target instanceof Element && event.target.closest(".notes-disk-version")) {
+      event.preventDefault(); event.stopPropagation(); setDiskVersion(null); editorRef.current?.focus();
+    }
+  }} onKeyDown={(event) => {
+    // All editor keys, including otherwise-unhandled Normal-mode Escape, stay
+    // local. Vim owns q (macro recording), /, ?, :, and its modal transitions.
     event.stopPropagation();
+    if (event.defaultPrevented) return;
+    const inEditor = event.target instanceof Element && event.target.closest(".cm-editor") !== null;
+    if (inEditor) return;
     const editing = event.target instanceof HTMLElement && (event.target.closest(".cm-editor, input, textarea, select") !== null || event.target.isContentEditable);
     if (event.key === "Escape" || (event.key === "q" && !editing)) { event.preventDefault(); requestClose(); }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); void save(); }
@@ -156,7 +191,7 @@ export function NotesPanel({ paperId, onClose, onDirtyChange }: NotesPanelProps)
     </header>
     {closing && <div className="notes-close-prompt" role="alert">
       <p>Save your notes before leaving?</p>
-      <div><button type="button" disabled={saving} onClick={() => { void save(true); }}>Save and close</button><button type="button" disabled={saving} onClick={finishClose}>Discard changes</button><button type="button" onClick={() => { setClosing(false); afterCloseRef.current = undefined; editorRef.current?.focus(); }}>Keep editing</button></div>
+      <div><button type="button" disabled={saving} onClick={() => { void save(true); }}>Save and close</button><button type="button" disabled={saving} onClick={finishClose}>Discard changes</button><button type="button" onClick={cancelClose}>Keep editing</button></div>
     </div>}
     {error !== null && <div className="notes-error" role="alert"><p>{error}</p>
       {document === null && <button type="button" onClick={() => { setError(null); setLoadAttempt((value) => value + 1); }}>Retry</button>}

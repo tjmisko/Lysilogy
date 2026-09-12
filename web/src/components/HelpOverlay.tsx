@@ -48,10 +48,25 @@ const GROUPS = [
     ],
   },
   {
+    title: "Notes · Vim",
+    commands: [
+      ["i / a / o · Esc", "Enter Insert mode / return to Normal without closing notes"],
+      ["v / V / Ctrl-v", "Visual / line / block selection"],
+      ["/ · ? · n / N", "Search forward / backward in the note; repeat / reverse"],
+      ["ciw · dap · yy · p", "Change a word, delete a paragraph, yank and put"],
+      ["u / Ctrl-r · .", "Undo / redo; repeat the last change"],
+      ["q{register} … q · @{register}", "Record and replay a macro"],
+      [":w / Ctrl-s", "Save the Markdown note"],
+      [":q · :wq / :x / ZZ · :q! / ZQ", "Quit · save and quit · discard and quit"],
+      [":%s/old/new/g", "Substitute throughout this note"],
+      ["Ctrl-w h / l / w · :reader", "Focus reader / notes / other pane; return to reader"],
+    ],
+  },
+  {
     title: "Application",
     commands: [
       ["b", "Toggle the library"],
-      ["F1", "Toggle the library from anywhere"],
+      ["F1", "Toggle the library outside the notes buffer"],
       ["F10", "Fuzzy-find and switch articles"],
       ["f", "Filter to mapped papers while the library is open"],
       [":analyze", "Analyze with the selected provider"],

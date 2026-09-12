@@ -483,10 +483,17 @@ image segmentation.
 `E` opens an actual CodeMirror 6 Markdown buffer. Notes map the PDF’s relative filename to `.md`
 beneath `Notes/` (for example `local-articles/topic/Paper.pdf` → `Notes/topic/Paper.md`). Set another
 root with `--notes /path/to/paper-notes`. Opening a missing note creates it from the configured Markdown template, with local date/time, the `paper` tag, and a link to its source PDF. Existing files are preserved.
-Ctrl/Cmd-S saves atomically; a content revision check reports external edits instead of overwriting
-a stale file. Unsaved changes prompt on close/navigation. `q`, `/`, and ordinary editor keys remain
-inside the editor. The initial buffer provides Markdown styling, wrapping, and undo/redo; it does
-not embed a Neovim process.
+The buffer opens in Vim Normal mode using [CodeMirror Vim](https://github.com/replit/codemirror-vim).
+Motions, text objects, Visual modes, registers, macros, `/`/`?` search, `n`/`N`, substitution,
+and undo/redo stay inside the note. Escape returns to Normal or cancels the current prompt;
+repeated Escape never closes a focused buffer. `q` records a macro.
+
+`:w` or Ctrl/Cmd-S saves atomically; `:q` quits with an unsaved-changes prompt; `:wq`, `:x`,
+and `ZZ` save and quit only after a successful save. `:q!` and `ZQ` discard the draft. Ordinary
+saves detect external changes; explicit `:w!` or `:wq!` accepts the current disk version before
+replacing it, with another revision check for edits made during that request. `Ctrl-w h`, `:reader`,
+or `Ctrl-w w` focuses the reader; `Ctrl-w l` or `Ctrl-w w` returns to notes from the reader.
+See [notes controls and configuration](docs/notes.md) for details.
 
 The requests were recorded before implementation in [navigation issue #8](https://github.com/tjmisko/Lysilogy/issues/8)
 and [source-search issue #9](https://github.com/tjmisko/Lysilogy/issues/9).

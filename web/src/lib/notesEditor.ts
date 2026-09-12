@@ -1,8 +1,9 @@
 import { EditorState, type Extension } from "@codemirror/state";
 import { Decoration, EditorView, ViewPlugin, drawSelection, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { notesVim, type NotesVimCommands } from "./notesVim";
 
-type Snapshot = { text: string; anchor: number; head: number };
-type EditorOptions = { text: string; parent: HTMLElement; onChange: (text: string) => void; onSave: () => void };
+type EditorOptions = NotesVimCommands & { text: string; parent: HTMLElement; onChange: (text: string) => void };
 
 /** Lightweight Markdown decorations for the notes buffer; the document stays plain Markdown. */
 function markdownDecorations(view: EditorView) {
@@ -38,48 +39,20 @@ const markdown = ViewPlugin.fromClass(class {
   update(update: { docChanged: boolean; view: EditorView }) { if (update.docChanged) this.decorations = markdownDecorations(update.view); }
 }, { decorations: (plugin) => plugin.decorations });
 
-export function createNotesEditor({ text, parent, onChange, onSave }: EditorOptions): EditorView {
-  const undo: Snapshot[] = [], redo: Snapshot[] = [];
-  let restoring = false, lastInput = 0;
-  const snapshot = (state: EditorState): Snapshot => ({ text: state.doc.toString(), anchor: state.selection.main.anchor, head: state.selection.main.head });
-  const restore = (view: EditorView, source: Snapshot[], destination: Snapshot[]): boolean => {
-    const previous = source.pop();
-    if (previous === undefined) return true;
-    destination.push(snapshot(view.state));
-    restoring = true;
-    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: previous.text }, selection: { anchor: previous.anchor, head: previous.head }, scrollIntoView: true });
-    restoring = false;
-    lastInput = 0;
-    return true;
-  };
+export function createNotesEditor({ text, parent, onChange, ...commands }: EditorOptions): EditorView {
   const extensions: Extension[] = [
+    // Vim must precede ordinary keymaps, which then provide Insert-mode editing.
+    notesVim(commands), history(),
     EditorView.lineWrapping, drawSelection(), highlightActiveLine(), markdown,
     placeholder("Write notes in Markdown…"),
     EditorView.contentAttributes.of({ "aria-label": "Paper notes", spellcheck: "true" }),
     EditorView.theme({ "&": { height: "100%" }, ".cm-scroller": { overflow: "auto" }, ".cm-content": { padding: "18px 0", minHeight: "100%" }, ".cm-line": { padding: "0 20px" } }, { dark: true }),
     keymap.of([
-      { key: "Mod-s", run: () => { lastInput = 0; onSave(); return true; } },
-      { key: "Mod-z", run: (view) => restore(view, undo, redo), shift: (view) => restore(view, redo, undo) },
-      { key: "Mod-y", run: (view) => restore(view, redo, undo) },
+      { key: "Mod-s", run: () => { commands.onSave(); return true; } },
+      ...defaultKeymap, ...historyKeymap,
     ]),
-    EditorView.domEventHandlers({ blur: () => { lastInput = 0; }, beforeinput: (event, view) => {
-      if (event.inputType === "historyUndo" || event.inputType === "historyRedo") {
-        event.preventDefault();
-        return event.inputType === "historyUndo" ? restore(view, undo, redo) : restore(view, redo, undo);
-      }
-      return false;
-    } }),
     EditorView.updateListener.of((update) => {
       if (!update.docChanged) return;
-      if (!restoring) {
-        const now = Date.now();
-        const typing = update.transactions.some((transaction) => transaction.isUserEvent("input.type"));
-        if (!typing || now - lastInput > 750 || undo.length === 0) undo.push(snapshot(update.startState));
-        // Bound history even when a reader pastes a very large document.
-        while (undo.length > 50 || (undo.length > 1 && undo.reduce((bytes, item) => bytes + item.text.length, 0) > 8 * 1024 * 1024)) undo.shift();
-        redo.length = 0;
-        lastInput = typing ? now : 0;
-      }
       onChange(update.state.doc.toString());
     }),
   ];
