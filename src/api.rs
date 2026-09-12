@@ -79,6 +79,7 @@ pub struct AppState {
     experiment_write: Arc<Mutex<()>>,
     tools_write: Arc<Mutex<()>>,
     tools_extract: Arc<Mutex<()>>,
+    reading_indexes: source_index::IndexJobs,
     frontend_root: Option<Arc<PathBuf>>,
 }
 
@@ -145,6 +146,7 @@ impl AppState {
             experiment_write: Arc::new(Mutex::new(())),
             tools_write: Arc::new(Mutex::new(())),
             tools_extract: Arc::new(Mutex::new(())),
+            reading_indexes: source_index::IndexJobs::default(),
             frontend_root: None,
         })
     }

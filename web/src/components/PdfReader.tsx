@@ -345,7 +345,7 @@ export function PdfReader({
   const visiblePages = flow === "continuous" ? availablePages : step === 2 && page < pageCount ? [page, page + 1] : [page];
   const slotWidth = step === 2 ? Math.max(160, (containerWidth - 36) / 2) : containerWidth;
   const lastVisiblePage = visiblePages[visiblePages.length - 1] ?? page;
-  const sourceTools = usePdfSourceTools({ url, page, root: readerRef, pageSubset, crops, markPages: flow === "paged" ? visiblePages : [readingPage - 1, readingPage, readingPage + 1, page], onPage, onOpenFullPaper, onClarify: onClarifySelection, onSave: onSaveReference });
+  const sourceTools = usePdfSourceTools({ url, page, root: readerRef, pageSubset, crops, markPages: flow === "paged" ? visiblePages : [readingPage - 1, readingPage, readingPage + 1, page], prefetchReady: pdfDocument !== null, onPage, onOpenFullPaper, onClarify: onClarifySelection, onSave: onSaveReference });
   const sourceKey = sourceTools.onKey;
   const sourceQuit = sourceTools.quit;
 

@@ -3,9 +3,13 @@
 //! Offsets are UTF-16 code units, matching JavaScript strings; geometry is PDF points.
 //! Native text is never silently replaced by model output. OCR pages carry provenance.
 
+mod cache;
 mod figures;
 mod native;
 mod ocr;
+
+#[cfg(test)]
+pub(crate) mod test_support;
 
 use std::{path::Path, time::Duration};
 
@@ -13,7 +17,9 @@ use serde::{Deserialize, Serialize};
 use tokio::{io::AsyncReadExt, process::Command};
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::{Error, Result, domain::TextRect, store::write_atomic};
+use crate::{Error, Result, domain::TextRect};
+
+pub use cache::{IndexDocument, load_cached, load_or_build, load_or_build_priority};
 
 pub const SCHEMA_VERSION: u16 = 3;
 const MAX_PAGES: usize = 400;
@@ -122,7 +128,17 @@ struct SourceStamp {
 #[derive(Deserialize, Serialize)]
 struct CachedIndex {
     source: SourceStamp,
+    #[serde(default)]
+    generation: String,
     index: ReadingIndex,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum BuildPriority {
+    #[default]
+    Interactive,
+    Background,
 }
 
 #[derive(Clone, Debug)]
@@ -143,57 +159,13 @@ struct SourcePage {
     confidence: Option<f32>,
 }
 
-/// Only local PDF processing. Refresh discards the index cache, never paper analysis.
-pub async fn load_or_build(source: &Path, directory: &Path, refresh: bool) -> Result<ReadingIndex> {
-    let metadata = tokio::fs::metadata(source)
-        .await
-        .map_err(|error| Error::io(source, error))?;
-    if metadata.len() > 512 * 1024 * 1024 {
-        return Err(Error::InvalidRequest(
-            "PDF exceeds the 512 MiB reading-index limit".into(),
-        ));
-    }
-    let stamp = SourceStamp {
-        bytes: metadata.len(),
-        modified_nanos: metadata
-            .modified()
-            .ok()
-            .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
-            .map_or(0, |duration| duration.as_nanos()),
-    };
-    let cache_path = directory.join("reading-index.json");
-    if !refresh
-        && let Ok(bytes) = tokio::fs::read(&cache_path).await
-        && let Ok(cached) = serde_json::from_slice::<CachedIndex>(&bytes)
-        && cached.source == stamp
-        && cached.index.schema_version == SCHEMA_VERSION
-    {
-        return Ok(cached.index);
-    }
-    tokio::fs::create_dir_all(directory)
-        .await
-        .map_err(|error| Error::io(directory, error))?;
-    let index = tokio::time::timeout(BUILD_TIMEOUT, build(source, directory, &stamp))
-        .await
-        .map_err(|_| {
-            Error::Task(
-                "Reading index timed out after 180 seconds; retry to resume cached OCR pages."
-                    .into(),
-            )
-        })??;
-    write_atomic(
-        &cache_path,
-        &serde_json::to_vec(&CachedIndex {
-            source: stamp,
-            index: index.clone(),
-        })?,
-    )
-    .await?;
-    Ok(index)
-}
-
-async fn build(source: &Path, directory: &Path, stamp: &SourceStamp) -> Result<ReadingIndex> {
-    let mut command = Command::new("pdftotext");
+async fn build(
+    source: &Path,
+    directory: &Path,
+    stamp: &SourceStamp,
+    priority: BuildPriority,
+) -> Result<ReadingIndex> {
+    let mut command = extraction_command("pdftotext", priority);
     command
         .args([
             "-bbox-layout",
@@ -235,7 +207,7 @@ async fn build(source: &Path, directory: &Path, stamp: &SourceStamp) -> Result<R
             Ok(cached)
         } else {
             ocr_count += 1;
-            ocr::page(source, directory, page, stamp).await
+            ocr::page(source, directory, page, stamp, priority).await
         };
         match result {
             Ok(ocr) if ocr.words.len() > page.words.len() => {
@@ -272,7 +244,20 @@ async fn build(source: &Path, directory: &Path, stamp: &SourceStamp) -> Result<R
     Ok(index)
 }
 
-/// Hard output/time limits and kill-on-drop also apply when an HTTP client cancels.
+// Background work remains bounded even on platforms without `nice`; priority
+// changes apply only to children, never the server or an already running job.
+fn extraction_command(program: &str, priority: BuildPriority) -> Command {
+    #[cfg(unix)]
+    if priority == BuildPriority::Background && Path::new("/usr/bin/nice").is_file() {
+        let mut command = Command::new("/usr/bin/nice");
+        command.args(["-n", "10", program]);
+        return command;
+    }
+    let _ = priority;
+    Command::new(program)
+}
+
+/// Hard output/time limits and kill-on-drop also apply if a build task is canceled.
 async fn bounded_command(command: &mut Command, program: &str, limit: usize) -> Result<Vec<u8>> {
     use std::process::Stdio;
     let mut child = command

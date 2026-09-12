@@ -471,7 +471,14 @@ for the complete motion and text-object behavior. Clipboard denial exposes selec
 offer an explicit jump to the full paper, preserving section bounds. Library and Glossary filters
 remain local when their inputs are focused.
 
-`GET /api/papers/{id}/reading-index` builds a separate cached UTF-16 text/geometry index. Native
+Opening a PDF quietly warms its search index during browser idle time. Index builds run at
+lower priority, are shared with searches, and continue after leaving the paper. Disk indexes
+have no expiry; PDF size/modification-time or schema changes invalidate them. The browser also
+caches responses for 30 days and conditionally validates them on each opening, while a bounded
+in-memory cache avoids repeated parsing. Failed warmups stay quiet and can be retried by searching.
+See [reading-index caching and scheduling](docs/reading-index.md#background-work-and-cache-lifetime).
+
+`GET /api/papers/{id}/reading-index` supplies the cached UTF-16 text/geometry index. Native
 PDF text, columns, paragraphs, captions and footnotes are processed deterministically; sparse pages
 use local `pdftoppm` + `tesseract` when installed. Native and OCR provenance stays visible. Limits are
 400 pages, 4 MiB text, and 12 OCR pages per build; unfinished pages have explicit gaps. Regex runs in

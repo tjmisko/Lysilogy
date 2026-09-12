@@ -117,12 +117,17 @@ function selectionFixture() {
 }
 const preciseSelection=selectionFixture();
 let usePreciseSelection=false;
+const indexRequests=[];const abortedIndexRequests=[];
+const initialIndexStarted=Promise.withResolvers();
+const initialIndex=Promise.withResolvers();let indexGate=initialIndex.promise;
+let failIndexRequests=0;
 
 const browser=await chromium.launch({headless:true});
 try {
   const page=await browser.newPage({viewport:{width:1280,height:800}});
   await page.addInitScript(()=>{window.copiedSource='';Object.defineProperty(navigator,'clipboard',{value:{writeText:async(text)=>{window.copiedSource=text;}}});});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  page.on('requestfailed',request=>{if(new URL(request.url()).pathname.endsWith('/reading-index'))abortedIndexRequests.push(request.failure()?.errorText);});
   await page.route('http://lysilogy.test/**', async route=>{
     const url=new URL(route.request().url()); const suffix=url.pathname.replace(/^\/api\/papers\/[^/]+/,'');
     if(url.pathname==='/api/library')return route.fulfill({json:{name:'Synthetic library',papers:libraryPapers}});
@@ -143,7 +148,16 @@ try {
     if(suffix==='/analyze'){analysisRequests.push(route.request().postDataJSON());return route.fulfill({status:500,json:{message:'Unexpected analysis request'}});}
     if(suffix==='/clarify'){ questions.push(route.request().postDataJSON()); return route.fulfill({json:{answer:'The selected source explains measurement error.',limitation:null}}); }
     if(suffix==='/map')return route.fulfill({json:{layout,highlights:[]}});
-    if(suffix==='/reading-index')return route.fulfill({json:usePreciseSelection?preciseSelection.index:readingIndex});
+    if(suffix==='/reading-index') {
+      indexRequests.push({priority:route.request().headers()['x-reading-priority'],etag:route.request().headers()['if-none-match']});
+      initialIndexStarted.resolve();
+      if(indexGate!==null)await indexGate;
+      if(failIndexRequests>0){failIndexRequests--;return route.fulfill({status:503,json:{message:'Index temporarily unavailable'}});}
+      const etag=usePreciseSelection?'"precise-index-v3"':'"reading-index-v2"';
+      const headers={etag,'cache-control':'private, max-age=2592000, must-revalidate'};
+      if(route.request().headers()['if-none-match']===etag)return route.fulfill({status:304,headers});
+      return route.fulfill({headers,json:usePreciseSelection?preciseSelection.index:readingIndex});
+    }
     if(suffix==='/source'){ sourceRequests++; return route.fulfill({body:usePreciseSelection?preciseSelection.pdf:pdf,contentType:'application/pdf'}); }
     if(suffix==='/abstract/refresh'||suffix==='/context/refresh'||suffix==='/structure/refresh'){ refreshes.push(suffix);return route.fulfill({json:{paper,analysis:analyzed?analysis:null}}); }
     if(suffix==='/reader-tools')return route.fulfill({json:{jobs:[],references:[],supercuts:[]}});
@@ -156,10 +170,29 @@ try {
   await page.goto(`http://lysilogy.test/#paper=${id}`);
   await page.locator('.pdf-reader').waitFor();
   await page.waitForFunction(()=>document.querySelector('.pdf-canvas')?.dataset.rendered==='true');
+  await initialIndexStarted.promise;
+  assert.equal(indexRequests.length,1,'opening the PDF warms its index before any search');
+  assert.equal(indexRequests[0].priority,'background');
+  assert.equal(await page.locator('.pdf-source-tools').count(),0,'warming is quiet');
   await page.keyboard.press('/');
   const search=page.getByRole('textbox',{name:'Search paper with regular expression'});
   await search.fill('evidence');await search.press('Enter');
+  await page.getByText('Indexing and searching source…',{exact:true}).waitFor();
+  assert.equal(indexRequests.length,1,'search joins an already running warmup');
+  await search.press('Escape');
+  await page.keyboard.press(':');await page.getByRole('textbox',{name:'Command',exact:true}).fill('home');await page.keyboard.press('Enter');
+  await page.locator('.home-page').waitFor();
+  await page.locator('.paper-card').click();await page.locator('.pdf-reader').waitFor();
+  await page.waitForFunction(()=>document.querySelector('.pdf-canvas')?.dataset.rendered==='true');
+  await page.evaluate(()=>new Promise(resolve=>requestIdleCallback(resolve,{timeout:1500})));
+  assert.equal(indexRequests.length,1,'returning to the PDF shares its unfinished index request');
+  const warmed=page.waitForResponse(response=>new URL(response.url()).pathname.endsWith('/reading-index'));
+  indexGate=null;initialIndex.resolve();await warmed;
+  assert.deepEqual(abortedIndexRequests,[],'leaving a reader does not abort its indexing request');
+  assert.equal(await page.locator('.pdf-source-tools').count(),0,'completion does not reopen an old search');
+  await page.keyboard.press('/');await search.fill('evidence');await search.press('Enter');
   await page.waitForFunction(()=>document.querySelector('.pdf-source-status')?.textContent.includes('1 / 88'));
+  assert.equal(indexRequests.length,1,'the warmed index is reused for search');
   await page.keyboard.press('n');await page.keyboard.press('n');
   await page.waitForFunction(()=>document.querySelector('.pdf-source-status')?.textContent.includes('3 / 88'));
   await page.keyboard.press('v');await page.keyboard.press('a');await page.keyboard.press('p');
@@ -169,6 +202,13 @@ try {
   await page.keyboard.press('y');
   await page.waitForFunction(()=>window.copiedSource==='Sentence 3 on page 1 describes the evidence and its limits.\n\n');
   assert.equal(await page.locator('.pdf-mode-note').count(),0);
+  // A later visit validates the remembered body cheaply, then searches locally.
+  const revalidation=page.waitForResponse(response=>new URL(response.url()).pathname.endsWith('/reading-index')&&response.status()===304);
+  await page.keyboard.press(':');await page.getByRole('textbox',{name:'Command',exact:true}).fill('home');await page.keyboard.press('Enter');
+  await page.locator('.home-page').waitFor();await page.locator('.paper-card').click();await revalidation;
+  assert.equal(indexRequests.length,2);
+  assert.equal(indexRequests[1].etag,'"reading-index-v2"');
+  assert.equal(indexRequests[1].priority,'background');
   // A match on a different source page becomes visible in paged mode.
   await page.keyboard.press('/');await search.fill('Sentence 20 on page 3');await search.press('Enter');
   await page.waitForFunction(()=>document.querySelector('[data-pdf-page="3"] canvas')?.dataset.rendered==='true');
@@ -239,7 +279,11 @@ try {
   await page.keyboard.press('/');await search.waitFor();
 
   // A separate real PDF provides character mappings and predictable line geometry.
-  usePreciseSelection=true;analyzed=false;await page.reload();
+  usePreciseSelection=true;analyzed=false;failIndexRequests=1;
+  const failedWarmup=page.waitForResponse(response=>new URL(response.url()).pathname.endsWith('/reading-index')&&response.status()===503);
+  await page.reload();await failedWarmup;
+  assert.equal(await page.locator('.pdf-source-tools').count(),0,'background indexing errors stay out of the reader');
+  const beforeRetry=indexRequests.length;
   await page.waitForFunction(()=>document.querySelector('[data-pdf-page="1"] [data-text-ready="true"]'));
   assert.match(await page.locator('.pdf-text-layer').innerText(),/A😀e\u0301Z/,'PDF.js must expose the fixture’s real Unicode mapping');
   const precise=preciseSelection.index;
@@ -262,7 +306,10 @@ try {
     width:parseFloat(node.style.width)*612/100,top:parseFloat(node.style.top)*792/100,
   })).sort((a,b)=>a.top-b.top||a.left-b.left));
 
-  await land('sure',3);await visual('ll');
+  await land('sure',3);
+  assert.equal(indexRequests.length,beforeRetry+1,'a real search retries failed warming');
+  assert.equal(indexRequests.at(-1).priority,'interactive');
+  await visual('ll');
   await page.waitForFunction(()=>{
     const mark=document.querySelector('.pdf-source-mark.is-visual');
     return mark?.getAttribute('data-geometry')==='native'&&mark.getAttribute('data-source-end')==='6';
@@ -338,5 +385,5 @@ try {
   await yank(precise.text.slice(columns.start,columns.end));
 
   assert.deepEqual(errors,[]);
-  console.log('PASS source regex search, cross-page navigation, word-end/sentence motions, Unicode character yanks, distinct paragraphs, native partial-word geometry, merged line highlights without column bridges, errors, q/Escape, continuous horizontal reading');
+  console.log('PASS quiet background indexing, request survival across visits, shared searches, conditional cache reuse, retry after background failure, source regex search, cross-page navigation, word-end/sentence motions, Unicode character yanks, distinct paragraphs, native partial-word geometry, merged line highlights without column bridges, errors, q/Escape, continuous horizontal reading');
 } finally {await browser.close();}

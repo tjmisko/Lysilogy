@@ -3,11 +3,12 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 
-use serde::{Deserialize, Serialize};
-use tokio::process::Command;
-
-use super::{Provenance, SourcePage, SourceStamp, SourceWord, bounded_command};
+use super::{
+    BuildPriority, Provenance, SourcePage, SourceStamp, SourceWord, bounded_command,
+    extraction_command,
+};
 use crate::{Error, Result, domain::TextRect, store::write_atomic};
+use serde::{Deserialize, Serialize};
 
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
@@ -44,6 +45,7 @@ pub(super) async fn page(
     directory: &Path,
     page: &SourcePage,
     stamp: &SourceStamp,
+    priority: BuildPriority,
 ) -> Result<SourcePage> {
     let cache_path = directory.join(format!("reading-ocr-{}.json", page.number));
     let prefix = directory.join(format!(
@@ -52,7 +54,7 @@ pub(super) async fn page(
         TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
     ));
     let image = TemporaryImage(prefix.with_extension("pgm"));
-    let mut render = Command::new("pdftoppm");
+    let mut render = extraction_command("pdftoppm", priority);
     render
         .args([
             "-f",
@@ -67,7 +69,7 @@ pub(super) async fn page(
         .arg(source)
         .arg(&prefix);
     bounded_command(&mut render, "pdftoppm", 1024).await?;
-    let mut command = Command::new("tesseract");
+    let mut command = extraction_command("tesseract", priority);
     command
         .arg(&image.0)
         .args(["stdout", "-l", "eng", "--psm", "3", "tsv"])

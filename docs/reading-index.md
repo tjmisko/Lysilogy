@@ -5,6 +5,41 @@ analysis or model. `?refresh=true` rebuilds it and resumes OCR beyond an earlier
 budget; already completed OCR pages are reused. The source PDF, saved highlights, citation
 anchors, and analysis are not modified.
 
+## Background work and cache lifetime
+
+Opening a full PDF or a focused section schedules indexing after the PDF has loaded, using
+browser idle time (at most a 1.5-second scheduling delay, or a 500 ms fallback). Home-page
+thumbnails do not trigger it. Warming does not open search controls or display errors; an
+explicit search retries a failed warmup. Searching while warming shares the same request.
+
+The server coalesces builds per paper and runs them independently of the HTTP connection.
+Leaving the reader or closing the tab does not cancel a started build. Pending background
+jobs yield to foreground extraction at the shared extraction lock. When available, `/usr/bin/nice`
+lowers the priority of background Poppler and Tesseract children by 10. Running work is not
+preempted; the existing subprocess and build limits still apply. Successful cache reads bypass
+the extraction lock, and completed jobs release their in-memory server results.
+
+Disk indexes have **no time-based expiry**. They are reused until the PDF's size/modification
+time or the index schema changes, or a refresh is requested. Per-page OCR caches also survive
+restarts. A source change detected during a build prevents publishing that build's result.
+
+HTTP responses use `Cache-Control: private, max-age=2592000, must-revalidate` (30 days) and an
+ETag. Each reader opening conditionally validates its index, so unchanged PDFs return 304
+without transferring the body; source/schema changes and explicit refreshes produce a new
+validator. The browser can retain the response across reloads. Within a tab, a shared LRU holds
+up to 16 parsed indexes and approximately 64 MiB; oversized results remain usable by their
+current reader without being retained in the shared cache. Navigation does not cancel shared
+requests. Their five-minute deadline frees stalled client requests without canceling a detached
+server build, whose eventual result remains on disk.
+
+Both priorities use the same URL. The reader sends `X-Reading-Priority: background` for warmup
+and `interactive` for a newly requested search; the optional `?priority=background` query is
+also supported. Priority affects scheduling, not the representation, so responses do not vary
+their HTTP cache key on that header. A new interactive HTTP request can promote an already
+queued same-paper job; readers sharing an existing warmup simply await that request.
+
+## Source representation
+
 The response contains canonical `text`, ordered `tokens`, `pages`, text `objects` (`word`,
 `WORD`, `sentence`, `paragraph`), `figures`, and explicit `gaps`. All ranges are half-open UTF-16
 offsets into `text`, matching JavaScript string indexing. Every token retains its original
@@ -53,6 +88,11 @@ Tests cover a real paper abstract as one complete paragraph, columns/indentation
 page continuation, ligature and UTF-16 offset fidelity, figure mentions across pages,
 OCR confidence/coordinate conversion, an actual image-only PDF and mixed PDF, bounded
 subprocess output, and cache invalidation when the PDF changes.
+Cache/job tests also cover conditional HTTP responses, refresh validators, legacy cache reuse,
+canceled clients, shared builds, queue priority, and cached reads while extraction is busy.
+`npm run test:reading-index-cache` checks client deduplication, bounded memory, validators, and
+failure recovery; `npm run smoke:source-search` exercises quiet warming, leaving and returning
+during a build, conditional reuse on a later visit, and retry after background failure.
 
 ## Proposed boundary audit
 

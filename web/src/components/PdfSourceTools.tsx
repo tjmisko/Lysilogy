@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { SectionCrop } from "../lib/sectionCrop";
-import { nearestToken, objectAt, readingIndexUrl, sourceSpaceAt, tokensInSpan, type ReadingIndex, type TextSpan } from "../lib/readingIndex";
+import { nearestToken, objectAt, sourceSpaceAt, tokensInSpan, type ReadingIndex, type TextSpan } from "../lib/readingIndex";
+import { loadReadingIndex, peekReadingIndex } from "../lib/readingIndexCache";
 import type { RegexResult } from "../lib/regexSearch";
 import { inclusiveSourceSpan, moveSourceCursor, moveSourceLine, sourceCursor, sourceGrapheme } from "../lib/sourceMotions";
 import { resolveSourceMarks, type SourceMark } from "../lib/sourceGeometry";
@@ -14,18 +15,18 @@ type Options = {
   pageSubset?: number[];
   crops: Map<number, SectionCrop | null>;
   markPages: number[];
+  prefetchReady: boolean;
   onPage: (page: number) => void;
   onOpenFullPaper?: (page: number) => void;
   onClarify: (text: string, page: number) => void;
   onSave: (text: string, page: number) => void;
 };
 type Resume = { query: string; matches: TextSpan[]; cursor: number; current: number };
-const indices = new Map<string, ReadingIndex>();
 const resumes = new Map<string, Resume>();
 
-export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPages, onPage, onOpenFullPaper, onClarify, onSave }: Options) {
+export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPages, prefetchReady, onPage, onOpenFullPaper, onClarify, onSave }: Options) {
   const [resume] = useState(() => resumes.get(url));
-  const [index, setIndex] = useState<ReadingIndex | null>(indices.get(url) ?? null);
+  const [index, setIndex] = useState<ReadingIndex | null>(() => peekReadingIndex(url));
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState(resume?.query ?? "");
   const [matches, setMatches] = useState<TextSpan[]>(resume?.matches ?? []);
@@ -43,8 +44,8 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
   const motionCount = useRef("");
   const motionPrefix = useRef("");
   const input = useRef<HTMLInputElement>(null);
-  const controller = useRef<AbortController | null>(null);
   const request = useRef<Promise<ReadingIndex> | null>(null);
+  const readyIndex = useRef<ReadingIndex | null>(null);
   const worker = useRef<Worker | null>(null);
   const deadline = useRef<ReturnType<typeof setTimeout> | null>(null);
   const generation = useRef(0);
@@ -53,28 +54,34 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
   useEffect(() => {
     resumes.delete(url);
     mounted.current = true;
-    return () => { mounted.current = false; controller.current?.abort(); worker.current?.terminate(); if (deadline.current !== null) clearTimeout(deadline.current); };
+    return () => { mounted.current = false; worker.current?.terminate(); if (deadline.current !== null) clearTimeout(deadline.current); };
   }, [url]);
   useEffect(() => { if (searchOpen) { input.current?.focus(); input.current?.select(); } }, [searchOpen]);
 
-  const loadIndex = useCallback(async () => {
-    const cached = indices.get(url);
-    if (cached !== undefined) return cached;
+  const loadIndex = useCallback(async (priority: "background" | "interactive" = "interactive") => {
+    if (readyIndex.current !== null) return readyIndex.current;
     if (request.current !== null) return request.current;
-    const abort = new AbortController();
-    controller.current = abort;
-    const timeout = setTimeout(() => abort.abort(), 180000);
-    request.current = fetch(readingIndexUrl(url), { signal: abort.signal }).then(async (response) => {
-      if (!response.ok) throw new Error(`Source indexing failed (${response.status}). Try again after extraction finishes.`);
-      const data = await response.json() as ReadingIndex;
-      if (typeof data.text !== "string" || !Array.isArray(data.tokens) || ![1, 2, 3].includes(data.schema_version)) throw new Error("The source index is unavailable. Restart the backend to enable paper search.");
-      if (indices.size >= 4) indices.delete(indices.keys().next().value ?? "");
-      indices.set(url, data);
-      if (mounted.current) setIndex(data);
+    // Revalidate once per opened reader, including when parsed data is already
+    // in memory. All readers share the request; unmounting never cancels it.
+    request.current = loadReadingIndex(url, { priority, revalidate: true }).then((data) => {
+      if (mounted.current) { readyIndex.current = data; setIndex(data); }
       return data;
-    }).finally(() => { clearTimeout(timeout); request.current = null; });
+    }).finally(() => { request.current = null; });
     return request.current;
   }, [url]);
+
+  useEffect(() => {
+    if (!prefetchReady) return;
+    const warm = () => { void loadIndex("background").catch(() => { /* Search can retry; background work stays quiet. */ }); };
+    // Let PDF loading and the first paint get ahead of optional source work.
+    const idle: { requestIdleCallback?: (callback: () => void, options: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void } = window;
+    if (idle.requestIdleCallback !== undefined) {
+      const handle = idle.requestIdleCallback(warm, { timeout: 1500 });
+      return () => idle.cancelIdleCallback?.(handle);
+    }
+    const handle = window.setTimeout(warm, 500);
+    return () => window.clearTimeout(handle);
+  }, [loadIndex, prefetchReady]);
 
   const inside = useCallback((data: ReadingIndex, span: TextSpan) => {
     if (pageSubset === undefined) return true;
