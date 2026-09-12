@@ -106,6 +106,7 @@ export function DigestPanel({
   const [clarifyError, setClarifyError] = useState<string | null>(null);
   const [clarifying, setClarifying] = useState(false);
   const [copied, setCopied] = useState(false);
+  const panelRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const fragmentRefs = useRef<Array<HTMLElement | null>>([]);
   const questionRef = useRef<HTMLTextAreaElement>(null);
@@ -288,8 +289,19 @@ export function DigestPanel({
     }
   };
 
+  useEffect(() => {
+    const panel = panelRef.current;
+    const quit = (event: Event) => {
+      if (clarifySelection.length > 0 || clarification !== null) {
+        event.preventDefault(); setClarifySelection(""); setClarification(null); setClarifyError(null);
+      } else if (visualAnchor !== null) { event.preventDefault(); setVisualAnchor(null); }
+    };
+    panel?.addEventListener("digest-quit", quit);
+    return () => panel?.removeEventListener("digest-quit", quit);
+  }, [clarifySelection, clarification, visualAnchor]);
+
   return (
-    <aside className="context-panel digest-panel" aria-label={`Digest: ${section.title}`}>
+    <aside ref={panelRef} data-local-selection={clarifySelection.length > 0 || clarification !== null || visualAnchor !== null} className="context-panel digest-panel" aria-label={`Digest: ${section.title}`}>
       <header className="panel-header">
         <div>
           <span className="eyebrow">Contextual digest</span>

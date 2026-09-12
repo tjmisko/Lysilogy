@@ -14,6 +14,7 @@ type LibraryRailProps = {
   onSelect: (id: string) => void;
   onClose: () => void;
   onScan: () => void;
+  onHome: () => void;
   onImport: (url: string) => Promise<void>;
   onVisiblePapersChange: (ids: string[]) => void;
 };
@@ -36,6 +37,7 @@ export function LibraryRail({
   onSelect,
   onClose,
   onScan,
+  onHome,
   onImport,
   onVisiblePapersChange,
 }: LibraryRailProps) {
@@ -180,7 +182,8 @@ export function LibraryRail({
         onClick={onClose}
         tabIndex={open ? 0 : -1}
       />
-      <aside className={`library-rail ${open ? "is-open" : ""}`} aria-label="Paper library">
+      <aside className={`library-rail ${open ? "is-open" : ""}`} aria-label="Paper library" inert={!open} aria-hidden={!open || undefined}>
+        <button className="brand rail-brand" type="button" onClick={onHome} aria-label="Go to library home"><img className="brand-mark" src="/lambda-mark.svg" alt="" /><strong>LYSILOGY</strong></button>
         <div className="rail-heading">
           <div>
             <span className="eyebrow">Vault</span>

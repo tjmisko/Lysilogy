@@ -36,6 +36,7 @@ analysis.sections[1].source_span = {start:anchor(2,5),end:anchor(3,12)};
 const paper={id,metadata:{title:'A synthetic paper about noisy proxies',authors:['Test Author', 'Second Author', 'Third Author', 'Fourth Author', 'Fifth Author', 'Sixth Author'],year:2018,page_count:4},relative_path:'synthetic.pdf',status:{state:'ready'},analyzed_at:now,one_line_summary:analysis.thesis};
 const root=path.resolve('dist');
 const refreshes=[]; let sourceRequests=0; let analyzed=true; const questions=[];
+let figureFixture=false;
 let libraryPapers=[paper]; const paperRequests=[]; const analysisRequests=[];
 let paperGate=null;
 let pollingTest=false; let pollRequests=0;
@@ -62,6 +63,7 @@ try {
     }
     if(suffix==='/analyze'){analysisRequests.push(route.request().postDataJSON());return route.fulfill({status:500,json:{message:'Unexpected analysis request'}});}
     if(suffix==='/clarify'){ questions.push(route.request().postDataJSON()); return route.fulfill({json:{answer:'The selected source explains measurement error.',limitation:null}}); }
+    if(suffix==='/reading-index')return route.fulfill({json:{schema_version:1,text:'Figure 1',pages:[],tokens:figureFixture?[{start:0,end:8,page:4,text:'Figure 1',rects:[rect(190)],provenance:'native'}]:[],objects:{word:[],WORD:[],sentence:[],paragraph:[]},figures:figureFixture?[{id:'figure-1',label:'Figure 1',page:4,caption:'Figure 1: source diagram',start:0,end:8,rect:{x_min:40,x_max:550,y_min:40,y_max:210},confidence:'candidate',references:[{page:2,start:10,end:18,rects:[rect(215)]}]}]:[],gaps:[]}});
     if(suffix==='/map')return route.fulfill({json:{layout,highlights:[]}});
     if(suffix==='/source'){ sourceRequests++; return route.fulfill({body:pdf,contentType:'application/pdf'}); }
     if(suffix==='/abstract/refresh'||suffix==='/context/refresh'||suffix==='/structure/refresh'){ refreshes.push(suffix);return route.fulfill({json:{paper,analysis:analyzed?analysis:null}}); }
@@ -112,12 +114,42 @@ try {
   const escapeFrom = async (name, prepare) => {
     await region.click();
     await page.locator('.section-focus').waitFor();
+    if (!(await page.locator('.topbar').isVisible())) { await page.keyboard.press('T'); }
     await prepare();
+    if (name === 'digest selection' || name === 'inline question') {
+      await page.keyboard.press('Escape');
+      assert.equal(await page.locator('.section-focus').count(),1,'quit clears the local digest mode first');
+    }
     await page.keyboard.press('Escape');
     await page.waitForFunction(()=>document.querySelector('.section-focus')===null);
     await page.waitForFunction(()=>document.activeElement?.dataset.sectionId==='regressional');
     assert.equal(await page.locator('.app-shell.has-library').count(),1,`${name}: library should be restored`);
   };
+  // Reader chrome starts hidden and reveals without spending permanent height.
+  await region.click();
+  await page.locator('.section-focus').waitFor();
+  await page.mouse.move(700,500);
+  assert.equal(await page.locator('.topbar').isVisible(),false);
+  assert.equal((await page.locator('.section-focus').boundingBox()).y,0);
+  await page.mouse.move(700,2);
+  await page.locator('.topbar').waitFor({state:'visible'});
+  await page.mouse.move(700,500);
+  await page.locator('.topbar').waitFor({state:'hidden'});
+  await page.keyboard.press('T');
+  await page.locator('.topbar').waitFor({state:'visible'});
+  await page.keyboard.press('q');
+  await page.waitForFunction(()=>document.querySelector('.section-focus')===null);
+  figureFixture=true;
+  await region.click();
+  await page.getByRole('button',{name:'Figure 1 ↗',exact:true}).click();
+  await page.getByRole('dialog',{name:'Figure 1 source'}).waitFor();
+  await page.getByRole('button',{name:'Whole page',exact:true}).click();
+  await page.keyboard.press('q');
+  assert.equal(await page.locator('.section-figure-view').count(),0);
+  assert.equal(await page.locator('.section-focus').count(),1);
+  await page.keyboard.press('q');
+  await page.waitForFunction(()=>document.querySelector('.section-focus')===null);
+  figureFixture=false;
   await escapeFrom('source', () => page.locator('.section-source-scroll').focus());
   await escapeFrom('digest', () => page.locator('.digest-fragment').first().focus());
   await escapeFrom('source page selector', () => page.getByLabel('Source page',{exact:true}).focus());
@@ -136,7 +168,7 @@ try {
   await escapeFrom('body after focus loss', () => page.evaluate(()=>document.activeElement?.blur()));
   await region.click();
   await page.locator('.digest-fragment').first().focus();
-  await page.keyboard.press('q');
+  await page.keyboard.press('Q');
   await page.getByRole('dialog').waitFor();
   await page.keyboard.press('Escape');
   await page.waitForFunction(()=>document.querySelector('[role="dialog"]')===null);
@@ -156,7 +188,7 @@ try {
   assert.ok(left.x+left.width<=right.x+1,'source and digest must be beside one another');
   assert.ok(right.width>=400 && right.width<=520 && right.width<left.width,'digest should be readable while leaving most width for source');
   const appbar = await page.locator('.topbar').boundingBox();
-  assert.equal(right.y,appbar.y+appbar.height,'digest must begin immediately below app bar');
+  assert.equal(right.y,(appbar?.y ?? 0)+(appbar?.height ?? 0),'digest must begin immediately below app bar');
   assert.equal(right.y+right.height,1000,'digest must reach the bottom of the window');
   await page.waitForFunction(()=>document.querySelectorAll('.section-focus [data-text-ready="true"]').length===2);
   const croppedText=await page.locator('.section-focus .pdf-text-layer').evaluateAll(layers=>layers.map(layer=>{
@@ -193,6 +225,8 @@ try {
   await page.setViewportSize({width:1600,height:1000});
   await page.waitForFunction(()=>document.querySelectorAll('.section-focus [data-text-ready="true"]').length===2
     && document.querySelector('.section-focus canvas')?.getBoundingClientRect().width>1000);
+  // Let the resize animation finish before constructing a native selection.
+  await page.waitForTimeout(250);
   await page.evaluate(()=>{
     const span=document.querySelector('.section-focus .pdf-text-layer span');
     const range=document.createRange();range.selectNodeContents(span);
@@ -279,10 +313,11 @@ try {
   await page.reload();
   await page.waitForFunction(()=>document.querySelector('.text-view [data-text-ready="true"]'));
   assert.equal(await page.locator('.view-switch').getByRole('button',{name:'Abstract',exact:true}).count(),0);
+  if (!(await page.locator('.topbar').isVisible())) await page.keyboard.press('T');
   assert.equal(await page.getByRole('button',{name:'Analyze',exact:true}).count(),1);
-  await page.keyboard.press('q');
+  await page.keyboard.press('Q');
   await page.getByRole('dialog',{name:'Processing queue'}).waitFor();
-  await page.keyboard.press('q');
+  await page.keyboard.press('Q');
   await page.getByRole('dialog',{name:'Processing queue'}).waitFor({state:'hidden'});
   await page.evaluate(()=>{
     const span=document.querySelector('.text-view .pdf-text-layer span');
@@ -364,7 +399,7 @@ try {
   const cardColumns=await page.locator('.paper-card').evaluateAll(cards=>new Set(cards.map(card=>Math.round(card.getBoundingClientRect().left))).size);
   assert.ok(cardColumns>=3,'desktop home must present a grid of papers');
   await page.getByRole('button',{name:'Lysilogy home',exact:true}).focus();
-  await page.keyboard.press('q');
+  await page.keyboard.press('Q');
   await page.getByRole('dialog',{name:'Processing queue'}).waitFor();
   await page.keyboard.press('Escape');
   await page.getByRole('dialog',{name:'Processing queue'}).waitFor({state:'hidden'});
@@ -375,6 +410,7 @@ try {
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await page.waitForFunction(()=>document.querySelector('.text-view [data-text-ready="true"]'));
+  if (!(await page.locator('.topbar').isVisible())) await page.keyboard.press('T');
   assert.equal(await page.getByRole('button',{name:'Analyze',exact:true}).count(),1);
   await page.goBack();
   await page.locator('.home-page').waitFor();

@@ -3,10 +3,12 @@ import type { PaperAnalysis, PaperMap, PaperSection } from "../types";
 import { sectionPages } from "../lib/sectionScope";
 import { visiblePdfPage } from "../lib/pdfViewport";
 import { animatePages, type PageSnapshot } from "../lib/pageTransition";
+import { SectionFigures } from "./SectionFigures";
 import { PdfReader } from "./PdfReader";
 
 type Props = {
   url: string;
+  toolbarVisible?: boolean;
   title: string;
   analysis: PaperAnalysis;
   section: PaperSection;
@@ -26,7 +28,7 @@ type Props = {
 
 const ignore = () => {};
 
-export function SectionFocus({ url, title, analysis, section, index, paperMap, darkInk, keyboardEnabled, snapshots,
+export function SectionFocus({ url, toolbarVisible = true, title, analysis, section, index, paperMap, darkInk, keyboardEnabled, snapshots,
   onToggleInk, onSection, onClose, onFullPaper, onClarify, onSaveReference, digest }: Props) {
   const [pageCount, setPageCount] = useState(paperMap?.layout.pages.length ?? Math.max(1, section.pages.end));
   const pages = useMemo(() => sectionPages(section, pageCount), [pageCount, section]);
@@ -39,20 +41,6 @@ export function SectionFocus({ url, title, analysis, section, index, paperMap, d
   useEffect(() => {
     scrollRef.current?.focus({ preventScroll: true });
   }, [jump.request]);
-
-  useEffect(() => {
-    if (!keyboardEnabled) return;
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || event.isComposing) return;
-      // The section reader owns Escape, including from its controls and digest
-      // selections. Separate dialogs suspend this handler via keyboardEnabled.
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      onClose();
-    };
-    window.addEventListener("keydown", onEscape, true);
-    return () => window.removeEventListener("keydown", onEscape, true);
-  }, [keyboardEnabled, onClose]);
 
   useLayoutEffect(() => {
     let stop = () => {};
@@ -107,8 +95,9 @@ export function SectionFocus({ url, title, analysis, section, index, paperMap, d
     <div className="section-focus-columns">
       <div className="section-source-scroll" tabIndex={0} ref={scrollRef} aria-label="Selected section source pages"
         onPointerDownCapture={() => setPane("source")} onFocusCapture={() => setPane("source")}>
+        {paperMap !== null && <SectionFigures url={url} section={section} pages={paperMap.layout.pages} darkInk={darkInk} onFullPaper={onFullPaper} />}
         {pages.length === 0 ? <p className="reader-message">This section has no usable page range. <button type="button" onClick={() => onFullPaper(1)}>Open full paper</button></p> :
-          <PdfReader url={url} title={title} page={currentPage} pageJump={jump.request} zoom={zoom} darkInk={darkInk} spread={false}
+          <PdfReader toolbarVisible={toolbarVisible} url={url} title={title} page={currentPage} pageJump={jump.request} zoom={zoom} darkInk={darkInk} spread={false}
             pageSubset={pages} pageLayouts={paperMap?.layout.pages} section={section}
             keyboardEnabled={keyboardEnabled && pane === "source"}
             onZoom={(delta) => setZoom((value) => Math.max(.6, Math.min(2, value + delta)))}

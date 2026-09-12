@@ -1,7 +1,9 @@
+import { flushSync } from "react-dom";
+import { NotesPanel } from "./components/NotesPanel";
 import { SectionFocus } from "./components/SectionFocus";
 import { capturePages, animatePages, type PageSnapshot } from "./lib/pageTransition";
 import { sectionPages } from "./lib/sectionScope";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { AbstractView } from "./components/AbstractView";
 import { PaperHeading } from "./components/PaperHeading";
@@ -116,6 +118,28 @@ export function App() {
   const mainStageRef = useRef<HTMLElement>(null);
   const closeReaderTools = useCallback(() => setToolsTab(null), []);
   const home = selectedId === null;
+  const [notesOpen, setNotesOpen] = useState(false);
+  const notesRailRestore = useRef<boolean | null>(null);
+  const openNotes = useCallback(() => {
+    notesRailRestore.current = libraryOpen;
+    setLibraryOpen(false);
+    setNotesOpen(true);
+  }, [libraryOpen]);
+  const closeNotes = useCallback(() => {
+    setNotesOpen(false);
+    if (notesRailRestore.current !== null) setLibraryOpen(notesRailRestore.current);
+    notesRailRestore.current = null;
+  }, []);
+  const [toolbarPinned, setToolbarPinned] = useState(false);
+  const [toolbarPeek, setToolbarPeek] = useState(false);
+  const [topbarHeight, setTopbarHeight] = useState(0);
+  const topbarRef = useRef<HTMLElement>(null);
+  const pendingSourceSearch = useRef(false);
+  const requestNotesClose = useCallback((afterClose?: () => void): boolean => {
+    const editor = document.querySelector(".notes-panel");
+    if (editor === null) return false;
+    return !editor.dispatchEvent(new CustomEvent("notes-close", { cancelable: true, detail: { afterClose } }));
+  }, []);
 
   useEffect(() => {
     mainStageRef.current?.scrollTo({ top: 0 });
@@ -196,10 +220,12 @@ export function App() {
 
   useEffect(() => {
     const onFunctionKey = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented) return;
       if (event.key === "F1") {
         event.preventDefault();
         // F1 explicitly changes the rail preference instead of restoring it on exit.
         focusRestore.current = null;
+        notesRailRestore.current = null;
         setPanel(null);
         setSwitcherOpen(false);
         setCommandOpen(false);
@@ -219,7 +245,7 @@ export function App() {
         setQueueOpen(false);
         if (compactLayout) setLibraryOpen(false);
         setCommandOpen(true);
-      } else if (event.key === "q" && !isEditableTarget(event.target)) {
+      } else if (event.key === "Q" && !isEditableTarget(event.target)) {
         event.preventDefault();
         setSwitcherOpen(false);
         setCommandOpen(false);
@@ -229,8 +255,8 @@ export function App() {
         void refreshQueue();
       }
     };
-    window.addEventListener("keydown", onFunctionKey);
-    return () => window.removeEventListener("keydown", onFunctionKey);
+    window.addEventListener("keydown", onFunctionKey, true);
+    return () => window.removeEventListener("keydown", onFunctionKey, true);
   }, [compactLayout, refreshQueue]);
 
   useEffect(() => {
@@ -271,7 +297,8 @@ export function App() {
   }, [loadPaper, processing, queueHasActive, queueOpen, refreshLibrary, refreshQueue, selectedId]);
 
   const selectPaper = useCallback(
-    (id: string, updateHistory = true): void => {
+    function navigateToPaper(id: string, updateHistory = true): void {
+      if (id !== selectedIdRef.current && requestNotesClose(() => navigateToPaper(id, updateHistory))) return;
       if (id === selectedIdRef.current) {
         setLibraryOpen(false);
         return;
@@ -303,10 +330,11 @@ export function App() {
         if (selectedIdRef.current === id) setError(reason instanceof Error ? reason.message : "Could not load paper");
       });
     },
-    [loadPaper],
+    [loadPaper, requestNotesClose],
   );
 
-  const openHome = useCallback((updateHistory = true): void => {
+  const openHome = useCallback(function navigateHome(updateHistory = true): void {
+    if (requestNotesClose(() => navigateHome(updateHistory))) return;
     if (updateHistory && window.location.hash !== "#home") window.history.pushState(null, "", "#home");
     if (selectedIdRef.current !== null) setHomeActiveId(selectedIdRef.current);
     selectedIdRef.current = null;
@@ -327,19 +355,28 @@ export function App() {
     setExperimentOpen(false);
     setToolsTab(null);
     setError(null);
-  }, []);
+  }, [requestNotesClose]);
 
   useEffect(() => {
     const readRoute = (): void => {
       const id = initialPaperId();
       // Browsers emit both events for a single back/forward hash traversal.
       if (id === selectedIdRef.current) return;
-      if (id === null) openHome(false);
-      else if (library !== null && !library.papers.some((paper) => paper.id === id)) {
-        openHome(false);
-        window.history.replaceState(null, "", "#home");
-        setError("This paper is no longer in the library.");
-      } else selectPaper(id, false);
+      const applyRoute = () => {
+        if (id === null) openHome(false);
+        else if (library !== null && !library.papers.some((paper) => paper.id === id)) {
+          openHome(false);
+          window.history.replaceState(null, "", "#home");
+          setError("This paper is no longer in the library.");
+        } else selectPaper(id, false);
+      };
+      const requestedHash = window.location.hash;
+      if (requestNotesClose(() => { window.history.replaceState(null, "", requestedHash); applyRoute(); })) {
+        // Keep the visible paper and URL together while an unsaved note awaits a decision.
+        window.history.replaceState(null, "", selectedIdRef.current === null ? "#home" : `#paper=${encodeURIComponent(selectedIdRef.current)}`);
+        return;
+      }
+      applyRoute();
     };
     window.addEventListener("popstate", readRoute);
     window.addEventListener("hashchange", readRoute);
@@ -347,7 +384,7 @@ export function App() {
       window.removeEventListener("popstate", readRoute);
       window.removeEventListener("hashchange", readRoute);
     };
-  }, [library, openHome, selectPaper]);
+  }, [library, openHome, requestNotesClose, selectPaper]);
 
   const selectFromSwitcher = useCallback(
     (id: string): void => {
@@ -361,7 +398,7 @@ export function App() {
     if (selectedId === null || processing) return;
     setError(null);
     setNotice(
-      `${analysisNeedsRefresh ? "Refresh queued" : "Queued"} for ${chosenProvider}. Press q to watch the live tasklist.`,
+      `${analysisNeedsRefresh ? "Refresh queued" : "Queued"} for ${chosenProvider}. Press Q to watch the live tasklist.`,
     );
     void api
       .analyze(
@@ -643,8 +680,10 @@ export function App() {
     onGloss: () => paperView?.analysis != null && openGlossary(),
     onHelp: () => setPanel("help"),
     onSearch: () => {
-      setLibraryOpen(true);
-      window.setTimeout(() => searchRef.current?.focus(), 0);
+      pendingSourceSearch.current = true;
+      setPanel(null);
+      setTextMode("pdf");
+      setView("text");
     },
     onToggleLibrary: () => setLibraryOpen((open) => !open),
     onToggleView: () => {
@@ -844,9 +883,93 @@ export function App() {
     window.queueMicrotask(() => setLibraryOpen(restore.library));
   }, [sectionFocused]);
 
+  const readingPdf = !home && paperView !== null && (sectionFocused || (view === "text" && textMode === "pdf"));
+  const toolbarVisible = !readingPdf || toolbarPinned || toolbarPeek;
+  useLayoutEffect(() => {
+    const header = topbarRef.current;
+    if (header === null) return;
+    const measure = () => setTopbarHeight(toolbarVisible ? header.getBoundingClientRect().height : 0);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, [toolbarVisible, home]);
+  useEffect(() => {
+    if (!readingPdf || toolbarPinned) return;
+    const reveal = (event: MouseEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const overControls = target?.closest(".topbar, .pdf-toolbar, .reader-reveal") != null;
+      if (event.clientY <= 8 || overControls) setToolbarPeek(true);
+      else if (target?.closest(".notes-panel, .pdf-source-tools, .section-figure-links, .section-figure-view header") != null) return;
+      else if (!(topbarRef.current?.contains(document.activeElement) && document.activeElement?.matches(":focus-visible"))) setToolbarPeek(false);
+    };
+    window.addEventListener("mousemove", reveal);
+    return () => window.removeEventListener("mousemove", reveal);
+  }, [readingPdf, toolbarPinned]);
+  useEffect(() => {
+    if (!pendingSourceSearch.current || view !== "text" || textMode !== "pdf") return;
+    pendingSourceSearch.current = false;
+    const frame = requestAnimationFrame(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "/", bubbles: true })));
+    return () => cancelAnimationFrame(frame);
+  }, [view, textMode, panel]);
+  useEffect(() => {
+    const onReaderKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest(".notes-panel") != null) return;
+      if (event.key === "/" && !isEditableTarget(event.target) && !home && !readingPdf && panel === null && !commandOpen && !switcherOpen && !queueOpen && !experimentOpen && toolsTab === null && !(compactLayout && libraryOpen) && target?.closest(".library-rail") == null) {
+        event.preventDefault(); event.stopImmediatePropagation(); pendingSourceSearch.current = true; setTextMode("pdf"); setView("text"); return;
+      }
+      if (!isEditableTarget(event.target) && event.key === "T" && readingPdf) {
+        event.preventDefault(); event.stopImmediatePropagation();
+        setToolbarPinned((value) => !value); setToolbarPeek(false); return;
+      }
+      if (!isEditableTarget(event.target) && event.key === "E" && !home) {
+        event.preventDefault(); event.stopImmediatePropagation();
+        if (notesOpen) requestNotesClose(); else openNotes();
+        return;
+      }
+      if (event.key !== "Escape" && event.key !== "q") return;
+      if (event.key === "q" && isEditableTarget(event.target)) return;
+      // Close one layer only. Local source/digest selection gets first refusal.
+      let close: (() => void) | null = null;
+      if (commandOpen) close = () => setCommandOpen(false);
+      else if (switcherOpen) close = () => setSwitcherOpen(false);
+      else if (queueOpen) close = () => setQueueOpen(false);
+      else if (sourceQuestion !== null) close = () => setSourceQuestion(null);
+      else if (experimentOpen) close = () => setExperimentOpen(false);
+      else if (toolsTab !== null) close = () => setToolsTab(null);
+      else if (panel === "help") close = () => setPanel(null);
+      else {
+        const quitLocal = (selector: string, name: string) => {
+          const node = document.querySelector(selector);
+          let handled = false;
+          if (node !== null) flushSync(() => { handled = !node.dispatchEvent(new CustomEvent(name, { cancelable: true })); });
+          return handled;
+        };
+        if (quitLocal(".section-figure-view", "figure-quit")
+          || quitLocal('.pdf-reader[data-source-local-mode="true"]', "source-quit")
+          || quitLocal('.context-panel[data-local-selection="true"]', "digest-quit")) {
+          event.preventDefault(); event.stopImmediatePropagation(); return;
+        }
+        if (markMode) close = () => setMarkMode(false);
+        else if (notesOpen) close = () => { requestNotesClose(); };
+        else if (sectionFocused) close = closeSection;
+        else if (panel !== null) close = () => setPanel(null);
+        else if (libraryOpen) close = () => setLibraryOpen(false);
+        else if (!home && analysis !== null && view !== "overview") close = () => setView("overview");
+        else if (!home) close = () => openHome();
+      }
+      if (close !== null) { event.preventDefault(); event.stopImmediatePropagation(); flushSync(close); }
+    };
+    window.addEventListener("keydown", onReaderKey, true);
+    return () => window.removeEventListener("keydown", onReaderKey, true);
+  }, [analysis, closeSection, commandOpen, compactLayout, experimentOpen, home, libraryOpen, markMode, notesOpen, openHome, openNotes, panel,
+    queueOpen, readingPdf, requestNotesClose, sectionFocused, sourceQuestion, switcherOpen, toolsTab, view]);
 
   return (
-    <div className={`app-shell ${home ? "is-home" : ""} ${sectionFocused ? "has-section-focus" : ""} ${libraryOpen ? "has-library" : ""}`}>
+    <div className={`app-shell ${home ? "is-home" : ""} ${notesOpen ? "has-notes" : ""} ${readingPdf ? "is-reading" : ""} ${sectionFocused ? "has-section-focus" : ""} ${libraryOpen ? "has-library" : ""}`} style={{ "--topbar-height": `${topbarHeight}px` } as CSSProperties}>
+      {readingPdf && <button className="reader-reveal" type="button" aria-label="Show reader controls (T)" onFocus={() => setToolbarPeek(true)} onClick={() => { setToolbarPinned((value) => !value); setToolbarPeek(false); }} />}
       <LibraryRail
         open={libraryOpen}
         keyboardMode={(compactLayout || home) && libraryOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && panel === null && sourceQuestion === null}
@@ -859,21 +982,21 @@ export function App() {
         onSelect={selectPaper}
         onClose={() => setLibraryOpen(false)}
         onScan={scan}
+        onHome={() => openHome()}
         onImport={importRemotePdf}
         onVisiblePapersChange={setSidebarPaperIds}
       />
 
       <div className={`workspace ${libraryOpen ? "rail-visible" : ""}`}>
-        <header className="topbar">
-          <button
-            className="brand"
-            type="button"
-            onClick={() => openHome()}
-            aria-label="Lysilogy home"
-          >
-            <img className="brand-mark" src="/lambda-mark.svg" alt="" />
-            <strong>LYSILOGY</strong>
-          </button>
+        <header className="topbar" ref={topbarRef} hidden={!toolbarVisible}
+          onFocusCapture={() => setToolbarPeek(true)} onBlurCapture={(event) => {
+            const next = event.relatedTarget;
+            if (!event.currentTarget.contains(next) && !(next instanceof Element && next.closest(".notes-panel, .pdf-source-tools, .section-figure-links, .section-figure-view") !== null)) setToolbarPeek(false);
+          }}>
+          <nav className="workspace-navigation" aria-label="Library navigation">
+            <button type="button" aria-label="Lysilogy home" title="Home" onClick={() => openHome()}>⌂</button>
+            <button type="button" aria-label="Toggle library (F1)" title="Library (F1)" onClick={() => setLibraryOpen((value) => !value)}>☰</button>
+          </nav>
           {home ? <span className="home-topbar-label">Your reading library</span> : <div className="view-switch" role="group" aria-label="Reader view">
             {analysis === null ? <>
               <button type="button" className={textMode === "pdf" ? "is-active" : ""} onClick={() => setTextMode("pdf")}>PDF</button>
@@ -924,9 +1047,12 @@ export function App() {
             </>}
           </div>}
           <div className="topbar-actions">
+            {!home && <button className="queue-button notes-toggle" type="button" aria-pressed={notesOpen} title="Markdown notes (E)" onClick={() => { if (notesOpen) requestNotesClose(); else openNotes(); }}>Notes <kbd>E</kbd></button>}
+            {readingPdf && <button className="queue-button toolbar-pin" type="button" aria-pressed={toolbarPinned} title="Pin reader controls (T)" onClick={() => { setToolbarPinned((value) => !value); setToolbarPeek(false); }}>Pin <kbd>T</kbd></button>}
+
             {home ? <>
               <button className="queue-button" type="button" onClick={scan}>Rescan</button>
-              <button className={`queue-button ${queueHasActive ? "has-work" : ""}`} type="button" onClick={() => { setQueueOpen(true); void refreshQueue(); }}>Queue <kbd>q</kbd></button>
+              <button className={`queue-button ${queueHasActive ? "has-work" : ""}`} type="button" onClick={() => { setQueueOpen(true); void refreshQueue(); }}>Queue <kbd>Q</kbd></button>
             </> : paperView === null ? <span className="current-paper-label">Opening paper…</span> : analysis !== null && currentPaper !== null ? <span className="current-paper-label" title={`${currentPaper.metadata.authors.join(", ")} — ${currentPaper.metadata.year ?? ""} — ${currentPaper.metadata.title}`}>
               {currentPaper.metadata.authors.length > 2 ? `${currentPaper.metadata.authors[0]} et al.` : currentPaper.metadata.authors.join(" & ")}
               {currentPaper.metadata.year == null ? "" : ` — ${currentPaper.metadata.year}`} — {currentPaper.metadata.title}
@@ -1015,6 +1141,7 @@ export function App() {
                   ) : (
                     <PdfReader
                       key={selectedId}
+                      toolbarVisible={toolbarVisible}
                       url={api.source(selectedId)}
                       title={currentPaper.metadata.title}
                       page={pdfPage}
@@ -1044,6 +1171,7 @@ export function App() {
 
       {sectionFocused ? (
         <SectionFocus key={`${currentPaper.id}:${selectedSection.id}`} url={api.source(currentPaper.id)} title={currentPaper.metadata.title}
+          toolbarVisible={toolbarVisible}
           analysis={analysis} section={selectedSection} index={activeSection} paperMap={paperMap} darkInk={darkInk}
           keyboardEnabled={!switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && sourceQuestion === null}
           snapshots={pageSnapshots} onToggleInk={() => setDarkInk((value) => !value)} onSection={openSection} onClose={closeSection}
@@ -1058,6 +1186,7 @@ export function App() {
           initialSelection={clarifySeed} onClose={() => { setClarifySeed(""); setPanel(null); }}
           onGloss={openGlossary} onOpenPage={openPage} onClarify={clarify} />
       ) : null}
+      {notesOpen && selectedId !== null && <NotesPanel key={selectedId} paperId={selectedId} onClose={closeNotes} />}
       {sourceQuestion !== null && selectedId !== null && <PassageQuestion key={`${selectedId}:${sourceQuestion.page}:${sourceQuestion.text}`}
         paperId={selectedId} text={sourceQuestion.text} page={sourceQuestion.page} provider={provider}
         onClose={() => { setSourceQuestion(null); mainStageRef.current?.querySelector<HTMLElement>(".pdf-reader")?.focus(); }} />}

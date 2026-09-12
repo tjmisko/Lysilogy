@@ -59,7 +59,7 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
 
     const onKeyDown = (event: KeyboardEvent): void => {
       const current = optionsRef.current;
-      if (!current.enabled) return;
+      if (!current.enabled || event.defaultPrevented) return;
       if (event.key === "Escape") {
         clearPendingG();
         current.onEscape();

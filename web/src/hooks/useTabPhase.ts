@@ -31,6 +31,7 @@ export function useTabPhase(options: TabPhaseOptions): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== "Tab") return;
+      if (event.target instanceof Element && event.target.closest(".notes-panel, .pdf-source-tools") !== null) return;
       // Ctrl/Cmd/Alt+Tab belong to the browser and the window manager.
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       const current = optionsRef.current;

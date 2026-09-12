@@ -1,7 +1,10 @@
+import { flushSync } from "react-dom";
+import { PdfSourceMarks } from "./PdfSourceMarks";
+import { usePdfSourceTools, type SourceMark } from "./PdfSourceTools";
 import { sectionPageCrop, type SectionCrop } from "../lib/sectionCrop";
 import { cropTextLayer } from "../lib/cropTextLayer";
 import { visiblePdfPage } from "../lib/pdfViewport";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   type PDFDocumentProxy,
   type PageViewport,
@@ -55,6 +58,7 @@ type PdfReaderProps = {
   onZoom?: (delta: number) => void;
   onReturnToMap?: () => void;
   keyboardEnabled?: boolean;
+  toolbarVisible?: boolean;
 };
 
 type PdfPageCanvasProps = {
@@ -73,6 +77,8 @@ type PdfPageCanvasProps = {
   crop?: SectionCrop;
   readingWidth?: number;
   readingHeight?: number;
+  sourceMarks: SourceMark[];
+  sourceDimensions?: { width: number; height: number };
 };
 
 type SelectionState = {
@@ -119,6 +125,8 @@ function PdfPageCanvas({
   crop,
   readingWidth,
   readingHeight,
+  sourceMarks,
+  sourceDimensions,
 }: PdfPageCanvasProps) {
   const frameRef = useRef<HTMLElement>(null);
   const [visible, setVisible] = useState(!lazy);
@@ -152,6 +160,8 @@ function PdfPageCanvas({
       .then(async (pdfPage) => {
         if (controller.signal.aborted) return;
         const base = pdfPage.getViewport({ scale: 1 });
+        surface.dataset.pdfWidth = String(layout?.width ?? base.width);
+        surface.dataset.pdfHeight = String(layout?.height ?? base.height);
         const fitScale = Math.max(0.1, fit === "height"
           ? (slotHeight - 40) / (crop === undefined ? base.height : readingHeight ?? base.height)
           : (slotWidth - 28) / (crop === undefined ? base.width : readingWidth ?? base.width));
@@ -256,6 +266,7 @@ function PdfPageCanvas({
           className={darkInk ? "pdf-canvas dark-ink" : "pdf-canvas"}
           aria-label={`Page ${page} of ${pageCount}`}
         />
+        <PdfSourceMarks marks={sourceMarks} page={page} width={sourceDimensions?.width ?? layout?.width ?? 612} height={sourceDimensions?.height ?? layout?.height ?? 792} crop={crop} />
         <div
           ref={textLayerRef}
           className="pdf-text-layer-host"
@@ -288,6 +299,7 @@ export function PdfReader({
   onZoom,
   onReturnToMap,
   keyboardEnabled = true,
+  toolbarVisible = true,
 }: PdfReaderProps) {
   const { document: pdfDocument, loading, error: loadError } = usePdfDocument(url);
   const [error, setError] = useState<string | null>(null);
@@ -296,7 +308,6 @@ export function PdfReader({
   const [fit, setFit] = useState<"width" | "height">("width");
   const [flow, setFlow] = useState<"paged" | "continuous">(pageSubset === undefined ? "paged" : "continuous");
   const [axis, setAxis] = useState<"vertical" | "horizontal">("vertical");
-  const [textPages, setTextPages] = useState<Record<number, boolean>>({});
   const [selectionState, setSelectionState] = useState<SelectionState | null>(null);
   const [copyLabel, setCopyLabel] = useState("Copy");
   const [readingPage, setReadingPage] = useState(page);
@@ -331,9 +342,9 @@ export function PdfReader({
   const visiblePages = flow === "continuous" ? availablePages : step === 2 && page < pageCount ? [page, page + 1] : [page];
   const slotWidth = step === 2 ? Math.max(160, (containerWidth - 36) / 2) : containerWidth;
   const lastVisiblePage = visiblePages[visiblePages.length - 1] ?? page;
-  const visibleTextStatus = visiblePages.map((visiblePage) => textPages[visiblePage]);
-  const textLayersReady = visibleTextStatus.every((status) => status !== undefined);
-  const hasSelectableText = visibleTextStatus.some(Boolean);
+  const sourceTools = usePdfSourceTools({ url, page, root: readerRef, pageSubset, crops, markPages: flow === "paged" ? visiblePages : [readingPage - 1, readingPage, readingPage + 1, page], onPage, onOpenFullPaper, onClarify: onClarifySelection, onSave: onSaveReference });
+  const sourceKey = sourceTools.onKey;
+  const sourceQuit = sourceTools.quit;
 
   useEffect(() => {
     if (flow !== "continuous") return;
@@ -375,9 +386,12 @@ export function PdfReader({
     return () => host.removeEventListener("wheel", onWheel);
   }, [axis, flow]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!keyboardEnabled) return;
     const onKey = (event: KeyboardEvent) => {
+      if (window.document.querySelector(".section-figure-view") !== null || event.target instanceof Element && event.target.closest(".notes-panel") !== null) return;
+      const sourceHandled = event.key === "q" || event.key === "Escape" ? flushSync(() => sourceKey(event)) : sourceKey(event);
+      if (sourceHandled) { event.preventDefault(); event.stopImmediatePropagation(); return; }
       const target = event.target;
       if (event.metaKey || event.altKey || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
         || target instanceof HTMLSelectElement || target instanceof HTMLElement && target.isContentEditable) return;
@@ -407,26 +421,13 @@ export function PdfReader({
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [availablePages, axis, changeAxis, changeFit, changeFlow, flow, keyboardEnabled, onPage, page, step]);
+  }, [availablePages, axis, changeAxis, changeFit, changeFlow, flow, keyboardEnabled, onPage, page, sourceKey, step]);
 
   const handleTextLayer = useCallback(
-    (pageNumber: number, viewport: PageViewport | null, hasText: boolean): void => {
-      if (viewport === null) {
-        viewportsRef.current.delete(pageNumber);
-        setTextPages((current) => {
-          if (!(pageNumber in current)) return current;
-          return Object.fromEntries(
-            Object.entries(current).filter(([key]) => Number(key) !== pageNumber),
-          );
-        });
-        return;
-      }
-      viewportsRef.current.set(pageNumber, viewport);
-      setTextPages((current) => current[pageNumber] === hasText
-        ? current
-        : { ...current, [pageNumber]: hasText });
-    },
-    [],
+    (pageNumber: number, viewport: PageViewport | null): void => {
+      if (viewport === null) viewportsRef.current.delete(pageNumber);
+      else viewportsRef.current.set(pageNumber, viewport);
+    }, [],
   );
 
   const readSelection = useCallback((): void => {
@@ -528,9 +529,44 @@ export function PdfReader({
     setSelectionState(null);
   }, []);
 
+  useLayoutEffect(() => {
+    const node = readerRef.current;
+    if (node === null) return;
+    const quit = (event: Event) => {
+      const closed = flushSync(sourceQuit);
+      if (closed) { event.preventDefault(); return; }
+      if (selectionState !== null) { clearSelection(); event.preventDefault(); }
+    };
+    node.addEventListener("source-quit", quit);
+    return () => node.removeEventListener("source-quit", quit);
+  }, [clearSelection, selectionState, sourceQuit]);
+
   return (
-    <section ref={readerRef} className="pdf-reader" tabIndex={-1} aria-label={`PDF: ${title}`} data-flow={flow} data-axis={axis} data-fit={fit}>
-      <div className="pdf-toolbar">
+    <section ref={readerRef} className="pdf-reader" tabIndex={-1} aria-label={`PDF: ${title}`} data-flow={flow} data-axis={axis} data-fit={fit}
+      data-source-local-mode={sourceTools.localMode || selectionState !== null ? "true" : undefined}
+      onPointerUp={(event) => {
+        let surface = event.target instanceof Element ? event.target.closest<HTMLElement>(".pdf-page-surface") : null;
+        const selection = window.getSelection();
+        const range = selection !== null && !selection.isCollapsed && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+        // A drag may end on another page; use the source page where the selection starts.
+        if (range !== null) {
+          const start = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+          const selectedSurface = start?.closest<HTMLElement>(".pdf-page-surface");
+          if (selectedSurface != null && readerRef.current?.contains(selectedSurface)) surface = selectedSurface;
+        }
+        const frame = surface?.closest<HTMLElement>("[data-pdf-page]");
+        if (surface === null || frame === null || frame === undefined) return;
+        const pageNumber = Number(frame.dataset.pdfPage);
+        const dimensions = sourceTools.index?.pages.find((item) => item.number === pageNumber) ?? pageLayouts?.find((item) => item.number === pageNumber);
+        const crop = crops.get(pageNumber);
+        const bounds = surface.getBoundingClientRect();
+        const selectedRect = range?.getClientRects()[0];
+        const x = (selectedRect?.left ?? event.clientX) - bounds.left;
+        const y = (selectedRect?.top ?? event.clientY) - bounds.top;
+        sourceTools.pointerCursor(pageNumber, (crop?.bounds.x_min ?? 0) + x / bounds.width * (crop === null || crop === undefined ? dimensions?.width ?? Number(surface.dataset.pdfWidth ?? 612) : crop.bounds.x_max - crop.bounds.x_min),
+          (crop?.bounds.y_min ?? 0) + y / bounds.height * (crop === null || crop === undefined ? dimensions?.height ?? Number(surface.dataset.pdfHeight ?? 792) : crop.bounds.y_max - crop.bounds.y_min));
+      }}>
+      <div className="pdf-toolbar" hidden={!toolbarVisible}>
         {pageSubset === undefined ? <div>
           <span className="eyebrow">Source document</span>
           <strong>{title}</strong>
@@ -596,15 +632,12 @@ export function PdfReader({
             crop={pageSubset === undefined ? undefined : crops.get(visiblePage) ?? undefined}
             readingWidth={pageSubset === undefined ? undefined : readingWidth}
             readingHeight={pageSubset === undefined ? undefined : readingHeight}
+            sourceMarks={sourceTools.marks}
+            sourceDimensions={sourceTools.index?.pages.find((item) => item.number === visiblePage)}
           />
         ))}
       </div>
-      <div className={`pdf-mode-note ${textLayersReady && !hasSelectableText ? "is-warning" : ""}`}>
-        {textLayersReady && !hasSelectableText
-          ? "This page has no embedded text. It needs OCR before passages can be selected."
-          : "Select any passage to copy it or ask for an explanation."}
-        {pageSubset === undefined && <>{" "}<kbd>Ctrl-d</kbd> / <kbd>PageDown</kbd> page forward; <kbd>Ctrl-u</kbd> / <kbd>PageUp</kbd> page back.</>}
-      </div>
+      {sourceTools.panel}
       {selectionState !== null && (
         <div
           className="pdf-selection-menu"

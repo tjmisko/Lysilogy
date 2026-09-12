@@ -11,7 +11,7 @@ of Dijkstra's "GOTO Statements Considered Harmful."
 
 ## The reading ladder
 
-Click **Lysilogy** to return to the library home page. Each card shows a first-page PDF preview
+Click **Lysilogy** above the sidebar’s Vault heading (or the compact Home control) to return to the library home page. Each card shows a first-page PDF preview
 with a compact title, authors, year, and mapping status. Arrows or `h/j/k/l` move between cards;
 Enter or `o` opens the selected paper. Home/End select the first/last card, and `/` searches.
 From search, Down or Enter focuses a matching card. The selection is restored when returning home.
@@ -83,6 +83,7 @@ cargo build --release
 | --- | --- | --- |
 | `--library` | `LYSILOGY_LIBRARY` | `local-articles` |
 | `--data` | `LYSILOGY_DATA` | `.lysilogy` |
+| `--notes` | `LYSILOGY_NOTES` | `Notes` |
 | `--bind` (serve) | — | `127.0.0.1:7319` |
 | `--web` (serve) | — | `web/dist` |
 
@@ -174,7 +175,7 @@ resumed, revision falls back to a fresh read-only call with `source.txt`, `analy
 feedback already present. Clarification stays ephemeral and uses prefetched local passage context.
 
 The backend owns `analysis-tasklist.md` and its typed `job.json` state; model processes are read-only
-and never edit progress. Press `q` to watch analysis progress.
+and never edit progress. Press `Q` to watch analysis progress.
 
 ### Reading units in the map
 
@@ -280,8 +281,8 @@ Press `?` in the app for the complete, contextual guide.
 | `[` / `]` | Previous / next paper, or PDF page |
 | `Ctrl-d` / `Ctrl-u` | Page forward / back in PDF; half-screen in text views |
 | `PageDown` / `PageUp` | Page forward / back in PDF; full-screen in text views |
-| `/` | Search the active view |
-| `v` | Start keyboard selection in a digest, or sentence marking in the source map |
+| `/` | Regex search in the paper; filter the focused library input |
+| `v` | Start source visual selection, digest selection, or map sentence marking |
 | `o` | Swap the moving end of a visual selection |
 | `c` | Clarify the selection in paper context |
 | `y` | Copy the selection |
@@ -293,8 +294,10 @@ Press `?` in the app for the complete, contextual guide.
 | `f` | Filter to mapped papers while the library is open |
 | `:` | Command menu (`:analyze`, `:queue`, `:feedback`, `:spread`, and more) |
 | `:experiment` | Open the blind learning-ramp A/B prompt lab. |
-| `q` | Toggle the processing queue and live analysis tasklists |
-| `Esc` | Return to Overview, or close the top panel |
+| `Q` | Toggle the processing queue and live analysis tasklists |
+| `q` / `Esc` | Leave the current selection or panel, return to map, then home |
+| `T` | Show or pin reader controls; the top mouse edge also reveals them |
+| `E` | Open Markdown notes beside the paper |
 
 Pointer selection works too: select text in a digest, then choose **Clarify selection**. In the page
 map, `v` enters a coordinate-backed evidence cursor; a second `v` starts a same-page sentence range,
@@ -335,10 +338,10 @@ limits, and the document-level verification approach.
 PDF mode renders a PDF.js text layer over the page image. Drag over a passage—even across lines or
 the two-page spread—to copy it or open **Ask about this** with the passage and its first page already
 filled in. Selections retain PDF-page coordinates and text-item offsets for future persistent marks.
-Image-only pages report that OCR is required instead of presenting an inert selection surface.
+Image-only pages can be indexed locally with Tesseract for search and visual text objects; missing tools or unfinished pages are reported as search gaps.
 Unanalyzed papers open directly in source reading, with PDF/Text tabs and one Analyze action.
 Passage questions work before analysis; extraction runs on demand without creating an analysis.
-Analyzed papers display their author, year, and title in the app bar; `q` opens the queue.
+Analyzed papers display their author, year, and title in the app bar; `Q` opens the queue.
 
 Opening an Overview region animates its source into a reading column with a compact digest on
 the right. Both panes fill the space below the app bar and scroll independently. The original PDF
@@ -349,7 +352,7 @@ Missing geometry offers an
 explicit link to the full page. The page picker preserves original PDF numbering, and **Open full
 paper** takes the current page into Text. **Map** or `Esc` restores the map's scroll, columns,
 keyboard focus, and library state. Escape works from either reading pane, including controls,
-selected passages, and inline questions. A separate open dialog closes first. Section navigation
+selected passages, and inline questions. A selection or inline question closes before its containing reader; a separate open dialog closes first. Section navigation
 lives in the digest footer. Reduced-motion
 settings skip the transition; narrow screens provide Source/Digest tabs. Overview and both readers
 share a PDF document, and scoped page canvases render lazily.
@@ -449,3 +452,40 @@ The delivery phases for abstract fidelity, cited before/after context, and a foc
 are in [the reading pipeline plan](docs/reading-pipeline-plan.md). The implemented scope, checks,
 and outstanding model-quality evaluation are recorded in the
 [validation report](docs/experiment-reports/2026-09-11-reading-pipeline.md).
+
+### Paper search, figures, and notes
+
+Reader chrome is hidden by default in the full PDF and focused section views. Move to the top
+edge or press `T` to reveal/pin it. Reading phase controls stay together, while long author/year/title
+metadata wraps. The sidebar holds the app branding. `Q` opens the queue; lowercase `q` and Escape
+unwind the current mode before closing the reader. The footer hint is removed.
+
+In a paper, `/` opens regex search over source text. Enter runs the pattern; `n` / `N` move forward /
+backward. `/optimization`, Enter, `n`, `n`, `v`, `a`, `p`, `y` searches, selects a paragraph and copies
+it. Visual selection supports `iw` / `aw`, `iW` / `aW`, `is` / `as`, and `ip` / `ap`, plus source
+cursor placement by clicking. Clipboard denial exposes selectable copy text. Out-of-section matches
+offer an explicit jump to the full paper, preserving section bounds. Library and Glossary filters
+remain local when their inputs are focused.
+
+`GET /api/papers/{id}/reading-index` builds a separate cached UTF-16 text/geometry index. Native
+PDF text, columns, paragraphs, captions and footnotes are processed deterministically; sparse pages
+use local `pdftoppm` + `tesseract` when installed. Native and OCR provenance stays visible. Limits are
+400 pages, 4 MiB text, and 12 OCR pages per build; unfinished pages have explicit gaps. Regex runs in
+a terminable worker with a one-second deadline. This cache leaves existing citation anchors intact.
+OCR and paragraph/figure segmentation remain heuristic, especially on unusual scans and layouts.
+
+When a cropped section cites a figure outside its visible regions, **Referenced figures** opens its
+source image and caption. Estimated image boundaries always offer **Whole page** as a fallback.
+Closing the figure returns to the same section. This is figure-reference detection, not model-verified
+image segmentation.
+
+`E` opens an actual CodeMirror 6 Markdown buffer. Notes map the PDF’s relative filename to `.md`
+beneath `Notes/` (for example `local-articles/topic/Paper.pdf` → `Notes/topic/Paper.md`). Set another
+root with `--notes /path/to/paper-notes`. Missing notes open empty and are created on the first save.
+Ctrl/Cmd-S saves atomically; a content revision check reports external edits instead of overwriting
+a stale file. Unsaved changes prompt on close/navigation. `q`, `/`, and ordinary editor keys remain
+inside the editor. The initial buffer provides Markdown styling, wrapping, and undo/redo; it does
+not embed a Neovim process.
+
+The requests were recorded before implementation in [navigation issue #8](https://github.com/tjmisko/Lysilogy/issues/8)
+and [source-search issue #9](https://github.com/tjmisko/Lysilogy/issues/9).

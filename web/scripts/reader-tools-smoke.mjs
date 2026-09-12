@@ -102,7 +102,7 @@ try {
     return route.fulfill({ body: await readFile(file), contentType: mime });
   });
   await page.goto(`http://lysilogy.test/#paper=${paperId}`);
-  await page.locator(".topbar").waitFor();
+  await page.locator(".topbar").waitFor({ state: "attached" });
   await page.keyboard.press(":");
   await page.getByRole("textbox", { name: "Command", exact: true }).fill("supercut");
   await page.keyboard.press("Enter");
@@ -137,7 +137,7 @@ try {
   await page.locator(".saved-reference").waitFor();
   await page.keyboard.press("Escape");
   await dialog.waitFor({ state: "detached" });
-  await page.locator(".topbar").waitFor();
+  await page.locator(".topbar").waitFor({ state: "attached" });
   await page.keyboard.press(":");
   await page.getByRole("textbox", { name: "Command", exact: true }).fill("references");
   await page.keyboard.press("Enter");
@@ -162,7 +162,7 @@ try {
   await page.screenshot({ path: path.join(output, "references-mobile.png"), fullPage: true });
   assert.equal(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1), true, "reference panel must fit mobile");
   await page.reload();
-  await page.locator(".topbar").waitFor();
+  await page.locator(".topbar").waitFor({ state: "attached" });
   await page.keyboard.press(":");
   await page.getByRole("textbox", { name: "Command", exact: true }).fill("supercut");
   await page.keyboard.press("Enter");
