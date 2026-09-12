@@ -70,6 +70,7 @@ try {
     const url=new URL(route.request().url()); const suffix=url.pathname.replace(/^\/api\/papers\/[^/]+/,'');
     if(url.pathname==='/api/library')return route.fulfill({json:{name:'Synthetic library',papers:libraryPapers}});
     if(url.pathname==='/api/queue')return route.fulfill({json:{jobs:[]}});
+    if(url.pathname==='/api/notes/vimrc')return route.fulfill({json:{path:'.vimrc',text:'',exists:false}});
     if(/^\/api\/papers\/[^/]+$/.test(url.pathname)) {
       const selected=libraryPapers.find(item=>url.pathname.endsWith(item.id));
       paperRequests.push(selected?.id);
@@ -153,7 +154,12 @@ try {
     await page.keyboard.type(query); await page.keyboard.press('Enter'); await vimInput.waitFor({state:'hidden'});
   };
   const focusWithin=async(selector)=>page.waitForFunction(selector=>document.querySelector(selector)?.contains(document.activeElement),selector,{timeout:3000});
-  const closed=()=>page.locator('.notes-panel').waitFor({state:'hidden'});
+  const closed=async()=>{
+    await page.locator('.notes-panel').waitFor({state:'hidden'});
+    // Closing restores reader focus on the next animation frame. Wait for
+    // that transition before immediately sending E to reopen the editor.
+    await page.waitForFunction(()=>Boolean(document.activeElement?.closest('.pdf-reader, .section-source-scroll')));
+  };
   const opened=async()=>{await page.keyboard.press('E'); await editor.waitFor(); await mode('NORMAL');};
   const saved=()=>page.waitForFunction(()=>document.querySelector('.notes-panel')?.dataset.dirty==='false');
   await page.getByText('Notes unavailable',{exact:true}).waitFor();
@@ -330,8 +336,8 @@ try {
   assert.equal(noteWrites.at(-1).revision,'force-quit-revision');
   await opened();
   await replaceBuffer('# Saved before going home');
-  await page.mouse.move(20,2);
-  await page.getByRole('button',{name:'Lysilogy home',exact:true}).click();
+  await editor.press('Control+w');await page.keyboard.type('h');await focusWithin('.pdf-reader');
+  await homeCommand(true);
   await page.getByRole('button',{name:'Save and close',exact:true}).click();
   await page.locator('.home-page').waitFor();
   assert.equal(await page.locator('.notes-panel').count(),0);

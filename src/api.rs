@@ -12,6 +12,7 @@ mod citation_graph;
 mod notes;
 mod reader_tools;
 mod source_index;
+mod vimrc;
 
 use axum::{
     Json, Router,
@@ -74,6 +75,7 @@ pub struct AppState {
     citation_http: crate::citation_graph::GraphHttp,
     jobs: JobTracker,
     notes: crate::notes::NotesStore,
+    vimrc: Arc<PathBuf>,
     highlight_write: Arc<Mutex<()>>,
     import_write: Arc<Mutex<()>>,
     experiment_write: Arc<Mutex<()>>,
@@ -141,6 +143,7 @@ impl AppState {
             citation_http: crate::citation_graph::GraphHttp::from_environment()?,
             jobs,
             notes: crate::notes::NotesStore::new(PathBuf::from("Notes")),
+            vimrc: Arc::new(PathBuf::from(".vimrc")),
             highlight_write: Arc::new(Mutex::new(())),
             import_write: Arc::new(Mutex::new(())),
             experiment_write: Arc::new(Mutex::new(())),
@@ -154,6 +157,13 @@ impl AppState {
     #[must_use]
     pub fn with_notes_root(mut self, root: impl Into<PathBuf>) -> Self {
         self.notes = crate::notes::NotesStore::new(root.into());
+        self
+    }
+
+    /// The configured Vimrc is read lazily, when a notes editor requests it.
+    #[must_use]
+    pub fn with_vimrc(mut self, path: impl Into<PathBuf>) -> Self {
+        self.vimrc = Arc::new(path.into());
         self
     }
 
@@ -1847,6 +1857,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(citation_graph::routes())
         .merge(source_index::routes())
         .merge(notes::routes())
+        .merge(vimrc::routes())
         .route("/api/health", get(health))
         .route("/api/library", get(library))
         .route("/api/library/scan", post(scan_library))

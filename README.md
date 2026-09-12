@@ -498,6 +498,12 @@ Motions, text objects, Visual modes, registers, macros, `/`/`?` search, `n`/`N`,
 and undo/redo stay inside the note. Escape returns to Normal or cancels the current prompt;
 repeated Escape never closes a focused buffer. `q` records a macro.
 
+**U** and **Ctrl-R** redo; `u` undoes. Notes load the project's [`.vimrc`](.vimrc), with
+portable mappings from the user's Neovim configuration. `:source` reloads remaps, options,
+variables, conditionals, and command aliases without losing edits or undo history. Configure
+another file with `"vim": { "vimrc": "/path/to/notes.vimrc" }` in `lysilogy.config.json`.
+See [Vimrc support and its limits](docs/notes.md#vimrc) for the supported scripting subset.
+
 `:w` or Ctrl/Cmd-S saves atomically; `:q` quits with an unsaved-changes prompt; `:wq`, `:x`,
 and `ZZ` save and quit only after a successful save. `:q!` and `ZQ` discard the draft. Ordinary
 saves detect external changes; explicit `:w!` or `:wq!` accepts the current disk version before

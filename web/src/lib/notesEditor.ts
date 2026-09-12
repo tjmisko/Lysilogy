@@ -1,6 +1,6 @@
 import { EditorState, type Extension } from "@codemirror/state";
 import { Decoration, EditorView, ViewPlugin, drawSelection, highlightActiveLine, keymap, placeholder } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { notesVim, type NotesVimCommands } from "./notesVim";
 
 type EditorOptions = NotesVimCommands & { text: string; parent: HTMLElement; onChange: (text: string) => void };
@@ -43,12 +43,13 @@ export function createNotesEditor({ text, parent, onChange, ...commands }: Edito
   const extensions: Extension[] = [
     // Vim must precede ordinary keymaps, which then provide Insert-mode editing.
     notesVim(commands), history(),
-    EditorView.lineWrapping, drawSelection(), highlightActiveLine(), markdown,
+    drawSelection(), highlightActiveLine(), markdown,
     placeholder("Write notes in Markdown…"),
     EditorView.contentAttributes.of({ "aria-label": "Paper notes", spellcheck: "true" }),
     EditorView.theme({ "&": { height: "100%" }, ".cm-scroller": { overflow: "auto" }, ".cm-content": { padding: "18px 0", minHeight: "100%" }, ".cm-line": { padding: "0 20px" } }, { dark: true }),
     keymap.of([
       { key: "Mod-s", run: () => { commands.onSave(); return true; } },
+      indentWithTab,
       ...defaultKeymap, ...historyKeymap,
     ]),
     EditorView.updateListener.of((update) => {

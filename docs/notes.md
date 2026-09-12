@@ -1,8 +1,8 @@
 # Markdown notes
 
-Press **E** or use **Notes** to open a paper's Markdown buffer alongside the PDF. Opening notes temporarily collapses the library sidebar to leave room for reading; closing notes restores it. The editor wraps long lines and highlights headings, emphasis, links, lists, quotes, and code.
+Press **E** or use **Notes** to open a paper's Markdown buffer alongside the PDF. Opening notes temporarily collapses the library sidebar to leave room for reading; closing notes restores it. The editor supports configurable line wrapping and highlights headings, emphasis, links, lists, quotes, and code.
 
-The buffer opens in Vim **Normal** mode. Use `i`, `a`, or `o` to start writing; **Esc** returns to Normal. The status line shows the current mode. Motions, counts, operators, visual selection, text objects such as `iw`, named registers, macros, and substitutions work inside the buffer. For example, `ciw` changes a word, `qa` starts recording macro `a`, `q` stops recording, and `@a` replays it. Undo uses `u`; redo uses **Ctrl-R**.
+The buffer opens in Vim **Normal** mode. Use `i`, `a`, or `o` to start writing; **Esc** returns to Normal. The status line shows the current mode. Motions, counts, operators, visual selection, text objects such as `iw`, named registers, macros, and substitutions work inside the buffer. For example, `ciw` changes a word, `qa` starts recording macro `a`, `q` stops recording, and `@a` replays it. Undo uses `u`; redo uses **U** or **Ctrl-R**. `U` works even without a Vimrc file.
 
 | Command | Action |
 | --- | --- |
@@ -69,5 +69,84 @@ Opening uses `POST /api/papers/{id}/notes/open` with `{created_at: "2026-09-11T1
 If the reader shows **Notes unavailable** and says the API returned a web page, an older backend or misdirected `/api` proxy is serving the app shell instead of the notes endpoint. Restart the backend with the current build, check the frontend API proxy, then use **Retry**. The reader also rejects malformed JSON or incompatible note responses with an actionable message; it never displays the returned HTML or a raw JSON parser error.
 
 The buffer uses CodeMirror 6 with `@replit/codemirror-vim` and a small Markdown decoration extension. Dependency versions are pinned in `web/package-lock.json`; the [Vim archive provenance and build instructions](../web/vendor/README.md) document the exact upstream release. File commands operate on the current paper's Markdown note. The optional full Markdown language package is not required by this implementation.
+
+## Vimrc
+
+Notes load `.vimrc` beside `lysilogy.config.json` each time the buffer opens. Without an
+application config, `.vimrc` is relative to the server's working directory. The checked-in
+[file](../.vimrc) ports these mappings from `linux-config/common/.config/nvim/lua/goose/remap.lua`:
+
+| Keys | Behavior |
+| --- | --- |
+| `U` | Redo, keeping Ctrl-R available. |
+| Ctrl-D / Ctrl-U, PageDown / PageUp | Move half a screen and center the cursor. Page keys also work in Insert mode. |
+| `n`, `N`, `*` | Center after a search motion. |
+| `;`, `,` | Reverse their usual character-find repeat bindings. |
+| Home | Move to the first nonblank character. |
+| Space, `p` in Visual mode | Replace the selection while preserving the paste register. |
+
+The file also sets absolute/relative line numbers, four-space indentation, and `nowrap`.
+Edit it directly and run **`:source`** in the note to reload it. `:source .vimrc` or the
+configured path also works. Reload preserves unsaved text, undo/redo history, and registers;
+removed remaps return to defaults. Fetch failures keep the existing configuration. Unsupported
+lines appear in an expandable **Vimrc warnings** message and do not disable the editor.
+Normal/Visual mapping prefixes wait up to one second for another key, then fall back to their
+ordinary motion or shorter mapping. Escape cancels a pending prefix. Interactive remaps and
+`:unmap` / `:mapclear` use the same configuration owner; `:source` replaces those session edits
+with the current file.
+
+To choose another file, add this to the existing application config and restart the backend:
+
+```json
+"vim": { "vimrc": "/path/to/notes.vimrc" }
+```
+
+Relative paths resolve beside the config file. Vimrc contents are fetched afresh on opening
+or `:source`; editing the file itself does not require restarting. A missing file is optional
+and uses the built-in bindings. The read-only API `GET /api/notes/vimrc` returns
+`{path,text,exists}` with `Cache-Control: no-store`; files must be regular UTF-8 files of at
+most 64 KiB. `:source` reloads only the configured file, not arbitrary browser-supplied paths.
+
+The loader implements a **Vimscript subset**, not the Neovim Lua runtime:
+
+- `map` / `noremap`, mode-specific `n`, `i`, `v`, `x`, and `o` variants, unmapping, and map clearing.
+  `noremap` prevents recursive expansion, so swaps and `n` → `nzz` work. `<silent>` and
+  `<buffer>` are accepted; `<Leader>`, `<LocalLeader>`, standard key notation, and `<Nop>` work.
+- Scalar `let` assignments, string concatenation, `execute` to generate configuration,
+  `if` / `elseif` / `else` / `endif`, comparisons, Boolean operators, `exists()`, and
+  `has('lysilogy')` guards. Variables are evaluated within one file load.
+- `command[!] Name ex-command` defines an argument-free command alias invoked later in the
+  buffer. Alias recursion is bounded. Existing `:w`, `:wq`, `:q!`, and other file commands
+  retain their save/conflict behavior.
+- `set` / `setlocal` support `number` (`nu`), `relativenumber` (`rnu`), `wrap`, `expandtab`
+  (`et`), `tabstop` (`ts`), `shiftwidth` (`sw`), `textwidth` (`tw`), `pcre`, and
+  `insertModeEscKeysTimeout`. Boolean negation, inversion, and `&` default resets work.
+  `:set` also applies these options interactively; all settings belong to the notes editor.
+
+For example:
+
+```vim
+let mapleader = " "
+nnoremap U <C-r>
+inoremap jk <Esc>
+let g:save_key = '<leader>w'
+if has('lysilogy') && !exists('g:disable_save_key')
+  execute 'nnoremap ' . g:save_key . ' :write<CR>'
+  command! SaveAndQuit wq
+endif
+```
+
+Lua callbacks/plugins, Vim functions, autocommands, loops, expression mappings, shell commands,
+and nested file sourcing are outside this subset. Unsupported script blocks are skipped as
+blocks so their interior does not become accidental configuration. Neovim-only filesystem,
+buffer/tab, quickfix, timestamp-function, and Markdown-fence clipboard mappings from the
+original Lua config are not imported. PDF-reader keybindings are separate from the notes Vimrc.
+Operator-pending multikey mappings that begin with a complete native motion still use the
+engine's matching behavior, where that native motion can take precedence. Insert mappings
+use the engine's escape-sequence timeout, configurable with `insertModeEscKeysTimeout`.
+
+`npm --prefix web run test:vimrc` verifies the compiler; `npm --prefix web run smoke:notes-vimrc`
+exercises actual remaps, scripts, live reload, and save/quit in the browser, including the
+checked-in Vimrc. Backend tests cover missing files, reload, path resolution, and size/type limits.
 
 Validation: `cargo test notes::` exercises storage, create-on-open templates, existing-file preservation, API conflicts, traversal/symlink rejection, UTF-8 and size limits, and atomic updates. `npm --prefix web run smoke:notes` exercises the actual Vim editor, search and editing commands, pane focus, save/quit failure handling, old-backend HTML failures and retry, and local-time template creation with synthetic PDF and API fixtures. `npm --prefix web run test:api` checks response validation and timestamp formatting.

@@ -202,6 +202,7 @@ async fn run(cli: Cli) -> Result<()> {
     let state = AppState::new(&cli.library, &cli.data)
         .await?
         .with_notes_root(&cli.notes)
+        .with_vimrc(config.vim.vimrc)
         .with_notes_template(config.notes)?;
     match cli.command.unwrap_or(Command::Serve {
         bind: "127.0.0.1:7319"

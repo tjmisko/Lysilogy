@@ -4,6 +4,7 @@ import type { EditorView } from "@codemirror/view";
 import { ApiError } from "../lib/api";
 import { notesApi, type NoteDocument } from "../lib/notesApi";
 import { createNotesEditor } from "../lib/notesEditor";
+import type { VimrcStatus } from "../lib/notesVimrc";
 import "./NotesPanel.css";
 
 type NotesPanelProps = { paperId: string; onClose: () => void; onFocusReader: () => void; onDirtyChange?: (dirty: boolean) => void };
@@ -29,6 +30,7 @@ export function NotesPanel({ paperId, onClose, onFocusReader, onDirtyChange }: N
   const [closing, setClosing] = useState(false);
   const [savedNotice, setSavedNotice] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [vimrc, setVimrc] = useState<VimrcStatus | null>(null);
 
   useEffect(() => { closeRef.current = onClose; focusReaderRef.current = onFocusReader; dirtyCallbackRef.current = onDirtyChange; }, [onClose, onFocusReader, onDirtyChange]);
 
@@ -118,6 +120,7 @@ export function NotesPanel({ paperId, onClose, onFocusReader, onDirtyChange }: N
       onQuit: (discard) => quitRef.current(discard),
       onFocusReader: () => { requestAnimationFrame(() => focusReaderRef.current()); },
       onCommandError: (message) => { setError(message); setConflict(false); },
+      onVimrcStatus: setVimrc,
       onChange: (text) => {
       textRef.current = text;
       setSavedNotice(false);
@@ -198,7 +201,12 @@ export function NotesPanel({ paperId, onClose, onFocusReader, onDirtyChange }: N
       {conflict && <button type="button" onClick={() => { void compare(); }}>Compare with disk</button>}
     </div>}
     {diskVersion !== null && <div className="notes-disk-version"><p>Current file on disk</p><pre>{diskVersion.text || "(Empty file)"}</pre><p>Your draft is still in the editor.</p><button type="button" onClick={useDiskVersion}>Discard draft and use disk version</button><button type="button" onClick={() => setDiskVersion(null)}>Keep my draft</button></div>}
+    {vimrc !== null && vimrc.diagnostics.length > 0 && <details className="notes-vimrc-status">
+      <summary>{vimrc.diagnostics.length} Vimrc {vimrc.diagnostics.length === 1 ? "warning" : "warnings"}</summary>
+      <p>{vimrc.path}</p>
+      <ul>{vimrc.diagnostics.map((item, index) => <li key={index}>{item.line > 0 ? `Line ${item.line}: ` : ""}{item.message}</li>)}</ul>
+    </details>}
     <div className="notes-editor" ref={hostRef} />
-    <footer className="notes-footer"><span role="status">{document === null ? error === null ? "Opening notes…" : "Not opened" : dirty ? "Unsaved changes" : savedNotice ? "Saved" : "Saved to Markdown"}</span><span>Markdown <kbd>Ctrl S</kbd></span></footer>
+    <footer className="notes-footer"><span role="status">{document === null ? error === null ? "Opening notes…" : "Not opened" : dirty ? "Unsaved changes" : savedNotice ? "Saved" : "Saved to Markdown"}</span><span title={vimrc === null ? "" : `${vimrc.path} — reload with :source`}>{vimrc?.loading ? "Loading Vimrc…" : vimrc?.exists ? "Vimrc" : "Vim"} · Markdown <kbd>Ctrl S</kbd></span></footer>
   </aside>;
 }
