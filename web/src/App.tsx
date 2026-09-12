@@ -94,6 +94,7 @@ export function App() {
   const [queue, setQueue] = useState<ProcessingQueue>({ jobs: [] });
   const [libraryQuery, setLibraryQuery] = useState("");
   const [homeQuery, setHomeQuery] = useState("");
+  const [homeActiveId, setHomeActiveId] = useState<string | null>(null);
   const [provider, setProvider] = useState<AnalysisProvider>("codex");
   const [pdfPage, setPdfPage] = useState(1);
   const [pdfPages, setPdfPages] = useState(1);
@@ -307,6 +308,7 @@ export function App() {
 
   const openHome = useCallback((updateHistory = true): void => {
     if (updateHistory && window.location.hash !== "#home") window.history.pushState(null, "", "#home");
+    if (selectedIdRef.current !== null) setHomeActiveId(selectedIdRef.current);
     selectedIdRef.current = null;
     appliedPaperRequest.current = ++paperRequest.current;
     focusRestore.current = null;
@@ -958,7 +960,7 @@ export function App() {
             <div className="center-state"><span className="loader large" /><p>Opening the vault…</p></div>
           )}
           {!loading && home && <HomePage papers={library?.papers ?? []} name={library?.name ?? "Library"}
-            query={homeQuery} onQuery={setHomeQuery} onSelect={selectPaper}
+            query={homeQuery} onQuery={setHomeQuery} onSelect={selectPaper} activeId={homeActiveId} onActive={setHomeActiveId}
             keyboardEnabled={!libraryOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && toolsTab === null}
             onImport={() => setLibraryOpen(true)} />}
           {!loading && !home && paperView === null && <div className="center-state"><span className="loader large" /><p>Opening paper…</p></div>}

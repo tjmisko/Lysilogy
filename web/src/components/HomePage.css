@@ -79,7 +79,7 @@
 .home-results-line > button:hover { color: var(--signal); }
 .home-results-line > button > span { margin-left: 6px; }
 
-.paper-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 18px; margin: 0; padding: 0; list-style: none; }
+.paper-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 18px; margin: 0; padding: 0; list-style: none; }
 .paper-grid > li { display: flex; min-width: 0; }
 .paper-card {
   position: relative;
@@ -88,30 +88,30 @@
   align-items: stretch;
   width: 100%;
   min-width: 0;
-  min-height: 316px;
-  padding: 23px 22px 17px;
+  padding: 0;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--paper-accent) 19%, var(--line));
-  border-top: 2px solid color-mix(in srgb, var(--paper-accent) 70%, var(--line));
   border-radius: 2px;
-  background: linear-gradient(150deg, color-mix(in srgb, var(--paper-accent) 8%, var(--bg-raised)), var(--bg-raised) 75%);
+  background: var(--bg-raised);
   text-align: left;
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
-.paper-card:hover, .paper-card:focus-visible { transform: translateY(-3px); border-color: var(--paper-accent); box-shadow: 0 9px 24px #0004; }
-.paper-card-top { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 24px; color: var(--ink-faint); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.paper-card:hover { border-color: var(--paper-accent); box-shadow: 0 6px 20px #0004; }
+.paper-card.is-active { border-color: var(--signal); box-shadow: 0 0 0 1px var(--signal); }
+.paper-card:focus-visible { outline-offset: 3px; }
+.paper-preview { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 4 / 3; padding: 12px; overflow: hidden; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper-accent) 8%, var(--panel)); }
+.paper-preview img { display: block; max-width: 100%; height: 100%; object-fit: contain; box-shadow: 0 2px 8px #0005; }
+.paper-preview-placeholder { display: grid; place-items: center; height: 100%; aspect-ratio: 8.5 / 11; padding: 14px; background: var(--panel-bright); color: var(--ink-faint); font: 10px/1.5 ui-monospace, monospace; text-align: center; }
+.paper-card-caption { display: block; padding: 15px 16px 17px; }
+.paper-card-top { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 10px; color: var(--ink-faint); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
 .paper-card-status { display: inline-flex; align-items: center; gap: 7px; }
 .paper-card-status::before { width: 5px; height: 5px; border: 1px solid currentColor; border-radius: 50%; content: ""; }
 .paper-card-status.state-ready { color: var(--paper-accent); }
 .paper-card-status.state-ready::before, .paper-card-status.state-analyzing::before, .paper-card-status.state-extracting::before { background: currentColor; }
 .paper-card-status.state-failed { color: var(--danger); }
-.paper-card h2 { display: -webkit-box; overflow: hidden; margin: 0 0 13px; color: var(--ink); font: 400 25px/1.17 Georgia, "Times New Roman", serif; letter-spacing: -.025em; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow-wrap: anywhere; }
-.paper-card-authors { display: -webkit-box; overflow: hidden; margin: 0 0 19px; color: var(--ink-soft); font-size: 11px; line-height: 1.65; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
-.paper-card-summary { display: -webkit-box; overflow: hidden; margin: 0 0 22px; color: var(--ink-faint); font: 14px/1.55 Georgia, "Times New Roman", serif; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
-.paper-card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: auto; padding-top: 17px; border-top: 1px solid color-mix(in srgb, var(--paper-accent) 12%, var(--line)); color: var(--ink-faint); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
-.paper-card-bottom > span:last-child { color: var(--paper-accent); font-size: 19px; line-height: 1; }
-.paper-card:hover .paper-card-bottom { color: var(--paper-accent); }
+.paper-card h2 { display: -webkit-box; overflow: hidden; margin: 0 0 8px; color: var(--ink); font: 400 18px/1.25 Georgia, "Times New Roman", serif; letter-spacing: -.015em; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow-wrap: anywhere; }
+.paper-card-authors { display: -webkit-box; overflow: hidden; margin: 0; color: var(--ink-soft); font-size: 10px; line-height: 1.6; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .home-empty { padding: 72px 20px; text-align: center; }
 .home-empty h2 { margin: 0 0 12px; font: 400 30px/1.2 Georgia, "Times New Roman", serif; }
 .home-empty p { color: var(--ink-soft); font-size: 13px; }
@@ -131,7 +131,6 @@
 @media (max-width: 420px) {
   .home-filters button { padding-inline: 8px; }
   .home-sort > span { display: none; }
-  .paper-card { min-height: 280px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

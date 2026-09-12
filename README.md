@@ -11,10 +11,14 @@ of Dijkstra's "GOTO Statements Considered Harmful."
 
 ## The reading ladder
 
-Click **Lysilogy** to return to the library home page. Its responsive paper grid shows titles,
-authors, years, mapping status, and saved summaries. Search the library, filter mapped or unmapped
-papers, and open a card to read it. The empty URL and `#home` open the grid; `#paper=<id>` remains
-a direct paper link. Browser Back and Forward work between the library and papers.
+Click **Lysilogy** to return to the library home page. Each card shows a first-page PDF preview
+with a compact title, authors, year, and mapping status. Arrows or `h/j/k/l` move between cards;
+Enter or `o` opens the selected paper. Home/End select the first/last card, and `/` searches.
+From search, Down or Enter focuses a matching card. The selection is restored when returning home.
+Previews load near the viewport, with at most two renders running; only the small images are cached.
+Filter mapped or unmapped papers, sort, or click anywhere on a card to read it. The empty URL and
+`#home` open the grid; `#paper=<id>` remains a direct paper link. Browser Back and Forward work
+between the library and papers.
 
 The top bar is a monotonic ramp — each level is strictly more detailed than the one before it.
 

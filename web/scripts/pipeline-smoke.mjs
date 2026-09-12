@@ -298,7 +298,7 @@ try {
   assert.equal(questions.length,1); assert.equal(questions[0].section_id,null);
   await page.keyboard.press('Escape');
   await question.waitFor({state:'hidden'});
-  // Home uses library metadata only; cards must never start analysis or fetch every PDF.
+  // Home previews source pages lazily, without requesting analysis or paper details.
   analyzed=true;
   libraryPapers=[paper,...Array.from({length:11},(_,i)=>({
     id:`home${String(i).padStart(12,'0')}`,
@@ -317,6 +317,26 @@ try {
   assert.equal(await page.locator('.view-switch').count(),0);
   assert.equal(await page.getByRole('button',{name:'Analyze',exact:true}).count(),0);
   assert.equal(await page.locator('.paper-card').count(),12);
+  await page.waitForFunction(()=>document.activeElement?.classList.contains('paper-card'));
+  await page.locator('.paper-card .paper-preview img').first().waitFor();
+  assert.equal(await page.locator('.paper-card-bottom').count(),0);
+  assert.equal(await page.locator('.paper-card').getByText(/^(Read paper|Explore paper)$/).count(),0);
+  assert.ok(await page.locator('.paper-card h2').first().evaluate(node=>parseFloat(getComputedStyle(node).fontSize))<=18);
+  assert.equal(await page.locator('.paper-card[tabindex="0"]').count(),1);
+  // Navigation starts on entry and also works after focus moves to the app bar.
+  await page.getByRole('button',{name:'Lysilogy home',exact:true}).focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator('.paper-card').nth(1).evaluate(node=>node===document.activeElement),true);
+  await page.keyboard.press('j');
+  const downIndex=await page.locator('.paper-card').evaluateAll(cards=>cards.indexOf(document.activeElement));
+  assert.ok(downIndex>1,'Down must move into the next visual row');
+  await page.keyboard.press('k');
+  assert.equal(await page.locator('.paper-card').nth(1).evaluate(node=>node===document.activeElement),true);
+  await page.keyboard.press('h');
+  assert.equal(await page.locator('.paper-card').first().evaluate(node=>node===document.activeElement),true);
+  await page.keyboard.press('End');
+  assert.equal(await page.locator('.paper-card').last().evaluate(node=>node===document.activeElement),true);
+  await page.keyboard.press('Home');
   await page.getByRole('button',{name:'Lysilogy home',exact:true}).focus();
   await page.keyboard.press('/');
   assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'Search papers');
@@ -330,10 +350,16 @@ try {
   const homeSearch=page.getByRole('searchbox',{name:'Search papers',exact:true});
   await homeSearch.fill('collective decisions');
   assert.equal(await page.locator('.paper-card').count(),1);
+  await page.keyboard.press('ArrowDown');
+  assert.equal(await page.locator('.paper-card').evaluate(node=>node===document.activeElement),true);
+  await page.keyboard.press('/');
   await homeSearch.fill('there is no such title');
   assert.equal(await page.locator('.paper-card').count(),0);
   await homeSearch.fill('');
   await page.setViewportSize({width:1280,height:850});
+  await page.waitForFunction(()=>Array.from(document.querySelectorAll('.paper-card')).filter(node=>{
+    const box=node.getBoundingClientRect(); return box.top<innerHeight&&box.bottom>0;
+  }).every(node=>node.querySelector('.paper-preview img')!==null));
   await page.screenshot({path:'/tmp/lysilogy-home-desktop.png'});
   const cardColumns=await page.locator('.paper-card').evaluateAll(cards=>new Set(cards.map(card=>Math.round(card.getBoundingClientRect().left))).size);
   assert.ok(cardColumns>=3,'desktop home must present a grid of papers');
@@ -346,11 +372,13 @@ try {
   assert.ok(await page.locator('.home-page').evaluate(node=>node.scrollWidth<=node.clientWidth+1),'home should fit mobile width');
   await page.screenshot({path:'/tmp/lysilogy-home-mobile.png'});
   await homeSearch.fill('collective decisions');
-  await page.locator('.paper-card').click();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
   await page.waitForFunction(()=>document.querySelector('.text-view [data-text-ready="true"]'));
   assert.equal(await page.getByRole('button',{name:'Analyze',exact:true}).count(),1);
   await page.goBack();
   await page.locator('.home-page').waitFor();
+  await page.waitForFunction(()=>document.activeElement?.dataset.paperId==='home000000000000');
   await page.goForward();
   await page.locator('.text-view').waitFor();
   await page.getByRole('button',{name:'Lysilogy home',exact:true}).click();

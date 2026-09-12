@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFDocumentLoadingTask } from "pdfjs-dist";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-
-GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+import { getDocument, type PDFDocumentProxy, type PDFDocumentLoadingTask } from "pdfjs-dist";
+import "../lib/pdfWorker";
 
 type Entry = { task: PDFDocumentLoadingTask; document: PDFDocumentProxy | null; users: number; releaseTimer: number | null };
 const documents = new Map<string, Entry>();

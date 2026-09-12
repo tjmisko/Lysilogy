@@ -18,7 +18,8 @@ const GROUPS = [
   {
     title: "Read",
     commands: [
-      ["↵ or o", "Open the focused section"],
+      ["↵ or o", "Open the selected paper or focused section"],
+      ["Home / End", "First / last paper in the home grid"],
       ["d", "Open its contextual digest"],
       ["g", "Open the technical glossary (pause after one g)"],
       ["m", "Toggle PDF / requested Markdown reconstruction"],

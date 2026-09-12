@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
+import { api } from "../lib/api";
 import { spatialNeighbor, type Direction } from "../lib/spatialNavigation";
 import type { PaperOverview } from "../types";
+import { PaperPreview } from "./PaperPreview";
 import "./HomePage.css";
 
 type HomePageProps = {
@@ -9,6 +11,8 @@ type HomePageProps = {
   papers: PaperOverview[];
   query: string;
   onQuery: (query: string) => void;
+  activeId: string | null;
+  onActive: (id: string) => void;
   onSelect: (id: string) => void;
   onImport: () => void;
   keyboardEnabled: boolean;
@@ -35,7 +39,7 @@ function paperStatus(paper: PaperOverview): string {
   }
 }
 
-export function HomePage({ name, papers, query, onQuery, onSelect, onImport, keyboardEnabled }: HomePageProps) {
+export function HomePage({ name, papers, query, onQuery, activeId, onActive, onSelect, onImport, keyboardEnabled }: HomePageProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState("title");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -56,35 +60,69 @@ export function HomePage({ name, papers, query, onQuery, onSelect, onImport, key
       return collator.compare(a.metadata.title, b.metadata.title);
     });
   }, [filter, papers, query, sort]);
+  const selectedId = visible.find((paper) => paper.id === activeId)?.id ?? visible[0]?.id;
 
   useEffect(() => {
     if (!keyboardEnabled) return;
-    const search = (event: globalThis.KeyboardEvent): void => {
-      if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
-      const target = event.target;
-      if (target instanceof HTMLElement && (target.matches("input, textarea, select") || target.isContentEditable)) return;
-      event.preventDefault();
-      searchRef.current?.focus();
-    };
-    window.addEventListener("keydown", search);
-    return () => window.removeEventListener("keydown", search);
+    const frame = window.requestAnimationFrame(() => {
+      const card = gridRef.current?.querySelector<HTMLButtonElement>('.paper-card[tabindex="0"]');
+      card?.focus({ preventScroll: true });
+      card?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [keyboardEnabled]);
 
-  const moveInGrid = (event: KeyboardEvent<HTMLUListElement>): void => {
-    if (!keyboardEnabled || event.ctrlKey || event.metaKey || event.altKey) return;
-    const directions: Partial<Record<string, Direction>> = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
-    const direction = directions[event.key];
-    if (direction === undefined || !(event.target instanceof HTMLButtonElement)) return;
-    const cards = Array.from(gridRef.current?.querySelectorAll<HTMLButtonElement>(".paper-card") ?? []);
-    const origin = cards.indexOf(event.target);
-    if (origin < 0) return;
-    event.preventDefault();
-    const next = spatialNeighbor(cards.map((card, section) => {
-      const { left, right, top, bottom } = card.getBoundingClientRect();
-      return { left, right, top, bottom, section };
-    }), origin, direction);
-    if (next !== null) cards[next]?.focus();
-  };
+  useEffect(() => {
+    if (!keyboardEnabled) return;
+    const focusCard = (card: HTMLButtonElement | undefined): void => {
+      card?.focus({ preventScroll: true });
+      card?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    };
+    const navigate = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target;
+      const cards = Array.from(gridRef.current?.querySelectorAll<HTMLButtonElement>(".paper-card") ?? []);
+      if (target === searchRef.current) {
+        if (["ArrowDown", "Enter", "Escape"].includes(event.key)) {
+          event.preventDefault();
+          focusCard(cards.find((card) => card.dataset.paperId === selectedId));
+        }
+        return;
+      }
+      if (target instanceof HTMLElement && (target.matches("input, textarea, select") || target.isContentEditable)) return;
+      if (event.key === "/") {
+        event.preventDefault();
+        searchRef.current?.focus();
+        return;
+      }
+      const directions: Partial<Record<string, Direction>> = {
+        ArrowLeft: "left", h: "left", ArrowRight: "right", l: "right",
+        ArrowUp: "up", k: "up", ArrowDown: "down", j: "down",
+      };
+      const direction = directions[event.key];
+      if (direction !== undefined) {
+        event.preventDefault();
+        const focused = cards.findIndex((card) => card === target);
+        const origin = focused >= 0 ? focused : cards.findIndex((card) => card.dataset.paperId === selectedId);
+        const next = spatialNeighbor(cards.map((card, section) => {
+          const { left, right, top, bottom } = card.getBoundingClientRect();
+          return { left, right, top, bottom, section };
+        }), origin, direction);
+        focusCard(cards[next ?? origin]);
+      } else if (["Home", "End", "G"].includes(event.key)) {
+        event.preventDefault();
+        focusCard(event.key === "Home" ? cards[0] : cards.at(-1));
+      } else if ((event.key === "Enter" || event.key === "o") && selectedId !== undefined) {
+        // Enter on toolbar controls retains its native action.
+        if (event.key === "Enter" && target instanceof HTMLElement && target.closest("button, a") !== null
+          && !target.closest(".paper-card")) return;
+        event.preventDefault();
+        onSelect(selectedId);
+      }
+    };
+    window.addEventListener("keydown", navigate);
+    return () => window.removeEventListener("keydown", navigate);
+  }, [keyboardEnabled, onSelect, selectedId, visible]);
 
   return <section className="home-page" aria-labelledby="home-title">
     <header className="home-intro">
@@ -110,14 +148,17 @@ export function HomePage({ name, papers, query, onQuery, onSelect, onImport, key
 
     <div className="home-results-line"><span role="status">{visible.length === papers.length ? "On the shelves" : `${visible.length} of ${papers.length} papers`}</span><button type="button" onClick={onImport}>Add a paper <span aria-hidden="true">↗</span></button></div>
 
-    {visible.length > 0 ? <ul className="paper-grid" ref={gridRef} onKeyDown={moveInGrid} aria-label="Papers">
+    {visible.length > 0 ? <ul className="paper-grid" ref={gridRef} aria-label="Papers">
       {visible.map((paper) => <li key={paper.id} style={{ "--paper-accent": paperAccent(paper.id) } as CSSProperties}>
-        <button type="button" className={`paper-card ${paper.status.state === "ready" ? "is-mapped" : ""}`} aria-labelledby={`card-title-${paper.id}`} onClick={() => onSelect(paper.id)}>
+        <button type="button" className={`paper-card ${paper.id === selectedId ? "is-active" : ""} ${paper.status.state === "ready" ? "is-mapped" : ""}`}
+          data-paper-id={paper.id} tabIndex={paper.id === selectedId ? 0 : -1}
+          aria-labelledby={`card-title-${paper.id}`} onFocus={() => onActive(paper.id)} onClick={() => onSelect(paper.id)}>
+          <PaperPreview url={api.source(paper.id)} title={paper.metadata.title} />
+          <span className="paper-card-caption">
           <span className="paper-card-top"><span className={`paper-card-status state-${paper.status.state}`}>{paperStatus(paper)}</span><span>{paper.metadata.year ?? "Undated"}</span></span>
           <h2 id={`card-title-${paper.id}`} title={paper.metadata.title}>{paper.metadata.title}</h2>
           <p className="paper-card-authors" title={paper.metadata.authors.join(", ")}>{paper.metadata.authors.join(", ") || "Author not listed"}</p>
-          {paper.one_line_summary !== null && paper.status.state === "ready" && <p className="paper-card-summary">{paper.one_line_summary}</p>}
-          <span className="paper-card-bottom"><span>{paper.status.state === "ready" ? "Explore paper" : "Read paper"}</span><span aria-hidden="true">↗</span></span>
+          </span>
         </button>
       </li>)}
     </ul> : <div className="home-empty">
