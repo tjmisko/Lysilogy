@@ -16,6 +16,7 @@ with a compact title, authors, year, and mapping status. Arrows or `h/j/k/l` mov
 Enter or `o` opens the selected paper. Home/End select the first/last card, and `/` searches.
 From search, Down or Enter focuses a matching card. The selection is restored when returning home.
 Previews load near the viewport, with at most two renders running; only the small images are cached.
+Thumbnails follow the reader's dark/light ink setting; `I` toggles it from home or the reader.
 Filter mapped or unmapped papers, sort, or click anywhere on a card to read it. The empty URL and
 `#home` open the grid; `#paper=<id>` remains a direct paper link. Browser Back and Forward work
 between the library and papers.

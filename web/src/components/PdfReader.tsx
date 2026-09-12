@@ -294,7 +294,8 @@ function PdfPageCanvas({
         x: crop.bounds.x_min / layout.width, y: crop.bounds.y_min / layout.height,
         width: (crop.bounds.x_max - crop.bounds.x_min) / layout.width, height: (crop.bounds.y_max - crop.bounds.y_min) / layout.height,
       })}>
-      <div className="pdf-page-window" ref={windowRef} style={lazy ? {
+      {/* Placeholder dimensions must never overwrite a rendered canvas's crop. */}
+      <div className="pdf-page-window" ref={windowRef} style={lazy && !visible ? {
         width: (crop === undefined ? layout?.width ?? 612 : crop.bounds.x_max - crop.bounds.x_min) * placeholderScale,
         aspectRatio: crop === undefined ? `${layout?.width ?? 612} / ${layout?.height ?? 792}`
           : `${crop.bounds.x_max - crop.bounds.x_min} / ${crop.bounds.y_max - crop.bounds.y_min}`,

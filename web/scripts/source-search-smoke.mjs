@@ -316,6 +316,9 @@ try {
   await page.keyboard.press('T');
   await page.getByRole('button',{name:'Overview',exact:true}).click();
   await page.keyboard.press('/');await search.waitFor();
+  // Settle this reader's indexing before injecting a failure for the reloaded PDF.
+  await search.fill('Sentence 1 on page 1');await search.press('Enter');
+  await page.waitForFunction(()=>document.querySelector('.pdf-source-status')?.textContent.includes('/Sentence 1 on page 1 · 1 / 1'));
 
   // A separate real PDF provides character mappings and predictable line geometry.
   usePreciseSelection=true;analyzed=false;failIndexRequests=1;

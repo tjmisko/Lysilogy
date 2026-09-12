@@ -16,6 +16,8 @@ type HomePageProps = {
   onSelect: (id: string) => void;
   onImport: () => void;
   keyboardEnabled: boolean;
+  darkInk: boolean;
+  onToggleInk: () => void;
 };
 
 type Filter = "all" | "mapped" | "unmapped";
@@ -39,7 +41,7 @@ function paperStatus(paper: PaperOverview): string {
   }
 }
 
-export function HomePage({ name, papers, query, onQuery, activeId, onActive, onSelect, onImport, keyboardEnabled }: HomePageProps) {
+export function HomePage({ name, papers, query, onQuery, activeId, onActive, onSelect, onImport, keyboardEnabled, darkInk, onToggleInk }: HomePageProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState("title");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -90,6 +92,11 @@ export function HomePage({ name, papers, query, onQuery, activeId, onActive, onS
         return;
       }
       if (target instanceof HTMLElement && (target.matches("input, textarea, select") || target.isContentEditable)) return;
+      if (event.key === "I") {
+        event.preventDefault();
+        onToggleInk();
+        return;
+      }
       if (event.key === "/") {
         event.preventDefault();
         searchRef.current?.focus();
@@ -122,9 +129,9 @@ export function HomePage({ name, papers, query, onQuery, activeId, onActive, onS
     };
     window.addEventListener("keydown", navigate);
     return () => window.removeEventListener("keydown", navigate);
-  }, [keyboardEnabled, onSelect, selectedId, visible]);
+  }, [keyboardEnabled, onSelect, onToggleInk, selectedId, visible]);
 
-  return <section className="home-page" aria-labelledby="home-title">
+  return <section className={`home-page${darkInk ? " dark-ink" : ""}`} aria-labelledby="home-title">
     <header className="home-intro">
       <div>
         <p className="home-eyebrow">{name}</p>

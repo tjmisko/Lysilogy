@@ -60,7 +60,7 @@ export async function checkPdfFits(page, { cropped = false } = {}) {
   await page.keyboard.press('H'); await ready();
 }
 
-function visualFixture() {
+export function visualFixture() {
   const content = 'BT /F1 16 Tf 180 650 Td (Asymmetric text) Tj ET 1 0 1 rg 80 260 380 220 re f';
   const pages = [content, content,
     'q 340 0 0 410 70 210 cm BI /W 2 /H 2 /BPC 8 /CS /G /F /AHx ID 00888800> EI Q', ''];
