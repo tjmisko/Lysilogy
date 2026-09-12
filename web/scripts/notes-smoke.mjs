@@ -115,9 +115,24 @@ try {
     return route.fulfill({body:await readFile(file),contentType});
   });
 
+  const homeCommand=async(click=false)=>{
+    await page.keyboard.press(':');
+    const menu=page.getByRole('dialog',{name:'Command menu',exact:true});await menu.waitFor();
+    const option=menu.getByRole('option',{name:':home Open the paper library home',exact:true});
+    await option.waitFor();
+    const command=menu.getByRole('textbox',{name:'Command',exact:true});
+    await command.fill('hom');assert.equal(await menu.getByRole('option').count(),1);
+    await command.press('Tab');assert.equal(await command.inputValue(),'home');
+    if(click)await option.click();else await command.press('Enter');
+    await menu.waitFor({state:'hidden'});
+  };
 
   await page.goto(`http://lysilogy.test/#paper=${id}`);
   await page.locator('.pdf-reader').waitFor();
+  await page.locator('.pdf-reader').focus();await homeCommand();
+  await page.locator('.home-page').waitFor();
+  assert.equal(new URL(page.url()).hash,'#home',':home navigates from a paper to the library grid');
+  await page.locator('.paper-card').click();await page.locator('.pdf-reader').waitFor();
   await page.keyboard.press('E');
   const editor=page.locator('.notes-panel .cm-content');
   const editorText=()=>editor.locator('.cm-line').evaluateAll(lines=>lines.map(line=>line.textContent).join('\n'));
@@ -324,8 +339,14 @@ try {
   await page.locator('.paper-card').click(); await page.locator('.pdf-reader').waitFor();
   await opened();
   await replaceBuffer('# Discard before going home');
-  await page.mouse.move(20,2);
-  await page.getByRole('button',{name:'Lysilogy home',exact:true}).click();
+  await editor.press('Control+w');await page.keyboard.type('h');await focusWithin('.pdf-reader');
+  await homeCommand();
+  await page.getByText('Save your notes before leaving?',{exact:true}).waitFor();
+  assert.equal(new URL(page.url()).hash,`#paper=${id}`,':home defers navigation while notes are dirty');
+  await page.getByRole('button',{name:'Keep editing',exact:true}).click();
+  assert.equal(await editorText(),'# Discard before going home',':home cancellation preserves the draft');
+  await editor.press('Control+w');await page.keyboard.type('h');await focusWithin('.pdf-reader');
+  await homeCommand();
   await page.getByRole('button',{name:'Discard changes',exact:true}).click();
   await page.locator('.home-page').waitFor();
   assert.equal(storedNote.text,'# Saved before going home');
@@ -356,6 +377,10 @@ try {
   await focusWithin('.notes-panel .cm-content');
   await ex('q'); await closed();
   assert.equal(await page.locator('.section-focus').count(),1,':q closes only notes inside a section');
+  await focusWithin('.section-source-scroll');await homeCommand(true);
+  await page.locator('.home-page').waitFor();
+  assert.equal(new URL(page.url()).hash,'#home');
+  assert.equal(await page.locator('.section-focus').count(),0,':home leaves a focused section for the library grid');
   assert.deepEqual(errors,[]);
-  console.log('PASS notes: HTML fallback diagnosis, retry, create-on-open template, local date, existing-note preservation, CodeMirror, Markdown styling, Vim modes, text objects, macros, registers, native search, substitution, undo/redo, pane focus, Ex save/quit, failed saves, conflicts, dirty-close choices, and deferred home navigation.');
+  console.log('PASS notes: HTML fallback diagnosis, retry, create-on-open template, local date, existing-note preservation, CodeMirror, Markdown styling, Vim modes, text objects, macros, registers, native search, substitution, undo/redo, pane focus, Ex save/quit, failed saves, conflicts, dirty-close choices, and :home command navigation from paper/section with dirty-note safeguards.');
 } finally {await browser.close();}

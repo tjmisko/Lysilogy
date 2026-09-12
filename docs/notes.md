@@ -21,6 +21,8 @@ The buffer opens in Vim **Normal** mode. Use `i`, `a`, or `o` to start writing; 
 
 Inside the editor, **Esc** cancels Insert, Visual, search, Ex, or an unfinished operator. Repeated Esc in Normal mode keeps notes open. Use `:q` or the close button to leave. Esc on the unsaved-changes prompt cancels closing and returns focus to the buffer. Editor keys stay local: Normal-mode `q` records macros, `/` searches notes, and `:` opens Vim's command line. In Insert mode, `q` and `/` are ordinary text.
 
+From the PDF, `:home` in the app's command menu returns to the paper library grid. Unsaved notes keep their Save, Discard, or Keep editing prompt. Use **Ctrl-W**, then `h` to focus the PDF before opening that menu from notes.
+
 The default directory is `./Notes`, relative to the server's working directory. Running from this repository puts it at `/home/tjmisko/Projects/Lysilogy/Notes`. This is separate from the user's home-directory notes. Configure another directory with the global `--notes` option:
 
 ```sh
