@@ -651,12 +651,26 @@ fn member_spans(index: &ReadingIndex, page: u32, rect: TextRect) -> Vec<TextRang
 }
 
 // Tables commonly put their captions above the grid, unlike figure captions.
-fn remember_rows(rows: &mut Vec<f32>, text: &[&ReadingToken], font: f32) {
-    for cell in text.iter().flat_map(|token| &token.rects) {
-        if rows.iter().all(|y| (*y - cell.y_min).abs() > font * 0.4) {
-            rows.push(cell.y_min);
+fn remember_rows(rows: &mut Vec<[f32; 2]>, text: &[&ReadingToken]) {
+    rows.extend(
+        text.iter()
+            .flat_map(|token| &token.rects)
+            .map(|cell| [cell.y_min, cell.y_max]),
+    );
+    rows.sort_by(|a, b| a[0].total_cmp(&b[0]));
+    let mut merged = Vec::<[f32; 2]>::new();
+    for band in rows.drain(..) {
+        if let Some(last) = merged.last_mut()
+            && band[0] <= last[1]
+        {
+            // A superscript/subscript overlapping the base glyphs belongs to
+            // the same printed line, even when its top differs substantially.
+            last[1] = last[1].max(band[1]);
+        } else {
+            merged.push(band);
         }
     }
+    *rows = merged;
 }
 
 fn table_below(
@@ -716,7 +730,7 @@ fn table_below(
             .collect::<Vec<_>>()
             .join(" ");
         numeric |= content.chars().filter(char::is_ascii_digit).count() >= 2;
-        remember_rows(&mut rows, &text, font);
+        remember_rows(&mut rows, &text);
         bounds = Some(bounds.map_or(rect, |r| union([r, rect].into_iter())));
     }
     let mut bounds = bounds?;
@@ -881,7 +895,10 @@ fn table_above(
         }));
     }
     let bounds = union(members.iter().flat_map(|token| token.rects.iter().copied()));
-    if bounds.y_max < last || bounds.x_min >= bounds.x_max {
+    if bounds.y_max < last
+        || bounds.x_min >= bounds.x_max
+        || prose_between_grid_and_caption(index, candidate, bounds, font)
+    {
         return None;
     }
     Some(padded(
@@ -891,6 +908,26 @@ fn table_above(
         lower,
         caption.y_min,
     ))
+}
+
+fn prose_between_grid_and_caption(
+    index: &ReadingIndex,
+    candidate: &Caption<'_>,
+    grid: TextRect,
+    font: f32,
+) -> bool {
+    index.objects.paragraph.iter().any(|paragraph| {
+        let text = paragraph_tokens(index, paragraph, candidate.page);
+        if text.is_empty() || !prose_barrier(&text, font) {
+            return false;
+        }
+        let rect = union(text.iter().flat_map(|token| token.rects.iter().copied()));
+        // A method column occupying the established grid rows remains a grid
+        // member. Separate prose below it cannot be crossed to reach a caption.
+        rect.y_min >= grid.y_max
+            && rect.y_max <= candidate.rect.y_min
+            && horizontal_gap(rect, candidate.rect) == 0.0
+    })
 }
 
 fn repeated_grid_column(
@@ -1235,6 +1272,69 @@ mod tests {
             token.rects[0].y_max += 1.0;
         }
         assert!(find(&index)[0].rect.is_none());
+    }
+
+    #[test]
+    fn should_count_one_printed_heading_when_scripts_overlap_its_base_glyphs() {
+        for (top, bottom) in [(129.0, 136.0), (142.0, 149.0)] {
+            let mut index = fixture(&[
+                (
+                    "Table 1: A caption with unavailable grid geometry.",
+                    "caption",
+                    50.0,
+                    100.0,
+                ),
+                ("2.2. Further 2 experiments", "body", 50.0, 135.0),
+            ]);
+            let script = index
+                .tokens
+                .iter_mut()
+                .find(|token| token.text == "2")
+                .unwrap();
+            script.rects[0].y_min = top;
+            script.rects[0].y_max = bottom;
+            assert!(
+                find(&index)[0].rect.is_none(),
+                "script band {top}..{bottom}"
+            );
+        }
+    }
+
+    #[test]
+    fn should_withhold_a_disconnected_grid_when_prose_separates_it_from_the_caption() {
+        let mut index = fixture(&[
+            ("First", "float", 80.0, 130.0),
+            ("0.553", "float", 210.0, 130.0),
+            ("Second", "float", 80.0, 146.0),
+            ("0.603", "float", 210.0, 146.0),
+            (
+                "This separate paragraph discusses the following experiment",
+                "body",
+                50.0,
+                162.0,
+            ),
+            (
+                "and establishes a prose boundary before its missing table.",
+                "body",
+                50.0,
+                178.0,
+            ),
+            (
+                "Table I: Results whose grid geometry is unavailable.",
+                "caption",
+                50.0,
+                194.0,
+            ),
+        ]);
+        index.objects.paragraph[4].end = index.objects.paragraph[5].end;
+        index.objects.paragraph.remove(5);
+        assert!(prose_barrier(
+            &paragraph_tokens(&index, &index.objects.paragraph[4], 1),
+            10.0
+        ));
+        let result = find(&index);
+        assert_eq!(result.len(), 1);
+        assert!(result[0].rect.is_none());
     }
 
     #[test]
