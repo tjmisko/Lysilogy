@@ -255,8 +255,28 @@ class PersonTruthTests(unittest.TestCase):
         with patch.object(person, "MAX_SLOTS", 1), self.assertRaisesRegex(truth.TruthError, "slot bound"):
             build([[authorship(), authorship(raw=BETA, profile=BETA)]])
 
-
-if __name__ == "__main__":
-    loader = unittest.TestLoader()
-    loader.testMethodPrefix = "should_"
-    unittest.TextTestRunner(verbosity=2).run(loader.loadTestsFromTestCase(PersonTruthTests))
+    def should_write_labels_and_safe_features_when_cli_inputs_have_verified_frozen_provenance(self):
+        source = snapshot("openalex", {"doi": "10.1234/a", "authorships": [authorship()]})
+        response = {**source["receipt"], "body": truth.canonical(source["payload"]), "cache_hit": False,
+                    "wall_seconds": 0.01, "model_calls": 0, "model_cost_usd": 0, "provider_cost_usd": None}
+        with tempfile.TemporaryDirectory(prefix="person-cli-fixture-") as directory:
+            root = Path(directory)
+            descriptor = freeze.freeze_request(root, {"provider": "openalex", "dois": ["10.1234/a"]}, lambda _: response)
+            membership = root / "universe.json"
+            manifest = root / "manifest.json"
+            output = root / "labels.json"
+            projected = root / "features.json"
+            membership.write_text(truth.canonical(person.universe(selection=selection(["10.1234/a"]))))
+            manifest.write_text(truth.canonical({"schema_version": 1, "snapshots": [descriptor]}))
+            command = ["build", "--universe", str(membership), "--frozen-root", str(root), "--manifest", str(manifest),
+                       "--built-at", AT, "--output", str(output)]
+            with patch("builtins.print"):
+                self.assertEqual(0, person.main(command))
+                self.assertEqual(0, person.main(command))
+                original = output.read_bytes()
+                self.assertEqual(0, person.main(["features", "--k4", str(output), "--output", str(projected)]))
+                self.assertNotIn(ALPHA, projected.read_text())
+                source_path = root / "responses" / (response["body_sha256"] + ".json")
+                source_path.write_text("{}")
+                self.assertEqual(1, person.main(command))
+                self.assertEqual(original, output.read_bytes())
