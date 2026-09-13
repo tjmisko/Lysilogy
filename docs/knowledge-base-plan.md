@@ -378,6 +378,9 @@ measured iteration. Repeated numeric columns support below-grid table captions; 
 heading cannot establish a table. The short sentence-continuation caption guard is independent
 of the longer prose barrier that bounds diagram regions. Both immutable K1 cohorts are measured
 separately, with their original matching and complete denominators retained.
+When only raster inserts are supported within an independently enclosing native diagram,
+multiple small nonnumeric labels above and below the inserts retain that native extent.
+This evidence does not infer the contents or bounds of unsupported masks.
 
 ### E1.2 Backend bibliography extraction and parsing
 

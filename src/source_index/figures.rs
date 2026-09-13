@@ -405,7 +405,88 @@ fn figure_region(
         .filter(|rect| horizontal_gap(*rect, caption) == 0.0)
         .reduce(|a, b| union([a, b].into_iter()))
         .map(|seed| connected_bounds(seed, &image_regions, body_font * 3.0, body_font * 3.0));
-    let mut regions = Vec::new();
+    let native = native_regions(index, candidate, captions, top, body_font);
+    let regions = &native.rects;
+    if regions.len() > 1024 {
+        return None;
+    }
+    let native_seed = regions
+        .iter()
+        .copied()
+        .filter(|r| horizontal_gap(*r, caption) == 0.0)
+        .reduce(|a, b| union([a, b].into_iter()));
+    let enclosed_diagram = candidate.kind == "Figure"
+        && image_bounds.is_some_and(|image| native.encloses_image(image));
+    let image_only = image_bounds.is_some() && !enclosed_diagram;
+    let seed = if enclosed_diagram {
+        native_seed
+    } else {
+        image_bounds.or(native_seed)
+    }?;
+    // Partial raster inserts must not erase independently enclosing diagram
+    // labels. Other image-backed figures retain the zero vertical gap, so a
+    // preceding table cannot expand their observed image body upward.
+    let bounds = connected_bounds(
+        seed,
+        regions,
+        body_font * 3.0,
+        if image_only { 0.0 } else { body_font * 3.0 },
+    );
+    if image_only {
+        return Some(bounds);
+    }
+
+    Some(padded(
+        bounds,
+        body_font * 0.4,
+        dimensions.width,
+        top,
+        caption.y_min,
+    ))
+}
+
+struct NativeRegions {
+    rects: Vec<TextRect>,
+    diagram_labels: Vec<TextRect>,
+    diagram_only: bool,
+}
+
+impl NativeRegions {
+    fn encloses_image(&self, image: TextRect) -> bool {
+        if !self.diagram_only || self.diagram_labels.len() < 3 {
+            return false;
+        }
+        let bounds = union(self.diagram_labels.iter().copied());
+        bounds.x_min <= image.x_min
+            && bounds.x_max >= image.x_max
+            && bounds.y_min < image.y_min
+            && bounds.y_max > image.y_max
+            && self
+                .diagram_labels
+                .iter()
+                .any(|label| label.y_max < image.y_min)
+            && self
+                .diagram_labels
+                .iter()
+                .any(|label| label.y_min > image.y_max)
+    }
+}
+
+fn native_regions(
+    index: &ReadingIndex,
+    candidate: &Caption<'_>,
+    captions: &[Caption<'_>],
+    top: f32,
+    body_font: f32,
+) -> NativeRegions {
+    let mut result = NativeRegions {
+        rects: Vec::new(),
+        diagram_labels: Vec::new(),
+        diagram_only: true,
+    };
+    let page = candidate.page;
+    let caption = candidate.rect;
+    let caption_start = candidate.paragraph.start;
     // Printed diagram labels/ticks establish an observed extent. Do not fill
     // whitespace back to a page margin or include the separate caption body.
     for paragraph in index
@@ -433,42 +514,24 @@ fn figure_region(
                 distance(&a.rect).total_cmp(&distance(&b.rect))
             });
         if nearest.is_some_and(|c| c.paragraph.start == caption_start) {
-            regions.push(rect);
+            result.rects.push(rect);
+            if horizontal_gap(rect, caption) == 0.0 {
+                let diagram_label = text.len() <= 12
+                    && text.iter().all(|token| {
+                        !token.text.chars().any(|ch| ch.is_ascii_digit())
+                            && token.rects.iter().all(|r| {
+                                let height = r.y_max - r.y_min;
+                                height > 0.0 && height < body_font * 0.85
+                            })
+                    });
+                result.diagram_only &= diagram_label;
+                if diagram_label {
+                    result.diagram_labels.push(rect);
+                }
+            }
         }
     }
-    if regions.len() > 1024 {
-        return None;
-    }
-    let native_seed = regions
-        .iter()
-        .copied()
-        .filter(|r| horizontal_gap(*r, caption) == 0.0)
-        .reduce(|a, b| union([a, b].into_iter()));
-    let seed = image_bounds.or(native_seed)?;
-    // Native diagrams can connect labels in both directions. Image-backed
-    // figures extend only through vertically overlapping native labels, so a
-    // preceding table's text cannot expand an observed image body upward.
-    let bounds = connected_bounds(
-        seed,
-        &regions,
-        body_font * 3.0,
-        if image_bounds.is_some() {
-            0.0
-        } else {
-            body_font * 3.0
-        },
-    );
-    if image_bounds.is_some() {
-        return Some(bounds);
-    }
-
-    Some(padded(
-        bounds,
-        body_font * 0.4,
-        dimensions.width,
-        top,
-        caption.y_min,
-    ))
+    result
 }
 
 fn prose_top(
@@ -1605,6 +1668,100 @@ mod tests {
             }];
         }
         assert!(find(&index)[0].rect.unwrap().y_max >= 140.0);
+    }
+
+    #[test]
+    fn should_preserve_enclosing_diagram_labels_when_only_raster_inserts_are_available() {
+        let mut index = fixture(&[
+            ("Input", "float", 80.0, 80.0),
+            ("Encoder", "float", 200.0, 140.0),
+            ("Output", "float", 220.0, 200.0),
+            (
+                "Figure 1: A labeled system with partially available raster inserts.",
+                "caption",
+                50.0,
+                230.0,
+            ),
+        ]);
+        for token in index.tokens.iter_mut().take(3) {
+            token.rects[0].y_max = token.rects[0].y_min + 6.0;
+        }
+        let native = find(&index);
+        let image = TextRect {
+            x_min: 90.0,
+            y_min: 110.0,
+            x_max: 120.0,
+            y_max: 170.0,
+        };
+        let page = super::super::graphics::PageGraphics {
+            page: 1,
+            status: "partial".into(),
+            trace_sha256: None,
+            images: vec![image],
+            unsupported_images: 2,
+        };
+        let with_image = find_with_images(&index, &[page]);
+        assert_eq!(with_image[0].rect, native[0].rect);
+        assert_eq!(with_image[0].spans, native[0].spans);
+        assert!(with_image[0].rect.unwrap().x_max > 240.0);
+        assert!(with_image[0].rect.unwrap().y_min < 80.0);
+        assert!(with_image[0].rect.unwrap().y_max > 206.0);
+    }
+
+    #[test]
+    fn should_keep_image_bounds_when_native_labels_lack_independent_diagram_enclosure() {
+        for case in ["above_only", "numeric_grid", "separate_caption"] {
+            let bottom_text = if case == "numeric_grid" {
+                "Output 25"
+            } else {
+                "Output"
+            };
+            let bottom_y = if case == "above_only" { 90.0 } else { 200.0 };
+            let mut lines = vec![
+                ("Input", "float", 80.0, 80.0),
+                ("Encoder", "float", 200.0, 140.0),
+                (bottom_text, "float", 220.0, bottom_y),
+            ];
+            if case == "separate_caption" {
+                lines.push((
+                    "Figure 1: An independently owned preceding diagram.",
+                    "caption",
+                    50.0,
+                    100.0,
+                ));
+            }
+            lines.push((
+                "Figure 2: A separate image with a complete observed boundary.",
+                "caption",
+                50.0,
+                230.0,
+            ));
+            let mut index = fixture(&lines);
+            for token in &mut index.tokens {
+                if token.start < index.objects.paragraph[3].start {
+                    token.rects[0].y_max = token.rects[0].y_min + 6.0;
+                }
+            }
+            let image = TextRect {
+                x_min: 90.0,
+                y_min: 110.0,
+                x_max: 120.0,
+                y_max: 170.0,
+            };
+            let page = super::super::graphics::PageGraphics {
+                page: 1,
+                status: "partial".into(),
+                trace_sha256: None,
+                images: vec![image],
+                unsupported_images: 2,
+            };
+            let result = find_with_images(&index, &[page]);
+            let figure = result
+                .iter()
+                .find(|figure| figure.label == "Figure 2")
+                .unwrap();
+            assert_eq!(figure.rect, Some(image), "{case}");
+        }
     }
 
     #[test]

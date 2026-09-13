@@ -80,6 +80,12 @@ requires multiple printed rows before a below-caption grid is admitted. A short 
 unfinished reference sentence can reject a false caption without changing the separate
 multi-line prose barrier used for diagram bounds. Original native schemas, both K1 versions,
 caption matching and all-region denominators remain unchanged.
+Partial raster inserts cannot replace a separately established diagram extent: at least three
+complete caption-owned native labels must enclose the image seed, including whole labels above
+and below it. Every label contributing to that native seed must contain at most twelve tokens,
+no digits, and glyph heights below85% of the page's median body height. This conservative cue
+uses the existing native connected bounds and padding; numeric grids, ordinary body text and
+one-sided label evidence retain the image-only boundary. Unknown mask pixels remain unavailable.
 The bridge retains raw traces immutably only under the dedicated external
 `~/.cache/lysilogy/object-graphics-traces/<sha256>.xml` root, rejecting symlinked ancestors and
 conflicting existing bytes. The collector checks every retained trace path/hash, source/tool
