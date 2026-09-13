@@ -1763,7 +1763,13 @@ mod tests {
             }
             let image = TextRect {
                 x_min: 90.0,
-                y_min: 110.0,
+                // Keep the image beyond the earlier caption's existing
+                // four-point ownership barrier in this control case.
+                y_min: if case == "separate_caption" {
+                    120.0
+                } else {
+                    110.0
+                },
                 x_max: 120.0,
                 y_max: 170.0,
             };
