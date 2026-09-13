@@ -79,7 +79,7 @@ export function LibraryRail({
     if (!keyboardMode) return;
     const item = itemRefs.current[activeIndex];
     (item ?? searchRef.current)?.focus({ preventScroll: true });
-    item?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    item?.scrollIntoView({ block: "nearest", behavior: "instant" });
   }, [activeIndex, keyboardMode, searchRef]);
 
   useEffect(() => {
@@ -131,6 +131,33 @@ export function LibraryRail({
           clearPending();
           setActive((index) => Math.max(0, index - 1));
           break;
+        case "PageDown":
+        case "PageUp": {
+          event.preventDefault();
+          clearPending();
+          const item = itemRefs.current[activeIndex];
+          const list = item?.parentElement;
+          if (item == null || list == null) break;
+          const direction = event.key === "PageDown" ? 1 : -1;
+          const edge = direction === 1 ? lastIndex : 0;
+          const distance = Math.max(item.offsetHeight, list.clientHeight - item.offsetHeight);
+          let next = activeIndex;
+          // Page by the visible list height, accounting for wrapped paper titles.
+          while (next !== edge) {
+            const candidate = itemRefs.current[next + direction];
+            if (candidate == null) break;
+            if (next !== activeIndex && Math.abs(candidate.offsetTop - item.offsetTop) > distance) break;
+            next += direction;
+          }
+          setActive(next);
+          break;
+        }
+        case "Home":
+          event.preventDefault();
+          clearPending();
+          setActive(0);
+          break;
+        case "End":
         case "G":
           event.preventDefault();
           clearPending();
