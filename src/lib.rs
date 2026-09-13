@@ -15,6 +15,7 @@ pub mod layout;
 pub mod library;
 pub mod markdown;
 pub mod notes;
+pub mod objects;
 pub mod reader_tools;
 mod remote;
 pub mod source_index;
