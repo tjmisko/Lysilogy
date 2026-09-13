@@ -355,4 +355,23 @@ Long runs span sessions and context compactions. This file is the source of trut
 At the end of every session, or before a context compaction is likely, append one entry:
 date, last merged issue, in-flight branches and their state, next action, and open problems.
 
-_No entries yet._
+### 2026-09-12 — initial autonomous build orientation
+
+- Last merged issue: none from implementation; plan PR #66 was already merged as `d2dd6eb`.
+  Main and origin/main matched at orientation. No open PRs or prior session entries existed.
+- Current phase/wave: A/A1. Implementers are running in
+  `.worktrees/feat/e2.2-kb-types` (#34), `.worktrees/feat/e8.1-eval-harness` (#68), and
+  `.worktrees/feat/e8.2-arxiv-corpus` (#69). No implementation PR has opened yet. Merge #34 first.
+- Build resource settings: one Cargo build job per worktree, debug information disabled for dev
+  and test profiles, incremental compilation disabled. Targets stay in their worktrees on disk.
+- Background downloads: none. Creating `~/.cache/lysilogy/` and `~/Corpora/arxiv/` failed with
+  `Read-only file system` even after an approved sandbox escalation. Do not relocate the corpus
+  into the repository or `/tmp`. Writable access to the designated roots is required for corpus
+  and synthetic-scale measurements. The first OAI-PMH HTTP probe also encountered a sandbox
+  domain-allowlist block; the corpus implementer is testing an authorized escalation.
+- Next action: finish the three implementations, run independent PR reviews and quality gates,
+  merge #34 first, then continue A1 (#24, #19, #20, #63). E8.1 can use an unprivileged network
+  namespace for G5; `unshare --user --map-root-user --net true` succeeded.
+- Main's unrelated changes remain untouched, including `.gitignore`, `web/package.json`, the
+  PDF-preview files listed in Phase A notes, and the new PDF-preview test/smoke scripts. Existing
+  unrelated `/tmp/lysilogy-*` worktrees remain untouched.
