@@ -250,9 +250,24 @@ succeeded in 0.298 seconds with 74,816 KiB peak child RSS and no external calls.
 The unpublished candidate contains eight complete visual objects, four equations
 and 20 references (16 object references, including three O4 pairs), with reviewed
 formal negative inventories. Automatic acceptance remains false and all source
-diagnostics remain unchanged. Bibliography and O8–O11 are omitted. Current-source
-full gates and separate final agent review remain pending; earlier full gates
-apply only to `3154815`. No new truth release or detector measurement has run.
+diagnostics remain unchanged. Bibliography and O8–O11 are omitted.
+
+After a normal docs-only main merge, all current-source gates passed at
+`542da50`: formatting, strict all-target/all-feature Clippy, all Rust targets,
+233 targeted Python tests, the affected objects/bibliography and scale checks,
+G5, and an actual immutable-v1 replay. G5 ran 350 Rust, 374 Python and 85 Node
+tests. The complete sequence took 15.402 seconds with 157,056 KiB peak child RSS;
+all 160 retained source inputs stayed unchanged. Its 54 raw artifacts are copied
+and SHA-verified in the external archive. The generated scorecard was the sole
+dirty file during evaluation and was retained before restoration. Objects and
+bibliography remained unavailable on this branch's empty collector inputs;
+these checks do not remeasure the previously published limited truth. O30
+remains zero violations across 10,000 fixture references. The existing v1 object
+and bibliography payloads reproduced exactly. Separate final agent review and
+the current full 1,000-paper automatic report remain prerequisites for a new
+release. The external v2 configuration is a deliberately incomplete review
+template, retaining the 500-paper target and explicit selection bias. No new
+truth release or detector measurement has run.
 
 ## Retained evidence
 
