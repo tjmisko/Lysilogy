@@ -338,6 +338,17 @@ original 35 independently reviewed entries and adds no new bibliography cohort.
 Prior annotation/panel agent dollar costs are unavailable and remain unknown;
 the measured runtime costs above apply only to the recorded offline executions.
 
+The integrated gate attempt at `6eea188` ran all twelve commands successfully,
+including G5's 350 Rust, 383 Python and 85 Node tests and both version replays.
+Its wrapper nevertheless failed its final byte-idempotence assertion: the existing
+JSON baseline read/write changed O1 and its recorded adjustment from
+`0.9787234042553191` to the adjacent float `0.9787234042553192`. The actual measured
+score remains the former. The failed receipt, all raw logs and exact before/after
+bytes are retained. Two repeated own-CLI checks pass and leave the latter bytes
+unchanged. This stable serialization is committed without changing a target,
+measurement, justification or assertion; the same complete gate runner must pass
+again before final clearance.
+
 ## Retained evidence
 
 The machine-readable companion is
