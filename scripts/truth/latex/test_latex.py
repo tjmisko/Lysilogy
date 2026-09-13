@@ -25,6 +25,12 @@ def tar(members):
 
 
 class SourceTests(unittest.TestCase):
+    def test_should_bound_stored_argument_inspection_when_nested_metadata_repeats_source_spans(self):
+        source = document(r'\title{\title{\title{' + 'a' * 200 + '}}}')
+        self.assertLess(len(source), 400)
+        with self.assertRaisesRegex(UnsupportedSource, 'stored argument inspection exceeds its cumulative bound'):
+            parse_project({'main.tex': source}, Limits(text_bytes=400))
+
     def test_should_leave_literal_star_tokens_when_consuming_unbraced_control_word_arguments(self):
         self.assertEqual(token_argument(r'\alpha*tail', 0), (r'\alpha', 6))
         self.assertEqual(token_argument(r'\*tail', 0), (r'\*', 2))

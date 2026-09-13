@@ -9,6 +9,21 @@ STANDARD_STATEMENTS = {name: name for name in ("theorem", "lemma", "corollary", 
 ENVIRONMENTS = {"figure": "figure", "table": "table", "equation": "equation", "align": "equation", "gather": "equation", "multline": "equation", "eqnarray": "equation", "proof": "proof", "algorithm": "algorithm", "algorithm2e": "algorithm", "listing": "algorithm", "lstlisting": "algorithm"}
 CITES = {"cite", "citep", "citet", "citealt", "citealp", "parencite", "textcite", "autocite"}
 REFS = {"ref", "eqref", "autoref", "cref", "Cref", "vref"}
+# These exact slots are metadata, literal input, or deferred/repeated content.
+# Structural tokens there do not independently establish a live object/link.
+# In particular href's second argument and ordinary formatting arguments are
+# visible content and deliberately absent from this registry.
+STORED_ARGUMENT_ROLES = {
+    **{name: (1,) for name in CITES | REFS | {
+        "index", "label", "tag", "bibliographystyle", "url", "path", "nolinkurl", "href",
+        "documentclass", "documentstyle", "usepackage", "RequirePackage", "LoadClass", "includegraphics",
+        "title", "TITLE", "author", "date", "thanks", "bibitem", "bibinfo", "bibfield", "nocite",
+        "addbibresource", "vspace", "hspace", "vskip", "hskip"}},
+    "setlength": (1, 2), "addcontentsline": (1, 2, 3), "markboth": (1, 2), "newtheorem": (1, 2),
+    "printbibliography": (),
+}
+OPTIONAL_STORED_ARGUMENTS = CITES | REFS | {"bibitem", "documentclass", "documentstyle", "usepackage", "RequirePackage", "LoadClass", "includegraphics", "href", "printbibliography", "addbibresource", "newtheorem"}
+LITERAL_ARGUMENTS = {"url", "path", "nolinkurl"}
 # These standard math symbols and scalar dimensions cannot inject object
 # environments. This inventory capability does not imply faithful rendering:
 # commands absent from Renderer still withhold their enclosing object's text.
@@ -354,6 +369,11 @@ def parse_project(files, limits=Limits(), selected_main=None):
                 pending.extend(dependencies - seen)
         return forwarding[name]
 
+    def structural_argument_commands(value):
+        commands = {item[1].rstrip("*") for item in COMMAND.finditer(value)}
+        return sorted(item for item in commands if item in structural or item in aliases
+                      or "cite" in item.casefold() or "ref" in item.casefold() or structural_macro(item))
+
     argument_evidence = []
     argument_steps, argument_bytes = 0, 0
     for command in COMMAND.finditer(scan):
@@ -387,9 +407,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
             argument_bytes += pos - start
             if argument_steps > limits.expansion_steps or argument_bytes > limits.text_bytes:
                 raise UnsupportedSource("macro argument inspection exceeds its cumulative bound")
-            commands = {item[1].rstrip("*") for item in COMMAND.finditer(value)}
-            affecting = sorted(item for item in commands if item in structural or item in aliases
-                               or "cite" in item.casefold() or "ref" in item.casefold() or structural_macro(item))
+            affecting = structural_argument_commands(value)
             if affecting:
                 source_semantics["structural_macro_argument:" + name] += 1
                 argument_evidence.append({"macro": name, "argument": number + 1,
@@ -398,6 +416,57 @@ def parse_project(files, limits=Limits(), selected_main=None):
                                           "source_members": expanded.origins(start, pos)})
         if len(argument_evidence) > limits.expansion_steps:
             raise UnsupportedSource("macro argument evidence exceeds its cumulative bound")
+    stored_evidence = []
+    for command in COMMAND.finditer(scan):
+        name = command[1].rstrip('*')
+        if name not in STORED_ARGUMENT_ROLES:
+            continue
+        # Only explicit standard starred variants consume that character here.
+        pos = command.end() - int(command[1].endswith('*') and name not in {'tag', 'includegraphics', 'vspace', 'hspace', 'newtheorem'} | CITES | REFS)
+        invocation = expanded.origins(command.start(), pos)
+        arguments = []
+        try:
+            if name in OPTIONAL_STORED_ARGUMENTS:
+                for number in range(2):
+                    start = skip_space(scan, pos)
+                    value, stop = group(scan, start, '[', ']', False)
+                    if value is None:
+                        break
+                    pos = stop
+                    arguments.append(('option:' + str(number + 1), start, pos, value))
+            for number in range(1, max(STORED_ARGUMENT_ROLES[name], default=0) + 1):
+                start = skip_space(scan, pos)
+                if name in LITERAL_ARGUMENTS and scan[start:start + 1] != '{':
+                    # Literal delimiter forms do not execute their contents.
+                    # Their exact delimiter grammar is not implemented here.
+                    raise UnsupportedSource('unverified literal argument delimiter')
+                value, pos = token_argument(scan, start)
+                if number in STORED_ARGUMENT_ROLES[name]:
+                    arguments.append((number, start, pos, value))
+                if name == 'newtheorem':
+                    start = skip_space(scan, pos)
+                    value, stop = group(scan, start, '[', ']', False)
+                    if value is not None:
+                        pos = stop
+                        arguments.append(('counter:' + str(number), start, pos, value))
+        except UnsupportedSource as error:
+            if any(word in str(error) for word in ('bound', 'recursion', 'nesting')):
+                raise
+            source_semantics['unverified_stored_arguments:' + name] += 1
+            stored_evidence.append({'command': name, 'reason': str(error), 'invocation': invocation})
+        for number, start, stop, value in arguments:
+            argument_steps += 1
+            argument_bytes += stop - start
+            if argument_steps > limits.expansion_steps or argument_bytes > limits.text_bytes:
+                raise UnsupportedSource('stored argument inspection exceeds its cumulative bound')
+            affecting = structural_argument_commands(value)
+            if affecting:
+                source_semantics['structural_stored_argument:' + name] += 1
+                stored_evidence.append({'command': name, 'argument': number, 'commands': affecting,
+                                        'reason': 'unverified stored or literal argument visibility and multiplicity',
+                                        'invocation': invocation, 'source_members': expanded.origins(start, stop)})
+        if len(stored_evidence) + len(argument_evidence) > limits.expansion_steps:
+            raise UnsupportedSource('stored argument evidence exceeds its cumulative bound')
     # Unimplemented low-level definitions can hide structure through aliases.
     # Track all referenced macro names transitively, without executing a body.
     reachable = {command[1].rstrip("*") for command in COMMAND.finditer(scan)}
@@ -671,6 +740,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
                              for name, row in aliases.items()},
                          "other_environments": dict(unsupported_environments), "issues": dict(ignored),
                          "unverified_macro_arguments": argument_evidence,
+                         "unverified_stored_arguments": stored_evidence,
                          "unsupported_object_environments": unknown_environments,
                          "unsupported_source_semantics": dict(source_semantics),
                          "objects_by_kind": dict(Counter(row["kind"] for row in objects)),

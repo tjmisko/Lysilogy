@@ -143,8 +143,13 @@ arguments do not establish a live inventory: the macro may discard, duplicate, o
 reorder them. The reader retains their original invocation/argument/object spans
 as unsupported evidence. Nested custom argument forwarding, including tail calls
 that may consume additional caller tokens, remains unverified rather than being
-expanded. Argument inspection has cumulative byte/step limits and treats a star
-following a control word as a separate TeX token. A direct equation boundary alias is supported
+expanded. An explicit standard argument-role registry likewise withholds structural
+tokens in URLs, keys, filenames, field roles and stored title/author/date content;
+these slots cannot certify immediate visibility or multiplicity. Visible `href`
+text and ordinary formatting arguments keep their separate rendering contract.
+Unimplemented literal delimiter forms remain unsupported. Argument inspection has
+cumulative byte/step limits and treats a star following a control word as a
+separate TeX token. A direct equation boundary alias is supported
 only when one global preamble `newcommand` or plain `def` has no arguments and its
 entire body is one literal `begin` or `end` for a known equation environment.
 Events retain the original invocation and definition positions; source text is

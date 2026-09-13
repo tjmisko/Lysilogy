@@ -17,6 +17,56 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_withhold_literal_or_stored_objects_when_standard_argument_roles_do_not_execute_them(self):
+        statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        cases = [(name, '\\' + name + '{', '}') for name in
+                 ('index', 'title', 'author', 'date', 'label', 'includegraphics', 'url', 'path', 'nolinkurl', 'ref', 'cite')]
+        cases += [('href', r'\href{', '}{visible text}'), ('bibinfo', r'\bibinfo{', '}{visible text}'),
+                  ('bibfield', r'\bibfield{', '}{visible text}'), ('setlength', r'\setlength{\textwidth}{', '}'),
+                  ('addcontentsline', r'\addcontentsline{toc}{section}{', '}')]
+        for name, prefix, suffix in cases:
+            source = document(prefix + statement + suffix)
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(command=name):
+                self.assertIn('structural_stored_argument:' + name, parsed['coverage']['unsupported_source_semantics'])
+                self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output.'})['metric_eligibility']['O5'])
+                evidence = next(row for row in parsed['coverage']['unverified_stored_arguments'] if row['command'] == name)
+                member = evidence['source_members'][0]
+                self.assertEqual(source[member['start']:member['end']], '{' + statement + '}')
+                self.assertEqual(len(parsed['objects']), 1)
+
+    def test_should_withhold_structural_options_when_citation_or_bibliography_keys_are_not_body_content(self):
+        statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        for body in (r'\cite[' + statement + ']{one}',
+                     r'\begin{thebibliography}{9}\bibitem[' + statement + ']{one}A complete independent entry.\end{thebibliography}'):
+            parsed = parse_project({'main.tex': document(body)})
+            with self.subTest(body=body):
+                self.assertTrue(parsed['coverage']['unverified_stored_arguments'])
+                self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output. A complete independent entry.'})['metric_eligibility']['O5'])
+
+    def test_should_withhold_accepted_aliases_when_their_tokens_are_stored_in_metadata(self):
+        for name in ('index', 'title', 'url', 'label'):
+            parsed = parse_project({'main.tex': document('\\' + name + r'{\be abcdefghij=12345\ee}',
+                                    r'\def\be{\begin{equation}}\def\ee{\end{equation}}')})
+            with self.subTest(command=name):
+                self.assertEqual(parsed['coverage']['objects_by_kind']['equation'], 1)
+                self.assertIn('structural_stored_argument:' + name, parsed['coverage']['unsupported_source_semantics'])
+                self.assertFalse(align_paper(parsed, {'text': 'abcdefghij=12345'})['metric_eligibility']['O3'])
+
+    def test_should_preserve_visible_href_and_formatting_content_when_metadata_roles_are_structurally_empty(self):
+        source = document(r'\begin{theorem}\textbf{Every input has a unique bounded output.}\end{theorem}'
+                          r'\href{https://example.test}{\begin{theorem}Every output has a distinct finite encoding.\end{theorem}}',
+                          r'\title{An ordinary title}\author{A. Author}\date{2025}')
+        parsed = parse_project({'main.tex': source})
+        self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+        self.assertTrue(align_paper(parsed, {'text': 'Every input has a unique bounded output. Every output has a distinct finite encoding.'})['metric_eligibility']['O5'])
+
+    def test_should_withhold_literal_delimiter_syntax_when_raw_contents_might_be_mistaken_for_objects(self):
+        source = document(r'\url|\begin{theorem}Every input has a unique bounded output.\end{theorem}|')
+        parsed = parse_project({'main.tex': source})
+        self.assertIn('unverified_stored_arguments:url', parsed['coverage']['unsupported_source_semantics'])
+        self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output.'})['metric_eligibility']['O5'])
+
     def test_should_withhold_raw_object_inventory_when_macro_arguments_are_discarded_duplicated_or_reordered(self):
         first = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
         second = r'\begin{theorem}Every output has a distinct finite encoding.\end{theorem}'
