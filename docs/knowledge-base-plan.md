@@ -341,6 +341,18 @@ anchors.
 
 Blocked by: none
 
+Measured detector refresh decision (#101, 2026-09-13): preserve native schema-6 index bytes,
+UTF-16 anchors, and exact index ETags. Current `ObjectsArtifact::from_reading_index` recomputes
+figure/table predictions from the immutable native input, with separately versioned detector
+metadata and a generation hash binding that version to the native ETag. The objects cache/API
+refreshes old derived generations; the legacy reading-index response retains its historical
+embedded `figures` field. Measurements retain the exact new prediction artifact and hashed native
+basis, without editing frozen K1 labels/indexes or changing O1/O2 matching and denominators.
+Roman captions may be recovered from body/footnote paragraphs with explicit printed separators;
+physical prose continuation is rejected. Diagram/table regions use observed label/cell extents
+and exclude captions/page whitespace. Regions remain candidates, and text-poor graphics may
+remain unavailable or incomplete; real O2 measurement determines the remaining gap.
+
 ### E1.2 Backend bibliography extraction and parsing
 
 Move bibliography detection and entry splitting from `paperLinks.ts` to the backend, and persist

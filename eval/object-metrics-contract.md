@@ -33,9 +33,21 @@ inventories/negatives, independent evidence hashes, source/PDF/index identity an
 An evaluation-only Rust bridge calls the production `load_cached` and
 `ObjectsArtifact::from_reading_index` functions. It never scans a library, builds an index,
 writes objects into the canonical data root, or invokes an extractor/model/network. These are
-actual production predictions in the exact frozen native indexes, wrapped by the current objects
-implementation. The current figure-detector source must equal the source used for those caches;
-a detector change requires separately reviewed new-generation measurement, not stale cache reuse.
+actual current production predictions derived from the exact frozen native indexes. Detector
+version 2 recomputes captions and regions in `ObjectsArtifact::from_reading_index`; it never reads
+legacy embedded `ReadingIndex.figures` as its predictions. The independent native generation
+remains the SHA256/ETag of the original unchanged index. `figure_detector_generation` is SHA256
+of UTF-8 `figures:<version>:<native-etag>`, and object cache reuse requires both that fingerprint
+and the current detector version. Existing objects without these fields are rebuilt atomically.
+The source reading-index endpoint retains its historical embedded figure records; current KB/API
+objects use the refreshed factory. No canonical native cache is rewritten for measurement.
+
+The bridge retains a separately hashed JSON serialization of the exact typed native input passed
+to that factory, excluding only the unused embedded `figures`. The collector compares every native
+text/page/token/geometry/paragraph/gap value against the original frozen index and checks the
+derived version/generation. PDF/source/index hashes and reviewed truth anchors are unchanged.
+This replaces the v1 collector's historical-detector source-equality guard with explicit current
+production derivation evidence; the scoring and all denominators above remain v1 unchanged.
 
 Every measurement invokes Cargo and verifies its selected compiler artifact and current source
 hashes; editing a saved build receipt cannot substitute an executable. The original registry,

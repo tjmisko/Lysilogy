@@ -27,6 +27,21 @@ def fixture():
 
 
 class ObjectMetricTests(unittest.TestCase):
+    def should_reject_changed_native_basis_when_a_new_detector_generation_is_measured(self):
+        _,artifact,index=fixture()
+        index.update({'tokens':[{'text':'independent','rects':[rectangle()],'provenance':'native'}],'objects':{'paragraph':[]},'gaps':[],'figures':[{'legacy':'ignored'}]})
+        artifact['figure_detector_version']=m.DETECTOR_VERSION
+        artifact['figure_detector_generation']=m.digest(('figures:'+str(m.DETECTOR_VERSION)+':'+artifact['reading_index_generation']).encode())
+        basis={k:v for k,v in index.items() if k!='figures'}
+        raw=m.canonical(basis).decode();row={'index_sha256':'b'*64,'native_basis_json':raw,'native_basis_sha256':m.digest(raw.encode())}
+        self.assertEqual(m.validate_derivation(row,artifact,index)['version'],m.DETECTOR_VERSION)
+        for key in ['text','pages','tokens','objects','gaps']:
+            altered=copy.deepcopy(basis);altered[key]=None;raw=m.canonical(altered).decode()
+            with self.subTest(key=key),self.assertRaisesRegex(ValueError,'native text, tokens, geometry or provenance differs'):
+                m.validate_derivation({**row,'native_basis_json':raw,'native_basis_sha256':m.digest(raw.encode())},artifact,index)
+        for changes in [{'figure_detector_version':1},{'figure_detector_version':True},{'figure_detector_generation':'forged'}]:
+            with self.subTest(changes=changes),self.assertRaises(ValueError):m.validate_derivation(row,{**artifact,**changes},index)
+
     def should_use_cargo_selected_artifact_when_inherited_targets_point_elsewhere(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);source=root/'examples/object_metrics.rs';source.parent.mkdir();source.write_text('source')

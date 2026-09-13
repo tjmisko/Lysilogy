@@ -23,6 +23,8 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{Error, Result, domain::TextRect};
 
+pub use figures::{DETECTOR_VERSION as FIGURE_DETECTOR_VERSION, find as detect_figures};
+
 pub use cache::{IndexDocument, load_cached, load_or_build, load_or_build_priority};
 
 pub const SCHEMA_VERSION: u16 = 6;

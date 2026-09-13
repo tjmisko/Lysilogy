@@ -103,13 +103,22 @@ async fn main() -> Result<(), Failure> {
         {
             return Err("index changed while loading".into());
         }
+        // Serialize the exact typed input passed to the production factory. The
+        // legacy embedded predictions are excluded from the derivation basis.
+        let mut native_basis: serde_json::Value =
+            serde_json::from_str(&serde_json::to_string(&document.index)?)?;
+        native_basis
+            .as_object_mut()
+            .ok_or("native basis is not an object")?
+            .remove("figures");
+        let native_basis_json = serde_json::to_string(&native_basis)?;
         let artifact = ObjectsArtifact::from_reading_index(&paper.paper_id, &document);
         let artifact_json = serde_json::to_string(&artifact)?;
-        output_bytes += artifact_json.len();
+        output_bytes += artifact_json.len() + native_basis_json.len();
         if output_bytes > 16 * 1024 * 1024 {
             return Err("object response exceeds 16 MiB".into());
         }
-        rows.push(json!({"paper_id":paper.paper_id,"index_sha256":paper.index_sha256,"object_sha256":format!("{:x}",Sha256::digest(artifact_json.as_bytes())),"artifact_json":artifact_json}));
+        rows.push(json!({"paper_id":paper.paper_id,"index_sha256":paper.index_sha256,"object_sha256":format!("{:x}",Sha256::digest(artifact_json.as_bytes())),"artifact_json":artifact_json,"native_basis_sha256":format!("{:x}",Sha256::digest(native_basis_json.as_bytes())),"native_basis_json":native_basis_json}));
     }
     println!(
         "{}",

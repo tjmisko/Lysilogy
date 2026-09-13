@@ -20,7 +20,8 @@ CONFIG = 'eval/truth/k1-limited-v1-build.json'
 TRACE = 'eval/inputs/evidence/object-metrics.json'
 INPUT = 'eval/inputs/objects/figure-table.json'
 KINDS = ('figure', 'table')
-VERSION = 'figure-table-metrics-v1'
+VERSION = 'figure-table-metrics-v2'
+DETECTOR_VERSION = 2
 MAX_JSON = 32 * 1024 * 1024
 
 
@@ -219,9 +220,8 @@ def validate_truth(repo, cache, corpus, data, truth_raw):
     require(truth['schema_version']==1 and truth['truth_set']=='K1' and truth['origin']=='arxiv-latex' and truth['version']==config['version'], 'unsupported frozen K1 identity')
     original=truth['provenance']
     require(digest(config_raw)==original['build_config_sha256'], 'K1 config hash differs')
-    # The historical detector is embedded in the frozen native caches. Current
-    # wrappers are measured separately, while changed detectors require new caches.
-    require(digest(read(repo/'src/source_index/figures.rs'))==original['implementation']['src/source_index/figures.rs'], 'native cache detector source differs; new-generation measurement required')
+    # Current detector output is rederived from immutable native coordinates.
+    # validate_derivation binds that independently versioned generation below.
     for path,expected in original['implementation'].items():
         if path.startswith('scripts/truth/latex/'):
             require(digest(read(repo/path))==expected,'truth implementation changed')
@@ -234,6 +234,18 @@ def validate_truth(repo, cache, corpus, data, truth_raw):
     rebuilt,_=release.build_release(assemblies,config,inputs,history);rebuilt['provenance']=original
     require(canonical(rebuilt)+b'\n'==truth_raw, 'K1 labels or complete cohort differ from independent evidence')
     return truth,config
+
+
+def validate_derivation(row, artifact, index):
+    """Bind current production predictions to the exact frozen native basis."""
+    raw=row['native_basis_json'].encode()
+    require(digest(raw)==row['native_basis_sha256'],'native derivation basis hash differs')
+    expected={key:value for key,value in index.items() if key!='figures'}
+    require(document(raw)==expected,'detector native text, tokens, geometry or provenance differs')
+    require(type(artifact.get('figure_detector_version')) is int and artifact['figure_detector_version']==DETECTOR_VERSION,'unsupported current detector version')
+    generation=digest(('figures:'+str(DETECTOR_VERSION)+':'+artifact['reading_index_generation']).encode())
+    require(artifact.get('figure_detector_generation')==generation,'derived detector generation differs')
+    return {'version':DETECTOR_VERSION,'generation':generation,'native_basis_sha256':row['native_basis_sha256'],'index_sha256':row['index_sha256']}
 
 
 def atomic_json(path, value):
@@ -328,7 +340,8 @@ def main():
         # object digest; a separately canonicalized digest binds the JSON projection.
         artifact_raw=row['artifact_json'].encode();require(digest(artifact_raw)==row['object_sha256'],'object artifact hash differs')
         artifact=document(artifact_raw)
-        object_hashes[paper['paper_id']]={'rust_serialized_sha256':row['object_sha256'],'canonical_sha256':digest(canonical(artifact))}
+        derivation=validate_derivation(row,artifact,indexes[paper['paper_id']])
+        object_hashes[paper['paper_id']]={'rust_serialized_sha256':row['object_sha256'],'canonical_sha256':digest(canonical(artifact)),'derivation':derivation}
         metrics.append(evaluate_paper(paper,artifact,indexes[paper['paper_id']]))
     require(sources=={p:digest(read(ROOT/p)) for p in sources} and read(ROOT/TRUTH)==truth_raw and digest(read(expected,128*1024*1024))==executable_hash,'measurement source or truth changed')
     for path,expected_hash in tracked.items():require(digest(read(Path(path),512*1024*1024))==expected_hash,'canonical input changed during measurement')
