@@ -142,7 +142,8 @@ redefinitions retain their exclusions. Structural tokens passed as custom-macro
 arguments do not establish a live inventory: the macro may discard, duplicate, or
 reorder them. The reader retains their original invocation/argument/object spans
 as unsupported evidence. Nested custom argument forwarding, including tail calls
-that may consume additional caller tokens, remains unverified rather than being
+to standard stored/literal consumers that may consume additional caller tokens,
+remains unverified rather than being
 expanded. An explicit standard argument-role registry likewise withholds structural
 tokens in URLs, keys, filenames, field roles and stored title/author/date content;
 these slots cannot certify immediate visibility or multiplicity. Visible `href`

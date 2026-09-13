@@ -17,6 +17,16 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_withhold_a_stored_argument_tail_alias_when_its_definition_hides_the_consumer(self):
+        statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        for definitions, body in ((r'\newcommand{\literal}{\url}', r'\literal{' + statement + '}'),
+                                  (r'\newcommand{\middle}{\url}\newcommand{\literal}{\middle}', r'\literal{' + statement + '}'),
+                                  (r'\newcommand{\hidden}[1]{#1\index}', r'\hidden{ordinary}{' + statement + '}')):
+            parsed = parse_project({'main.tex': document(body, definitions)})
+            with self.subTest(definitions=definitions):
+                self.assertTrue(any(name.startswith('unverified_macro_argument_forwarding:') for name in parsed['coverage']['unsupported_source_semantics']))
+                self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output.'})['metric_eligibility']['O5'])
+
     def test_should_withhold_literal_or_stored_objects_when_standard_argument_roles_do_not_execute_them(self):
         statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
         cases = [(name, '\\' + name + '{', '}') for name in
@@ -38,7 +48,7 @@ class AlignmentTests(unittest.TestCase):
     def test_should_withhold_structural_options_when_citation_or_bibliography_keys_are_not_body_content(self):
         statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
         for body in (r'\cite[' + statement + ']{one}',
-                     r'\begin{thebibliography}{9}\bibitem[' + statement + ']{one}A complete independent entry.\end{thebibliography}'):
+                     r'\begin{thebibliography}{9}\bibitem[' + statement + r']{one}A complete independent entry.\end{thebibliography}'):
             parsed = parse_project({'main.tex': document(body)})
             with self.subTest(body=body):
                 self.assertTrue(parsed['coverage']['unverified_stored_arguments'])

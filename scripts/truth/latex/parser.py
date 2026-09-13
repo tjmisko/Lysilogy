@@ -363,7 +363,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
                 if len(seen) > limits.expansion_steps:
                     raise UnsupportedSource("macro argument dependency closure exceeds its bound")
                 dependencies = {item[1].rstrip("*") for item in COMMAND.finditer(renderer.macros[current][1])}
-                if any(renderer.macros.get(dependency, (0, ""))[0] for dependency in dependencies):
+                if any(renderer.macros.get(dependency, (0, ""))[0] or STORED_ARGUMENT_ROLES.get(dependency)
+                       for dependency in dependencies):
                     forwarding[name] = True
                     break
                 pending.extend(dependencies - seen)
@@ -382,7 +383,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
             source_semantics["structural_macro:" + name] += 1
         if name not in renderer.macros:
             continue
-        # Nested parameterized custom macros have no independently established
+        # Nested custom or standard stored-argument consumers have no established
         # forwarding contract. A body can discard/repeat/reorder #n, or end in
         # another macro which consumes additional caller tokens. Do not infer
         # visibility from the raw source inventory in any such invocation.
