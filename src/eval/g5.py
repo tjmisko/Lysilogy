@@ -12,6 +12,7 @@ import socket
 import subprocess
 import sys
 import time
+import unittest
 
 MODELS = ("codex", "claude", "gemini", "aider", "ollama")
 TOOLS = ("sh", "bash", "env", "node", "npm", "python3", "cc", "gcc", "as", "ld", "ar",
@@ -19,10 +20,24 @@ TOOLS = ("sh", "bash", "env", "node", "npm", "python3", "cc", "gcc", "as", "ld",
          "mkdir", "chmod", "cp", "dirname", "basename", "head", "sed", "uname", "nice")
 
 
+def tooling_tests(directory):
+    # Repository tests use should_*_when_* names. Keep standard test_* support
+    # too; an empty collection must never establish an offline-test pass.
+    loader = unittest.TestLoader()
+    loader.testMethodPrefix = ("test", "should_")
+    suite = loader.discover(str(directory), pattern="test*.py")
+    if suite.countTestCases() == 0:
+        print(f"G5 FAIL: no tooling tests collected in {directory}", file=sys.stderr)
+        return 1
+    return 0 if unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful() else 1
+
+
 def run():
     root = Path(sys.argv[1]).resolve()
     output = Path(sys.argv[2]).resolve()
     output.mkdir(parents=True, exist_ok=True)
+    if len(sys.argv) > 3 and sys.argv[3] == "--tooling-tests":
+        return tooling_tests(Path(sys.argv[4]))
     if len(sys.argv) > 3 and sys.argv[3] == "--script-shell":
         # npm adds node_modules/.bin directories to PATH after our outer check.
         if any(shutil.which(name) for name in MODELS):
@@ -84,7 +99,8 @@ def run():
     for directory, subdirectories, files in os.walk(root / "scripts"):
         subdirectories[:] = sorted(name for name in subdirectories if not name.startswith("."))
         if any(name.startswith("test") and name.endswith(".py") for name in files):
-            commands.append((root, ["python3", "-m", "unittest", "discover", "-s", str(Path(directory).relative_to(root)), "-p", "test*.py", "-v"]))
+            commands.append((root, ["python3", str(Path(__file__).resolve()), str(root),
+                                   str(output), "--tooling-tests", str(directory)]))
     commands.extend((root / "web", ["npm", "--script-shell", str(shell_guard), "run", name]) for name in scripts)
     results = []
     for index, (cwd, command) in enumerate(commands):

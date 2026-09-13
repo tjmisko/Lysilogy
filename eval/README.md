@@ -124,7 +124,9 @@ G5 requires Linux `unshare --user --map-root-user --net`, Python 3, the installe
 Node/npm, and the project's cached dependencies. It does not install anything. The runner checks
 that the network namespace changed and only loopback exists, probes a documentation-only
 address, and constructs an allowlisted PATH with no `codex`, `claude`, `gemini`, `aider`, or
-`ollama`. It executes Rust tests with Cargo offline all `test*.py` unittest suites beneath nonhidden `scripts/` directories, and all
+`ollama`. It executes Rust tests with Cargo offline, all `test*.py` unittest suites beneath
+nonhidden `scripts/` directories (collecting both `test*` and `should_*` methods and rejecting
+empty suites), and all
 `test`/`test:*` frontend package scripts (rechecking PATH after npm adds its executable paths), retaining separate logs plus `evidence.json` beneath `target/eval-g5/<run>/`. It fails
 closed if isolation or a command fails; no missing-tool condition produces a pass.
 
