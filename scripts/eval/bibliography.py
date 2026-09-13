@@ -248,8 +248,25 @@ def samples(summary):
 class Backend:
     def __init__(self):
         environment = dict(os.environ, CARGO_BUILD_JOBS="1", CARGO_PROFILE_DEV_DEBUG="0", CARGO_PROFILE_TEST_DEBUG="0", CARGO_INCREMENTAL="0")
-        subprocess.run(["cargo", "build", "--quiet", "--offline", "--example", "objects_fixture"], cwd=ROOT, env=environment, check=True)
-        self.binary = ROOT / "target/debug/examples/objects_fixture"
+        build = subprocess.run(["cargo", "build", "--offline", "--example", "objects_fixture", "--message-format=json"],
+                               cwd=ROOT, env=environment, check=True, capture_output=True, text=True)
+        executables = set()
+        for line in build.stdout.splitlines():
+            message = json.loads(line)
+            target = message.get("target", {})
+            if (message.get("reason") == "compiler-artifact" and target.get("name") == "objects_fixture"
+                    and target.get("kind") == ["example"] and message.get("executable")
+                    and Path(target.get("src_path", "")).resolve() == (ROOT / "examples/objects_fixture.rs").resolve()):
+                executables.add(Path(message["executable"]).resolve(strict=True))
+        if len(executables) != 1:
+            raise ValueError("Cargo must report exactly one production objects_fixture executable")
+        self.binary = executables.pop()
+        self.executable_sha256 = digest(self.binary.read_bytes())
+
+    def verify(self):
+        if digest(self.binary.read_bytes()) != self.executable_sha256:
+            raise ValueError("production executable changed during measurement")
+        return {"target": "objects_fixture", "executable_sha256": self.executable_sha256}
 
     def run(self, request):
         output = subprocess.run([str(self.binary)], input=json.dumps(request), capture_output=True, text=True, check=True, timeout=60)
@@ -337,9 +354,10 @@ def main():
     summary = summarize(observations, k2_cases)
     if implementation != [evidence(path, VERSION) for path in SOURCES] or any(evidence(item["path"], item["version"]) != item for item in truths.values()):
         raise ValueError("implementation or truth changed during measurement")
+    executable = backend.verify()
     observed_path = "eval/inputs/evidence/bibliography-observations.json"
     atomic_json(ROOT / observed_path, {"schema_version": 1, "collector": VERSION, "papers": observations,
-                "k2_cases": k2_cases, "k2_coverage": k2_coverage, "summary": summary, "model_calls": 0})
+                "k2_cases": k2_cases, "k2_coverage": k2_coverage, "summary": summary, "backend": executable, "model_calls": 0})
     observed = evidence(observed_path, VERSION)
     metrics = {metric: {"sample": sample, "cases": cases, "evidence": [observed]} for metric, (sample, cases) in samples(summary).items()}
     atomic_json(ROOT / "eval/inputs/bibliography/entries.json", {"schema_version": 1, "suite": "bibliography", "collector": VERSION,

@@ -80,3 +80,6 @@ fingerprints the production parser, object/type plumbing, shared normalization h
 Cargo manifest/lock, collector, truth labels and derived observations. Source-PDF/archive hashes
 come from K1's independently verified provenance. The report retains all matching disagreements,
 known/excluded field counts, model calls (zero), cost (zero), and measured wall time.
+The collector selects the executable from Cargo's JSON compiler-artifact result, including when
+environment or Cargo configuration changes the target directory. Its executable hash is retained
+with observations and checked again before publication; a stale default-target binary is never selected.

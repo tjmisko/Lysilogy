@@ -1,8 +1,11 @@
 """Synthetic arithmetic/provenance regressions; never written as K1/K2 truth."""
 import copy
+import json
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import bibliography as collector
 
@@ -39,6 +42,36 @@ def score(index, truth, artifact):
 
 
 class BibliographyCollectorTests(unittest.TestCase):
+    def test_should_execute_cargos_reported_artifact_when_a_custom_target_has_a_stale_default_binary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            stale = root / "target/debug/examples/objects_fixture"
+            stale.parent.mkdir(parents=True)
+            stale.write_bytes(b"stale default executable")
+            executable = root / "custom-target/debug/examples/objects_fixture"
+            executable.parent.mkdir(parents=True)
+            executable.write_bytes(b"current Cargo executable")
+            artifact = {"reason": "compiler-artifact", "executable": str(executable),
+                        "target": {"name": "objects_fixture", "kind": ["example"],
+                                   "src_path": str(root / "examples/objects_fixture.rs")}}
+
+            def run(command, **kwargs):
+                if command[0] == "cargo":
+                    self.assertIn("--message-format=json", command)
+                    self.assertEqual(kwargs["env"]["CARGO_TARGET_DIR"], str(root / "custom-target"))
+                    return subprocess.CompletedProcess(command, 0, stdout=json.dumps(artifact))
+                self.assertEqual(command, [str(executable)])
+                return subprocess.CompletedProcess(command, 0, stdout="[]")
+
+            with patch.object(collector, "ROOT", root), patch.object(collector.subprocess, "run", side_effect=run), patch.dict(collector.os.environ, CARGO_TARGET_DIR=str(root / "custom-target")):
+                backend = collector.Backend()
+                self.assertEqual(backend.run({"normalize_titles": []}), [])
+                self.assertEqual(backend.verify()["executable_sha256"], collector.digest(executable.read_bytes()))
+                self.assertNotEqual(backend.executable_sha256, collector.digest(stale.read_bytes()))
+                executable.write_bytes(b"replaced after measurement")
+                with self.assertRaisesRegex(ValueError, "executable changed"):
+                    backend.verify()
+
     def test_should_penalize_known_fields_when_segmentation_misses_a_truth_entry(self):
         index, truth, artifact = fixture()
         artifact["objects"].pop()
