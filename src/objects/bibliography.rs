@@ -272,15 +272,9 @@ fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block
         let base = source.byte(block.span.start).unwrap_or_default();
         let labels: Vec<_> = label_regex().captures_iter(text).collect();
         if labels.is_empty() {
-            // Entries in either convention can wrap into layout paragraphs.
-            // A new author/date cue starts a new unnumbered entry; otherwise
-            // retain the continuation as another disjoint source member.
-            if let Some(previous) = entries.last_mut()
-                && author_year_prefix(text).is_none()
-            {
-                previous.spans.push(block.span);
-                continue;
-            }
+            // A block can finish a preceding entry and start the next one.
+            // Find all author/date boundaries before attaching its leading
+            // continuation as another disjoint source member.
             let mut starts = vec![0];
             for (offset, _) in text.match_indices('\n') {
                 let remainder = &text[offset + 1..];
@@ -291,9 +285,19 @@ fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block
             }
             starts.push(text.len());
             for pair in starts.windows(2) {
-                if !text[pair[0]..pair[1]].trim().is_empty() {
+                let segment = &text[pair[0]..pair[1]];
+                let span = source.range(base + pair[0], base + pair[1]);
+                if segment.trim().is_empty() {
+                    continue;
+                }
+                if pair[0] == 0
+                    && author_year_prefix(segment).is_none()
+                    && let Some(previous) = entries.last_mut()
+                {
+                    previous.spans.push(span);
+                } else {
                     entries.push(Entry {
-                        spans: vec![source.range(base + pair[0], base + pair[1])],
+                        spans: vec![span],
                         key: None,
                     });
                 }
@@ -1450,5 +1454,31 @@ mod tests {
         assert_eq!(mentions.len(), 2);
         assert_eq!(slice(&index, &mentions[0].anchor), "[Smith2020]");
         assert_eq!(slice(&index, &mentions[1].anchor), "Smith 2020");
+    }
+
+    #[test]
+    fn should_preserve_the_next_entry_when_a_block_starts_with_a_continuation() {
+        let index = fixture(&[
+            ("Smith (2020) and Jones (2021) agree.", "body", 1),
+            ("References", "heading", 2),
+            ("Smith, A. (2020). A long", "body", 2),
+            (
+                "title. Journal of Results.\nJones, B. 2021. Next title.",
+                "body",
+                3,
+            ),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 2);
+        assert!(result.entries.iter().all(|entry| entry.mentions.len() == 1));
+        let first = &result.entries[0];
+        let second = &result.entries[1];
+        assert_eq!(fields(first).title.value.as_deref(), Some("A long title"));
+        assert_eq!(fields(second).title.value.as_deref(), Some("Next title"));
+        assert_eq!(fields(second).year.value.as_deref(), Some("2021"));
+        assert_eq!(first.member_anchors.len(), 2);
+        assert!(first.anchor.end <= second.anchor.start);
+        assert_eq!(slice(&index, &first.mentions[0].anchor), "Smith (2020)");
+        assert_eq!(slice(&index, &second.mentions[0].anchor), "Jones (2021)");
     }
 }
