@@ -12,7 +12,7 @@ use crate::{
     domain::{LayoutPage, TextRect},
 };
 
-pub(crate) struct ReadingLayoutPage<'a> {
+pub struct ReadingLayoutPage<'a> {
     pub page: LayoutPage,
     pub content: &'a str,
     pub failure: Option<String>,
@@ -44,7 +44,7 @@ struct Tag<'a> {
 
 /// Validate every document/page boundary before admitting any page-local result.
 /// A malformed word or line discards that whole page and retains its error.
-pub(crate) fn parse_pages(input: &str) -> Result<Vec<ReadingLayoutPage<'_>>> {
+pub fn parse_pages(input: &str) -> Result<Vec<ReadingLayoutPage<'_>>> {
     page_frames(input)?
         .into_iter()
         .enumerate()
@@ -301,7 +301,7 @@ fn attributes(mut input: &str) -> Result<Vec<(&str, &str)>> {
     Ok(output)
 }
 
-fn name_character(ch: char) -> bool {
+const fn name_character(ch: char) -> bool {
     ch.is_ascii_alphanumeric() || matches!(ch, '_' | ':' | '-' | '.')
 }
 
@@ -315,8 +315,8 @@ fn next_tag(input: &str, cursor: usize) -> Result<Option<Tag<'_>>> {
         ("<!--", "-->", TagKind::Comment),
         ("<?", "?>", TagKind::Instruction),
     ] {
-        if rest.starts_with(prefix) {
-            let close = rest[prefix.len()..]
+        if let Some(stripped) = rest.strip_prefix(prefix) {
+            let close = stripped
                 .find(suffix)
                 .ok_or_else(|| invalid("unterminated document comment or instruction"))?;
             return Ok(Some(Tag {
@@ -356,13 +356,14 @@ fn next_tag(input: &str, cursor: usize) -> Result<Option<Tag<'_>>> {
             end,
         }));
     }
-    let (raw, kind) = if let Some(raw) = raw.strip_prefix('/') {
-        (raw.trim_end(), TagKind::Close)
-    } else if let Some(raw) = raw.strip_suffix('/') {
-        (raw.trim_end(), TagKind::Empty)
-    } else {
-        (raw, TagKind::Open)
-    };
+    let (raw, kind) = raw.strip_prefix('/').map_or_else(
+        || {
+            raw.strip_suffix('/').map_or((raw, TagKind::Open), |value| {
+                (value.trim_end(), TagKind::Empty)
+            })
+        },
+        |value| (value.trim_end(), TagKind::Close),
+    );
     let split = raw
         .find(|ch: char| !name_character(ch))
         .unwrap_or(raw.len());
