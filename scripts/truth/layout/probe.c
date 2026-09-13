@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
         puts("aggregate bounded"); return 0;
     }
     CHECK(!strcmp(argv[1], "isolation"));
+    CHECK(getpid() == 2);
     CHECK(getenv("SYNTHETIC_SENTINEL") == NULL);
     CHECK(getenv("LD_PRELOAD") == NULL);
     CHECK(fcntl(99, F_GETFD) == -1 && errno == EBADF);

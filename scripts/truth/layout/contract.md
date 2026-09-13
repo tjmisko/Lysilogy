@@ -45,7 +45,27 @@ numbers, equation numbers and approximate image similarity cannot admit truth.
 Any positive result still requires a separately reviewed source-layout codec,
 complete per-kind inventory and original-PDF/source evidence.
 
-Current implementation checkpoint: policy and synthetic process confinement
-only. Runtime pinning, archive materialization, production engine commands,
-selection, raster correspondence and the ten-paper experiment are not yet
-complete or cleared for deposited-source execution.
+The trusted runtime inventory binds every installed TeX tree entry plus the
+exact engine, format, configuration, font map, renderer and dynamic libraries.
+Symlinks in the trusted tree are inventoried without reading their unmounted
+outside targets. Source archives instead require only bounded regular members.
+Materialization preserves the exact original bytes. An ambiguous source root
+remains a failure; no source rewriting or engine fallback repairs it.
+
+The original safe basename remains the TeX job name, preserving bibliography
+lookup. One extra pre-created file, `pdflatex2.fls`, supports the fixed PID2
+engine's recorder startup. Both final and busy recorder/SyncTeX artifacts remain
+bounded. Missing font maps must not silently cause a bitmap-font substitution:
+the installed system PDFTeX map is explicitly pinned. Raster bytes are captured
+through bounded stdout because the renderer removes path outputs before writing.
+
+Whole-document comparison refuses changed page counts before a renderer can
+clamp an out-of-range page. Every required page is compared at both resolutions;
+malformed or unavailable rasters remain failures with retained receipts. The
+batch keeps every selected failure/unstarted paper and a 15-minute process
+deadline. Source-layout semantic claims and K1 publication are always false.
+
+Current checkpoint: runtime/input/selection/renderer and batch primitives exist,
+but the final pinned execution launcher, complete synthetic fidelity/adversarial
+review and actual ten-paper experiment are not yet complete. Deposited-source
+execution remains withheld. Synthetic results prove only the tested capability.

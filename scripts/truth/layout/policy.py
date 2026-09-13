@@ -8,6 +8,7 @@ import platform
 import stat
 import struct
 import math
+import re
 
 
 class Refused(ValueError):
@@ -56,6 +57,8 @@ def regular_path(path, directory=False):
     """Reject symlinks in every component before inspecting any file contents."""
     path = Path(path).absolute()
     for component in reversed((path, *path.parents)):
+        if component.name in (".env", ".secrets") or component.name.startswith(".env."):
+            raise Refused("private filename in input or output path")
         mode = component.lstat().st_mode
         if stat.S_ISLNK(mode):
             raise Refused("symlink in input or output path")
@@ -130,11 +133,27 @@ def fixed_environment(epoch):
         "TEXMFDBS": "/runtime/texmf", "TEXMFHOME": "/unmounted",
         "TEXMFVAR": "/unmounted", "TEXMFCONFIG": "/unmounted",
         "TEXINPUTS": "/input//:/runtime/texmf/tex//",
+        "TEXFONTMAPS": "/runtime/maps:/runtime/texmf/fonts/map//",
         "TEXFORMATS": "/runtime/format", "TEXMFOUTPUT": "/output",
-        "TEXMFLOG": "/output", "TEXMFTEMP": "/unmounted",
+        "TEXMFTEMP": "/unmounted",
         "openin_any": "p", "openout_any": "p", "shell_escape": "0",
         "MKTEXFMT": "0", "MKTEXTEX": "0", "MKTEXPK": "0", "MKTEXTFM": "0",
     }
+
+
+def job_name(main):
+    safe_relative(main)
+    if not main.endswith(".tex") or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", PurePosixPath(main).stem):
+        raise Refused("unsupported literal TeX job name")
+    return PurePosixPath(main).stem
+
+
+def output_names(main):
+    job = job_name(main)
+    # This fixed bubblewrap topology has reaper PID1 and engine PID2. pdfTeX
+    # opens its recorder before processing -jobname. No general filename slot
+    # or writable directory is introduced; another topology simply fails.
+    return tuple(job + name.removeprefix("layout") for name in OUTPUT_NAMES) + ("pdflatex2.fls",)
 
 
 def engine_command(main):
@@ -144,4 +163,4 @@ def engine_command(main):
     return ["/runtime/bin/pdftex", "-progname=pdflatex", "-fmt=/runtime/format/pdflatex.fmt",
             "-no-shell-escape", "-no-parse-first-line", "-interaction=nonstopmode",
             "-halt-on-error", "-file-line-error", "-recorder", "-synctex=1",
-            "-jobname=layout", "-output-directory=/output", "/input/" + main]
+            "-jobname=" + job_name(main), "-output-directory=/output", "/input/" + main]

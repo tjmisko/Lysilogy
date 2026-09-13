@@ -76,11 +76,14 @@ class PolicyTests(unittest.TestCase):
         self.assertNotIn("synthetic", env["TEXINPUTS"])
         self.assertEqual(env["MKTEXFMT"], "0")
 
-    def should_preserve_a_literal_main_path_when_source_names_are_not_commands(self):
-        command = engine_command("paper/$(touch sentinel).tex")
-        self.assertEqual(command[-1], "/input/paper/$(touch sentinel).tex")
+    def should_preserve_the_original_job_name_when_constructing_a_fixed_engine_command(self):
+        command = engine_command("paper/original-name.tex")
+        self.assertEqual(command[-1], "/input/paper/original-name.tex")
+        self.assertIn("-jobname=original-name", command)
         self.assertIn("-no-shell-escape", command)
         self.assertIn("-no-parse-first-line", command)
+        with self.assertRaises(Refused):
+            engine_command("paper/$(touch sentinel).tex")
 
     def should_reject_stale_outputs_and_links_when_preparing_a_run(self):
         with tempfile.TemporaryDirectory() as temporary:
