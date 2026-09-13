@@ -3748,3 +3748,47 @@ date, last merged issue, in-flight branches and their state, next action, and op
   all5 gates/24of30objectives, production10k scale, all phase exits and final system report
   remain outstanding. Continue useful offline work while the approved host profile awaits an
   effective restart; never re-request the four-host approval or touch the user's vault/private paths.
+
+### 2026-09-13 20:45 UTC — new worktrees active; 7,000 native indexes verified
+
+- Last merged issue remains #105 / PR108 (`7ef8fda`), Phase A / Wave A2. Main docs3b44b1e
+  pushed; #97 issue body now also records the merged three-paper release, current full1000
+  diagnostics and open #106/#107. All other phase/system acceptance work remains outstanding.
+- **#106** owner finish_benchmark created `.worktrees/fix/e1.1-expanded-k1-regions`, branch
+  `fix/e1.1-expanded-k1-regions`, from3b44b1e. Clean before run is ACTIVE in retainedTTY79471:
+  `~/.cache/lysilogy/expanded-k1-regions/before-3b44b1e/`. It builds its own Cargo-selected CLI,
+  measures/freeze v1 then v2, and runs objects --check only with v2 active, avoiding a false
+  ratchet across cohorts. Native queue is paused. Owner will hand the heavy window directly
+  to #107 after terminal completion and notify root. No source changes/PR yet at checkpoint.
+- **#107** owner finish_corpus_proxy created `.worktrees/fix/e8.3-duplicate-labels`, branch
+  `fix/e8.3-duplicate-labels`, also3b44b1e. Read-only fixture/source analysis precedes its own
+  baseline CLI build + objects check; wait for #106's direct window handoff. No source edits
+  or PR yet. review_ready_prs remains the separate reviewer for both implementations; it is
+  doing a bounded manual2001 geometry reconciliation while waiting. Do not begin additional
+  heavy work or duplicate existing implementers.
+- Batch23 complete250/250435.891851s; root audit `native-index-after-batch23-review.json`
+  SHA99490ae316b91f394a5a38145842d834e3dafd0993316387485ab2205b52ccf4.
+  Batch24 complete250/250405.053456s; receiptbc086905d18a15e8fc53322bc089554b67bf74eb99994afa4669ea65c5febb1e,
+  audit `native-index-after-batch24-review.json` SHA
+  1fc2f379d2fdd9dbfba2bb4f2054e95041e3750676ea33459a2e71b8a801faec. Counts **7,000unique,
+  1,000eval,6,049scale**;3,951scale indexes remain. QueueTTY10988 exited0, PAUSED BEFORE25.
+  `scale-index-queue/PAUSE` currently requests #106 then #107 clean baseline windows. Remove
+  this specific completed pause request only after both windows finish; then use the same
+  pinned queue with `--start 25 --check`, followed by retainedTTY `--start 25`. Continue to
+  audit each250max batch/fail closed/20GiBfloor. No downloads; no production10k acceptance.
+- Root completed2310 geometry mechanical review after adapting the reader to the original
+  independent schema's `occurrence_id` and separately stored note page/rectangle. No labels
+  changed in those reader fixes. Exact additivev2 replay, all35 original body-box pairs,
+  all22 independent printed-number tokens/derived geometry and TableIII full grid+note region
+  now verified. Receipt `k1-coverage/manual-tranche-v1/reconciliation/2310.04162/geometry-independent-review-v1/root-review-v2.json`
+  SHA2fef43be2cc54fe78a97912edc73e22e7d2210fdeb1b88fc3cd32aa5df8e56a5. It pins the retained
+  root-review.py; do not rerun its exclusive output tail. Root re-viewed originalpages3/7,
+  with other pages covered by its earlier full inspection and the current separate review.
+  Native-derived number proposals do not claim missing prior hand-drawn rectangles; future
+  codec support and paper/release checks remain, so no new truth/metric admission yet.
+- #25 draftPR94/201c53c, #33 tree905c341, #71 draftPR93/d5e12aa and #72 draftPR95/c867ec6
+  retain the exact holds in the preceding entry. Four-host approval persists; effective
+  profile application/restart is still pending, not a new approval question. Main preview
+  hashes remain protected, and no vault/private paths were touched. Scorecard remains
+ 1/5 available/pass gates,3/30 at-target objectives O1/O2/O30 on limited truth; #97's~500
+  target, final Playwright/all5gates/24of30objectives/production10k and system report remain.
