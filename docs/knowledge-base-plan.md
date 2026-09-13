@@ -1161,6 +1161,12 @@ initial 25-paper pilot found useful complete figure/table inventories alongside 
 and bibliography forms; it does not lower any gate, objective or the approximately 500-paper
 target. See [the K1 cohort contract](../eval/latex-contract.md). Figure/caption alignment supplies
 no full-region O2 labels; O2 region evidence and the three-agent O11 panel remain independent.
+Before any panel votes or detector ranks are inspected, O11 arithmetic is fixed as mean top-three
+set overlap divided by three against each of three panelists over every frozen paper (denominator
+nine per paper). Only the first three model ranking positions count; duplicates, invalid IDs,
+missing choices and missing paper results keep their denominator and are not backfilled from
+positions four/five. Malformed rankings fail validation. Panel votes require three distinct valid
+source IDs; display-only consensus ordering cannot change this score or its 0.70 target.
 
 Acceptance: truth covers every E1 object kind; alignment quality is reported per paper; the suite
 runs offline from the corpus cache.

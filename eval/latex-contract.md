@@ -45,3 +45,12 @@ any detector evaluation. The reproducible seeded order alternates categories, th
 each category. Exploratory partial inputs remain external; they cannot be relabeled as final K1.
 The complete build must retain the approximately 500-paper target, every E1 kind, documented
 category/year coverage, omitted cohorts and reasons, and independent panel/region evidence.
+
+O11 scoring is frozen before any detector ranking or panel vote inspection: average
+`|model_top3 ∩ panelist_top3| / 3` across all three independent panelists and every frozen paper.
+The denominator is nine opportunities per paper. Each panel vote has exactly three distinct valid
+source IDs. E1.7 may produce three to five ordered choices; only its first three ranked positions
+count. Duplicate/invalid IDs and missing positions receive no extra credit and are never backfilled
+from rank four or five. A missing model result contributes zero with its full denominator.
+Malformed or ambiguous rankings fail the collector. A consensus rank may be shown for display,
+but it is not used to score O11. The target remains at least 0.70.
