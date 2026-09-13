@@ -63,7 +63,7 @@ The retained [receipt](../../eval/evidence/corpus-availability.json) includes ex
 full isolated test outputs, command results, scorecard observations and original live failure
 provenance. G5 and O30 remain the available passing gate/objective for this change; K0-dependent
 metrics remain unavailable until the corpus and their collectors are complete. No gate or
-objective target changed, and no additional follow-up was opened for this repair.
+objective target changed, and the source endpoint failure is tracked separately in follow-up #91.
 
 ## Live verification
 
@@ -77,11 +77,12 @@ bytes. The new selection hash is
 The timing/RSS describe recovery, which reuses metadata and cached inventories; they are not a
 controlled performance comparison with the original harvest. Model cost remained $0.
 
-The bounded eval download admitted PDF `0812.5080v5`, then exited with code 1 because the source
+The bounded eval download took 4.00 seconds (peak RSS 240,944 KiB), admitted PDF `0812.5080v5`,
+then exited with code 1 because the source
 `e-print` endpoint returns HTTP 301. The existing redirect refusal remained effective. A separate
 parent-owned no-follow probe confirmed the same approved host's canonical `/src/0812.5080v5`
 endpoint returns a 21,993-byte gzip source (HTTP 200, 0.45 seconds); those probe bytes were not
-admitted as a corpus source. A narrowly scoped source-endpoint follow-up is required before full
+admitted as a corpus source. Source-endpoint follow-up [#91](https://github.com/tjmisko/Lysilogy/issues/91) is required before full
 resume. There is now one admitted PDF, so `recover-selection` must never be run again on this
 corpus. Continue with ordinary download resume after the endpoint fix.
 
