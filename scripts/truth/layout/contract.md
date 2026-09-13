@@ -74,6 +74,9 @@ verifies the exact launch and independent review, and compiles verified module
 bytes directly. Adjacent bytecode cannot substitute for those sources. Every
 sandbox invocation rechecks the reviewed confinement tool identities. Each build,
 page-count query and render also receives the absolute batch deadline.
+Sandbox setup consumes that deadline too. The controller checks immediately
+before process creation and recomputes the wait budget afterward; expiration
+during setup prevents a launch, and expiration during creation triggers cleanup.
 
 Current checkpoint: complete source and synthetic tests are prepared, with final
 independent review and actual ten-paper experiment pending. Deposited-source

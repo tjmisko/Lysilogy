@@ -4,6 +4,7 @@ No deposited source is run on import. A caller must prepare and independently
 review the exact runtime, source selection and command before a live experiment.
 """
 import json
+import math
 import os
 from pathlib import Path
 import resource
@@ -117,7 +118,7 @@ def sandbox_command(tools, readonly, output, names, command, environment, filter
     return argv
 
 
-def run_sandbox(*, run_dir, readonly, output, names, command, environment, limits=Limits(), expected_tools=None):
+def run_sandbox(*, run_dir, readonly, output, names, command, environment, limits=Limits(), expected_tools=None, deadline=None):
     """One bounded invocation; interruption kills the complete namespace job.
 
     All writable mounts name pre-existing regular inodes. Their parent mount,
@@ -127,6 +128,10 @@ def run_sandbox(*, run_dir, readonly, output, names, command, environment, limit
     ioctl reflinks, io_uring, process creation, or a socket to evade this bound.
     """
     limits.validate()
+    started = time.monotonic()
+    if deadline is not None and (type(deadline) not in (int, float) or not math.isfinite(deadline)):
+        raise Refused("invalid absolute process deadline")
+    cutoff = min(started + limits.wall_seconds, deadline) if deadline is not None else started + limits.wall_seconds
     tools = check_tools()
     if expected_tools is not None and tools != expected_tools:
         raise Refused("confinement tool identity changed since snapshot review")
@@ -159,6 +164,7 @@ def run_sandbox(*, run_dir, readonly, output, names, command, environment, limit
         raise Refused("unexpected seccomp program")
     record = {"schema_version": 1, "tools": tools, "filter": binding(filter_path),
               "command": command, "environment": environment, "limits": vars(limits),
+              "deadline_monotonic": cutoff,
               "writable_file_count": len(names) + 2,
               "aggregate_output_byte_bound": (len(names) + 2) * limits.file_bytes,
               "network_calls": 0, "model_calls": 0, "external_cost_usd": 0,
@@ -166,7 +172,6 @@ def run_sandbox(*, run_dir, readonly, output, names, command, environment, limit
     with (run_dir / "before.json").open("x") as stream:
         json.dump(record, stream, sort_keys=True, indent=2)
     process = None
-    started = time.monotonic()
     previous_signals = {}
 
     def interrupted(signum, _frame):
@@ -185,16 +190,25 @@ def run_sandbox(*, run_dir, readonly, output, names, command, environment, limit
         with filter_path.open("rb") as filt, (run_dir / "stdout.log").open("xb") as out, (run_dir / "stderr.log").open("xb") as err:
             argv = sandbox_command(tools, readonly, output, names, command, environment, filt.fileno())
             record["argv"] = argv
-            process = subprocess.Popen(argv, env={"PATH": "/usr/bin"}, stdin=subprocess.DEVNULL,
-                                       stdout=out, stderr=err, close_fds=True,
-                                       pass_fds=(filt.fileno(),), start_new_session=True,
-                                       preexec_fn=resource_limits)
-            record["pid"] = process.pid
-            try:
-                record["exit_code"] = process.wait(timeout=limits.wall_seconds)
-                record["status"] = "passed" if process.returncode == 0 else "process_failed"
-            except subprocess.TimeoutExpired:
+            # Tool verification, tree walks and mount construction consume the
+            # same deadline as execution. Never launch using a stale duration.
+            if time.monotonic() >= cutoff:
                 record["status"] = "wall_timeout"
+            else:
+                process = subprocess.Popen(argv, env={"PATH": "/usr/bin"}, stdin=subprocess.DEVNULL,
+                                           stdout=out, stderr=err, close_fds=True,
+                                           pass_fds=(filt.fileno(),), start_new_session=True,
+                                           preexec_fn=resource_limits)
+                record["pid"] = process.pid
+                remaining = cutoff - time.monotonic()
+                if remaining <= 0:
+                    record["status"] = "wall_timeout"
+                else:
+                    try:
+                        record["exit_code"] = process.wait(timeout=remaining)
+                        record["status"] = "passed" if process.returncode == 0 else "process_failed"
+                    except subprocess.TimeoutExpired:
+                        record["status"] = "wall_timeout"
     except BaseException as error:
         record["status"] = "interrupted" if isinstance(error, (KeyboardInterrupt, SystemExit, InterruptedError)) else "failed"
         record["error"] = type(error).__name__ + ": " + str(error)
