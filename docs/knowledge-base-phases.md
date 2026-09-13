@@ -203,6 +203,11 @@ acceptance are unchanged.
   Branch `feat/e8.3-k1-coverage`. Owns evaluation-only source support, independent annotation
   tooling and expanded truth/evidence. Retain the approximately 500-paper target; compare the
   limited initial release with expanded strata without changing truth quality or score targets.
+- [ ] **#105 Publish reviewed manual K1 cohorts with immutable replay** (bounded part of #97;
+  after #70). Uses the in-flight `feat/e8.3-k1-coverage` branch; owns the explicit manual-tranche
+  validator, retained versioned verifier, object collector selection and limited release evidence.
+  Publish the two prior cohorts plus the independently completed new cohort, with fresh metrics
+  and separate review. Closing #105 does not close #97 or meet its approximately 500-paper target.
 - [x] **#98 Preserve readable pages after native coordinate failure** (after #19, #20).
   Branch `fix/e0-reading-index-page-failure`. Owns `src/layout.rs`,
   `src/source_index/native.rs`, focused orchestration/tests and report. Keep the anchored layout
@@ -3512,3 +3517,107 @@ date, last merged issue, in-flight branches and their state, next action, and op
   independently completed improvement. Continue batch21 afterward. On effective host restart,
   prioritize#33/#71→#72/#25, then earliest-readyA3. Alllaterphases/Playwright/systemgates,
   24/30objectives,production10kscenario/finalreport still outstanding.
+
+### 2026-09-13 19:54 UTC — #105 bounded release reviewed; #97 stays open
+
+- PhaseA/WaveA2; last implementation merge still#101/PR104/a54de426. Main before this log
+  a6799e3. No implementation PR merged this interval. #105 created and added to project12:
+  reviewed manual-cohort validator, immutable versioned replay and fresh limited-cohort metrics.
+  The existing feat/e8.3-k1-coverage branch now targets Closes#105. #97 acceptance explicitly
+  requires approximately500papers and stays OPEN. This corrects the earlier loose suggestion
+  to close#97 after a small release: its coverage requirement is not a scored objective.
+- In-flight branches: #105/#97 tree909c9c1, noPR yet, preview/config review underway;
+  #25 draftPR94/201c53c source clear, held for K2/fullO9; #33 tree905c341 noPR and missing Rust
+  crates, preserve preexisting dirty.gitignore/target notes; #71 draftPR93/d5e12aa and
+  #72 draftPR95/c867ec6 await live deposited truth. All four approved host grants still require
+  effective profile application/restart; exact script and read-only backup failure are in prior
+  entry. No renewed approval is needed. No user confirmation of script execution has arrived.
+- Current automatic run COMPLETE at unchanged542da50, same original1000/original999successmap:
+  **612parsed,388failed,1rawaccepted,0bibliography eligible**. Only O5/O6 empty cohorts eligible.
+  Wall1032.039396s/453392KiB,zero externalcalls/$0. Report
+  `~/.cache/lysilogy/k1-full-alignment-542da50/report.json` SHA
+  8d594362f94a85e4283af239a7869b3ccaafdde1dc90a0c11c812fcea3108162;
+  papers.jsonl SHA6a96449b8d63659f14b57d8725d9f352a43e6bc44113c5cdb3d4428031cd4ce3.
+  Root independent aggregate `root-review.json` SHA
+  e5f7a228c8912fe42bbc2c848f2592962093c1ec15c638eea00e3558326205e2 rehashed all612canonical
+  candidates/inventories121450396B,13committed snapshot modules, all counts/exclusions/links,
+  input/PaperId/source/PDF/index identities and unchanged six current derivation modules.
+  Owner auditf4867a8226071348b3d141b74132b051cda1b04cf292ca36526c956ba49fa051 retained.
+- Sole candidate2007.05954v1/a262768158c83162 now has independently defensible **negative-only
+  O5/O6**, no positive automatic metric cohort. Separate reviewer read all18originalpages and
+  full40820B active source before candidate; procedural list/manualbib/incompletevisual/math
+  exclusions remain. `~/.cache/lysilogy/review-empty-formal-2007.05954-542da50/review.json`
+  SHA2a5c4686336b5862f792a58496a8e4e18fb15d484416ec44073e74a7e042b0ca.
+  Root rehashed44bindings, reproduced exact active archive member and native allowlist, inspected
+  originalpages3/13 and accepted this narrow reading in `k1-full-alignment-542da50/root-negative-disposition.json`
+  SHA3b76c5b8df85207448627d937dddc7a7a5a246bca60063283aeba150c6a09ad5.
+  **1defensible candidate,0positive automatic admissions,0published automatic papers.** Manualv2
+  remains3papers. Historical4ada537 broader raw acceptance remains invalid; no report rewritten.
+- Manual codec fixes1b41313 independently clear,235tests; review
+  `~/.cache/lysilogy/review-tranche-independent-1b41313/review.json` SHA
+  43befe13e06e4290cdc0e8d52b21e9336d0244933286a5ea923a61dcaf379b3f.
+  Corrected actual first assembly receipt `manual-tranche-v1/reconciliation/2210.11141/actual-assembly-1b41313/receipt.json`
+  SHA2c3ad26eb95ad6d3153ed6da57536d368a8156665eb7a082a6e30c382b8c19bf;
+  candidatea54f3d36c1c10a9e9017fd6c5e905846cbf30e3bfb8a216223a174e4b1797215,
+  .3102s/72464KiB,8visual4math20distinctrefs. Automatic dependencies unchanged, continuityreceipt
+  e19c7822271280740ee8bd8ad5443ed84a1cec58125a0cfe3f98b2c8487f05e6.
+- Versioned verifier/collector source db50312 then fix8987d13 independently clear at909c9c1:
+  `~/.cache/lysilogy/review-versioned-8987d13/review.json` SHA
+  d4d8f4b9f809177a94c25c9d71c1889e7999ea12ac08cd256071cceeba63e19f.
+  12verifier/35collector tests and substitution/isolation probes pass. One active
+  figure-table.json metric owner; old/new inputs and observations freeze byte-identically
+  outside active glob under object-metrics-history/<hash>. V1 default remains. V2 retains14fixed
+  application modules, not mutable current-source-only replay; original12-modulev1 bundle unchanged.
+- Concrete UNPUBLISHED v2 config `eval/truth/k1-limited-v2-build.json` SHA
+  5b231d66b5882cdea10d1b90b349093b804b536fa6367b6e37a11371d6281f1a committed909c9c1.
+  Preview `~/.cache/lysilogy/k1-coverage/release-v2-review-909c9c1/` receipt
+  f8ce95daf5aeaaa5ba0705c8dc0c9356707bb71196943cdc418c8c9ace71d0d7; objects.json.preview
+  SHA56e4b1f6fa7002169c82aba26fb69a40a948197a21b3331e0a2d0d9e1f8a3202,138405B;
+  bibliography.json.preview59591f3df988ff2376ae51f77928be28ba9908b21c63b426fb8e9313018d4e9d,83165B;
+  manifest.preview.json fdd6d2c5e9ec5f03f6461b15fe01c92ab93151a68ed695a661183616379446ae.
+  Root pure rebuild/config/14git-pinnedmodule review CLEAR, `root-review.json` SHA
+  317c9567b925f5e04a683e48ca5a1422f916960ab1e0101d713ee3cc2b186f22. Exact outputbytes;
+  prior23objectlabels unchanged, allbibfields/bindings unchanged except correctly rehashed current
+  producer assembly receipt. Threepapers16fig7table5eq4stmt1proof2alg35bibentries. New2210has
+  O8–O11omitted. Separate finish_benchmark config/preview/pin review is running; owner
+  finish_corpus_proxy holds heavywindow for publication/pin/replay/freshcollector/finalgates afterward.
+- Seventh manual2303corrections now independently root-replayed, all under
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v1/`. Root full7originalpages viewed.
+  Initial mechanicalcomparison review `reconciliation/2303.07834/root-mechanical-comparison-review-v1.json`
+  SHA2df8a042fb7e515aebe4bad4ece3a4f5910356de0adb88143affb485d3f62d4f;
+  comparison60ca7886c24f5258c0f7c3fc12c20e94f1e29ffb9fc8276f3ff8f4327d1a2c91.
+  Primarycorrection-v2SHA7fb9375862175c4e88949c124da06eb222cd040c887146f1834202f6e16c2181,
+  receipt5d63d4b15b8cf78012a75cc5fe4b2bf1b16f5208e7ac2042ba5bab14c8788779;
+  independentmembership-correction-v1SHAe0cc0313a5c577a3c61f39b1919c80eda65c2f8175725f55f2ffc4680764c68a,
+  receipt14ce2f37e86004cc4bd7cca50960f65f00c1211f07dab65635049b7cf0b38303.
+  Root `root-corrections-review-v1.json` SHA828de5e94f57f15988ec9c76f97344a1cd504021ddd2046c5659b28edc1d889d:
+  14exactoperations each; strict615/263source,715/648native,9798primarytokens. Eq2/Eq8/Claim1/2
+  corrections now agree; two proof overbars, full/ancillaryQED and missingAppendixpointer restored.
+  Five qbody extents adjusted, originalpgeometry unchanged. Originals/roles/sources/parents/
+  bibliography/citations/77macrorefs unchanged. Eight prior literal groups andnewAppendix agree;
+  remaining contextual candidates stay explicit.
+  Root `root-chain-segmentation-review-v1.json` SHA9ff049228b646b1eaaa0e0698737da3bcf0277bd4a6ac5b0ff403ed1948e8e21
+  keeps the two separately unnumbered equality steps before15/18 (61units), with wrapped
+  continuations grouped by expression. Numbered denominator26unchanged. Full/direct/QED
+  conventions, unheadedproof roles, finalgeometry and completeformalcodec still pending.
+  Other six manual-paper statuses remain as prior entries; none newly admitted by these reviews.
+- Scale batch21 COMPLETE378.031379s/216720KiB,250/250; output
+  e5115f026499e7aa59afc53a83d7af1bf27f177613e3665a409b12e374061eec.
+  Rootaudit `~/.cache/lysilogy/native-index-after-batch21-review.json` SHA
+  da16dd70221bdf40890afeb6606a3da5b4dd8ddb66e6300fb369ebd1267b52a1,764588032B rehashed.
+  Now6250unique/1000eval/5299scale,49overlap. **No indexing or downloads running.** No heavy
+  process at checkpoint; owner#105 has next window. Serial queue PREPARED NOT STARTED:
+  `~/.cache/lysilogy/run-remaining-scale-indexes.py` SHA
+  0cdcc62d36899022b39010ab4ab285c7d8d4318294c2148e3dc40059e4d27583.
+  After#105gates/collector, use `--start 22 --check`, then retainedTTY `--start 22`. Runs one
+  reviewed250maxbatch then independent audit; stops on failure/freefloor or queue/PAUSE at a
+  batch boundary. Retains exclusive logs/receipts.4701scaleindexes remain. This is preparation,
+  not production O25/O27 or system10kacceptance.
+- Scorecard unchanged at checkpoint: main historical1/5gates,3/30O1/O2/O30; #105 currentbranch
+  precollector1/5,1/30O30. Targets/hardgates unchanged. New followup/bounded issue#105 only;
+  #97coverage/#103titles remainopen. Next complete#105separatepublicationreview→publish exact
+  bytes/pins→replaybothversions→freshcollector→allgates→draftPR/separatereview→ordinarymain
+  merge/update docs. Then resume indexqueue and#97coverage. After effectivehostrestart prioritize
+  #33/#71→#72/#25 beforeA3. All phase exits, remainingphases, actualPlaywrightE2E/all5gates/
+  24of30objectives/production10k/finalsystemreport remain outstanding. Preserve all10preview
+  hashes and unrelatedworktrees; no rebase/sudo/rm-rf/privatepaths/modelbatches.
