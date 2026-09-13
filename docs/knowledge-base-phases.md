@@ -4092,3 +4092,69 @@ date, last merged issue, in-flight branches and their state, next action, and op
   is still blocked. Do not ask permission again. User-terminal script remains
   ~/.config/lysilogy/apply-codex-kb-network-permissions.py, then Codex restart; no automatic
   profile edit can succeed on current read-only ~/.codex mount. All phase/system exits remain.
+
+
+### 2026-09-13 23:12 UTC — corrected duplicate comparison complete; mask and layout checks continue
+
+- Last merged issue remains #106/PR112 at e1fe6a38925c90de5189462ead96725439d69f73.
+  Remote completed-branch deletion and main docs push fa841d4 both succeeded. Phase A/Wave A2;
+  scorecard1/5 gates available/pass and3/30 objectives at target (O1/O2/O30). No phase exit,
+  system acceptance or new truth publication. All10 unrelated preview hashes remain unchanged.
+- #107 corrected source05d33352da50af754ff76765ba64746bb5215f84 is independently clear,
+  review3d2c3c767385876abdc78644a5866003f77c573269939c075e1828239197feae. It treats raw
+  ^^ notation before comment/definition masking as unknown lexical semantics; exact markers
+  remain evidence and affected automatic/manual truth is withheld. Direct-source snapshot
+  `duplicate-labels/comparison-05d3335-source-loader-v1/launch.json` SHA
+  e41103ace2e7e723ce08e01b5763c382363b9e759e9924d9d78aa21f71be15a3; independent runner review
+  f19f33b17255f2142af509c6502d112f5969ad19a0c2dd8d00182a9ae768f521. Corrected first7 passed,
+  receipt916617ebac2cc2dc1aac9cd57ff90a1711c8559a0abbfed76e6b3771f4799ecc; independent
+  first7 review4dbc2f3a47c41bafb341b90527b20790389a424a598da54596cc6253d6f81ef2.
+- Corrected702 TTY2552 completed exit0,870.997910s,315696KiB,$0/no external calls. All90 prior
+  duplicate failures recover and all612 prior successes remain;702 source parses/assemblies,
+  zero raw accepted and zero eligible metrics. Receipt a77d28ff2c0a49181bbc31d12cbd34f4ce88d56637d1add6a93ffff58f0132f9;
+  reportcd8b553701b769ff1318d28f3d236c76d5385b425d912328835a00434b376970; ledger
+  4dc2517e867846197d1a580f19701446bba48e0fc913bc65d2d5b145c6730a9e. Historical f24 generation
+  remains immutable. Comparison951f05dd5163d9597b8a8f93fdadc2511ec58cf940cd531a2bbb08178a87fc0d
+  confirms all702 object/link/entry occurrence inventories unchanged,27 corrected target arguments
+  across10 papers,88 papers with lexical evidence and one eligibility loss:2007.05954 has five raw
+  ^^ markers in svjour3.cls, so its prior O5/O6 negatives are withheld. Do not relax the guard.
+  Main ordinary integration405c6a3d050219338376c7fee8fa6b2c20f3db4c passed276 latex/35 collector
+  tests. Closure045e80cd9e283ca7fb154ad711dc465cfbcac3c3481ff82ab36b900e7aab5d0b:14 derivation
+  modules unchanged,79 production/collector/Cargo files equal main,37 frozen-release files exact.
+  Owner finish_corpus_proxy prepares final review/report/draft; full gates await another window.
+- #111 branch `fix/e1.1-mask-regions`, owner finish_benchmark, clean own baseline fa841d4 passed,
+  receipt134f8526cf8dffd3784cbc78ec7f191e400c9960c857c66dc02a77fe37d59e01. First source
+  cd360fb311b1a020643ebbdf05e696c1caac4ebc, follow-up3f2599288acfe7ae3bc0ef951ecc2ca10ee318de.
+  Independent packet12 cases/31 variants remains frozen, SHA
+  deeef753e886092f54d841cc2e746387085d5c8351daf15ceea24d5bb0cde892. Native index/truth/scoring
+  unchanged. Reviewer found the new embedded masks.js missing from collector implementation-file
+  inventory; owner must fix and test. Formatting/37 Python tests pass; compiled validation,
+  /dev/stdin compatibility and reviewer binary replay pending. #111 now owns the sole heavy window;
+  no changed-truth measurement authorized until source/compiled review clears. Continuation
+  `mask-regions/resume-3f25992.json` SHA5e8c3bb9e6c78013d85de86398d10917935f9a37f4e5cbbda13f00173af56e99.
+- #110 root branch `feat/e8.3-source-layout-probe`: f7e9544 primitives independently clear,
+ 35 tests, all72 runtime files/19168 entries and30 frozen selected inputs verified. Review
+  `review-layout-primitives-f7e9544/review.json` SHA
+  bb77e338d13238739ae38e3a68a356b648bd37ed5f83cda2c5372ef39fc4baae. Runtime-v2 inventory
+  fd2fa9e27a350cb97aed83b7eb17b59274b35ec24f488cb4e3bb180419ad2a3a adds the exact installed
+  font map. Synthetic-v4 generated document builds and repeat-renders exactly at96/192,
+  .867170224s, receipt28cdd1ed243434e804fcdf7c1db43ad13de51f9c1c7af562e249a15b1422cf01.
+  Its3 earlier module bytes differ from committed f7 and no exact copies exist: retain it as
+  historical capability evidence, never exact current-source execution evidence.
+- New #110 committed delta255e2c6a4054d4e08cfd9a8ad6885dea81bc34a1 adds source-only frozen
+  execution with exact independent-review binding, Python/bwrap/unshare pins, per-process
+  absolute batch deadline, population/deadline/changed-tool tests and generated TeX engine,
+  format, shell, path, infinite-compilation and mathematical-fidelity cases. Tiny tests passed
+  (4batch/5loader/12policy/6experiment). New actual TeX suite remains unrun while111 compiles.
+  Review requested; final snapshot must copy committed bytes. Nextroot: prepare pinned synthetic
+  evidence, run after window release, address review, ordinary main merge/full gates, freeze/review
+  selection+runner and bounded10 experiment. No deposited TeX/PDF build has executed. #110 may
+  finish as an honest exploratory no-go; #97 approximately500-paper K1 requirement remains open.
+- Native queue remains paused before26:7250unique/6299scale,3701scale indexes remain. No downloads.
+  Resume pinned --start26 only after allocated implementation windows. #109 remains queued after107.
+  #25/PR94, #33, #71/PR93 and #72/PR95 remain held on actual provider truth/dependencies. Allfour
+  hosts are permanently approved but current config grants remain absent/effectively blocked;
+  the managed ~/.codex mount is read-only even after approved escalation. User-terminal action is
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart Codex. Do not ask
+  approval again. Continue offline work. Root/finish_benchmark/finish_corpus_proxy are three
+  implementers; review_ready_prs is separate. Use followup_task to wake an idle reviewer.
