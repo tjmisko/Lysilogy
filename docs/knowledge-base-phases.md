@@ -129,7 +129,7 @@ pass.
   Touches `src/library.rs`, `src/store.rs`, `src/domain.rs`. `sha2` is already a dependency.
   Renames currently orphan `papers/<id>/` because `PaperId` hashes the relative path; notes are
   keyed separately by relative path in `Notes/`, so decide and document how notes follow a move.
-- [ ] **#63 E7.1 Provider cache and rate budgets**. Branch `feat/e7.1-provider-cache`.
+- [x] **#63 E7.1 Provider cache and rate budgets**. Branch `feat/e7.1-provider-cache`.
   Owns `src/citation_graph/cache.rs`, `budget.rs`; touches `http.rs`. Preserve the existing
   1.1-second spacing, `Retry-After` cooldown, and credential redaction behavior in
   `docs/citation-graph-sources.md`; the cache must never store credentials.
@@ -182,6 +182,18 @@ pass.
 
 ### Phase A notes
 
+- #63 merged in PR #78 (`2c21e77`) after independent review of the transport, credential
+  redaction, durable shared budgets, independent O30 observer, and atomic collector publication.
+  O30 meets target: 0 violations across 10,000 admissions, with 216 deferrals, 72 cooldowns, and
+  32 serialized state reloads. Final G5 passed 255 Rust, 49 Python, and 84 Node tests; formatting
+  and Clippy passed. Scorecard: 1/5 gates and 1/30 objectives. Report and retained evidence are in
+  `docs/experiment-reports/2026-09-12-provider-budgets.md` and `eval/evidence/`. Shared storage is
+  `~/.cache/lysilogy/providers`, independent of data roots, created only for explicit requests.
+  Defaults are seven-day cache expiry, 1.1-second spacing, and 50 requests per 60-second window;
+  fixed provider endpoints and credential redaction remain enforced. No live provider/model
+  calls were made. On fresh worktrees, run `python3 scripts/eval/provider-budgets.py` before
+  `eval scale --check` to regenerate its ignored input instead of reporting O30 unavailable.
+  Branch/worktree removed after merge; no objective miss or follow-up issue was needed.
 - #68 merged in PR #76 (`a04c0c0`) after independent re-review of committed-baseline history,
   real `should_*` Python discovery, frontend test coverage, and collector composition. Final
   quality gates and isolated G5 passed: 239 Rust, 45 Python, and 84 Node tests. G5 is the first
