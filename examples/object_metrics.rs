@@ -15,10 +15,10 @@ type Failure = Box<dyn std::error::Error>;
 struct Request {
     corpus_root: PathBuf,
     data_root: PathBuf,
-    papers: Vec<Paper>,
+    papers: Vec<FrozenInput>,
 }
 #[derive(Deserialize)]
-struct Paper {
+struct FrozenInput {
     paper_id: PaperId,
     relative_path: String,
     index_sha256: String,
