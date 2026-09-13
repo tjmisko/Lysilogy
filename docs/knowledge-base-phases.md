@@ -112,7 +112,7 @@ pass.
 
 ### Wave A1 (parallel, no blockers)
 
-- [ ] **#34 E2.2 KB domain types**. Branch `feat/e2.2-kb-types`.
+- [x] **#34 E2.2 KB domain types**. Branch `feat/e2.2-kb-types`.
   Owns `src/kb/mod.rs`, `src/kb/types.rs`, and the `pub mod kb;` line in `src/lib.rs`.
   Reuse or extend `citation_graph::Identifier` rather than duplicating identifier parsing. Merge
   this first: it is small and it creates the `src/kb/` module that A2 branches extend.
@@ -182,6 +182,16 @@ pass.
 
 ### Phase A notes
 
+- #34 merged first in PR #74 (`4ff924b`). `WorkId`/`PersonId` are validated opaque W/P tokens;
+  the store must allocate once and preserve allocations in canonical records. `AliasMap<I>` is a
+  cycle-safe projection with `merge(absorbed, surviving)`, `resolve`, and `links`; persistence and
+  replay remain #33/#39. Identifiers and alias maps serialize in sorted order. Authorship positions
+  are zero-based. Person identifiers are distinct from Work identifiers. Citation anchors explicitly
+  distinguish layout-token anchors from reading-index generation plus half-open UTF-16 ranges.
+- Workflow deviation: automatic approval review rejected rebasing twice despite this task's
+  instruction to rebase. Use a normal merge from current `origin/main` before rerunning gates;
+  this preserves history and was approved. Keep merge commits for PR integration. PR #74 passed
+  independent review at `b779118` and all quality gates (186 unit + 2 integration tests).
 - Main's working tree has uncommitted changes to `web/src/App.tsx`, `HomePage.tsx`,
   `PaperPreview.tsx`, `pdfPreview.ts`, and new `pdfPreviewCache.ts`/`pdfPreviewStorage.ts`. Those
   are unrelated and not on `main`; E0.4 (Phase B) will likely conflict with them once committed.
@@ -355,4 +365,43 @@ Long runs span sessions and context compactions. This file is the source of trut
 At the end of every session, or before a context compaction is likely, append one entry:
 date, last merged issue, in-flight branches and their state, next action, and open problems.
 
-_No entries yet._
+### 2026-09-12 — initial autonomous build orientation
+
+- Last merged issue: none from implementation; plan PR #66 was already merged as `d2dd6eb`.
+  Main and origin/main matched at orientation. No open PRs or prior session entries existed.
+- Current phase/wave: A/A1. Implementers are running in
+  `.worktrees/feat/e2.2-kb-types` (#34), `.worktrees/feat/e8.1-eval-harness` (#68), and
+  `.worktrees/feat/e8.2-arxiv-corpus` (#69). No implementation PR has opened yet. Merge #34 first.
+- Build resource settings: one Cargo build job per worktree, debug information disabled for dev
+  and test profiles, incremental compilation disabled. Targets stay in their worktrees on disk.
+- Background downloads: none. Creating `~/.cache/lysilogy/` and `~/Corpora/arxiv/` failed with
+  `Read-only file system` even after an approved sandbox escalation. Do not relocate the corpus
+  into the repository or `/tmp`. Writable access to the designated roots is required for corpus
+  and synthetic-scale measurements. The first OAI-PMH HTTP probe also encountered a sandbox
+  domain-allowlist block; the corpus implementer is testing an authorized escalation.
+- Next action: finish the three implementations, run independent PR reviews and quality gates,
+  merge #34 first, then continue A1 (#24, #19, #20, #63). E8.1 can use an unprivileged network
+  namespace for G5; `unshare --user --map-root-user --net true` succeeded.
+- Main's unrelated changes remain untouched, including `.gitignore`, `web/package.json`, the
+  PDF-preview files listed in Phase A notes, and the new PDF-preview test/smoke scripts. Existing
+  unrelated `/tmp/lysilogy-*` worktrees remain untouched.
+
+### 2026-09-12 — first foundation merged
+
+- Last merged issue: #34, PR #74, merge commit `4ff924b`. Independent reviewer found no unresolved
+  findings; all 188 tests, formatting, and Clippy passed after updating from main. Implementation
+  branch and worktree were removed, reclaiming its target directory.
+- Current phase/wave: A/A1. #68 (`feat/e8.1-eval-harness`) and #69
+  (`feat/e8.2-arxiv-corpus`) are still implementing/testing in their `.worktrees/feat/` paths;
+  neither has a PR yet. Next implementation is #24 (`feat/e1.1-paper-objects`), then #20/#63/#19
+  as capacity permits. Do not advance to A2 before A1 finishes.
+- Scorecard: not yet available; #68 is building the harness. No measured objective misses or
+  follow-up issues yet. No hard gate has been weakened.
+- Background downloads: none. Corpus/cache storage remains read-only after approved escalation;
+  OAI-PMH remains blocked by the domain allowlist after escalation. A pending user question requests
+  writable `/home/tjmisko/Corpora` and `/home/tjmisko/.cache/lysilogy` plus access to
+  `oaipmh.arxiv.org`, `export.arxiv.org`, and `storage.googleapis.com`. Offline implementations
+  continue. No credentials or sudo are needed for the implemented foundation.
+- Next action: independently review #68/#69 when ready, and implement the remaining A1 issues.
+  Use the documented normal-merge alternative to the rejected rebase. Preserve all unrelated
+  main-checkout changes; their SHA-256 fingerprints are in `/tmp/lysilogy-preview-before.json`.
