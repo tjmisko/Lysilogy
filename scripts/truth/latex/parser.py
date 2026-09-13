@@ -92,9 +92,9 @@ def equation_rows(node, text):
     return output
 
 
-def argument_commands(text, names):
-    at = 0
-    for match in COMMAND.finditer(text):
+def argument_commands(text, names, start=0, end=None):
+    at = start
+    for match in COMMAND.finditer(text, start, len(text) if end is None else end):
         if match.start() < at or match[1].rstrip("*") not in names:
             continue
         options = []
@@ -687,7 +687,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
     unsupported_kind_inventory = Counter()
     heading_ranks = {name: rank for rank, name in enumerate(('part', 'chapter', 'section', 'subsection', 'subsubsection', 'paragraph', 'subparagraph'))}
     heading_names = set(heading_ranks)
-    headings = list(argument_commands(scan, heading_names | {'textbf', 'textit', 'emph'}))
+    headings = list(argument_commands(scan, heading_names | {'textbf', 'textit', 'emph'},
+                                      document['content_start'], document['content_end']))
     formal_headings = [row for row in headings if row['command'].rstrip('*') in heading_names]
     formal_starts = [row['start'] for row in formal_headings]
     # Descendant headings belong to their enclosing section. Precompute the

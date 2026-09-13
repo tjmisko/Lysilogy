@@ -17,6 +17,16 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_keep_preamble_command_roles_separate_when_heading_names_are_formatting_parameters(self):
+        source = document(r'\section{References}Smith, A. A manually formatted reference. 2020.'
+                          r'\section{Appendix}Ordinary appendix text.',
+                          r'\titleformat{\section}[runin]{\normalfont\bfseries}{\relax\thesection.~}{0pt}{}[.]')
+        parsed = parse_project({'main.tex': source})
+        self.assertIn('unknown_inventory_command:titleformat', parsed['coverage']['unsupported_source_semantics'])
+        evidence = parsed['coverage']['unparsed_source_roles'][0]
+        self.assertEqual(evidence['source_members'], [{'path': 'main.tex', 'start': source.index(r'\section{References}'), 'end': source.index(r'\section{Appendix}')}])
+        self.assertFalse(align_paper(parsed, {'text': 'Smith, A. A manually formatted reference. 2020. Ordinary appendix text.'})['bibliography_eligible'])
+
     def test_should_preserve_other_complete_kinds_when_a_declared_operator_has_unverified_math_rendering(self):
         source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
                           r'\begin{equation}\argbest abcdefghij=12345\end{equation}',
