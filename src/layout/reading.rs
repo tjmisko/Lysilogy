@@ -4,6 +4,8 @@
 //! entities, or arbitrary XML. Word text (including Poppler control glyphs) is
 //! left to the existing verbatim decoder. A bad page body cannot donate words.
 
+use std::collections::BTreeSet;
+
 use super::{make_layout_page, normalize_rect, parse_page_tokens};
 use crate::{
     Error, Result,
@@ -247,6 +249,7 @@ fn number_attribute(attributes: &[(&str, &str)], name: &str) -> Result<f32> {
 
 fn attributes(mut input: &str) -> Result<Vec<(&str, &str)>> {
     let mut output = Vec::new();
+    let mut seen = BTreeSet::new();
     while !input.trim().is_empty() {
         input = input.trim_start();
         let end = input
@@ -276,7 +279,7 @@ fn attributes(mut input: &str) -> Result<Vec<(&str, &str)>> {
         if value.contains('<') {
             return Err(invalid("unescaped markup inside attribute"));
         }
-        if output.iter().any(|(key, _)| *key == name) {
+        if !seen.insert(name) {
             return Err(invalid("duplicate attribute"));
         }
         output.push((name, value));
