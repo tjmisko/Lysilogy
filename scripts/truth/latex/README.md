@@ -18,8 +18,9 @@ nested aligned/split environments stay inside their numbered equation. Unknown c
 or unknown object environments withhold exhaustive truth. Used macro aliases that transitively
 contain structural/link commands, conditionals, and repeated definitions also withhold admission;
 the reader does not execute their visibility or scope semantics. Fields come only from explicit
-active BibTeX databases or bibliography-field markup. BibTeX values must agree with the deposited
-rendered entry; stale, unrelated, and unverified fields remain unknown with conflict evidence.
+deposited bibliography-field markup that establishes printed field boundaries and role. Active
+BibTeX databases supply comparison evidence, but BibTeX-only fields stay unknown: a word/year
+appearing somewhere in an entry cannot establish a complete title or publication-year label.
 
 `align.py` reads only actual PDF-index text and token geometry. It never reads production figure,
 object, paragraph or citation predictions. Unique source-text matches retain half-open UTF-16

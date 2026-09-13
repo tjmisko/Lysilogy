@@ -118,12 +118,24 @@ See \ref{fig:a} and \eqref{eq:a}; evidence \cite{source}.
         self.assertEqual(len(result["links"]), 3)
         self.assertEqual(result["entries"][0]["field_labels"], {})
 
-    def test_should_use_only_explicit_fields_when_active_bibtex_labels_match_rendered_entries(self):
+    def test_should_withhold_bibtex_only_fields_when_printed_field_boundaries_are_not_explicit(self):
         files = {"main.tex": document(r"\bibliography{sources}"), "main.bbl": r"\begin{thebibliography}{9}\bibitem{one}A. Author. A deposited title. 2020.\end{thebibliography}",
                  "sources.bib": '@article{one, author={Author, A. and Second, B.},title={A deposited title},year={2020}}'}
         result = parse_project(files)
-        self.assertEqual(result["entries"][0]["field_labels"], {"title": "A deposited title", "first_author": "Author, A.", "year": "2020"})
-        self.assertEqual(result["entries"][0]["field_provenance"]["title"]["path"], "sources.bib")
+        self.assertEqual(result["entries"][0]["field_labels"], {})
+        self.assertEqual(len(result["entries"][0]["field_conflicts"]), 3)
+
+    def test_should_withhold_substring_fields_when_printed_negation_and_year_roles_differ(self):
+        files = {"main.tex": document(r"\bibliography{used}"), "main.bbl": r"\begin{thebibliography}{9}\bibitem{one}Smith. Not all events of 1999 were recorded. 2021.\end{thebibliography}",
+                 "used.bib": '@article{one, title={All events of 1999 were recorded},year={1999}}'}
+        row = parse_project(files)["entries"][0]
+        self.assertEqual(row["field_labels"], {})
+        self.assertEqual(len(row["field_conflicts"]), 2)
+
+    def test_should_take_explicit_printed_fields_when_bibliography_markup_establishes_their_roles(self):
+        source = document(r"\begin{thebibliography}{9}\bibitem{one}\bibinfo{author}{Smith}. \bibinfo{title}{Not all events of 1999 were recorded}. \bibinfo{year}{2021}.\end{thebibliography}")
+        row = parse_project({'main.tex': source})['entries'][0]
+        self.assertEqual(row['field_labels'], {'title': 'Not all events of 1999 were recorded', 'year': '2021', 'first_author': 'Smith'})
 
     def test_should_withhold_stale_fields_when_active_bibtex_disagrees_with_rendered_evidence(self):
         files = {"main.tex": document(r"\bibliography{used}"), "main.bbl": r"\begin{thebibliography}{9}\bibitem{one}Smith. Correct unique published title. 2021.\end{thebibliography}",

@@ -1,7 +1,6 @@
 """Derive evaluation objects and links from source structure, not PDF detectors."""
 from collections import Counter
 import re
-import unicodedata
 
 from archive import Limits, UnsupportedSource, sha256
 from tex import COMMAND, Renderer, comments, definition_regions, expand_project, group, mask_regions, skip_space
@@ -138,6 +137,7 @@ def bibtex_fields(files, renderer):
 
 def markup_fields(raw, renderer):
     labels, provenance = {}, {}
+    raw = mask_regions(raw, definition_regions(raw))
     for match in COMMAND.finditer(raw):
         if match[1] not in ("bibinfo", "bibfield"):
             continue
@@ -151,26 +151,6 @@ def markup_fields(raw, renderer):
                 labels[field] = value
                 provenance[field] = {"command": match[1], "field": name, "offset": match.start()}
     return labels, provenance
-
-
-def field_is_printed(field, value, rendered, known_title=None):
-    """Validate an explicit source label against deposited rendered evidence.
-
-    This never infers a field from prose. Missing/contradictory source metadata
-    remains unknown even when another paper shares its bibliography key.
-    """
-    def words(text):
-        return re.findall(r"[^\W_]+", unicodedata.normalize("NFKD", text).casefold())
-    if field == "first_author":
-        prefix = rendered
-        if known_title and known_title in rendered:
-            prefix = rendered[:rendered.index(known_title)]
-        # Only the beginning can verify first-author membership. Reordered
-        # family/given names are allowed, but absent initials remain unknown.
-        authored = words(value)
-        return bool(authored) and Counter(authored) <= Counter(words(prefix)[:len(authored)])
-    expected, actual = words(value), words(rendered)
-    return bool(expected) and any(actual[start:start + len(expected)] == expected for start in range(len(actual) - len(expected) + 1))
 
 
 def parse_project(files, limits=Limits(), selected_main=None):
@@ -350,11 +330,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
                 for field, value in deposited["labels"].items():
                     if field in field_labels and field_labels[field] != value:
                         field_conflicts.append({"field": field, "reason": "BibTeX disagrees with explicit deposited bibliography markup", "provenance": deposited["provenance"][field]})
-                    elif field not in field_labels and field_is_printed(field, value, rendered, deposited["labels"].get("title")):
-                        field_labels[field] = value
-                        field_provenance[field] = deposited["provenance"][field]
                     elif field not in field_labels:
-                        field_conflicts.append({"field": field, "reason": "BibTeX label is not verified by deposited rendered bibliography", "provenance": deposited["provenance"][field]})
+                        field_conflicts.append({"field": field, "reason": "BibTeX alone does not establish the printed field boundaries and role", "provenance": deposited["provenance"][field]})
             ignored["unverified_bibtex_fields"] += len(field_conflicts)
             start = bibliography["content_start"] + marker["start"]
             source_end = bibliography["content_start"] + end
