@@ -722,3 +722,25 @@ date, last merged issue, in-flight branches and their state, next action, and op
   `scripts/corpus/README.md` as soon as its storage/network requirements permit. Never relocate
   large data into the repository or `/tmp`. The preceding full session checkpoint records
   validation artifacts, all prior merges, and the exact protected main-checkout file list.
+
+### 2026-09-12 — approved environment repair prepared for external execution
+
+- The user explicitly approved writable `/home/tjmisko/Corpora` and
+  `/home/tjmisko/.cache/lysilogy`, and access to `oaipmh.arxiv.org`, `export.arxiv.org`, and
+  `storage.googleapis.com`; they authorized automatic setup or a script. An approved escalated
+  mkdir still returned `Read-only file system`. Approval alone did not change the active mounts.
+- Inspected the relevant settings in `/home/tjmisko/.codex/config.toml`: the selected
+  `claude-like` profile lacks those five grants. Prepared
+  `/home/tjmisko/.config/lysilogy/apply-codex-corpus-permissions.py` for execution in a normal
+  terminal. It validates the exact semantic delta, preserves other config values and comments,
+  checks storage writes, backs up the config, and atomically adds the approved entries. Dry-run,
+  idempotence, and conflicting-entry refusal were verified without changing the active config.
+- Next action: user runs
+  `python3 ~/.config/lysilogy/apply-codex-corpus-permissions.py`, restarts Codex, and resumes this
+  conversation. Verify the fresh session's actual writes and corpus host access before using the
+  preceding benchmark/corpus resume instructions. No storage or host repair is claimed yet.
+- No new merges or follow-up issues. Last merged issue remains #83 / PR #84; draft PR #82 at
+  `65d2c418bd63f5f07138169b09b5f2d2833b6a91` and its retained benchmark worktree remain in flight.
+  Phase A / wave A1; G5 passes and O30 = 0/10k (1/5 gates, 1/30 objectives); other measurements
+  remain unavailable. No background downloads or full 10k data exist. The external environment
+  repair remains the next prerequisite; the full system goal is not complete.
