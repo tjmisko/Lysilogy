@@ -1151,6 +1151,17 @@ align them to the PDF by caption and text matching, drop papers whose alignment 
 quality threshold, and record alignment confidence. Include a three-agent panel judging the top
 figures and tables for O11.
 
+K1 records overall per-paper alignment completeness separately from explicit exhaustive metric
+cohorts. A paper can supply complete figure/table truth while its separate bibliography or math
+inventory remains unsupported. Each metric requires its entire independently parsed inventory
+and all relevant links; missing members exclude the paper from that metric, never shorten its
+denominator. Source semantics that might hide an inventory exclude affected cohorts. Cohorts and
+all exclusions are frozen before detector evaluation. This clarifies the truth schema after an
+initial 25-paper pilot found useful complete figure/table inventories alongside unsupported math
+and bibliography forms; it does not lower any gate, objective or the approximately 500-paper
+target. See [the K1 cohort contract](../eval/latex-contract.md). Figure/caption alignment supplies
+no full-region O2 labels; O2 region evidence and the three-agent O11 panel remain independent.
+
 Acceptance: truth covers every E1 object kind; alignment quality is reported per paper; the suite
 runs offline from the corpus cache.
 

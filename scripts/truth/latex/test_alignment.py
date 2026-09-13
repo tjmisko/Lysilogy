@@ -195,6 +195,57 @@ class AlignmentTests(unittest.TestCase):
         self.assertEqual(result['mentions'], [])
         self.assertFalse(result['bibliography_eligible'])
 
+    def test_should_admit_complete_figure_truth_when_a_separate_equation_kind_cannot_align(self):
+        source = document(r'\begin{figure}\caption{A complete independently aligned caption.}\end{figure}\begin{equation}\unknownop abcdefghi=12345\end{equation}')
+        result = align_paper(parse_project({'main.tex': source}), {'text': 'A complete independently aligned caption. abcdefghi=12345'})
+        self.assertTrue(result['accepted'])
+        self.assertTrue(result['metric_eligibility']['O1'])
+        self.assertFalse(result['metric_eligibility']['O2'])
+        self.assertFalse(result['metric_eligibility']['O3'])
+        self.assertEqual(result['alignment']['overall_completeness'], .5)
+        self.assertEqual(result['alignment']['quality'], 1)
+        self.assertEqual(result['kind_coverage']['equation']['expected'], 1)
+        self.assertEqual(result['kind_coverage']['equation']['aligned'], 0)
+
+    def test_should_keep_the_whole_kind_denominator_when_one_of_its_objects_is_missing(self):
+        source = document(r'\begin{figure}\caption{First distinctive figure caption.}\end{figure}\begin{figure}\caption{Second distinctive figure caption.}\end{figure}\begin{theorem}A fully aligned distinctive statement.\end{theorem}')
+        result = align_paper(parse_project({'main.tex': source}), {'text': 'First distinctive figure caption. A fully aligned distinctive statement.'})
+        self.assertTrue(result['accepted'])
+        self.assertFalse(result['metric_eligibility']['O1'])
+        self.assertTrue(result['metric_eligibility']['O5'])
+        self.assertEqual(result['kind_coverage']['figure']['expected'], 2)
+        self.assertEqual(result['kind_coverage']['figure']['aligned'], 1)
+        self.assertNotIn('figure', result['eligible_kinds'])
+
+    def test_should_retain_exhaustive_bibliography_cohorts_when_unrelated_math_is_unaligned(self):
+        parsed, index = fixture()
+        extra = parse_project({'main.tex': document(r'\begin{equation}\unknownop abcdefghi=12345\end{equation}')})['objects'][0]
+        parsed['objects'].append(extra)
+        result = align_paper(parsed, index)
+        self.assertTrue(result['bibliography_eligible'])
+        self.assertTrue(result['metric_eligibility']['O8'])
+        self.assertTrue(result['metric_eligibility']['O10'])
+        self.assertFalse(result['metric_eligibility']['O3'])
+        self.assertEqual(result['alignment']['overall_completeness'], 2 / 3)
+
+    def test_should_withhold_proof_link_metrics_when_a_proof_has_no_independent_destination(self):
+        source = document(r'\begin{theorem}A completely aligned distinctive theorem.\end{theorem}\begin{proof}A completely aligned distinctive proof.\end{proof}')
+        result = align_paper(parse_project({'main.tex': source}), {'text': 'A completely aligned distinctive theorem. A completely aligned distinctive proof.'})
+        self.assertTrue(result['metric_eligibility']['O5'])
+        self.assertFalse(result['metric_eligibility']['O6'])
+
+    def test_should_keep_citation_denominators_when_another_metric_cohort_is_complete(self):
+        parsed, index = fixture()
+        parsed['links'].append({**parsed['links'][0], 'context_before': 'Another distinctive context that never occurs', 'context_after': 'and its complete unmatched continuation'})
+        figure = parse_project({'main.tex': document(r'\begin{figure}\caption{The distinctive independently aligned figure.}\end{figure}')})['objects'][0]
+        parsed['objects'].append(figure)
+        index['text'] += '\nThe distinctive independently aligned figure.'
+        result = align_paper(parsed, index)
+        self.assertTrue(result['metric_eligibility']['O1'])
+        self.assertFalse(result['bibliography_eligible'])
+        self.assertFalse(result['metric_eligibility']['O10'])
+        self.assertEqual(len(result['excluded_citations']), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

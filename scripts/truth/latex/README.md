@@ -25,8 +25,11 @@ appearing somewhere in an entry cannot establish a complete title or publication
 `align.py` reads only actual PDF-index text and token geometry. It never reads production figure,
 object, paragraph or citation predictions. Unique source-text matches retain half-open UTF-16
 spans. Source contexts identify printed citation/reference occurrences; source keys supply their
-destinations. Missing or ambiguous matches count against per-paper alignment quality (default
-threshold 0.95). Bibliography entry and citation inventories must be exhaustive to enter O8–O10.
+destinations. Missing or ambiguous matches remain in per-paper overall completeness. An explicit
+per-metric cohort requires every relevant source item to align at the declared quality threshold
+(0.95); a missing member excludes the whole paper/kind, and never shrinks its denominator.
+Bibliography entry and citation inventories must be exhaustive to enter O8–O10. See
+[`eval/latex-contract.md`](../../../eval/latex-contract.md) for the cohort and omission contract.
 Equation matching preserves case, operators, scripts and grouping; unsupported rendered math
 withholds that equation. Multiple source objects cannot certify the same PDF span.
 Caption token bounds are explicitly not full figure-region labels; full-region and O11 panel
