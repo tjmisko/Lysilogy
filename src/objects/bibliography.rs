@@ -341,7 +341,7 @@ fn starts_new_line(previous: &ReadingToken, current: &ReadingToken) -> bool {
     let displacement = ((left.y_min + left.y_max) - (right.y_min + right.y_max)).abs() * 0.5;
     overlap <= short * 0.2
         && displacement > tall * 0.65
-        && (right.x_min + short * 0.5 < left.x_min || displacement > tall * 1.5)
+        && (short.mul_add(0.5, right.x_min) < left.x_min || displacement > tall * 1.5)
 }
 
 fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block>) -> Vec<Entry> {
@@ -362,7 +362,7 @@ fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block
                 // line. Only an established adjacent dotted-number sequence
                 // justifies interpreting it as a four-digit entry key.
                 if label.publication_year
-                    && !previous_dot_number.is_some_and(|previous| Some(previous + 1) == number)
+                    && previous_dot_number.is_none_or(|previous| Some(previous + 1) != number)
                 {
                     return false;
                 }
@@ -793,7 +793,7 @@ fn resolve_mentions(source: &Source<'_>, bibliography: TextRange, result: &mut B
         .any(|matched| {
             let whole = matched.get(0).expect("bracketed citation");
             let span = source.range(whole.start(), whole.end());
-            (span.start < bibliography.start || span.start >= bibliography.end)
+            (!(bibliography.start..bibliography.end).contains(&span.start))
                 && citation_keys(&matched[1]).iter().any(|item| {
                     item.as_ref()
                         .is_ok_and(|key| printed.get(key).is_some_and(|targets| targets.len() == 1))
