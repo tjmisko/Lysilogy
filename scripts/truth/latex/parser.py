@@ -3,7 +3,7 @@ from collections import Counter
 import re
 
 from archive import Limits, UnsupportedSource, sha256
-from tex import ACCENTS, COMMAND, DROP_ARGUMENT, FORMATTING, SILENT, SYMBOLS, Renderer, comments, definition_regions, expand_project, group, local_style_dependencies, mask_regions, skip_space, token_argument
+from tex import ACCENTS, COMMAND, DROP_ARGUMENT, FORMATTING, SILENT, SYMBOLS, UNVERIFIED_MATH_LAYOUTS, Renderer, comments, definition_regions, expand_project, group, local_style_dependencies, mask_regions, skip_space, token_argument
 
 STANDARD_STATEMENTS = {name: name for name in ("theorem", "lemma", "corollary", "proposition", "definition", "assumption", "remark", "claim", "conjecture", "example")}
 ENVIRONMENTS = {"figure": "figure", "table": "table", "equation": "equation", "align": "equation", "gather": "equation", "multline": "equation", "eqnarray": "equation", "proof": "proof", "algorithm": "algorithm", "algorithm2e": "algorithm", "listing": "algorithm", "lstlisting": "algorithm"}
@@ -688,7 +688,15 @@ def parse_project(files, limits=Limits(), selected_main=None):
         unknown_context = dict(renderer.unsupported - before)
         if context_error:
             unknown_context["unbalanced_clipped_context"] = 1
-        math_context = renderer.math_seen > before_math
+        layout_context = []
+        for node in nodes:
+            if node['environment'].rstrip('*') in UNVERIFIED_MATH_LAYOUTS and node['content_start'] <= row['start'] < node['content_end']:
+                unknown_context['unverified_math_layout:' + node['environment']] = 1
+                layout_context.append({'environment': node['environment'], 'source_members': expanded.origins(node['start'], node['end'])})
+        # Context clipping intentionally removes begin/end commands. Retain
+        # enclosing source layout provenance so that clipping cannot erase an
+        # unverified row/column relationship from reference/citation evidence.
+        math_context = renderer.math_seen > before_math or bool(layout_context)
         if math_context and any(char in context_before + context_after for char in "^_"):
             unknown_context["unverified_script_binding"] = 1
         links.append({"kind": "citation" if row["command"].rstrip("*") in CITES else "reference",
@@ -697,6 +705,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
                       "source_members": expanded.origins(row["start"], row["end"]),
                       "context_before": context_before, "context_after": context_after,
                       "math_context": math_context,
+                      "source_layout_context": layout_context,
                       "context_exclusion": context_error,
                       "unsupported_context_commands": unknown_context})
     label_targets = {}

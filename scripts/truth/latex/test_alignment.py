@@ -17,6 +17,22 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_retain_enclosing_layout_exclusions_when_reference_or_citation_context_is_clipped(self):
+        for command, metric in (('ref', 'O4'), ('cite', 'O10')):
+            layout = r'\begin{array}{c}the independent statement ' + chr(92) + command + r'{one} supports the whole argument\end{array}'
+            body = (r'\begin{theorem}\label{one}Every input has a unique bounded output.\end{theorem}$' + layout + '$'
+                    + r'\begin{thebibliography}{9}\bibitem{one}A complete independently identifiable source entry.\end{thebibliography}')
+            source = document(body)
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(command=command):
+                link = parsed['links'][0]
+                self.assertEqual(link['unsupported_context_commands']['unverified_math_layout:array'], 1)
+                self.assertTrue(link['math_context'])
+                self.assertEqual(link['source_layout_context'], [{'environment': 'array', 'source_members': [
+                    {'path': 'main.tex', 'start': source.index(layout), 'end': source.index(layout) + len(layout)}]}])
+                result = align_paper(parsed, {'text': 'Every input has a unique bounded output. cthe independent statement 1 supports the whole argument [1] A complete independently identifiable source entry.'})
+                self.assertFalse(result['metric_eligibility'][metric])
+
     def test_should_withhold_flat_math_layout_collisions_when_rows_and_columns_are_unverified(self):
         for environment, parameter in (('array', '{c}'), ('aligned', ''), ('alignedat', '{2}'), ('split', '')):
             source = document(r'\begin{equation}\begin{' + environment + '}' + parameter
