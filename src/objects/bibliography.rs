@@ -627,17 +627,25 @@ fn title_venue(text: &str) -> (Option<String>, Option<String>) {
             );
         }
     }
-    let end = sentence_boundary(text).unwrap_or(text.len());
+    let period = sentence_boundary(text).unwrap_or(text.len());
+    let terminal = text.char_indices().find_map(|(at, ch)| {
+        (matches!(ch, '?' | '!')
+            && (at + 1 == text.len() || text[at + 1..].starts_with(char::is_whitespace)))
+        .then_some(at)
+    });
+    // Question/exclamation punctuation belongs to the title. The separating
+    // period follows the existing convention of being omitted from the field.
+    let (end, remaining) = terminal.filter(|at| *at < period).map_or_else(
+        || (period, text.get(period + 1..).unwrap_or_default()),
+        |at| (at + 1, &text[at + 1..]),
+    );
     let title = &text[..end];
     if !title.chars().any(char::is_alphabetic)
         || pattern!(r"(?i)^(?:doi\s*:|https?://|arxiv\s*:)").is_match(title)
     {
         return (None, None);
     }
-    (
-        trimmed(title),
-        clean_venue(text.get(end + 1..).unwrap_or_default()),
-    )
+    (trimmed(title), clean_venue(remaining))
 }
 
 fn clean_venue(text: &str) -> Option<String> {
@@ -1910,5 +1918,31 @@ mod tests {
         assert_eq!(result.entries[0].mentions.len(), 1);
         assert_eq!(slice(&index, &result.entries[0].mentions[0].anchor), "7");
         assert!(result.unresolved.is_empty());
+    }
+    #[test]
+    fn should_preserve_terminal_title_punctuation_when_the_venue_follows_a_question_or_exclamation()
+    {
+        for (raw, title, venue) in [
+            (
+                "Example, A. (2020). What Can Models Learn? Journal of Results.",
+                "What Can Models Learn?",
+                Some("Journal of Results"),
+            ),
+            (
+                "Example, A. (2020). Careful With That Baseline! Studies in Evaluation.",
+                "Careful With That Baseline!",
+                Some("Studies in Evaluation"),
+            ),
+            ("Example, A. (2020). Is There More?", "Is There More?", None),
+            (
+                "Example, A. (2020). An ordinary title. Journal of Results.",
+                "An ordinary title",
+                Some("Journal of Results"),
+            ),
+        ] {
+            let fields = parse_fields(raw, None);
+            assert_eq!(fields.title.value.as_deref(), Some(title), "{raw}");
+            assert_eq!(fields.venue.value.as_deref(), venue, "{raw}");
+        }
     }
 }
