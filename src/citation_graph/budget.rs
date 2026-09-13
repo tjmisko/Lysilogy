@@ -1,5 +1,10 @@
 //! Shared request admission: fixed windows, spacing, and durable provider cooldowns.
-use std::{fs::File, path::PathBuf, sync::Arc, time::Duration};
+use std::{
+    fs::File,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::Duration,
+};
 
 use rustix::fs::{FlockOperation, Mode, OFlags, flock, open};
 use serde::{Deserialize, Serialize};
@@ -113,28 +118,9 @@ impl ProviderBudgets {
         let local = self.locks[index].clone().lock_owned().await;
         cache::ensure_directory(&self.root).await?;
         let lock_path = self.root.join(format!("{}.lock", provider.slug()));
-        let file = File::from(
-            open(
-                &lock_path,
-                OFlags::CREATE | OFlags::RDWR | OFlags::CLOEXEC | OFlags::NOFOLLOW,
-                Mode::RUSR | Mode::WUSR,
-            )
-            .map_err(|_| storage_failure())?,
-        );
-        flock(&file, FlockOperation::NonBlockingLockExclusive)
-            .map_err(|_| deferred(1, "Another request holds this provider's connection budget"))?;
+        let connection = ConnectionLock::acquire(&lock_path, local)?;
         let path = self.root.join(format!("{}.json", provider.slug()));
-        let saved = cache::read_bounded(&path, 4_096).await?;
-        let state = match saved {
-            Some(bytes) => serde_json::from_slice(&bytes).map_err(|_| storage_failure())?,
-            None => BudgetState::default(),
-        };
-        let mut lease = BudgetLease {
-            state,
-            path,
-            _file: file,
-            _local: local,
-        };
+        let mut lease = BudgetLease::load(path, connection).await?;
         loop {
             let now = now_ms();
             match lease.state.reserve(now, self.policy[index]) {
@@ -156,14 +142,58 @@ impl ProviderBudgets {
     }
 }
 
+/// Owns the request's lock, even while persisted state is still being loaded.
+struct ConnectionLock {
+    file: File,
+    _local: OwnedMutexGuard<()>,
+}
+impl ConnectionLock {
+    fn acquire(path: &Path, local: OwnedMutexGuard<()>) -> GraphResult<Self> {
+        let file = File::from(
+            open(
+                path,
+                OFlags::CREATE | OFlags::RDWR | OFlags::CLOEXEC | OFlags::NOFOLLOW,
+                Mode::RUSR | Mode::WUSR,
+            )
+            .map_err(|_| storage_failure())?,
+        );
+        flock(&file, FlockOperation::NonBlockingLockExclusive)
+            .map_err(|_| deferred(1, "Another request holds this provider's connection budget"))?;
+        Ok(Self {
+            file,
+            _local: local,
+        })
+    }
+}
+impl Drop for ConnectionLock {
+    fn drop(&mut self) {
+        // Closing alone does not unlock while a pre-exec child (or duplicate)
+        // retains the same open-file description. End ownership before the local
+        // mutex is released; Drop must not panic if the kernel rejects unlock.
+        let _ = flock(&self.file, FlockOperation::Unlock);
+    }
+}
+
 /// Held through the entire HTTP response, preserving the provider connection limit.
 pub struct BudgetLease {
     state: BudgetState,
     path: PathBuf,
-    _file: File,
-    _local: OwnedMutexGuard<()>,
+    _connection: ConnectionLock,
 }
 impl BudgetLease {
+    async fn load(path: PathBuf, connection: ConnectionLock) -> GraphResult<Self> {
+        let saved = cache::read_bounded(&path, 4_096).await?;
+        let state = match saved {
+            Some(bytes) => serde_json::from_slice(&bytes).map_err(|_| storage_failure())?,
+            None => BudgetState::default(),
+        };
+        Ok(Self {
+            state,
+            path,
+            _connection: connection,
+        })
+    }
+
     pub async fn cooldown(&mut self, seconds: u64) -> GraphResult<()> {
         self.state.cooldown(now_ms(), seconds);
         self.persist().await
@@ -238,6 +268,49 @@ mod tests {
         assert_eq!(failure.kind, FailureKind::RateLimited);
         assert!(failure.retry_after_seconds.unwrap() >= 599);
         assert!(restarted.acquire(Provider::Crossref).await.is_ok());
+    }
+
+    #[tokio::test]
+    #[allow(clippy::used_underscore_binding)] // Inspect the opaque guard solely to duplicate its descriptor.
+    async fn should_expose_saved_cooldown_when_a_duplicate_outlives_the_request_lease() {
+        let root = tempfile::tempdir().unwrap();
+        let budgets =
+            ProviderBudgets::new(root.path().to_owned(), [BudgetPolicy::default(); 4]).unwrap();
+        let mut lease = budgets.acquire(Provider::Openalex).await.unwrap();
+        lease.cooldown(600).await.unwrap();
+        // Like a child before exec, a duplicate shares the open-file description.
+        let duplicate = lease._connection.file.try_clone().unwrap();
+        drop(lease);
+        let restarted =
+            ProviderBudgets::new(root.path().to_owned(), [BudgetPolicy::default(); 4]).unwrap();
+        let failure = restarted.acquire(Provider::Openalex).await.err().unwrap();
+        assert_eq!(failure.kind, FailureKind::RateLimited);
+        assert!(failure.retry_after_seconds.unwrap() >= 599, "{failure:?}");
+        assert!(failure.message.contains("cooling down"));
+        drop(duplicate);
+    }
+
+    #[tokio::test]
+    #[allow(clippy::significant_drop_tightening)] // The guard moves into load; dropping it again is invalid.
+    async fn should_release_duplicated_lock_when_budget_state_cannot_be_loaded() {
+        for malformed in [false, true] {
+            let root = tempfile::tempdir().unwrap();
+            let path = root.path().join("openalex.json");
+            if malformed {
+                tokio::fs::write(&path, b"malformed JSON").await.unwrap();
+            } else {
+                tokio::fs::create_dir(&path).await.unwrap();
+            }
+            let lock_path = root.path().join("openalex.lock");
+            let local = Arc::new(Mutex::new(()));
+            let connection =
+                ConnectionLock::acquire(&lock_path, local.clone().lock_owned().await).unwrap();
+            let duplicate = connection.file.try_clone().unwrap();
+            let failure = BudgetLease::load(path, connection).await.err().unwrap();
+            assert_eq!(failure.kind, FailureKind::Unavailable);
+            let _next = ConnectionLock::acquire(&lock_path, local.lock_owned().await).unwrap();
+            drop(duplicate);
+        }
     }
 
     #[tokio::test]
