@@ -351,3 +351,190 @@ fn should_accept_stored_adjustment_when_justified_baseline_is_read_again() {
     );
     assert!(verify_baseline_changes(dir.path(), &original, &current).is_ok());
 }
+
+fn scale_input(root: &Path, collector: &str, id: &str, value: f64) -> Input {
+    Input {
+        schema_version: 1,
+        suite: "scale".into(),
+        collector: format!("{collector}-v1"),
+        implementation: vec![evidence(root, &format!("{collector}-implementation.rs"))],
+        truth_sets: BTreeMap::from([(
+            "synthetic".into(),
+            evidence(root, &format!("{collector}-truth.json")),
+        )]),
+        metrics: BTreeMap::from([(
+            id.into(),
+            Observation {
+                sample: Sample::Value { value },
+                cases: 10,
+                evidence: vec![evidence(root, &format!("{collector}-observations.json"))],
+            },
+        )]),
+        cost_usd: Some(0.0),
+        wall_seconds: 1.5,
+    }
+}
+
+#[test]
+fn should_compose_disjoint_collectors_when_they_own_different_metrics() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut scan = scale_input(dir.path(), "scan", "O25", 1.9);
+    scan.cost_usd = None;
+    scan.wall_seconds = 4.0;
+    write_json(&dir.path().join("eval/inputs/scale/scan.json"), &scan).unwrap();
+    write_json(
+        &dir.path().join("eval/inputs/scale/provider-budgets.json"),
+        &scale_input(dir.path(), "budgets", "O30", 0.0),
+    )
+    .unwrap();
+    let run = collect(dir.path(), Suite::Scale).unwrap();
+    assert_eq!(
+        run.metrics["O25"].value.unwrap().to_bits(),
+        1.9_f64.to_bits()
+    );
+    assert_eq!(
+        run.metrics["O30"].value.unwrap().to_bits(),
+        0.0_f64.to_bits()
+    );
+    assert_eq!(run.costs_usd.len(), 2);
+    assert_eq!(run.costs_usd["scale/scan"], None);
+    assert_eq!(
+        run.costs_usd["scale/provider-budgets"].unwrap().to_bits(),
+        0.0_f64.to_bits()
+    );
+    assert_eq!(run.wall_seconds["scale/scan"].to_bits(), 4.0_f64.to_bits());
+    assert_eq!(
+        run.wall_seconds["scale/provider-budgets"].to_bits(),
+        1.5_f64.to_bits()
+    );
+    assert_eq!(run.collectors["scale/scan"].metrics, ["O25"]);
+    assert_eq!(run.collectors["scale/scan"].input.version, "scan-v1");
+    assert!(measurement::verify(dir.path(), &run.collectors["scale/scan"].input).unwrap());
+}
+
+#[test]
+fn should_preserve_unrelated_metrics_when_one_collectors_dependencies_are_stale() {
+    let dir = tempfile::tempdir().unwrap();
+    write_json(
+        &dir.path().join("eval/inputs/scale/scan.json"),
+        &scale_input(dir.path(), "scan", "O25", 1.9),
+    )
+    .unwrap();
+    write_json(
+        &dir.path().join("eval/inputs/scale/provider-budgets.json"),
+        &scale_input(dir.path(), "budgets", "O30", 0.0),
+    )
+    .unwrap();
+    fs::write(
+        dir.path().join("budgets-implementation.rs"),
+        b"changed budget code",
+    )
+    .unwrap();
+    let run = collect(dir.path(), Suite::Scale).unwrap();
+    assert_eq!(
+        run.metrics["O25"].value.unwrap().to_bits(),
+        1.9_f64.to_bits()
+    );
+    assert!(run.metrics["O30"].value.is_none());
+    assert!(
+        run.metrics["O30"]
+            .reason
+            .as_ref()
+            .unwrap()
+            .contains("budgets-implementation.rs")
+    );
+    assert_eq!(run.collectors.len(), 2);
+}
+
+#[test]
+fn should_reject_duplicate_ownership_when_two_collectors_claim_the_same_metric() {
+    let dir = tempfile::tempdir().unwrap();
+    write_json(
+        &dir.path().join("eval/inputs/scale/first.json"),
+        &scale_input(dir.path(), "first", "O30", 0.0),
+    )
+    .unwrap();
+    write_json(
+        &dir.path().join("eval/inputs/scale/second.json"),
+        &scale_input(dir.path(), "second", "O30", 0.0),
+    )
+    .unwrap();
+    fs::write(
+        dir.path().join("first-implementation.rs"),
+        b"stale owner still owns the metric",
+    )
+    .unwrap();
+    assert!(
+        collect(dir.path(), Suite::Scale)
+            .unwrap_err()
+            .to_string()
+            .contains("duplicate metric ownership for O30")
+    );
+}
+
+#[test]
+fn should_compose_legacy_and_named_inputs_when_their_metric_ownership_is_disjoint() {
+    let dir = tempfile::tempdir().unwrap();
+    write_json(
+        &dir.path().join("eval/inputs/scale.json"),
+        &scale_input(dir.path(), "scan", "O25", 1.9),
+    )
+    .unwrap();
+    write_json(
+        &dir.path().join("eval/inputs/scale/provider-budgets.json"),
+        &scale_input(dir.path(), "budgets", "O30", 0.0),
+    )
+    .unwrap();
+    let run = collect(dir.path(), Suite::Scale).unwrap();
+    assert!(run.metrics["O25"].value.is_some());
+    assert!(run.metrics["O30"].value.is_some());
+    assert!(run.costs_usd.contains_key("scale"));
+    assert!(run.costs_usd.contains_key("scale/provider-budgets"));
+    write_json(
+        &dir.path().join("eval/inputs/scale/duplicate.json"),
+        &scale_input(dir.path(), "duplicate", "O25", 1.8),
+    )
+    .unwrap();
+    assert!(
+        collect(dir.path(), Suite::Scale)
+            .unwrap_err()
+            .to_string()
+            .contains("duplicate metric ownership for O25")
+    );
+}
+
+#[test]
+fn should_reject_unbounded_discovery_when_a_suite_has_too_many_collectors() {
+    let dir = tempfile::tempdir().unwrap();
+    let inputs = dir.path().join("eval/inputs/scale");
+    fs::create_dir_all(&inputs).unwrap();
+    for index in 0..=MAX_INPUTS_PER_SUITE {
+        fs::write(inputs.join(format!("collector-{index}.json")), b"{}").unwrap();
+    }
+    assert!(
+        collect(dir.path(), Suite::Scale)
+            .unwrap_err()
+            .to_string()
+            .contains("32-input limit")
+    );
+}
+
+#[test]
+fn should_reject_oversized_input_when_a_collector_exceeds_the_byte_limit() {
+    // The sparse size fixture belongs in the worktree target, not RAM-backed /tmp.
+    let scratch = Path::new(env!("CARGO_MANIFEST_DIR")).join("target/eval-fixtures");
+    fs::create_dir_all(&scratch).unwrap();
+    let dir = tempfile::tempdir_in(scratch).unwrap();
+    let inputs = dir.path().join("eval/inputs");
+    fs::create_dir_all(&inputs).unwrap();
+    fs::File::create(inputs.join("scale.json"))
+        .unwrap()
+        .set_len(MAX_INPUT_BYTES + 1)
+        .unwrap();
+    assert!(
+        collect(dir.path(), Suite::Scale)
+            .unwrap_err()
+            .to_string()
+            .contains("byte input limit")
+    );
+}

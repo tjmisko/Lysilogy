@@ -103,8 +103,30 @@ pub struct Run {
     pub metrics: BTreeMap<String, MetricResult>,
     pub costs_usd: BTreeMap<String, Option<f64>>,
     pub wall_seconds: BTreeMap<String, f64>,
+    #[serde(default)]
+    pub collectors: BTreeMap<String, CollectorResult>,
     pub failures: Vec<String>,
     pub baseline_before: BTreeMap<String, f64>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct CollectorResult {
+    pub input: EvidenceFile,
+    pub metrics: Vec<String>,
+}
+
+const MAX_INPUTS_PER_SUITE: usize = 32;
+const MAX_INPUT_BYTES: u64 = 8 * 1024 * 1024;
+
+struct LoadedInput {
+    input: Input,
+    source: EvidenceFile,
+}
+
+#[derive(Default)]
+struct SuiteInputs {
+    inputs: BTreeMap<String, LoadedInput>,
+    owners: BTreeMap<String, String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -219,10 +241,11 @@ fn collect(root: &Path, suite: Suite) -> Result<Run> {
         metrics: BTreeMap::new(),
         costs_usd: BTreeMap::new(),
         wall_seconds: BTreeMap::new(),
+        collectors: BTreeMap::new(),
         failures: vec![],
         baseline_before: BTreeMap::new(),
     };
-    let mut inputs = BTreeMap::<String, Option<Input>>::new();
+    let mut inputs = BTreeMap::<String, SuiteInputs>::new();
     for definition in definitions().into_iter().filter(|d| suite.includes(*d)) {
         if definition.id == "G5" {
             let (metric, seconds) = isolated_tests(root)?;
@@ -232,25 +255,133 @@ fn collect(root: &Path, suite: Suite) -> Result<Run> {
             continue;
         }
         if !inputs.contains_key(definition.suite) {
-            let input: Option<Input> =
-                read_optional(&root.join(format!("eval/inputs/{}.json", definition.suite)))?;
-            if let Some(input) = &input {
-                validate_input(input, definition.suite)?;
-                run.costs_usd
-                    .insert(definition.suite.into(), input.cost_usd);
+            let collectors = load_suite_inputs(root, definition.suite)?;
+            for (key, loaded) in &collectors.inputs {
+                run.costs_usd.insert(key.clone(), loaded.input.cost_usd);
                 run.wall_seconds
-                    .insert(definition.suite.into(), input.wall_seconds);
+                    .insert(key.clone(), loaded.input.wall_seconds);
+                run.collectors.insert(
+                    key.clone(),
+                    CollectorResult {
+                        input: loaded.source.clone(),
+                        metrics: loaded.input.metrics.keys().cloned().collect(),
+                    },
+                );
             }
-            inputs.insert(definition.suite.into(), input);
+            inputs.insert(definition.suite.into(), collectors);
         }
-        let metric = evaluate(
-            root,
-            definition,
-            inputs.get(definition.suite).and_then(Option::as_ref),
-        )?;
+        let owner = inputs.get(definition.suite).and_then(|suite| {
+            suite
+                .owners
+                .get(definition.id)
+                .and_then(|owner| suite.inputs.get(owner))
+        });
+        let metric = evaluate(root, definition, owner.map(|loaded| &loaded.input))?;
         run.metrics.insert(definition.id.into(), metric);
     }
     Ok(run)
+}
+
+fn load_suite_inputs(root: &Path, suite: &str) -> Result<SuiteInputs> {
+    let mut sources = BTreeMap::new();
+    let legacy = format!("eval/inputs/{suite}.json");
+    if let Some(input) = load_input(root, &legacy, suite)? {
+        sources.insert(suite.to_owned(), input);
+    }
+    let directory = format!("eval/inputs/{suite}");
+    let folder = match measurement::safe_file(root, &directory) {
+        Ok(path) => Some(path),
+        Err(Error::Io { source, .. }) if source.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error),
+    };
+    if let Some(folder) = folder {
+        let entries = fs::read_dir(&folder).map_err(|error| Error::io(&folder, error))?;
+        let mut paths = BTreeMap::new();
+        for entry in entries {
+            let path = entry.map_err(|error| Error::io(&folder, error))?.path();
+            if path.extension().is_none_or(|extension| extension != "json") {
+                continue;
+            }
+            let id = path
+                .file_stem()
+                .and_then(|name| name.to_str())
+                .unwrap_or_default();
+            if id.is_empty()
+                || id.len() > 64
+                || !id.as_bytes()[0].is_ascii_alphanumeric()
+                || !id.bytes().all(|byte| {
+                    byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"._-".contains(&byte)
+                })
+            {
+                return Err(Error::InvalidRequest("collector filenames must use 1–64 lowercase letters, digits, dots, underscores, or hyphens, starting with a letter or digit".into()));
+            }
+            paths.insert(format!("{suite}/{id}"), format!("{directory}/{id}.json"));
+            if sources.len() + paths.len() > MAX_INPUTS_PER_SUITE {
+                return Err(Error::InvalidRequest(format!(
+                    "{suite} exceeds the {MAX_INPUTS_PER_SUITE}-input limit"
+                )));
+            }
+        }
+        for (key, path) in paths {
+            let input = load_input(root, &path, suite)?.ok_or_else(|| {
+                Error::InvalidRequest(format!("collector input disappeared: {path}"))
+            })?;
+            sources.insert(key, input);
+        }
+    }
+    let mut owners = BTreeMap::new();
+    for (key, loaded) in &sources {
+        for id in loaded.input.metrics.keys() {
+            if let Some(previous) = owners.insert(id.clone(), key.clone()) {
+                return Err(Error::InvalidRequest(format!(
+                    "duplicate metric ownership for {id}: {previous} and {key}"
+                )));
+            }
+        }
+    }
+    Ok(SuiteInputs {
+        inputs: sources,
+        owners,
+    })
+}
+
+fn load_input(root: &Path, relative: &str, suite: &str) -> Result<Option<LoadedInput>> {
+    use sha2::{Digest, Sha256};
+    use std::io::Read as _;
+    let path = match measurement::safe_file(root, relative) {
+        Ok(path) => path,
+        Err(Error::Io { source, .. }) if source.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(None);
+        }
+        Err(error) => return Err(error),
+    };
+    if !fs::metadata(&path)
+        .map_err(|error| Error::io(&path, error))?
+        .is_file()
+    {
+        return Err(Error::InvalidRequest(format!(
+            "collector input is not a regular file: {relative}"
+        )));
+    }
+    let mut bytes = Vec::new();
+    fs::File::open(&path)
+        .map_err(|error| Error::io(&path, error))?
+        .take(MAX_INPUT_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| Error::io(&path, error))?;
+    if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > MAX_INPUT_BYTES {
+        return Err(Error::InvalidRequest(format!(
+            "{relative} exceeds the {MAX_INPUT_BYTES}-byte input limit"
+        )));
+    }
+    let input: Input = serde_json::from_slice(&bytes)?;
+    validate_input(&input, suite)?;
+    let source = EvidenceFile {
+        path: relative.into(),
+        sha256: format!("{:x}", Sha256::digest(&bytes)),
+        version: input.collector.clone(),
+    };
+    Ok(Some(LoadedInput { input, source }))
 }
 
 fn validate_input(input: &Input, suite: &str) -> Result<()> {
@@ -283,8 +414,8 @@ fn validate_input(input: &Input, suite: &str) -> Result<()> {
 fn evaluate(root: &Path, definition: Definition, input: Option<&Input>) -> Result<MetricResult> {
     let Some(input) = input else {
         return Ok(MetricResult::unavailable(format!(
-            "missing eval/inputs/{}.json; truth/collector not built",
-            definition.suite
+            "no owning collector in eval/inputs/{}.json or eval/inputs/{}/; truth/collector not built",
+            definition.suite, definition.suite
         )));
     };
     let Some(observation) = input.metrics.get(definition.id) else {

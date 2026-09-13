@@ -117,7 +117,7 @@ pub(super) fn render(metrics: &BTreeMap<String, MetricResult>, baselines: &Basel
         )
         .expect("writing to a string cannot fail");
     }
-    output.push_str("\n## Evidence and availability\n\nMeasurements are calculated from `eval/inputs/<suite>.json` with content-verified implementation, truth-set, and observation files. G5 executes isolated tests. Results retain truth versions, source hashes, commit, case counts, cost, wall time, and the pre-run baseline. Missing cost is unknown.\n\n");
+    output.push_str("\n## Evidence and availability\n\nMeasurements are calculated from `eval/inputs/<suite>/<collector>.json` or the legacy suite file with content-verified implementation, truth-set, and observation files. G5 executes isolated tests. Results retain truth versions, source hashes, commit, case counts, cost, wall time, and the pre-run baseline. Missing cost is unknown.\n\n");
     for definition in definitions() {
         if let Some(metric) = metrics.get(definition.id) {
             if let Some(reason) = &metric.reason {

@@ -958,7 +958,11 @@ beyond tolerance; should report a suite as unavailable when its truth set is mis
 ratchet the baseline when a metric improves.
 
 Implementation contract (E8.1): suites consume versioned, content-addressed local observations
-from `eval/inputs/<suite>.json`; each later detector/resolver/benchmark issue adds its collector.
+from `eval/inputs/<suite>/<collector-id>.json` (alongside legacy `eval/inputs/<suite>.json`);
+each later detector/resolver/benchmark issue adds its collector. Collectors own disjoint metrics;
+duplicate ownership fails. Each collector retains independent dependency hashes and cost/time,
+so stale evidence cannot invalidate or be re-attested by another collector. Discovery is bounded
+to 32 files per suite and 8 MiB per input.
 The collector must rerun against the current implementation before evaluation. The harness
 calculates ratios, F1, mean, median, and nearest-rank p95 from raw samples and also accepts
 collector-computed statistics (such as B-cubed F1) with case counts and evidence. Changed

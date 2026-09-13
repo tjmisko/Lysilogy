@@ -30,12 +30,33 @@ live end-to-end scenario are recorded in the system report, outside this numeric
 ## Collector contract
 
 E8.1 supplies the harness, metric definitions, aggregators, and G5 runner. Each subsequent
-feature/truth issue adds its evaluator to produce `eval/inputs/<suite>.json`. A collector must
+feature/truth issue adds its evaluator to produce `eval/inputs/<suite>/<collector-id>.json`.
+The original `eval/inputs/<suite>.json` format remains supported alongside these files. A collector must
 run the actual implementation over local truth, record the observations, and fingerprint all
 implementation dependencies that affect the measurement. Refresh these observations **before**
 running `eval` after a change; evaluation deliberately refuses stale hashes. The evidence contract
 makes results auditable but cannot prove the correctness of a collector or its labels; reviewers
 must inspect that computation in the owning issue.
+
+Collectors sharing a suite own disjoint metric IDs. For example, catalog benchmarks may write
+`eval/inputs/scale/catalog.json` for O25–O29 while provider simulation writes
+`eval/inputs/scale/provider-budgets.json` for O30. Each file retains its own implementation,
+truth, observation evidence, cost, and wall time. The harness never unions or re-fingerprints
+those dependencies. A stale collector makes only its metrics unavailable. Duplicate metric
+ownership fails, including duplicates between the legacy file and named collectors and claims
+from stale inputs; migrate an old owner explicitly before publishing the same metric elsewhere.
+
+Discovery reads only direct `<collector-id>.json` children, in deterministic order. IDs use
+1–64 lowercase letters, digits, dots, underscores, or hyphens and start with a letter or digit.
+A suite permits at most 32 input files including its legacy file, with an 8 MiB limit per regular
+JSON file. Put raw traces elsewhere (for example `eval/inputs/evidence/`), not beside collector
+inputs. Each collector should atomically replace only its own input file.
+
+Result `costs_usd` and `wall_seconds` maps retain each named collector under
+`<suite>/<collector-id>`; legacy files retain their original `<suite>` key. `collectors` records
+the input path, exact input SHA-256, the payload's `collector` label/version, and owned metric IDs.
+The payload `collector` field may describe an evaluator version independently of the stable
+filename. Old result records without the added `collectors` field remain readable.
 
 The JSON schema corresponds to public Rust types in `src/eval/measurement.rs`. The following is
 a schema example, **not a measured result** (replace hashes with actual SHA-256 values):
