@@ -4,11 +4,15 @@
 use std::{collections::BTreeSet, path::Path};
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::{
     Error, Result,
     domain::{PaperId, TextRect},
-    source_index::{Figure, IndexDocument},
+    source_index::{
+        FIGURE_DETECTOR_VERSION, Figure, IndexDocument, detect_figures, detect_figures_with_images,
+        graphics,
+    },
     store::write_atomic,
 };
 
@@ -23,6 +27,15 @@ pub struct ObjectsArtifact {
     /// Opaque fingerprint (`IndexDocument.etag`) of the exact persisted index.
     /// A rebuilt index has a new generation even when the PDF is unchanged.
     pub reading_index_generation: String,
+    /// Current derived figure/table behavior, independent of native schema/version.
+    #[serde(default)]
+    pub figure_detector_version: u16,
+    /// Fingerprint of the exact native generation and the derived detector version.
+    #[serde(default)]
+    pub figure_detector_generation: String,
+    /// Optional PDF placements, independently versioned from immutable native text.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub graphics: Option<graphics::GraphicsEvidence>,
     pub objects: Vec<PaperObject>,
 }
 
@@ -89,14 +102,16 @@ pub struct ObjectMention {
 }
 
 impl ObjectsArtifact {
-    /// Wrap existing figure/table records; detection and reading-index schema stay
-    /// unchanged. Later deterministic detectors register their objects here.
+    /// Recompute current deterministic objects from immutable native coordinates.
+    /// The historical `ReadingIndex.figures` cache is never authoritative here.
     #[must_use]
     pub fn from_reading_index(paper_id: &PaperId, document: &IndexDocument) -> Self {
+        Self::from_figures(paper_id, document, &detect_figures(&document.index))
+    }
+
+    fn from_figures(paper_id: &PaperId, document: &IndexDocument, figures: &[Figure]) -> Self {
         let mut ids = BTreeSet::new();
-        let objects = document
-            .index
-            .figures
+        let objects = figures
             .iter()
             .map(|figure| {
                 let mut object = PaperObject::from_figure(figure);
@@ -113,9 +128,120 @@ impl ObjectsArtifact {
             schema_version: SCHEMA_VERSION,
             paper_id: paper_id.clone(),
             reading_index_generation: document.etag.clone(),
+            figure_detector_version: FIGURE_DETECTOR_VERSION,
+            figure_detector_generation: figure_detector_generation(&document.etag),
+            graphics: None,
             objects,
         }
     }
+}
+
+#[must_use]
+pub fn figure_detector_generation(native_generation: &str) -> String {
+    format!(
+        "{:x}",
+        Sha256::digest(format!(
+            "figures:{FIGURE_DETECTOR_VERSION}:{native_generation}"
+        ))
+    )
+}
+
+#[must_use]
+pub fn source_detector_generation(native_generation: &str, graphics_generation: &str) -> String {
+    format!(
+        "{:x}",
+        Sha256::digest(format!(
+            "figures:{FIGURE_DETECTOR_VERSION}:{native_generation}:graphics:{graphics_generation}"
+        ))
+    )
+}
+
+pub struct SourceObjects {
+    pub artifact: ObjectsArtifact,
+    /// Raw trace bytes are available to explicit experiments, never persisted by
+    /// the product in its object cache or native reading index.
+    pub traces: Vec<(u32, Vec<u8>)>,
+}
+
+async fn derive_source(
+    source: &Path,
+    paper_id: &PaperId,
+    document: &IndexDocument,
+    prepared: graphics::PreparedGraphics,
+) -> Result<SourceObjects> {
+    let pages = detect_figures(&document.index)
+        .iter()
+        .map(|figure| figure.page)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let graphics = graphics::collect(source, document, &pages, prepared).await?;
+    let mut artifact = ObjectsArtifact::from_figures(
+        paper_id,
+        document,
+        &detect_figures_with_images(&document.index, &graphics.evidence.pages),
+    );
+    artifact.figure_detector_generation =
+        source_detector_generation(&document.etag, &graphics.evidence.generation);
+    artifact.graphics = Some(graphics.evidence);
+    Ok(SourceObjects {
+        artifact,
+        traces: graphics.traces,
+    })
+}
+
+/// The shared current production path. Derive into separate artifacts; never
+/// rewrite the native index, its old figures, registry, or source PDF.
+pub async fn from_source(
+    source: &Path,
+    paper_id: &PaperId,
+    document: &IndexDocument,
+) -> Result<SourceObjects> {
+    let prepared = graphics::prepare(source, document).await?;
+    derive_source(source, paper_id, document, prepared).await
+}
+
+/// The source-aware cache invalidates native-only and previous tool generations.
+pub async fn load_or_build_from_source(
+    source: &Path,
+    directory: &Path,
+    paper_id: &PaperId,
+    document: &IndexDocument,
+) -> Result<ObjectsArtifact> {
+    let prepared = graphics::prepare(source, document).await?;
+    let path = directory.join(OBJECTS_FILE);
+    if let Ok(bytes) = tokio::fs::read(&path).await
+        && let Ok(cached) = serde_json::from_slice::<ObjectsArtifact>(&bytes)
+        && cached.schema_version == SCHEMA_VERSION
+        && cached.paper_id == *paper_id
+        && cached.reading_index_generation == document.etag
+        && cached.figure_detector_version == FIGURE_DETECTOR_VERSION
+        && let Some(evidence) = &cached.graphics
+        && evidence.reusable_for(&prepared)
+        && evidence
+            .pages
+            .iter()
+            .map(|page| page.page)
+            .collect::<Vec<_>>()
+            == detect_figures(&document.index)
+                .iter()
+                .map(|figure| figure.page)
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>()
+        && cached.figure_detector_generation
+            == source_detector_generation(&document.etag, &evidence.generation)
+    {
+        return Ok(cached);
+    }
+    let artifact = derive_source(source, paper_id, document, prepared)
+        .await?
+        .artifact;
+    tokio::fs::create_dir_all(directory)
+        .await
+        .map_err(|error| Error::io(directory, error))?;
+    write_atomic(&path, &serde_json::to_vec(&artifact)?).await?;
+    Ok(artifact)
 }
 
 impl PaperObject {
@@ -188,6 +314,8 @@ pub async fn load_or_build(
         && cached.schema_version == SCHEMA_VERSION
         && cached.paper_id == *paper_id
         && cached.reading_index_generation == document.etag
+        && cached.figure_detector_version == FIGURE_DETECTOR_VERSION
+        && cached.figure_detector_generation == figure_detector_generation(&document.etag)
     {
         return Ok(cached);
     }
@@ -211,7 +339,7 @@ mod tests {
     }
 
     fn document() -> IndexDocument {
-        let index: ReadingIndex = serde_json::from_value(json!({
+        let mut index: ReadingIndex = serde_json::from_value(json!({
             "schema_version": INDEX_SCHEMA_VERSION,
             "text": "😀 Figure 3. A caption. Diagram. See Figure 3.",
             "pages": [], "tokens": [],
@@ -228,10 +356,76 @@ mod tests {
             }], "gaps": []
         }))
         .unwrap();
+        index.pages = serde_json::from_value(json!([{"number":1,"width":600.0,"height":800.0,"start":0,"end":46,"provenance":"native","confidence":null}])).unwrap();
+        index.objects.paragraph = serde_json::from_value(json!([
+            {"start":3,"end":23,"kind":"caption"}, {"start":24,"end":32,"kind":"float"}, {"start":33,"end":46,"kind":"body"}
+        ])).unwrap();
+        for (start, end, text, x, y) in [
+            (3, 9, "Figure", 10.0, 200.0),
+            (10, 12, "3.", 45.0, 200.0),
+            (13, 14, "A", 60.0, 200.0),
+            (15, 23, "caption.", 70.0, 200.0),
+            (24, 32, "Diagram.", 10.0, 100.0),
+            (33, 36, "See", 10.0, 300.0),
+            (37, 43, "Figure", 40.0, 300.0),
+            (44, 46, "3.", 80.0, 300.0),
+        ] {
+            index.tokens.push(serde_json::from_value(json!({"start":start,"end":end,"text":text,"page":1,"rects":[{"x_min":x,"x_max":x+30.0,"y_min":y,"y_max":y+10.0}],"provenance":"native"})).unwrap());
+        }
         IndexDocument {
             index,
             etag: "\"generation-1\"".into(),
         }
+    }
+
+    #[tokio::test]
+    async fn should_replace_native_only_objects_when_the_source_factory_supplies_a_new_generation()
+    {
+        let directory = tempfile::tempdir().unwrap();
+        let source = directory.path().join("synthetic.pdf");
+        // No caption pages means no native command; this test exercises source
+        // identity and cache invalidation independently of installed tools.
+        tokio::fs::write(&source, b"independently specified source")
+            .await
+            .unwrap();
+        let mut document = document();
+        document.index.objects.paragraph.clear();
+        let id = paper_id();
+        let original = load_or_build(directory.path(), &id, &document)
+            .await
+            .unwrap();
+        let native_before = serde_json::to_vec(&document.index).unwrap();
+        let current = load_or_build_from_source(&source, directory.path(), &id, &document)
+            .await
+            .unwrap();
+        assert!(current.graphics.is_some());
+        assert!(current.objects.is_empty());
+        assert_ne!(
+            current.figure_detector_generation,
+            original.figure_detector_generation
+        );
+        assert_eq!(serde_json::to_vec(&document.index).unwrap(), native_before);
+        let reused = load_or_build_from_source(&source, directory.path(), &id, &document)
+            .await
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(&current).unwrap(),
+            serde_json::to_value(reused).unwrap()
+        );
+        tokio::fs::write(&source, b"independently changed source")
+            .await
+            .unwrap();
+        let changed = load_or_build_from_source(&source, directory.path(), &id, &document)
+            .await
+            .unwrap();
+        assert_ne!(
+            current.figure_detector_generation,
+            changed.figure_detector_generation
+        );
+        assert_eq!(
+            changed.reading_index_generation,
+            current.reading_index_generation
+        );
     }
 
     #[test]
@@ -243,7 +437,8 @@ mod tests {
         table.label = "Table 2".into();
         table.rect = None;
         document.index.figures.push(table);
-        let artifact = ObjectsArtifact::from_reading_index(&paper_id(), &document);
+        let artifact =
+            ObjectsArtifact::from_figures(&paper_id(), &document, &document.index.figures);
         assert_eq!(artifact.objects.len(), 2);
         let figure = &artifact.objects[0];
         assert_eq!(figure.id, "fig-3");
@@ -352,11 +547,11 @@ mod tests {
             .index
             .figures
             .push(document.index.figures[0].clone());
-        let first = ObjectsArtifact::from_reading_index(&paper_id(), &document);
+        let first = ObjectsArtifact::from_figures(&paper_id(), &document, &document.index.figures);
         assert_eq!(first.objects[0].id, "fig-3");
         assert_eq!(first.objects[1].id, "fig-3-2");
         document.etag = "\"rebuilt\"".into();
-        let second = ObjectsArtifact::from_reading_index(&paper_id(), &document);
+        let second = ObjectsArtifact::from_figures(&paper_id(), &document, &document.index.figures);
         assert_eq!(first.objects[1].id, second.objects[1].id);
     }
 
@@ -365,7 +560,8 @@ mod tests {
         let mut document = document();
         document.index.figures[0].kind.clear();
         document.index.figures[0].id = "table-2".into();
-        let artifact = ObjectsArtifact::from_reading_index(&paper_id(), &document);
+        let artifact =
+            ObjectsArtifact::from_figures(&paper_id(), &document, &document.index.figures);
         assert_eq!(artifact.objects[0].kind, PaperObjectKind::Table);
         assert_eq!(artifact.objects[0].id, "tab-2");
     }
@@ -417,7 +613,14 @@ mod tests {
             .await
             .unwrap();
         document.etag = "\"generation-2\"".into();
-        document.index.figures[0].caption = "A corrected caption.".into();
+        document.index.text = document.index.text.replace("caption.", "revised.");
+        document
+            .index
+            .tokens
+            .iter_mut()
+            .find(|t| t.start == 15)
+            .unwrap()
+            .text = "revised.".into();
         let second = load_or_build(directory.path(), &id, &document)
             .await
             .unwrap();
@@ -426,7 +629,7 @@ mod tests {
             second.reading_index_generation
         );
         assert_eq!(first.objects[0].id, second.objects[0].id);
-        assert_eq!(second.objects[0].text, "A corrected caption.");
+        assert_eq!(second.objects[0].text, "Figure 3. A revised.");
         let persisted: ObjectsArtifact = serde_json::from_slice(
             &tokio::fs::read(directory.path().join(OBJECTS_FILE))
                 .await
@@ -437,6 +640,42 @@ mod tests {
             persisted.reading_index_generation,
             second.reading_index_generation
         );
+    }
+
+    #[tokio::test]
+    async fn should_refresh_legacy_detector_cache_when_native_generation_is_unchanged() {
+        let directory = tempfile::tempdir().unwrap();
+        let id = paper_id();
+        let mut document = document();
+        document.index.figures[0].caption = "Stale embedded prediction".into();
+        let native = serde_json::to_vec(&document.index).unwrap();
+        let mut old =
+            serde_json::to_value(ObjectsArtifact::from_reading_index(&id, &document)).unwrap();
+        old.as_object_mut()
+            .unwrap()
+            .remove("figure_detector_version");
+        old.as_object_mut()
+            .unwrap()
+            .remove("figure_detector_generation");
+        old["objects"][0]["text"] = json!("Stale derived object");
+        tokio::fs::write(
+            directory.path().join(OBJECTS_FILE),
+            serde_json::to_vec(&old).unwrap(),
+        )
+        .await
+        .unwrap();
+        let rebuilt = load_or_build(directory.path(), &id, &document)
+            .await
+            .unwrap();
+        assert_eq!(rebuilt.objects[0].text, "Figure 3. A caption.");
+        assert_eq!(rebuilt.reading_index_generation, document.etag);
+        assert_eq!(rebuilt.figure_detector_version, FIGURE_DETECTOR_VERSION);
+        assert_eq!(
+            rebuilt.figure_detector_generation,
+            figure_detector_generation(&document.etag)
+        );
+        assert_eq!(serde_json::to_vec(&document.index).unwrap(), native);
+        assert!(!directory.path().join("reading-index.json").exists());
     }
 
     #[tokio::test]
