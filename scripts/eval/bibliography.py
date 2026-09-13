@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 VERSION = "bibliography-v1"
 FIELDS = ("title", "first_author", "year")
 SOURCES = (
-    "src/objects/bibliography.rs", "src/objects/mod.rs", "src/source_index.rs",
+    "src/objects/bibliography.rs", "src/objects/mod.rs", "src/source_index.rs", "src/source_index/cache.rs",
     "src/domain.rs", "src/kb/names.rs", "src/kb/titles.rs", "examples/objects_fixture.rs",
     "scripts/eval/bibliography.py", "Cargo.toml", "Cargo.lock",
 )
