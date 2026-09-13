@@ -290,7 +290,7 @@ fn hanging_definition_indent_keeps_the_complete_paragraph() {
 fn native_block_structure_retains_a_complete_real_abstract() {
     let pages =
         native::parse(include_str!("../../tests/fixtures/debate-frontmatter.html")).unwrap();
-    let index = assemble(&pages);
+    let index = assemble(&pages.pages);
     let paragraph = index
         .objects
         .paragraph
@@ -377,7 +377,7 @@ fn native_dash_wrapped_hierarchy_paragraph_reaches_desai_citation() {
         "../../tests/fixtures/hierarchy-introduction.html"
     ))
     .unwrap();
-    let index = assemble(&pages);
+    let index = assemble(&pages.pages);
     let paragraphs = paragraph_texts(&index);
     let humans = index.text[..index.text.find("humans").unwrap()]
         .encode_utf16()
@@ -411,7 +411,7 @@ fn real_goodhart_prose_definition_and_numbered_footnotes_have_independent_bounda
         "../../tests/fixtures/goodhart-paragraphs.html"
     ))
     .unwrap();
-    let index = assemble(&pages);
+    let index = assemble(&pages.pages);
     let paragraphs = paragraph_texts(&index);
     assert_eq!(paragraphs.len(), 6, "{paragraphs:#?}");
     assert!(paragraphs[0].starts_with("proxy necessarily"));
