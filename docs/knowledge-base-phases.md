@@ -3003,3 +3003,113 @@ date, last merged issue, in-flight branches and their state, next action, and op
   this continuation #97/#98/#101/#103; #98/#101 now closed. Coverage#97/title#103 and
   historical O25/O26#21/#22 remain. All later phases, final Playwright app scenario,
   5/5 gates and24/30 objectives, actual10k scenario and final system report remain pending.
+
+
+### 2026-09-13 — three blind annotations frozen; mixed-bundle adapter review
+
+- Main before this checkpoint is2ad503d. PhaseA, WaveA2; no phase exit. Last merge
+  remains #101/PR104, mergea54de426d6691c013e5ea4b3333e7027d7103335; owned branch and
+  worktree removed. Current scorecard **1/5 gates,3/30 objectives(O1,O2,O30)**. O1=1.0,
+  O2=.9107793204006069 on all15 objects in the immutable two-paper release. All later
+  phases, five hard gates,24/30 objectives, production10k scenario and final app/report
+  remain outstanding. Protected ten unrelated PDF-preview file hashes unchanged.
+- #97 `feat/e8.3-k1-coverage`, `.worktrees/feat/e8.3-k1-coverage`, owner
+  `finish_corpus_proxy`, now clean source **e64b9d85bf0c4aefe9627bf175a01aeed4992cc8**.
+  It contains ordinary main merge8f8105a and independently cleared parser8a8f58c;
+  no rebase. New narrow adapter composes separately verified visual/math/bibliography
+  overlays against original candidate bytes, preserves typed figure/table references
+  outside O4 and verifies the exact native export actually shown to blind annotators.
+  Owner reports210 offline Python tests-Werror passing,12new; root independent review
+  is in progress. No expanded truth assembled/admitted. All51 pinned verifier/truth/
+  blind-packet files unchanged. Original v1 truth and retained historical implementations
+  remain immutable; previous actual replay reproduced both payloads byte-for-byte.
+- Owner's before-change own-CLI build/check receipt is
+  `~/.cache/lysilogy/k1-coverage/manual-adapter-before-7c6296e/receipt.json`, SHA
+  `91df0d363255b7cbc14611b09b9e312552be414d1f8288979e93348a0404293d`.
+  Actual objects and bibliography `--check` passed; no fresh collector or truth build.
+  After batch14 completed, owner was given the next sole heavy build/gate window for
+  e64b9d8; await terminal receipts before starting batch15. Use one native/Rust/G5 job,
+  CARGO_BUILD_JOBS1, dev/test debug0, incremental0. Lightweight annotation/review continues.
+- Frozen seven-paper blind pilot is under
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v1/`. Policy/selection/render/export hashes
+  are recorded in the prior entry and remain unchanged. All43 original pages are rendered;
+  exports include only exact native text/pages/tokens and safe raw deposited source. No
+  raw detector-bearing reading indexes or other annotator labels are shown to annotators.
+  First three dual annotations are now frozen; fourth2409.03655v1 is RUNNING. Primary
+  `finish_benchmark` and independent `review_ready_prs` own their separate immutable
+  `primary/<id>/` and `independent/<id>/` inventories and receipts. Use followup_task to
+  assign later papers after freeze, in order2002.03492v1,2207.03024v1,2303.07834v2.
+  Seven/21 planned milestones do not replace the approximately500-paper coverage target.
+- First2210.11141v1: both found6figures,2tables,4equations,25bib/75fields,49citation
+  groups/75pairs,20source refs. Root checked232primary and207independent source spans,
+  native memberships, all full original pages and independent evidence. Initial comparison
+  SHAae8df874fe30bf0b47b7cab33959fcd15455702a25b4f53fb5b2cd69b6ba2204 found17
+  independent fields lost26 accents/hyphens during normalized character lookup. Original
+  labels remain immutable. Independent inventory-v2 SHA
+  `29aa1a0b1010e252323d8c13f2e3566c935c674129b1cf7314144fe071c659a6` corrects exact
+  raw membership only; all75 now independently match primary. Root correction review
+  `reconciliation/2210.11141/root-field-correction-review-v2.json` SHA
+  `31f2903c9055153d4e9ef7070b7e20931066faf00a509b6b2fdea1f13e0cd106`. Five genuine
+  source/native wrap or missing-hyphen gaps remain explicit; no invented glyphs.
+- Root re-rendered first-paper pages2–4 at192dpi and visually reconciled complete eight
+  graphic/table regions, retaining all labels/subpanels and separate captions. Root region
+  reconciliation SHA001c12e6b58f0b7add19cfb53df78294d1356f082c69471f21dc9d7d1b5745a5.
+  Role reconciliation SHA11dea94e9c9a8c4031e60806f455a3f5a2453dd48cdcbe3040099ba251882866:
+  task-definition paragraph, two prose lists and four narrative passages remain explicit
+  candidates, outside original E1.4 formal statement/proof and E1.5 captioned Algorithm/
+  code-listing scope. No automatic guard or objective target changed. These are supplements,
+  not truth admission. Remaining assembly prerequisites: post-freeze source-inventory/
+  packet reconciliation and independently drawn four math-body visual boxes. Owner is
+  preparing exact requirements; do not fabricate geometry or accepted/completeness flags.
+- Second2310.04162v1 frozen: primary inventory
+  `ee3e94419a17895f51f1934ea37656628277f0a423cdff8fa4431f4ec1c9583e`, receipt
+  `45917c3e97bcc07f1c01e3c2ec32046cd92e1578b1cf3a660141cf2dcd82fbf7`,490.575s;
+  independent inventory`2a5786952a7dd26b2888fb8c78e70e2069607ee6b80dac5787c86c86f52ce847`,
+  receipt`9b1c95ae3bd656e118194ad8a3198529394ff309fe86425d34017ae405b6ea71`,634.33738s.
+  Both found8figures,5tables,22eq,20bib/60fields,32citationgroups/40pairs,26object refs
+  and5section refs. Three author-numbering inconsistencies remain unresolved. Independent
+  raw field audit59normalizationmatches/one genuine missing-native-hyphen gap. Prose
+  candidate segmentation differs and needs root reconciliation. Second schema uses
+  occurrence_id/caption_native/visual_body/native/target_pairs; adapt comparator explicitly,
+  retaining first-paper immutable outputs. Root still needs full eight original-page views.
+- Third2001.05217v1 frozen: primary inventory
+  `5a12b5bbcff11675604e34ef56d4bb99d1a068543a8e4d2eaa213a486c8274c7`, receipt
+  `be9b2abe68741f5f168ba077c20d5964442dbf6fd97bac7b284ce77be5c1924b`,495.526s;
+  independent inventory`3b76d4023b89b8b93317f41716925e752d1136ef5806cf084d6c6ea1cbb20cfe`,
+  receipt`f8a4beb4f0881a952eda90548baebcb911d5680de1205145a9e295a6808f3541`,449.179735s.
+  Both4figures,14eq,15bib,10citationgroups/17pairs,13objectrefs; independent additionally
+  records one next-section ref. Two collective authors have no named individual first author;
+  field eligibility needs reconciliation. Math fidelity/definition/procedure roles explicit.
+  All annotation receipts record zero external calls; agent reasoning cost is unknown.
+- #97's latest full automated run remains4ada537:617parsed/383failed/rawaccepted1/
+  **zero defensible new truth**,997.138481s/499824KiB/zero calls/$0. Historical ledger
+  stays unchanged. No namespace probe/new full run. Approximately500 coverage remains unmet.
+- **Scale batches1–14 complete**, plus separate#98 retry: **4,500 unique indexes,
+  all1000eval and3549scale**,49overlap. Batch14:250/250,436.895303s/305392KiB,zero
+  network/model calls/$0; output0267f750538fbbcbd5cb1bf1db5cb3c3342a05e52f83807030d7126102d81108.
+  Root rehashed821,016,778 new index bytes; audit
+  `~/.cache/lysilogy/native-index-after-batch14-review.json` SHA
+  `996543d3f9bfc390785e7d7af0e01570b594b615285993cad227659ec92c89e4`.
+  Terminal exec81555 completed exit0; do not poll again. Next batch15 using retained
+  run-scale-index-batch.py --batch15 --limit250 after owner's heavy window releases.
+  Corpus complete10951PDFs/1000sources at~/Corpora/arxiv; no downloader. Canonical data
+  ~/.cache/lysilogy/arxiv-kb-data; registry10951 SHA934d7fa7860d8a84639f52fbb7d77c0a721f3b7e4bc8f836b70b8063c4fa835d
+  unchanged. Preserve20GiB free-space floor. This is indexing preparation, not production
+  O25/O27 or10k acceptance. Portable helper/runner/auditor remain those in the prior entry.
+- Draft#25/PR94 `feat/e1.2-bibliography`201c53c remains independently clear, paused for
+  genuine K2/fullO9. Actual limited O8/O10=1.0, title30/35, author/year35/35; #103 retains
+  five title misses. G5388Rust/296Python/92Node; full source/compiled/runtime evidence
+  remains in prior entry. Do not merge based on the small K1 cohort alone.
+- Paused#33 `feat/e2.1-kb-store`905c341, noPR, uncompiled/missing rusqlite dependencies;
+  paused#71/draftPR93 `feat/e8.4-reference-truth`d5e12aa and#72/draftPR95
+  `feat/e8.5-person-labels`c867ec6. No response to pending permission for index.crates.io,
+  static.crates.io,api.crossref.org,api.openalex.org. Four-host script is prepared but NOT
+  applied; prior automatic review rejected a persistent two-host expansion without exact
+  authorization. Do not bypass. Genuine K2/K4/K5/K7/production G4/O28 remain unmeasured.
+  Original corpus storage/OAI/export/GCS permissions work. No rebase/sudo/rm-rf/private/env
+  access. Preserve unrelated worktrees and store dirty.gitignore/resume notes.
+- Next: review e64b9d8 adapter independently; reconcile second then third frozen annotations;
+  obtain first-paper exact supplemental math regions and source-inventory reconciliation;
+  finish remaining four blind papers; await owner after gates, audit/continue scale15. No
+  new issue merges or follow-ups at this checkpoint. This continuation opened#97/#98/#101/
+  #103; #98/#101 now closed. Coverage#97,title#103 and historical#21/#22 remain open.
