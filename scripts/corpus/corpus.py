@@ -12,6 +12,7 @@ import datetime as dt
 import email.utils
 import fcntl
 import hashlib
+import http.client
 import json
 import math
 import os
@@ -30,6 +31,7 @@ OAI = "https://oaipmh.arxiv.org/oai"
 GCS = "https://storage.googleapis.com"
 EXPORT = "https://export.arxiv.org/e-print/"
 USER_AGENT = "Lysilogy-K0/1.0 (research corpus; https://github.com/tjmisko/Lysilogy)"
+PROXY_ENV_VARS = ("HTTPS_PROXY", "https_proxy")
 MIB = 1024 * 1024
 GIB = 1024 * MIB
 NS = {"o": "http://www.openarchives.org/OAI/2.0/", "a": "http://arxiv.org/OAI/arXiv/"}
@@ -155,16 +157,67 @@ def persist_rate_deadline(rate_file, deadline):
     os.fsync(rate_file.fileno())
 
 
+def configured_proxy(variable):
+    """Read only an explicitly selected proxy; never include its value in errors."""
+    if variable is None:
+        return {}
+    if variable not in PROXY_ENV_VARS:
+        raise CorpusError("Proxy environment variable must be HTTPS_PROXY or https_proxy")
+    value = os.environ.get(variable, "")
+    if not value:
+        raise CorpusError("The selected HTTPS proxy environment variable is missing or empty")
+    try:
+        parsed = urllib.parse.urlsplit(value)
+        if parsed.scheme == "https":
+            raise CorpusError("HTTPS-scheme proxies are unsupported by this transport; configure an approved HTTP CONNECT proxy")
+        valid = (parsed.scheme == "http" and parsed.hostname
+                 and parsed.port != 0 and parsed.path in {"", "/"}
+                 and not parsed.query and not parsed.fragment
+                 and not any(ord(char) <= 32 or ord(char) == 127 for char in value))
+    except ValueError:
+        valid = False
+    if not valid:
+        raise CorpusError("The selected HTTPS proxy must be a valid http:// proxy URL without a path, query or fragment")
+    return {"https": value}
+
+
 class Http:
-    def __init__(self, cache_root=None, sleep=time.sleep, clock=time.time):
+    def __init__(self, cache_root=None, sleep=time.sleep, clock=time.time, proxy_env=None):
         self.clock = clock
         self.cache_root = cache_root or Path.home() / ".cache/lysilogy"
         self.sleep = sleep
-        self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+        proxies = configured_proxy(proxy_env)
+        self.proxy_enabled = bool(proxies)
+        self.opener = urllib.request.build_opener(urllib.request.ProxyHandler(proxies), NoRedirect())
+
+    @staticmethod
+    def proxy_failure(error):
+        # urllib errors can echo an authenticated proxy URL. Report only status/type
+        # and suppress exception chaining at the call site, never transport secrets.
+        detail = f"HTTP {error.code}" if isinstance(error, urllib.error.HTTPError) else type(error).__name__
+        return CorpusError(f"Configured HTTPS proxy request failed ({detail}); check proxy access and corpus host permissions")
 
     @contextlib.contextmanager
     def open(self, url):
         validate_url(url)
+        if not self.proxy_enabled:
+            with self._open(url) as response:
+                yield response
+            return
+        try:
+            with self._open(url) as response:
+                yield response
+        except (KeyboardInterrupt, SystemExit, GeneratorExit, CorpusError) as error:
+            # Keep cancellation and known corpus failures intact, but suppress a
+            # transport exception left as context during persistence or cleanup.
+            raise error from None
+        except Exception as error:
+            # The response's read/close and retry handler are part of the same
+            # boundary as connection setup; none may echo proxy credentials.
+            raise self.proxy_failure(error) from None
+
+    @contextlib.contextmanager
+    def _open(self, url):
         arxiv = urllib.parse.urlsplit(url).hostname != "storage.googleapis.com"
         # This lock is shared across corpus roots/processes. Hold it until the
         # response closes: the policy also limits simultaneous connections.
@@ -186,20 +239,34 @@ class Http:
                     response = self.opener.open(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}), timeout=90)
                     break
                 except urllib.error.HTTPError as error:
-                    delay = max(retry_after(error.headers.get("Retry-After"), timestamp=self.clock()),
-                                3.0 * 2**attempt)
-                    if rate_file:
-                        # Save even on the final retry, before raising or an
-                        # interruptible sleep releases the shared connection lock.
-                        persist_rate_deadline(rate_file, self.clock() + delay)
-                    error.close()
+                    try:
+                        delay = max(retry_after(error.headers.get("Retry-After"), timestamp=self.clock()),
+                                    3.0 * 2**attempt)
+                        if rate_file:
+                            # Save even on the final retry, before raising or an
+                            # interruptible sleep releases the shared connection lock.
+                            persist_rate_deadline(rate_file, self.clock() + delay)
+                    finally:
+                        # Cancellation during persistence must still close the
+                        # response, including its deferred resource-warning state.
+                        error.close()
                     if error.code not in (429, 500, 502, 503, 504) or attempt == 5:
+                        if self.proxy_enabled:
+                            raise self.proxy_failure(error) from None
                         raise
-                    self.sleep(delay)
-                except urllib.error.URLError:
+                except urllib.error.URLError as error:
                     if attempt == 5:
+                        if self.proxy_enabled:
+                            raise self.proxy_failure(error) from None
                         raise
-                    self.sleep(3.0 * 2**attempt)
+                    delay = 3.0 * 2**attempt
+                except (http.client.HTTPException, ValueError) as error:
+                    if self.proxy_enabled:
+                        raise self.proxy_failure(error) from None
+                    raise
+                # Leave the error handler before an interruptible sleep so an
+                # interrupt cannot render a proxy exception's credential context.
+                self.sleep(delay)
             with response:
                 yield response
 
@@ -678,6 +745,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=os.environ.get("LYSILOGY_CORPUS", "~/Corpora/arxiv"))
     parser.add_argument("--config", type=Path, default=Path(__file__).with_name("selection.json"))
+    parser.add_argument("--proxy-env", choices=PROXY_ENV_VARS,
+                        help="Explicitly use the HTTPS proxy from this environment variable; direct transport is the default")
     commands = parser.add_subparsers(dest="command", required=True)
     harvest_parser = commands.add_parser("harvest", help="Resume OAI metadata harvest")
     harvest_parser.add_argument("--refresh", action="store_true", help="Fetch updates since each completed harvest")
@@ -707,7 +776,7 @@ def main(argv=None):
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError as error:
                 raise CorpusError("Another corpus mutation is already running at this root") from error
-            http = Http()
+            http = Http(proxy_env=args.proxy_env)
             if args.command in {"harvest", "run"}:
                 harvest(root, config, http, getattr(args, "refresh", False))
             if args.command in {"select", "run"}:

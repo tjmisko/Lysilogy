@@ -1057,6 +1057,13 @@ background resume. OAI modification dates are only incremental-harvest bounds; s
 strata use `created`. Sources explicitly request the pinned PDF version. Missing artifacts or
 sparse strata fail without silently reducing the tier count.
 
+Direct transport is the default. Managed environments may explicitly select their approved
+HTTP CONNECT proxy for HTTPS destinations with `--proxy-env HTTPS_PROXY` (or `https_proxy`).
+Unsupported HTTPS-scheme proxy URLs are rejected. This reads only the selected process
+variable, redacts proxy credentials from errors, and leaves destination hosts, TLS,
+redirect refusal and the shared rate budget unchanged. Environment host permissions remain
+independent of this transport choice.
+
 Acceptance: a fresh run reproduces the same selection; an interrupted run resumes without
 re-downloading verified files; the harvester stays within the documented rate; disk usage is
 reported before download starts and the run refuses to proceed when free space would drop below a
