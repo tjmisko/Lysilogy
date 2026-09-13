@@ -54,7 +54,7 @@ integration check.
 
 ## Validation and measured availability
 
-Final source `b779eb1f750e0389fd55a53e8635dfab271e8975` normally merges main `cc329dd`, including
+Initial integrated checkpoint `b779eb1f750e0389fd55a53e8635dfab271e8975` normally merges main `cc329dd`, including
 corpus fixes #88/#91. Its parser, frontend and collector source is unchanged from the independently
 cleared `97067fc`. Formatting, strict all-target/all-feature Clippy, and all **329 Rust tests** pass.
 The additions include 23 bibliography tests and a backend API evidence test. Frontend typecheck,
@@ -67,7 +67,7 @@ keyboard isolation. The healthy fixture exposes six reference, four figure, one 
 additional native hints. The final screenshots were inspected and retained outside the worktree.
 This is issue-level reader verification; final live-system and 10k arXiv verification remain ahead.
 
-G5 passes **329 Rust, 124 Python and 90 Node tests** in an isolated network namespace with no model
+At that checkpoint, G5 passes **329 Rust, 124 Python and 90 Node tests** in an isolated network namespace with no model
 CLIs. It took **7.650 seconds**; the complete final gate sequence took **64.534 seconds**. Model
 calls: **0**. Cost: **$0**. Bibliography, objects, scale and tests evaluations all pass `--check`.
 The original before/after JSON, 28 source fingerprints, command log hashes, G5 evidence/counts,
@@ -76,6 +76,23 @@ executable fingerprint and screenshot hashes are retained in
 are also retained under `~/.cache/lysilogy/bibliography-e1.2/`. Actual commit/dirty flags remain
 intact; generated scorecard output accounts for dirty state during evaluation. No source changed
 during the final gates.
+
+The final fixture follow-up is `6291b7e5c64cdc4c87762ab2097f4e51499d449d`. Review found that the
+browser test helper inherited Cargo directory/target settings while executing a fixed binary path.
+It now owns the worktree target directory and selects Cargo's reported executable by exact example
+name, kind and source path. Its regression models directory and native-target-triple overrides from
+both environment and configuration, including stale native binaries and unrelated build artifacts.
+Production Rust and the Python collector are unchanged from the earlier validated checkpoint.
+
+The affected frontend typecheck/lint/build, focused fixture regression, production-artifact paper
+links and Playwright smoke were refreshed successfully. Bibliography, objects, scale and tests
+`--check` also pass after refreshing O30. Final G5 is **329 Rust / 124 Python / 91 Node**, taking
+**7.386 seconds**; the affected-check sequence took **32.858 seconds**, with zero model calls and
+$0 cost. [Supplemental evidence](../../eval/evidence/bibliography-fixture-target.json) retains the
+final 29 source fingerprints, exact results/logs, G5 receipt/counts and screenshots, plus the
+historical passing directory-only checkpoint. The earlier full Rust/Clippy receipts remain valid
+for their unchanged source. This follow-up is independently cleared; the K1/K2 measurement hold
+is unchanged.
 
 | Measure | Before | After | Status |
 | --- | --- | --- | --- |
