@@ -137,6 +137,12 @@ See \ref{fig:a} and \eqref{eq:a}; evidence \cite{source}.
         row = parse_project({'main.tex': source})['entries'][0]
         self.assertEqual(row['field_labels'], {'title': 'Not all events of 1999 were recorded', 'year': '2021', 'first_author': 'Smith'})
 
+    def test_should_take_one_explicit_author_when_a_bibfield_wrapper_contains_multiple_people(self):
+        source = document(r"\begin{thebibliography}{9}\bibitem{one}\bibfield{author}{\bibinfo{author}{A. Smith} and \bibinfo{author}{B. Jones}}. A title.\end{thebibliography}")
+        self.assertEqual(parse_project({'main.tex': source})['entries'][0]['field_labels'], {'first_author': 'A. Smith'})
+        ambiguous = source.replace(r'\bibinfo{author}{A. Smith} and \bibinfo{author}{B. Jones}', 'A. Smith and B. Jones')
+        self.assertEqual(parse_project({'main.tex': ambiguous})['entries'][0]['field_labels'], {})
+
     def test_should_withhold_stale_fields_when_active_bibtex_disagrees_with_rendered_evidence(self):
         files = {"main.tex": document(r"\bibliography{used}"), "main.bbl": r"\begin{thebibliography}{9}\bibitem{one}Smith. Correct unique published title. 2021.\end{thebibliography}",
                  "used.bib": '@article{one, author={Wrong Author},title={An unrelated manuscript},year={1999}}'}

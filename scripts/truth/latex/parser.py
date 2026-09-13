@@ -143,10 +143,16 @@ def markup_fields(raw, renderer):
             continue
         name, pos = group(raw, match.end())
         value, _ = group(raw, pos)
+        # A bibfield{author} wrapper can contain an entire list. Only the first
+        # explicitly delimited bibinfo{author} establishes a first-author label.
+        if name == "author" and match[1] == "bibfield":
+            continue
         field = {"title": "title", "year": "year", "author": "first_author"}.get(name)
         if field and field not in labels:
             before = renderer.unsupported.copy()
             value = renderer.plain(value)
+            if field == "first_author" and re.search(r"\band\b|\bet\s+al\b|;", value):
+                continue
             if value and renderer.unsupported == before and (field != "year" or re.fullmatch(r"(?:18|19|20)\d{2}[a-z]?", value)):
                 labels[field] = value
                 provenance[field] = {"command": match[1], "field": name, "offset": match.start()}
