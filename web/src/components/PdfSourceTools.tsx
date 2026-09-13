@@ -551,5 +551,5 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     {index !== null && index.gaps.length > 0 && <p className="pdf-source-gap">Search incomplete: {index.gaps.map((gap) => `p. ${gap.page}: ${gap.reason}`).join("; ")}</p>}
     {manualCopy !== null && <textarea aria-label="Text to copy manually" value={manualCopy} readOnly onFocus={(event) => event.target.select()} autoFocus />}
   </div> : null;
-  return { panel, marks, index, onKey, pointerCursor, quit, cursorMode, lineNumberMode, localMode: panel !== null, visualMode: visual !== null };
+  return { panel, marks, index, loadIndex, onKey, pointerCursor, quit, cursorMode, lineNumberMode, localMode: panel !== null, visualMode: visual !== null };
 }

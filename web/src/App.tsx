@@ -231,6 +231,7 @@ export function App() {
   useEffect(() => {
     const onFunctionKey = (event: KeyboardEvent): void => {
       if (event.defaultPrevented) return;
+      if (event.key.length === 1 && document.querySelector('.pdf-reader[data-link-hints="true"]') !== null) return;
       if (event.target instanceof Element && event.target.closest(".notes-panel") !== null) return;
       if (event.key === "F1") {
         event.preventDefault();
@@ -939,6 +940,7 @@ export function App() {
       if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target instanceof Element ? event.target : null;
       if (target?.closest(".notes-panel") != null) return;
+      if (document.querySelector('.pdf-reader[data-link-hints="true"]') !== null) return;
       if (event.key === "/" && !isEditableTarget(event.target) && !home && !readingPdf && panel === null && !commandOpen && !switcherOpen && !queueOpen && !experimentOpen && toolsTab === null && !(compactLayout && libraryOpen) && target?.closest(".library-rail") == null) {
         event.preventDefault(); event.stopImmediatePropagation(); pendingSourceSearch.current = true; setTextMode("pdf"); setView("text"); return;
       }

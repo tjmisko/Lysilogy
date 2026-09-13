@@ -1,5 +1,6 @@
 import { flushSync } from "react-dom";
 import { PdfSourceLineNumbers, PdfSourceMarks } from "./PdfSourceMarks";
+import { usePdfLinkHints } from "./PdfLinkHints";
 import { usePdfSourceTools, type SourceMark } from "./PdfSourceTools";
 import { sectionPageCrop, type SectionCrop } from "../lib/sectionCrop";
 import { cropTextLayer } from "../lib/cropTextLayer";
@@ -380,7 +381,9 @@ export function PdfReader({
     if (pdfDocument !== null) onPageCount(pdfDocument.numPages);
   }, [onPageCount, pdfDocument]);
 
-  const pageCount = pdfDocument?.numPages ?? 1;
+  // Cached search can finish before PDF.js loads. Keep section boundaries valid
+  // using the already available page layouts during that interval.
+  const pageCount = pdfDocument?.numPages ?? pageLayouts?.reduce((count, layout) => Math.max(count, layout.number), 1) ?? 1;
   const crops = useMemo(() => new Map(pageLayouts?.map((layout) => [layout.number,
     section === undefined ? null : sectionPageCrop(section, layout, pageCount)])), [pageCount, pageLayouts, section]);
   const readingWidth = Math.max(1, ...Array.from(crops.values()).flatMap((crop) => crop === null ? [] : [crop.bounds.x_max - crop.bounds.x_min]));
@@ -395,6 +398,13 @@ export function PdfReader({
   const sourceTools = usePdfSourceTools({ url, page, root: readerRef, pageSubset, crops, markPages: flow === "paged" ? visiblePages : [readingPage - 1, readingPage, readingPage + 1, page], prefetchReady: pdfDocument !== null, onPage, onOpenFullPaper, onClarify: onClarifySelection, onSave: onSaveReference });
   const sourceKey = sourceTools.onKey;
   const sourceQuit = sourceTools.quit;
+  const linkHints = usePdfLinkHints({ url, page, document: pdfDocument, root: readerRef, enabled: keyboardEnabled,
+    context: `${flow}:${axis}:${fit}:${visualFit}:${zoom}:${containerWidth}:${containerHeight}`, crops, pageSubset,
+    loadIndex: sourceTools.loadIndex, onPage, onOpenFullPaper });
+  const linkKey = linkHints.onKey;
+  const linkActive = linkHints.active;
+  const linkQuit = linkHints.quit;
+  const linkOwnsPageJump = linkHints.ownsPageJump;
 
   useEffect(() => {
     if (flow !== "continuous") return;
@@ -410,6 +420,9 @@ export function PdfReader({
 
   useEffect(() => {
     if (flow !== "continuous" || pdfDocument === null) return;
+    // Following a link reveals its exact coordinates after rendering. A generic
+    // page-start scroll must not race that reveal or undo it on an already drawn page.
+    if (linkOwnsPageJump(page)) return;
     const frame = window.requestAnimationFrame(() => {
       const host = containerRef.current;
       const target = readerRef.current?.querySelector<HTMLElement>(`[data-pdf-page="${page}"]`);
@@ -418,11 +431,20 @@ export function PdfReader({
       else host.scrollLeft += target.getBoundingClientRect().left - host.getBoundingClientRect().left - 12;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [axis, flow, page, pageJump, pdfDocument]);
+  }, [axis, flow, linkOwnsPageJump, page, pageJump, pdfDocument]);
 
   const changeFit = useCallback((next: "width" | "height", visual = false) => { setFit(next); setVisualFit(visual); onZoom?.(1 - zoom); }, [onZoom, zoom]);
-  const changeFlow = useCallback(() => { onPage(flow === "continuous" ? readingPage : page); setFlow((value) => value === "paged" ? "continuous" : "paged"); }, [flow, onPage, page, readingPage]);
-  const changeAxis = useCallback(() => { onPage(flow === "continuous" ? readingPage : page); setFlow("continuous"); setAxis((value) => value === "vertical" ? "horizontal" : "vertical"); }, [flow, onPage, page, readingPage]);
+  const changeFlow = useCallback(() => {
+    // A link jump can precede the scroll event that updates readingPage.
+    const current = containerRef.current === null ? readingPage : visiblePdfPage(containerRef.current) ?? readingPage;
+    onPage(flow === "continuous" ? current : page);
+    setFlow((value) => value === "paged" ? "continuous" : "paged");
+  }, [flow, onPage, page, readingPage]);
+  const changeAxis = useCallback(() => {
+    const current = containerRef.current === null ? readingPage : visiblePdfPage(containerRef.current) ?? readingPage;
+    onPage(flow === "continuous" ? current : page);
+    setFlow("continuous"); setAxis((value) => value === "vertical" ? "horizontal" : "vertical");
+  }, [flow, onPage, page, readingPage]);
 
   useEffect(() => {
     const host = containerRef.current;
@@ -456,6 +478,7 @@ export function PdfReader({
       if (event.defaultPrevented || handleNotesPaneKey(event)) { clearPendingG(); return; }
       if (window.document.querySelector(".section-figure-view") !== null || event.target instanceof Element && event.target.closest(".notes-panel") !== null) { clearPendingG(); return; }
       const target = event.target;
+      if (target instanceof Element && target.closest(".library-rail") !== null) { clearPendingG(); return; }
       if (event.isComposing || event.metaKey || event.altKey || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
         || target instanceof HTMLSelectElement || target instanceof HTMLElement && target.isContentEditable) { clearPendingG(); return; }
       if (event.repeat && ["g", "H", "W", "w"].includes(event.key) && !event.ctrlKey && !sourceTools.cursorMode && !sourceTools.visualMode) {
@@ -463,6 +486,9 @@ export function PdfReader({
       }
       const prefixed = pendingG.current !== null;
       clearPendingG();
+      if ((linkActive || event.key === "f" || event.ctrlKey && event.key === "o") && flushSync(() => linkKey(event))) {
+        event.preventDefault(); event.stopImmediatePropagation(); return;
+      }
       if (prefixed && !event.ctrlKey && ["H", "W", "g", "Escape"].includes(event.key)) {
         event.preventDefault(); event.stopImmediatePropagation();
         if (event.key === "H" || event.key === "W") changeFit(event.key === "H" ? "height" : "width", true);
@@ -503,7 +529,7 @@ export function PdfReader({
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [availablePages, axis, changeAxis, changeFit, changeFlow, clearPendingG, flow, keyboardEnabled, onGloss, onPage, page, sourceKey, sourceTools.cursorMode, sourceTools.visualMode, step]);
+  }, [availablePages, axis, changeAxis, changeFit, changeFlow, clearPendingG, flow, keyboardEnabled, linkActive, linkKey, onGloss, onPage, page, sourceKey, sourceTools.cursorMode, sourceTools.visualMode, step]);
 
   const handleTextLayer = useCallback(
     (pageNumber: number, viewport: PageViewport | null): void => {
@@ -615,6 +641,7 @@ export function PdfReader({
     const node = readerRef.current;
     if (node === null) return;
     const quit = (event: Event) => {
+      if (flushSync(linkQuit)) { event.preventDefault(); return; }
       if (pendingG.current !== null) { clearPendingG(); event.preventDefault(); return; }
       const closed = flushSync(sourceQuit);
       if (closed) { event.preventDefault(); return; }
@@ -622,12 +649,13 @@ export function PdfReader({
     };
     node.addEventListener("source-quit", quit);
     return () => node.removeEventListener("source-quit", quit);
-  }, [clearPendingG, clearSelection, selectionState, sourceQuit]);
+  }, [clearPendingG, clearSelection, linkQuit, selectionState, sourceQuit]);
 
   return (
     <section ref={readerRef} className="pdf-reader" tabIndex={-1} aria-label={`PDF: ${title}`} data-flow={flow} data-axis={axis} data-fit={fit}
       data-fit-bounds={visualFit ? "visual" : "page"}
-      data-source-local-mode={sourceTools.localMode || selectionState !== null ? "true" : undefined}
+      data-source-local-mode={linkHints.active || sourceTools.localMode || selectionState !== null ? "true" : undefined}
+      data-link-hints={linkHints.active ? "true" : undefined}
       data-source-visual={keyboardEnabled && sourceTools.visualMode ? "true" : undefined}
       data-source-cursor={keyboardEnabled && sourceTools.cursorMode ? "true" : undefined}
       data-line-numbers={sourceTools.cursorMode ? sourceTools.lineNumberMode : undefined}
@@ -727,6 +755,7 @@ export function PdfReader({
         ))}
       </div>
       {sourceTools.panel}
+      {linkHints.panel}
       {selectionState !== null && (
         <div
           className="pdf-selection-menu"

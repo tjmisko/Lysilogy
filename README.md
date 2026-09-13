@@ -294,13 +294,28 @@ Press `?` in the app for the complete, contextual guide.
 | `I` | Invert every PDF rendering between dark ink and true image colors |
 | `F1` | Toggle the library from anywhere |
 | `F10` | Open the fuzzy article switcher |
-| `f` | Filter to mapped papers while the library is open |
+| `f` | Show Vimium-style hints for visible citations, figures, tables, and PDF links; filter mapped papers when the library has focus |
+| `Ctrl-o` | Return to the reading position before following a link |
 | `:` | Command menu (`:analyze`, `:queue`, `:feedback`, `:spread`, and more) |
 | `:experiment` | Open the blind learning-ramp A/B prompt lab. |
 | `Q` | Toggle the processing queue and live analysis tasklists |
 | `q` / `Esc` | Leave the current selection or panel, return to map, then home |
 | `T` | Show or pin reader controls; the top mouse edge also reveals them |
 | `E` | Open Markdown notes beside the paper |
+
+In the PDF, press `f` and type the yellow hint to follow its link. `Tab` shows the citation or
+caption destination in the hint bar; `Enter` follows the inspected hint. `Backspace` edits a
+partial hint, and `Esc` or `q` cancels. Grouped citations get separate hints for each destination.
+Only visible links within the current page or section crop receive hints. Following a destination
+outside the section opens it in the full paper, with its location briefly outlined; `Ctrl-o`
+returns to the previous source position. Web links open in a new tab.
+
+Link matching uses the current paper's bibliography and captions: numbered and alphanumeric
+references, raised numeric citations, author–year citations, figure/table abbreviations, Roman
+numerals, and supplementary labels. Embedded PDF destinations take precedence for individual
+links. Ambiguous or unresolved text references are omitted; scanned pages depend on available
+OCR or embedded links. Hint keys belong to the PDF reader; notes and editable fields keep their
+normal keyboard behavior.
 
 Pointer selection works too: select text in a digest, then choose **Clarify selection**. In the page
 map, `v` enters a coordinate-backed evidence cursor; a second `v` starts a same-page sentence range,
