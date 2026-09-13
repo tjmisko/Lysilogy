@@ -19,13 +19,19 @@ class BuilderTests(unittest.TestCase):
         self.assertEqual({row['stratum'][0] for row in first[:3]}, {0, 1, 2})
         self.assertEqual(len(first), 12)
 
-    def test_should_select_unique_title_evidence_when_two_roots_have_different_titles(self):
+    def test_should_withhold_title_substring_selection_when_complete_printed_title_boundaries_are_unknown(self):
         files = {'a.tex': document('Body.', r'\title{The sufficiently distinctive first paper title}'),
                  'b.tex': document('Other.', r'\title{A completely different second paper title}')}
         text = 'The sufficiently distinctive first paper title'
-        selected, evidence = choose_main(files, {'text': text, 'pages': [{'number': 1, 'start': 0, 'end': len(text)}]})
-        self.assertEqual(selected, 'a.tex')
-        self.assertIn('PDF first page', evidence['method'])
+        with self.assertRaisesRegex(UnsupportedSource, 'non-equivalent'):
+            choose_main(files, {'text': text, 'pages': [{'number': 1, 'start': 0, 'end': len(text)}]})
+
+    def test_should_not_choose_a_shorter_source_title_when_the_pdf_has_added_negation(self):
+        files = {'a.tex': document(r'\begin{theorem}A distinctive body.\end{theorem}', r'\title{All elements have a unique bounded representation}'),
+                 'b.tex': document(r'\begin{center}Not all elements have a unique bounded representation\end{center} A distinctive body.')}
+        text = 'Not all elements have a unique bounded representation A distinctive body.'
+        with self.assertRaisesRegex(UnsupportedSource, 'non-equivalent'):
+            choose_main(files, {'text': text, 'pages': [{'number': 1, 'start': 0, 'end': len(text)}]})
 
     def test_should_reject_title_ties_when_different_documents_share_a_title(self):
         title = r'\title{The sufficiently distinctive shared paper title}'

@@ -300,9 +300,11 @@ def parse_project(files, limits=Limits(), selected_main=None):
         caption_rows = list(owned_commands(node, {"caption"}))
         selected = caption_rows[0]["value"] if caption_rows else raw
         before = renderer.unsupported.copy()
+        before_math = renderer.math_seen
         rendered = renderer.plain(selected)
         unknown = dict(renderer.unsupported - before)
-        if kind == "equation" and any(char in rendered for char in "^_"):
+        has_math = kind == "equation" or renderer.math_seen > before_math
+        if has_math and any(char in rendered for char in "^_"):
             # Flattened PDF text does not establish which tokens belong to a
             # superscript/subscript group. Until independent geometry proves
             # binding, neither braced nor one-token TeX scripts are certifiable.
@@ -312,6 +314,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
                "source_members": expanded.origins(node["start"], node["end"]),
                "labels": label_keys, "text": rendered, "text_sha256": sha256(rendered.encode()),
                "caption": rendered if caption_rows else None, "unsupported_commands": unknown,
+               "contains_math": has_math,
                "statement_type": statements.get(environment, statements.get(base)), "proof_target_labels": [],
                "number_hint": str(numbering[kind]) if kind in ("figure", "table", "algorithm") else None}
         if kind == "proof" and node["option"]:
@@ -335,8 +338,12 @@ def parse_project(files, limits=Limits(), selected_main=None):
             end = markers[number + 1]["start"] if number + 1 < len(markers) else len(raw)
             body = raw[marker["end"]:end]
             before = renderer.unsupported.copy()
+            before_math = renderer.math_seen
             rendered = renderer.plain(body)
             unknown = dict(renderer.unsupported - before)
+            has_math = renderer.math_seen > before_math
+            if has_math and any(char in rendered for char in "^_"):
+                unknown["unverified_script_binding"] = 1
             field_labels, field_provenance = markup_fields(body, renderer)
             deposited = database.get(key)
             field_conflicts = []
@@ -354,6 +361,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
                             "numeric_key_hint": str(number + 1), "field_labels": field_labels,
                             "field_provenance": field_provenance, "source_span": {"start": start, "end": source_end},
                             "field_conflicts": field_conflicts,
+                            "contains_math": has_math,
                             "source_members": expanded.origins(start, source_end), "unsupported_commands": unknown})
         occupied.append((bibliography["start"], bibliography["end"]))
     links = []
@@ -385,13 +393,18 @@ def parse_project(files, limits=Limits(), selected_main=None):
         if following:
             right = right[:following.start()]
         before = renderer.unsupported.copy()
+        before_math = renderer.math_seen
         context_before, context_after = renderer.plain(left)[-200:], renderer.plain(right)[:200]
         unknown_context = dict(renderer.unsupported - before)
+        math_context = renderer.math_seen > before_math
+        if math_context and any(char in context_before + context_after for char in "^_"):
+            unknown_context["unverified_script_binding"] = 1
         links.append({"kind": "citation" if row["command"].rstrip("*") in CITES else "reference",
                       "command": row["command"], "targets": keys, "options": row["options"],
                       "source_span": {"start": row["start"], "end": row["end"]},
                       "source_members": expanded.origins(row["start"], row["end"]),
                       "context_before": context_before, "context_after": context_after,
+                      "math_context": math_context,
                       "unsupported_context_commands": unknown_context})
     label_targets = {}
     for row in objects:

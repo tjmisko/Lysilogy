@@ -246,6 +246,7 @@ class Renderer:
         self.definitions = []
         self.definition_counts = Counter()
         self.budget = [limits.expansion_steps, limits.text_bytes]
+        self.math_seen = 0
         for match in COMMAND.finditer(text):
             if match[1].rstrip("*") not in ("newcommand", "renewcommand", "providecommand"):
                 continue
@@ -284,6 +285,7 @@ class Renderer:
         while at < len(text):
             if text[at] != "\\":
                 char = text[at]
+                self.math_seen += char == "$"
                 output.append(" " if char in "~&" else "" if char in "{}$" else char)
                 at += 1
                 continue
@@ -315,6 +317,7 @@ class Renderer:
             elif name in SYMBOLS:
                 output.append(SYMBOLS[name])
             elif name in FORMATTING:
+                self.math_seen += name == "ensuremath"
                 value, at = token_argument(text, at)
                 output.append(self.plain(value, depth + 1, budget))
             elif name in ("href", "bibinfo", "bibfield"):
@@ -322,7 +325,8 @@ class Renderer:
                 value, at = group(text, at)
                 output.append(self.plain(value, depth + 1, budget))
             elif name in ("begin", "end"):
-                _, at = group(text, at)
+                environment, at = group(text, at)
+                self.math_seen += environment.rstrip("*") in {"equation", "align", "aligned", "gather", "multline", "eqnarray", "split"}
             elif name in DROP_ARGUMENT:
                 _, at = group(text, at, required=False)
             elif name in SILENT:

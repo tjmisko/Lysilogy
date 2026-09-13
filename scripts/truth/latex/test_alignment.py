@@ -265,6 +265,33 @@ class AlignmentTests(unittest.TestCase):
         self.assertFalse(result['metric_eligibility']['O4'])
         self.assertIn('crefrange', result['coverage']['unsupported_reference_commands'])
 
+    def test_should_preserve_inline_math_when_operators_inside_prose_change_meaning(self):
+        for environment, opening, closing in (('theorem', '', ''), ('figure', r'\caption{', '}'), ('algorithm', '', '')):
+            for authored, actual in (('x+y', 'x-y'), ('x=y', 'xy'), ('Alpha=Beta', 'alpha=beta'), ('x^{ab}', 'x^a b')):
+                body = 'The sufficient condition $' + authored + '$ ensures a unique bounded outcome.'
+                source = document('\\begin{' + environment + '}' + opening + body + closing + '\\end{' + environment + '}')
+                parsed = parse_project({'main.tex': source})
+                result = align_paper(parsed, {'text': 'The sufficient condition ' + actual + ' ensures a unique bounded outcome.'})
+                with self.subTest(environment=environment, authored=authored):
+                    self.assertFalse(result['accepted'])
+                    self.assertEqual(result['objects'], [])
+
+    def test_should_preserve_inline_math_when_bibliography_text_contains_a_formula(self):
+        source = document(r'\begin{thebibliography}{9}\bibitem{one}Smith. A result about $x+y$ with unique consequences. 2020.\end{thebibliography}')
+        result = align_paper(parse_project({'main.tex': source}), {'text': 'Smith. A result about x-y with unique consequences. 2020.'})
+        self.assertFalse(result['bibliography_eligible'])
+        self.assertEqual(result['entries'], [])
+
+    def test_should_preserve_inline_math_when_selecting_a_printed_link_context(self):
+        parsed, index = fixture()
+        parsed['links'][0]['context_before'] = 'The sufficient condition x+y has a unique meaning'
+        parsed['links'][0]['context_after'] = ''
+        parsed['links'][0]['math_context'] = True
+        index['text'] = 'The sufficient condition x-y has a unique meaning [1]\n[1] Smith, A. A uniquely identifiable synthetic study. 2020.'
+        result = align_paper(parsed, index)
+        self.assertEqual(result['mentions'], [])
+        self.assertFalse(result['bibliography_eligible'])
+
 
 if __name__ == "__main__":
     unittest.main()

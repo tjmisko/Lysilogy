@@ -27,7 +27,7 @@ from tex import Renderer, comments, definition_regions, expand_project, local_st
 
 VERSION = 'k1-latex-v1'
 POLICY = {'version': VERSION, 'seed': 'k1-latex-strata-v1', 'target_papers': 500, 'alignment_threshold': 0.95,
-          'source_limits': vars(Limits()), 'main_selection': 'unique root, unique PDF title, or byte-equivalent resolved closure',
+          'source_limits': vars(Limits()), 'main_selection': 'unique root or byte-equivalent resolved closure; title substring overlap is diagnostic only',
           'bibliography_inventory': 'all deposited entries and printed source citation occurrences must align',
           'region_truth': 'independent full-region annotations only; caption token geometry is never full-region truth'}
 IMPLEMENTATION = ['scripts/truth/latex/' + name for name in ('archive.py', 'tex.py', 'parser.py', 'align.py', 'builder.py')] + ['examples/k1_index.rs', 'src/library.rs', 'src/store.rs', 'src/domain.rs', 'src/source_index.rs', 'src/source_index/cache.rs', 'src/source_index/native.rs', 'src/source_index/paragraphs.rs', 'src/source_index/ocr.rs', 'src/source_index/figures.rs', 'scripts/corpus/corpus.py', 'scripts/corpus/selection.json', 'Cargo.toml', 'Cargo.lock']
@@ -167,8 +167,10 @@ def choose_main(files, index, members=None):
             titles[name] = title
             if not renderer.unsupported and len(normalized(title)) >= 20 and normalized(title) in pdf_title_text:
                 matches.append(name)
-    if len(matches) == 1:
-        return matches[0], {'method': 'unique complete source title in actual PDF first page', 'selected': matches[0], 'candidates': candidates, 'titles': titles}
+    # First-page substring matches are diagnostic only: a shorter source title
+    # may occur inside a different printed title (including added negation).
+    # Without independently bounded title/source evidence, do not select a
+    # non-equivalent root from that overlap.
     # Equivalent roots must expand to identical text and have identical deposited
     # bibliography content; a same-named or same-title file alone is insufficient.
     closures = {}
@@ -237,6 +239,8 @@ def derive_paper(paper, mapped, root, data_root):
     selected, main_evidence = choose_main(files, index, members)
     parsed = parse_project(files, selected_main=selected)
     result = align_paper(parsed, index, POLICY['alignment_threshold'])
+    result['source_inventory'] = parsed
+    result['source_inventory_sha256'] = sha256(canonical(parsed))
     if sha256(index_path.read_bytes()) != mapped['index']['sha256']:
         raise ValueError('index bytes changed during alignment')
     result.update(arxiv_id=paper['arxiv_id'], paper_id=mapped['paper_id'], pdf_sha256=paper['pdf']['sha256'],

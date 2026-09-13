@@ -87,16 +87,17 @@ class TextAlignment:
         return span, None
 
     def context_matches(self, span, link):
-        before = normalized(link["context_before"])[-80:]
-        after = normalized(link["context_after"])[:80]
+        math = link.get("math_context", False)
+        before = normalized(link["context_before"], math)[-80:]
+        after = normalized(link["context_after"], math)[:80]
         # One substantial unique context side can establish a location; a short
         # generic word or an empty context never chooses among repeated markers.
         evidence = []
         if len(before) >= 12:
-            actual = normalized(self.text[max(0, span[0] - 300):span[0]])
+            actual = normalized(self.text[max(0, span[0] - 300):span[0]], math)
             evidence.append(actual.endswith(before))
         if len(after) >= 12:
-            actual = normalized(self.text[span[1]:span[1] + 300])
+            actual = normalized(self.text[span[1]:span[1] + 300], math)
             evidence.append(actual.startswith(after))
         return bool(evidence) and all(evidence)
 
@@ -206,7 +207,7 @@ def align_paper(parsed, index, threshold=0.95):
             reason = "unsupported math commands prevent complete equation alignment" if row["kind"] == "equation" else "unsupported commands prevent complete object text alignment"
             excluded.append({"kind": row["kind"], "id": row["id"], "reason": reason, "unsupported_commands": row["unsupported_commands"]})
             continue
-        span, reason = aligner.unique(row["text"], row["kind"] == "equation")
+        span, reason = aligner.unique(row["text"], row["kind"] == "equation" or row.get("contains_math", False))
         if span is None:
             excluded.append({"kind": row["kind"], "id": row["id"], "reason": reason})
             continue
@@ -220,7 +221,7 @@ def align_paper(parsed, index, threshold=0.95):
         if row.get("unsupported_commands"):
             excluded.append({"kind": "bib_entry", "id": row["id"], "reason": "unsupported commands prevent complete bibliography text alignment", "unsupported_commands": row["unsupported_commands"]})
             continue
-        span, reason = aligner.unique(row["text"])
+        span, reason = aligner.unique(row["text"], row.get("contains_math", False))
         if span is None:
             excluded.append({"kind": "bib_entry", "id": row["id"], "reason": reason})
             continue

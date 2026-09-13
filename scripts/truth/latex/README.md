@@ -8,8 +8,8 @@ strings and never publish them as K1.
 traversal, duplicate canonical paths, sparse and special members; and supports standalone gzip
 LaTeX. `tex.py` preserves source positions while masking comments and inert definitions, expands
 bounded literal includes, and records source membership and unsupported presentation commands.
-A unique document root is the default. An explicit root needs independent PDF/title or equivalent
-resolved-closure evidence from the builder; filenames alone never break an ambiguity.
+A unique document root is the default. The builder accepts equivalent resolved closures when
+every resource is established; first-page title substrings and filenames cannot break an ambiguity.
 
 `parser.py` derives figure/table captions, numbered equations, custom theorem-like environments,
 proof targets, algorithms, bibliography items, citation keys and object references from source
@@ -30,8 +30,9 @@ per-metric cohort requires every relevant source item to align at the declared q
 (0.95); a missing member excludes the whole paper/kind, and never shrinks its denominator.
 Bibliography entry and citation inventories must be exhaustive to enter O8–O10. See
 [`eval/latex-contract.md`](../../../eval/latex-contract.md) for the cohort and omission contract.
-Equation matching preserves case, operators, scripts and grouping; unsupported rendered math
-withholds that equation. Multiple source objects cannot certify the same PDF span.
+Math matching preserves case and operators inside every object, bibliography entry and link
+context. Unsupported math/script binding withholds that evidence. Multiple source objects cannot
+certify the same PDF span.
 Caption token bounds are explicitly not full figure-region labels; full-region and O11 panel
 annotations require separate independent evidence.
 
@@ -48,7 +49,11 @@ exploratory input snapshot from verified eval PDF/source pairs, validates manife
 and retains candidates under `~/.cache/lysilogy/k1-builds/`. It builds the offline native helper,
 uses Cargo's reported executable, and fingerprints source, executable, PDF, source archive, and
 index bytes. It never changes corpus files. Main-file ties require a unique source title in the
-actual PDF first page or identical resolved text, active bibliography, and graphics hashes.
+actual PDF with independent complete-title evidence (not yet automated), or identical resolved
+text, active bibliography, and graphics hashes. Uninterpreted local package/class semantics
+withhold both root-equivalence claims and object inventory admission.
 All regular archive members are hash-pinned in memory; binary resources are never decoded as TeX.
 The full-build path currently refuses publication until the coverage and independent panel
 contract is implemented and satisfied; exploratory reports explicitly retain that limitation.
+Every aligned candidate retains the complete parsed object/entry/link inventory and its hash
+alongside omissions, so numeric link indices and all metric denominators remain auditable.
