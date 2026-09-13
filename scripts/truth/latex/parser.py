@@ -394,16 +394,29 @@ def parse_project(files, limits=Limits(), selected_main=None):
         left = re.split(r"\n\s*\n", left)[-1]
         right = re.split(r"\n\s*\n", right)[0]
         boundaries = CITES | REFS | {"label", "begin", "end", "section", "subsection", "subsubsection", "caption"}
-        previous = list(argument_commands(left, boundaries))
-        following = next((command for command in COMMAND.finditer(right) if command[1].rstrip("*") in boundaries), None)
-        if previous:
-            left = left[previous[-1]["end"]:]
-        if following:
-            right = right[:following.start()]
         before = renderer.unsupported.copy()
         before_math = renderer.math_seen
-        context_before, context_after = renderer.plain(left)[-200:], renderer.plain(right)[:200]
+        context_error = None
+        try:
+            previous = list(argument_commands(left, boundaries))
+            following = next((command for command in COMMAND.finditer(right) if command[1].rstrip("*") in boundaries), None)
+            if previous:
+                left = left[previous[-1]["end"]:]
+            if following:
+                right = right[:following.start()]
+            context_before, context_after = renderer.plain(left)[-200:], renderer.plain(right)[:200]
+        except UnsupportedSource as error:
+            # These are clipped context windows, not complete source commands.
+            # A citation inside a braced heading/macro can leave one side open;
+            # retain its source occurrence and denominator without inventing a
+            # closing brace or rejecting unrelated source inventories.
+            if any(word in str(error) for word in ("bound", "recursion")):
+                raise
+            context_before, context_after = "", ""
+            context_error = str(error)
         unknown_context = dict(renderer.unsupported - before)
+        if context_error:
+            unknown_context["unbalanced_clipped_context"] = 1
         math_context = renderer.math_seen > before_math
         if math_context and any(char in context_before + context_after for char in "^_"):
             unknown_context["unverified_script_binding"] = 1
@@ -413,6 +426,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
                       "source_members": expanded.origins(row["start"], row["end"]),
                       "context_before": context_before, "context_after": context_after,
                       "math_context": math_context,
+                      "context_exclusion": context_error,
                       "unsupported_context_commands": unknown_context})
     label_targets = {}
     for row in objects:

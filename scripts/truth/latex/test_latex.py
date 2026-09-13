@@ -191,6 +191,21 @@ See \ref{fig:a} and \eqref{eq:a}; evidence \cite{source}.
         with self.assertRaisesRegex(UnsupportedSource, "aggregate byte bound"):
             parse_project({"main.tex": source}, Limits(text_bytes=1200))
 
+    def test_should_retain_source_links_when_partial_contexts_cut_balanced_authoring_commands(self):
+        contexts = (r'\mbox{A distinctive cited statement \cite{one} with its continuation.}',
+                    r'\subsubsection{A heading containing \cite{one}}',
+                    r'A distinctive cited statement \cite{one} \emph{' + 'extended ' * 100 + '}')
+        for context in contexts:
+            source = document(r'\begin{figure}\caption{A separately complete figure caption.}\end{figure}' + context + r'\begin{thebibliography}{9}\bibitem{one}A unique complete bibliography entry.\end{thebibliography}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(context=context):
+                self.assertEqual(len(parsed['objects']), 1)
+                self.assertEqual(len(parsed['entries']), 1)
+                self.assertEqual(len(parsed['links']), 1)
+                self.assertEqual(parsed['links'][0]['targets'], ['one'])
+                self.assertIn('unbalanced_clipped_context', parsed['links'][0]['unsupported_context_commands'])
+                self.assertTrue(parsed['links'][0]['source_members'])
+
 
 if __name__ == "__main__":
     unittest.main()
