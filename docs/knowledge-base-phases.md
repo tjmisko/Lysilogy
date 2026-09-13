@@ -215,11 +215,17 @@ acceptance are unchanged.
   pages, using existing bounded OCR or explicit unavailable provenance. Preserve valid frozen
   indexes and all identity records. Coordinate shared `src/source_index.rs` with #70.
 
-- [ ] **#106 Recover regions and reject duplicate captions on expanded K1** (after #105).
+- [x] **#106 Recover regions and reject duplicate captions on expanded K1** (after #105).
   Branch `fix/e1.1-expanded-k1-regions`. Owns `src/source_index/figures.rs`, bounded graphics
   trace parsing in `src/source_index/graphics.rs`, focused fixtures and measured evidence.
   Preserve immutable v1/v2 truth and full denominators; measure both cohorts, keep current
   detector/native generations explicit, and coordinate object plumbing with #25.
+- [ ] **#111 Resolve remaining mask-clipped figure regions** (after #106).
+  Branch `fix/e1.1-mask-regions`. Owns bounded mask evidence in `src/source_index/graphics.rs`,
+  necessary region composition in `figures.rs`, focused synthetic fixtures and measured report.
+  Preserve arbitrary/empty mask uncertainty, native anchors and both immutable cohorts. Never
+  substitute a mask's bounding frame for its painted support. A bounded negative experiment
+  is reportable; O1/O2 targets and complete region denominators remain unchanged.
 - [ ] **#107 Preserve source objects with ambiguous duplicate labels** (after #105; part of #97).
   Branch `fix/e8.3-duplicate-labels`. Owns current evaluation-only source parser/alignment,
   manual consumer guards and tests in `scripts/truth/latex/`, new-generation evidence/contract.
@@ -4005,3 +4011,84 @@ date, last merged issue, in-flight branches and their state, next action, and op
   separate. Native queue is still paused before26,7,250unique/6,299scale verified. No
   downloads, new PR, merge or changed merged scorecard. All pending host/phase/system holds
   in the preceding entry remain; ten unrelated main preview hashes remain unchanged.
+
+
+### 2026-09-13 22:28 UTC — #106 merged; corrected source and confined layout work continue
+
+- Last merged issue is **#106/PR112**, merge commit
+  e1fe6a38925c90de5189462ead96725439d69f73 at22:25:07Z. Reviewed head
+  29d8ca91a40a9aaed3a2f0ea07ec70543b94b795. Main fast-forwarded safely; all10 unrelated
+  preview hashes remain unchanged. Completed worktree/target and local branch removed;
+  remote deletion commandTTY19862 is pending its final push result. Before cleanup root
+  rehashed all230 portable artifacts/185126901bytes and all165 gate-source fingerprints.
+  Separate final review `review-expanded-regions-final-29d8ca9/review.json` SHA
+  6e80fb6b2946293c32fe97df7eb5dc2d2681f91a6137d1e94d3aae976ce52cec is clear.
+  Report `docs/experiment-reports/2026-09-13-kb-expanded-k1-regions.md`; machine evidence
+  c472acd7552ce17cec9e207dc3c03d1a2af52bcab292af9f175ff99f17b77207. Exact final report
+  archive084bcdc36443a0435e4372b3eb4649ffd1fd95e39f6953da5a8aa8dac13b0843 survives cleanup.
+- Final second actual #106 generation7e74e59 completed42.147674s,0network/model calls/$0.
+  Receipt a7c2806df47a0238a10f991b0973a2b805e394a6464289007d287d50076b5fe9; independent
+  second-measurement-reviewc1696971074bb3b77d9e0e0053af2f56d6dc3e06ec4ac0703409adf8710205f7.
+  V2 O1=1.0(23TP/0FP/0FN), O2=.9076006899903768 acrossall23,unknown0. Figure1 restored
+  its prior .7570080448318404. Original two complete paper records and all15 IoUs are exact;
+  v1 O1=1/O2=.9107793204006069. Four zero regions remain: three new image masks tracked
+  in #111 (E1#12), plus one old zero whose cause must be assessed separately. Both original
+  and first-regression measurements remain frozen. Full integrated fmt/strictClippy/Rust,
+  objects/scale and G5 pass362Rust/383Python/85Node. Initial G5 TypeScript cache-link setup
+  failure retained; unchanged-source retrydb78ee288b1b41c0875d7cf4bd79e6eff298a655f7a4d60f8f04fae83aebc5e9.
+  PhaseA/WaveA2; merged scorecard1/5 gates available/pass,3/30objectives at target, no new target miss.
+- #107 frozen f24f735 full comparison finishedTTY46633exit0. All90 prior duplicate failures
+  recovered, all612 old successes retained; 702/702 parse/assemble,1105.420s,265104KiB,$0/no calls.
+  Sole raw accepted row remains2007.05954 O5/O6 negatives: no new positive cohort/publication.
+  Receipt41edd48d26ace1720881af91904c49c7c58c64d7e5956ddd4ef169fac5e0e4bd; report
+  835c050bc55eabe7b7e695299fcd64d7f14fc97819bc3c0f1e474066692d11ae, ledger
+  816528c3445dcb223f7df0a0225c5fd332cb4b84aa576522ea783113c3866ee6, regression
+  58db87f511bece0edcc82089c917607285daf253d0d242bb96519aaeb9e9ba36. No old object/link/entry/
+  eligibility differences; changed label/proof/primitive metadata retained explicitly. Historical
+  bytecode qualification from preceding logs remains, with no observed old execution mismatch.
+- Current #107 source branch54095cd4b7823f86e4f0be8b3aa97d4d1ac16cde,271offline tests pass.
+  Comma correctione63c5e0 independently clear; actual audit10papers/27links/1proof heading,
+  SHA7d23f464a4b5e8dfe8e5b86760ea900696b11fd1159a32f8387d4b175663b56d. Dynamic naming
+  guard retains objects but withholds uncertain destinations; no affected dynamic claims across
+  the702historical payloads, audit94b215a050857da4fe9451400048f3d6fc7870758d8583f121bbaaab51fabb67.
+  Reviewer found raw ^^ notation can encode structural commands before TeX tokenization, so
+  name-only exclusion is insufficient. Owner finish_corpus_proxy adds a pre-masking raw lexical
+  guard; no corrected actual generation launched. Reviewer probe1109170e9349cef83718bd616007eb111da065308a480ba0c77696caae275b43.
+  New direct-source runner snapshot is prepared but awaits source/runner clearance before the
+  next heavy window. #109 stays queued after107. Do not relabel the completed f24 generation.
+- Root #110 WT `feat/e8.3-source-layout-probe`: clean own-CLI before-run passed102.855757s,
+  receipt83633d2d4cc69f8e48e2092de47e24cb4a07bc20d3d82c1a8586b202ac8a903a. Capability
+  commits4479fe1 then446e61a add fixed-inode output mounts, nativeaarch64 positive seccomp,
+  resource/cleanup controls and17synthetic tests. Independent reviewer found writable source
+  aliases;446e61a rejects path ancestry and device/inode aliases before controller writes.
+  Separate corrected-layer reviewd6c6ce08fb381fa4624e0f8697072d8fceb177e1a22158758730e011c307ed86
+  is clear. Original finding98655446b58ac27f5f44d45791d1412c7ac5ab42bf25f766381308e4954f735e retained.
+  Core layer clearance does not cover current uncommitted production files/job-name adjustment.
+- #110 uncommitted `scripts/truth/layout/` now also has bounded byte-preserving inputs,
+  availability selection, exact installed runtime inventory, bounded decoded PPM/full-document
+  comparisons and incomplete experiment orchestration. Seven input and four pixel tests pass.
+  Frozen selection `source-layout-probe/selection-v1.json` SHA
+  9b3542e0366b13a3fb66cfafd92dc21a5ef341b435a924502ce66e3b82e6df0d contains10balanced papers,
+  original pre-outcome pool/ranks only; no source execution. Runtime inventory
+  `runtime-v1/inventory.json` SHA652c1f6dda5e9a374fdf5000da40b34b205fa7404ab5478e011e54c0035c8523
+  pins71regular binaries/configs/libs and19168texmf entries,4.469649s. Only fixed installed
+  trusted dependencies queried; no new dependencies/network calls. Source epoch0 is explicitly
+  unavailable date fidelity; no actual paper outcomes used. Preserve original proposal's stricter
+  criterion>=8/10builds and>=5/10complete documents matchingeverypage at96/192, not five pages.
+- Root ran only GENERATED synthetic TeX. Retained source-only launcher `run-synthetic-tex-v1.py`
+  failed at recorder startup because PDFLaTeX first opens pdflatex2.fls before processing jobname;
+  receipt909c7462369bec5d3e42cceb31d910bcfe73209cd9677bbd9bb96fe41e7a50f7. Current uncommitted
+  fixed inventory adds that one exact PID2 recorder file (no writable directory exception), while
+  preserving the validated original source basename for bibliography lookup. Syntheticv2 builds
+  in two passes,0.389073s; receiptd729d6f8a2daf3b6eec86da56ef1634a40ed2d39abfc73f3dd52684567589564.
+  No deposited TeX program has executed; full production/selection/fidelity review is still pending.
+  Nextroot: finish source/renderer orchestration and synthetic fidelity/engine/format counterexamples,
+  freeze/review code and selection, run gates, then bounded10experiment if cleared.
+- Native queue remains paused before26:7,250unique/6,299scale,3,701scale indexes remain. No
+  downloads run; corpus is complete. Next heavy job is reviewed #107 correction, then resume
+  queue with pinned --start26 after allocated implementation windows. #25/PR94, #33,
+  #71/PR93, #72/PR95 provider/dependency holds remain. Effective write probes for Corpora/cache
+  passed; allfour permanently approved hosts remain absent from saved config and index.crates.io
+  is still blocked. Do not ask permission again. User-terminal script remains
+  ~/.config/lysilogy/apply-codex-kb-network-permissions.py, then Codex restart; no automatic
+  profile edit can succeed on current read-only ~/.codex mount. All phase/system exits remain.
