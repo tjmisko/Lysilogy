@@ -562,8 +562,8 @@ fn table_below(
         let cell_band = caption.y_max..=bounds.y_max;
         if cell_band.contains(&rect.y_min)
             && cell_band.contains(&rect.y_max)
-            && rect.x_max >= caption.x_min - font * 2.0
-            && rect.x_min <= caption.x_max + font * 2.0
+            && rect.x_max >= font.mul_add(-2.0, caption.x_min)
+            && rect.x_min <= font.mul_add(2.0, caption.x_max)
         {
             bounds = union([bounds, rect].into_iter());
         }
