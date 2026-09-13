@@ -30,8 +30,19 @@ all three SQL migrations, checked foreign keys and verified that duplicate ident
 both entities through the covering lookup index. This validates SQL syntax/index shape only;
 it does not substitute for running the Rust store or its quality gates.
 
-The G4 adapter's provisional raw-record input must be replaced with actual E8.4 K2 plus its frozen
-Crossref provenance before measurement. No synthetic PDF, reference record or fixture establishes
-G4. O28 still requires the full prescribed 500k-Work/3M-edge run once dependencies are available.
+The G4 adapter now consumes actual E8.4 K2 and a verified frozen manifest through a lazy,
+evaluation-only loader. It reconstructs K2 and requires complete equality before passing original
+Crossref messages, original fetch times and deposited case IDs into the production allocation and
+admission scenario. It retains frozen source/manifest/loader fingerprints and revalidates after
+measurement. The store itself does not depend on the unmerged truth builder. Missing E8.4 code
+or genuine K2 leaves G4 unavailable. The previous provisional `K2.records` contract is retired.
+
+The standalone KB Python suite passes eight existing tests and explicitly skips three new adapter
+tests because E8.4 is not in this branch. Loading the reviewed E8.4 `reference_truth.py` read-only
+from its separate worktree makes all seven rebuild-collector tests pass, including the three
+adapter cases: original records with invalid/unlabeled references, rehashed label drift and receipt
+time drift. These use invented tiny fixtures and cannot establish G4. Rust example execution,
+Clippy and the store's Rust tests remain unrun. O28 still requires the full prescribed
+500k-Work/3M-edge run once dependencies are available.
 The main checkout's preview changes and the pre-existing worktree `.gitignore` addition were
 left untouched. R4 for this offline work: zero provider/model calls, zero model cost.

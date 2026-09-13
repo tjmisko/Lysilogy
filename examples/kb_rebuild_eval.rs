@@ -27,6 +27,7 @@ struct Args {
 struct Truth {
     schema_version: u32,
     truth_id: String,
+    kind: String,
     version: String,
     records: Vec<Record>,
 }
@@ -34,24 +35,23 @@ struct Truth {
 struct Record {
     retrieved_at: DateTime<Utc>,
     crossref: Value,
+    doi: String,
+    deposited_references: Vec<DepositedReference>,
+}
+#[derive(Deserialize)]
+struct DepositedReference {
+    doi: String,
+    case_id: String,
 }
 fn hash(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
-}
-fn doi(value: &Value) -> Result<String, Box<dyn std::error::Error>> {
-    let id = value
-        .as_str()
-        .ok_or("Crossref record lacks DOI")?
-        .trim()
-        .to_lowercase();
-    Identifier::parse(&format!("doi:{id}")).map_err(|error| error.message)?;
-    Ok(id)
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let truth: Truth = serde_json::from_slice(&fs::read(&args.truth)?)?;
     if truth.schema_version != 1
         || truth.truth_id != "K2"
+        || truth.kind != "kb_rebuild_input"
         || truth.version.trim().is_empty()
         || truth.records.is_empty()
     {
@@ -75,7 +75,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut deposited_pairs = 0;
     let mut first = None;
     for (index, record) in truth.records.iter().enumerate() {
-        let source_doi = doi(&record.crossref["DOI"])?;
+        let source_doi = record.doi.clone();
         let source_id = store.allocate_work(&format!("crossref:doi:{source_doi}"))?;
         let title = record.crossref["title"]
             .as_array()
@@ -113,15 +113,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             payload: ObservationPayload::Json(record.crossref.clone()),
         };
         let mut citations = Vec::new();
-        for reference in record.crossref["reference"]
-            .as_array()
-            .into_iter()
-            .flatten()
-        {
-            if reference.get("DOI").is_none() {
-                continue;
-            }
-            let cited_doi = doi(&reference["DOI"])?;
+        for reference in &record.deposited_references {
+            let cited_doi = &reference.doi;
             let cited = store.allocate_work(&format!("crossref:doi:{cited_doi}"))?;
             citations.push(Citation {
                 citing: source_id.clone(),
@@ -129,7 +122,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 evidence: vec![CitationEvidence::Provider {
                     provider: Provider::Crossref,
                     retrieved_at: record.retrieved_at,
-                    provider_edge_id: Some(format!("{source_doi}->{cited_doi}")),
+                    provider_edge_id: Some(reference.case_id.clone()),
                     passages: vec![],
                     intents: vec![],
                     is_influential: None,

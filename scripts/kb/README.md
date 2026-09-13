@@ -60,31 +60,31 @@ benchmark. All build/data directories remain on disk, outside `/tmp` and the use
 ## G4 rebuild collector
 
 ```sh
-python3 scripts/kb/rebuild-eval.py --truth eval/truth/reference-resolution.json
+python3 scripts/kb/rebuild-eval.py --truth eval/truth/reference-resolution.json \
+  --frozen-root ~/.cache/lysilogy/reference-truth \
+  --manifest ~/.cache/lysilogy/reference-truth/crossref-manifest.json
 cargo run --offline -- eval resolution --check
 ```
 
 Until the actual K2 truth file exists, the collector reports unavailable and removes only its
-own stale generated input. A synthetic unit fixture never establishes G4. The initial adapter
-expects the following shape from E8.4's real deposited-reference build (coordinate its schema
-when K2 lands):
+own stale generated input. A synthetic unit fixture never establishes G4. The evaluation-only adapter lazily loads E8.4's
+`scripts/truth/reference_truth.py`; until that reviewed loader is present, it reports unavailable.
+The production store has no dependency on the truth builder.
 
-```json
-{
-  "schema_version": 1,
-  "truth_id": "K2",
-  "version": "the-real-truth-build-version",
-  "records": [
-    {"retrieved_at": "2026-09-13T00:00:00Z", "crossref": {"DOI": "<real DOI>", "reference": []}}
-  ]
-}
-```
+Supply actual K2 (`schema_version: 1`, `truth_set: K2`, `sources`, `works`, `cases`, `coverage`,
+`built_at`, content-derived `version`) and its frozen Crossref manifest. The loader verifies exact
+receipt/body bytes and original timestamps. The adapter reconstructs K2 from its retained work
+origins and missing requested DOI identities, then requires full equality, including source/case
+identity and content version. Extra or refreshed Crossref snapshots fail validation.
 
-This example illustrates the shape only. At least one genuine deposited DOI reference pair is
-required. `crossref` is the original cached Crossref message object, with its title, authors and
-references; the explicit truth build retains provenance. The collector sets up an isolated root
-under `~/.cache/lysilogy/kb-rebuild-eval/`, admits those real records via production APIs, and
-creates a deliberate duplicate of one exact DOI source to exercise canonical alias replay.
+Only after this check does an isolated `verified-input.json` under the external derived cache
+carry original Crossref messages, fetch times and K2's deposited DOI case IDs into the production
+allocate/admit scenario. Invalid or absent reference DOI fields remain in the original message;
+they produce no citation edge. No input field is reconstructed from a predicted entity. The Rust
+example accepts this explicitly tagged derived input, not the retired provisional `K2.records`
+shape. It creates one deliberate duplicate exact-DOI source to exercise canonical alias replay.
+The collector verifies frozen/K2 bytes again afterward and retains loader/source/manifest hashes.
+
 It compares complete logical snapshots before rebuild, after transactional rebuild, and after
 deleting only its evaluator-owned SQLite file and rebuilding from the same canonical records.
 
