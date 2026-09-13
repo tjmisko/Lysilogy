@@ -134,3 +134,62 @@ Optional process environment configuration (no credential files are read):
 Credentials are attached only at transport time, omitted from serialized request provenance, and
 redacted from errors/debug output. Restart the backend after changing these settings. No key is
 required by the adapter; provider-side access limits and policies still apply.
+
+## Shared response cache and batch budgets
+
+Explicit citation requests now use the same provider services intended for resolution and
+acquisition. Successful JSON objects/arrays are cached for seven days under
+`~/.cache/lysilogy/providers/responses/<provider>/<key>.json`. This storage is separate from
+both the library and its data root; local-library and corpus processes share it. Construction
+is lazy and ordinary reading creates no provider files. `GraphHttp::from_environment_with_storage`
+accepts an explicit shared storage location and per-provider `BudgetPolicy` values for services
+and isolated fixtures. Every service using the same provider credentials must use the same root.
+
+Keys hash the provider and canonical public endpoint/path/query before authentication. Public
+query ordering is canonicalized while repeated parameter order remains significant. Credentials
+and contact parameters are removed from keys. Credential fields and configured secret echoes
+(including nested strings, object keys and mixed-case/double percent encoding) are removed from
+responses before return or serialization. Cache reads verify schema, key, SHA-256, creation and
+expiry timestamps, object/array shape, and the 8 MiB payload cap. Hash-corrupt or expired entries
+are misses. Generated storage paths reject symlinks in any ancestor, and writes use an atomic
+replacement followed by file/directory synchronization.
+
+`created_ms` and `expires_ms` in each cache entry describe the provider fetch. The graph report's
+`retrieved_at` remains the time that local report was assembled; a report can reuse provider
+metadata fetched up to seven days earlier. A cache hit does not contact a provider or consume an
+admission slot, including while that provider is in cooldown. Concurrent cache fills can
+conservatively consume an unused admission slot when a lookup is filled while awaiting its lease.
+Failures and credential errors are not cached. A failed cache write preserves the successful
+response and emits a generic warning; unavailable budget storage fails closed before a request.
+
+Each provider defaults to 1.1-second spacing, one active connection, and 50 admissions in a
+60-second fixed window. A window restarts on the first admission check after the previous window expires.
+The quota and window are explicit local limits, not estimates of paid account credits. Configured
+spacing cannot be less than 1.1 seconds. A short spacing wait is allowed; exhausted windows and
+long server cooldowns return `rate_limited` with a retry interval. Separate processes coordinate
+through a provider file lock held until the response body finishes. Admissions and the largest
+`Retry-After` deadline persist before the request or failure returns, so restart does not reset
+the allowance or shorten a cooldown. Rate state contains only timestamps and counts.
+
+Policies checked on 2026-09-12: [Semantic Scholar](https://webflow.semanticscholar.org/product/api)
+documents an introductory keyed allowance of one request per second;
+[Crossref](https://www.crossref.org/documentation/retrieve-metadata/rest-api/access-and-authentication/)
+documents pool-specific rate and concurrency headers, including one concurrent public request;
+[OpenAlex](https://help.openalex.org/api/authentication/) applies both request-rate and daily
+credit limits; [OpenCitations](https://opencitations.net/querying/) recommends a token in the
+authorization header. The local limits do not claim to exhaust any provider's account allowance.
+No automatic retry or paid request purchase is added.
+
+Measure the actual admission state machine over the recorded 10,000-reference fixture:
+
+```sh
+python3 scripts/eval/provider-budgets.py
+cargo run -- eval scale --check
+```
+
+The Rust trace covers all four providers, exhausted windows, injected server cooldowns and
+serialized state reloads. An independent Python audit checks observed grants against spacing,
+window quotas, cooldown deadlines, duplicate admission and complete case coverage. It writes
+`eval/inputs/scale/provider-budgets.json` and a hashed observations file; each scale collector
+keeps its own input and dependencies. Four offline audit tests include deliberately invalid
+traces to demonstrate that violations are detected. No network or model is called.

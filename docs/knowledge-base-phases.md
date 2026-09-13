@@ -129,11 +129,11 @@ pass.
   Touches `src/library.rs`, `src/store.rs`, `src/domain.rs`. `sha2` is already a dependency.
   Renames currently orphan `papers/<id>/` because `PaperId` hashes the relative path; notes are
   keyed separately by relative path in `Notes/`, so decide and document how notes follow a move.
-- [ ] **#63 E7.1 Provider cache and rate budgets**. Branch `feat/e7.1-provider-cache`.
+- [x] **#63 E7.1 Provider cache and rate budgets**. Branch `feat/e7.1-provider-cache`.
   Owns `src/citation_graph/cache.rs`, `budget.rs`; touches `http.rs`. Preserve the existing
   1.1-second spacing, `Retry-After` cooldown, and credential redaction behavior in
   `docs/citation-graph-sources.md`; the cache must never store credentials.
-- [ ] **#68 E8.1 Evaluation harness, scorecard, and ratchet**. Branch `feat/e8.1-eval-harness`.
+- [x] **#68 E8.1 Evaluation harness, scorecard, and ratchet**. Branch `feat/e8.1-eval-harness`.
   Owns `src/eval/` (or `eval/` tooling), `eval/baselines.json`, `docs/kb-scorecard.md`, and an
   `eval` subcommand. Merge early: every later PR reports metrics through it.
 - [x] **#69 E8.2 arXiv research corpus**. Branch `feat/e8.2-arxiv-corpus`. Owns the corpus
@@ -182,6 +182,28 @@ pass.
 
 ### Phase A notes
 
+- #63 merged in PR #78 (`2c21e77`) after independent review of the transport, credential
+  redaction, durable shared budgets, independent O30 observer, and atomic collector publication.
+  O30 meets target: 0 violations across 10,000 admissions, with 216 deferrals, 72 cooldowns, and
+  32 serialized state reloads. Final G5 passed 255 Rust, 49 Python, and 84 Node tests; formatting
+  and Clippy passed. Scorecard: 1/5 gates and 1/30 objectives. Report and retained evidence are in
+  `docs/experiment-reports/2026-09-12-provider-budgets.md` and `eval/evidence/`. Shared storage is
+  `~/.cache/lysilogy/providers`, independent of data roots, created only for explicit requests.
+  Defaults are seven-day cache expiry, 1.1-second spacing, and 50 requests per 60-second window;
+  fixed provider endpoints and credential redaction remain enforced. No live provider/model
+  calls were made. On fresh worktrees, run `python3 scripts/eval/provider-budgets.py` before
+  `eval scale --check` to regenerate its ignored input instead of reporting O30 unavailable.
+  Branch/worktree removed after merge; no objective miss or follow-up issue was needed.
+- #68 merged in PR #76 (`a04c0c0`) after independent re-review of committed-baseline history,
+  real `should_*` Python discovery, frontend test coverage, and collector composition. Final
+  quality gates and isolated G5 passed: 239 Rust, 45 Python, and 84 Node tests. G5 is the first
+  passing hard gate; every other gate and all objectives remain unavailable on main. Later
+  collectors own disjoint metrics in `eval/inputs/<suite>/<collector-id>.json`; see `eval/README.md`.
+  Stale evidence affects only its collector, and duplicate ownership fails even for stale inputs.
+  Run relevant suites before/after subsequent implementations. Final numerical acceptance adds
+  `--require-complete` to `eval all --check`; buildout checks never count unavailable metrics as
+  passed. Every first-parent baseline transition is audited, so committing weaker values cannot
+  bypass the ratchet. Branch/worktree removed after merge.
 - #69 tooling merged in PR #75 (`b8baa7b`), independently cleared after three fixes and tested
   against current main: 41 offline Python tests plus all 200 Rust tests, formatting, and Clippy.
   See `scripts/corpus/README.md` for selection, background launch, resume, and verification.
@@ -478,3 +500,24 @@ date, last merged issue, in-flight branches and their state, next action, and op
 - Provisional scorecard: G5 passes; other gates and all objectives unavailable. No objective
   follow-ups yet. The last fingerprint check confirmed all ten unrelated main-checkout changed
   files remain byte-for-byte unchanged.
+
+### 2026-09-12 — evaluation harness merged
+
+- Last merged issue: #68 / PR #76 (`a04c0c0`); #34, #24, and #69 also merged. Current phase/wave
+  A/A1. Final independent review cleared all harness findings and composition changes; merged
+  branch/worktree removed. Scorecard: G5 passes (1/5 gates), 0/30 objectives available at target.
+- In flight: #63 draft PR #78 (`feat/e7.1-provider-cache`, initial head `1713315`) is undergoing
+  independent review, then integrating the harness and running fresh scale/tests evaluations.
+  Its offline production-state simulation provisionally measures O30 at 0 violations across
+  10,000 admissions; this must pass the actual collector/harness review before merge. #20
+  (`feat/e0.2-content-hash`) is finalizing identity/notes/provenance regressions and integrating
+  the harness before opening its draft PR.
+- #19 started in `.worktrees/feat/e0.1-scale-bench`, branch `feat/e0.1-scale-bench`, commit
+  `4563749`: deterministic PDF generator plus seven offline tests, including real Poppler
+  parsing, pass. The timing/Playwright/extraction benchmark runner and baseline report remain
+  to implement. No large fixture or Rust target has been created in this worktree yet.
+- No background downloads; required corpus/cache storage and arXiv network access remain
+  blocked as recorded above, with the sandbox-update question pending. No corpus or 10k vault
+  has been relocated. Next action: finish/review/measure #63/#20/#19, merge eligible A1 work,
+  then begin A2 only once the wave is complete. No measured objective misses or follow-up
+  issues yet. Main's unrelated PDF-preview changes remain untouched.

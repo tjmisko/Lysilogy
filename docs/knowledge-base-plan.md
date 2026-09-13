@@ -918,6 +918,14 @@ A shared on-disk provider response cache keyed by provider, endpoint, and identi
 expiry, and per-provider request budgets with cooldowns, usable by citation-graph fetches,
 resolution, and acquisition batches.
 
+Implementation defaults: seven-day successful JSON cache and durable provider budgets under
+`~/.cache/lysilogy/providers/`, shared across data roots and processes. Budgets retain 1.1-second
+spacing and one active connection, with an explicit local limit of 50 admissions per 60-second
+window. The public Rust constructor supports other shared storage roots and configurable per-provider
+policies. Credentials and response echoes are removed before serialization. See
+[citation provider operations](citation-graph-sources.md#shared-response-cache-and-batch-budgets)
+for expiry/provenance semantics, policy evidence and the offline O30 collector.
+
 Acceptance: repeated lookups hit the cache; a 10k-paper batch stays within configured budgets;
 credentials never enter cache keys or files.
 
