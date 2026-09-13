@@ -119,6 +119,17 @@ def target_labels(command, value):
     return keys
 
 
+def dynamic_label_name(value):
+    """Recognize unproved name expansion, without executing or normalizing it."""
+    return '\\' in value or '~' in value or '^^' in value
+
+
+def reference_names_verified(parsed, labels):
+    # An unexpanded naming claim can alias any literal key in this paper.
+    # An unexpanded lookup also cannot acquire a destination from its spelling.
+    return not parsed.get('unverified_label_names') and not any(dynamic_label_name(label) for label in labels)
+
+
 def source_identities(objects, expanded, files, limits):
     """Keep unique historical IDs, disambiguating every colliding occurrence."""
     if len(objects) > limits.expansion_steps:
@@ -217,8 +228,11 @@ def label_inventory(objects, entries, nodes, headings, scan, document, expanded,
             raise UnsupportedSource('source label evidence exceeds its byte bound')
         groups.setdefault(claim['label'], []).append(len(occurrences))
         occurrences.append(claim)
-    ambiguous, targets = {}, {}
+    ambiguous, targets, unverified = {}, {}, {}
     for label, numbers in groups.items():
+        if dynamic_label_name(label):
+            unverified[label] = {'occurrences': numbers, 'candidate_count': len(numbers),
+                                 'reason': 'source label name contains unverified expandable tokens'}
         if len(numbers) > 1:
             owners = [occurrences[n]['owner'] for n in numbers]
             ambiguous[label] = {'occurrences': numbers, 'candidate_count': len(numbers),
@@ -228,7 +242,7 @@ def label_inventory(objects, entries, nodes, headings, scan, document, expanded,
             owner = occurrences[numbers[0]]['owner']
             if owner['role'] == 'object':
                 targets[label] = owner['object_id']
-    return occurrences, ambiguous, targets
+    return occurrences, ambiguous, {} if unverified else targets, unverified
 
 
 def equation_aliases(text, scan):
@@ -1026,18 +1040,20 @@ def parse_project(files, limits=Limits(), selected_main=None):
                       "context_exclusion": context_error,
                       "unsupported_context_commands": unknown_context})
     source_identity = source_identities(objects, expanded, files, limits)
-    label_occurrences, ambiguous_labels, label_targets = label_inventory(
+    label_occurrences, ambiguous_labels, label_targets, unverified_label_names = label_inventory(
         objects, entries, nodes, formal_headings, scan, document, expanded, limits)
     for link in links:
         if link['kind'] == 'reference':
             link['ambiguous_targets'] = {key: ambiguous_labels[key]['candidate_count']
                                          for key in dict.fromkeys(link['targets']) if key in ambiguous_labels}
+            link['unverified_target_names'] = bool(unverified_label_names) or any(dynamic_label_name(key) for key in link['targets'])
     preceding_statement = None
     for row in objects:
-        row["proof_targets"] = [label_targets.get(label) for label in row["proof_target_labels"]]
+        row["proof_targets"] = [None if dynamic_label_name(label) else label_targets.get(label) for label in row["proof_target_labels"]]
         if row["kind"] == "proof":
             row['ambiguous_proof_target_labels'] = {key: ambiguous_labels[key]['candidate_count']
                                                    for key in dict.fromkeys(row['proof_target_labels']) if key in ambiguous_labels}
+            row['unverified_proof_target_names'] = bool(row['proof_target_labels']) and (bool(unverified_label_names) or any(dynamic_label_name(key) for key in row['proof_target_labels']))
             if row["proof_target_labels"]:
                 row["proof_linkage"] = "explicit source label in proof heading"
             elif row.get("proof_heading_source"):
@@ -1063,10 +1079,13 @@ def parse_project(files, limits=Limits(), selected_main=None):
     return {"main": expanded.main, "source_map": expanded.pieces, "objects": objects, "entries": entries, "links": links,
             "empty_inventory_document_probe": document_probe,
             "source_identity": source_identity, "label_occurrences": label_occurrences,
-            "ambiguous_labels": ambiguous_labels, "label_targets": label_targets, "statement_definitions": definitions,
+            "ambiguous_labels": ambiguous_labels, "unverified_label_names": unverified_label_names,
+            "label_targets": label_targets, "statement_definitions": definitions,
             "coverage": {**expanded.coverage, "unsupported_commands": dict(renderer.unsupported),
                          'label_resolution': {'occurrences': len(label_occurrences), 'ambiguous_names': len(ambiguous_labels),
-                                              'ambiguous_occurrences': sum(row['candidate_count'] for row in ambiguous_labels.values())},
+                                              'ambiguous_occurrences': sum(row['candidate_count'] for row in ambiguous_labels.values()),
+                                              'unverified_names': len(unverified_label_names),
+                                              'unverified_occurrences': sum(row['candidate_count'] for row in unverified_label_names.values())},
                          "resolved_equation_aliases": {name: {"command": row["command"], "environment": row["value"],
                              "definition": expanded.origins(row["definition_start"], row["definition_end"]),
                              "invocations": [expanded.origins(event["start"], event["end"]) for event in environment_events if event.get("alias") == name]}

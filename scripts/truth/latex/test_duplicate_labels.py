@@ -18,6 +18,68 @@ def equation(body, labels=''):
 
 
 class DuplicateLabelTests(unittest.TestCase):
+    def test_should_keep_occurrences_but_withhold_names_when_a_macro_can_alias_a_literal_label(self):
+        included = equation('gamma+delta=67890', r'\label{\alias}')
+        for preamble in (r'\newcommand{\alias}{a}', r'\newcommand{\other}{a}\newcommand{\alias}{\other}'):
+            parsed = parse(equation('alpha+beta=12345', r'\label{a}') + r'\input{part}'
+                           r'This distinctive comparison uses equation \ref{a} in its conclusion.',
+                           preamble, {'part.tex': included})
+            self.assertEqual([o['id'] for o in parsed['objects']], ['object:a', r'object:\alias'])
+            self.assertEqual(len({o['source_occurrence_id'] for o in parsed['objects']}), 2)
+            self.assertEqual(parsed['label_targets'], {})
+            self.assertEqual(parsed['ambiguous_labels'], {})  # No speculative alias expansion.
+            self.assertEqual(parsed['unverified_label_names'][r'\alias']['occurrences'], [1])
+            self.assertEqual(parsed['coverage']['label_resolution']['unverified_occurrences'], 1)
+            member = parsed['label_occurrences'][1]['source_members'][0]
+            self.assertEqual(member['path'], 'part.tex')
+            self.assertEqual(included[member['start']:member['end']], r'\label{\alias}')
+            self.assertEqual(parsed['coverage']['unsupported_source_semantics'], {})
+            self.assertTrue(parsed['links'][0]['unverified_target_names'])
+            result = align_paper(parsed, {'text': 'alpha+beta=12345 gamma+delta=67890 This distinctive comparison uses equation 1 in its conclusion.', 'tokens': []})
+            self.assertTrue(result['metric_eligibility']['O3'])
+            self.assertFalse(result['metric_eligibility']['O4'])
+            self.assertEqual(result['references'], [])
+            self.assertEqual(result['excluded_references'][0]['reason'], 'source label naming is unverified')
+
+    def test_should_keep_literal_ambiguity_evidence_when_dynamic_names_are_also_unverified(self):
+        for label in (r'\alias', 'a~b', '^^61'):
+            parsed = parse(equation('abcdefghij=12345', '\\label{' + label + '}')
+                           + equation('klmnopqrst=67890', r'\label{x}\label{x}') + r'\ref{x}')
+            self.assertEqual(parsed['label_targets'], {})
+            self.assertIn(label, parsed['unverified_label_names'])
+            self.assertEqual(parsed['ambiguous_labels']['x']['candidate_count'], 2)
+            aligned = align_paper(parsed, {'text': 'abcdefghij=12345 klmnopqrst=67890', 'tokens': []})
+            self.assertEqual(aligned['excluded_references'][0]['ambiguous_labels'], {'x': 2})
+
+    def test_should_keep_static_names_when_dynamic_tokens_occur_only_in_inert_source(self):
+        for label in ('a,b', 'eq:a_b', 'equation-1'):
+            parsed = parse(equation('abcdefghij=12345', '\\label{' + label + '}')
+                           + '\n% \\label{\\alias}\n' + '\\ref{' + label + '}',
+                           r'\newcommand{\unused}{\label{\alias}}')
+            self.assertEqual(parsed['unverified_label_names'], {})
+            self.assertEqual(parsed['label_targets'], {label: 'object:' + label})
+            self.assertFalse(parsed['links'][0]['unverified_target_names'])
+
+    def test_should_withhold_only_dynamic_lookups_when_all_naming_claims_are_static(self):
+        parsed = parse(equation('abcdefghij=12345', r'\label{a}') + r'\ref{a}\ref{\alias}',
+                       r'\newcommand{\alias}{a}')
+        self.assertEqual(parsed['label_targets'], {'a': 'object:a'})
+        self.assertEqual([r['unverified_target_names'] for r in parsed['links']], [False, True])
+        self.assertEqual(parsed['links'][1]['targets'], [r'\alias'])
+
+    def test_should_preserve_unnamed_proofs_when_label_naming_is_unverified(self):
+        body = (r'\begin{theorem}\label{a}The first complete independent assertion.\end{theorem}'
+                r'\begin{lemma}\label{\alias}The second complete independent assertion.\end{lemma}')
+        for heading in ('', r'[By \ref{a}]', r'[By \ref{\alias}]'):
+            parsed = parse(body + r'\begin{proof}' + heading + r'A complete supporting argument.\end{proof}',
+                           r'\newcommand{\alias}{a}')
+            proof = parsed['objects'][-1]
+            self.assertEqual(proof['proof_targets'], [None] if heading else [parsed['objects'][-2]['id']])
+            self.assertEqual(proof['unverified_proof_target_names'], bool(heading))
+            self.assertEqual('nearest preceding' in proof['proof_linkage'], not heading)
+            aligned = align_paper(parsed, {'text': ' '.join(o['text'] for o in parsed['objects']), 'tokens': []})
+            self.assertEqual(aligned['metric_eligibility']['O6'], not heading)
+
     def test_should_keep_both_source_objects_when_two_equations_share_a_label(self):
         parsed = parse(equation('alpha+beta=12345', r'\label{shared}')
                        + equation('gamma+delta=67890', r'\label{shared}')

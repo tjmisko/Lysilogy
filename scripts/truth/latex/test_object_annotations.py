@@ -99,6 +99,30 @@ def apply(rows):
 
 
 class ObjectAnnotationTests(unittest.TestCase):
+    def test_should_reject_manual_destinations_when_a_dynamic_claim_can_alias_static_labels(self):
+        for launder in (False, True):
+            rows = fixture(extra_source=r'\label{\alias}')
+            if launder:
+                reference = rows[4]['references'][0]; number = reference['source_link']
+                member = rows[0]['source_inventory']['links'][number]['source_members']
+                reference.update(target='section:invented', source_target_label='thm:a', source_members=member, printed='1')
+                rows[5]['object_references'] = []
+                rows[7]['object_reference_source_links_verified'] = []
+                rows[7]['non_object_references_verified'].append({
+                    'source_link': number, 'target': 'section:invented', 'source_label': 'thm:a',
+                    'source_members': member, 'printed': '1', 'span': {k: reference['span'][k] for k in ('start', 'end')}})
+                reseal(rows)
+            with self.subTest(launder=launder), self.assertRaisesRegex(ValueError, 'unverified source label names'):
+                apply(rows)
+
+    def test_should_reject_manual_named_proofs_when_a_dynamic_claim_can_alias_the_target(self):
+        rows = fixture(extra_source=r'\label{\alias}', proof_heading=r'[Proof of \ref{thm:a}]')
+        rows[5]['proof_attribution'][0]['explicit_source_ref'] = True
+        rows[4]['objects'][2]['proof_targets'] = ['object:thm:a']
+        reseal(rows)
+        with self.assertRaisesRegex(ValueError, 'unverified source label names.*proof'):
+            apply(rows)
+
     def test_should_bind_manual_reference_when_one_literal_comma_alias_is_unique(self):
         rows = fixture(statement_alias=r'\label{a,b}', reference_label='a,b')
         self.assertEqual(apply(rows)['manual_object_overlay']['references'][0]['target'], 'object:thm:a')

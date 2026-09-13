@@ -44,6 +44,17 @@ Reference arguments follow each supported command's grammar: `ref`, `eqref`, `au
 `vref` retain a complete trimmed literal key, including commas. Only `cref`/`Cref` and the
 supported citation commands split comma lists. Proof headings share this parser, so a literal
 comma key cannot become two named proof destinations or evade its ambiguity catalog.
+Dynamic label spellings containing a control token (`\`), active tilde (`~`) or TeX's
+`^^` character notation are never expanded or normalized into hypothetical names.
+`unverified_label_names` retains their occurrence indices and reason; original spellings,
+object identities and literal duplicate counts remain intact. Such a naming claim may alias
+any static key, so the entire paper's proven `label_targets` table is withheld. Every reference
+and explicit proof lookup records unverified naming and cannot acquire a destination through
+either automatic alignment or either current manual consumer, including section classification.
+A dynamic lookup without dynamic naming claims withholds only that lookup. Genuinely unnamed
+proofs still use source occurrence order, and naming uncertainty alone does not veto complete
+object detection. Existing execution/category-code guards remain independent; this capability
+does not claim a TeX name expander. Comments and unused definitions remain inert.
 The retained v1/v2 modules, payloads and configuration remain immutable. New candidate metadata
 does not rewrite their inventories or change their version-selected replay.
 

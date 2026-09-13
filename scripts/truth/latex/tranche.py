@@ -11,6 +11,7 @@ from pathlib import Path
 from annotations import canonical, document, require
 from archive import read_archive, sha256
 from native_exports import FORMAT as NATIVE_FORMAT, verify_native_export
+from parser import reference_names_verified
 
 FORMAT = 'k1-manual-tranche-v1'
 REVIEW_FORMAT = 'k1-manual-tranche-review-v1'
@@ -452,6 +453,8 @@ def validate_references(docs, candidate, files, index, id_map, primary_map):
         require(number not in seen and other['id'] not in primary_seen, 'manual reference occurrence reused')
         seen.add(number); primary_seen.add(other['id'])
         exact(source['targets'], [row['source_label']], 'reference source target differs')
+        require(reference_names_verified(candidate['source_inventory'], source['targets']),
+                'unverified source label names cannot acquire a manual object or section destination')
         require(not any(label in candidate['source_inventory'].get('ambiguous_labels', {}) for label in source['targets']),
                 'ambiguous source reference cannot acquire a manual object or section destination')
         exact(other['target_label'], row['source_label'], 'reference label inventories disagree')

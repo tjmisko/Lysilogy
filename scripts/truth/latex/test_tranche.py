@@ -367,6 +367,17 @@ class TrancheTests(unittest.TestCase):
             changed['source_inventory']['ambiguous_labels'] = {label: {'candidate_count': 2, 'roles': ['object', 'section']}}
             with self.subTest(ambiguous=label), self.assertRaisesRegex(ValueError, 'ambiguous source reference'):
                 validate_references(docs, changed, files, index, {'eq': 'eq', 'fig': 'fig'}, {'eq': 'eq', 'fig': 'fig'})
+        for destination in ('eq', 'fig', 'section:s'):
+            changed = deepcopy(candidate)
+            changed['source_inventory']['unverified_label_names'] = {r'\alias': {'occurrences': [0], 'candidate_count': 1}}
+            reduced = deepcopy(docs)
+            for key in ('primary', 'independent_corrected'):
+                reduced[key]['references'] = [r for r in reduced[key]['references'] if r.get('destination_id', r.get('target_id')) == destination]
+                reduced[key]['counts'] = {k: 1 for k in reduced[key]['counts']}
+            member = reduced['independent_corrected']['references'][0]['source']['member']
+            changed['source_inventory']['links'] = [l for l in links if l['source_members'] == [member]]
+            with self.subTest(dynamic_destination=destination), self.assertRaisesRegex(ValueError, 'unverified source label names'):
+                validate_references(reduced, changed, files, index, {'eq': 'eq', 'fig': 'fig'}, {'eq': 'eq', 'fig': 'fig'})
         for changed in ['section:s', 'missing']:
             altered = deepcopy(docs); altered['independent_corrected']['references'][0]['destination_id'] = changed
             altered['independent_corrected']['references'][0]['destination_kind'] = 'section'

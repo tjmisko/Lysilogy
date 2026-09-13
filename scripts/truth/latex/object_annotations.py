@@ -5,6 +5,7 @@ import math
 
 from annotations import canonical, document, require
 from archive import read_archive, sha256
+from parser import reference_names_verified
 
 KINDS = {'equation', 'statement', 'proof', 'algorithm'}
 
@@ -184,6 +185,8 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
         proof, statement = attribution['proof'], attribution['statement']
         require(proof not in proof_targets and proof in sources and sources[proof]['kind'] == 'proof' and statement in sources and sources[statement]['kind'] == 'statement', 'manual proof attribution is duplicated or has invalid endpoint roles')
         if attribution['explicit_source_ref']:
+            require(reference_names_verified(parsed, sources[proof]['proof_target_labels']),
+                    'unverified source label names cannot acquire a manual proof destination')
             require(not any(label in parsed.get('ambiguous_labels', {}) for label in sources[proof]['proof_target_labels']),
                     'ambiguous source labels cannot establish explicit proof attribution')
             expected = {parsed['label_targets'].get(label) for label in sources[proof]['proof_target_labels']}
@@ -212,6 +215,8 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
         matched = [number for number, link in source_refs.items() if member_identity(link['source_members']) == member_identity(row['source_members'])]
         require(len(matched) == 1 and matched[0] not in source_numbers, 'independent reference membership is ambiguous or duplicated')
         number = matched[0]; link = source_refs[number]
+        require(reference_names_verified(parsed, link['targets']),
+                'unverified source label names cannot acquire a manual reference destination')
         require(not any(label in parsed.get('ambiguous_labels', {}) for label in link['targets']),
                 'ambiguous source reference cannot acquire a manual destination')
         targets = {parsed['label_targets'].get(label) for label in link['targets']}
@@ -233,6 +238,8 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
     require(len(non_objects) == len(source_refs) - len(source_numbers) and {row['source_link'] for row in non_objects} == set(source_refs) - source_numbers, 'unknown reference target roles remain outside the manual comparison')
     for row in non_objects:
         number = row['source_link']; declared = root_refs[number]
+        require(reference_names_verified(parsed, source_refs[number]['targets']),
+                'unverified source label names cannot become a non-object role')
         require(not any(label in parsed.get('ambiguous_labels', {}) for label in source_refs[number]['targets']),
                 'ambiguous source reference cannot become a non-object role')
         require(not any(parsed['label_targets'].get(label) in all_sources for label in source_refs[number]['targets']), 'object reference cannot be relabeled as a non-object role')
