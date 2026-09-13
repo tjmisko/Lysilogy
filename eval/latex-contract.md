@@ -133,3 +133,14 @@ original evidence. It ignores current parser modules and cached bytecode and
 never rewrites the release. Collector receipts retain the selected manifest,
 module and evidence hashes before and after measurement. Unknown versions fail
 explicitly; a new version requires its own reviewed construction and selection.
+
+Coverage expansion distinguishes known inventory effects from faithful rendering.
+Finite standard Greek/math atoms, font sizes and line breaks cannot introduce
+objects; an unsupported glyph, script, or font representation still withholds
+the enclosing text from alignment. Arbitrary hooks, local programs and structural
+redefinitions retain their exclusions. A direct equation boundary alias is supported
+only when one global preamble `newcommand` or plain `def` has no arguments and its
+entire body is one literal `begin` or `end` for a known equation environment.
+Events retain the original invocation and definition positions; source text is
+never rewritten. Scoped, repeated, indirect, parameterized and executable variants
+remain unsupported, and equation row/numbering guards still apply.

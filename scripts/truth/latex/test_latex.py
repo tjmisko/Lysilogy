@@ -25,6 +25,50 @@ def tar(members):
 
 
 class SourceTests(unittest.TestCase):
+    def test_should_preserve_deposited_spans_when_literal_equation_aliases_replace_boundaries(self):
+        for definitions in (r'\newcommand{\be}{\begin{equation}}\newcommand{\ee}{\end{equation}}',
+                            r'\def\be{\begin{equation}}\def\ee{\end{equation}}'):
+            source=document(r'\be abcdefghij=12345\label{eq:one}\ee',definitions)
+            parsed=parse_project({'main.tex':source})
+            self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+            self.assertEqual(len(parsed['objects']),1)
+            row=parsed['objects'][0]
+            self.assertEqual(row['id'],'object:eq:one')
+            start=source.index(r'\be abcdefghij');end=source.index(r'\ee',start)+3
+            self.assertEqual(row['source_members'],[{'path':'main.tex','start':start,'end':end}])
+            aliases=parsed['coverage']['resolved_equation_aliases']
+            self.assertEqual(aliases['be']['invocations'],[[{'path':'main.tex','start':start,'end':start+3}]])
+            self.assertEqual(source[aliases['be']['definition'][0]['start']:aliases['be']['definition'][0]['end']],definitions.split(r'\newcommand{\ee}')[0] if definitions.startswith(r'\newcommand') else r'\def\be{\begin{equation}}')
+
+    def test_should_keep_numbered_rows_when_literal_align_aliases_have_distinct_labels(self):
+        source=document(r'\ba abcdefghij=12345\label{one}\\klmnopqrst=67890\label{two}\ea',
+                        r'\def\ba{\begin{align}}\def\ea{\end{align}}')
+        parsed=parse_project({'main.tex':source})
+        self.assertEqual([row['id'] for row in parsed['objects']],['object:one','object:two'])
+        self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+        self.assertLessEqual(parsed['objects'][0]['source_members'][-1]['end'],parsed['objects'][1]['source_members'][0]['start'])
+
+    def test_should_reject_alias_inventory_when_definitions_are_scoped_repeated_or_indirect(self):
+        definitions=(r'{\def\be{\begin{equation}}}',r'\bgroup\def\be{\begin{equation}}\egroup',
+                     r'\def\be#1{\begin{equation}#1}',r'\newcommand{\be}[1]{\begin{equation}#1}',
+                     r'\def\be{\begin{equation}}\def\be{}',r'\edef\be{\begin{equation}}',
+                     r'\newcommand{\inner}{\begin{equation}}\newcommand{\be}{\inner}')
+        for definition in definitions:
+            with self.subTest(definition=definition):
+                try:
+                    parsed=parse_project({'main.tex':document(r'\be abcdefghij=12345\ee',definition+r'\def\ee{\end{equation}}')})
+                except UnsupportedSource:
+                    continue
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+                self.assertNotIn('be',parsed['coverage']['resolved_equation_aliases'])
+
+    def test_should_withhold_transitive_wrappers_when_only_direct_alias_invocations_are_inventoried(self):
+        source=document(r'\outer abcdefghij=12345\close',r'\def\be{\begin{equation}}\newcommand{\outer}{\be}\def\ee{\end{equation}}\newcommand{\close}{\ee}')
+        parsed=parse_project({'main.tex':source})
+        self.assertEqual(parsed['objects'],[])
+        self.assertIn('structural_macro:outer',parsed['coverage']['unsupported_source_semantics'])
+        self.assertIn('structural_macro:close',parsed['coverage']['unsupported_source_semantics'])
+
     def test_should_omit_only_literal_penalty_parameters_when_bibliography_spacing_is_deposited(self):
         self.assertEqual(Renderer().plain(r'12:\penalty0 2121--2159'), '12: 2121–2159')
         self.assertEqual(Renderer().plain(r'12\penalty-100 (1)'), '12 (1)')

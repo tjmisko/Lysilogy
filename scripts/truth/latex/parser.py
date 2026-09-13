@@ -91,6 +91,76 @@ def argument_commands(text, names):
         yield {"command": match[1], "value": value, "options": options, "start": match.start(), "end": at}
 
 
+def equation_aliases(text, scan):
+    """Recognize only global preamble, zero-argument equation boundary aliases.
+
+    No source is expanded or rewritten: event positions stay at the deposited
+    invocation. Parameterized, scoped, repeated, indirect and executable bodies
+    retain the ordinary unsupported-macro handling.
+    """
+    documents = [row for row in argument_commands(scan, {"begin"}) if row["value"] == "document"]
+    if len(documents) != 1:
+        return {}
+    definitions, depths = {}, {}
+    previous, depth = 0, 0
+    for start, end in definition_regions(text):
+        # One cumulative scan, rather than rescanning the entire prefix for
+        # every definition in a large deposited preamble.
+        at = previous
+        for match in COMMAND.finditer(scan, previous, start):
+            depth += scan[at:match.start()].count("{") - scan[at:match.start()].count("}")
+            if match[1] in {"bgroup", "begingroup"}:
+                depth += 1
+            elif match[1] in {"egroup", "endgroup"}:
+                depth -= 1
+            at = match.end()
+        depth += scan[at:start].count("{") - scan[at:start].count("}")
+        depths[start], previous = depth, start
+        command = COMMAND.match(text, start)
+        kind, pos = command[1].rstrip("*"), skip_space(text, command.end())
+        if kind not in {"newcommand", "renewcommand", "providecommand", "def", "gdef", "edef", "xdef"}:
+            continue
+        if text[pos:pos + 1] == "{":
+            name, pos = group(text, pos)
+        else:
+            name_match = COMMAND.match(text, pos)
+            if not name_match:
+                continue
+            name, pos = name_match[0], name_match.end()
+        if not re.fullmatch(r"\\[A-Za-z@]+", name):
+            continue
+        definitions.setdefault(name[1:], []).append((kind, start, end, pos))
+    output = {}
+    for name, rows in definitions.items():
+        if len(rows) != 1:
+            continue
+        kind, start, end, pos = rows[0]
+        if kind not in {"newcommand", "def"} or end > documents[0]["start"]:
+            continue
+        # A literal braced group or explicit group command scopes definitions.
+        if depths[start] != 0 or text[skip_space(text, pos):skip_space(text, pos) + 1] != "{":
+            continue
+        body, stop = group(text, pos)
+        match = re.fullmatch(r"\s*\\(begin|end)\s*\{(equation|align|gather|multline|eqnarray)(\*?)\}\s*", body)
+        if stop != end or not match or name in (CITES | REFS | set(SYMBOLS) | set(FORMATTING) | set(SILENT) | INVENTORY_ONLY_PRIMITIVES | {"begin", "end", "label", "caption", "bibitem"}):
+            continue
+        output[name] = {"command": match[1], "value": match[2] + match[3], "definition_start": start, "definition_end": end}
+    return output
+
+
+def environment_commands(scan, aliases, limits):
+    rows = list(argument_commands(scan, {"begin", "end"}))
+    extra = []
+    for match in COMMAND.finditer(scan):
+        if match[1] in aliases:
+            if any(row['start'] <= match.start() < row['end'] for row in rows):
+                raise UnsupportedSource('equation alias inside an environment name is unsupported')
+            extra.append({**aliases[match[1]], "alias": match[1], "start": match.start(), "end": match.end(), "options": []})
+            if len(extra) > limits.expansion_steps:
+                raise UnsupportedSource('equation alias invocation count exceeds its bound')
+    return sorted(rows + extra, key=lambda row: row['start'])
+
+
 def render_text(renderer, text):
     """Retain an unrenderable source item without inventing its printed text.
 
@@ -217,6 +287,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
     text = expanded.text
     renderer = Renderer(text, limits)
     scan = mask_regions(text, definition_regions(text))
+    aliases = equation_aliases(text, scan)
+    environment_events = environment_commands(scan, aliases, limits)
     # TeX conditionals and scoped/repeated definitions affect what exists, not
     # just its presentation. We do not execute them or certify their inventory.
     source_semantics = Counter()
@@ -236,6 +308,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
     macro_structure = {}
 
     def structural_macro(name):
+        if name in aliases:
+            return False
         if name in macro_structure:
             return macro_structure[name]
         pending, seen = [name], set()
@@ -247,7 +321,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
             if len(seen) > limits.expansion_steps:
                 raise UnsupportedSource("macro dependency closure exceeds its bound")
             commands = {item[1].rstrip("*") for item in COMMAND.finditer(renderer.macros[current][1])}
-            if commands & structural or any("ref" in command.casefold() or "cite" in command.casefold() for command in commands):
+            if commands & (structural | set(aliases)) or any("ref" in command.casefold() or "cite" in command.casefold() for command in commands):
                 macro_structure[name] = True
                 return True
             pending.extend(commands - seen)
@@ -275,7 +349,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
         kind = definition[1].rstrip("*")
         if kind in {"def", "gdef", "edef", "xdef"}:
             name = COMMAND.match(text, skip_space(text, definition.end()))
-            if name and name[1] in reachable:
+            if name and name[1] in reachable and name[1] not in aliases:
                 source_semantics["unsupported_definition:" + kind + ":" + name[1]] += 1
         elif kind in {"newenvironment", "renewenvironment"}:
             name, _ = group(text, definition.end())
@@ -291,7 +365,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
     # Unhandled commands cannot certify an empty inventory. Standard math and
     # presentation may be unrenderable while their inventory effect is known;
     # arbitrary deposited commands and hooks remain unsupported.
-    inventory_commands = (set(ACCENTS) | set(FORMATTING) | set(SILENT) | set(SYMBOLS) | set(DROP_ARGUMENT) | INVENTORY_ONLY_PRIMITIVES | CITES | REFS | structural | set(renderer.macros)
+    inventory_commands = (set(ACCENTS) | set(FORMATTING) | set(SILENT) | set(SYMBOLS) | set(DROP_ARGUMENT) | INVENTORY_ONLY_PRIMITIVES | CITES | REFS | structural | set(renderer.macros) | set(aliases)
                           | {"documentclass", "documentstyle", "usepackage", "RequirePackage", "LoadClass", "title", "TITLE", "author", "date", "maketitle", "thanks", "footnote", "footnotemark", "footnotetext", "section", "subsection", "subsubsection", "paragraph", "subparagraph", "chapter", "part", "appendix", "item", "newpage", "clearpage", "pagebreak", "linebreak", "includegraphics", "bibliographystyle", "bibinfo", "bibfield", "href", "nocite", "newtheorem", "setcounter", "addtocounter", "refstepcounter", "pagestyle", "thispagestyle", "markboth", "tableofcontents", "listoffigures", "listoftables", "frac", "dfrac", "tfrac", "sqrt", "sum", "prod", "int", "iint", "iiint", "oint", "partial", "nabla", "lim", "log", "ln", "exp", "sin", "cos", "tan", "min", "max", "arg", "det", "sup", "inf", "overline", "underline", "hat", "widehat", "bar", "vec", "dot", "ddot", "notag", "nonumber", "hline", "cline", "toprule", "midrule", "bottomrule", "multicolumn", "multirow", "centering", "caption", "(", ")", "[", "]", "crefrange", "Crefrange", "cpageref", "Cpageref", "labelcref", "labelcpageref", "namecref", "nameCref", "lcnamecref", "pageref", "eqrefrange", "autopageref", "vpageref", "vref", "autocites", "parencites", "textcites", "citeauthor", "citeyear", "citeyearpar", "citenum", "citetext", "citealp", "citealt", "printbibliography", "addbibresource"})
     for name in sorted(reachable - inventory_commands):
         source_semantics["unknown_inventory_command:" + name] += 1
@@ -308,7 +382,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
         statements[name] = renderer.plain(title)
         definitions.append({"environment": name, "title": statements[name], "shared_counter": shared, "within": within, "numbered": not match[1].endswith("*")})
     stack, nodes = [], []
-    for command in argument_commands(scan, {"begin", "end"}):
+    for command in environment_events:
         name = command["value"]
         if command["command"] == "begin":
             if len(stack) >= limits.group_depth:
@@ -520,6 +594,10 @@ def parse_project(files, limits=Limits(), selected_main=None):
             "empty_inventory_document_probe": document_probe,
             "label_targets": label_targets, "statement_definitions": definitions,
             "coverage": {**expanded.coverage, "unsupported_commands": dict(renderer.unsupported),
+                         "resolved_equation_aliases": {name: {"command": row["command"], "environment": row["value"],
+                             "definition": expanded.origins(row["definition_start"], row["definition_end"]),
+                             "invocations": [expanded.origins(event["start"], event["end"]) for event in environment_events if event.get("alias") == name]}
+                             for name, row in aliases.items()},
                          "other_environments": dict(unsupported_environments), "issues": dict(ignored),
                          "unsupported_object_environments": unknown_environments,
                          "unsupported_source_semantics": dict(source_semantics),
