@@ -1336,3 +1336,115 @@ date, last merged issue, in-flight branches and their state, next action, and op
   remains **1/5 gates (G5), 1/30 objectives (O30=0/10k)**; historical O25/O26 misses retain #21/#22.
   No new missed-objective issue or target change. At most three implementations and one heavy
   gate window; #25 transitions to #33 after its narrow correction, while #70/#72 continue.
+
+
+### 2026-09-13 — fixture correction reviewed; real-source pilot diagnostics
+
+- Last merged issue remains **#88 / PR90** (`e60acb9`); current phase/wave **A/A2**.
+  Main prior progress checkpoint `9b6b3d8`. All ten protected preview files remain byte-identical.
+  No additional host approval has arrived; the exact four-host grant and validated script remain
+  pending/unapplied. Offline implementations continue; no provider/registry bypass.
+- **#25 / draft PR94** is safely paused, clean/pushed at **`46ff41b`**. Final helper source
+  **`6291b7e`** selects Cargo's actual compiler-artifact executable, including custom target
+  directory and native target-triple layouts; four configuration regressions pass. Independent
+  reviewer cleared source and all 79 current/historical source/log hashes. Root separately
+  verified 29 current source hashes, 11 final and 11 earlier follow-up gate logs, both sets of
+  14 G5 logs, and two retained screenshots. Final G5 **329 Rust / 124 Python / 91 Node**.
+  Supplemental evidence `eval/evidence/bibliography-fixture-target.json` is the final checkpoint;
+  `bibliography-parser.json` intentionally preserves the earlier `b779eb1` receipts. Root review
+  is at `~/.cache/lysilogy/review-bibliography-root.json`. No remaining code finding; real K1/K2
+  O8–O10 measurements still block merge. Keep its worktree/target for the collector.
+- **#72** source **`b33e924`** in `feat/e8.5-person-labels` has independent clearance and normal
+  integration of `9b6b3d8`. Agent `review_ready_prs` owns final heavy gates, retained exec **65963**.
+  Initial source `9584a88`; root reproduced and reviewer checked fixes for OpenAlex profile IDs
+  embedded in raw names, K4 content-version drift at the feature CLI boundary, and output above
+  the shared 128-MiB derived-file bound. All **55 truth tests** pass (22 new), independently
+  rerun before the final small output-bound guard. The pure feature projection remains independent
+  of answer labels. No real K4/person metric or provider request; draft PR still to be opened.
+  It stacks paused #71's reviewed provenance foundation, so #71 must merge first.
+- Agent `finish_benchmark` has finished #25 and #72 review and now resumes **#33** in its existing
+  worktree. Preserve its `.gitignore` change and target notes/unfinished patch. Await its aggregation
+  design, then independently review current-bound-observation refresh/merge/split behavior,
+  canonical Person identifiers, shared title keys and identifier indexing. Rust registry access
+  and real K2 remain unavailable; do not claim Rust/O28/G4 success before their actual checks.
+- **#70** remains on `feat/e8.3-latex-truth` from `cc329dd`, with uncommitted evaluation code under
+  `scripts/truth/latex/` and `examples/k1_index.rs`. Baseline dependency issue is resolved; the
+  native-index helper and its focused Rust test/strict example Clippy pass. No actual mapped
+  indexing has started. Root survey and parser pilot concern the same 25 real source archives;
+  the first pilot parsed seven, with every exclusion retained in
+  `~/.cache/lysilogy/k1-parser-pilot.json`. This is exploratory source parsing only.
+- Root independently diagnosed exclusions, retaining scripts/reports at
+  `~/.cache/lysilogy/k1-exclusion-review.{py,json}` and `k1-main-evidence-review.{py,json}`.
+  Three argument failures are ordinary unbraced formatting tokens; one citation uses angle-bracket
+  options. Four ambiguous source-root cases include genuine main/supplement/revision documents.
+  First-page PDF title evidence uniquely favors one root only for 1902.08294; two other papers
+  retain title ties. 2109.10028 has byte-identical Bigdata roots, requiring equivalent resource
+  closures before deduplication. All four PDFs/sources were rehashed, no files extracted, no
+  network/model calls, PDF diagnostic wall 0.268 seconds. These are diagnostics, never K1 labels.
+- #70 is correcting nearest-object ownership for nested labels and adding numbered-row truth for
+  align/gather/eqnarray, with notag/nonumber/tag support; nested aligned/split within equation must
+  remain one equation. Unknown citation-family macros make bibliography inventories non-exhaustive
+  until supported. Title ties stay excluded absent unique PDF evidence. Figure/table `region`
+  remains null with independent-visual-annotation-required status; caption/text boxes cannot
+  establish O2. Add source/alignment regressions before admitting mapped pilot labels.
+- **Only live corpus mutation is still retained TTY exec97363.** Latest read-only status:
+  **1,629 PDFs / 600 complete eval PDF-source pairs / 5,686,790,413 bytes**, 1,060 scale PDFs,
+  no status path problems. Full artifact verification/completion is still pending. Log proceeds
+  through 2023 IDs. The queued permanent-main full run and hash guard remain as previously logged.
+- Prepared offline metadata plans, with zero network/model calls: K0 Crossref seed plan
+  `~/.cache/lysilogy/reference-truth-plans/k0-172d18c2-seeds-v1.json` has 30 unique citing DOIs,
+  SHA-256 `6cf7c4cd0afb156aaf0c09bd4d92622d628af6fed0dbefdf2836a93492370602`, K0 origins only.
+  K4 K0-only universe/request files are
+  `~/.cache/lysilogy/person-truth/k0-172d18c2-{universe-v1,requests-v1}.json`: 10,951 rows,
+  9,146 missing and two invalid DOI values, 1,803 unique valid DOIs, 73 requests at 25/batch.
+  Actual live sequence after approval: Crossref freeze/build K2; build combined K2+K0 K4 universe;
+  freeze OpenAlex once and reuse those exact snapshots for both K4 and K5. Do not execute the
+  preparatory K0-only plan as final combined coverage or duplicate overlapping lookup batches.
+- Scorecard unchanged: **1/5 gates (G5), 1/30 objectives (O30=0/10k)**. Historical O25/O26 misses
+  retain #21/#22; no new measured miss or follow-up. Current implementations #33/#70/#72;
+  #25/#71 are paused drafts. Full phase/system acceptance remains outstanding.
+
+
+### 2026-09-13 — person-truth draft reviewed; store and LaTeX remain active
+
+- Last merged issue remains **#88 / PR90**, current phase/wave **A/A2**. Main prior checkpoint
+  `c269dd1`. No phase exit or new objective measurement. All grant/blocker conditions below
+  remain unchanged; no user approval of the additional four hosts has arrived.
+- **#72 / draft PR #95** is safely paused at clean/pushed **`c867ec6`**, explicitly based on
+  `feat/e8.4-reference-truth` / PR93. Tested source **`b33e924`** is independently cleared.
+  Final checks pass: **309 Rust / 165 Python / 85 Node**, 55 truth tests (22 new), O30=0/10k;
+  G1.persons/O13 remain unavailable. Exec65963 is terminal. Root verified 13 current source hashes,
+  eight gate logs, 15 G5 logs and both actual metadata-plan files; review receipt
+  `~/.cache/lysilogy/review-person-truth-root.json`. Report/evidence are
+  `docs/experiment-reports/2026-09-13-person-silver-labels.md` and
+  `eval/evidence/person-silver-labels.json`. No actual K4, complete K2/K0 input set or provider call.
+  Do not merge until actual label acceptance exists and PR93 has merged.
+- Agent `review_ready_prs` now independently reviews **#70** committed checkpoint **`3500522`**
+  while implementer `finish_corpus_proxy` continues builder/coverage receipts and a small native
+  index/alignment pilot. Checkpoint3500522 has 28 Python tests and the native helper's focused
+  Rust/Clippy checks passing; it does not yet contain final K1 publication/CLI/O11 panel.
+  Root reproduced a math-alignment collision: case-folding matched distinct uppercase/lowercase
+  equation variables with quality1.0. Owner is fixing case-sensitive equation matching and auditing
+  omitted unsupported operators; independent reviewer is checking the same semantic boundary.
+  Keep every rejected/partial alignment and unknown geometry explicit. No fabricated O2 labels.
+- **#33** normally integrated main at **`f2da82e`**; only kb/mod.rs conflicted and both store/titles
+  modules were retained. Agent `finish_benchmark` is implementing aggregation from every current
+  canonical-bound observation revision, using stable observation-ID ordering instead of refresh
+  time. Union identifiers/versions/copies/name variants, select known scalars and coherent parsed
+  name tuples deterministically, and retain every full asserted entity/revision in derived
+  provenance tables. Refresh replaces only that observation's contribution; merge/split use the
+  same aggregation path. Exact same-key version/copy contradictions reject before journal append.
+  Planned migration3 adds assertion/identifier projection tables plus journal validation stamp;
+  rebuild existing projections on migration. Root agreed to this storage default and requested
+  explicit documentation that later resolver policy may select among all retained claims.
+  Existing `.gitignore` change and target notes/patch remain preserved. No Rust compile/registry
+  probe or G4/O28 claim; dependency hosts remain blocked.
+- **#25 / draft PR94** stays paused at `46ff41b`, final helper source `6291b7e`, held for real
+  K1/K2 measurement. Root's final receipt verification uses the supplemental
+  `bibliography-fixture-target.json`; the original bibliography-parser.json remains intentionally
+  historical. **#71 / draft PR93** stays paused at `d5e12aa`; actual K2/K5/K7 remain unavailable.
+- Only live corpus mutator remains retained **exec97363**, with eval and subsequent guarded full
+  run logs/paths as recorded above. Poll that handle before any new corpus mutation. Native
+  indexing is separate, writes only the dedicated cache data root, and must preserve its canonical
+  PaperId registry. Current active implementations are #33/#70; #72's agent is reviewing #70.
+  Scorecard remains **1/5 gates (G5), 1/30 objectives (O30)**; O25/O26 misses retain #21/#22.
