@@ -206,6 +206,16 @@ fn validate_page(content: &str, width: f32, height: f32) -> Result<()> {
                 }
                 let attributes = attributes(tag.attributes)?;
                 if tag.name == "word" {
+                    // The legacy decoder finds attributes by substring. Accept
+                    // only Poppler's four numeric word attributes so unrelated
+                    // names or quoted values cannot shadow coordinates or the
+                    // opening tag boundary. Saved anchor parsing is unchanged.
+                    if attributes
+                        .iter()
+                        .any(|(name, _)| !matches!(*name, "xMin" | "yMin" | "xMax" | "yMax"))
+                    {
+                        return Err(invalid("unsupported native word attribute"));
+                    }
                     normalize_rect(
                         TextRect {
                             x_min: number_attribute(&attributes, "xMin")?,

@@ -151,3 +151,34 @@ fn should_ignore_page_lookalikes_when_they_are_inside_document_metadata_or_comme
     assert!(pages[0].failure.is_none());
     assert_eq!(pages[0].page.tokens[0].text, "OnlyPage");
 }
+
+#[test]
+fn should_withhold_page_when_extra_word_attributes_can_shadow_coordinates_or_text() {
+    let valid = page(&valid_word("Preserved"));
+    for attributes in [
+        r#"fake_xMin="80" xMin="40" yMin="100" xMax="90" yMax="110""#,
+        r#"note='xMin="80"' xMin="40" yMin="100" xMax="90" yMax="110""#,
+        r#"xMin="40" yMin="100" xMax="90" yMax="110" note=">InventedPrefix""#,
+    ] {
+        let broken = page(&word("ActualText", attributes));
+        let xml = format!("<doc>{valid}{broken}{valid}</doc>");
+        let parsed = parse_pages(&xml).unwrap();
+        assert_eq!(parsed.len(), 3);
+        assert!(
+            parsed[1]
+                .failure
+                .as_deref()
+                .unwrap()
+                .contains("unsupported native word attribute")
+        );
+        assert!(parsed[1].page.tokens.is_empty());
+        for at in [0, 2] {
+            assert!(parsed[at].failure.is_none());
+            assert_eq!(parsed[at].page.tokens[0].text, "Preserved");
+            assert_eq!(
+                parsed[at].page.tokens[0].rects[0].x_min.to_bits(),
+                40_f32.to_bits()
+            );
+        }
+    }
+}
