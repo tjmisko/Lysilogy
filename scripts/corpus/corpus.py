@@ -200,6 +200,24 @@ class Http:
     @contextlib.contextmanager
     def open(self, url):
         validate_url(url)
+        if not self.proxy_enabled:
+            with self._open(url) as response:
+                yield response
+            return
+        try:
+            with self._open(url) as response:
+                yield response
+        except (KeyboardInterrupt, SystemExit, GeneratorExit, CorpusError) as error:
+            # Keep cancellation and known corpus failures intact, but suppress a
+            # transport exception left as context during persistence or cleanup.
+            raise error from None
+        except Exception as error:
+            # The response's read/close and retry handler are part of the same
+            # boundary as connection setup; none may echo proxy credentials.
+            raise self.proxy_failure(error) from None
+
+    @contextlib.contextmanager
+    def _open(self, url):
         arxiv = urllib.parse.urlsplit(url).hostname != "storage.googleapis.com"
         # This lock is shared across corpus roots/processes. Hold it until the
         # response closes: the policy also limits simultaneous connections.
@@ -221,13 +239,17 @@ class Http:
                     response = self.opener.open(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}), timeout=90)
                     break
                 except urllib.error.HTTPError as error:
-                    delay = max(retry_after(error.headers.get("Retry-After"), timestamp=self.clock()),
-                                3.0 * 2**attempt)
-                    if rate_file:
-                        # Save even on the final retry, before raising or an
-                        # interruptible sleep releases the shared connection lock.
-                        persist_rate_deadline(rate_file, self.clock() + delay)
-                    error.close()
+                    try:
+                        delay = max(retry_after(error.headers.get("Retry-After"), timestamp=self.clock()),
+                                    3.0 * 2**attempt)
+                        if rate_file:
+                            # Save even on the final retry, before raising or an
+                            # interruptible sleep releases the shared connection lock.
+                            persist_rate_deadline(rate_file, self.clock() + delay)
+                    finally:
+                        # Cancellation during persistence must still close the
+                        # response, including its deferred resource-warning state.
+                        error.close()
                     if error.code not in (429, 500, 502, 503, 504) or attempt == 5:
                         if self.proxy_enabled:
                             raise self.proxy_failure(error) from None

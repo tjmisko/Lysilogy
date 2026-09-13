@@ -235,6 +235,56 @@ class CorpusTests(unittest.TestCase):
         factory.assert_called_once_with(proxy_env="HTTPS_PROXY")
         self.assertEqual(factory.return_value, harvest.call_args.args[2])
 
+    def should_suppress_transport_context_when_cooldown_persistence_is_interrupted(self):
+        with patch.dict(os.environ, {"HTTPS_PROXY": "http://fixture-secret@proxy.invalid:8080"}):
+            client = corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY", clock=lambda: 1000.0)
+        persist = corpus.persist_rate_deadline
+        calls = []
+        def interrupted_persist(stream, deadline):
+            calls.append(deadline)
+            persist(stream, deadline)
+            if len(calls) == 2:
+                raise KeyboardInterrupt()
+        error = corpus.urllib.error.HTTPError(corpus.OAI, 429, "fixture-secret", {"Retry-After": "600"}, None)
+        with patch.object(client.opener, "open", side_effect=error), \
+                patch.object(corpus, "persist_rate_deadline", side_effect=interrupted_persist):
+            with self.assertRaises(KeyboardInterrupt) as failure:
+                client.bytes(corpus.OAI)
+        self.assertEqual([1003, 1600], calls)
+        self.assertEqual(1600, float((self.root / "arxiv-http.lock").read_text()))
+        self.assertTrue(error.closed)
+        self.assertNotIn("fixture-secret", "".join(traceback.format_exception(failure.exception)))
+
+    def should_redact_response_lifetime_errors_when_proxy_read_or_cleanup_fails(self):
+        class BrokenResponse:
+            def __init__(self, fail_read):
+                self.fail_read = fail_read
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                if not self.fail_read:
+                    raise RuntimeError("fixture-secret")
+            def read(self, _count):
+                if self.fail_read:
+                    raise corpus.urllib.error.URLError("fixture-secret")
+                return b"fixture"
+        class BrokenClose(corpus.urllib.error.HTTPError):
+            def close(self):
+                super().close()
+                raise RuntimeError("fixture-secret")
+        with patch.dict(os.environ, {"HTTPS_PROXY": "http://fixture-secret@proxy.invalid:8080"}):
+            client = corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY")
+        for response in (BrokenResponse(True), BrokenResponse(False)):
+            with patch.object(client.opener, "open", return_value=response):
+                with self.assertRaises(corpus.CorpusError) as failure:
+                    client.bytes(corpus.GCS + "/fixture")
+            self.assertNotIn("fixture-secret", "".join(traceback.format_exception(failure.exception)))
+        error = BrokenClose(corpus.GCS, 429, "fixture-secret", {}, None)
+        with patch.object(client.opener, "open", side_effect=error):
+            with self.assertRaises(corpus.CorpusError) as failure:
+                client.bytes(corpus.GCS + "/fixture")
+        self.assertNotIn("fixture-secret", "".join(traceback.format_exception(failure.exception)))
+
     def should_reject_directory_symlink_when_pdf_storage_leaves_corpus_root(self):
         real_directory = self.root / "external"
         real_directory.mkdir()

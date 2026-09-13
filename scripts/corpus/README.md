@@ -135,7 +135,7 @@ link readers to each paper's arXiv abstract/download page. Never commit PDFs or 
 
 ## Current verification boundary
 
-The 50 offline tests cover deterministic strata, OAI paging/refresh/deletion/token expiry and
+The 52 offline tests cover deterministic strata, OAI paging/refresh/deletion/token expiry and
 midnight boundaries, pinned GCS versions, file integrity/resume, truncated and HTML payload
 rejection, request pacing and cooldown persistence, free-space failures, unsafe roots,
 symlinks, explicit proxy selection and redaction, and a full fixture download/verify/resume cycle.
