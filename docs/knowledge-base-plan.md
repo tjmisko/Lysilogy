@@ -531,6 +531,21 @@ Tests: should normalize "$\alpha$-Divergence" and "α-divergence" to the same ke
 "Title: Subtitle" and "Title - Subtitle" as equal; should not equate "Attention Is All You Need" with
 a paper titled "Attention Is Not All You Need".
 
+Implementation contract: `kb::titles::title_key` folds compatibility Unicode, letter diacritics,
+case, ordinary punctuation and known LaTeX presentation commands. Words, negation, repetition,
+mathematical operators and script grouping remain significant. Unknown LaTeX command names retain
+their spelling and case, and their argument braces remain explicit; unsupported macros are not
+silently interpreted or removed. This is a syntactic decoder, not a TeX execution engine.
+
+`title_similarity` uses a multiset character-trigram Sørensen–Dice score, with two boundary
+sentinels on each side of the normalized title and repeated grams counted. Empty inputs score
+zero. Unequal keys above 1,024 Unicode characters score zero to bound fuzzy work and memory;
+exact nonempty equality remains comparable at any length. A fuzzy score is not a probability:
+different strings can share a gram multiset, so exact title equality must use the key itself.
+Neither helper makes entity identity decisions or claims resolver metrics before K3 exists.
+E2.1 owns the SQLite FTS5 table and populates it with `title_key` when the two branches integrate;
+there is one database index, rather than a second in-memory candidate store.
+
 Blocked by: E2.2
 
 ### E2.5 Resolution gold set and evaluation
