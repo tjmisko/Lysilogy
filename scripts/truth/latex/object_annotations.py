@@ -229,9 +229,15 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
         checked_span({**row['span'], 'text': row['printed'], 'text_utf8_sha256': native['native_text_sha256']}, index['text'])
         require(row['target'] == declared['target'] and row['target'].startswith('section:') and declared['source_target_label'] in source_refs[number]['targets'], 'manual non-object reference role lacks reviewed source identity')
     relevant_refs = [row for row in reference_rows if sources[row['target']]['kind'] in ('equation', 'statement')]
+    absent_kinds = []
+    negative_review = comparison.get('negative_kind_review', {})
+    for kind in ('figure', 'table'):
+        if comparison['complete_inventory_verified'].get(kind) == 0:
+            require(negative_review.get('pages_viewed') == sorted(pages) and isinstance(negative_review.get(kind), str) and negative_review[kind].strip() and not any(row['kind'] == kind for row in parsed['objects']), 'manual absent kind lacks complete source and visual review')
+            absent_kinds.append(kind)
     overlay = {'objects': output_objects, 'automatic_candidate_retained': True, 'final_k1_publication': False,
                'verified_image_paths': verified_images,
-               'associated_content': ancillary, 'references': reference_rows, 'non_object_references': non_objects,
+               'reviewed_absent_kinds': absent_kinds, 'associated_content': ancillary, 'references': reference_rows, 'non_object_references': non_objects,
                'reference_coverage': {'source_occurrences': len(source_refs), 'object_occurrences': len(reference_rows), 'O4_occurrences': len(relevant_refs)},
                'metric_eligibility': {'O3': True, 'O4': True, 'O5': True, 'O6': True, 'O7': True},
                'evidence_hashes': {'candidate_sha256': sha256(candidate_raw), 'source_inventory_sha256': candidate['source_inventory_sha256'], 'packet_sha256': sha256(packet_raw), 'root_annotation_sha256': sha256(root_raw), 'independent_annotation_sha256': sha256(independent_raw), 'independent_receipt_sha256': sha256(independent_receipt_raw), 'comparison_sha256': sha256(comparison_raw)}}

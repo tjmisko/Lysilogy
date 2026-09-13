@@ -169,6 +169,16 @@ class ObjectAnnotationTests(unittest.TestCase):
             rows = fixture(); mutation(rows[7]['non_object_references_verified'][0]); reseal(rows)
             with self.subTest(mutation=mutation), self.assertRaises(ValueError): apply(rows)
 
+    def test_should_retain_reviewed_absent_kinds_when_every_page_and_source_inventory_were_checked(self):
+        rows = fixture()
+        rows[4]['complete_visual_inventory'].update(figure=0, table=0)
+        rows[7]['complete_inventory_verified'].update(figure=0, table=0)
+        rows[7]['negative_kind_review'] = {'pages_viewed': [1], 'figure': 'Complete original page has no figure', 'table': 'Complete original page has no table'}
+        reseal(rows)
+        self.assertEqual(apply(rows)['manual_object_overlay']['reviewed_absent_kinds'], ['figure', 'table'])
+        rows[7]['negative_kind_review']['pages_viewed'] = []
+        with self.assertRaisesRegex(ValueError, 'absent kind lacks complete'): apply(rows)
+
     def test_should_reject_unverified_images_when_manual_hash_claims_do_not_match_the_file_boundary(self):
         rows = fixture(); rows[8]['page-1.png'] = 'f' * 64
         with self.assertRaisesRegex(ValueError, 'actual verified bytes'): apply(rows)
