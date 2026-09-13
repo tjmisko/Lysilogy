@@ -13,20 +13,17 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ToolingDiscoveryTests(unittest.TestCase):
-    def should_link_a_new_binary_when_the_configured_linker_is_mold(self):
-        tools = runpy.run_path(str(ROOT / "src/eval/g5.py"))["TOOLS"]
+    def should_link_a_fresh_executable_when_the_toolchain_path_is_restricted(self):
+        tooling_path = runpy.run_path(str(ROOT / "src/eval/g5.py"))["tooling_path"]
+        linker = ["-fuse-ld=mold"] if shutil.which("mold") else []
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             executables = directory / "bin"
-            executables.mkdir()
-            for name in tools:
-                source = shutil.which(name)
-                if source:
-                    (executables / name).symlink_to(source)
+            tooling_path(executables)
             source = directory / "main.c"
             source.write_text("int main(void) { return 0; }\n")
             result = subprocess.run(
-                [str(executables / "cc"), "-fuse-ld=mold", str(source), "-o", str(directory / "linked")],
+                [str(executables / "cc"), *linker, str(source), "-o", str(directory / "linked")],
                 env={**os.environ, "PATH": str(executables)}, capture_output=True, text=True,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
