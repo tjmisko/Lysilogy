@@ -87,7 +87,7 @@ class TexTests(unittest.TestCase):
         assertions = (b"\\ifdefined\\directlua\\errmessage{Lua engine escaped policy}\\fi\n"
                       b"\\ifdefined\\XeTeXversion\\errmessage{XeTeX escaped policy}\\fi\n"
                       b"\\ifnum\\pdfoutput=1\\else\\errmessage{PDF mode unavailable}\\fi\n"
-                      b"\\def\\wanted{LaTeX}\\ifx\\fmtname\\wanted\\else\\errmessage{wrong format}\\fi\n")
+                      b"\\def\\wanted{LaTeX2e}\\ifx\\fmtname\\wanted\\else\\errmessage{wrong format}\\fi\n")
         self.build("override", b"Fixed engine and format", prefix=b"%&luatex\n% !TEX program = xelatex\n", preamble=assertions)
 
     def should_disable_shell_escape_when_source_attempts_a_write_eighteen_command(self):
