@@ -14,7 +14,7 @@ Saved citation-anchor parsing remains strict and retains its token numbering. Pa
 
 ## Tests and scorecard
 
-Twelve new offline tests cover coordinate reversal, nonfinite/missing/invalid/duplicate values, unsafe framing and dimensions, malformed local nesting, exact valid-fixture preservation, Unicode/control glyphs, attribute shadowing, page/block mapping, OCR success/failure/empty output, and interrupted prose. Three existing real native fixtures compare exactly with the strict verbatim parser.
+Eleven new offline tests cover coordinate reversal, nonfinite/missing/invalid/duplicate values, unsafe framing and dimensions, malformed local nesting, exact valid-fixture preservation, Unicode/control glyphs, attribute shadowing, page/block mapping, OCR success/failure/empty output, and interrupted prose. Three existing real native fixtures compare exactly with the strict verbatim parser.
 
 Before-change main `941c4f3` was clean. Its offline CLI build took 95.8173 seconds; `eval objects`, `bibliography` and `scale --check` passed. The final source was normally merged with main through `a322185` (without rebase), producing validation head `e5ac219`.
 
