@@ -378,7 +378,7 @@ fn figure_region(
     if height < 35.0 || height > dimensions.height * 0.70 {
         return None;
     }
-    let mut bounds = None;
+    let mut regions = Vec::new();
     // Printed diagram labels/ticks establish an observed extent. Do not fill
     // whitespace back to a page margin or include the separate caption body.
     for paragraph in index
@@ -397,12 +397,7 @@ fn figure_region(
         }
         let nearest = captions
             .iter()
-            .filter(|c| {
-                c.page == page
-                    && c.rect.y_min >= rect.y_max
-                    && c.rect.x_max > rect.x_min
-                    && c.rect.x_min < rect.x_max
-            })
+            .filter(|c| c.page == page && c.rect.y_min >= rect.y_max)
             .min_by(|a, b| {
                 let distance = |c: &TextRect| {
                     let dx = (c.x_min - rect.x_max).max(rect.x_min - c.x_max).max(0.0);
@@ -411,10 +406,36 @@ fn figure_region(
                 distance(&a.rect).total_cmp(&distance(&b.rect))
             });
         if nearest.is_some_and(|c| c.paragraph.start == caption_start) {
-            bounds = Some(bounds.map_or(rect, |b| union([b, rect].into_iter())));
+            regions.push(rect);
         }
     }
-    bounds.map(|r| padded(r, body_font * 0.4, dimensions.width, top, caption.y_min))
+    let mut bounds = regions
+        .iter()
+        .copied()
+        .filter(|r| horizontal_gap(*r, caption) == 0.0)
+        .reduce(|a, b| union([a, b].into_iter()))?;
+    // A diagram may be wider than its caption. Extend the seeded neighborhood
+    // through nearby observed labels, without jumping into another column.
+    regions.sort_by(|a, b| horizontal_gap(*a, caption).total_cmp(&horizontal_gap(*b, caption)));
+    for rect in regions {
+        if horizontal_gap(rect, bounds) <= body_font * 3.0
+            && rect.y_max >= bounds.y_min
+            && rect.y_min <= bounds.y_max
+        {
+            bounds = union([bounds, rect].into_iter());
+        }
+    }
+    Some(padded(
+        bounds,
+        body_font * 0.4,
+        dimensions.width,
+        top,
+        caption.y_min,
+    ))
+}
+
+fn horizontal_gap(a: TextRect, b: TextRect) -> f32 {
+    (a.x_min - b.x_max).max(b.x_min - a.x_max).max(0.0)
 }
 
 fn padded(rect: TextRect, margin: f32, width: f32, top: f32, bottom: f32) -> TextRect {
@@ -525,7 +546,12 @@ fn table_below(
     let mut bounds = None;
     let mut numeric = false;
     for (paragraph, text, rect) in candidates {
-        if rect.y_min - bounds.map_or(caption.y_max, |r: TextRect| r.y_max) > font * 5.0
+        let gap_limit = if bounds.is_some() {
+            font * 2.0
+        } else {
+            font * 5.0
+        };
+        if rect.y_min - bounds.map_or(caption.y_max, |r: TextRect| r.y_max) > gap_limit
             || captions
                 .iter()
                 .any(|c| c.paragraph.start == paragraph.start)
@@ -882,6 +908,37 @@ mod tests {
             index.objects.paragraph.truncate(1);
             assert!(find(&index).is_empty());
         }
+    }
+
+    #[test]
+    fn should_extend_connected_labels_when_a_drawing_is_wider_than_its_caption() {
+        let index = fixture(&[
+            (
+                "A lengthy top diagram label establishes the width",
+                "float",
+                50.0,
+                120.0,
+            ),
+            ("Intermediate node", "float", 180.0, 170.0),
+            ("Action classifier", "float", 260.0, 150.0),
+            ("Unrelated heading", "body", 430.0, 150.0),
+            ("Figure 2: Diagram.", "caption", 50.0, 220.0),
+        ]);
+        let figure = &find(&index)[0];
+        assert!(figure.rect.unwrap().x_max > 300.0);
+        assert!(figure.rect.unwrap().x_max < 400.0);
+    }
+
+    #[test]
+    fn should_stop_the_grid_when_a_separated_section_heading_follows_its_last_row() {
+        let index = fixture(&[
+            ("Table IV: Scores.", "body", 50.0, 100.0),
+            ("Method Score", "float", 70.0, 130.0),
+            ("First 12.5", "float", 70.0, 146.0),
+            ("Second 25.0", "float", 70.0, 162.0),
+            ("B. Further results", "body", 50.0, 201.0),
+        ]);
+        assert!(find(&index)[0].rect.unwrap().y_max < 180.0);
     }
 
     #[test]
