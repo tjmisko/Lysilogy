@@ -363,7 +363,44 @@ def release_paths(version):
     return {'truth': 'eval/truth/' + version + '/objects.json',
             'config': 'eval/truth/' + version + '-build.json',
             'trace': TRACE if version == TRUTH_VERSIONS[0] else 'eval/inputs/evidence/object-metrics-' + version + '.json',
-            'input': INPUT if version == TRUTH_VERSIONS[0] else 'eval/inputs/objects/figure-table-' + version + '.json'}
+            'input': INPUT}
+
+
+def freeze_measurement(repo, input_raw, observation_raw, paths):
+    """Preserve exact original bytes outside the harness's active input directory."""
+    manifest={'schema_version':1,'original_paths':{'input':paths['input'],'observation':paths['trace']},
+              'sha256':{'input.json':digest(input_raw),'observation.json':digest(observation_raw)}}
+    payloads={'input.json':input_raw,'observation.json':observation_raw,'manifest.json':canonical(manifest)+b'\n'}
+    folder=repo/'eval/evidence/object-metrics-history'/digest(canonical(manifest))
+    require(not any(p.is_symlink() for p in (folder,*folder.parents)), 'symlinked measurement history')
+    folder.mkdir(parents=True,exist_ok=True)
+    for name,raw in payloads.items():
+        require(len(raw)<=8*1024*1024,'measurement history exceeds bound')
+        path=folder/name
+        if path.exists():require(read(path)==raw,'immutable measurement history differs')
+        else:
+            with path.open('xb') as stream:stream.write(raw);stream.flush();os.fsync(stream.fileno())
+    return str(folder.relative_to(repo))
+
+
+def publish_measurement(repo, paths, observation, payload):
+    # The harness scans every immediate JSON input and rejects duplicate metric
+    # owners. Keep one active input; preserve overlapping prior cohorts as history.
+    active=repo/INPUT
+    if active.exists() or active.is_symlink():
+        old_raw=read(active);old=document(old_raw)
+        old_version=old['truth_sets']['K1']['version'];old_paths=release_paths(old_version)
+        require(set(old['metrics'])=={'O1','O2'} and old['suite']=='objects', 'existing input has another metric owner')
+        old_observation=read(repo/old_paths['trace'])
+        for metric in old['metrics'].values():
+            require(any(row['path']==old_paths['trace'] and row['sha256']==digest(old_observation)
+                        for row in metric['evidence']), 'prior observation differs from its input')
+        freeze_measurement(repo,old_raw,old_observation,old_paths)
+    input_raw=canonical(payload)+b'\n';observation_raw=canonical(observation)+b'\n'
+    archive=freeze_measurement(repo,input_raw,observation_raw,paths)
+    atomic_json(repo/paths['trace'],observation)
+    atomic_json(repo/INPUT,payload)
+    return archive
 
 
 def implementation_files(repo, truth_version=TRUTH_VERSIONS[0]):
@@ -403,7 +440,7 @@ def build_bridge(repo, truth_version=TRUTH_VERSIONS[0]):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--truth-version', choices=TRUTH_VERSIONS, default=TRUTH_VERSIONS[0], help='Explicit immutable cohort; each version writes separate observations and harness input')
+    parser.add_argument('--truth-version', choices=TRUTH_VERSIONS, default=TRUTH_VERSIONS[0], help='Explicit immutable cohort; preserve prior observations/input before selecting the active cohort')
     parser.add_argument('--build',action='store_true',help='Build the exact worktree bridge and freeze its Cargo receipt')
     parser.add_argument('--executable',type=Path,help='Cargo-built object_metrics executable in this worktree target/debug/examples')
     args=parser.parse_args();started=time.monotonic()
@@ -469,10 +506,10 @@ def main():
     run_root=cache/'object-metrics'/digest(result.stdout)
     atomic_json(run_root/'predictions.json',response)
     observation['predictions_sha256']=digest(canonical(response)+b'\n')
-    atomic_json(ROOT/paths['trace'],observation)
     evidence=lambda p,v:{'path':p,'version':v,'sha256':digest(read(ROOT/p))}
-    payload={'schema_version':1,'suite':'objects','collector':VERSION,'implementation':[evidence(p,VERSION) for p in sources],'truth_sets':{'K1':evidence(paths['truth'],truth['version'])},'metrics':{'O1':{'sample':{'method':'f1','true_positive':totals['tp'],'false_positive':totals['fp'],'false_negative':totals['fn']},'cases':totals['truth_objects'],'evidence':[evidence(paths['trace'],VERSION)]},'O2':{'sample':{'method':'median','values':values},'cases':len(values),'evidence':[evidence(paths['trace'],VERSION)]}},'cost_usd':0,'wall_seconds':observation['wall_seconds']}
-    atomic_json(ROOT/paths['input'],payload)
+    observation_evidence={'path':paths['trace'],'version':VERSION,'sha256':digest(canonical(observation)+b'\n')}
+    payload={'schema_version':1,'suite':'objects','collector':VERSION,'implementation':[evidence(p,VERSION) for p in sources],'truth_sets':{'K1':evidence(paths['truth'],truth['version'])},'metrics':{'O1':{'sample':{'method':'f1','true_positive':totals['tp'],'false_positive':totals['fp'],'false_negative':totals['fn']},'cases':totals['truth_objects'],'evidence':[observation_evidence]},'O2':{'sample':{'method':'median','values':values},'cases':len(values),'evidence':[observation_evidence]}},'cost_usd':0,'wall_seconds':observation['wall_seconds']}
+    publish_measurement(ROOT,paths,observation,payload)
     print(json.dumps({k:observation[k] for k in ('summary','O1','O2','matched_only_median','wall_seconds')},sort_keys=True))
 
 
