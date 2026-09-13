@@ -71,7 +71,7 @@ def compose_overlays(candidate_raw, overlays):
     for result in overlays:
         extra = set(result) - set(candidate)
         require(len(extra) == 1 and extra <= allowed and set(candidate) <= set(result)
-                and {key: result.get(key) for key in candidate} == candidate,
+                and canonical({key: result.get(key) for key in candidate}) == canonical(candidate),
                 'manual overlay changed the original candidate or unexpected fields')
         name = next(iter(extra))
         require(name not in output, 'manual overlay was supplied twice')

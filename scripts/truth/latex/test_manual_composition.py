@@ -57,6 +57,14 @@ class ManualCompositionTests(unittest.TestCase):
             self.assertIn('manual_figure_table_overlay', result); self.assertIn('manual_object_overlay', result)
             self.assertEqual(result['manual_assembly']['omitted_manual_kinds'], ['bib_entry'])
 
+    def test_should_reject_candidate_type_changes_when_python_values_compare_equal(self):
+        base = {'accepted': False, 'counts': {'objects': 0}, 'quality': 1.0}
+        for key, changed in [('accepted', 0), ('counts', {'objects': False}), ('quality', 1)]:
+            supplied = {**deepcopy(base), key: changed, 'manual_object_overlay': {'objects': []}}
+            self.assertEqual({name: supplied[name] for name in base}, base)
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'changed the original candidate'):
+                compose_overlays(canonical(base), [supplied])
+
     def test_should_exclude_predictions_and_preserve_utf16_text_when_native_export_is_verified(self):
         raw, exported, declaration = native_fixture()
         self.assertNotIn(b'prediction', exported)
@@ -79,6 +87,20 @@ class ManualCompositionTests(unittest.TestCase):
         for key, value in [('format', 'another-format'), ('index_sha256', 'f' * 64), ('sha256', 'f' * 64), ('bytes', len(exported) + 1)]:
             with self.subTest(key=key), self.assertRaises(ValueError):
                 verify_native_export(raw, exported, 'a' * 16, {**declaration, key: value})
+
+    def test_should_reject_resealed_native_type_changes_when_python_values_compare_equal(self):
+        raw, _, declaration = native_fixture()
+        mutations = [lambda e: e['tokens'][0].update(start=False),
+                     lambda e: e['tokens'][0].update(page=True),
+                     lambda e: e['pages'][0].update(width=100.0),
+                     lambda e: e['tokens'][0]['rects'][0].update(x_min=False)]
+        for mutation in mutations:
+            value = native_projection(raw, 'a' * 16); mutation(value)
+            self.assertEqual(value, native_projection(raw, 'a' * 16))
+            changed = canonical(value)
+            claim = {**declaration, 'sha256': sha256(changed), 'bytes': len(changed)}
+            with self.subTest(mutation=mutation), self.assertRaisesRegex(ValueError, 'fixed native allowlist'):
+                verify_native_export(raw, changed, 'a' * 16, claim)
 
     def test_should_rehash_actual_blind_export_when_annotators_used_its_safe_cache_path(self):
         with tempfile.TemporaryDirectory() as directory:

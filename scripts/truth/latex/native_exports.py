@@ -1,5 +1,5 @@
 """Verify the exact native subset shown to blind annotators, without predictions."""
-from annotations import document, require
+from annotations import canonical, document, require
 from archive import sha256
 
 FORMAT = 'k1-native-allowlist-v1'
@@ -49,6 +49,6 @@ def verify_native_export(index_raw, export_raw, paper_id, declaration):
     require(declaration.get('index_sha256') == sha256(index_raw), 'blind export names another native index')
     require(type(declaration.get('bytes')) is int and declaration['bytes'] == len(export_raw)
             and declaration.get('sha256') == sha256(export_raw), 'blind export bytes differ from its receipt')
-    require(document(export_raw) == native_projection(index_raw, paper_id),
+    require(canonical(document(export_raw)) == canonical(native_projection(index_raw, paper_id)),
             'blind export differs from the fixed native allowlist')
     return {'format': FORMAT, 'sha256': sha256(export_raw), 'index_sha256': sha256(index_raw)}
