@@ -1,5 +1,6 @@
 """Derive evaluation objects and links from source structure, not PDF detectors."""
 from collections import Counter
+from bisect import bisect_right
 import re
 
 from archive import Limits, UnsupportedSource, sha256
@@ -599,12 +600,67 @@ def parse_project(files, limits=Limits(), selected_main=None):
             row["proof_heading_source"] = node["option"]
         objects.append(row)
     bibliographies = [node for node in nodes if node["environment"] == "thebibliography"]
+    source_role_evidence = []
+    unsupported_kind_inventory = Counter()
+    heading_names = {'section', 'subsection', 'subsubsection', 'paragraph', 'subparagraph', 'chapter', 'part'}
+    headings = list(argument_commands(scan, heading_names | {'textbf', 'textit', 'emph'}))
+    formal_headings = [row for row in headings if row['command'].rstrip('*') in heading_names]
+    formal_starts = [row['start'] for row in formal_headings]
+    bibliography_masked = mask_regions(scan, [(row['start'], row['end']) for row in bibliographies])
+    for heading in headings:
+        if not document['content_start'] <= heading['start'] < document['content_end']:
+            continue
+        if any(row['start'] <= heading['start'] < row['end'] for row in bibliographies):
+            continue
+        formal = heading['command'].rstrip('*') in heading_names
+        if not formal:
+            # Only an isolated styled line supplies an unparsed heading cue;
+            # a word inside a sentence/caption is not a bibliography section.
+            line_start = scan.rfind('\n', 0, heading['start']) + 1
+            line_end = scan.find('\n', heading['end'])
+            if line_end < 0:
+                line_end = len(scan)
+            prefix = re.sub(r'\\(?:noindent|small|footnotesize|large|Large|bfseries)\b', '', scan[line_start:heading['start']])
+            suffix = scan[heading['end']:line_end].replace('\\\\', '')
+            if prefix.strip(' {}\t') or suffix.strip(' {}\t'):
+                continue
+        before = renderer.unsupported.copy()
+        title = render_text(renderer, heading['value']).casefold().strip(' :.')
+        if renderer.unsupported != before:
+            continue  # Uninterpreted text cannot establish a particular role.
+        following = bisect_right(formal_starts, heading['start'])
+        end = formal_starts[following] if following < len(formal_starts) else document['content_end']
+        if title in {'references', 'bibliography', 'literature cited', 'works cited', 'references and notes'}:
+            if bibliography_masked[heading['end']:end].strip(' {}\t\n\r'):
+                unsupported_bibliography['unparsed_reference_section'] = unsupported_bibliography.get('unparsed_reference_section', 0) + 1
+                source_role_evidence.append({'kind': 'bib_entry', 'reason': 'reference section contains content outside parsed bibliography entries',
+                                             'heading': title, 'heading_members': expanded.origins(heading['start'], heading['end']),
+                                             'source_members': expanded.origins(heading['start'], end)})
+        if re.match(r'^(?:algorithm|procedure|pseudocode)\b', title) and not any(
+                row['kind'] == 'algorithm' and row['source_span']['start'] <= heading['start'] < row['source_span']['end'] for row in objects):
+            unsupported_kind_inventory['algorithm'] += 1
+            source_role_evidence.append({'kind': 'algorithm', 'reason': 'procedural heading has no parsed algorithm container',
+                                         'heading_members': expanded.origins(heading['start'], heading['end']),
+                                         'source_members': expanded.origins(heading['start'], end)})
+    for node in nodes:
+        if node['environment'] == 'enumerate' and node['option'] and re.search(r'\bstep\b', node['option'], re.I):
+            if not any(row['kind'] == 'algorithm' and row['source_span']['start'] <= node['start'] < row['source_span']['end'] for row in objects):
+                unsupported_kind_inventory['algorithm'] += 1
+                source_role_evidence.append({'kind': 'algorithm', 'reason': 'step-labeled procedural list has no parsed algorithm container',
+                                             'source_members': expanded.origins(node['start'], node['end'])})
     entries, entry_keys, occupied = [], set(), []
     database, bib_issues = bibtex_fields({path: files[path] for path in expanded.coverage["bibliography_files"]}, renderer)
     ignored.update(bib_issues)
     for bibliography in bibliographies:
         raw = text[bibliography["content_start"]:bibliography["content_end"]]
         markers = list(argument_commands(mask_regions(raw, definition_regions(raw)), {"bibitem"}))
+        prefix_end = markers[0]['start'] if markers else len(raw)
+        prefix = mask_regions(raw[:prefix_end], definition_regions(raw[:prefix_end]))
+        _, prefix_start = group(prefix, 0, required=False)  # thebibliography's label-width argument
+        if prefix[prefix_start:].strip(' {}\t\n\r'):
+            unsupported_bibliography['unparsed_bibliography_prefix'] = unsupported_bibliography.get('unparsed_bibliography_prefix', 0) + 1
+            source_role_evidence.append({'kind': 'bib_entry', 'reason': 'bibliography content precedes its parsed entry markers',
+                                         'source_members': expanded.origins(bibliography['content_start'] + prefix_start, bibliography['content_start'] + prefix_end)})
         if not markers:
             ignored["empty_bibliography"] += 1
         for number, marker in enumerate(markers):
@@ -753,6 +809,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
                          "unverified_stored_arguments": stored_evidence,
                          "unsupported_object_environments": unknown_environments,
                          "unsupported_source_semantics": dict(source_semantics),
+                         "unsupported_kind_inventory": dict(unsupported_kind_inventory),
+                         "unparsed_source_roles": source_role_evidence,
                          "objects_by_kind": dict(Counter(row["kind"] for row in objects)),
                          "bibliography_entries": len(entries), "citation_commands": sum(row["kind"] == "citation" for row in links),
                          "unsupported_citation_commands": dict(unsupported_citations),

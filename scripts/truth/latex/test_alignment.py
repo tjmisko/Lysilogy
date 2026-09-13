@@ -17,6 +17,62 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_withhold_bibliography_negatives_when_explicit_reference_headings_have_unparsed_content(self):
+        for heading in (r'\section*{References}', r'\subsection{Bibliography}', '\n'+r'\textbf{References}'+'\n'):
+            source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                              + heading + '\nSmith, A. A manually formatted source reference. 2020.\n'
+                              + r'\section{Appendix}Ordinary appendix text.')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(heading=heading):
+                self.assertEqual(parsed['entries'], [])
+                evidence = parsed['coverage']['unparsed_source_roles'][0]
+                self.assertEqual(evidence['kind'], 'bib_entry')
+                self.assertEqual(evidence['source_members'][-1]['end'], source.index(r'\section{Appendix}'))
+                result = align_paper(parsed, {'text': 'An independently complete visual caption. Smith, A. A manually formatted source reference. 2020. Ordinary appendix text.'})
+                self.assertTrue(result['metric_eligibility']['O1'])
+                self.assertFalse(any(result['metric_eligibility'][key] for key in ('O8', 'O9', 'O10')))
+
+    def test_should_keep_complete_bibliography_headings_when_their_contents_are_all_in_parsed_entries(self):
+        entry = r'\begin{thebibliography}{9}\bibitem{one}A complete independently identifiable source entry.\end{thebibliography}'
+        source = document(r'\section*{References}' + entry + r'\section{Appendix}Ordinary appendix text.')
+        parsed = parse_project({'main.tex': source})
+        self.assertFalse(parsed['coverage']['unparsed_source_roles'])
+        self.assertTrue(align_paper(parsed, {'text': '[1] A complete independently identifiable source entry. Ordinary appendix text.'})['bibliography_eligible'])
+        # A parsed entry elsewhere does not account for an additional manual one.
+        extra = parse_project({'main.tex': source.replace(entry, 'Another manually formatted reference. 2021. ' + entry)})
+        self.assertFalse(align_paper(extra, {'text': '[1] A complete independently identifiable source entry.'})['bibliography_eligible'])
+
+    def test_should_withhold_unmarked_bibliography_entries_when_text_precedes_or_replaces_bibitem_markers(self):
+        for suffix in ('', r'\bibitem{one}A separately marked source entry.'):
+            source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                              + r'\begin{thebibliography}{9}A manually written reference. 2020.' + suffix + r'\end{thebibliography}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(marked=bool(suffix)):
+                self.assertIn('unparsed_bibliography_prefix', parsed['coverage']['unsupported_bibliography_commands'])
+                self.assertFalse(align_paper(parsed, {'text': 'An independently complete visual caption. A manually written reference. 2020. [1] A separately marked source entry.'})['bibliography_eligible'])
+
+    def test_should_withhold_procedure_negatives_when_step_lists_or_algorithm_headings_lack_a_parsed_container(self):
+        for procedure in (r'\begin{enumerate}[Step 1:]\item Select an input.\item Return a result.\end{enumerate}',
+                          r'\section{Algorithm 1}Select an input and return a result.'):
+            source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}' + procedure)
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(procedure=procedure):
+                self.assertEqual(parsed['coverage']['unsupported_kind_inventory']['algorithm'], 1)
+                self.assertEqual(parsed['coverage']['unparsed_source_roles'][0]['kind'], 'algorithm')
+                result = align_paper(parsed, {'text': 'An independently complete visual caption. Select an input. Return a result.'})
+                self.assertTrue(result['metric_eligibility']['O1'])
+                self.assertFalse(result['metric_eligibility']['O7'])
+
+    def test_should_preserve_supported_empty_or_contained_inventories_when_no_unparsed_source_role_exists(self):
+        ordinary = parse_project({'main.tex': document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                                   r'\begin{enumerate}\item A list of components.\end{enumerate}\begin{thebibliography}{9}\end{thebibliography}')})
+        self.assertFalse(ordinary['coverage']['unparsed_source_roles'])
+        result = align_paper(ordinary, {'text': 'An independently complete visual caption. A list of components.'})
+        self.assertTrue(result['metric_eligibility']['O7'])
+        self.assertTrue(result['metric_eligibility']['O8'])
+        contained = parse_project({'main.tex': document(r'\begin{algorithm}\caption{A complete algorithm caption.}\begin{enumerate}[Step 1:]\item Select an input.\end{enumerate}\end{algorithm}')})
+        self.assertFalse(contained['coverage']['unsupported_kind_inventory'])
+
     def test_should_retain_enclosing_layout_exclusions_when_reference_or_citation_context_is_clipped(self):
         for command, metric in (('ref', 'O4'), ('cite', 'O10')):
             layout = r'\begin{array}{c}the independent statement ' + chr(92) + command + r'{one} supports the whole argument\end{array}'

@@ -162,3 +162,10 @@ without proving its rendered text. Array column declarations, row grouping and
 matrix binding are not ordinary prose; objects, entries or contexts containing
 these layouts retain an explicit fidelity exclusion until independently verified
 geometry is available. This does not exclude another completely aligned kind.
+
+An explicit References/Bibliography heading with content outside parsed entry
+containers, or unmarked content inside a bibliography container, prevents a
+negative bibliography/citation claim. Likewise, a procedural heading or a
+step-labeled list outside a parsed algorithm container prevents an algorithm
+absence claim. These source-role exclusions retain original spans and affect the
+relevant metric cohorts; a complete independent kind elsewhere remains usable.
