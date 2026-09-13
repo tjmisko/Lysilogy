@@ -65,6 +65,11 @@ that PDFs/sources were downloaded or mapped. Each membership origin and input co
 is retained. Missing and invalid DOI counts are explicit; no title-based identity is invented.
 Rebuild the universe with both actual inputs before final K4 acceptance.
 
+For the first live build, freeze Crossref and derive genuine K2 first. Then form the combined
+K2+K0 universe and freeze its OpenAlex plan once. Reuse those same OpenAlex snapshots for both
+K4 and K5, rather than independently generating overlapping OA and person lookup batches. The
+current K0-only 73-request plan is a preparatory checkpoint, not this final combined plan.
+
 The request plan uses the E8.4 `freeze_reference.py freeze` command and Rust GraphHttp helper,
 with the existing cache, budget and fixed provider endpoint. The plan alone makes no network
 call. Live freezing remains a separate explicit operation after host access is available.
