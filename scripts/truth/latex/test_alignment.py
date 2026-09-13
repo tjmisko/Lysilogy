@@ -17,6 +17,22 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_distinguish_inventory_support_when_standard_math_is_still_unrenderable(self):
+        source = document(r'\begin{figure}\caption{A complete independ\"ent figure caption.}\end{figure}\begin{equation}x\in A+\tilde{x}\end{equation}', r'\setlength{\parindent}{0pt}\setlength{\textwidth}{10cm}')
+        parsed = parse_project({'main.tex': source})
+        result = align_paper(parsed, {'text': 'A complete independent figure caption. x in A plus x'})
+        self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+        self.assertTrue(result['metric_eligibility']['O1'])
+        self.assertFalse(result['metric_eligibility']['O3'])
+        self.assertIn('in', parsed['objects'][1]['unsupported_commands'])
+        self.assertIn('tilde', parsed['objects'][1]['unsupported_commands'])
+
+    def test_should_retain_unknown_hooks_when_an_ordinary_looking_command_can_hide_objects(self):
+        for command in (r'\captionof{table}{A hidden table}', r'\phantom{Hidden contents}', r'\customhook'):
+            parsed = parse_project({'main.tex': document(command + r'\begin{figure}\caption{A complete independent figure caption.}\end{figure}')})
+            self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+            self.assertFalse(align_paper(parsed, {'text': 'A complete independent figure caption.'})['accepted'])
+
     def test_should_withhold_semantic_math_alphabets_when_a_plain_text_collision_exists(self):
         for command in ('mathbb', 'mathcal', 'mathbf', 'mathsf', 'mathrm', 'mathit', 'operatorname'):
             source = document(r'\begin{equation}' + chr(92) + command + r'{R}+constant=12345\end{equation}')

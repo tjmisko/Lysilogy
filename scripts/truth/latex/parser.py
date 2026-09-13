@@ -3,12 +3,16 @@ from collections import Counter
 import re
 
 from archive import Limits, UnsupportedSource, sha256
-from tex import COMMAND, DROP_ARGUMENT, FORMATTING, SILENT, SYMBOLS, Renderer, comments, definition_regions, expand_project, group, local_style_dependencies, mask_regions, skip_space
+from tex import ACCENTS, COMMAND, DROP_ARGUMENT, FORMATTING, SILENT, SYMBOLS, Renderer, comments, definition_regions, expand_project, group, local_style_dependencies, mask_regions, skip_space
 
 STANDARD_STATEMENTS = {name: name for name in ("theorem", "lemma", "corollary", "proposition", "definition", "assumption", "remark", "claim", "conjecture", "example")}
 ENVIRONMENTS = {"figure": "figure", "table": "table", "equation": "equation", "align": "equation", "gather": "equation", "multline": "equation", "eqnarray": "equation", "proof": "proof", "algorithm": "algorithm", "algorithm2e": "algorithm", "listing": "algorithm", "lstlisting": "algorithm"}
 CITES = {"cite", "citep", "citet", "citealt", "citealp", "parencite", "textcite", "autocite"}
 REFS = {"ref", "eqref", "autoref", "cref", "Cref", "vref"}
+# These standard math symbols and scalar dimensions cannot inject object
+# environments. This inventory capability does not imply faithful rendering:
+# commands absent from Renderer still withhold their enclosing object's text.
+INVENTORY_ONLY_PRIMITIVES = {"in", "notin", "ni", "subset", "subseteq", "supset", "supseteq", "sim", "simeq", "approx", "equiv", "cong", "propto", "perp", "parallel", "forall", "exists", "neg", "land", "lor", "cup", "cap", "emptyset", "pm", "mp", "div", "circ", "tilde", "widetilde", "limits", "nolimits", "textwidth", "linewidth", "columnwidth", "hsize", "vsize", "parindent", "parskip", "baselineskip", "abovecaptionskip", "belowcaptionskip", "tabcolsep", "arraycolsep"}
 LAYOUT_ENVIRONMENTS = {"document", "abstract", "thebibliography", "itemize", "enumerate", "description", "center", "quote", "quotation", "minipage", "tabular", "tabularx", "tabular*", "array", "split", "aligned", "alignedat", "subequations", "subfigure", "subtable", "algorithmic", "algorithmicx", "algorithmic*", "flushleft", "flushright", "IEEEkeywords", "keywords", "tikzpicture", "picture", "adjustbox", "threeparttable", "tablenotes", "multicols", "spacing", "doublespace", "singlespace", "small", "footnotesize", "landscape"}
 
 
@@ -269,7 +273,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
     # Unhandled commands cannot certify an empty inventory. Standard math and
     # presentation may be unrenderable while their inventory effect is known;
     # arbitrary deposited commands and hooks remain unsupported.
-    inventory_commands = (set(FORMATTING) | set(SILENT) | set(SYMBOLS) | set(DROP_ARGUMENT) | CITES | REFS | structural | set(renderer.macros)
+    inventory_commands = (set(ACCENTS) | set(FORMATTING) | set(SILENT) | set(SYMBOLS) | set(DROP_ARGUMENT) | INVENTORY_ONLY_PRIMITIVES | CITES | REFS | structural | set(renderer.macros)
                           | {"documentclass", "documentstyle", "usepackage", "RequirePackage", "LoadClass", "title", "TITLE", "author", "date", "maketitle", "thanks", "footnote", "footnotemark", "footnotetext", "section", "subsection", "subsubsection", "paragraph", "subparagraph", "chapter", "part", "appendix", "item", "newpage", "clearpage", "pagebreak", "linebreak", "includegraphics", "bibliographystyle", "bibinfo", "bibfield", "href", "nocite", "newtheorem", "setcounter", "addtocounter", "refstepcounter", "pagestyle", "thispagestyle", "markboth", "tableofcontents", "listoffigures", "listoftables", "frac", "dfrac", "tfrac", "sqrt", "sum", "prod", "int", "iint", "iiint", "oint", "partial", "nabla", "lim", "log", "ln", "exp", "sin", "cos", "tan", "min", "max", "arg", "det", "sup", "inf", "overline", "underline", "hat", "widehat", "bar", "vec", "dot", "ddot", "notag", "nonumber", "hline", "cline", "toprule", "midrule", "bottomrule", "multicolumn", "multirow", "centering", "caption", "(", ")", "[", "]", "crefrange", "Crefrange", "cpageref", "Cpageref", "labelcref", "labelcpageref", "namecref", "nameCref", "lcnamecref", "pageref", "eqrefrange", "autopageref", "vpageref", "vref", "autocites", "parencites", "textcites", "citeauthor", "citeyear", "citeyearpar", "citenum", "citetext", "citealp", "citealt", "printbibliography", "addbibresource"})
     for name in sorted(reachable - inventory_commands):
         source_semantics["unknown_inventory_command:" + name] += 1
