@@ -23,6 +23,11 @@ def run():
     root = Path(sys.argv[1]).resolve()
     output = Path(sys.argv[2]).resolve()
     output.mkdir(parents=True, exist_ok=True)
+    if len(sys.argv) > 3 and sys.argv[3] == "--script-shell":
+        # npm adds node_modules/.bin directories to PATH after our outer check.
+        if any(shutil.which(name) for name in MODELS):
+            raise RuntimeError("npm injected a model CLI into the test PATH")
+        os.execv("/bin/sh", ["sh", *sys.argv[4:]])
     if len(sys.argv) == 3:
         # The parent namespace identity is recorded, then checked after unshare.
         command = ["unshare", "--user", "--map-root-user", "--net", sys.executable,
@@ -71,8 +76,16 @@ def run():
     scripts = sorted(name for name in package["scripts"] if name == "test" or name.startswith("test:"))
     if not scripts:
         raise RuntimeError("no frontend test scripts were discovered")
+    shell_guard = output / "script-shell"
+    shell_guard.write_text("#!/usr/bin/python3\nimport os, sys\nos.execv(" + repr(sys.executable) + ", [" + repr(sys.executable) + ", " + repr(str(Path(__file__).resolve())) + ", " + repr(str(root)) + ", " + repr(str(output)) + ", '--script-shell', *sys.argv[1:]])\n")
+    shell_guard.chmod(0o700)
     commands = [(root, ["cargo", "test", "--offline", "--all-targets"])]
-    commands.extend((root / "web", ["npm", "run", name]) for name in scripts)
+    # Discover committed tooling tests without traversing hidden data directories.
+    for directory, subdirectories, files in os.walk(root / "scripts"):
+        subdirectories[:] = sorted(name for name in subdirectories if not name.startswith("."))
+        if any(name.startswith("test") and name.endswith(".py") for name in files):
+            commands.append((root, ["python3", "-m", "unittest", "discover", "-s", str(Path(directory).relative_to(root)), "-p", "test*.py", "-v"]))
+    commands.extend((root / "web", ["npm", "--script-shell", str(shell_guard), "run", name]) for name in scripts)
     results = []
     for index, (cwd, command) in enumerate(commands):
         log = output / f"{index:02d}.log"

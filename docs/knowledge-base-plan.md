@@ -968,7 +968,8 @@ set implies a passing measurement.
 
 Compound scorecard metrics retain independent components; an objective counts at target only
 when every component does. The additional `tests` suite owns G5, and `all` includes it. G5 runs
-`cargo test --offline --all-targets` and every frontend `test`/`test:*` script in an unprivileged
+`cargo test --offline --all-targets`, discovered `scripts/**/test*.py` unittest suites, and every
+frontend `test`/`test:*` script in an unprivileged
 network namespace with an allowlisted executable PATH; logs, namespace identity, a blocked
 connection probe, and model-CLI absence are retained. Browser smoke scenarios remain explicit
 verification, separate from these fixture unit tests. Failure to establish isolation fails G5.
