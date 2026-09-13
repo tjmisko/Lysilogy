@@ -1,6 +1,8 @@
 """Regression tests for the production G5 tooling-test subprocess."""
 
 from pathlib import Path
+import os
+import shutil
 import subprocess
 import runpy
 import sys
@@ -11,6 +13,25 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ToolingDiscoveryTests(unittest.TestCase):
+    def should_link_a_new_binary_when_the_configured_linker_is_mold(self):
+        tools = runpy.run_path(str(ROOT / "src/eval/g5.py"))["TOOLS"]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            executables = directory / "bin"
+            executables.mkdir()
+            for name in tools:
+                source = shutil.which(name)
+                if source:
+                    (executables / name).symlink_to(source)
+            source = directory / "main.c"
+            source.write_text("int main(void) { return 0; }\n")
+            result = subprocess.run(
+                [str(executables / "cc"), "-fuse-ld=mold", str(source), "-o", str(directory / "linked")],
+                env={**os.environ, "PATH": str(executables)}, capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(subprocess.run([str(directory / "linked")]).returncode, 0)
+
     def run_fixture(self, directory, body):
         cases = directory / "cases"
         cases.mkdir()
