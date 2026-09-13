@@ -58,6 +58,24 @@ def checked_regions(rows, pages):
     return output
 
 
+def covered_characters(spans, text):
+    """Compare exact authored membership, allowing only whitespace-only splits."""
+    encoded = text.encode('utf-16-le')
+    covered = set()
+    for span in spans:
+        offset = span['start']
+        for character in encoded[2 * offset:2 * span['end']].decode('utf-16-le'):
+            width = len(character.encode('utf-16-le')) // 2
+            if not character.isspace():
+                covered.update(range(offset, offset + width))
+            offset += width
+    return covered
+
+
+def checked_root_span(row, text):
+    return checked_span({**row, 'text_utf8_sha256': row['native_text_sha256']}, text)
+
+
 def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_raw, independent_raw,
                          independent_receipt_raw, comparison_raw, verified_images):
     """Retain immutable automatic results; add only completely reviewed metric kinds.
@@ -107,6 +125,7 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
     objects = independent['objects']
     require(len(objects) == len(sources) and {row['id'] for row in objects} == set(sources) and set(comparison['objects_verified']) == set(sources), 'manual object inventory is incomplete or duplicated')
     counts = dict(Counter(row['kind'] for row in objects))
+    require(comparison.get('complete_inventory_verified') == root['complete_visual_inventory'], 'comparison complete inventory contradicts root review')
     require(independent['complete_inventory']['counts'] == counts and all(root['complete_visual_inventory'].get(kind, 0) == counts.get(kind, 0) for kind in KINDS), 'independent complete kind counts disagree')
     output_objects = []
     for row in objects:
@@ -121,13 +140,27 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
     # Parent/child structure is sourced from exact nested source environments;
     # floating placement does not turn child bodies into parent direct spans.
     by_id = {row['id']: row for row in output_objects}
+    root_objects = {row['source_id']: row for row in root['objects']}
+    require(len(root['objects']) == len(sources) and set(root_objects) == set(sources), 'root object inventory differs from independent source inventory')
+    parents = {}
+    for identifier, source in sources.items():
+        span = source['source_span']
+        enclosing = [other for other in sources.values() if other['source_span']['start'] < span['start'] < span['end'] < other['source_span']['end']]
+        parents[identifier] = min(enclosing, key=lambda item: item['source_span']['end'] - item['source_span']['start'])['id'] if enclosing else None
     for row in output_objects:
-        parent = row['source_parent_object']
-        if parent is not None:
-            require(parent in by_id and row['id'] in by_id[parent]['source_child_objects'], 'manual source parent/child relation is not reciprocal')
-            parent_span, child_span = sources[parent]['source_span'], sources[row['id']]['source_span']
-            require(parent_span['start'] < child_span['start'] < child_span['end'] < parent_span['end'], 'manual child does not lie inside its source parent')
-        require(all(child in by_id and by_id[child]['source_parent_object'] == row['id'] for child in row['source_child_objects']), 'manual child relation is incomplete or cyclic')
+        children = {identifier for identifier, parent in parents.items() if parent == row['id']}
+        require(row['source_parent_object'] == parents[row['id']] and len(row['source_child_objects']) == len(children) and set(row['source_child_objects']) == children, 'manual source ownership omits or changes a nested object')
+        require(set(root_objects[row['id']]['separately_annotated_nested_objects']) == children, 'root nested ownership differs from source structure')
+        checked_members(root_objects[row['id']]['source_members'], files, sources[row['id']]['source_members'])
+    geometry = {row['source_id']: row for row in comparison['comparisons']}
+    require(len(comparison['comparisons']) == len(sources) and set(geometry) == set(sources), 'comparison geometry inventory is incomplete or duplicated')
+    for row in output_objects:
+        root_regions = [region for region in root_objects[row['id']]['regions'] if region['role'] != 'attached_footnote']
+        compared = geometry[row['id']]['geometry']
+        require(len(compared) == len(row['region']) == len(root_regions), 'comparison geometry count contradicts annotations')
+        for recorded, actual, original in zip(compared, row['region'], root_regions):
+            require(recorded['page'] == actual['page'] == original['page'] and recorded['root_rect'] == original['rect'] and recorded['independent_rect'] == actual['rect'], 'comparison geometry contradicts frozen annotation boxes')
+            require(recorded.get('disposition', '').startswith('accepted;'), 'comparison geometry is not accepted')
     ancillary = []
     for row in independent['associated_content']:
         parent = row['source_parent_object']
@@ -140,8 +173,10 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
         ancillary.append({'id': row['id'], 'role': row['role'], 'source_parent_object': parent, 'source_members': source_members, 'spans': spans, 'region': regions})
     owned = sorted((span['start'], span['end']) for row in output_objects + ancillary for span in row['spans'])
     require(all(left[1] <= right[0] for left, right in zip(owned, owned[1:])), 'manual direct/ancillary membership overlaps across object owners')
-    root_objects = {row['source_id']: row for row in root['objects']}
-    require(len(root_objects) == len(sources) and set(root_objects) == set(sources), 'root object inventory differs from independent source inventory')
+    for row in output_objects:
+        original = [checked_root_span(span, index['text']) for span in root_objects[row['id']]['spans']]
+        complete = row['spans'] + [span for content in ancillary if content['source_parent_object'] == row['id'] for span in content['spans']]
+        require(covered_characters(original, index['text']) == covered_characters(complete, index['text']), 'manual direct and ancillary ownership differs from reviewed root membership')
     proof_targets = {}
     for attribution in independent['proof_attribution']:
         proof, statement = attribution['proof'], attribution['statement']
@@ -158,6 +193,10 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
         require(root_objects[proof]['proof_targets'] == [statement], 'independent proof annotations disagree')
         proof_targets[proof] = {'target': statement, 'basis': basis}
     require(set(proof_targets) == {row['id'] for row in sources.values() if row['kind'] == 'proof'}, 'manual proof attribution inventory is incomplete')
+    compared_proofs = comparison['proof_attribution_verified']
+    if isinstance(compared_proofs, dict):
+        compared_proofs = [compared_proofs]
+    require(len(compared_proofs) == len(proof_targets) and {row['proof']: row['statement'] for row in compared_proofs} == {key: value['target'] for key, value in proof_targets.items()}, 'comparison proof attribution contradicts annotations')
     for row in output_objects:
         row['proof_targets'] = [proof_targets[row['id']]['target']] if row['id'] in proof_targets else []
         row['proof_linkage'] = proof_targets.get(row['id'], {}).get('basis')
@@ -181,6 +220,13 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
     require(len(non_objects) == len(source_refs) - len(source_numbers) and {row['source_link'] for row in non_objects} == set(source_refs) - source_numbers, 'unknown reference target roles remain outside the manual comparison')
     for row in non_objects:
         number = row['source_link']; declared = root_refs[number]
+        require(not any(parsed['label_targets'].get(label) in sources for label in source_refs[number]['targets']), 'object reference cannot be relabeled as a non-object role')
+        require(row['source_label'] == declared['source_target_label'], 'comparison non-object source label differs')
+        checked_members(row['source_members'], files, source_refs[number]['source_members'])
+        checked_members(declared['source_members'], files, source_refs[number]['source_members'])
+        native = checked_root_span(declared['span'], index['text'])
+        require(all(row['span'][key] == native[key] for key in ('start', 'end')) and row['printed'] == declared['printed'], 'comparison non-object reference differs from root anchor')
+        checked_span({**row['span'], 'text': row['printed'], 'text_utf8_sha256': native['native_text_sha256']}, index['text'])
         require(row['target'] == declared['target'] and row['target'].startswith('section:') and declared['source_target_label'] in source_refs[number]['targets'], 'manual non-object reference role lacks reviewed source identity')
     relevant_refs = [row for row in reference_rows if sources[row['target']]['kind'] in ('equation', 'statement')]
     overlay = {'objects': output_objects, 'automatic_candidate_retained': True, 'final_k1_publication': False,
