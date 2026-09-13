@@ -136,7 +136,7 @@ bytes, unsupported source programs and alignment failures remain unchanged.
 Complete independent visual inventories provide a separate source of evidence;
 they do not turn a local style program into supported automatic source semantics.
 
-The manifest declares schema version 1 and exactly 22 cache-relative artifacts:
+The manifest declares schema version 1 and exactly 21 cache-relative artifacts:
 policy, selection, original packet, source/native exports, both original inventories
 and receipts, corrected independent inventory and receipt, mathematical supplement
 and receipt, initial/role/visual/math reviews, later construction, object/link

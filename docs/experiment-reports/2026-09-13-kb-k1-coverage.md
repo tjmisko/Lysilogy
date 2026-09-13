@@ -236,11 +236,23 @@ objects fail until a suitable ownership codec exists. It validates the original
 input and correction histories, complete source/native occurrence bijections,
 mathematical and visual regions, informal role dispositions and all reference
 roles. Bibliography and O8–O11 remain omitted. The actual manifest template binds
-22 evidence documents and deliberately points to a pending, invalid final review;
+21 evidence documents and deliberately points to a pending, invalid final review;
 it cannot admit a paper. All 230 offline tests pass in 0.536 seconds with 34,624 KiB
-peak child RSS and zero external calls. This source checkpoint awaits independent
-review and subsequent full gates; the earlier full gates remain evidence only for
-`3154815`. No actual tranche validation or new truth publication has run.
+peak child RSS and zero external calls. Subsequent review corrections preserve
+appended field-audit limitations and reviewed contained role passages, rehash
+declared correction audit inputs, and pin the explicit manifest in release
+evidence. All 233 current offline tests pass. The frozen templates remain unchanged;
+their prose artifact count of 22 was a documentation error, not an omitted input.
+
+Root source and construction review cleared `8c8fd16`, and a separate accepted
+review/manifest binds the original 21-artifact closure. Actual full assembly
+succeeded in 0.298 seconds with 74,816 KiB peak child RSS and no external calls.
+The unpublished candidate contains eight complete visual objects, four equations
+and 20 references (16 object references, including three O4 pairs), with reviewed
+formal negative inventories. Automatic acceptance remains false and all source
+diagnostics remain unchanged. Bibliography and O8–O11 are omitted. Current-source
+full gates and separate final agent review remain pending; earlier full gates
+apply only to `3154815`. No new truth release or detector measurement has run.
 
 ## Retained evidence
 
