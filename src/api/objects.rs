@@ -9,7 +9,7 @@ use super::{AppState, parse_id};
 use crate::{
     Result,
     domain::PaperId,
-    objects::{ObjectsArtifact, load_or_build},
+    objects::{ObjectsArtifact, load_or_build_from_source},
     source_index::BuildPriority,
 };
 
@@ -22,7 +22,8 @@ impl AppState {
         let document = self
             .reading_index_document(id, false, BuildPriority::Interactive)
             .await?;
-        load_or_build(&self.store.paper_dir(id), id, &document).await
+        let source = self.source_path(id).await?;
+        load_or_build_from_source(&source, &self.store.paper_dir(id), id, &document).await
     }
 }
 
@@ -151,6 +152,14 @@ mod tests {
             "caption": "A cached caption.", "start": 0, "end": 17, "spans": [],
             "rect": null, "confidence": "candidate", "references": []
         }]);
+        cache["index"]["text"] = json!("Figure 3. A cached caption.");
+        cache["index"]["pages"] = json!([{"number":1,"width":600.0,"height":800.0,"start":0,"end":27,"provenance":"native","confidence":null}]);
+        cache["index"]["tokens"] = json!([
+            {"start":0,"end":6,"page":1,"text":"Figure","rects":[{"x_min":50.0,"x_max":85.0,"y_min":200.0,"y_max":210.0}],"provenance":"native"},
+            {"start":7,"end":9,"page":1,"text":"3.","rects":[{"x_min":90.0,"x_max":100.0,"y_min":200.0,"y_max":210.0}],"provenance":"native"},
+            {"start":10,"end":27,"page":1,"text":"A cached caption.","rects":[{"x_min":105.0,"x_max":190.0,"y_min":200.0,"y_max":210.0}],"provenance":"native"}
+        ]);
+        cache["index"]["objects"]["paragraph"] = json!([{"start":0,"end":27,"kind":"caption"}]);
         tokio::fs::write(&path, serde_json::to_vec(&cache).unwrap())
             .await
             .unwrap();
@@ -174,11 +183,12 @@ mod tests {
             serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes())
                 .unwrap();
         assert_eq!(first.objects[0].id, "fig-3");
-        assert_eq!(first.objects[0].text, "A cached caption.");
+        assert_eq!(first.objects[0].text, "Figure 3. A cached caption.");
         assert!(directory.join(OBJECTS_FILE).is_file());
         assert!(!directory.join("analysis.json").exists());
         cache["generation"] = json!("new-generation");
-        cache["index"]["figures"][0]["caption"] = json!("Updated caption.");
+        cache["index"]["text"] = json!("Figure 3. A newer! caption.");
+        cache["index"]["tokens"][2]["text"] = json!("A newer! caption.");
         tokio::fs::write(&path, serde_json::to_vec(&cache).unwrap())
             .await
             .unwrap();
@@ -198,7 +208,7 @@ mod tests {
             second.reading_index_generation
         );
         assert_eq!(second.objects[0].id, first.objects[0].id);
-        assert_eq!(second.objects[0].text, "Updated caption.");
+        assert_eq!(second.objects[0].text, "Figure 3. A newer! caption.");
         drop(extraction_guard);
     }
 
