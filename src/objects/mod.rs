@@ -395,6 +395,134 @@ mod tests {
         }
     }
 
+    fn document_with_bibliography() -> IndexDocument {
+        let mut document = document();
+        for (text, kind) in [
+            ("See [1] and [9].", "body"),
+            ("References", "heading"),
+            ("[1] Smith, A. (2020). A title. doi:10.1000/ABC.", "body"),
+        ] {
+            document.index.text.push_str("\n\n");
+            let start = document.index.text.encode_utf16().count();
+            document.index.text.push_str(text);
+            let end = document.index.text.encode_utf16().count();
+            document.index.objects.paragraph.push(
+                serde_json::from_value(json!({"start":start,"end":end,"kind":kind})).unwrap(),
+            );
+            if text.starts_with("See") {
+                document
+                    .index
+                    .objects
+                    .sentence
+                    .push(serde_json::from_value(json!({"start":start,"end":end})).unwrap());
+                for (offset, marker, x) in [(4, "[1]", 30.0), (12, "[9]", 80.0)] {
+                    document.index.tokens.push(
+                        serde_json::from_value(json!({
+                            "start":start+offset,"end":start+offset+3,"text":marker,"page":1,
+                            "rects":[{"x_min":x,"x_max":x+15.0,"y_min":350.0,"y_max":360.0}],
+                            "provenance":"native"
+                        }))
+                        .unwrap(),
+                    );
+                }
+            }
+            document.index.pages[0].end = end;
+        }
+        document
+    }
+
+    #[test]
+    fn should_preserve_bibliography_mentions_when_current_figure_regions_change() {
+        let mut document = document_with_bibliography();
+        document.index.figures[0].caption = "Stale embedded caption".into();
+        let native_before = serde_json::to_vec(&document.index).unwrap();
+        let native = ObjectsArtifact::from_reading_index(&paper_id(), &document);
+        assert_eq!(native.schema_version, 2);
+        assert_eq!(native.objects.len(), 2);
+        assert_eq!(native.objects[0].text, "Figure 3. A caption.");
+        assert_eq!(native.objects[1].mentions.len(), 1);
+        assert_eq!(native.objects[1].mentions[0].anchor.start, 52);
+        assert_eq!(native.objects[1].mentions[0].anchor.end, 55);
+        assert_eq!(
+            native.objects[1].mentions[0]
+                .sentence_anchor
+                .as_ref()
+                .unwrap()
+                .start,
+            48
+        );
+        assert_eq!(native.unresolved_citations.len(), 1);
+        assert_eq!(native.unresolved_citations[0].key, "9");
+        let mut figures = detect_figures(&document.index);
+        figures[0].rect = None;
+        let changed = ObjectsArtifact::from_figures(&paper_id(), &document, &figures);
+        assert_eq!(
+            serde_json::to_value(&native.objects[1]).unwrap(),
+            serde_json::to_value(&changed.objects[1]).unwrap()
+        );
+        assert_eq!(
+            serde_json::to_value(&native.unresolved_citations).unwrap(),
+            serde_json::to_value(&changed.unresolved_citations).unwrap()
+        );
+        assert_eq!(serde_json::to_vec(&document.index).unwrap(), native_before);
+    }
+
+    #[tokio::test]
+    async fn should_retain_bibliography_when_source_aware_cache_is_reused_or_upgraded() {
+        let directory = tempfile::tempdir().unwrap();
+        let source = directory.path().join("synthetic.pdf");
+        tokio::fs::write(&source, b"source identity fixture")
+            .await
+            .unwrap();
+        let mut document = document_with_bibliography();
+        // No caption pages: exercise source/cache identity without native commands.
+        document
+            .index
+            .objects
+            .paragraph
+            .retain(|paragraph| paragraph.start >= 48);
+        let native_before = serde_json::to_vec(&document.index).unwrap();
+        let current = load_or_build_from_source(&source, directory.path(), &paper_id(), &document)
+            .await
+            .unwrap();
+        assert_eq!(current.objects.len(), 1);
+        assert_eq!(current.objects[0].mentions.len(), 1);
+        assert_eq!(current.unresolved_citations.len(), 1);
+        assert!(current.graphics.as_ref().unwrap().pages.is_empty());
+        let path = directory.path().join(OBJECTS_FILE);
+        let mut saved = serde_json::to_value(&current).unwrap();
+        saved["cache_fixture_marker"] = json!(true);
+        let bytes = serde_json::to_vec_pretty(&saved).unwrap();
+        tokio::fs::write(&path, &bytes).await.unwrap();
+        let reused = load_or_build_from_source(&source, directory.path(), &paper_id(), &document)
+            .await
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(&reused).unwrap(),
+            serde_json::to_value(&current).unwrap()
+        );
+        assert_eq!(tokio::fs::read(&path).await.unwrap(), bytes);
+        // A schema-1 graphics artifact cannot suppress newly available bibliography.
+        saved["schema_version"] = json!(1);
+        saved["objects"] = json!([]);
+        saved
+            .as_object_mut()
+            .unwrap()
+            .remove("unresolved_citations");
+        tokio::fs::write(&path, serde_json::to_vec(&saved).unwrap())
+            .await
+            .unwrap();
+        let upgraded = load_or_build_from_source(&source, directory.path(), &paper_id(), &document)
+            .await
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(&upgraded).unwrap(),
+            serde_json::to_value(&current).unwrap()
+        );
+        assert_eq!(serde_json::to_vec(&document.index).unwrap(), native_before);
+        assert!(!directory.path().join("reading-index.json").exists());
+    }
+
     #[tokio::test]
     async fn should_replace_native_only_objects_when_the_source_factory_supplies_a_new_generation()
     {

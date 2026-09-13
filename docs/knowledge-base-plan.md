@@ -379,6 +379,10 @@ strings, publication years retain citation suffixes, and arXiv IDs retain printe
 Conflicting identifiers leave the corresponding structured field missing; the raw entry remains.
 Wrapped entries retain disjoint member anchors, excluding classified floating captions. Object
 IDs use deterministic bibliography order within the paper and remain stable for an unchanged index.
+Bibliography assembly is shared by the native-only fixture factory and the asynchronous
+source-backed objects factory. Current figure/table derivation and graphics cache generations
+remain independent of bibliography parsing; schema 1 graphics caches rebuild to schema 2 rather
+than suppressing entries. Geometry changes preserve bibliography fields and citation anchors.
 
 Resolved mentions keep the exact UTF-16 occurrence anchor and its source token rectangles separately
 from `sentence_anchor`. If a citation crosses the sentence segmenter's abbreviation boundary, its
