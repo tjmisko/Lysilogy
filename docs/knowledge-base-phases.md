@@ -203,8 +203,8 @@ acceptance are unchanged.
   Branch `feat/e8.3-k1-coverage`. Owns evaluation-only source support, independent annotation
   tooling and expanded truth/evidence. Retain the approximately 500-paper target; compare the
   limited initial release with expanded strata without changing truth quality or score targets.
-- [ ] **#105 Publish reviewed manual K1 cohorts with immutable replay** (bounded part of #97;
-  after #70). Uses the in-flight `feat/e8.3-k1-coverage` branch; owns the explicit manual-tranche
+- [x] **#105 Publish reviewed manual K1 cohorts with immutable replay** (bounded part of #97;
+  after #70). Merged via `feat/e8.3-k1-coverage` in PR108; owns the explicit manual-tranche
   validator, retained versioned verifier, object collector selection and limited release evidence.
   Publish the two prior cohorts plus the independently completed new cohort, with fresh metrics
   and separate review. Closing #105 does not close #97 or meet its approximately 500-paper target.
@@ -214,6 +214,17 @@ acceptance are unchanged.
   parser strict; isolate malformed word geometry only within structurally valid reading-index
   pages, using existing bounded OCR or explicit unavailable provenance. Preserve valid frozen
   indexes and all identity records. Coordinate shared `src/source_index.rs` with #70.
+
+- [ ] **#106 Recover regions and reject duplicate captions on expanded K1** (after #105).
+  Branch `fix/e1.1-expanded-k1-regions`. Owns `src/source_index/figures.rs`, bounded graphics
+  trace parsing in `src/source_index/graphics.rs`, focused fixtures and measured evidence.
+  Preserve immutable v1/v2 truth and full denominators; measure both cohorts, keep current
+  detector/native generations explicit, and coordinate object plumbing with #25.
+- [ ] **#107 Preserve source objects with ambiguous duplicate labels** (after #105; part of #97).
+  Branch `fix/e8.3-duplicate-labels`. Owns current evaluation-only source parser/alignment,
+  manual consumer guards and tests in `scripts/truth/latex/`, new-generation evidence/contract.
+  Keep source-occurrence objects distinct, every ambiguous reference counted but unresolved,
+  and all source/math/native guards. Retained v1/v2 modules and truth are immutable.
 
 ### Wave A3
 
@@ -227,6 +238,19 @@ acceptance are unchanged.
 
 ### Phase A notes
 
+- #105 merged in PR108 (`7ef8fda`) after independent final review of `670ff4d`.
+  The immutable three-paper `k1-limited-v2` has23 visual regions and reproduces both prior
+  per-paper metric records exactly. Actual O1=0.9787234042553191 (23TP/1FP/0FN),
+  O2=0.7570080448318404/all23, zero unknown; targets .90/.75 unchanged. The explicit
+  cohort-baseline justification preserves v1 and failed old-cohort ratchet checks. The existing
+  harness normalizes O1 by one floating-point rounding unit; two probes stabilize and all12
+  final checks pass at4f3a289, including350Rust/383Python/85Node G5 and both exact replays.
+  The failed first wrapper remains failed and archived. #106 tracks the added paper's duplicate
+  caption and six null/one misplaced region. #97 remains OPEN for approximately500papers;
+  #107 is a bounded source-support step, not a replacement coverage acceptance.
+  Report: [K1 coverage](experiment-reports/2026-09-13-kb-k1-coverage.md). Final receipts/logs
+  have external portability aliases in `~/.cache/lysilogy/review-evidence/pr108/manifest.json`.
+  Worktree and local/remote branch removed; all10 unrelated preview files remain unchanged.
 - #96 merged in PR #102 (`d074dae`) after final independent clearance of `5d5c567`.
   First real limited-K1 baselines are **O1 0.7692307692** (10TP/1FP/5FN) and
   **O2 0.2448506858** over all 15 independently annotated bodies, with zero unknown regions.
@@ -3621,3 +3645,106 @@ date, last merged issue, in-flight branches and their state, next action, and op
   #33/#71→#72/#25 beforeA3. All phase exits, remainingphases, actualPlaywrightE2E/all5gates/
   24of30objectives/production10k/finalsystemreport remain outstanding. Preserve all10preview
   hashes and unrelatedworktrees; no rebase/sudo/rm-rf/privatepaths/modelbatches.
+
+### 2026-09-13 20:36 UTC — reviewed K1 v2 merged; scale queue and two bounded follow-ups next
+
+- **Phase A / Wave A2**, last merged issue **#105 / PR108**, merge
+  `7ef8fda06b43ec0e4485fcceb3f19ad9487b20f7`. Main fast-forwarded safely; all10 protected
+  preview hashes still match `/tmp/lysilogy-preview-before.json`. Clean implementation branch
+  `feat/e8.3-k1-coverage` and its worktree/target were removed locally and remotely. Never edit
+  main's preview work or unrelated worktrees. Ordinary main merges remain the recorded
+  alternative to rebase under the standing ask-before-rebase policy.
+- Next start two ready A2 implementations: **#107** on `fix/e8.3-duplicate-labels` (source
+  occurrence identities/ambiguity guards, owner finish_corpus_proxy) and **#106** on
+  `fix/e1.1-expanded-k1-regions` (detector/graphics, owner finish_benchmark). They must create
+  their own worktrees with `gh worktree create --branch`, read issue/plan/current notes and
+  obtain separate reviews (review_ready_prs available). At this checkpoint neither new
+  worktree/PR exists yet. Keep no more than3 implementations and one heavy job; coordinate
+  native queue pauses at batch boundaries before Rust/G5/full truth or measured detector runs.
+- Other in-flight work is unchanged: #25 draftPR94/201c53c source clear, K2/fullO9 hold;
+  #33 tree905c341 noPR, missing crates, preserve its dirty.gitignore/target notes;
+  #71 draftPR93/d5e12aa and #72 draftPR95/c867ec6 await live deposited truth. These and
+  #97/~500 coverage remain unfinished; no A3/phase exit or system acceptance yet.
+- All four user-approved grants are still ABSENT: index.crates.io, static.crates.io,
+  api.crossref.org, api.openalex.org. Storage probes for Corpora/cache pass. A fresh approved
+  require_escalated HEAD to crates index still hit the effective host allowlist, not an
+  automatic-approval rejection. The approved profile script cannot save its backup under
+  read-only ~/.codex in this session. User was given the command again without requesting
+  renewed approval: `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then
+  restart Codex. Do not repeat the same failed write or treat elapsed time as profile application.
+  After effective restart prioritize #33 Rust dependencies and #71/#72 providers before #25.
+- **Published v2:** objects SHA56e4b1f6fa7002169c82aba26fb69a40a948197a21b3331e0a2d0d9e1f8a3202;
+  bibliography SHA59591f3df988ff2376ae51f77928be28ba9908b21c63b426fb8e9313018d4e9d.
+  Three papers: old2104.01511v1/e51f6f61ec6d4107, old2503.05828v1/3a516027f3a6af6d,
+  new2210.11141v1/7d44d376e1a07145. Counts16figures/7tables/5equations/4statements/1proof/
+  2algorithms/35bibentries. New paper O8–O11 remain omitted. Original v1 bytes and its12-module
+  verifier are unchanged; v2 retains14fixed modules. Both isolated replays pass.
+- Actual new-cohort collector at59742fd: O1=46/47=.9787234042553191, O2=.7570080448318404,
+  all23 regions/0unknown,13.006s/98048KiB/zero externalcalls/$0. Old2 papers' complete per-paper
+  records reproduce exactly. Root pure replay/19input-hash check receipt
+  `k1-coverage/measurement-v2-59742fd/root-cohort-review.json` SHA
+  fadc2c8335ef540cdaad00948032c1056c93bd31a5ededa15ea80c76e1689741; separate comparison review
+  `review-k1-v2-cohort-5d3bf5a/review.json` SHA0a25d3d836a179f69dc725a3a86cfa526d6a3a06a1af7edd055704d41c702570.
+  Explicit baseline reset is justified by cohort change, not lowered targets/gates. Original
+  unadjusted failures and one-ULP serializer-normalization failure remain immutable.
+- Final unchanged full gate runner passed at4f3a289 in20.158858s/150784KiB, all12commands0,
+  185 source files unchanged, G5350Rust/383Python/85Node. Receipt
+  `k1-coverage/final-gates-4f3a289/receipt.json` SHAadd188bf6dd727c37fa8f3df28bd04744da54f20f5a4b3bfabce5051c8d8b66c.
+  Final independent PR review670ff4d rehashed452bindings:
+  `review-k1-final-670ff4d/review.json` SHA20af2b3ef682fd1cf22c32d76b82efbd43e5e142a5296bf293a47995ce775dc4.
+  `review-evidence/pr108/manifest.json` SHAf8256b356bea80ecdb60e893acc3cb11427c1757a024198760175cf29e2143e8
+  retains411small bindings/8299625B and176 original-to-archive aliases; root verified all176.
+  Paths above are under ~/.cache/lysilogy/. Main scorecard:1/5 gates available/pass,
+  3/30 objectives at target (O1/O2/O30); no new hard gate/target miss or system completion.
+- **Corpus complete**, no downloads:10951PDFs/1000sources remain only under~/Corpora/arxiv,
+  separate data root~/.cache/lysilogy/arxiv-kb-data, registry SHA
+  934d7fa7860d8a84639f52fbb7d77c0a721f3b7e4bc8f836b70b8063c4fa835d unchanged.
+  Native batch22 completed250/250 in374.235910s; receipt
+  b7507960609e1392d0ee2aeb6d81e12573fea372bebce563e9e6c40ad6e5ad70, independent audit
+  `native-index-after-batch22-review.json` SHAae75c330df37481062a17fbfbfb2a25a5a5eec64f3c6cf92948f87e744e2f85d.
+  Counts6500unique/1000eval/5549scale,49overlap. Queue resumed at23 in retainedTTY **10988**,
+  PAUSE sentinel removed; next4451scale papers, one250max batch+audit at a time through40.
+  Runner `~/.cache/lysilogy/run-remaining-scale-indexes.py` SHA
+  0cdcc62d36899022b39010ab4ab285c7d8d4318294c2148e3dc40059e4d27583. Check
+  `scale-index-queue/status.json` and retained session before starting anything heavy.
+  Use `scale-index-queue/PAUSE` for a boundary stop; resume from the next verified batch.
+  Preparation is not production10k/O25/O27 acceptance. Keep20GiB free; latest free77.1GB.
+- #107 feasibility `k1-coverage/duplicate-label-feasibility-20260913/proposal.md` SHA
+  f62b747fd5dc165f661975a0f8b6af19f6977d3aef843a018aa25d8ce3a831ab; receipt
+  55dcf74c898da043b192cc2fe04cc9c32f96264e99ebb1a6229f801e4a796171. Exactly90 prior failures,
+  seven original source strata sampled. Whole-source object IDs must not collapse; ambiguous
+  object/section/item labels cannot become unique or be laundered through manual validators.
+  Preserve O4/O6 unknown denominators/no explicit-proof proximity fallback. Use frozen offline
+  derive runner,7diagnostics then90+612 regression set, not builder CLI/native rebuild.
+  #97 remains approximately500papers; the last full542da50 run is612parsed/388failed,1defensible
+  O5/O6 negative candidate2007.05954,0positive/0published automatic papers. Its receipt and
+  root audit remain in k1-full-alignment-542da50; do not rewrite earlier failed runs.
+- #106 root diagnostics: `figure-regions-v2-diagnostic-4f3a289-v2.json` SHA
+  3c50f4c451837ac738a6f88e5e382261e869b88f558679ed531e5f0287bc3163 (v2 corrects one directional
+  sentence in v1); current trace parser rejects group-contained images/clips on all3new-paper
+  pages. Do not ignore unknown state/masks without validated support. Table1 actual grid is
+  above its caption; current predicted box encloses the next heading below it.
+  `figure-4-continuation-diagnostic-4f3a289.json` SHA
+  3e0fbcda75aa8aba7e91cea1f8c635e8a0d7913f39bdd83755d5a92fad478208: a short indented preceding
+  line is missed by a guard requiring80characters/two lines and less-than-one-font indentation.
+  Read original images/retained predictions; keep truth/scoring fixed when implementing.
+- Manual remaining6papers stay preparatory under k1-coverage/manual-tranche-v1; full prior
+  correction receipts/statuses are in the preceding session entries. New2303 role decision
+  `reconciliation/2303.07834/root-unheaded-proof-role-review-v1.json` SHA
+  9b3e941eb07df00c31887d521c3ceb047b01f199b532264eee9469c3be2b5dd6 and independent
+  `review-unheaded-proof-role-2303.07834/review.json` SHAee86d531ef06cdfdf1d0cc18de2a7ad0aa86b3db3a73c5e745defbe3076544e0
+  establish two additional positive unheaded argument passages with explicit Theorem1/2 targets,
+  partial/Appendix status preserved. Native U+0004 at19351:19352 remains ancillary QED, not
+  rewritten text. Eight passages does not claim eight complete mathematical proofs or O6.
+  New2310 geometry proposal `reconciliation/2310.04162/geometry-independent-review-v1/geometry-reconciliation-v2.json`
+  SHA68901209257d843ed8ee2158d2e8fdcc4ab2c40294880879728521817f23282b and correction
+  7beeaccbb9cc4360f3cdb83a6748f36c204372c1732e04b9cac07125f7e97ed0 preserve35body boxes and22
+  native-derived number proposals. Root caught TableIII's attached tablenotes omitted from full
+  region; v2 keeps core-grid separately and full region[54,395.25,294,477], both prior note boxes
+  preserved. Root reviewed originalpages3/7; final mechanical review script stopped on schema
+  key `id` versus independent `occurrence_id`, no receipt written yet. Finish that bounded
+  replay before treating geometry fully root-clear. No new truth/codec/metric admission.
+- New issues this interval **#106/#107**, both project12. Final Playwright end-to-end scenario,
+  all5 gates/24of30objectives, production10k scale, all phase exits and final system report
+  remain outstanding. Continue useful offline work while the approved host profile awaits an
+  effective restart; never re-request the four-host approval or touch the user's vault/private paths.
