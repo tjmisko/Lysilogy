@@ -916,3 +916,45 @@ date, last merged issue, in-flight branches and their state, next action, and op
   #21/#22; no old source fingerprints were re-attested after adding the parser. No new follow-up
   issues were opened in this checkpoint. All ten unrelated main-checkout preview changes were
   rechecked byte-for-byte against `/tmp/lysilogy-preview-before.json` and remain untouched.
+
+### 2026-09-13 — missing public PDF stops corpus; availability follow-up started
+
+- Last merged issue remains **#35 / PR #87**, merge `e066946`, progress through `26b4adc`.
+  Phase/wave **A/A2**; full goal remains active. #25 now has its own worktree
+  `.worktrees/feat/e1.2-bibliography`, branch `feat/e1.2-bibliography`, agent `finish_benchmark`.
+  It started from `26b4adc`; baseline evaluation/implementation is underway, no PR yet.
+- #36 `feat/e2.4-titles` remains in its matching worktree, agent `review_ready_prs`.
+  Independent reviewer `finish_benchmark` cleared source `1558119` after reproducing and fixing
+  math-argument minus, letter/digit script, and escaped-brace collisions. Final integrated gates,
+  evidence review, and draft PR are still required. Review probes are retained at
+  `~/.cache/lysilogy/review-titles/`.
+- #33 is **paused at a clean committed checkpoint `7fed742`**, branch `feat/e2.1-kb-store`
+  in `.worktrees/feat/e2.1-kb-store`; it has integrated main/#35. No PR, Rust gates or O28 run
+  yet. Eight Python collector tests and the local SQLite/FTS smoke passed. Missing registry
+  dependencies remain blocked on the pending exact two-host permission question described in
+  the preceding entry; no user approval or config change has arrived. Do not bypass that denial.
+- **Corpus exec session 9593 is terminal, exit 1** (handle confirmed). Metadata and selection
+  succeeded, but inventory preparation failed with `Selected PDF unavailable in public bucket:
+  1801.00600`, before any manifest/PDF/source was admitted. A new rate-coordinated OAI GetRecord
+  confirms header and metadata ID `1801.00600`, title *Static Free Space Detection with Laser
+  Scanner using Occupancy Grid Maps*, and `created=2020-06-30`; an exact-prefix GCS listing is
+  empty. The record therefore is not evidence of a parser ID mismatch. 733 selected IDs predate
+  2020 despite their OAI created years; do not rewrite upstream metadata dates without evidence.
+  The original 514,249 records, 10,951-paper frozen selection and its hash in the previous entry,
+  and fetched inventories remain intact. Log: `~/.cache/lysilogy/arxiv-corpus-proxy.log`.
+  Final receipt: **45:13.98 wall time, 3,732,208 KiB peak RSS, $0**, no PDF/source downloads.
+  There is now **no live corpus process**. Do not restart the unchanged failing command.
+- Opened **follow-up #88** on epic #67 and added it to project 12. Agent `finish_corpus_proxy`
+  switched from paused #33 to `fix/e8.2-corpus-availability`, creating its own matching worktree.
+  The fix must qualify deterministic candidates by actual public-object availability, retain exact
+  tier/category/year quotas and exclusion evidence, and provide explicit safe recovery of this
+  zero-artifact frozen run. Preserve the original selection; refuse reselection after admitted
+  artifacts; never silently shrink tiers or change pinned versions. Implement, test, independently
+  review, and perform bounded live verification before resuming the full download. No destructive
+  repair or manual selection edit has been performed.
+- Current active implementations are #25/#36/#88 (three maximum); #33's target is idle. Keep one
+  heavy gate window at a time. Next: merge reviewed #36, review/fix #88 and resume downloads;
+  continue #25 and start remaining ready #71/#72 as slots free. Scorecard unchanged: G5 passes,
+  O30=0/10k (**1/5 gates, 1/30 objectives**); historical O25/O26 misses have open #21/#22.
+  New follow-up #88 is open. All unrelated main-preview edits and unrelated worktrees remain
+  untouched; protected-file fingerprints are `/tmp/lysilogy-preview-before.json`.
