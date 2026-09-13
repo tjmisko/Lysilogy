@@ -1100,6 +1100,23 @@ background resume. OAI modification dates are only incremental-harvest bounds; s
 strata use `created`. Sources explicitly request the pinned PDF version. Missing artifacts or
 sparse strata fail without silently reducing the tier count.
 
+Follow-up #88 qualifies each deterministically ranked candidate against a completed public PDF
+inventory before filling its original category/year quota. Schema-2 selections pin version,
+generation, size and MD5; immutable consulted inventory snapshots and excluded-ID reasons retain
+the availability boundary. Invalid or oversized latest objects are excluded, never silently
+replaced with an older version. The original OAI `created` value remains unchanged when an ID
+suggests an earlier year. Identical metadata, config and inventory snapshots reproduce selection;
+interrupted preparation checkpoints its consulted inputs.
+
+The first full harvest exposed missing PDF `1801.00600` after a metadata-only selection froze.
+An explicit `recover-selection --reason …` may repair only a legacy schema-1 selection with zero
+manifest rows and no artifacts, receipts or partials. It archives exact original bytes and the
+failure reason, verifies the original metadata snapshot, retains unavailable original members as
+exclusion evidence, and durably stages a full-quota replacement before atomic publication.
+Interrupted publication resumes the staged replacement; archives are immutable, and any admitted
+artifact prevents recovery. Ordinary resume never reselects a frozen corpus. No metric target,
+host, proxy/TLS policy, request pacing, source-version rule or disk floor changes.
+
 Follow-up #91 uses the canonical `/src/` endpoint after live verification showed `/e-print/`
 returns HTTP 301. The exact same pinned ID/version's previously verified `/e-print/` source
 receipt remains reusable and keeps its original URL, time and bytes, including after an
