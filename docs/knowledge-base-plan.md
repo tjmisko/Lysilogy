@@ -2,7 +2,8 @@
 
 Status: planned 2026-09-12. Tracked in the GitHub project **Lysilogy: Knowledge Base**. Each
 `### E<epic>.<n>` heading below is the design section for exactly one issue; issue bodies are
-generated from these sections.
+generated from these sections. Execution order, branches, file ownership, and phase exit criteria
+are in [knowledge-base-phases.md](knowledge-base-phases.md).
 
 Lysilogy's first goal is making one paper easy to read. This plan adds the second: making it easy
 to be *read into a literature*. That requires two layers of modeling.
