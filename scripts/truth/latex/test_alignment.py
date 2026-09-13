@@ -83,6 +83,20 @@ class AlignmentTests(unittest.TestCase):
                 self.assertTrue(result['metric_eligibility']['O1'])
                 self.assertFalse(result['metric_eligibility']['O7'])
 
+    def test_should_recognize_compact_step_numbers_when_the_role_is_not_a_longer_ordinary_word(self):
+        for label, expected in (('Step1:', True), ('STEP2:', True), ('Step 1:', True), ('Step~1:', True),
+                                ('stepwise:', False), ('steppe:', False)):
+            source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                              + r'\begin{enumerate}[' + label + r']\item Select an input.\end{enumerate}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(label=label):
+                self.assertEqual(bool(parsed['coverage']['unsupported_kind_inventory'].get('algorithm')), expected)
+                self.assertEqual(align_paper(parsed, {'text': 'An independently complete visual caption. Select an input.'})['metric_eligibility']['O7'], not expected)
+        for heading, expected in (('Algorithm1', True), ('Procedure2', True), ('Algorithmic properties', False)):
+            parsed = parse_project({'main.tex': document('\\section{' + heading + '}Select an input.')})
+            with self.subTest(heading=heading):
+                self.assertEqual(bool(parsed['coverage']['unsupported_kind_inventory'].get('algorithm')), expected)
+
     def test_should_preserve_supported_empty_or_contained_inventories_when_no_unparsed_source_role_exists(self):
         ordinary = parse_project({'main.tex': document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
                                    r'\begin{enumerate}\item A list of components.\end{enumerate}\begin{thebibliography}{9}\end{thebibliography}')})

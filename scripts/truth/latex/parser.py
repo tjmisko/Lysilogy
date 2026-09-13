@@ -644,14 +644,14 @@ def parse_project(files, limits=Limits(), selected_main=None):
                 source_role_evidence.append({'kind': 'bib_entry', 'reason': 'reference section contains content outside parsed bibliography entries',
                                              'heading': title, 'heading_members': expanded.origins(heading['start'], heading['end']),
                                              'source_members': expanded.origins(heading['start'], end)})
-        if re.match(r'^(?:algorithm|procedure|pseudocode)\b', title) and not any(
+        if re.match(r'^(?:algorithm|procedure|pseudocode)(?:\b|(?=[0-9]))', title) and not any(
                 row['kind'] == 'algorithm' and row['source_span']['start'] <= heading['start'] < row['source_span']['end'] for row in objects):
             unsupported_kind_inventory['algorithm'] += 1
             source_role_evidence.append({'kind': 'algorithm', 'reason': 'procedural heading has no parsed algorithm container',
                                          'heading_members': expanded.origins(heading['start'], heading['end']),
                                          'source_members': expanded.origins(heading['start'], end)})
     for node in nodes:
-        if node['environment'] == 'enumerate' and node['option'] and re.search(r'\bstep\b', node['option'], re.I):
+        if node['environment'] == 'enumerate' and node['option'] and re.search(r'\bstep(?:\b|(?=[0-9]))', node['option'], re.I):
             if not any(row['kind'] == 'algorithm' and row['source_span']['start'] <= node['start'] < row['source_span']['end'] for row in objects):
                 unsupported_kind_inventory['algorithm'] += 1
                 source_role_evidence.append({'kind': 'algorithm', 'reason': 'step-labeled procedural list has no parsed algorithm container',
