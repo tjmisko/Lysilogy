@@ -809,3 +809,50 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Read-only #33 preparation identified the need for canonical mint/bind events independent of
   SQLite, retained admitted observations where mutable inputs cannot reproduce them, and deferred
   provider-specific admission to #40/#41. No A2 implementation has begun.
+
+### 2026-09-12 — A1 complete, A2 implementations and live corpus harvest
+
+- This resumed goal turn made progress: the full default synthetic 10k run completed, independent
+  reviews and integrated gates passed, #85/PR #86 merged as `e12adc3`, and #19/PR #82 merged as
+  `2683dce`. Progress notes are committed through `705b94b`. Both branches/worktrees were removed.
+  The full project goal is active and unchanged; Phase A has not exited.
+- **Current phase/wave: A/A2.** Three implementations have started from current main:
+  #33 `feat/e2.1-kb-store` in `.worktrees/feat/e2.1-kb-store` (agent `finish_corpus_proxy`),
+  #35 `feat/e2.3-names` in `.worktrees/feat/e2.3-names` (`finish_benchmark`), and
+  #36 `feat/e2.4-titles` in `.worktrees/feat/e2.4-titles` (`review_ready_prs`, now an implementer).
+  No PRs are open at this checkpoint. Assign a different agent to review each implementation.
+  Names/titles coordinate the same cached `unicode-normalization = "0.1.25"` dependency; #33 owns
+  FTS5 population and integrates #36's exact-key helper when available. SQLite's `rusqlite` and
+  iterator dependencies may require fetching. One Cargo job per worktree, dev/test debug off,
+  incremental off, worktree-local targets, at most three concurrent implementations.
+- **Live corpus build:** after the user restarted the daemon, approved proxy access succeeded.
+  Root exec session **9593** is running the reviewed corpus `run --proxy-env HTTPS_PROXY` under
+  `/usr/bin/time -v`; log `/home/tjmisko/.cache/lysilogy/arxiv-corpus-proxy.log`. Poll the handle
+  before concluding it stopped; do not start a duplicate build. At 2026-09-13 06:44:09 UTC it
+  had **208,880 distinct metadata records**, `cs:cs:CV` complete, and `cs:cs:LG` in progress.
+  No frozen selection/PDF/source existed yet; about 138 GiB remained free. Its code/config were
+  loaded before worktree removal; independent audit found no subsequent worktree dependency,
+  and a post-cleanup handle poll confirmed it remained live. No daemon restart or corpus process
+  restart is needed now. If it actually exits, inspect its final log and resume from main using
+  `python3 -u scripts/corpus/corpus.py --root /home/tjmisko/Corpora/arxiv --proxy-env HTTPS_PROXY run`.
+  Keep its shared three-second arXiv budget and 20 GiB floor. Watch whole-metadata selection RSS;
+  optimize only if measurement warrants it. Corpus files never enter the repo/library/`/tmp`.
+- **Scale evidence:** original clean source `7e84828`; full 10k run
+  `~/.cache/lysilogy/bench-vault/runs/d2019ea2409e42ceb373a98b03fb08ce` retains raw observations and
+  the screenshot. Total 1,260.601 s, $0. After #85 integration, independent review reconfirmed all
+  150 source hashes, all physical PDF/artifact counts, metrics, and gate logs at final head
+  `8083602`. Do not repeat expensive timings without a source/measurement reason. Committed
+  reports and evidence are listed in Phase A notes.
+- Scorecard: G5 passes (final integrated 279 Rust / 80 Python / 85 Node tests), **1/5 gates**;
+  O30 = 0 violations/10k, **1/30 objectives at target**. Measured misses are O25 = 15.503406 s and
+  O26 = 1,757.1 ms first render / 163.4 ms search p95, recorded with next ideas in existing open
+  follow-ups #21/#22. O27 remains unavailable despite exploratory extractor efficiency 0.855644;
+  production worker measurement belongs to #23. Other metrics await implementations/truth.
+  Follow-up #85 was opened and resolved during this work; no objective target or hard gate changed.
+- **Next actions:** finish/review/merge #33/#35/#36 in dependency-safe order; select ready #25,
+  #71 and #72 within A2 as implementation slots free. Preserve canonical minted-once identities
+  through SQLite rebuilds and avoid claiming real G4 before K2 exists. Continue monitoring the
+  corpus through metadata, selection, inventory and downloads while offline implementations run.
+  Do not advance to A3 before A2 finishes. The user's unrelated ten preview-file changes remain
+  byte-for-byte intact; original fingerprints are `/tmp/lysilogy-preview-before.json`, and the
+  earlier full checkpoint lists every protected path. Unrelated `/tmp` worktrees remain untouched.
