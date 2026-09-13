@@ -12,6 +12,7 @@ struct Caption<'a> {
     rect: TextRect,
 }
 
+#[must_use]
 pub fn find(index: &ReadingIndex) -> Vec<Figure> {
     find_with_images(index, &[])
 }
@@ -364,28 +365,7 @@ fn figure_region(
     {
         return Some(below);
     }
-    let mut top = dimensions.height * 0.05;
-    for paragraph in &index.objects.paragraph {
-        if paragraph.start == caption_start {
-            continue;
-        }
-        let text = paragraph_tokens(index, paragraph, page);
-        if text.is_empty() {
-            continue;
-        }
-        if !captions
-            .iter()
-            .any(|c| c.paragraph.start == paragraph.start)
-            && !prose_barrier(&text, body_font)
-        {
-            continue;
-        }
-        let rect = union(text.iter().flat_map(|token| token.rects.iter().copied()));
-        let overlap = rect.x_max.min(caption.x_max) - rect.x_min.max(caption.x_min);
-        if rect.y_max < caption.y_min && overlap > (caption.x_max - caption.x_min) * 0.35 {
-            top = top.max(rect.y_max + 4.0);
-        }
-    }
+    let top = prose_top(index, candidate, captions, body_font, dimensions.height);
     let height = caption.y_min - top;
     if height < 35.0 || height > dimensions.height * 0.70 {
         return None;
@@ -472,6 +452,41 @@ fn figure_region(
     ))
 }
 
+fn prose_top(
+    index: &ReadingIndex,
+    candidate: &Caption<'_>,
+    captions: &[Caption<'_>],
+    body_font: f32,
+    height: f32,
+) -> f32 {
+    let page = candidate.page;
+    let caption_start = candidate.paragraph.start;
+    let caption = candidate.rect;
+    let mut top = height * 0.05;
+    for paragraph in &index.objects.paragraph {
+        if paragraph.start == caption_start {
+            continue;
+        }
+        let text = paragraph_tokens(index, paragraph, page);
+        if text.is_empty() {
+            continue;
+        }
+        if !captions
+            .iter()
+            .any(|c| c.paragraph.start == paragraph.start)
+            && !prose_barrier(&text, body_font)
+        {
+            continue;
+        }
+        let rect = union(text.iter().flat_map(|token| token.rects.iter().copied()));
+        let overlap = rect.x_max.min(caption.x_max) - rect.x_min.max(caption.x_min);
+        if rect.y_max < caption.y_min && overlap > (caption.x_max - caption.x_min) * 0.35 {
+            top = top.max(rect.y_max + 4.0);
+        }
+    }
+    top
+}
+
 fn vertical_gap(a: TextRect, b: TextRect) -> f32 {
     (a.y_min - b.y_max).max(b.y_min - a.y_max).max(0.0)
 }
@@ -510,7 +525,10 @@ fn image_owner<'a>(
     rect: TextRect,
 ) -> Option<&'a Caption<'a>> {
     let distance = |caption: &Caption<'_>| {
-        horizontal_gap(caption.rect, rect).powi(2) + 4.0 * vertical_gap(caption.rect, rect).powi(2)
+        4.0_f32.mul_add(
+            vertical_gap(caption.rect, rect).powi(2),
+            horizontal_gap(caption.rect, rect).powi(2),
+        )
     };
     let mut owners = captions
         .iter()
@@ -524,7 +542,7 @@ fn image_owner<'a>(
     let first = owners.first()?;
     if owners
         .get(1)
-        .is_some_and(|second| distance(first) == distance(second))
+        .is_some_and(|second| distance(first).total_cmp(&distance(second)).is_eq())
     {
         return None;
     }
@@ -729,7 +747,7 @@ fn repeated_grid_column(
         let dy = (caption.rect.y_min - column.y_max)
             .max(column.y_min - caption.rect.y_max)
             .max(0.0);
-        horizontal_gap(caption.rect, column).powi(2) + dy.powi(2)
+        dy.mul_add(dy, horizontal_gap(caption.rect, column).powi(2))
     };
     if captions.iter().any(|other| {
         other.page == candidate.page
@@ -1213,6 +1231,37 @@ mod tests {
                 y_max: 230.0
             })
         );
+    }
+
+    #[test]
+    fn should_exclude_a_separately_captioned_bitmap_table_when_a_figure_follows_in_the_same_column()
+    {
+        let index = fixture(&[
+            ("Table I: A raster table.", "body", 50.0, 100.0),
+            ("Figure 1: A separate plot.", "caption", 50.0, 300.0),
+        ]);
+        let table = TextRect {
+            x_min: 50.0,
+            x_max: 200.0,
+            y_min: 130.0,
+            y_max: 190.0,
+        };
+        let plot = TextRect {
+            x_min: 50.0,
+            x_max: 200.0,
+            y_min: 220.0,
+            y_max: 280.0,
+        };
+        let images = super::super::graphics::PageGraphics {
+            page: 1,
+            status: "complete".into(),
+            trace_sha256: None,
+            unsupported_images: 0,
+            images: vec![table, plot],
+        };
+        let figures = find_with_images(&index, &[images]);
+        assert_eq!(figures[1].rect, Some(plot));
+        assert!(figures[0].rect.is_none()); // unsupported raster-table geometry stays explicit
     }
 
     #[test]

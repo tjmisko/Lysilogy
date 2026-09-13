@@ -66,7 +66,7 @@ async fn file_hash(path: &Path, limit: u64) -> Result<String> {
     let mut file = file.take(limit + 1);
     let mut hash = Sha256::new();
     let mut total = 0_u64;
-    let mut buffer = [0_u8; 65536];
+    let mut buffer = vec![0_u8; 65536];
     loop {
         let count = file
             .read(&mut buffer)
@@ -173,24 +173,7 @@ pub async fn collect(
         {
             result.status = "resource_limit".into();
         } else if let Some(program) = &prepared.program {
-            let mut command = Command::new(program);
-            command
-                .args([
-                    "draw",
-                    "-F",
-                    "trace",
-                    "-r",
-                    "72",
-                    "-N",
-                    "-L",
-                    "-m",
-                    "134217728",
-                    "-q",
-                    "-o",
-                    "-",
-                ])
-                .arg(source)
-                .arg(page.to_string());
+            let mut command = trace_command(program, source, *page);
             let output = tokio::time::timeout(
                 Duration::from_secs(5),
                 super::bounded_command(&mut command, "mutool", PAGE_BYTES.min(TOTAL_BYTES - total)),
@@ -239,6 +222,28 @@ pub async fn collect(
         evidence: prepared.evidence,
         traces,
     })
+}
+
+fn trace_command(program: &Path, source: &Path, page: u32) -> Command {
+    let mut command = Command::new(program);
+    command
+        .args([
+            "draw",
+            "-F",
+            "trace",
+            "-r",
+            "72",
+            "-N",
+            "-L",
+            "-m",
+            "134217728",
+            "-q",
+            "-o",
+            "-",
+        ])
+        .arg(source)
+        .arg(page.to_string());
+    command
 }
 
 struct Tag<'a> {
@@ -313,9 +318,9 @@ fn image_rect(tag: &Tag<'_>, page: &ReadingPage) -> Result<TextRect> {
     if !tag.empty || tag.attrs.get("alpha") != Some(&"1") {
         return Err(invalid());
     }
-    let [a, b, c, d, e, f] = numbers::<6>(tag.attrs.get("transform").ok_or_else(invalid)?)?;
-    if !((b == 0.0 && c == 0.0 && a != 0.0 && d != 0.0)
-        || (a == 0.0 && d == 0.0 && b != 0.0 && c != 0.0))
+    let [xx, yx, xy, yy, tx, ty] = numbers::<6>(tag.attrs.get("transform").ok_or_else(invalid)?)?;
+    if !((yx == 0.0 && xy == 0.0 && xx != 0.0 && yy != 0.0)
+        || (xx == 0.0 && yy == 0.0 && yx != 0.0 && xy != 0.0))
     {
         return Err(invalid());
     }
@@ -332,10 +337,10 @@ fn image_rect(tag: &Tag<'_>, page: &ReadingPage) -> Result<TextRect> {
         }
     }
     let points = [
-        (e, f),
-        (a + e, b + f),
-        (c + e, d + f),
-        (a + c + e, b + d + f),
+        (tx, ty),
+        (xx + tx, yx + ty),
+        (xy + tx, yy + ty),
+        (xx + xy + tx, yx + yy + ty),
     ];
     let rect = TextRect {
         x_min: points.iter().map(|p| p.0).fold(f32::INFINITY, f32::min),
@@ -357,10 +362,101 @@ fn image_rect(tag: &Tag<'_>, page: &ReadingPage) -> Result<TextRect> {
     Ok(rect)
 }
 
+fn next_tag(rest: &str) -> Result<(&str, &str)> {
+    let mut quote = None;
+    let mut end = None;
+    for (position, ch) in rest.char_indices() {
+        if position > 65536 {
+            return Err(invalid());
+        }
+        match (quote, ch) {
+            (None, '\'' | '"') => quote = Some(ch),
+            (Some(q), _) if q == ch => quote = None,
+            (None, '>') => {
+                end = Some(position);
+                break;
+            }
+            _ => {}
+        }
+    }
+    let end = end.ok_or_else(invalid)?;
+    let raw_tag = &rest[..end];
+    Ok((raw_tag, &rest[end + 1..]))
+}
+
+fn known_command(name: &str) -> bool {
+    matches!(
+        name,
+        "document"
+            | "page"
+            | "fill_image"
+            | "fill_text"
+            | "stroke_text"
+            | "ignore_text"
+            | "span"
+            | "g"
+            | "fill_path"
+            | "stroke_path"
+            | "moveto"
+            | "lineto"
+            | "curveto"
+            | "closepath"
+            | "rect"
+            | "set_default_colorspaces"
+            | "clip_path"
+            | "clip_stroke_path"
+            | "clip_text"
+            | "clip_stroke_text"
+            | "clip_image_mask"
+            | "pop_clip"
+    )
+}
+
+fn validate_page(value: &Tag<'_>, page: &ReadingPage) -> Result<()> {
+    if value
+        .attrs
+        .get("number")
+        .ok_or_else(invalid)?
+        .parse::<u32>()
+        .map_err(|_| invalid())?
+        != page.number
+    {
+        return Err(invalid());
+    }
+    let [x, y, w, h] = numbers::<4>(value.attrs.get("mediabox").ok_or_else(invalid)?)?;
+    if x != 0.0 || y != 0.0 || (w - page.width).abs() > 0.01 || (h - page.height).abs() > 0.01 {
+        return Err(invalid());
+    }
+    Ok(())
+}
+
+fn record_image(
+    value: &Tag<'_>,
+    page: &ReadingPage,
+    visible: bool,
+    images: &mut Vec<TextRect>,
+    unsupported: &mut usize,
+) -> Result<()> {
+    if images.len() + *unsupported >= 256 {
+        return Err(invalid());
+    }
+    if visible && let Ok(rect) = image_rect(value, page) {
+        images.push(rect);
+    } else {
+        *unsupported += 1;
+    }
+    Ok(())
+}
+
 /// Trace commands already carry page-space matrices. Unsupported drawing state
 /// never becomes a claimed image rectangle; native text geometry is untouched.
 pub fn parse_trace(raw: &[u8], page: &ReadingPage) -> Result<(Vec<TextRect>, usize)> {
-    if raw.len() > PAGE_BYTES {
+    if raw.len() > PAGE_BYTES
+        || !page.width.is_finite()
+        || !page.height.is_finite()
+        || page.width <= 0.0
+        || page.height <= 0.0
+    {
         return Err(invalid());
     }
     let text = std::str::from_utf8(raw).map_err(|_| invalid())?;
@@ -378,25 +474,8 @@ pub fn parse_trace(raw: &[u8], page: &ReadingPage) -> Result<(Vec<TextRect>, usi
             return Err(invalid());
         }
         rest = &rest[start + 1..];
-        let mut quote = None;
-        let mut end = None;
-        for (position, ch) in rest.char_indices() {
-            if position > 65536 {
-                return Err(invalid());
-            }
-            match (quote, ch) {
-                (None, '\'' | '"') => quote = Some(ch),
-                (Some(q), _) if q == ch => quote = None,
-                (None, '>') => {
-                    end = Some(position);
-                    break;
-                }
-                _ => {}
-            }
-        }
-        let end = end.ok_or_else(invalid)?;
-        let raw_tag = &rest[..end];
-        rest = &rest[end + 1..];
+        let (raw_tag, tail) = next_tag(rest)?;
+        rest = tail;
         if raw_tag.starts_with("?xml ")
             && raw_tag.ends_with('?')
             && !document_seen
@@ -423,53 +502,18 @@ pub fn parse_trace(raw: &[u8], page: &ReadingPage) -> Result<(Vec<TextRect>, usi
                 return Err(invalid());
             }
             pages += 1;
-            if value
-                .attrs
-                .get("number")
-                .ok_or_else(invalid)?
-                .parse::<u32>()
-                .map_err(|_| invalid())?
-                != page.number
-            {
-                return Err(invalid());
-            }
-            let [x, y, w, h] = numbers::<4>(value.attrs.get("mediabox").ok_or_else(invalid)?)?;
-            if x != 0.0
-                || y != 0.0
-                || (w - page.width).abs() > 0.01
-                || (h - page.height).abs() > 0.01
-            {
-                return Err(invalid());
-            }
+            validate_page(&value, page)?;
         } else if !stack.contains(&"page") {
             return Err(invalid());
         }
-        if !matches!(
-            value.name,
-            "document"
-                | "page"
-                | "fill_image"
-                | "fill_text"
-                | "stroke_text"
-                | "ignore_text"
-                | "span"
-                | "g"
-                | "fill_path"
-                | "stroke_path"
-                | "moveto"
-                | "lineto"
-                | "curveto"
-                | "closepath"
-                | "rect"
-                | "set_default_colorspaces"
-                | "clip_path"
-                | "clip_stroke_path"
-                | "clip_text"
-                | "clip_stroke_text"
-                | "clip_image_mask"
-                | "pop_clip"
-        ) {
+        if !known_command(value.name) {
             unsafe_state = true;
+        }
+        if (value.name.starts_with("clip_") || value.name == "pop_clip")
+            && (stack.as_slice() != ["document", "page"]
+                || (value.name == "pop_clip" && !value.empty))
+        {
+            return Err(invalid());
         }
         if value.name.starts_with("clip_") {
             clips = clips.checked_add(1).ok_or_else(invalid)?;
@@ -477,27 +521,17 @@ pub fn parse_trace(raw: &[u8], page: &ReadingPage) -> Result<(Vec<TextRect>, usi
         if value.name == "pop_clip" {
             clips = clips.checked_sub(1).ok_or_else(invalid)?;
         }
-        if matches!(
-            value.name,
-            "begin_mask" | "end_mask" | "begin_group" | "end_group"
-        ) {
-            unsafe_state = true;
-        }
         if value.name == "fill_image" {
             if stack.as_slice() != ["document", "page"] {
                 unsafe_state = true;
             }
-            if images.len() + unsupported >= 256 {
-                return Err(invalid());
-            }
-            if clips == 0
-                && !unsafe_state
-                && let Ok(rect) = image_rect(&value, page)
-            {
-                images.push(rect);
-            } else {
-                unsupported += 1;
-            }
+            record_image(
+                &value,
+                page,
+                clips == 0 && !unsafe_state,
+                &mut images,
+                &mut unsupported,
+            )?;
         }
         if !value.empty {
             stack.push(value.name);
@@ -674,6 +708,35 @@ mod tests {
             trace("<fill_text><span><g unicode=\"&lt;fill_image x='1'&gt;\"/></span></fill_text>");
         assert!(parse_trace(&quoted, &page()).unwrap().0.is_empty());
     }
+    #[test]
+    fn should_reject_nonfinite_native_pages_when_trace_geometry_is_finite() {
+        for dimension in [f32::NAN, f32::INFINITY, 0.0, -1.0] {
+            let mut invalid_page = page();
+            invalid_page.width = dimension;
+            assert!(parse_trace(&trace(&image("100 0 0 50 20 30")), &invalid_page).is_err());
+            let mut invalid_page = page();
+            invalid_page.height = dimension;
+            assert!(parse_trace(&trace(&image("100 0 0 50 20 30")), &invalid_page).is_err());
+        }
+    }
+
+    #[test]
+    fn should_reject_nested_state_when_path_payloads_try_to_pop_or_create_clips() {
+        for prefix in [
+            "<clip_path><pop_clip/></clip_path>",
+            "<fill_path><clip_path/></fill_path>",
+            "<pop_clip></pop_clip>",
+        ] {
+            assert!(
+                parse_trace(
+                    &trace(&format!("{prefix}{}", image("100 0 0 50 20 30"))),
+                    &page()
+                )
+                .is_err()
+            );
+        }
+    }
+
     #[test]
     fn should_withhold_completion_when_unknown_state_contains_no_observed_images() {
         assert!(parse_trace(&trace("<unknown_hook/>"), &page()).is_err());

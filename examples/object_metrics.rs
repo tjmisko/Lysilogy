@@ -134,12 +134,12 @@ fn native_value_digest(value: &serde_json::Value) -> Result<String, Failure> {
             Value::Null => hash.update(b"n"),
             Value::Bool(value) => hash.update(if *value { b"t" } else { b"f" }),
             Value::Number(number) if number.is_i64() || number.is_u64() => {
-                frame(hash, b'i', number.to_string().as_bytes())?
+                frame(hash, b'i', number.to_string().as_bytes())?;
             }
             Value::Number(number) => {
                 let original = number.as_f64().ok_or("unsupported native number")?;
                 let value = original as f32;
-                if !value.is_finite() || f64::from(value) != original {
+                if !value.is_finite() || f64::from(value).to_bits() != original.to_bits() {
                     return Err("native value is not exact finite f32".into());
                 }
                 hash.update(b"r");
