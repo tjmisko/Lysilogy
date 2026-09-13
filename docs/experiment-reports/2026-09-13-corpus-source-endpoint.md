@@ -46,7 +46,20 @@ are complete.
 
 ## Live verification boundary
 
-The parent agent is integrating this reviewed/gated source with PR #90's availability validation
-before bounded live verification. The recovered selection and admitted PDFs must remain intact;
-reselection is forbidden after artifact admission. The completed integrated PDF reuse and source
-download receipt will be recorded before merge. Complete K0 verification is still outstanding.
+The bounded integrated download succeeded with exit 0 in 3.19 seconds, peaking at 240,608 KiB
+RSS with $0 model cost. It rehashed and reused the already-admitted 327,794-byte PDF
+`0812.5080v5`, then downloaded and admitted its 21,993-byte canonical source. The source
+SHA-256 is `8b95087c0ab3a43d4f021459374bc52a66a4baae9211174f83984cb12f250c1d`,
+fetched at `2026-09-13T08:26:54.029223+00:00`. The parent independently verified both receipts'
+identities and actual bytes. Selection SHA-256 remains
+`172d18c2eeb8a640ead81f55261619800e2728553c7b25f87a191393d25b3e5f`.
+
+Live verification combined this reviewed source with PR #90's schema-2 availability validation.
+The first fetch ran at `a975703f07c32f7f94ecf3cfd75a0d29e74bd0bd`; integration commit
+`06dc69329ae0064507ba76e8196752bd64883fd5` has the identical Git tree after a message-only
+amend to place the coauthor trailer last. All 82 combined offline corpus tests passed. The
+retained receipt records the exact combined source hashes, standalone receipt hash and full
+live log (SHA-256 `8a4d295852a8daa24801549030691e94c0c1a2b7168bdb10e91a3779c40c244a`).
+
+This verifies one PDF/source pair. Complete K0 verification remains outstanding. The recovered
+selection and admitted artifacts remain intact; reselection is forbidden after artifact admission.

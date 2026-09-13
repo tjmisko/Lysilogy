@@ -223,9 +223,43 @@
       "wall_seconds": 6.322987195999303
     },
     "live_verification": {
-      "observer": "parent agent owns corpus mutations",
-      "source_commit": "ebead0c169a57dfc8cd651df48353d000cc5ba64",
-      "status": "pending_reviewed_availability_integration"
+      "artifacts": {
+        "pdf": {
+          "bytes": 327794,
+          "fetched_at": "2026-09-13T08:11:49.948657+00:00",
+          "path": "pdf/0812.5080v5.pdf",
+          "sha256": "0c145aa92ccd4d1c37503b0df9325c410d4be4974a548276cdb04a27bc78603c",
+          "url": "https://storage.googleapis.com/arxiv-dataset/arxiv/arxiv/pdf/0812/0812.5080v5.pdf?generation=1639285573421857"
+        },
+        "source": {
+          "bytes": 21993,
+          "fetched_at": "2026-09-13T08:26:54.029223+00:00",
+          "path": "source/0812.5080v5.src",
+          "sha256": "8b95087c0ab3a43d4f021459374bc52a66a4baae9211174f83984cb12f250c1d",
+          "url": "https://export.arxiv.org/src/0812.5080v5"
+        }
+      },
+      "corpus_root": "~/Corpora/arxiv",
+      "exit_code": 0,
+      "first_download_commit": "a975703f07c32f7f94ecf3cfd75a0d29e74bd0bd",
+      "integrated_offline_corpus_tests": 82,
+      "integration_commit": "06dc69329ae0064507ba76e8196752bd64883fd5",
+      "log_output": "{\"action\":\"disk_preflight\",\"floor_bytes\":21474836480,\"free_bytes\":132995051520,\"projected_additional_bytes\":8388608}\n{\"action\":\"disk_preflight_pinned\",\"floor_bytes\":21474836480,\"free_bytes\":132995051520,\"projected_additional_bytes\":8388608}\n{\"action\":\"pdf\",\"downloaded\":false,\"id\":\"0812.5080\"}\n{\"action\":\"source\",\"downloaded\":true,\"id\":\"0812.5080\"}\n\tCommand being timed: \"python3 -B -u scripts/corpus/corpus.py --root /home/tjmisko/Corpora/arxiv --proxy-env HTTPS_PROXY download --tier eval --limit 1\"\n\tUser time (seconds): 2.69\n\tSystem time (seconds): 0.17\n\tPercent of CPU this job got: 89%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:03.19\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 240608\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 1\n\tMinor (reclaiming a frame) page faults: 37217\n\tVoluntary context switches: 645\n\tInvoluntary context switches: 123\n\tSwaps: 0\n\tFile system inputs: 197440\n\tFile system outputs: 24160\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 16384\n\tExit status: 0\n",
+      "log_path": "~/.cache/lysilogy/arxiv-corpus-source-endpoint-verification.log",
+      "log_sha256": "8a4d295852a8daa24801549030691e94c0c1a2b7168bdb10e91a3779c40c244a",
+      "message_only_amend_same_tree": true,
+      "model_cost_usd": 0,
+      "observer": "parent agent independently validated receipt identities and actual bytes",
+      "peak_rss_kib": 240608,
+      "scope": "One eval-tier paper only; K0 remains incomplete. The PDF was rehashed and reused; only its canonical source was downloaded.",
+      "selection_sha256": "172d18c2eeb8a640ead81f55261619800e2728553c7b25f87a191393d25b3e5f",
+      "source_files": {
+        "scripts/corpus/corpus.py": "82991d0ad9e4c1beb277402836426a03dff6a4ed2a886bdc4524b80ef8812930",
+        "scripts/corpus/test_corpus.py": "2c6cf79e1514f4476a11b67e99a1ffb47666f9c24960baf6e41047e27248d9db"
+      },
+      "standalone_receipt_sha256": "7fbbbc1351bd1f3257fd655a2539ecb61f914c3a2bd1bdc473e7892bef625aa3",
+      "status": "passed_bounded_pdf_reuse_and_source_admission",
+      "wall_seconds": 3.19
     },
     "logs": [
       {
@@ -1293,7 +1327,7 @@
   },
   "issue": 91,
   "measurement_limits": [
-    "The canonical endpoint probe was not persisted as a corpus source; bounded integrated verification remains pending.",
+    "The original canonical endpoint probe was not persisted; the later reviewed availability integration successfully admitted one canonical source and reused its verified PDF. This bounded check does not establish complete K0.",
     "Scale ran with clean trees; G5 dirty flags record the subsequently generated scorecard.",
     "K0 remains incomplete and no corpus-dependent objective is claimed."
   ],
