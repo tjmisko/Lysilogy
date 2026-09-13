@@ -80,6 +80,7 @@ async fn main() -> Result<(), Failure> {
         return Err("invalid measurement roots or population".into());
     }
     let mut rows = Vec::new();
+    let mut output_bytes = 0;
     for paper in request.papers {
         if !safe_id(paper.paper_id.as_str()) || !direct_pdf(&paper.relative_path) {
             return Err("unsafe PDF name".into());
@@ -104,6 +105,10 @@ async fn main() -> Result<(), Failure> {
         }
         let artifact = ObjectsArtifact::from_reading_index(&paper.paper_id, &document);
         let artifact_json = serde_json::to_string(&artifact)?;
+        output_bytes += artifact_json.len();
+        if output_bytes > 16 * 1024 * 1024 {
+            return Err("object response exceeds 16 MiB".into());
+        }
         rows.push(json!({"paper_id":paper.paper_id,"index_sha256":paper.index_sha256,"object_sha256":format!("{:x}",Sha256::digest(artifact_json.as_bytes())),"artifact_json":artifact_json}));
     }
     println!(
