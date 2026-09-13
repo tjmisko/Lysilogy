@@ -2,9 +2,90 @@
 
 Bibliography entries now come from the deterministic backend and are persisted as schema-2
 `bib_entry` objects. The reader consumes their reference links only when the paper ID and exact
-reading-index generation agree. The implementation and its offline collector have passed
-independent source review and all quality gates. **The PR remains draft: real K1/K2 measurements
-are required before this detector merges.**
+reading-index generation agree. The original implementation and collector passed independent review; the measured parser
+corrections below are undergoing their final independent review. **The PR remains draft: genuine
+K2 deposited-reference measurements are still required for O9 before this detector merges.**
+
+## Real K1 measurements and corrections
+
+The unchanged limited K1 release now supplies one independently annotated, complete bibliography
+from arXiv **2503.05828v1**: **35 entries**, **105 known fields**, and **40 citation groups / 50
+occurrence-target pairs**. Its bibliography truth SHA-256 is
+`a821d3070768175f2de7022928a6a19f6ef8cddce9edef726448447e24fc7c82`;
+the exact frozen reading-index SHA-256 is
+`da7f49d6a539b86a4aba82b3c85c6078d4eb2166fc01a577b55b5817185728e2`.
+No PDF, source archive, reading index, label, matching rule, denominator or target changed.
+This small, manually selected cohort measures current behavior; it does not establish broad
+corpus generalization. Coverage expansion remains tracked by #97.
+
+| Measure | First real run `779f0c2` | Line correction `aae7369` | Marker correction `d497304` | Final parser `2608bc8` |
+| --- | --- | --- | --- | --- |
+| O8 exact entry F1 | 0.289855 (10 TP / 24 FP / 25 FN) | 0.916667 (33 / 4 / 2) | 1.0 (35 / 0 / 0) | 1.0 (35 / 0 / 0) |
+| O10 precision / recall | 0.261905 / 0.22 (11 TP / 31 FP / 39 FN) | 0.738462 / 0.96 (48 / 17 / 2) | 1.0 / 1.0 (50 / 0 / 0) | 1.0 / 1.0 (50 / 0 / 0) |
+| Known K1 title accuracy | 7/35 | 27/35 | 29/35 | 30/35 |
+| Known K1 first-author / year accuracy | 10/35 / 10/35 | 33/35 / 33/35 | 35/35 / 35/35 | 35/35 / 35/35 |
+| Complete O9 | unavailable | unavailable | unavailable | unavailable: genuine K2 absent |
+
+The first actual baseline is immutable under
+`~/.cache/lysilogy/bibliography-k1-first-measurement/`. Every later measured checkpoint and
+failed gate attempt remains under `~/.cache/lysilogy/bibliography-development/`, with source,
+truth, index, Cargo-selected executable, command and observation fingerprints. The final
+bibliography evaluation at `2608bc8` retains the first real O8/O10 values in `baseline_before`;
+the evaluation harness advances its rolling baseline after each run. Earlier pre-truth receipts
+below remain historical evidence.
+
+The corrections address general representation failures. Bibliography text classified as a
+heading is retained within the bibliography region; captions remain excluded. Printed keys at
+physical line or page starts split entries even when the reading index joins those lines with
+spaces. The additional boundaries use token geometry and exact byte-to-UTF-16 conversion,
+with raised inline tokens, missing or invalid rectangles, and astral text covered by tests.
+Wrapped author/year/title members remain attached to their numbered entry. Explicit
+surname/initial/year entries following a complete numbered entry preserve mixed conventions.
+Dotted publication-year continuations are not assumed to be new keys; an independently present
+adjacent dotted-key sequence, including lookahead at the first entry, can justify four-digit
+printed keys. Bracketed four-digit keys remain explicit.
+
+A square-bracket citation convention provides evidence against interpreting an unrelated bare
+superscript or parenthesized number as another citation. Such candidates now remain unlinked
+`ambiguous_marker` observations with exact occurrences and candidate IDs unless a connected known
+citation or explicit bibliographic cue supports the mixed form. “See [1] and (2)” is supported;
+“See (2)” and “[1] confirms (2)” alone remain ambiguous. Tests retain pure superscript support
+and cover equation/list numbers, footnotes, mathematical indices, and frontend withholding.
+Question/exclamation punctuation now terminates a title while remaining part of that title.
+
+The **five remaining known K1 title misses** are line-break hyphens: `Feed- back`, `Substi- tutes`,
+`Intel- ligent`, `Re- inforcement`, and `Compet- itive`. Their measured 30/35 title accuracy is
+0.857143 versus the planned 0.90 component target. [Follow-up #103](https://github.com/tjmisko/Lysilogy/issues/103)
+records the exact independent source IDs and next idea: retain physical break evidence and
+conservative spelling alternatives while preserving real compounds and mathematical minus
+signs. Ambiguous printed hyphens have not been silently removed. This remains a K1 diagnostic;
+no full O9 value is claimed without deposited K2 data.
+
+Full checks at `2608bc8` pass: formatting, strict all-target/all-feature Clippy, **355 Rust tests**,
+frontend typecheck/lint/build, **20 paper-link tests**, and the Playwright reader smoke using the
+production Rust artifact. G5 passes **355 Rust / 292 Python / 92 Node**, with external networking
+disabled and model CLIs absent. Eleven new Rust tests and one new frontend test extend the original
+bibliography checks. Both retained screenshots were inspected. The full gate sequence took
+**69.149 seconds**; the real bibliography collector took **0.817 seconds**, the integrated figure
+collector **5.288 seconds**, and isolated G5 **7.994 seconds**. Network/model calls: **0**; cost: **$0**.
+
+The figure collector was refreshed against unchanged K1 after integrating #96: O1 remains
+0.769231 (10 TP / 1 FP / 5 FN), O2 remains 0.244851 over all 15 independently annotated objects.
+Those misses remain with #101. O30 remains zero violations over 10,000 simulated admissions.
+Bibliography, objects, scale and tests `--check` pass with honest unavailable metrics; the local
+scorecard is **1/5 hard gates passing and 3/30 objectives at target** (O8, O10, O30).
+Historical O25/O26 misses remain with #21/#22. No native extraction or expensive scale timing was
+repeated for this parser.
+
+The [K1 iteration evidence](../../eval/evidence/bibliography-k1-iterations.json) and
+[derived final bibliography observations](../../eval/evidence/bibliography-k1-observations.json)
+retain inspectable source matching and field disagreements. Main's docs-only checkpoint `9dc3f27`
+was normally merged as `e8601d0`; all 189 compiled, collector and frontend source fingerprints
+remain identical to `2608bc8`. All required warm integration checks also pass with the same metrics and G5 counts; that
+sequence took **40.332 seconds**, with **0.537 seconds** for bibliography, **4.863 seconds** for
+figures, and **7.896 seconds** inside isolated G5. Both screenshots are byte-identical to the
+inspected prior run. Its 50 retained artifacts include 16 gate logs, 15 isolated G5 logs, exact
+results, source/executable bindings, and screenshots.
 
 ## Behavior and decisions
 
@@ -52,7 +133,7 @@ publication. Review added a custom-target/stale-default regression and executabl
 rejection. The actual Cargo-selected executable and production field/title modes passed the final
 integration check.
 
-## Validation and measured availability
+## Historical validation before K1 publication
 
 Initial integrated checkpoint `b779eb1f750e0389fd55a53e8635dfab271e8975` normally merges main `cc329dd`, including
 corpus fixes #88/#91. Its parser, frontend and collector source is unchanged from the independently
@@ -103,13 +184,13 @@ is unchanged.
 | G5 offline tests | passing baseline | pass | no regression |
 | O30 provider budget violations | 0 / 10,000 baseline | 0 / 10,000 fresh simulation | at target |
 
-The local scorecard remains **1/5 hard gates passing and 1/30 objectives at target**. Unavailable
+At that pre-truth checkpoint, the local scorecard was **1/5 hard gates passing and 1/30 objectives at target**. Unavailable
 metrics do not count as passes, and no synthetic fixture has been published as K1/K2 or as an
 O8–O10 measurement. No target or baseline was relaxed. The existing historical O25/O26 misses
 remain tracked by #21/#22; their expensive synthetic 10k timing was not rerun or re-attested for
 this parser change. Their absence in this worktree's fresh results is not an objective regression.
 
-Next: build independently aligned K1 bibliography labels and deposited K2 references, run the
-collector, inspect its retained matching disagreements, and iterate against O8–O10. Keep #25 open
-and the PR draft until those real detector measurements exist. No new missed-objective follow-up
-is warranted from unavailable measurements; #70/#71 already own the prerequisites.
+The pre-truth hold above is superseded by the real K1 results at the start of this report.
+Next: retain the #25 draft while #71 builds genuine K2 deposited reference inputs, then measure
+all O9 components, address remaining reviewed defects, and assess the existing merge gate.
+The K1 title diagnostic miss now has follow-up #103; #97 owns broader independent coverage.
