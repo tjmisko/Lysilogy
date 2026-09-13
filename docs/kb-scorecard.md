@@ -64,14 +64,21 @@ System acceptance requires 5/5 gates and at least 24/30 objectives; use `eval al
 
 Measurements are calculated from `eval/inputs/<suite>/<collector>.json` or the legacy suite file with content-verified implementation, truth-set, and observation files. G5 executes isolated tests. Results retain truth versions, source hashes, commit, case counts, cost, wall time, and the pre-run baseline. Missing cost is unknown.
 
-- **G1.works:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
-- **G1.persons:** no owning collector in eval/inputs/persons.json or eval/inputs/persons/; truth/collector not built
-- **G4:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
-- **O12.precision:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
-- **O12.recall:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
-- **O13:** no owning collector in eval/inputs/persons.json or eval/inputs/persons/; truth/collector not built
-- **O14:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
-- **O15:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
+- **G3:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O1:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O2:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O3:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O4:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O5:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O6:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O7:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O8:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O9.title:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O9.first_author:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O9.year:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O10.precision:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O10.recall:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O11:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 - **O25:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
 - **O26.render:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
 - **O26.search:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
@@ -79,7 +86,8 @@ Measurements are calculated from `eval/inputs/<suite>/<collector>.json` or the l
 - **O28:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
 - **O29:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
 - **O30:** 10000 cases; recorded fixtures provider-budget-batch-v1 (`3272d90d6aa27b2c8081ef5ff6e7c823d840bc645bf7c6a69859e83d8f6b5cd9`)
-- **R3:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
+- **R4.enrichment_cost:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **R4.enrichment_time:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 
 ## Ratchet policy
 
