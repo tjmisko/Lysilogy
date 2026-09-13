@@ -129,6 +129,12 @@ class ObjectMetricTests(unittest.TestCase):
             p,a,i=fixture();a[field]=value
             with self.assertRaisesRegex(ValueError,'generation'):m.evaluate_paper(p,a,i)
 
+    def should_penalize_inconsistent_anchor_pages_when_prediction_page_and_offsets_agree(self):
+        p,a,i=fixture();a['objects'][0]['anchor']['page']=2
+        r=m.evaluate_paper(p,a,i);self.assertEqual((r['tp'],r['fp'],r['fn']),(0,1,1))
+        self.assertEqual(r['invalid_caption_anchors'],{0:'invalid_caption_anchor'})
+        self.assertEqual(r['region_values'],[0])
+
     def should_preserve_scalar_boundaries_when_caption_offsets_are_utf16(self):
         i={'text':'😀 xyz','pages':[{'number':1,'start':0,'end':6,'provenance':'native'}]}
         members,pages=m.utf16_members(i,[{'start':0,'end':2}]);self.assertEqual(members,{0,1})

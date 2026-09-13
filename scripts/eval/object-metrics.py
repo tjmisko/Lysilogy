@@ -83,6 +83,7 @@ def utf16_members(index, spans, page=None, encoded=None):
         owners = [p for p in index['pages'] if p['start'] <= start < end <= p['end']]
         require(len(owners) == 1 and owners[0]['provenance'] == 'native', 'caption lacks a unique native page')
         require(page is None or owners[0]['number'] == page, 'caption page differs')
+        require('page' not in span or span['page'] == owners[0]['number'], 'caption anchor page differs')
         offset=start
         for char in text:
             width=2 if ord(char)>0xffff else 1
