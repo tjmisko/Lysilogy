@@ -175,7 +175,9 @@ relevant metric cohorts; a complete independent kind elsewhere remains usable.
 
 The AMS `DeclareMathOperator` capability accepts a single top-level preamble
 declaration following an explicit `amsmath` or `amsopn` package load. Its new
-control word must not replace an existing primitive or deposited definition;
+control word must not replace an existing primitive, environment entry/exit
+command, or deposited definition. Names beginning with `end` are forbidden by
+LaTeX's declaration contract. The
 its complete body is bounded literal letters/digits/spaces and standard spacing
 tokens. Braced and one-token names and the standard starred variant preserve
 their original source spans. Scoped, conditional, repeated, deferred, dynamic,

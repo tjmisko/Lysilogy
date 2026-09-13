@@ -199,9 +199,16 @@ def math_operator_declarations(text, scan, reserved, limits):
     ams_loads = [row for row in argument_commands(scan, {'usepackage', 'RequirePackage'})
                  if {name.strip() for name in row['value'].split(',')} & {'amsmath', 'amsopn'}]
     reserved = reserved | set('arccos arcsin arctan arg cos cosh cot coth csc deg det dim exp gcd hom inf injlim ker lg lim liminf limsup ln log max min Pr projlim sec sin sinh sup tan tanh'.split())
+    environment_names = set(ENVIRONMENTS) | LAYOUT_ENVIRONMENTS | set(STANDARD_STATEMENTS) | UNVERIFIED_MATH_LAYOUTS | {
+        'math', 'displaymath', 'alignat', 'flalign', 'verbatim', 'Verbatim', 'minted', 'alltt', 'comment'}
+    environment_names.update(row['value'] for row in argument_commands(scan, {'newtheorem'}))
     defined = set()
     for start, _ in definition_regions(text):
         match = COMMAND.match(text, start)
+        if match[1].rstrip('*') in {'newenvironment', 'renewenvironment'}:
+            name, _ = group(text, match.end())
+            environment_names.add(name)
+            continue
         if match[1].rstrip('*') not in {'newcommand', 'renewcommand', 'providecommand', 'def', 'gdef', 'edef', 'xdef'}:
             continue
         pos = skip_space(text, match.end())
@@ -212,6 +219,7 @@ def math_operator_declarations(text, scan, reserved, limits):
             name = value[0] if value else ''
         if re.fullmatch(r'\\[A-Za-z@]+', name):
             defined.add(name[1:])
+    reserved |= environment_names | {'end' + name for name in environment_names}
     # Scope is evaluated over the unchanged, definition-masked source once.
     # The declaration's own brace groups are balanced and have zero net depth.
     depth, environment_depth, previous, rows, prior_control = 0, 0, 0, [], False
@@ -243,7 +251,7 @@ def math_operator_declarations(text, scan, reserved, limits):
                 row['reason'] = 'operator declaration follows uninterpreted preamble control flow'
             elif not any(load['end'] <= command.start() for load in ams_loads):
                 row['reason'] = 'operator declaration has no preceding explicit AMS package load'
-            elif 'DeclareMathOperator' in defined or row['name'] in reserved | defined:
+            elif row['name'].startswith('end') or 'DeclareMathOperator' in defined or row['name'] in reserved | defined:
                 row['reason'] = 'operator name or declaration primitive has another definition'
             elif not body.strip() or len(body) > 256 or not re.fullmatch(r'(?:[A-Za-z0-9 \t\r\n]|\\[,;! ])+', body):
                 row['reason'] = 'operator body is not bounded literal text and standard spacing'

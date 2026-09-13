@@ -17,6 +17,20 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_withhold_false_negatives_when_operator_names_collide_with_environment_entry_or_exit_commands(self):
+        for name, declaration in (('claim', r'\newtheorem{claim}{Claim}'), ('customclaim', r'\newtheorem{customclaim}{Claim}'),
+                                  ('equation', ''), ('customenv', r'\newenvironment{customenv}{Visible start}{Visible end}')):
+            source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                              + '\\' + name + ' Every input has an output.\\end' + name,
+                              r'\usepackage{amsmath}' + declaration + r'\DeclareMathOperator{' + '\\' + name + '}{name}'
+                              + r'\DeclareMathOperator{\end' + name + '}{endname}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(name=name):
+                self.assertFalse(any(row['inventory_verified'] for row in parsed['coverage']['math_operator_declarations']))
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+                result = align_paper(parsed, {'text': 'An independently complete visual caption. Every input has an output.'})
+                self.assertFalse(any(result['metric_eligibility'].values()))
+
     def test_should_keep_preamble_command_roles_separate_when_heading_names_are_formatting_parameters(self):
         source = document(r'\section{References}Smith, A. A manually formatted reference. 2020.'
                           r'\section{Appendix}Ordinary appendix text.',

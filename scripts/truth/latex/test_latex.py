@@ -54,7 +54,8 @@ class SourceTests(unittest.TestCase):
                 self.assertFalse(any(row['inventory_verified'] for row in parsed['coverage']['math_operator_declarations']))
         for preamble in (declaration, declaration + r'\usepackage{amsmath}',
                          r'\usepackage{amsmath}\DeclareMathOperator{\Pr}{Prob}',
-                         r'\usepackage{amsmath}\DeclareMathOperator{\alpha}{alpha}'):
+                         r'\usepackage{amsmath}\DeclareMathOperator{\alpha}{alpha}',
+                         r'\usepackage{amsmath}\DeclareMathOperator{\endfresh}{endfresh}'):
             parsed = parse_project({'main.tex': document('', preamble)})
             self.assertFalse(any(row['inventory_verified'] for row in parsed['coverage']['math_operator_declarations']))
 
