@@ -21,7 +21,7 @@ def checked_artifacts(paper):
             raise Refused("frozen original artifact changed")
 
 
-def build_paper(paper, runtime, destination):
+def build_paper(paper, runtime, destination, *, deadline=None):
     checked_artifacts(paper)
     started = time.monotonic()
     destination = Path(destination)
@@ -41,7 +41,7 @@ def build_paper(paper, runtime, destination):
         environment = fixed_environment(paper["source_date_epoch"])
         command = engine_command(main)
         for number in (1, 2):
-            remaining = 90 - (time.monotonic() - started)
+            remaining = min(started + 90, deadline if deadline is not None else started + 90) - time.monotonic()
             if remaining <= 0:
                 record["status"] = "paper_wall_timeout"
                 break
@@ -49,7 +49,8 @@ def build_paper(paper, runtime, destination):
             run_dir.mkdir(mode=0o700)
             receipt = run_sandbox(run_dir=run_dir, readonly=[*runtime["engine_mounts"],
                                   (destination / "input", "/input")], output=output, names=names,
-                                  command=command, environment=environment, limits=Limits(wall_seconds=remaining))
+                                  command=command, environment=environment, limits=Limits(wall_seconds=remaining),
+                                  expected_tools=runtime.get("confinement_tools"))
             record["passes"].append({"number": number, "receipt": binding(run_dir / "receipt.json"),
                                      "status": receipt["status"], "wall_seconds": receipt["wall_seconds"]})
             if receipt["status"] != "passed":
@@ -105,7 +106,8 @@ def render_page(pdf, runtime, directory, page, dpi, *, deadline=None):
     receipt = run_sandbox(run_dir=directory, readonly=[*runtime["render_mounts"],
                           (pdf, "/runtime/document.pdf")], output=output, names=("unused",),
                           command=command, environment={"PATH": "/runtime/bin", "HOME": "/unmounted", "LC_ALL": "C"},
-                          limits=Limits(wall_seconds=remaining_seconds(30, deadline), cpu_seconds=15))
+                          limits=Limits(wall_seconds=remaining_seconds(30, deadline), cpu_seconds=15),
+                          expected_tools=runtime.get("confinement_tools"))
     if binding(pdf) != original:
         raise Refused("PDF changed during rendering")
     if receipt["status"] != "passed":
@@ -125,7 +127,8 @@ def page_count(pdf, runtime, directory, *, deadline=None):
     receipt = run_sandbox(run_dir=directory, readonly=[*runtime["render_mounts"],
                           (pdf, "/runtime/document.pdf")], output=output, names=("unused",),
                           command=command, environment={"PATH": "/runtime/bin", "HOME": "/unmounted", "LC_ALL": "C"},
-                          limits=Limits(wall_seconds=remaining_seconds(10, deadline), cpu_seconds=5, file_bytes=4096))
+                          limits=Limits(wall_seconds=remaining_seconds(10, deadline), cpu_seconds=5, file_bytes=4096),
+                          expected_tools=runtime.get("confinement_tools"))
     if receipt["status"] != "passed" or binding(pdf) != original:
         raise Refused("confined PDF page-count query failed")
     value = (directory / "stdout.log").read_text().strip()

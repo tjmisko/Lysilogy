@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from experiment import build_paper, compare_document
+from experiment import build_paper, compare_document, remaining_seconds
 from policy import Refused, binding
 
 
@@ -73,6 +73,23 @@ class ExperimentTests(unittest.TestCase):
             self.assertEqual(result["status"], "failed")
             self.assertFalse(result["exact_whole_document"])
             self.assertEqual(result["pages"], [])
+
+    def should_bound_each_process_by_remaining_time_when_the_global_deadline_approaches(self):
+        with patch("experiment.time.monotonic", return_value=897.5):
+            self.assertEqual(remaining_seconds(30, 900), 2.5)
+            self.assertEqual(remaining_seconds(1, 900), 1)
+            with self.assertRaises(Refused):
+                remaining_seconds(30, 897)
+
+    def should_keep_a_paper_unbuilt_when_preparation_consumes_the_global_deadline(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            paper = self.make_paper(root)
+            with patch("experiment.time.monotonic", side_effect=[0, 1, 1]), patch("experiment.run_sandbox") as run:
+                result = build_paper(paper, {"engine_mounts": []}, root / "build", deadline=0.5)
+            run.assert_not_called()
+            self.assertEqual(result["status"], "paper_wall_timeout")
+            self.assertNotIn("pdf", result)
 
 
 if __name__ == "__main__":

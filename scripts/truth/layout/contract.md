@@ -30,10 +30,12 @@ host controller closes inherited descriptors, kills the launcher process group,
 reaps it and retains an interruption/failure receipt. Bubblewrap's die-with-parent
 behavior terminates its separate session/PID namespace when the launcher dies.
 
-Tests run only the repository's synthetic C fixture, without TeX, papers, network
-connections or model calls. They verify actual filesystem/process/syscall behavior
-as well as policy generation. The required namespace tests fail instead of being
-silently skipped. G5 explicitly registers bwrap and unshare in its tool PATH.
+Tests use the repository's synthetic C fixture and generated TeX documents,
+without deposited papers, network connections or model calls. They verify actual
+filesystem/process/syscall behavior, fixed engine/format/shell controls, bounded
+infinite compilation and changed mathematical raster content. Missing installed
+tools or namespace capabilities fail instead of being silently skipped. G5
+explicitly registers bwrap and unshare in its tool PATH.
 
 Selection and correspondence must be frozen before source execution. The
 original feasibility proposal's exploratory criterion is retained: at least
@@ -65,7 +67,14 @@ malformed or unavailable rasters remain failures with retained receipts. The
 batch keeps every selected failure/unstarted paper and a 15-minute process
 deadline. Source-layout semantic claims and K1 publication are always false.
 
-Current checkpoint: runtime/input/selection/renderer and batch primitives exist,
-but the final pinned execution launcher, complete synthetic fidelity/adversarial
-review and actual ten-paper experiment are not yet complete. Deposited-source
+`freeze.py` copies only exact committed source bytes into a fresh external-cache
+snapshot, with the frozen selection/runtime and hashes of Python, bwrap and
+unshare. `execute.py` requires isolated Python without site initialization,
+verifies the exact launch and independent review, and compiles verified module
+bytes directly. Adjacent bytecode cannot substitute for those sources. Every
+sandbox invocation rechecks the reviewed confinement tool identities. Each build,
+page-count query and render also receives the absolute batch deadline.
+
+Current checkpoint: complete source and synthetic tests are prepared, with final
+independent review and actual ten-paper experiment pending. Deposited-source
 execution remains withheld. Synthetic results prove only the tested capability.

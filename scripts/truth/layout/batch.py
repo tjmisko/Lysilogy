@@ -13,6 +13,7 @@ def run(config, snapshot):
     runtime_path = snapshot / "runtime.json"
     selection = json.loads(selection_path.read_text())
     installed = json.loads(runtime_path.read_text())
+    installed["confinement_tools"] = config["confinement_tools"]
     papers = selection["papers"]
     if len(papers) != 10 or len({(p["arxiv_id"], p["version"]) for p in papers}) != 10:
         raise Refused("the experiment requires the frozen ten distinct papers")
@@ -42,7 +43,7 @@ def run(config, snapshot):
             checked_artifacts(paper)
             paper_dir = destination / f"paper-{position:02d}"
             paper_dir.mkdir(mode=0o700)
-            built = build_paper(paper, installed, paper_dir / "build")
+            built = build_paper(paper, installed, paper_dir / "build", deadline=started + 900)
             item["build_receipt"] = binding(paper_dir / "build/receipt.json")
             item["status"] = built["status"]
             if built["status"] != "built":

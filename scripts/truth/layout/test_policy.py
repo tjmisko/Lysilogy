@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from confinement import check_tools, prepare_outputs, readonly_tree, reject_readwrite_aliases, sandbox_command
+from confinement import check_tools, prepare_outputs, readonly_tree, reject_readwrite_aliases, run_sandbox, sandbox_command
 from policy import Limits, Refused, engine_command, fixed_environment, regular_path, safe_relative, seccomp_filter
 
 
@@ -67,6 +67,13 @@ class PolicyTests(unittest.TestCase):
     def should_refuse_missing_tools_when_isolation_cannot_start(self):
         with patch("confinement.shutil.which", return_value=None), self.assertRaises(Refused):
             check_tools()
+
+    def should_refuse_before_touching_outputs_when_a_confinement_tool_pin_changes(self):
+        with patch("confinement.check_tools", return_value={"bwrap": "changed"}), \
+                patch("confinement.regular_path") as paths, self.assertRaises(Refused):
+            run_sandbox(run_dir="unused", readonly=[], output="unused", names=("a",),
+                        command=["/unused"], environment={}, expected_tools={"bwrap": "reviewed"})
+        paths.assert_not_called()
 
     def should_ignore_host_environment_when_constructing_engine_configuration(self):
         with patch.dict(os.environ, {"TEXINPUTS": "/synthetic-secret", "LD_PRELOAD": "/synthetic-preload", "TOKEN": "sentinel"}):

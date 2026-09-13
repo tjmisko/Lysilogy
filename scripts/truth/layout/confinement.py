@@ -117,7 +117,7 @@ def sandbox_command(tools, readonly, output, names, command, environment, filter
     return argv
 
 
-def run_sandbox(*, run_dir, readonly, output, names, command, environment, limits=Limits()):
+def run_sandbox(*, run_dir, readonly, output, names, command, environment, limits=Limits(), expected_tools=None):
     """One bounded invocation; interruption kills the complete namespace job.
 
     All writable mounts name pre-existing regular inodes. Their parent mount,
@@ -128,6 +128,8 @@ def run_sandbox(*, run_dir, readonly, output, names, command, environment, limit
     """
     limits.validate()
     tools = check_tools()
+    if expected_tools is not None and tools != expected_tools:
+        raise Refused("confinement tool identity changed since snapshot review")
     run_dir = regular_path(run_dir, directory=True)
     output = regular_path(output, directory=True)
     if shutil.disk_usage(run_dir).free < limits.free_bytes:
