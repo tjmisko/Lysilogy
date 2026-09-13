@@ -1080,7 +1080,7 @@ and `/tmp`, at a configurable root (default `~/Corpora/arxiv/`, `LYSILOGY_CORPUS
   (`https://storage.googleapis.com/arxiv-dataset/arxiv/arxiv/pdf/<YYMM>/<id>v<n>.pdf`; listing via
   the JSON API). No `gsutil` is required.
 - **Sources:** fetch LaTeX sources for the `eval` tier per paper from
-  `https://export.arxiv.org/e-print/<id>`, with a shared single-connection budget of at most one request every
+  `https://export.arxiv.org/src/<id>v<n>`, with a shared single-connection budget of at most one request every
   three seconds, including retries. This follows the stricter
   [API terms](https://info.arxiv.org/help/api/tou.html), checked 2026-09-12; the bulk
   harvesting page separately permits four-request bursts. The requester-pays S3 bucket
@@ -1099,6 +1099,13 @@ selection/version freezing, format and hash verification limits, isolated scale 
 background resume. OAI modification dates are only incremental-harvest bounds; submitted-year
 strata use `created`. Sources explicitly request the pinned PDF version. Missing artifacts or
 sparse strata fail without silently reducing the tier count.
+
+Follow-up #91 uses the canonical `/src/` endpoint after live verification showed `/e-print/`
+returns HTTP 301. The exact same pinned ID/version's previously verified `/e-print/` source
+receipt remains reusable and keeps its original URL, time and bytes, including after an
+interrupted manifest update. No new request follows the legacy redirect; other host/path/version
+aliases remain invalid. PDF generation URLs remain exact. Automatic redirect refusal, TLS,
+shared arXiv pacing and the free-space floor are unchanged.
 
 Direct transport is the default. Managed environments may explicitly select their approved
 HTTP CONNECT proxy for HTTPS destinations with `--proxy-env HTTPS_PROXY` (or `https_proxy`).

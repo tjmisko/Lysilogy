@@ -29,7 +29,8 @@ import xml.etree.ElementTree as ET
 
 OAI = "https://oaipmh.arxiv.org/oai"
 GCS = "https://storage.googleapis.com"
-EXPORT = "https://export.arxiv.org/e-print/"
+EXPORT = "https://export.arxiv.org/src/"
+LEGACY_EXPORT = "https://export.arxiv.org/e-print/"
 USER_AGENT = "Lysilogy-K0/1.0 (research corpus; https://github.com/tjmisko/Lysilogy)"
 PROXY_ENV_VARS = ("HTTPS_PROXY", "https_proxy")
 MIB = 1024 * 1024
@@ -476,6 +477,16 @@ def verified(path, receipt):
                 and digest_file(path) == {key: receipt[key] for key in ("sha256", "md5", "bytes")})
 
 
+def receipt_url_matches(actual, expected, kind):
+    """Keep historical provenance only for the exact same pinned source version."""
+    if actual == expected:
+        return True
+    if kind != "source":
+        return False
+    matched = re.fullmatch(re.escape(EXPORT) + r"(\d{4}\.\d{4,5}v[1-9]\d*)", expected)
+    return bool(matched and actual == LEGACY_EXPORT + matched[1])
+
+
 def fetch_file(path, url, kind, http, floor, maximum, expected=None):
     if path.parent.is_symlink() or path.is_symlink():
         raise CorpusError("Corpus artifacts cannot use symlinks")
@@ -483,7 +494,8 @@ def fetch_file(path, url, kind, http, floor, maximum, expected=None):
     if receipt_path.is_symlink():
         raise CorpusError("Corpus receipts cannot use symlinks")
     receipt = read_json(receipt_path)
-    if receipt and receipt.get("url") == url and verified(path, receipt):
+    if (receipt and receipt.get("kind") == kind
+            and receipt_url_matches(receipt.get("url"), url, kind) and verified(path, receipt)):
         if not expected or all(receipt[key] == expected[key] for key in ("md5", "bytes")):
             return receipt, False
     if path.exists():
@@ -588,7 +600,7 @@ def artifact_location(entry, kind):
 
 def validate_receipt(entry, kind, receipt):
     path, url = artifact_location(entry, kind)
-    if receipt["path"] != path or receipt["url"] != url or receipt["kind"] != kind:
+    if receipt["path"] != path or not receipt_url_matches(receipt["url"], url, kind) or receipt["kind"] != kind:
         raise CorpusError("Artifact path, URL or kind differs from pinned paper version")
     if kind == "pdf" and any(receipt[key] != entry["remote_pdf"][key] for key in ("md5", "bytes")):
         raise CorpusError("PDF receipt differs from pinned GCS hash or size")
