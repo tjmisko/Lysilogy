@@ -40,12 +40,12 @@ The source reading-index endpoint retains those historical embedded records unch
 
 Native generation remains the original full index SHA256/ETag. Native-only detector generation
 is SHA256 of UTF-8 `figures:<version>:<native-etag>`. The source-backed generation hashes UTF-8
-`figures:<version>:<native-etag>:graphics:<graphics-generation>`. Graphics version1 binds the
+`figures:<version>:<native-etag>:graphics:<graphics-generation>`. Graphics version2 binds the
 native ETag, exact PDF SHA256, canonical tool path/SHA256, page statuses, raw trace hashes,
 accepted image placements and excluded-image counts. Its generation hashes the exact Rust JSON
 serialization with the `generation` field empty; the collector retains those exact bytes and
 checks their structural equality to the artifact. A separate cache key hashes JSON
-`[1,native-etag,pdf-sha256,tool-sha256]`. Existing native-only objects, changed source/tool bytes,
+`[2,native-etag,pdf-sha256,tool-sha256]`. Existing native-only objects, changed source/tool bytes,
 old detector versions and invalid graphics generations are rebuilt in the product cache.
 Transient tool/resource failures remain explicit and are retried; unavailable tools retain
 native-only geometry, with a new generation when the tool becomes available.
@@ -58,15 +58,34 @@ Unsupported or failed pages preserve explicit status plus the untouched native f
 The parser requires one requested page with finite, zero-origin dimensions matching its native
 page within0.01 PDF point. It admits only opaque self-closing image operations with positive
 intrinsic dimensions and finite axis-aligned/reflected/quarter-turn page-space unit-square
-matrices wholly inside the page. Pixel dimensions never scale the placed rectangle. Active
-clips exclude images until `pop_clip`; masks/groups/tiles or unknown drawing state withhold
-all page images. Text/glyph/path records provide no inferred graphic bounds. DTDs, malformed
+matrices wholly inside the page. Pixel dimensions never scale the placed rectangle. Graphics
+version2 recognizes only full-page, isolated, non-knockout `Normal` groups with alpha1 and
+`actualtext` metadata around text operations. Matrices remain in page space; group scopes must
+balance their own clips without consuming an enclosing clip. A single explicitly closed
+axis-aligned rectangle under `clip_path` supplies exact clipping bounds; nested rectangles
+intersect an image's placed bounds until their matching `pop_clip`. Arbitrary paths, stroked
+clips, text clips and image-mask clips still exclude affected images; soft masks, unsupported
+groups/tiles or unknown drawing state withhold all page images. Text/glyph/path records provide
+no inferred painted graphic bounds. The installed MuPDF Device reference describes the image
+unit rectangle, clip stack and transparency-group semantics used by this bounded extension.
+DTD declarations, malformed
 framing, duplicate attributes, oversized tags/depth/inventories are rejected. Independently
 specified synthetic traces cover these boundaries without consulting truth regions/predictions.
 
 Image tiles seed the nearest compatible caption neighborhood; separately owned columns and
 captions cannot be joined. Native labels extend a bounded connected neighborhood; table bands
 stop before following image placements. These are detector heuristics, never truth matching.
+Detector version3 additionally recognizes repeated numeric-column grids above captions and
+requires multiple printed rows before a below-caption grid is admitted. A short same-column
+unfinished reference sentence can reject a false caption without changing the separate
+multi-line prose barrier used for diagram bounds. Original native schemas, both K1 versions,
+caption matching and all-region denominators remain unchanged.
+Partial raster inserts cannot replace a separately established diagram extent: at least three
+complete caption-owned native labels must enclose the image seed, including whole labels above
+and below it. Every label contributing to that native seed must contain at most twelve tokens,
+no digits, and glyph heights below85% of the page's median body height. This conservative cue
+uses the existing native connected bounds and padding; numeric grids, ordinary body text and
+one-sided label evidence retain the image-only boundary. Unknown mask pixels remain unavailable.
 The bridge retains raw traces immutably only under the dedicated external
 `~/.cache/lysilogy/object-graphics-traces/<sha256>.xml` root, rejecting symlinked ancestors and
 conflicting existing bytes. The collector checks every retained trace path/hash, source/tool
