@@ -744,3 +744,40 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Phase A / wave A1; G5 passes and O30 = 0/10k (1/5 gates, 1/30 objectives); other measurements
   remain unavailable. No background downloads or full 10k data exist. The external environment
   repair remains the next prerequisite; the full system goal is not complete.
+
+### 2026-09-12 — storage repaired; full benchmark running; corpus transport follow-up
+
+- User ran the approved setup script. Fresh root-agent commands now create and fsync files in
+  both designated storage roots; about 139 GiB is free. Retained implementer agents still have
+  old read-only mounts, so root launches storage-dependent commands while they handle code and
+  review in worktrees. The main checkout's ten unrelated preview files remain byte-identical.
+- #19 / draft PR #82 is synchronized with main at `7e84828` in the retained
+  `feat/e0.1-scale-bench` worktree. The real default 10,000-PDF vault now exists at
+  `/home/tjmisko/.cache/lysilogy/bench-vault` (about 41 MiB of PDFs). Release/backend and frontend
+  builds completed; six full extraction trials are running before the 10,000-paper persistence
+  pass and browser timings. Root exec session `63200`; log
+  `/home/tjmisko/.cache/lysilogy/bench-e0.1.log`; run directory
+  `runs/d2019ea2409e42ceb373a98b03fb08ce`. No new objective result is published yet. Avoid source
+  changes and heavy competing test/build jobs during timing. Detached subprocesses did not survive
+  their tool namespace; obsolete PID records were removed. Poll the retained exec session, not a
+  PID from another tool's namespace.
+- Corpus attempt ended with DNS failure after 93.08 s, peak RSS 30,096 KiB, before the first
+  metadata page. No background corpus process, selected K0 paper, or download exists. The log is
+  `/home/tjmisko/.cache/lysilogy/arxiv-corpus.log`. Its explicit disabled proxy prevented use of
+  the managed transport. A rate-coordinated root probe through the configured proxy then hit
+  the runtime host allowlist, both normally and after approved escalation, even though all three
+  approved hosts are present in the saved Codex config. The active proxy policy still needs a
+  reload; the installed CLI supports `codex app-server daemon restart`. Do not restart the daemon
+  while the full benchmark is active. Do not broaden network access or bypass the proxy policy.
+- Follow-up #85 (epic #67) is implementing an explicit proxy option in
+  `.worktrees/fix/e8.2-corpus-proxy-transport`. 49 offline Python tests initially passed. Independent
+  reviewer found that urllib does not actually implement TLS to an HTTPS proxy; reject unsupported
+  HTTPS proxy URLs rather than silently downgrading them. Review/fix remains in flight; Cargo/G5
+  gates wait for benchmark timing to finish. No PR or merge yet at this checkpoint.
+- Current phase/wave A/A1; last merged issue #83 / PR #84. Scorecard remains the last validated
+  G5 pass and O30 = 0/10k (1/5 gates, 1/30 objectives), with other metrics unavailable. Next:
+  complete/review #19's measured results and #85's fix, run gates, merge and record each; use
+  existing open #21/#22 as measured optimization follow-ups if O25/O26 miss. Then start A2.
+  Read-only #33 preparation identified the need for canonical mint/bind events independent of
+  SQLite, retained admitted observations where mutable inputs cannot reproduce them, and deferred
+  provider-specific admission to #40/#41. No A2 implementation has begun.
