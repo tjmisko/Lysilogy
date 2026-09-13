@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "issue": 79,
+  "before": {
+    "schema_version": 1,
+    "suite": "tests",
+    "timestamp": "2026-09-13T04:56:34.782326888Z",
+    "commit": "a941b6d72d779e1504773d862710207ea4e6b421",
+    "dirty": true,
+    "metrics": {
+      "G5": {
+        "value": 0.0,
+        "reason": "isolated runner failed: exit status: 1; logs /home/tjmisko/Projects/Lysilogy/.worktrees/feat/e0.1-scale-bench/target/eval-g5/20260913T045634.782339847Z",
+        "cases": 1,
+        "truth_sets": {},
+        "evidence": [
+          {
+            "path": "target/eval-g5/20260913T045634.782339847Z/evidence.json",
+            "sha256": "d570c83b6e8bb8708861a4aa8ee65f00a365caf03e643d1971fd53cf53c0dac2",
+            "version": "g5-network-namespace-v1"
+          }
+        ]
+      }
+    },
+    "costs_usd": {
+      "tests": 0.0
+    },
+    "wall_seconds": {
+      "tests": 5.5518251
+    },
+    "collectors": {},
+    "failures": [
+      "G5 hard gate failed: 0"
+    ],
+    "baseline_before": {
+      "G5": 1.0,
+      "O30": 0.0
+    }
+  },
+  "before_log_sha256": "48ab391c53fae88125a8e3aeaa947d96795b9ce90a11f94abdc82f9227ee0547",
+  "failure_excerpt": "Configured -fuse-ld=mold; collect2: fatal error: cannot find 'ld'",
+  "after": {
+    "schema_version": 1,
+    "suite": "tests",
+    "timestamp": "2026-09-13T05:02:47.131122595Z",
+    "commit": "b5cc10c32471e8ae7c9b023617023e3ed9d7e549",
+    "dirty": false,
+    "metrics": {
+      "G5": {
+        "value": 1.0,
+        "reason": null,
+        "cases": 1,
+        "truth_sets": {},
+        "evidence": [
+          {
+            "path": "target/eval-g5/20260913T050247.131149971Z/evidence.json",
+            "sha256": "c7dbfedc26b79507ec9e47f3ef203ca619a05892bfbc28ab8f525a87a42e134a",
+            "version": "g5-network-namespace-v1"
+          }
+        ]
+      }
+    },
+    "costs_usd": {
+      "tests": 0.0
+    },
+    "wall_seconds": {
+      "tests": 17.909996841
+    },
+    "collectors": {},
+    "failures": [],
+    "baseline_before": {
+      "G5": 1.0,
+      "O30": 0.0
+    }
+  },
+  "isolation": {
+    "schema_version": 1,
+    "network_namespace": "net:[4026534498]",
+    "parent_network_namespace": "net:[4026534569]",
+    "interfaces": [
+      "lo"
+    ],
+    "network_probe_errno": 101,
+    "model_clis_absent": {
+      "codex": true,
+      "claude": true,
+      "gemini": true,
+      "aider": true,
+      "ollama": true
+    },
+    "path": "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z/bin",
+    "commands": [
+      {
+        "command": [
+          "cargo",
+          "test",
+          "--offline",
+          "--all-targets"
+        ],
+        "cwd": ".",
+        "exit_code": 0,
+        "wall_seconds": 13.01013011699979,
+        "log": "target/eval-g5/20260913T050247.131149971Z/00.log"
+      },
+      {
+        "command": [
+          "python3",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/src/eval/g5.py",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z",
+          "--tooling-tests",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/scripts/corpus"
+        ],
+        "cwd": ".",
+        "exit_code": 0,
+        "wall_seconds": 0.11726106800051639,
+        "log": "target/eval-g5/20260913T050247.131149971Z/01.log"
+      },
+      {
+        "command": [
+          "python3",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/src/eval/g5.py",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z",
+          "--tooling-tests",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/scripts/eval"
+        ],
+        "cwd": ".",
+        "exit_code": 0,
+        "wall_seconds": 0.3168091760016978,
+        "log": "target/eval-g5/20260913T050247.131149971Z/02.log"
+      },
+      {
+        "command": [
+          "npm",
+          "--script-shell",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z/script-shell",
+          "run",
+          "test:api"
+        ],
+        "cwd": "web",
+        "exit_code": 0,
+        "wall_seconds": 0.7724615000042832,
+        "log": "target/eval-g5/20260913T050247.131149971Z/03.log"
+      },
+      {
+        "command": [
+          "npm",
+          "--script-shell",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z/script-shell",
+          "run",
+          "test:paper-links"
+        ],
+        "cwd": "web",
+        "exit_code": 0,
+        "wall_seconds": 0.4206222120046732,
+        "log": "target/eval-g5/20260913T050247.131149971Z/04.log"
+      },
+      {
+        "command": [
+          "npm",
+          "--script-shell",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z/script-shell",
+          "run",
+          "test:pdf-visual-bounds"
+        ],
+        "cwd": "web",
+        "exit_code": 0,
+        "wall_seconds": 0.4212895899981959,
+        "log": "target/eval-g5/20260913T050247.131149971Z/05.log"
+      },
+      {
+        "command": [
+          "npm",
+          "--script-shell",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z/script-shell",
+          "run",
+          "test:reading-index-cache"
+        ],
+        "cwd": "web",
+        "exit_code": 0,
+        "wall_seconds": 0.42432935800025007,
+        "log": "target/eval-g5/20260913T050247.131149971Z/06.log"
+      },
+      {
+        "command": [
+          "npm",
+          "--script-shell",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z/script-shell",
+          "run",
+          "test:section-figures"
+        ],
+        "cwd": "web",
+        "exit_code": 0,
+        "wall_seconds": 0.4390633559960406,
+        "log": "target/eval-g5/20260913T050247.131149971Z/07.log"
+      },
+      {
+        "command": [
+          "npm",
+          "--script-shell",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z/script-shell",
+          "run",
+          "test:section-scope"
+        ],
+        "cwd": "web",
+        "exit_code": 0,
+        "wall_seconds": 0.41536709999490995,
+        "log": "target/eval-g5/20260913T050247.131149971Z/08.log"
+      },
+      {
+        "command": [
+          "npm",
+          "--script-shell",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z/script-shell",
+          "run",
+          "test:source-text"
+        ],
+        "cwd": "web",
+        "exit_code": 0,
+        "wall_seconds": 0.4152977240009932,
+        "log": "target/eval-g5/20260913T050247.131149971Z/09.log"
+      },
+      {
+        "command": [
+          "npm",
+          "--script-shell",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z/script-shell",
+          "run",
+          "test:spatial-navigation"
+        ],
+        "cwd": "web",
+        "exit_code": 0,
+        "wall_seconds": 0.3653079879950383,
+        "log": "target/eval-g5/20260913T050247.131149971Z/10.log"
+      },
+      {
+        "command": [
+          "npm",
+          "--script-shell",
+          "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker/target/eval-g5/20260913T050247.131149971Z/script-shell",
+          "run",
+          "test:vimrc"
+        ],
+        "cwd": "web",
+        "exit_code": 0,
+        "wall_seconds": 0.4146912619980867,
+        "log": "target/eval-g5/20260913T050247.131149971Z/11.log"
+      },
+      {
+        "command": [
+          "node",
+          "--experimental-strip-types",
+          "--test",
+          "scripts/cursor-document.test.mjs"
+        ],
+        "cwd": "web",
+        "exit_code": 0,
+        "wall_seconds": 0.2644360530030099,
+        "log": "target/eval-g5/20260913T050247.131149971Z/12.log"
+      }
+    ],
+    "wall_seconds": 17.815819693001686,
+    "passed": true
+  },
+  "cold_test_compile_excerpt": "   Compiling lysilogy v0.1.0 (/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.1-isolated-linker)",
+  "test_counts": {
+    "rust": 255,
+    "python": 50,
+    "node": 84
+  },
+  "model_cost_usd": 0,
+  "source_files": {
+    "src/eval/g5.py": "9265b08ce7f21a3f9b36c602162f73e914c6afe2139fef30157623d65e224dc9",
+    "scripts/eval/test_g5.py": "81a1e9249abac60df9448fa16b64f5b5820a4d9866b88617dfc1a51ef850c762"
+  }
+}
