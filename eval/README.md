@@ -150,6 +150,8 @@ review of `registry.rs`; justification only changes the objective baseline.
 
 G5 requires Linux `unshare --user --map-root-user --net`, Python 3, the installed Rust toolchain,
 Node/npm, and the project's cached dependencies. It does not install anything. The runner checks
+installed compiler tools including `mold`/`ld.mold`; a regression links a fresh executable using
+the production restricted PATH, selecting mold when installed. The runner also checks
 that the network namespace changed and only loopback exists, probes a documentation-only
 address, and constructs an allowlisted PATH with no `codex`, `claude`, `gemini`, `aider`, or
 `ollama`. It executes Rust tests with Cargo offline, all `test*.py` unittest suites beneath
