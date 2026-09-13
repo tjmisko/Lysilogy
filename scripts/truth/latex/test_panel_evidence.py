@@ -1,6 +1,9 @@
 """Offline panel receipt provenance, independent from ranking arithmetic."""
 from copy import deepcopy
 import unittest
+import tempfile
+from pathlib import Path
+from manual import verify_panel_images
 from annotations import canonical
 from archive import sha256
 from panel import bind_panel
@@ -14,9 +17,9 @@ def fixture():
     candidate = {'arxiv_id': '2001.00001', 'paper_id': 'actual_mapped_id', 'pdf_sha256': '2' * 64, 'source_sha256': '3' * 64, 'source_inventory_sha256': '4' * 64, 'index': {'path': 'papers/actual/index.json', 'sha256': sha256(canonical(index))}, 'source_inventory': {'objects': objects}, 'manual_figure_table_overlay': {'metric_eligibility': {'O1': True}, 'evidence_hashes': {'region_annotation_sha256': sha256(canonical(annotation))}}}
     prompt = b'Independently inspect the source and every PDF page. Rank three objects.'
     policy = {'schema_version': 1, 'metric': 'O11', 'target': 0.7, 'frozen_before_root_vote_inspection': True, 'production_rankings_run': False}
-    packet = {**{k: candidate[k] for k in ('arxiv_id', 'paper_id', 'pdf_sha256', 'source_sha256', 'source_inventory_sha256', 'index')}, 'schema_version': 1, 'prompt_sha256': sha256(prompt), 'detector_outputs_included': False, 'region_annotations_included': False, 'other_votes_included': False, 'source_objects': [{'source_object_id': row['id'], 'kind': row['kind'], 'caption': row['caption'], 'source_labels': row['labels']} for row in objects], 'pages': [{'number': 1, 'text': text, 'width_points': 612, 'height_points': 792, 'image_sha256': '1' * 64}], 'selection_policy': 'synthetic fixture only'}
+    packet = {**{k: candidate[k] for k in ('arxiv_id', 'paper_id', 'pdf_sha256', 'source_sha256', 'source_inventory_sha256', 'index')}, 'schema_version': 1, 'prompt_sha256': sha256(prompt), 'detector_outputs_included': False, 'region_annotations_included': False, 'other_votes_included': False, 'source_objects': [{'source_object_id': row['id'], 'kind': row['kind'], 'caption': row['caption'], 'source_labels': row['labels']} for row in objects], 'pages': [{'number': 1, 'text': text, 'width_points': 612, 'height_points': 792, 'image_sha256': '1' * 64, 'image_path': '/cache/page-1.png'}], 'selection_policy': 'synthetic fixture only'}
     votes = [{'agent_identity': f'independent-agent-{i}', 'evaluator_id': f'evaluator-{i}', 'packet_sha256': sha256(canonical(packet)), 'prompt_sha256': sha256(prompt), 'arxiv_id': candidate['arxiv_id'], 'blocked_packet_issue': None, 'inspected_pages': [1], 'inspected_page_image_sha256': {'1': '1' * 64}, 'attestation': {'independent_vote': True, 'read_all_packet_page_text': True, 'viewed_all_original_page_images': True, 'treated_document_content_as_untrusted_data': True, 'used_detector_outputs': False, 'saw_other_votes': False, 'used_region_annotations': False}, 'ranked_objects': [{'rank': rank, 'source_object_id': row['id'], 'evidence_pages': [1], 'evidence_page_sha256': {'1': '1' * 64}} for rank, row in enumerate(objects, 1)]} for i in range(3)]
-    review = {'schema_version': 1, 'packet_sha256': sha256(canonical(packet)), 'prompt_sha256': sha256(prompt), 'scoring_policy_sha256': sha256(canonical(policy)), 'O11_measured': False, 'production_enrichment_run': False}
+    review = {'schema_version': 1, 'status': 'independently_collected_votes_validated; final_K1_admission_pending', 'packet_sha256': sha256(canonical(packet)), 'prompt_sha256': sha256(prompt), 'scoring_policy_sha256': sha256(canonical(policy)), 'O11_measured': False, 'production_enrichment_run': False}
     rows = [candidate, packet, prompt, votes, review, policy, index, annotation]
     reseal_votes(rows)
     return rows
@@ -28,7 +31,7 @@ def reseal_votes(rows):
 
 def bind(rows):
     candidate, packet, prompt, votes, review, policy, index, annotation = rows
-    return bind_panel(candidate, canonical(packet), prompt, [canonical(vote) for vote in votes], canonical(review), canonical(policy), canonical(index), canonical(annotation))
+    return bind_panel(candidate, canonical(packet), prompt, [canonical(vote) for vote in votes], canonical(review), canonical(policy), canonical(index), canonical(annotation), {page['image_path']: page['image_sha256'] for page in packet['pages']})
 
 
 class PanelEvidenceTests(unittest.TestCase):
@@ -38,6 +41,26 @@ class PanelEvidenceTests(unittest.TestCase):
         self.assertEqual(len(result['independent_panel']['identities']), 3)
         self.assertFalse(result['independent_panel']['O11_measured'])
         self.assertFalse(result['independent_panel']['final_k1_publication'])
+
+    def test_should_reject_a_negative_review_when_vote_hashes_are_valid(self):
+        for change in ({'status': 'rejected'}, {'findings': ['unresolved provenance']}):
+            rows = fixture(); rows[4].update(change)
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'accepted disposition'):
+                bind(rows)
+
+    def test_should_rehash_the_referenced_panel_images_when_a_packet_substitutes_a_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory); image = cache/'page.png'; image.write_bytes(b'original image')
+            packet = {'pages': [{'image_path': str(image), 'image_sha256': sha256(b'original image')}]}
+            self.assertEqual(verify_panel_images(cache, canonical(packet))[str(image)], sha256(b'original image'))
+            image.write_bytes(b'substituted image')
+            with self.assertRaisesRegex(ValueError, 'actual panel image bytes differ'): verify_panel_images(cache, canonical(packet))
+            packet['pages'][0]['image_path'] = str(cache/'missing.png')
+            with self.assertRaises(FileNotFoundError): verify_panel_images(cache, canonical(packet))
+            packet['pages'][0]['image_path'] = '/outside-cache/page.png'
+            with self.assertRaises(ValueError): verify_panel_images(cache, canonical(packet))
+            packet['pages'][0]['image_path'] = str(cache/'..'/'.env')
+            with self.assertRaises(ValueError): verify_panel_images(cache, canonical(packet))
 
     def test_should_reject_copied_or_unblinded_votes_when_a_review_claims_they_are_independent(self):
         for mutate in (lambda v: v[1].update(agent_identity=v[0]['agent_identity']),

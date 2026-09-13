@@ -38,7 +38,7 @@ def score_frozen_panels(papers, predictions):
     return {"numerator": numerator, "denominator": denominator, "agreement": numerator / denominator, "papers": results}
 
 
-def bind_panel(candidate, packet_raw, prompt_raw, vote_raws, review_raw, policy_raw, index_raw, annotation_raw):
+def bind_panel(candidate, packet_raw, prompt_raw, vote_raws, review_raw, policy_raw, index_raw, annotation_raw, verified_images):
     """Bind three independently identified votes without measuring production O11."""
     from copy import deepcopy
     from annotations import document, require
@@ -53,6 +53,7 @@ def bind_panel(candidate, packet_raw, prompt_raw, vote_raws, review_raw, policy_
     require(overlay and overlay['metric_eligibility']['O1'], 'panel requires a complete independently verified source/visual inventory')
     require(sha256(annotation_raw) == overlay['evidence_hashes']['region_annotation_sha256'], 'panel uses another manual annotation')
     require(packet.get('schema_version') == 1 and review.get('schema_version') == 1 and policy.get('schema_version') == 1, 'unsupported panel receipt schema')
+    require(review.get('status') == 'independently_collected_votes_validated; final_K1_admission_pending' and review.get('findings', []) == [], 'panel review has no accepted disposition or has unresolved findings')
     require(packet.get('prompt_sha256') == sha256(prompt_raw) and review.get('prompt_sha256') == sha256(prompt_raw) and review.get('packet_sha256') == sha256(packet_raw), 'panel packet/prompt receipt mismatch')
     require(review.get('scoring_policy_sha256') == sha256(policy_raw) and policy.get('metric') == 'O11' and policy.get('target') == 0.7 and policy.get('frozen_before_root_vote_inspection') is True and policy.get('production_rankings_run') is False, 'panel scoring policy lacks its frozen pre-inspection receipt')
     require(review.get('O11_measured') is False and review.get('production_enrichment_run') is False, 'truth assembly cannot incorporate production ranking inspection')
@@ -67,6 +68,7 @@ def bind_panel(candidate, packet_raw, prompt_raw, vote_raws, review_raw, policy_
         require(row['caption'] == source['caption'] and row['kind'] == source['kind'] and row['source_labels'] == source['labels'], 'panel caption differs from independently parsed source')
     pages = {row['number']: row for row in index['pages']}
     require(len(packet['pages']) == len(pages) and {row['number'] for row in packet['pages']} == set(pages), 'panel packet omits or duplicates PDF pages')
+    require(isinstance(verified_images, dict) and set(verified_images) == {page['image_path'] for page in packet['pages']}, 'panel image paths were not all verified at the file boundary')
     image_hashes = {}
     encoded = index['text'].encode('utf-16-le')
     for page in packet['pages']:
@@ -74,6 +76,7 @@ def bind_panel(candidate, packet_raw, prompt_raw, vote_raws, review_raw, policy_
         require(page['text'] == encoded[2 * native['start']:2 * native['end']].decode('utf-16-le'), 'panel page text differs from verified native index')
         require(page['width_points'] == native['width'] and page['height_points'] == native['height'], 'panel page geometry differs from verified native index')
         require(page['image_sha256'] == annotation['page_render_sha256'].get(f"page-{page['number']}.png"), 'panel image differs from independently verified render')
+        require(verified_images[page['image_path']] == page['image_sha256'], 'actual panel image bytes differ from reviewed render')
         image_hashes[str(page['number'])] = page['image_sha256']
     require(isinstance(vote_raws, list) and len(vote_raws) == 3 and len(review['votes']) == 3, 'panel requires exactly three vote receipts')
     votes = [document(raw) for raw in vote_raws]
@@ -104,5 +107,5 @@ def bind_panel(candidate, packet_raw, prompt_raw, vote_raws, review_raw, policy_
         rankings.append(ids)
         identities.append({'agent_identity': vote['agent_identity'], 'evaluator_id': vote['evaluator_id'], 'receipt_sha256': sha256(raw)})
     output = deepcopy(candidate)
-    output['independent_panel'] = {'valid_ids': sorted(expected), 'panelists': rankings, 'identities': identities, 'packet_sha256': sha256(packet_raw), 'prompt_sha256': sha256(prompt_raw), 'review_sha256': sha256(review_raw), 'scoring_policy_sha256': sha256(policy_raw), 'selection_policy': packet['selection_policy'], 'O11_measured': False, 'final_k1_publication': False}
+    output['independent_panel'] = {'valid_ids': sorted(expected), 'panelists': rankings, 'identities': identities, 'packet_sha256': sha256(packet_raw), 'prompt_sha256': sha256(prompt_raw), 'review_sha256': sha256(review_raw), 'scoring_policy_sha256': sha256(policy_raw), 'verified_image_paths': verified_images, 'selection_policy': packet['selection_policy'], 'O11_measured': False, 'final_k1_publication': False}
     return output

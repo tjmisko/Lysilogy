@@ -12,7 +12,7 @@ import time
 
 from annotations import document
 from archive import sha256
-from builder import atomic_json, attach_manual_regions, canonical, fingerprint_sources, safe_file
+from builder import atomic_json, attach_manual_regions, canonical, fingerprint_file, fingerprint_sources, safe_file
 from panel import bind_panel
 
 
@@ -21,6 +21,20 @@ def bounded(root, relative):
     if path.stat().st_size > 32 * 1024 * 1024:
         raise ValueError('manual evidence exceeds its byte bound')
     return path.read_bytes()
+
+
+def verify_panel_images(cache, packet_raw):
+    verified = {}
+    for page in document(packet_raw)['pages']:
+        declared = page['image_path']
+        if not isinstance(declared, str) or not Path(declared).is_absolute():
+            raise ValueError('panel image path must be absolute within the dedicated cache')
+        relative = str(Path(declared).relative_to(cache))
+        actual, _ = fingerprint_file(safe_file(cache, relative), cap=32 * 1024 * 1024)
+        if actual != page['image_sha256']:
+            raise ValueError('actual panel image bytes differ from its packet hash')
+        verified[declared] = actual
+    return verified
 
 
 def assemble(cache, corpus_root, data_root, candidate_relative, region_relative, panel_relative=None,
@@ -37,10 +51,12 @@ def assemble(cache, corpus_root, data_root, candidate_relative, region_relative,
     output = attach_manual_regions(candidate_raw, papers[0], mappings[0], corpus_root, data_root, region_root)
     if panel_relative:
         read_panel = lambda name: bounded(cache, panel_relative + '/' + name)
-        output = bind_panel(output, read_panel('packet.json'), read_panel('prompt.txt'),
+        packet_raw = read_panel('packet.json')
+        verified_images = verify_panel_images(cache, packet_raw)
+        output = bind_panel(output, packet_raw, read_panel('prompt.txt'),
                             [read_panel(f'vote-evaluator-{number}.json') for number in range(1, 4)],
                             read_panel('panel-root-review-v1.json'), read_panel('scoring-policy-v1.json'),
-                            bounded(data_root, candidate['index']['path']), bounded(region_root, 'regions-root-v1.json'))
+                            bounded(data_root, candidate['index']['path']), bounded(region_root, 'regions-root-v1.json'), verified_images)
     output['manual_assembly'] = {'inputs_sha256': sha256(inputs_raw), 'index_map_sha256': sha256(indexes_raw),
                                  'candidate_sha256': sha256(candidate_raw), 'final_k1_publication': False,
                                  'source_inventory_policy': 'exact historical candidate retained; no automatic-confidence change'}
