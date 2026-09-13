@@ -1,9 +1,12 @@
-# K1 coverage experiments — issue #97
+# Reviewed manual K1 expansion — issues #105 and #97
 
-This is an implementation checkpoint, not a completed coverage release. The
-approximately 500-paper target remains unmet. No new automatic truth is
-published, and the independently reviewed `k1-limited-v1` payloads and build
-configuration remain unchanged.
+`k1-limited-v2` publishes three independently reviewed papers: the two original
+cohorts plus availability-selected `2210.11141`. It contains 23 annotated
+figures/tables, five equations, four statements, one proof, two algorithms and
+35 bibliography entries. The original v1 payloads, configuration and retained
+verifier modules remain byte-identical. This bounded release addresses #105;
+#97's approximately 500-paper target remains open and unmet. No automatic paper
+is published, and no system acceptance is claimed.
 
 ## Fixed comparison population
 
@@ -15,13 +18,14 @@ index-map SHA-256 is
 `40b0545ac4f34c4c1d389f3f7bbdb8b613a533cef6e566285b570ccd7ea0f785`.
 All corpus bytes and large receipts remain external to the repository.
 
-| Automatic source checkpoint | Parsed | Source/index failures | Raw accepted | Defensible new admissions | Wall seconds | Peak RSS KiB |
+| Automatic source checkpoint | Parsed | Source/index failures | Raw accepted | Defensible automatic candidates | Wall seconds | Peak RSS KiB |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Historical `0910c35` | 626 | 374 | 0 | 0 | 1,017.604 | 512,176 |
 | Reviewed baseline `9d3bd42` | 622 | 378 | 0 | 0 | 992.856 | 470,192 |
 | Exploratory `4ada537` | 617 | 383 | 1 | 0 | 997.138 | 499,824 |
+| Current `542da50` | 612 | 388 | 1 | 1, empty O5/O6 only | 1,032.039 | 453,392 |
 
-The latest run used the reviewed source and frozen runner, with a 30-second
+The exploratory `4ada537` run used the reviewed source and frozen runner, with a 30-second
 per-paper limit and 1.5 GiB memory cap. It made no network or model calls and
 incurred no external cost. Both owner and independent root audits rehashed all
 617 candidate payloads (119,831,173 bytes), validated their source inventories,
@@ -29,7 +33,7 @@ PDF/source hashes, PaperIds, index identities, strata and frozen order, and
 reproduced the aggregate counts. Seven papers changed parse-success state from
 the baseline. Unlaunched predecessor snapshots are retained separately.
 
-The sole raw accepted candidate, `2007.05954`, was an invalid negative-cohort
+That exploratory run's sole raw accepted candidate, `2007.05954`, was an invalid negative-cohort
 claim. Its source contains a manually formatted References section and an
 enumerated clustering procedure with nine literal `item` commands, of which
 eight are active and one is commented out. These were absent from the parsed
@@ -263,11 +267,10 @@ dirty file during evaluation and was retained before restoration. Objects and
 bibliography remained unavailable on this branch's empty collector inputs;
 these checks do not remeasure the previously published limited truth. O30
 remains zero violations across 10,000 fixture references. The existing v1 object
-and bibliography payloads reproduced exactly. Separate final agent review and
-the current full 1,000-paper automatic report remain prerequisites for a new
-release. The external v2 configuration is a deliberately incomplete review
-template, retaining the 500-paper target and explicit selection bias. No new
-truth release or detector measurement has run.
+and bibliography payloads reproduced exactly. At that historical checkpoint,
+separate review and the current full comparison still blocked publication; the
+external configuration was deliberately incomplete. Those templates and gate
+receipts remain immutable historical evidence.
 
 
 Independent review of the new validator found page ownership and repeated-reference
@@ -281,8 +284,11 @@ The fresh frozen comparison at `542da50` completed all 1,000 original inputs usi
 the original 999-success index map: 612 parsed and 388 source/index failures,
 1,032.039 seconds, 453,392 KiB peak RSS, no network/model calls or external cost.
 Its one raw accepted paper, `2007.05954`, has only complete empty O5/O6 inventories;
-all other metric cohorts are empty. This result remains under independent
-source/PDF review and supplies no automatic paper to the proposed new release.
+all other metric cohorts are empty. Independent inspection of all 18 original
+PDF pages and source/native evidence confirms only those formal negatives. It
+supplies no automatic paper to the new release and no positive-kind automatic
+admission. The raw report remains unchanged; the accepted negative disposition
+is a separate review receipt.
 The owner and root independently rehashed all 612 candidate/inventory pairs
 (121,450,396 bytes), exact input order, mapped identities and reported counters.
 The later manual-only corrections do not change the six-module automatic
@@ -290,15 +296,47 @@ execution closure; the report retains its actual `542da50` source identity.
 
 Version-aware replay and collector dispatch at `8987d13` pass 238 truth and 35
 collector tests. Actual v1 replay still reproduces both immutable payloads.
-V2 has its own fixed retained module inventory and remains disabled until its
-reviewed release manifest is pinned. A review found that separate immediate
+V2 now has its own pinned fourteen-module retained inventory and exact reviewed
+manifest/configuration/output hashes. Both isolated version replays succeed. A review found that separate immediate
 harness inputs would give O1/O2 duplicate owners; the correction keeps one active
 explicitly selected cohort and freezes exact prior/new input and observation
 bytes outside the active directory. Matching, geometry and score arithmetic
-remain unchanged. The completed proposed v2 build configuration contains the two
-prior reviewed papers plus `2210.11141`; no new payload or measurement has been
-published. Issue #105 owns this bounded improvement. Issue #97 remains open with
-the approximately 500-paper target unchanged; three papers do not meet it.
+remain unchanged. Independent publication review verified the exact three-paper
+configuration, both output previews, all retained modules and accepted source
+correspondences. Actual immutable publication at `59742fd` matched both preview
+hashes; old and new isolated replays reproduce both object/bibliography payloads.
+V1 replay took 4.485 seconds; v2 took 4.683 seconds. Issue #105 owns this bounded
+improvement. Issue #97 remains open; three papers do not meet its target.
+
+## Production measurement on the frozen expanded cohort
+
+| Cohort | Papers | Annotated regions | TP / FP / FN | O1 F1 | O2 median IoU |
+| --- | ---: | ---: | --- | ---: | ---: |
+| Previous v1 subset, reproduced within v2 | 2 | 15 | 15 / 0 / 0 | 1.000000 | 0.910779 |
+| Expanded v2 | 3 | 23 | 23 / 1 / 0 | 0.978723 | 0.757008 |
+
+Current production collection at `59742fd` took 13.006 seconds (13.080 seconds
+including its wrapper), with 98,048 KiB peak child RSS and zero model/network
+calls or external cost. All 23 independently annotated regions remain in O2,
+including zeros; unknown regions are zero. Both old per-paper metric records
+match the committed v1 observations exactly under canonical JSON. The new paper
+contributes eight correct caption matches and one extra Figure 4 candidate from
+a body paragraph. Six matched regions are null, Table 1's proposed body does not
+overlap its independently reviewed body, and Figure 1 has IoU 0.757008.
+
+Unadjusted `eval objects --check` correctly reports regression against the smaller
+v1 cohort's ratchet values; the raw failed result is retained. The independently reviewed
+explicit cohort-change justification binds the exact old/new comparison, keeps
+the old records unchanged, and changes no scoring rule or objective target.
+The justified objects check passes and records the new cohort baselines, retaining
+the old values and exact evidence in the adjustment history. Both aggregate targets
+remain met on this limited cohort (O1 ≥0.90, O2 ≥0.75);
+the individual misses are tracked by [#106](https://github.com/tjmisko/Lysilogy/issues/106)
+and the broader coverage gap remains open under #97. Bibliography
+checks remain unavailable on this branch's collector input; v2 preserves the
+original 35 independently reviewed entries and adds no new bibliography cohort.
+Prior annotation/panel agent dollar costs are unavailable and remain unknown;
+the measured runtime costs above apply only to the recorded offline executions.
 
 ## Retained evidence
 

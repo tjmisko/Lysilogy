@@ -2,12 +2,39 @@
   "schema_version": 1,
   "metrics": {
     "G5": 1.0,
-    "O1": 1.0,
-    "O2": 0.9107793204006068,
+    "O1": 0.9787234042553191,
+    "O2": 0.7570080448318404,
     "O25": 15.503405927,
     "O26.render": 1757.10000000149,
     "O26.search": 163.39999999850988,
     "O30": 0.0
   },
-  "adjustments": []
+  "adjustments": [
+    {
+      "metric": "O1",
+      "previous": 1.0,
+      "value": 0.9787234042553191,
+      "justification": {
+        "reason": "Explicit K1 cohort expansion from limited-v1 (2 papers,15 annotated figures/tables) to limited-v2 (3 papers,23 annotated figures/tables). Scoring and detector code are unchanged; the complete old per-paper observation records reproduce byte-for-byte under canonical JSON. The additional availability-selected paper exposes one false positive and seven zero-IoU objects. This records the new cohort baseline without changing objective targets; prior v1 truth and measurements remain immutable, and broad coverage stays open under97.",
+        "evidence": {
+          "path": "eval/evidence/k1-v2-cohort-comparison.json",
+          "sha256": "0188a6bb6e554b1bf10ded202ba71de6a8977a0246f10fd722639783961951fa",
+          "version": "k1-limited-v2"
+        }
+      }
+    },
+    {
+      "metric": "O2",
+      "previous": 0.9107793204006068,
+      "value": 0.7570080448318404,
+      "justification": {
+        "reason": "Explicit K1 cohort expansion from limited-v1 (2 papers,15 annotated figures/tables) to limited-v2 (3 papers,23 annotated figures/tables). Scoring and detector code are unchanged; the complete old per-paper observation records reproduce byte-for-byte under canonical JSON. The additional availability-selected paper exposes one false positive and seven zero-IoU objects. This records the new cohort baseline without changing objective targets; prior v1 truth and measurements remain immutable, and broad coverage stays open under97.",
+        "evidence": {
+          "path": "eval/evidence/k1-v2-cohort-comparison.json",
+          "sha256": "0188a6bb6e554b1bf10ded202ba71de6a8977a0246f10fd722639783961951fa",
+          "version": "k1-limited-v2"
+        }
+      }
+    }
+  ]
 }
