@@ -116,7 +116,7 @@ pass.
   Owns `src/kb/mod.rs`, `src/kb/types.rs`, and the `pub mod kb;` line in `src/lib.rs`.
   Reuse or extend `citation_graph::Identifier` rather than duplicating identifier parsing. Merge
   this first: it is small and it creates the `src/kb/` module that A2 branches extend.
-- [ ] **#24 E1.1 PaperObject types and objects artifact**. Branch `feat/e1.1-paper-objects`.
+- [x] **#24 E1.1 PaperObject types and objects artifact**. Branch `feat/e1.1-paper-objects`.
   Owns `src/objects/mod.rs`, `src/api/objects.rs`, `web/src/lib/objects.ts`.
   `Figure` currently lives in `src/source_index.rs` inside the cached `reading-index.json`
   (schema version 6). Wrap it; do not move figure detection or bump the reading-index schema
@@ -136,7 +136,7 @@ pass.
 - [ ] **#68 E8.1 Evaluation harness, scorecard, and ratchet**. Branch `feat/e8.1-eval-harness`.
   Owns `src/eval/` (or `eval/` tooling), `eval/baselines.json`, `docs/kb-scorecard.md`, and an
   `eval` subcommand. Merge early: every later PR reports metrics through it.
-- [ ] **#69 E8.2 arXiv research corpus**. Branch `feat/e8.2-arxiv-corpus`. Owns the corpus
+- [x] **#69 E8.2 arXiv research corpus**. Branch `feat/e8.2-arxiv-corpus`. Owns the corpus
   tooling (`corpus` subcommand or `scripts/corpus/`) and a checked-in selection config. Verified
   on 2026-09-12: the public bucket lists and serves over plain HTTPS
   (`https://storage.googleapis.com/storage/v1/b/arxiv-dataset/o?prefix=arxiv/arxiv/pdf/2608/`)
@@ -182,6 +182,22 @@ pass.
 
 ### Phase A notes
 
+- #69 tooling merged in PR #75 (`b8baa7b`), independently cleared after three fixes and tested
+  against current main: 41 offline Python tests plus all 200 Rust tests, formatting, and Clippy.
+  See `scripts/corpus/README.md` for selection, background launch, resume, and verification.
+  K0 does **not** exist yet: designated storage and arXiv HTTP access remain blocked. The issue's
+  tooling is complete; the Phase A requirement for both verified tiers is not. Corpus-dependent
+  detector/resolver measurements must wait for actual truth. Selection memory scales with the
+  metadata harvest; measure peak RSS on the first live harvest and consider bounded per-stratum
+  heaps with streaming metadata hashing if needed. Branch/worktree removed after merge.
+- #24 merged in PR #77 (`86e7c75`). `objects::ObjectsArtifact` wraps the existing schema-6
+  figures/tables and uses the reading-index document ETag as `reading_index_generation`.
+  `ReadingIndexAnchor` holds half-open UTF-16 ranges; caption anchors and membership spans remain
+  separate, and mentions retain source rectangles. `GET /api/papers/{id}/objects` shares existing
+  index jobs; `objects-enrichment.json` is reserved separately. The existing `test:api` frontend
+  entry point includes object client tests. No detector or reading-index schema changed; O1/O2
+  remain unavailable until K1. Independent review cleared final head `742426b`; 200 Rust tests,
+  frontend checks/build, and targeted tests passed. Branch/worktree removed after merge.
 - #34 merged first in PR #74 (`4ff924b`). `WorkId`/`PersonId` are validated opaque W/P tokens;
   the store must allocate once and preserve allocations in canonical records. `AliasMap<I>` is a
   cycle-safe projection with `merge(absorbed, surviving)`, `resolve`, and `links`; persistence and
@@ -428,3 +444,37 @@ date, last merged issue, in-flight branches and their state, next action, and op
   repository, library, data root, or `/tmp`.
 - Next action: finish/fix/review #68/#69/#24, merge when their gates and reviews pass, then
   implement #20, #63, and #19 in A1. No follow-up issues or measured objective misses yet.
+
+### 2026-09-12 — paper-object foundation merged
+
+- Last merged issue: #24 / PR #77 (`86e7c75`); #34 is also merged. Current phase/wave A/A1.
+- In flight: #69 draft PR #75, head `780313e`, has fixes for all three review findings and
+  41 passing Python tests; independent re-review is running. Its worktree remains
+  `.worktrees/feat/e8.2-arxiv-corpus` until merge/cleanup. #68 draft PR #76 is fixing the ratchet
+  guard so committing a weakened baseline cannot bypass checks; root fixed G5 discovery in
+  `07f80fd` with three subprocess regressions, now being tested by the implementer.
+- #63 is implementing in `.worktrees/feat/e7.1-provider-cache`, branch of the same name;
+  it must measure O30 on a simulated 10k-reference batch and provide an eval collector. Next
+  implementation is #20 content-hash identity, followed by #19 scale benchmark tooling.
+- Scorecard remains provisional G5 pass, all other gates/objectives unavailable. No measured
+  objective misses or follow-up issues. Background downloads: none; designated writable roots
+  and arXiv network access remain blocked, with the sandbox-update question pending.
+- Main's ten unrelated changed files remain untouched. Continue normal merges from main in
+  place of the approval-review-rejected rebase; do not advance beyond A1 yet.
+
+### 2026-09-12 — corpus tooling merged, live corpus still blocked
+
+- Last merged issue: #69 / PR #75 (`b8baa7b`); #34 and #24 also merged. Current phase/wave A/A1.
+  All corpus review findings were independently cleared, and the final current-main integration
+  passed 41 Python and 200 Rust tests. Corpus branch/worktree removed.
+- In flight: #68 draft PR #76 in `.worktrees/feat/e8.1-eval-harness`; ratchet history fix
+  `58f4464` adds six CLI regression tests. Integrate current main, rerun G5 including the actual
+  corpus and object tests, obtain re-review, then merge. #63 is implementing in
+  `.worktrees/feat/e7.1-provider-cache`. Next ready issues are #20 and #19.
+- No background downloads. The required corpus/cache directories remain read-only and OAI-PMH
+  remains allowlist-blocked after approved escalation. The user sandbox-update question remains
+  pending; no alternate corpus location has been used. Launch commands are now on main under
+  `scripts/corpus/README.md` and should run as soon as the environment permits.
+- Provisional scorecard: G5 passes; other gates and all objectives unavailable. No objective
+  follow-ups yet. The last fingerprint check confirmed all ten unrelated main-checkout changed
+  files remain byte-for-byte unchanged.

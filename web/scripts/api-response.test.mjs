@@ -3,6 +3,8 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import ts from 'typescript';
 import { ApiError, request } from '../src/lib/api.ts';
+// Keep the objects client in the API suite used by the offline quality gate.
+import './objects.test.mjs';
 
 // Transpile the browser module without changing its production import paths.
 const notesSource=await readFile(new URL('../src/lib/notesApi.ts',import.meta.url),'utf8');

@@ -965,6 +965,39 @@ Tests: should exit nonzero when a hard gate fails; should exit nonzero when an o
 beyond tolerance; should report a suite as unavailable when its truth set is missing; should
 ratchet the baseline when a metric improves.
 
+Implementation contract (E8.1): suites consume versioned, content-addressed local observations
+from `eval/inputs/<suite>/<collector-id>.json` (alongside legacy `eval/inputs/<suite>.json`);
+each later detector/resolver/benchmark issue adds its collector. Collectors own disjoint metrics;
+duplicate ownership fails. Each collector retains independent dependency hashes and cost/time,
+so stale evidence cannot invalidate or be re-attested by another collector. Discovery is bounded
+to 32 files per suite and 8 MiB per input.
+The collector must rerun against the current implementation before evaluation. The harness
+calculates ratios, F1, mean, median, and nearest-rank p95 from raw samples and also accepts
+collector-computed statistics (such as B-cubed F1) with case counts and evidence. Changed
+implementation, truth, or observation hashes make the metric unavailable. See
+[`eval/README.md`](../eval/README.md) for the interchange contract. No missing collector or truth
+set implies a passing measurement.
+
+Compound scorecard metrics retain independent components; an objective counts at target only
+when every component does. The additional `tests` suite owns G5, and `all` includes it. G5 runs
+`cargo test --offline --all-targets`, discovered `scripts/**/test*.py` unittest suites, and every
+frontend `test`/`test:*` script in an unprivileged
+network namespace with an allowlisted executable PATH; logs, namespace identity, a blocked
+connection probe, and model-CLI absence are retained. Browser smoke scenarios remain explicit
+verification, separate from these fixture unit tests. Failure to establish isolation fails G5.
+
+`--check` permits unavailable suites during incremental implementation; final system acceptance
+also runs `lysilogy eval all --check --require-complete`, requiring all five gates and at least
+24 of the 30 objectives. Latency tolerance is 10% relative, proportions permit 0.01 absolute,
+and other objective units permit no regression without documented evidence. Baselines improve
+automatically only on a run without failures; within-tolerance declines never lower them.
+`--justification` accepts explicit objective resets with a recorded reason and hashed evidence;
+hard gates cannot be waived. R metrics are reported without a baseline ratchet.
+
+O12 precision/recall live in `resolution`; identifier-acquisition changes run both `resolution`
+and `acquisition`. O30 provider-budget simulation lives in `scale`. Synthetic scale truth may
+establish early baselines, while the final corpus scale report must identify the real K0 tier.
+
 Blocked by: none
 
 ### E8.2 arXiv research corpus
@@ -983,8 +1016,10 @@ and `/tmp`, at a configurable root (default `~/Corpora/arxiv/`, `LYSILOGY_CORPUS
   (`https://storage.googleapis.com/arxiv-dataset/arxiv/arxiv/pdf/<YYMM>/<id>v<n>.pdf`; listing via
   the JSON API). No `gsutil` is required.
 - **Sources:** fetch LaTeX sources for the `eval` tier per paper from
-  `https://export.arxiv.org/e-print/<id>`, within arXiv's published harvesting rate (bursts of at
-  most 4 requests per second with a 1 second sleep per burst). The requester-pays S3 bucket
+  `https://export.arxiv.org/e-print/<id>`, with a shared single-connection budget of at most one request every
+  three seconds, including retries. This follows the stricter
+  [API terms](https://info.arxiv.org/help/api/tou.html), checked 2026-09-12; the bulk
+  harvesting page separately permits four-request bursts. The requester-pays S3 bucket
   `s3://arxiv/src/` is not used by default because its monthly tar chunks mix all categories.
 - **Manifest:** `manifest.jsonl` records ID, version, categories, tier, file hashes, and fetch
   times. Downloads are resumable and verified; partial files never enter the corpus.
@@ -993,6 +1028,13 @@ and `/tmp`, at a configurable root (default `~/Corpora/arxiv/`, `LYSILOGY_CORPUS
 
 Terms: most arXiv papers carry arXiv's default license, which does not grant redistribution. Only
 IDs, derived labels, and metrics are committed; tools link back to arXiv for downloads.
+
+Implementation: standard-library Python tooling at `scripts/corpus/corpus.py` and checked-in
+`scripts/corpus/selection.json`. See [corpus operations](../scripts/corpus/README.md) for commands,
+selection/version freezing, format and hash verification limits, isolated scale mapping, and
+background resume. OAI modification dates are only incremental-harvest bounds; submitted-year
+strata use `created`. Sources explicitly request the pinned PDF version. Missing artifacts or
+sparse strata fail without silently reducing the tier count.
 
 Acceptance: a fresh run reproduces the same selection; an interrupted run resumes without
 re-downloading verified files; the harvester stays within the documented rate; disk usage is
