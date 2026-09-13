@@ -27,7 +27,7 @@ export function fixture(blocks) {
 
 test('numbered bibliography citations support brackets, parentheses, lists and ranges', () => {
   const index = fixture([
-    ['Evidence [1, 3–4] confirms (2). Equation (99) is unrelated.'],
+    ['Evidence [1, 3–4] and (2) confirms this. Equation (99) is unrelated.'],
     ['References', 'heading', 2],
     ['[1] Adams. First work. 2020.', 'body', 2], ['[2] Baker. Second work. 2021.', 'body', 2],
     ['[3] Chen. Third work. 2022.', 'body', 3], ['[4] Diaz. Fourth work. 2023.', 'body', 3],
@@ -36,6 +36,19 @@ test('numbered bibliography citations support brackets, parentheses, lists and r
   assert.deepEqual(links.map(link => link.destination.label.match(/^\[\d\]/)[0]).sort(), ['[1]', '[2]', '[3]', '[4]']);
   assert.ok(links.every(link => link.kind === 'reference' && link.page === 1 && link.rects.length));
   assert.equal(links.find(link => link.label === '(2)').destination.page, 2);
+});
+
+test('should withhold ambiguous numeric hints when bracket citations establish a competing convention', () => {
+  const index = fixture([
+    ['See [1] and (2). See (2). Evidence [1] confirms (2). The two cases are (1) and (2). Equation (1).'],
+    ['References', 'heading', 2],
+    ['[1] Adams. First work. 2020.', 'body', 2], ['[2] Baker. Second work. 2021.', 'body', 2],
+  ]);
+  const artifact = backendObjects(index);
+  assert.deepEqual(projectPaperLinks(index, artifact, fixtureGeneration).map(link => link.label), ['[1]', '(2)', '[1]']);
+  const ambiguous = artifact.unresolved_citations.filter(item => item.reason === 'ambiguous_marker');
+  assert.equal(ambiguous.length, 4);
+  assert.ok(ambiguous.every(item => item.candidate_ids.length === 1 && index.text.slice(item.anchor.start, item.anchor.end) === item.text));
 });
 
 test('numbered dot entries and alphanumeric citation keys retain the printed convention', () => {

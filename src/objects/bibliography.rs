@@ -344,9 +344,64 @@ fn starts_new_line(previous: &ReadingToken, current: &ReadingToken) -> bool {
         && (short.mul_add(0.5, right.x_min) < left.x_min || displacement > tall * 1.5)
 }
 
+fn dotted_sequence_starts(
+    source: &Source<'_>,
+    blocks: &[(&Block, Vec<EntryLabel>)],
+) -> BTreeSet<usize> {
+    // Lookahead can establish a bibliography whose first actual key resembles
+    // a year. Each neighboring dotted key also needs independently printed
+    // author/title structure; two isolated continuation years do not suffice.
+    let candidates = blocks
+        .iter()
+        .flat_map(|(block, labels)| {
+            let text = source.text(block.span).unwrap_or_default();
+            let base = source.byte(block.span.start).unwrap_or_default();
+            labels.iter().enumerate().map(move |(at, label)| {
+                let end = labels.get(at + 1).map_or(text.len(), |next| next.start);
+                let fields = parse_fields(&text[label.start..end], Some(label.key.clone()));
+                let author = fields
+                    .authors
+                    .value
+                    .as_ref()
+                    .and_then(|authors| authors.first());
+                let structured = fields.title.value.is_some()
+                    && author.is_some_and(|author| {
+                        crate::kb::names::parse_name(author.trim_end_matches('.'))
+                            .unparsed_reason
+                            .is_none()
+                    });
+                (base + label.start, label, structured)
+            })
+        })
+        .collect::<Vec<_>>();
+    candidates
+        .windows(2)
+        .filter_map(|pair| {
+            let (start, first, first_structured) = pair[0];
+            let (_, second, second_structured) = pair[1];
+            let next = first
+                .key
+                .parse::<u32>()
+                .ok()
+                .and_then(|number| number.checked_add(1));
+            (first.publication_year
+                && second.dotted
+                && first_structured
+                && second_structured
+                && next.is_some()
+                && next == second.key.parse::<u32>().ok())
+            .then_some(start)
+        })
+        .collect()
+}
+
 fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block>) -> Vec<Entry> {
+    let blocks = blocks
+        .map(|block| (block, entry_labels(source, block.span)))
+        .collect::<Vec<_>>();
+    let supported_starts = dotted_sequence_starts(source, &blocks);
     let mut entries: Vec<Entry> = Vec::new();
-    for block in blocks {
+    for (block, candidates) in blocks {
         let text = source.text(block.span).unwrap_or_default();
         let base = source.byte(block.span.start).unwrap_or_default();
         let mut previous_dot_number = entries.last().and_then(|entry| {
@@ -354,7 +409,7 @@ fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block
             let label = label_regex().captures(raw)?.get(3)?;
             label.as_str().parse::<u32>().ok()
         });
-        let labels = entry_labels(source, block.span)
+        let labels = candidates
             .into_iter()
             .filter(|label| {
                 let number = label.key.parse::<u32>().ok();
@@ -362,6 +417,7 @@ fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block
                 // line. Only an established adjacent dotted-number sequence
                 // justifies interpreting it as a four-digit entry key.
                 if label.publication_year
+                    && !supported_starts.contains(&(base + label.start))
                     && previous_dot_number.is_none_or(|previous| Some(previous + 1) != number)
                 {
                     return false;
@@ -1986,5 +2042,46 @@ mod tests {
             Some(vec!["Other, B.".to_owned()])
         );
         assert!(result.entries.iter().all(|entry| entry.mentions.len() == 1));
+    }
+    #[test]
+    fn should_recognize_year_shaped_first_keys_when_lookahead_confirms_an_independent_dotted_sequence()
+     {
+        for grouped in [false, true] {
+            let mut blocks = vec![
+                ("See [2020] and [2021].", "body", 1),
+                ("References", "heading", 2),
+            ];
+            if grouped {
+                blocks.push((
+                    "2020. Adams. Earlier study.\n2021. Baker. Later study.",
+                    "body",
+                    2,
+                ));
+            } else {
+                blocks.push(("2020. Adams. Earlier study.", "body", 2));
+                blocks.push(("2021. Baker. Later study.", "body", 2));
+            }
+            let result = extract(&fixture(&blocks));
+            assert_eq!(result.entries.len(), 2, "grouped {grouped}");
+            assert_eq!(
+                fields(&result.entries[0]).printed_key.value.as_deref(),
+                Some("2020")
+            );
+            assert_eq!(
+                fields(&result.entries[1]).printed_key.value.as_deref(),
+                Some("2021")
+            );
+            assert!(result.entries.iter().all(|entry| entry.mentions.len() == 1));
+        }
+        let index = fixture(&[
+            ("See [1].", "body", 1),
+            ("References", "heading", 2),
+            ("[1] Example, A. (2019). An annual review.", "body", 2),
+            ("2020. Annual Review of Examples.", "body", 2),
+            ("2021. An updated edition.", "body", 2),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 1);
+        assert_eq!(result.entries[0].member_anchors.len(), 3);
     }
 }
