@@ -10,6 +10,7 @@ pub mod error;
 pub mod extract;
 mod frontmatter;
 pub mod jobs;
+pub mod kb;
 pub mod layout;
 pub mod library;
 pub mod markdown;
