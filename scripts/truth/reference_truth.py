@@ -70,6 +70,13 @@ def year(value):
     return None
 
 
+def year_label(value):
+    """Keep a valid deposited year's suffix for bibliography field comparisons."""
+    if year(value) is None:
+        return None
+    return str(value).strip()
+
+
 def first(values):
     return next((value for value in values if value is not None), None)
 
@@ -316,6 +323,9 @@ def build_k2(snapshots, seeds, built_at):
             case_id = "K2-" + fingerprint([identifier, index, reference])[:24]
             cases.append({"case_id": case_id, "citing_doi": identifier, "expected_doi": expected,
                           "input": {"text": input_text, "fields": fields, "kind": kind},
+                          "field_labels": {"title": text(reference.get("article-title")) or text(reference.get("volume-title")),
+                                           "first_author": text(reference.get("author")), "year": year_label(reference.get("year"))},
+                          "eligible_bibliography": unstructured is not None,
                           "expected_identifier_in_input": exposed, "eligible_resolution": input_text is not None,
                           "snapshot_id": snapshot["snapshot_id"], "json_pointer": f"/message/reference/{index}",
                           "deposited_entry_sha256": fingerprint(reference)})

@@ -68,6 +68,22 @@ class ReferenceTruthTests(unittest.TestCase):
         self.assertFalse(cases["10.1234/plain"]["expected_identifier_in_input"])
         self.assertTrue(cases["10.1234/visible"]["expected_identifier_in_input"])
 
+    def should_withhold_bibliography_metrics_when_the_input_was_rendered_from_its_field_labels(self):
+        structured = {"DOI": "10.1234/one", "article-title": "Fixture", "author": "Example", "year": "2021"}
+        unstructured = {**structured, "DOI": "10.1234/two", "unstructured": "Example. Fixture (2021)."}
+        result = truth.build_k2([crossref([structured, unstructured])], [{"doi": "10.1234/citing"}], AT)
+        cases = {row["expected_doi"]: row for row in result["cases"]}
+        self.assertFalse(cases["10.1234/one"]["eligible_bibliography"])
+        self.assertTrue(cases["10.1234/two"]["eligible_bibliography"])
+        self.assertEqual({"title": "Fixture", "first_author": "Example", "year": "2021"}, cases["10.1234/two"]["field_labels"])
+
+    def should_preserve_year_label_strings_when_deposits_use_numeric_or_suffixed_years(self):
+        for deposited, expected in [(2020, "2020"), (" 2020a ", "2020a"), (True, None), ("undated", None)]:
+            with self.subTest(deposited=deposited):
+                result = truth.build_k2([crossref([{"DOI": "10.1234/one", "year": deposited}])],
+                                        [{"doi": "10.1234/citing"}], AT)
+                self.assertEqual(expected, result["cases"][0]["field_labels"]["year"])
+
     def should_reject_wrong_identity_or_mixed_refreshes_when_crossref_sources_are_frozen(self):
         source = crossref([])
         with self.assertRaisesRegex(truth.TruthError, "identity"):

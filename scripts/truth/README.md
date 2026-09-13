@@ -34,6 +34,14 @@ inserted into that text. A deposited reference with only a DOI remains an identi
 If the DOI already occurs in the publisher's input text, `expected_identifier_in_input=true`
 records that easier stratum; resolution collectors must report its coverage separately.
 
+`field_labels` separately exposes nullable string `title`, `first_author`, and `year` labels
+from deposited reference fields. Crossref defines its citation `author` field as the
+[first author](https://www.crossref.org/documentation/schema-library/markup-guide-metadata-segments/references/).
+Numeric deposited years become strings; valid suffixes such as `2020a` remain intact.
+Only cases with actual unstructured deposited text have `eligible_bibliography=true`; a rendered
+structured input cannot establish field accuracy by repeating its own labels. Unknown labels are
+excluded individually with counts, while missing predictions for known labels count wrong.
+
 The seed planner uses DOI-bearing observed arXiv metadata, with deterministic diversity across
 primary-category families. Those seeds do not establish that PDFs have downloaded or mapped.
 Local bibliography provenance can be supplied as `kind` and `local_source_sha256` once extracted
@@ -55,6 +63,27 @@ See [OpenAlex's OA fields](https://help.openalex.org/data/works/open-access/) an
 [authentication and batch limits](https://help.openalex.org/api/authentication/), checked
 2026-09-13. Crossref deposited references come from its
 [public metadata API](https://www.crossref.org/documentation/retrieve-metadata/rest-api/).
+
+## K7 fold mechanics
+
+`read_next_truth.py` provides offline normalization and withholding, pending the actual mapped
+10k scale and local bibliography inputs. Candidates must be independently mapped papers from
+those cohorts; targets discovered only through a held-out reference do not enlarge the candidate
+set. Coverage counts references outside that universe and papers without an eligible reference.
+Explicit DOI aliases and arXiv versions identify duplicate views of the same paper. Conflicting
+aliases fail rather than guessing a merge from a title or name.
+
+Every edge view is oriented **citing → cited**, including incoming provider queries. Before
+constructing fold features, the builder removes every edge whose canonical source is the held-out
+paper from all bibliography/provider views. It then recomputes the union, incoming/outgoing
+adjacency and degrees. Other papers' edges into the query remain available. Raw provider payloads
+and cached features are refused as observation inputs. The future ranking adapter must consume
+only `features_for_fold` output, never the retained base graph or the fold's expected targets.
+
+`fold_plan` creates deterministic, seed-ordered compact fold records against one fingerprinted
+base graph, avoiding a separate 10k-node graph on disk for every fold. `expected_targets` are
+separate from feature output. Self-references are excluded from labels and counted. These mechanics
+have generated graph tests, but no actual K7 version or read-next metric exists at this checkpoint.
 
 ## Commands and current boundary
 
