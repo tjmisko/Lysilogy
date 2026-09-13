@@ -223,8 +223,24 @@ input copies are retained. Those annotations cannot honestly claim they read a
 candidate or parsed inventory before it existed. A proposed separate versioned
 manual-tranche path would bind their actual blind inputs and the later exact
 crosswalk, preserve the old validators and all automatic exclusions, and derive
-only independently complete visual/math metric cohorts. This proposal awaits
-review and implementation. Bibliography and O11 would remain explicitly omitted.
+only independently complete visual/math metric cohorts. Independent proposal
+review approved that separate evidence format. A further post-freeze audit
+rehashed 28 artifacts and independently reproduced all 12 object, 25 entry and
+69 link correspondences, retaining every automatic exclusion and native loss.
+That audit establishes the crosswalk, not bibliography field-role truth.
+
+Source checkpoint `89aedba` implements the explicit `k1-manual-tranche-v1`
+validator. Its first reusable codec supports complete direct figure/table/equation
+inventories and separately reviewed formal negatives; positive formal or nested
+objects fail until a suitable ownership codec exists. It validates the original
+input and correction histories, complete source/native occurrence bijections,
+mathematical and visual regions, informal role dispositions and all reference
+roles. Bibliography and O8–O11 remain omitted. The actual manifest template binds
+22 evidence documents and deliberately points to a pending, invalid final review;
+it cannot admit a paper. All 230 offline tests pass in 0.536 seconds with 34,624 KiB
+peak child RSS and zero external calls. This source checkpoint awaits independent
+review and subsequent full gates; the earlier full gates remain evidence only for
+`3154815`. No actual tranche validation or new truth publication has run.
 
 ## Retained evidence
 
