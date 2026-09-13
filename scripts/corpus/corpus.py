@@ -144,6 +144,17 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         raise CorpusError(f"Unexpected HTTP redirect ({code}); check the documented endpoint")
 
 
+def persist_rate_deadline(rate_file, deadline):
+    """Durably retain server cooldowns before control can sleep or return."""
+    rate_file.seek(0)
+    previous = float(rate_file.read().strip() or 0)
+    rate_file.seek(0)
+    rate_file.truncate()
+    rate_file.write(str(max(previous, deadline)))
+    rate_file.flush()
+    os.fsync(rate_file.fileno())
+
+
 class Http:
     def __init__(self, cache_root=None, sleep=time.sleep, clock=time.time):
         self.clock = clock
@@ -170,16 +181,17 @@ class Http:
                     pacer = Pacer(clock=self.clock, sleep=self.sleep)
                     pacer.next_at = float(raw or 0)
                     pacer.wait()
-                    rate_file.seek(0)
-                    rate_file.truncate()
-                    rate_file.write(str(pacer.next_at))
-                    rate_file.flush()
-                    os.fsync(rate_file.fileno())
+                    persist_rate_deadline(rate_file, pacer.next_at)
                 try:
                     response = self.opener.open(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}), timeout=90)
                     break
                 except urllib.error.HTTPError as error:
-                    delay = max(retry_after(error.headers.get("Retry-After")), 3.0 * 2**attempt)
+                    delay = max(retry_after(error.headers.get("Retry-After"), timestamp=self.clock()),
+                                3.0 * 2**attempt)
+                    if rate_file:
+                        # Save even on the final retry, before raising or an
+                        # interruptible sleep releases the shared connection lock.
+                        persist_rate_deadline(rate_file, self.clock() + delay)
                     error.close()
                     if error.code not in (429, 500, 502, 503, 504) or attempt == 5:
                         raise
@@ -256,10 +268,14 @@ def harvest(root, config, http, refresh=False):
         for set_spec in sorted(set(config["sets"].values())):
             saved = db.execute("SELECT body FROM harvests WHERE set_spec=?", (set_spec,)).fetchone()
             state = json.loads(saved[0]) if saved else {"from": config["harvest_from"], "token": "", "complete": False}
+            if saved and "window_start" not in state and state.get("response_date"):
+                # An old checkpoint recorded only its last response. Replaying
+                # its original bound is conservative and cannot skip updates.
+                state["window_start"] = state["from"] or config["harvest_from"]
             if state["complete"]:
                 if not refresh:
                     continue
-                state = {"from": state["response_date"][:10], "token": "", "complete": False}
+                state = {"from": state["window_start"], "token": "", "complete": False}
             token_restarted = False
             while not state["complete"]:
                 query = {"verb": "ListRecords"}
@@ -287,7 +303,10 @@ def harvest(root, config, http, refresh=False):
                             db.execute("DELETE FROM papers WHERE id=?", (paper["id"],))
                         else:
                             db.execute("INSERT OR REPLACE INTO papers VALUES (?,?)", (paper["id"], canonical(paper)))
-                    state.update(token=token, complete=not token, response_date=response_date)
+                    response_day = dt.date.fromisoformat(response_date[:10]).isoformat()
+                    window_start = min(state.get("window_start", response_day), response_day)
+                    state.update(token=token, complete=not token, response_date=response_date,
+                                 window_start=window_start)
                     db.execute("INSERT OR REPLACE INTO harvests VALUES (?,?)", (set_spec, canonical(state)))
                 print(canonical({"action": "harvest", "set": set_spec, "records": len(records),
                                  "complete": state["complete"]}), flush=True)
@@ -481,11 +500,38 @@ def validate_entry(entry, paper, selection_hash):
     remote = entry["remote_pdf"]
     matched = OBJECT_PATTERN.fullmatch(remote["name"])
     if (entry["id"] != paper["id"] or entry["tiers"] != paper["tiers"]
+            or any(entry.get(key) != paper.get(key) for key in ("categories", "strata", "arxiv_url", "license"))
             or entry["selection_sha256"] != selection_hash or not matched
             or matched[2] != paper["id"] or matched[1] != paper["id"][:4]
             or int(matched[3]) != entry["version"] or remote["version"] != entry["version"]
             or not str(remote["generation"]).isdigit() or remote["bytes"] <= 0):
         raise CorpusError("Manifest identity differs from pinned paper selection")
+    if len(base64.b64decode(remote["md5"], validate=True)) != 16:
+        raise CorpusError("Pinned PDF has an invalid MD5 hash")
+
+
+def artifact_location(entry, kind):
+    stem = f"{entry['id']}v{entry['version']}"
+    if kind == "pdf":
+        remote = entry["remote_pdf"]
+        return ("pdf/" + stem + ".pdf",
+                GCS + "/arxiv-dataset/" + remote["name"] + "?generation=" + str(remote["generation"]))
+    return "source/" + stem + ".src", EXPORT + stem
+
+
+def validate_receipt(entry, kind, receipt):
+    path, url = artifact_location(entry, kind)
+    if receipt["path"] != path or receipt["url"] != url or receipt["kind"] != kind:
+        raise CorpusError("Artifact path, URL or kind differs from pinned paper version")
+    if kind == "pdf" and any(receipt[key] != entry["remote_pdf"][key] for key in ("md5", "bytes")):
+        raise CorpusError("PDF receipt differs from pinned GCS hash or size")
+    if (not re.fullmatch(r"[0-9a-f]{64}", receipt["sha256"])
+            or len(base64.b64decode(receipt["md5"], validate=True)) != 16 or receipt["bytes"] <= 0):
+        raise CorpusError("Artifact receipt has invalid hashes or size")
+    if kind == "source" and receipt["source_format"] not in {"gzip", "tar", "tex", "pdf"}:
+        raise CorpusError("Source receipt has an unknown format")
+    if not dt.datetime.fromisoformat(receipt["fetched_at"]).tzinfo:
+        raise CorpusError("Artifact receipt has no timezone for its fetch timestamp")
 
 
 def download(root, config, http, tier="all", sources=True, limit=None):
@@ -528,15 +574,15 @@ def download(root, config, http, tier="all", sources=True, limit=None):
         for index, paper in enumerate(papers):
             entry = entries[paper["id"]]
             remote = entry["remote_pdf"]
-            stem = f"{entry['id']}v{entry['version']}"
-            url = GCS + "/arxiv-dataset/" + remote["name"] + "?generation=" + str(remote["generation"])
-            path = root / "pdf" / (stem + ".pdf")
+            relative, url = artifact_location(entry, "pdf")
+            path = root / relative
             receipt, fetched = fetch_file(path, url, "pdf", http, floor, config["max_file_mib"] * MIB, remote)
             entry["pdf"] = {**receipt, "path": str(path.relative_to(root))}
             print(canonical({"action": "pdf", "id": entry["id"], "downloaded": fetched}), flush=True)
             if sources and "eval" in entry["tiers"]:
-                path = root / "source" / (stem + ".src")
-                receipt, fetched = fetch_file(path, EXPORT + stem, "source", http, floor, config["max_file_mib"] * MIB)
+                relative, url = artifact_location(entry, "source")
+                path = root / relative
+                receipt, fetched = fetch_file(path, url, "source", http, floor, config["max_file_mib"] * MIB)
                 entry["source"] = {**receipt, "path": str(path.relative_to(root))}
                 print(canonical({"action": "source", "id": entry["id"], "downloaded": fetched}), flush=True)
 
@@ -553,32 +599,55 @@ def status(root, verify=False, config=None):
     selection = read_json(root / "selection.json", {"papers": []})
     result = {"selected": len(selection["papers"]), "manifest_entries": len(entries),
               "pdfs": 0, "sources": 0, "bytes": 0, "tiers": {}, "problems": []}
+    if verify and selection["papers"]:
+        config = config or load_config(Path(__file__).with_name("selection.json"))
+        try:
+            validate_selection(selection, config)
+        except (CorpusError, ValueError, KeyError, TypeError) as error:
+            result["problems"].append("Invalid frozen selection: " + str(error))
+            print(canonical(result), flush=True)
+            return False
+    selected = {paper["id"]: paper for paper in selection["papers"]}
+    available = {}
+    for identifier, entry in entries.items():
+        available[identifier] = set()
+        if verify:
+            try:
+                if identifier not in selected:
+                    raise CorpusError("Manifest paper is absent from frozen selection")
+                validate_entry(entry, selected[identifier], selection["selection_sha256"])
+            except (CorpusError, ValueError, KeyError, TypeError) as error:
+                result["problems"].append(f"{identifier}: invalid manifest: {error}")
+                continue
+        for kind in ("pdf", "source"):
+            receipt = entry.get(kind)
+            if not receipt:
+                continue
+            try:
+                relative = Path(receipt["path"])
+                if relative.is_absolute() or ".." in relative.parts or not (root / relative).resolve().is_relative_to(root):
+                    raise CorpusError("Manifest path leaves corpus root")
+                if verify:
+                    validate_receipt(entry, kind, receipt)
+                    if not verified(root / relative, receipt):
+                        raise CorpusError("Artifact bytes differ from its verified receipt")
+            except (CorpusError, OSError, ValueError, KeyError, TypeError) as error:
+                result["problems"].append(f"{identifier}: invalid {kind}: {error}")
+                continue
+            available[identifier].add(kind)
+            result[kind + "s"] += 1
+            result["bytes"] += receipt["bytes"]
     for tier in ("eval", "scale"):
         chosen = [p for p in selection["papers"] if tier in p["tiers"]]
         result["tiers"][tier] = {"selected": len(chosen), "pdfs": 0, "sources": 0}
         if verify and config and len(chosen) != config["tiers"][tier]["count"]:
             result["problems"].append(f"{tier}: selected count does not match configured target")
         for paper in chosen:
-            entry = entries.get(paper["id"], {})
             for kind in ("pdf", "source"):
-                receipt = entry.get(kind)
-                required = kind == "pdf" or tier == "eval"
-                if not receipt:
-                    if verify and required:
-                        result["problems"].append(f"{paper['id']}: missing {kind}")
-                    continue
-                relative = Path(receipt["path"])
-                if relative.is_absolute() or ".." in relative.parts or not (root / relative).resolve().is_relative_to(root):
-                    raise CorpusError("Manifest path leaves corpus root")
-                if verify and not verified(root / relative, receipt):
-                    result["problems"].append(f"{paper['id']}: invalid {kind}")
-                    continue
-                result["tiers"][tier][kind + "s"] += 1
-    for entry in entries.values():
-        for kind in ("pdf", "source"):
-            if receipt := entry.get(kind):
-                result[kind + "s"] += 1
-                result["bytes"] += receipt["bytes"]
+                if kind in available.get(paper["id"], set()):
+                    result["tiers"][tier][kind + "s"] += 1
+                elif verify and (kind == "pdf" or tier == "eval"):
+                    result["problems"].append(f"{paper['id']}: missing {kind}")
     if verify and not selection["papers"]:
         result["problems"].append("No frozen selection")
     print(canonical(result), flush=True)

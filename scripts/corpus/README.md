@@ -71,9 +71,12 @@ The corpus root contains:
 
 OAI uses `metadataPrefix=arXiv` and configured category sets. Initial `from=2020-01-01` is a
 **metadata modification** bound, never treated as a submission-date filter. Selection separately
-uses each record's `created` year. `harvest --refresh` incrementally overlaps the last server
-response day; expired daily resumption tokens restart the original window with idempotent
-upserts. Metadata updates do not mutate the frozen selection.
+uses each record's `created` year. `harvest --refresh` incrementally overlaps the previous
+harvest window's first response day, retained across pagination and process restarts; expired daily
+resumption tokens restart the original window with idempotent upserts. Harvests crossing
+midnight therefore include changes made after their first page. Legacy checkpoints lacking
+the first response day conservatively replay their original `from` bound. Metadata updates
+do not mutate the frozen selection.
 
 GCS PDFs are checked against inventory MD5 and size, their PDF header, and a computed SHA-256.
 Source responses have no upstream checksum; HTTPS, content length when present, recognizable
@@ -99,7 +102,9 @@ minimum between requests, including retries, and hold the lock through response 
 This is more conservative than the bulk page's four-request burst allowance and meets the API
 terms' single-connection rule. All other arXiv tools on the same machine must coordinate with
 this budget; running unrelated harvesters simultaneously would not be covered by this lock.
-`Retry-After` seconds and HTTP-date cooldowns are respected for 429 and transient server errors.
+`Retry-After` seconds and HTTP-date cooldowns are persisted to the shared rate file before
+sleeping or returning a final retry failure. A fresh process therefore preserves server
+cooldowns after an interrupted sleep or exhausted retries.
 Public GCS HTTPS listing and downloads are serial and require no requester-pays credentials.
 Environment proxies are disabled and redirects fail closed pending endpoint review.
 
@@ -109,9 +114,20 @@ link readers to each paper's arXiv abstract/download page. Never commit PDFs or 
 
 ## Current verification boundary
 
-The offline tests cover deterministic strata, OAI paging/refresh/deletion/token expiry, pinned
-GCS versions, file integrity/resume, truncated and HTML payload rejection, request pacing,
-free-space failures, unsafe roots, symlinks and a full fixture download/verify/resume cycle.
+The 41 offline tests cover deterministic strata, OAI paging/refresh/deletion/token expiry and
+midnight boundaries, pinned GCS versions, file integrity/resume, truncated and HTML payload
+rejection, request pacing and cooldown persistence, free-space failures, unsafe roots,
+symlinks and a full fixture download/verify/resume cycle.
+`verify` validates the frozen selection against the configured fingerprint, every manifest
+paper against that selection, artifact paths and URLs against the pinned paper version, and
+PDF bytes against the pinned GCS MD5/size as well as their local SHA-256 receipt. Extra manifest
+papers and modified provenance fail verification even when local artifact hashes still match.
+
+Selection currently loads the harvested bibliographic records into memory. Peak RSS remains
+unmeasured because the live build is blocked. The next optimization, if measurement warrants
+it, is to stream compact SQLite ID/category/year candidates through bounded per-stratum heaps
+and then load full metadata only for selected IDs.
+
 Live K0 counts and corpus-dependent scorecard measurements remain unavailable until a real build
 completes. In the 2026-09-12 implementation environment, `/home/tjmisko/Corpora` could not be
 created because its filesystem was read-only; an escalated read-only OAI probe was also blocked

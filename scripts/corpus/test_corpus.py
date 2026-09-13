@@ -336,8 +336,10 @@ class CorpusTests(unittest.TestCase):
                 corpus.download(self.root, config, client)
         self.assertEqual([], client.calls)
 
-    def should_pin_matching_source_version_and_resume_when_full_download_completes(self):
+    def complete_fixture(self):
         config = small_config()
+        for spec in config["tiers"].values():
+            spec["count"] = 1
         paper = {"id": "2001.00001", "tiers": ["eval", "scale"], "categories": ["cs.LG"]}
         selection = {"papers": [paper], "config_sha256": corpus.fingerprint(config), "selection_sha256": corpus.fingerprint([paper])}
         corpus.atomic_json(self.root / "selection.json", selection)
@@ -347,7 +349,11 @@ class CorpusTests(unittest.TestCase):
         client = FakeHttp([json.dumps(listing).encode(), pdf, b"\\documentclass{article}"])
         with contextlib.redirect_stdout(io.StringIO()):
             corpus.download(self.root, config, client)
-            self.assertTrue(corpus.status(self.root, verify=True))
+            self.assertTrue(corpus.status(self.root, verify=True, config=config))
+        return config, paper, client
+
+    def should_pin_matching_source_version_and_resume_when_full_download_completes(self):
+        config, paper, client = self.complete_fixture()
         manifest = corpus.read_manifest(self.root)
         self.assertEqual(2, manifest[paper["id"]]["version"])
         self.assertEqual("https://export.arxiv.org/e-print/2001.00001v2", client.calls[-1])
@@ -383,19 +389,163 @@ class CorpusTests(unittest.TestCase):
             corpus.validate_entry(entry, paper, "selection")
 
     def should_fail_verification_when_the_selection_has_missing_downloads(self):
-        corpus.atomic_json(self.root / "selection.json", {"papers": [{"id": "2001.00001", "tiers": ["eval", "scale"]}]})
+        config = small_config()
+        for spec in config["tiers"].values():
+            spec["count"] = 1
+        chosen = [{"id": "2001.00001", "tiers": ["eval", "scale"]}]
+        corpus.atomic_json(self.root / "selection.json", {"papers": chosen, "config_sha256": corpus.fingerprint(config),
+                                                         "selection_sha256": corpus.fingerprint(chosen)})
         with contextlib.redirect_stdout(io.StringIO()) as output:
-            self.assertFalse(corpus.status(self.root, verify=True))
+            self.assertFalse(corpus.status(self.root, verify=True, config=config))
         report = json.loads(output.getvalue())
         self.assertEqual(1, report["tiers"]["scale"]["selected"])
         self.assertIn("2001.00001: missing source", report["problems"])
 
     def should_reject_escape_when_manifest_path_points_outside_corpus(self):
-        paper = {"id": "2001.00001", "tiers": ["scale"], "pdf": {"path": "../outside.pdf"}}
-        corpus.atomic_json(self.root / "selection.json", {"papers": [paper]})
-        corpus.write_manifest(self.root, {paper["id"]: paper})
-        with self.assertRaisesRegex(corpus.CorpusError, "leaves corpus root"):
-            corpus.status(self.root, verify=True)
+        config, paper, _ = self.complete_fixture()
+        entries = corpus.read_manifest(self.root)
+        entries[paper["id"]]["pdf"]["path"] = "../outside.pdf"
+        corpus.write_manifest(self.root, entries)
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertFalse(corpus.status(self.root, verify=True, config=config))
+        self.assertIn("Manifest path leaves corpus root", output.getvalue())
+
+    def should_reject_manifest_corruption_when_pinned_provenance_is_changed(self):
+        config, paper, _ = self.complete_fixture()
+        entries = corpus.read_manifest(self.root)
+        changes = [
+            (("remote_pdf", "name"), "arxiv/arxiv/pdf/2001/2001.00002v2.pdf"),
+            (("remote_pdf", "md5"), base64.b64encode(b"x" * 16).decode()),
+            (("remote_pdf", "bytes"), 12345),
+            (("remote_pdf", "generation"), "124"),
+            (("version",), 3),
+            (("categories",), ["math.PR"]),
+            (("pdf", "path"), "pdf/2001.00002v2.pdf"),
+            (("pdf", "url"), corpus.GCS + "/other.pdf"),
+            (("source", "path"), "source/2001.00001v1.src"),
+            (("source", "url"), corpus.EXPORT + "2001.00001v1"),
+            (("source", "kind"), "pdf"),
+        ]
+        for keys, value in changes:
+            with self.subTest(keys=keys):
+                corrupted = copy.deepcopy(entries)
+                target = corrupted[paper["id"]]
+                for key in keys[:-1]:
+                    target = target[key]
+                target[keys[-1]] = value
+                corpus.write_manifest(self.root, corrupted)
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertFalse(corpus.status(self.root, verify=True, config=config))
+        corpus.write_manifest(self.root, entries)
+
+    def should_reject_frozen_selection_corruption_when_config_or_records_change(self):
+        config, _, _ = self.complete_fixture()
+        selection = corpus.read_json(self.root / "selection.json")
+        for changed in ("config_sha256", "selection_sha256", "records"):
+            with self.subTest(changed=changed):
+                corrupted = copy.deepcopy(selection)
+                if changed == "records":
+                    corrupted["papers"][0]["title"] = "modified after selection"
+                else:
+                    corrupted[changed] = "incorrect"
+                corpus.atomic_json(self.root / "selection.json", corrupted)
+                with contextlib.redirect_stdout(io.StringIO()) as output:
+                    self.assertFalse(corpus.status(self.root, verify=True, config=config))
+                self.assertIn("Invalid frozen selection", output.getvalue())
+        corpus.atomic_json(self.root / "selection.json", selection)
+
+    def should_reject_unselected_manifest_entry_when_its_artifact_hashes_are_valid(self):
+        config, paper, _ = self.complete_fixture()
+        entries = corpus.read_manifest(self.root)
+        entries["2001.00002"] = {**entries[paper["id"]], "id": "2001.00002"}
+        corpus.write_manifest(self.root, entries)
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertFalse(corpus.status(self.root, verify=True, config=config))
+        self.assertIn("absent from frozen selection", output.getvalue())
+
+    def should_reject_changed_pdf_when_local_receipt_matches_but_pinned_remote_does_not(self):
+        config, paper, _ = self.complete_fixture()
+        entries = corpus.read_manifest(self.root)
+        receipt = entries[paper["id"]]["pdf"]
+        path = self.root / receipt["path"]
+        path.write_bytes(b"%PDF-1.7 changed")
+        receipt.update(corpus.digest_file(path))
+        corpus.write_manifest(self.root, entries)
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertFalse(corpus.status(self.root, verify=True, config=config))
+        self.assertIn("differs from pinned GCS hash or size", output.getvalue())
+
+    def should_overlap_first_response_day_when_harvest_resumes_across_midnight(self):
+        config = small_config()
+        config["sets"] = {"cs.LG": "cs:cs:LG"}
+        first = FakeHttp([oai(record(), "next-page", date="2026-09-12T23:59:00Z")])
+        with self.assertRaises(StopIteration):
+            corpus.harvest(self.root, config, first)
+        corpus.harvest(self.root, config, FakeHttp([oai(record("2001.00002"), date="2026-09-13T00:01:00Z")]))
+        refresh = FakeHttp([oai(record("2001.00003"), date="2026-09-14T00:00:00Z")])
+        corpus.harvest(self.root, config, refresh, refresh=True)
+        self.assertIn("from=2026-09-12", refresh.calls[0])
+        self.assertNotIn("from=2026-09-13", refresh.calls[0])
+
+    def should_replay_original_bound_when_legacy_checkpoint_lacks_window_start(self):
+        config = small_config()
+        config["sets"] = {"cs.LG": "cs:cs:LG"}
+        db = corpus.connect(self.root)
+        with db:
+            state = {"from": "2020-01-01", "token": "", "complete": True, "response_date": "2026-09-13T00:00:00Z"}
+            db.execute("INSERT INTO harvests VALUES (?, ?)", ("cs:cs:LG", corpus.canonical(state)))
+        db.close()
+        refresh = FakeHttp([oai(record())])
+        corpus.harvest(self.root, config, refresh, refresh=True)
+        self.assertIn("from=2020-01-01", refresh.calls[0])
+
+    def should_persist_final_retry_cooldown_when_a_fresh_client_follows_failure(self):
+        current = [3907.0]
+        starts = []
+        def sleep(delay):
+            current[0] += delay
+        class Opener:
+            def open(self, request, timeout):
+                starts.append(current[0])
+                if len(starts) <= 6:
+                    headers = {"Retry-After": "600"} if len(starts) == 6 else {}
+                    raise corpus.urllib.error.HTTPError(request.full_url, 429, "rate limited", headers, None)
+                return Response(b"fixture")
+        opener = Opener()
+        first = corpus.Http(cache_root=self.root, sleep=sleep, clock=lambda: current[0])
+        first.opener = opener
+        with self.assertRaises(corpus.urllib.error.HTTPError):
+            first.bytes(corpus.OAI)
+        self.assertEqual(4000, current[0])
+        self.assertEqual(4600, float((self.root / "arxiv-http.lock").read_text()))
+        second = corpus.Http(cache_root=self.root, sleep=sleep, clock=lambda: current[0])
+        second.opener = opener
+        second.bytes(corpus.EXPORT + "2001.00001v1")
+        self.assertEqual(4600, starts[-1])
+
+    def should_preserve_server_cooldown_when_sleep_is_interrupted(self):
+        current = [4000.0]
+        starts = []
+        def interrupted_sleep(delay):
+            raise KeyboardInterrupt()
+        class Opener:
+            def open(self, request, timeout):
+                starts.append(current[0])
+                if len(starts) == 1:
+                    raise corpus.urllib.error.HTTPError(request.full_url, 429, "rate limited", {"Retry-After": "600"}, None)
+                return Response(b"fixture")
+        opener = Opener()
+        first = corpus.Http(cache_root=self.root, sleep=interrupted_sleep, clock=lambda: current[0])
+        first.opener = opener
+        with self.assertRaises(KeyboardInterrupt):
+            first.bytes(corpus.OAI)
+        self.assertEqual(4600, float((self.root / "arxiv-http.lock").read_text()))
+        def sleep(delay):
+            current[0] += delay
+        second = corpus.Http(cache_root=self.root, sleep=sleep, clock=lambda: current[0])
+        second.opener = opener
+        second.bytes(corpus.OAI)
+        self.assertEqual([4000, 4600], starts)
 
 
 if __name__ == "__main__":
