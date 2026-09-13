@@ -526,8 +526,9 @@ name receives no given-name initial or wildcard blocking key.
 
 Components preserve case and accents with NFC/whitespace normalization; blocking keys separately
 fold accents, punctuation, case, and common ligatures. Umlaut spellings also supply ae/oe/ue
-variants so Müller/Mueller retrieve one another. Particle-bearing and particle-free keys are
-candidate retrieval aids. Key collisions (including different given names or suffixes) never
+variants so Müller/Mueller retrieve one another. Particle prefixes retain a literal compound-family interpretation too; the particle vocabulary
+never excludes a whole family or given name such as Le, Van, or Al. Particle-bearing and
+particle-free keys are candidate retrieval aids. Key collisions (including different given names or suffixes) never
 establish person equality; raw evidence and all alternatives survive for the later resolver.
 Inputs over 1024 bytes, 16 words, or 256 alternatives, and unsupported syntax, remain explicitly
 unresolved without truncation. K3/K4 resolver metrics stay unavailable until their truth and

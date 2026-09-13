@@ -28,6 +28,7 @@ pub enum NameOrder {
 /// One possible interpretation, preserving casing and accents in components.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct NameParts {
+    /// For `Undivided`, this is the intact token, not an asserted family name.
     pub family_name: String,
     pub given_names: Vec<String>,
     pub particles: Vec<String>,
@@ -64,6 +65,10 @@ impl ParsedName {
     #[must_use]
     pub const fn is_ambiguous(&self) -> bool {
         self.alternatives.len() > 1
+            || matches!(
+                self.unparsed_reason,
+                Some(UnparsedReason::TooManyAlternatives)
+            )
     }
 
     /// Retrieve candidates for every interpretation without cross-pairing a
@@ -227,7 +232,7 @@ fn parse_unmarked(name: &str, mut suffix: Option<String>, output: &mut Candidate
 
 fn parse_words(words: &[&str], suffix: Option<String>, output: &mut Candidates) {
     if words.len() == 1 {
-        if is_word(words[0]) && !is_explicit_initial(words[0]) && !is_particle(words[0]) {
+        if is_word(words[0]) && !is_explicit_initial(words[0]) {
             output.insert(NameParts {
                 family_name: words[0].to_owned(),
                 given_names: Vec::new(),
@@ -275,12 +280,10 @@ fn add_parts(
             .iter()
             .any(|word| !is_word(word) || !family_explicit && is_explicit_initial(word))
         || given_words.iter().any(|word| !is_word(word))
-        || family_words.last().is_some_and(|word| is_particle(word))
-        || given_words.last().is_some_and(|word| is_particle(word))
     {
         return;
     }
-    let particle_count = family_words
+    let particle_count = family_words[..family_words.len() - 1]
         .iter()
         .take_while(|word| is_particle(word))
         .count();
@@ -326,6 +329,14 @@ fn add_parts(
             .collect();
     }
     for given_names in variants {
+        if particle_count > 0 {
+            output.insert(NameParts {
+                family_name: family_words.join(" "),
+                particles: Vec::new(),
+                given_names: given_names.clone(),
+                ..base.clone()
+            });
+        }
         output.insert(NameParts {
             given_names,
             ..base.clone()
@@ -753,6 +764,7 @@ mod tests {
             Some(UnparsedReason::TooManyAlternatives)
         );
         assert!(parsed.alternatives.is_empty());
+        assert!(parsed.is_ambiguous());
         assert!(parsed.blocking_keys().is_empty());
     }
 
@@ -774,6 +786,28 @@ mod tests {
         let explicit = parse_name("Smith, John, V");
         assert_eq!(explicit.alternatives.len(), 1);
         assert_eq!(explicit.alternatives[0].suffix.as_deref(), Some("V"));
+    }
+
+    #[test]
+    fn should_retain_literal_names_when_words_also_appear_in_the_particle_vocabulary() {
+        for (raw, family, given) in [
+            ("Le, Xuan", "Le", vec!["Xuan"]),
+            ("Van, Alice", "Van", vec!["Alice"]),
+            ("Al Smith", "Smith", vec!["Al"]),
+            ("Smith, Al", "Smith", vec!["Al"]),
+            ("John Van", "Van", vec!["John"]),
+            ("De la, Maria", "De la", vec!["Maria"]),
+        ] {
+            let parsed = parse_name(raw);
+            assert!(has_parts(&parsed, family, &given, &[]), "{raw}: {parsed:?}");
+            assert!(!parsed.blocking_keys().is_empty(), "{raw}");
+        }
+        let parsed = parse_name("van der Waals, J. D.");
+        assert!(has_parts(&parsed, "Waals", &["J.", "D."], &["van", "der"]));
+        assert!(has_parts(&parsed, "van der Waals", &["J.", "D."], &[]));
+        for raw in ["Le", "Van", "Al"] {
+            assert_eq!(parse_name(raw).alternatives[0].order, NameOrder::Undivided);
+        }
     }
 
     #[test]
