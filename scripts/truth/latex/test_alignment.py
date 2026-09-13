@@ -61,6 +61,21 @@ class AlignmentTests(unittest.TestCase):
         alignment = TextAlignment({"text": "abcdefgh < 12345"})
         self.assertIsNone(alignment.unique("abcdefgh > 12345", math=True)[0])
 
+    def test_should_preserve_variable_case_when_equation_letters_are_semantic(self):
+        alignment = TextAlignment({"text": "alpha=beta+gamma"})
+        self.assertIsNone(alignment.unique("Alpha=Beta+Gamma", math=True)[0])
+        self.assertIsNotNone(alignment.unique("alpha=beta+gamma", math=True)[0])
+        for actual, authored in (("abcdefgh_2=12345", "abcdefgh^2=12345"),
+                                 ("f(alpha,beta)=12345", "f(alphabeta)=12345"),
+                                 ("abcdefgh2=12345", "abcdefgh²=12345")):
+            self.assertIsNone(TextAlignment({"text": actual}).unique(authored, math=True)[0])
+
+    def test_should_exclude_partial_math_when_the_renderer_does_not_know_an_operator(self):
+        parsed = parse_project({"main.tex": document(r"\begin{equation}\unknownoperator abcdefghi=12345\end{equation}")})
+        aligned = align_paper(parsed, {"text": "abcdefghi=12345"})
+        self.assertEqual(aligned["objects"], [])
+        self.assertIn("unsupported math", aligned["excluded_objects"][0]["reason"])
+
     def test_should_not_publish_caption_boxes_when_full_figure_regions_are_unknown(self):
         source = document(r"\begin{figure}\caption{A sufficiently distinctive caption.}\end{figure}")
         result = align_paper(parse_project({"main.tex": source}), {"text": "Figure 1: A sufficiently distinctive caption.", "tokens": []})

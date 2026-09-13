@@ -11,8 +11,12 @@ def utf16(value):
 
 
 def folded(char, math=False):
+    if math:
+        # Case, scripts, grouping and operators can change an equation. Lossy
+        # plain PDF extraction withholds alignment rather than erasing them.
+        return "".join(item for item in unicodedata.normalize("NFC", char) if not item.isspace())
     value = unicodedata.normalize("NFKD", char).casefold()
-    return "".join(item for item in value if item.isalnum() or (math and item in "+-=<>≤≥≠×÷∈∉∪∩∞"))
+    return "".join(item for item in value if item.isalnum())
 
 
 def normalized(value, math=False):
@@ -192,6 +196,9 @@ def align_paper(parsed, index, threshold=0.95):
     objects, entries, excluded = [], [], []
     entry_matches = {}
     for row in parsed["objects"]:
+        if row["kind"] == "equation" and row.get("unsupported_commands"):
+            excluded.append({"kind": row["kind"], "id": row["id"], "reason": "unsupported math commands prevent complete equation alignment", "unsupported_commands": row["unsupported_commands"]})
+            continue
         span, reason = aligner.unique(row["text"], row["kind"] == "equation")
         if span is None:
             excluded.append({"kind": row["kind"], "id": row["id"], "reason": reason})
