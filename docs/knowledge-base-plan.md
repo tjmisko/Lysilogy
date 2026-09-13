@@ -1198,6 +1198,23 @@ Blocked by: E8.1, E7.1
 Build K4 from OpenAlex authorships with ORCIDs for works in K2 and K0, clustering name mentions by
 ORCID, and flag ORCID conflicts as excluded rather than truth.
 
+Implementation decision: K4 requires the authorship's source-deposited `raw_orcid`, rather than
+the resolved profile's propagated `author.orcid` alone; OpenAlex documents the distinction in
+[its ORCID semantics](https://help.openalex.org/data/authors/orcid/). Valid raw/profile disagreement
+and a raw ORCID repeated at multiple coauthor positions exclude the affected mentions. Invalid
+identifiers and profile-only coverage remain separately reported. A provider profile spanning
+different raw labels across works is diagnostic, not a clustering feature or a reason to discard
+otherwise consistent source evidence. ORCID shape/checksum validation does not verify registration.
+
+Mention identity is work DOI plus the authorship array index, not first/middle/last role. Raw name
+inputs are separated from evaluator-only ORCIDs/profile IDs/provenance by an explicit allowlist
+projection. Membership combines K2 citing/reference DOIs and K0 selected DOI metadata with source
+hashes; selected metadata does not assert artifact download or mapping. Frozen provider receipts
+reuse E8.4's checked storage/transport rather than a new network path. Missing/invalid/conflicting
+slots, truncation uncertainty and singleton/multi-work coverage remain visible. See the
+[K4 contract and build workflow](../scripts/truth/PERSONS.md). Genuine truth publication and
+G1/O13 measurement remain pending actual frozen provider records.
+
 Acceptance: only mentions with ORCID-backed identity become labels; conflicts are reported.
 
 Tests: should cluster mentions when they share an ORCID; should exclude a mention when its work
