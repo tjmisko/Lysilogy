@@ -29,7 +29,13 @@ The production neighborhood query uses a consistent SQLite snapshot across root 
 the two-hop traversal and induced edge lookup. The outgoing primary key and incoming citation
 index cover both directions. Public results include explicit truncation flags. Trigram searches
 accept literal phrases of at least three characters and at most 4,096 bytes; their result limit
-must be 1–1,000. Titles use the stored normalized key, and names use display names.
+must be 1–1,000. Titles recompute the shared normalized key for both population and queries; names use display names.
+
+Current metadata aggregates all canonically bound observation revisions in stable observation-ID
+order. Refreshes replace one contribution; merge/split rebuild the affected aggregates. Complete
+competing assertions and their provenance are available through `KbStore::assertions`. The scalar
+precedence is a storage default pending resolver policy. Identifier lookups return nonunique
+canonical candidates with explicit truncation and never decide identity merges.
 
 ## O28 graph benchmark
 

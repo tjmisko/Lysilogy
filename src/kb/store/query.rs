@@ -1,5 +1,5 @@
 use super::{KbStore, Result, StoreError, projection};
-use crate::kb::WorkId;
+use crate::kb::{Identifier, Observation, PersonIdentifier, WorkId};
 use rusqlite::{OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 
@@ -40,7 +40,67 @@ pub struct SearchResults {
     pub truncated: bool,
 }
 
+/// A competing current assertion with its exact admitted revision and raw observation.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EntityAssertion {
+    pub observation: Observation,
+    pub revision: String,
+    pub entity: super::EntityProjection,
+}
+
 impl KbStore {
+    /// Return all canonical candidates. An identifier is intentionally nonunique.
+    pub fn works_with_identifier(
+        &self,
+        identifier: &Identifier,
+        limit: usize,
+    ) -> Result<SearchResults> {
+        self.identifier_candidates(&super::identifiers::work_key(identifier)?, limit)
+    }
+
+    pub fn persons_with_identifier(
+        &self,
+        identifier: &PersonIdentifier,
+        limit: usize,
+    ) -> Result<SearchResults> {
+        self.identifier_candidates(&super::identifiers::person_key(identifier)?, limit)
+    }
+
+    fn identifier_candidates(&self, key: &str, limit: usize) -> Result<SearchResults> {
+        if !(1..=1000).contains(&limit) {
+            return Err(StoreError::Invalid(
+                "identifier lookup requires a 1..1000 result limit".into(),
+            ));
+        }
+        let connection = self.connection()?;
+        let mut ids = connection.prepare(
+            "SELECT entity_id FROM entity_identifiers WHERE identifier=?1 ORDER BY entity_id LIMIT ?2"
+        )?.query_map(params![key,limit+1], |row| row.get(0))?
+          .collect::<std::result::Result<Vec<_>,_>>()?;
+        let truncated = ids.len() > limit;
+        ids.truncate(limit);
+        Ok(SearchResults { ids, truncated })
+    }
+
+    pub fn assertions(&self, id: &str) -> Result<Vec<EntityAssertion>> {
+        let connection = self.connection()?;
+        let transaction = connection.unchecked_transaction()?;
+        let id = projection::resolve(&transaction, id)?;
+        let rows = transaction.prepare(
+            "SELECT o.body,a.revision,a.body FROM entity_assertions a JOIN observations o ON o.id=a.observation_id WHERE a.entity_id=?1 ORDER BY a.observation_id"
+        )?.query_map([id], |row| Ok((row.get::<_,String>(0)?,row.get::<_,String>(1)?,row.get::<_,String>(2)?)))?
+          .collect::<std::result::Result<Vec<_>,_>>()?;
+        rows.into_iter()
+            .map(|(observation, revision, entity)| {
+                Ok(EntityAssertion {
+                    observation: serde_json::from_str(&observation)?,
+                    revision,
+                    entity: serde_json::from_str(&entity)?,
+                })
+            })
+            .collect()
+    }
+
     /// Two undirected hops over directed citations, followed by all directed
     /// edges induced by the returned node set. Output bounds are explicit;
     /// neither traversal depth nor hub expansion has a hidden LIMIT.
@@ -61,7 +121,15 @@ impl KbStore {
     /// user operators cannot become FTS expressions. Sub-trigram inputs are
     /// rejected explicitly rather than causing a surprise full-table scan.
     pub fn search_titles(&self, query: &str, limit: usize) -> Result<SearchResults> {
-        self.search("work_search", "title", query, limit)
+        if query.len() > 4096 {
+            return Err(StoreError::Invalid("title query exceeds 4096 bytes".into()));
+        }
+        self.search(
+            "work_search",
+            "title",
+            &crate::kb::titles::title_key(query),
+            limit,
+        )
     }
     pub fn search_names(&self, query: &str, limit: usize) -> Result<SearchResults> {
         self.search("person_search", "name", query, limit)

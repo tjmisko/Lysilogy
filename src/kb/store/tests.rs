@@ -122,7 +122,7 @@ fn should_apply_pending_migrations_when_opening_an_older_database() {
         .unwrap()
         .pragma_query_value(None, "user_version", |row| row.get(0))
         .unwrap();
-    assert_eq!(version, 2);
+    assert_eq!(version, MIGRATIONS.len());
     let wal: String = store
         .connection()
         .unwrap()
@@ -537,4 +537,385 @@ fn should_keep_one_snapshot_when_another_connection_commits_between_frontier_and
             cited: c
         }]
     );
+}
+
+fn versioned(admission: &mut Admission, version: &str, hash: char) {
+    let ObservationSource::PdfMetadata { paper_id } = &admission.observation.source else {
+        unreachable!()
+    };
+    let EntityProjection::Work(work) = &mut admission.entity else {
+        unreachable!()
+    };
+    work.versions.push(crate::kb::WorkVersion {
+        id: version.into(),
+        kind: crate::kb::VersionKind::Published,
+        label: None,
+        identifiers: Default::default(),
+        date: None,
+    });
+    work.local_copies.push(crate::kb::LocalCopy {
+        paper_id: paper_id.clone(),
+        content_hash: hash.to_string().repeat(64),
+        version_id: Some(version.into()),
+    });
+}
+
+#[test]
+fn should_retain_other_contributions_when_merged_producers_refresh_and_split() {
+    let directory = tempfile::tempdir().unwrap();
+    let store = KbStore::open(directory.path()).unwrap();
+    let a = store.allocate_work("source-a").unwrap();
+    let b = store.allocate_work("source-b").unwrap();
+    let mut one = fixture(&store, &a, "A title");
+    let mut two = fixture(&store, &b, "B competing title");
+    versioned(&mut one, "v-a", 'a');
+    versioned(&mut two, "v-b", 'b');
+    let shared = crate::kb::Identifier::parse("doi:10.1234/shared").unwrap();
+    for admission in [&mut one, &mut two] {
+        let EntityProjection::Work(work) = &mut admission.entity else {
+            unreachable!()
+        };
+        work.identifiers.insert(shared.clone());
+        store.admit(admission, store.data_root()).unwrap();
+    }
+    store
+        .record_decision(&merge_decision(a.clone(), b.clone()))
+        .unwrap();
+    for admission in [&two, &one, &two] {
+        store.admit(admission, store.data_root()).unwrap();
+        let merged = store.work(&b).unwrap().unwrap();
+        assert_eq!(merged.id, a);
+        assert_eq!(merged.title.as_deref(), Some("A title"));
+        assert_eq!(merged.versions.len(), 2);
+        assert_eq!(merged.local_copies.len(), 2);
+        assert_eq!(store.assertions(b.as_str()).unwrap().len(), 2);
+    }
+    let EntityProjection::Work(value) = &mut one.entity else {
+        unreachable!()
+    };
+    value.identifiers.clear();
+    value.local_copies.clear();
+    value.versions.clear();
+    store.admit(&one, store.data_root()).unwrap();
+    let merged = store.work(&a).unwrap().unwrap();
+    assert!(merged.identifiers.contains(&shared));
+    assert_eq!(merged.local_copies.len(), 1);
+    assert_eq!(merged.versions[0].id, "v-b");
+    assert_eq!(
+        store.works_with_identifier(&shared, 10).unwrap().ids,
+        [a.to_string()]
+    );
+    let created: WorkId = "WsplitContributions".parse().unwrap();
+    store
+        .record_decision(&Decision {
+            id: "split-contributions".into(),
+            recorded_at: Utc::now(),
+            rationale: "separate independent assertions".into(),
+            action: DecisionAction::Work(EntityDecision::Split {
+                original: a.clone(),
+                created: created.clone(),
+                observation_ids: vec![two.observation.id.clone()],
+            }),
+        })
+        .unwrap();
+    assert!(store.work(&a).unwrap().unwrap().local_copies.is_empty());
+    assert!(store.work(&a).unwrap().unwrap().identifiers.is_empty());
+    assert_eq!(store.work(&created).unwrap().unwrap().local_copies.len(), 1);
+    assert_eq!(store.work(&b).unwrap().unwrap().id, a);
+    store.admit(&two, store.data_root()).unwrap();
+    assert_eq!(
+        store.works_with_identifier(&shared, 10).unwrap().ids,
+        [created.to_string()]
+    );
+    let before = store.snapshot().unwrap();
+    store.rebuild().unwrap();
+    assert_eq!(before, store.snapshot().unwrap());
+}
+
+#[test]
+fn should_preserve_canonical_state_when_version_or_copy_assertions_conflict() {
+    let directory = tempfile::tempdir().unwrap();
+    let store = KbStore::open(directory.path()).unwrap();
+    let id = store.allocate_work("conflicts").unwrap();
+    let mut one = fixture(&store, &id, "A source");
+    versioned(&mut one, "published", 'a');
+    store.admit(&one, store.data_root()).unwrap();
+    let before = store.snapshot().unwrap();
+    let journal = fs::read(directory.path().join("kb/decisions.jsonl")).unwrap();
+    let mut two = fixture(&store, &id, "B source");
+    versioned(&mut two, "published", 'b');
+    let EntityProjection::Work(value) = &mut two.entity else {
+        unreachable!()
+    };
+    value.versions[0].label = Some("conflicting version metadata".into());
+    assert!(store.admit(&two, store.data_root()).is_err());
+    let EntityProjection::Work(value) = &mut two.entity else {
+        unreachable!()
+    };
+    value.versions[0].label = None;
+    let EntityProjection::Work(original) = &one.entity else {
+        unreachable!()
+    };
+    value.local_copies[0].paper_id = original.local_copies[0].paper_id.clone();
+    assert!(store.admit(&two, store.data_root()).is_err());
+    assert_eq!(before, store.snapshot().unwrap());
+    assert_eq!(
+        journal,
+        fs::read(directory.path().join("kb/decisions.jsonl")).unwrap()
+    );
+    let EntityProjection::Work(value) = &mut one.entity else {
+        unreachable!()
+    };
+    value.local_copies[0].version_id = Some("missing-version".into());
+    assert!(store.admit(&one, store.data_root()).is_err());
+    assert_eq!(before, store.snapshot().unwrap());
+}
+
+#[test]
+fn should_return_nonunique_indexed_candidates_when_identifiers_collide() {
+    let directory = tempfile::tempdir().unwrap();
+    let store = KbStore::open(directory.path()).unwrap();
+    let identifier = crate::kb::Identifier::parse("doi:10.1234/collision").unwrap();
+    let mut ids = Vec::new();
+    for label in ["left", "right"] {
+        let id = store.allocate_work(label).unwrap();
+        let mut admission = fixture(&store, &id, label);
+        let EntityProjection::Work(work) = &mut admission.entity else {
+            unreachable!()
+        };
+        work.identifiers.insert(identifier.clone());
+        store.admit(&admission, store.data_root()).unwrap();
+        ids.push(id.to_string());
+    }
+    ids.sort();
+    assert_eq!(
+        store.works_with_identifier(&identifier, 10).unwrap().ids,
+        ids
+    );
+    let capped = store.works_with_identifier(&identifier, 1).unwrap();
+    assert_eq!(capped.ids, ids[..1]);
+    assert!(capped.truncated);
+    let plan: String = store.connection().unwrap().query_row(
+        "EXPLAIN QUERY PLAN SELECT entity_id FROM entity_identifiers WHERE identifier=?1 ORDER BY entity_id LIMIT 10",
+        [identifier.key()], |row| row.get(3)).unwrap();
+    assert!(plan.contains("entity_identifiers_lookup"), "{plan}");
+    assert_eq!(store.summary().unwrap().aliases, 0);
+}
+
+#[test]
+fn should_recompute_search_keys_when_a_producer_supplies_a_stale_title_key() {
+    let directory = tempfile::tempdir().unwrap();
+    let store = KbStore::open(directory.path()).unwrap();
+    let id = store.allocate_work("title-key").unwrap();
+    let mut admission = fixture(&store, &id, "State-of-the-art Methods");
+    let EntityProjection::Work(work) = &mut admission.entity else {
+        unreachable!()
+    };
+    work.title_key = Some("obsolete marker".into());
+    store.admit(&admission, store.data_root()).unwrap();
+    assert_eq!(
+        store.search_titles("state-of-the-art", 10).unwrap().ids,
+        [id.to_string()]
+    );
+    assert!(
+        store
+            .search_titles("obsolete marker", 10)
+            .unwrap()
+            .ids
+            .is_empty()
+    );
+    assert_eq!(
+        store.work(&id).unwrap().unwrap().title_key.as_deref(),
+        Some("state of the art methods")
+    );
+    let before = store.snapshot().unwrap();
+    store.rebuild().unwrap();
+    assert_eq!(before, store.snapshot().unwrap());
+}
+
+#[test]
+fn should_reject_changed_journal_prefix_when_a_live_handle_attempts_to_append() {
+    let directory = tempfile::tempdir().unwrap();
+    let store = KbStore::open(directory.path()).unwrap();
+    store.allocate_work("original-origin").unwrap();
+    let before = store.snapshot().unwrap();
+    let path = directory.path().join("kb/decisions.jsonl");
+    let original = fs::read_to_string(&path).unwrap();
+    let modified = original.replace("original-origin", "modified-origin");
+    assert_eq!(original.len(), modified.len());
+    fs::write(&path, &modified).unwrap();
+    assert!(store.allocate_work("later-origin").is_err());
+    assert!(store.rebuild().is_err());
+    assert_eq!(fs::read_to_string(&path).unwrap(), modified);
+    assert_eq!(before, store.snapshot().unwrap());
+    drop(store);
+    assert!(KbStore::open(directory.path()).is_err());
+}
+
+fn person_fixture(
+    store: &KbStore,
+    id: &PersonId,
+    label: &str,
+    family: &str,
+    given: &str,
+) -> Admission {
+    let work = store
+        .allocate_work(&format!("person-source-{label}"))
+        .unwrap();
+    let mut admission = fixture(store, &work, label);
+    admission.entity = EntityProjection::Person(Person {
+        id: id.clone(),
+        display_name: format!("{given} {family}"),
+        family_name: Some(family.into()),
+        given_names: vec![given.into()],
+        particles: vec![],
+        suffix: None,
+        name_variants: vec![crate::kb::NameVariant {
+            name: label.into(),
+            count: 2,
+        }],
+        identifiers: Default::default(),
+    });
+    admission
+}
+
+#[test]
+fn should_reject_noncanonical_person_identifiers_when_admitting_or_querying_them() {
+    use crate::kb::PersonIdentifier::{OpenalexAuthor, Orcid, SemanticScholarAuthor};
+    let directory = tempfile::tempdir().unwrap();
+    let store = KbStore::open(directory.path()).unwrap();
+    let id = store.allocate_person("identifier-person").unwrap();
+    let mut admission = person_fixture(&store, &id, "A person", "Example", "Alice");
+    let valid = [
+        Orcid("0000-0002-1825-0097".into()),
+        Orcid("0000-0002-1694-233X".into()),
+        OpenalexAuthor("A123".into()),
+        SemanticScholarAuthor("456".into()),
+    ];
+    let EntityProjection::Person(person) = &mut admission.entity else {
+        unreachable!()
+    };
+    person.identifiers.extend(valid.iter().cloned());
+    store.admit(&admission, store.data_root()).unwrap();
+    for identifier in valid {
+        assert_eq!(
+            store.persons_with_identifier(&identifier, 10).unwrap().ids,
+            [id.to_string()]
+        );
+    }
+    let before = store.snapshot().unwrap();
+    let invalid = [
+        Orcid("0000-0002-1825-0098".into()),
+        Orcid("https://orcid.org/0000-0002-1825-0097".into()),
+        Orcid("００００-0002-1825-0097".into()),
+        Orcid("0000-0002-1694-233x".into()),
+        OpenalexAuthor("https://openalex.org/A123".into()),
+        OpenalexAuthor("a123".into()),
+        OpenalexAuthor("A12\n".into()),
+        OpenalexAuthor("W123".into()),
+        SemanticScholarAuthor(" 456".into()),
+        SemanticScholarAuthor("abc".into()),
+    ];
+    for identifier in invalid {
+        let EntityProjection::Person(person) = &mut admission.entity else {
+            unreachable!()
+        };
+        person.identifiers = [identifier.clone()].into();
+        assert!(
+            store.admit(&admission, store.data_root()).is_err(),
+            "{identifier:?}"
+        );
+        assert!(store.persons_with_identifier(&identifier, 10).is_err());
+        assert_eq!(before, store.snapshot().unwrap());
+    }
+}
+
+#[test]
+fn should_keep_coherent_person_components_when_merged_observations_refresh_and_split() {
+    use crate::kb::PersonIdentifier;
+    let directory = tempfile::tempdir().unwrap();
+    let store = KbStore::open(directory.path()).unwrap();
+    let a = store.allocate_person("person-a").unwrap();
+    let b = store.allocate_person("person-b").unwrap();
+    let mut one = person_fixture(&store, &a, "A name", "Example", "Alice");
+    let mut two = person_fixture(&store, &b, "B name", "Other", "Bob");
+    for (admission, identifier) in [(&mut one, "A123"), (&mut two, "A456")] {
+        let EntityProjection::Person(person) = &mut admission.entity else {
+            unreachable!()
+        };
+        person
+            .identifiers
+            .insert(PersonIdentifier::OpenalexAuthor(identifier.into()));
+        store.admit(admission, store.data_root()).unwrap();
+    }
+    store
+        .record_decision(&Decision {
+            id: "person-merge".into(),
+            recorded_at: Utc::now(),
+            rationale: "fixture independent assertions".into(),
+            action: DecisionAction::Person(EntityDecision::Merge {
+                surviving: a.clone(),
+                absorbed: b.clone(),
+            }),
+        })
+        .unwrap();
+    store.admit(&two, store.data_root()).unwrap();
+    let merged = store.person(&b).unwrap().unwrap();
+    assert_eq!(merged.id, a);
+    assert_eq!(merged.display_name, "Alice Example");
+    assert_eq!(merged.family_name.as_deref(), Some("Example"));
+    assert_eq!(merged.given_names, ["Alice"]);
+    assert_eq!(merged.identifiers.len(), 2);
+    assert_eq!(merged.name_variants.len(), 2);
+    let claims = store.assertions(a.as_str()).unwrap();
+    assert_eq!(claims.len(), 2);
+    assert_ne!(claims[0].revision, claims[1].revision);
+    let EntityProjection::Person(other) = &claims[1].entity else {
+        unreachable!()
+    };
+    assert_eq!(other.display_name, "Bob Other");
+    let created: PersonId = "PsplitPerson".parse().unwrap();
+    store
+        .record_decision(&Decision {
+            id: "person-split".into(),
+            recorded_at: Utc::now(),
+            rationale: "fixture split".into(),
+            action: DecisionAction::Person(EntityDecision::Split {
+                original: a.clone(),
+                created: created.clone(),
+                observation_ids: vec![two.observation.id.clone()],
+            }),
+        })
+        .unwrap();
+    store.admit(&two, store.data_root()).unwrap();
+    assert_eq!(
+        store.person(&created).unwrap().unwrap().display_name,
+        "Bob Other"
+    );
+    assert_eq!(store.person(&a).unwrap().unwrap().identifiers.len(), 1);
+    assert_eq!(store.person(&b).unwrap().unwrap().id, a);
+    let before = store.snapshot().unwrap();
+    store.rebuild().unwrap();
+    assert_eq!(before, store.snapshot().unwrap());
+}
+
+#[test]
+fn should_resume_projection_upgrade_when_a_prior_rebuild_did_not_complete() {
+    let directory = tempfile::tempdir().unwrap();
+    let store = KbStore::open(directory.path()).unwrap();
+    let id = store.allocate_work("upgrade").unwrap();
+    let mut admission = fixture(&store, &id, "Upgrade title");
+    let EntityProjection::Work(work) = &mut admission.entity else {
+        unreachable!()
+    };
+    work.identifiers
+        .insert(crate::kb::Identifier::parse("doi:10.1234/upgrade").unwrap());
+    store.admit(&admission, store.data_root()).unwrap();
+    let before = store.snapshot().unwrap();
+    store.connection().unwrap().execute_batch(
+        "DELETE FROM entity_assertions; DELETE FROM entity_identifiers; UPDATE projection_state SET projection_version=0"
+    ).unwrap();
+    drop(store);
+    let reopened = KbStore::open(directory.path()).unwrap();
+    assert_eq!(before, reopened.snapshot().unwrap());
 }

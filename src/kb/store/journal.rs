@@ -172,17 +172,19 @@ pub(super) struct State {
     pub sequence: u64,
     pub bytes: u64,
     pub sha256: String,
+    pub stamp: String,
 }
 
 pub(super) fn state(connection: &Connection) -> Result<State> {
     Ok(connection.query_row(
-        "SELECT sequence,journal_bytes,sha256 FROM projection_state WHERE singleton=1",
+        "SELECT sequence,journal_bytes,sha256,journal_stamp FROM projection_state WHERE singleton=1",
         [],
         |row| {
             Ok(State {
                 sequence: row.get(0)?,
                 bytes: row.get(1)?,
                 sha256: row.get(2)?,
+                stamp: row.get(3)?,
             })
         },
     )?)
@@ -225,13 +227,15 @@ fn open_file(path: &Path, create: bool, append: bool) -> Result<File> {
     Ok(file)
 }
 
-pub(super) fn append(directory: &Path, bytes: &[u8], expected_length: u64) -> Result<()> {
+pub(super) fn append(directory: &Path, bytes: &[u8], expected: &State) -> Result<String> {
     if bytes.len() as u64 > MAX_RECORD {
         return Err(StoreError::Invalid("canonical record exceeds 8 MiB".into()));
     }
     let path = directory.join("decisions.jsonl");
     let mut file = open_file(&path, true, true)?;
-    if file.metadata()?.len() != expected_length {
+    if file.metadata()?.len() != expected.bytes
+        || (!expected.stamp.is_empty() && file_stamp(&file)? != expected.stamp)
+    {
         return Err(StoreError::Invalid(
             "canonical journal changed while writing".into(),
         ));
@@ -240,7 +244,13 @@ pub(super) fn append(directory: &Path, bytes: &[u8], expected_length: u64) -> Re
     file.write_all(b"\n")?;
     file.sync_all()?;
     File::open(directory)?.sync_all()?;
-    Ok(())
+    let stamp = file_stamp(&file)?;
+    if journal_stamp(directory)? != stamp {
+        return Err(StoreError::Invalid(
+            "canonical journal replaced while writing".into(),
+        ));
+    }
+    Ok(stamp)
 }
 
 pub(super) fn retain(directory: &Path, revision: &str, bytes: &[u8]) -> Result<()> {
@@ -310,18 +320,22 @@ pub(super) fn replay(connection: &Connection, directory: &Path, full: bool) -> R
             "canonical journal was truncated".into(),
         ));
     }
+    let stamp = file_stamp(&file)?;
+    let full = full || stamp != saved.stamp;
     let mut reader = BufReader::new(file);
     let mut current = if full {
         State {
             sequence: 0,
             bytes: 0,
             sha256: String::new(),
+            stamp: stamp.clone(),
         }
     } else {
         State {
             sequence: saved.sequence,
             bytes: saved.bytes,
             sha256: saved.sha256.clone(),
+            stamp: stamp.clone(),
         }
     };
     reader.seek(SeekFrom::Start(current.bytes))?;
@@ -355,6 +369,7 @@ pub(super) fn replay(connection: &Connection, directory: &Path, full: bool) -> R
                 + u64::try_from(read)
                     .map_err(|_| StoreError::Invalid("journal too large".into()))?,
             sha256: digest(&bytes),
+            stamp: stamp.clone(),
         };
         if record.sequence <= saved.sequence {
             let mirrored: Option<String> = connection
@@ -371,9 +386,25 @@ pub(super) fn replay(connection: &Connection, directory: &Path, full: bool) -> R
             }
         } else {
             projection::apply(connection, directory, &record)?;
-            projection::checkpoint(connection, &record, &bytes, &current.sha256, current.bytes)?;
+            projection::checkpoint(
+                connection,
+                &record,
+                &bytes,
+                &current.sha256,
+                current.bytes,
+                &stamp,
+            )?;
         }
     }
+    if file_stamp(reader.get_ref())? != stamp || journal_stamp(directory)? != stamp {
+        return Err(StoreError::Invalid(
+            "canonical journal changed during validation".into(),
+        ));
+    }
+    connection.execute(
+        "UPDATE projection_state SET journal_stamp=?1 WHERE singleton=1",
+        [&stamp],
+    )?;
     if current.sequence < saved.sequence {
         return Err(StoreError::Invalid("canonical journal lost records".into()));
     }
@@ -439,4 +470,27 @@ fn validate_hash(hash: &str) -> Result<()> {
         return Err(StoreError::Invalid("expected lowercase SHA-256".into()));
     }
     Ok(())
+}
+
+fn journal_stamp(directory: &Path) -> Result<String> {
+    file_stamp(&open_file(
+        &directory.join("decisions.jsonl"),
+        false,
+        false,
+    )?)
+}
+
+fn file_stamp(file: &File) -> Result<String> {
+    use std::os::unix::fs::MetadataExt;
+    let metadata = file.metadata()?;
+    Ok(format!(
+        "{}:{}:{}:{}:{}:{}:{}",
+        metadata.dev(),
+        metadata.ino(),
+        metadata.len(),
+        metadata.mtime(),
+        metadata.mtime_nsec(),
+        metadata.ctime(),
+        metadata.ctime_nsec()
+    ))
 }

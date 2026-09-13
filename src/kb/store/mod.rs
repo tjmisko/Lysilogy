@@ -1,5 +1,6 @@
 //! SQLite is a replaceable projection; allocation and admission records are durable.
 
+mod identifiers;
 mod journal;
 mod projection;
 mod query;
@@ -22,7 +23,9 @@ use sha2::{Digest, Sha256};
 
 use super::{Decision, Person, PersonId, Work, WorkId};
 pub use journal::{Admission, ArtifactSource, EntityProjection};
-pub use query::{Neighbor, Neighborhood, NeighborhoodEdge, NeighborhoodLimits, SearchResults};
+pub use query::{
+    EntityAssertion, Neighbor, Neighborhood, NeighborhoodEdge, NeighborhoodLimits, SearchResults,
+};
 
 pub type Result<T> = std::result::Result<T, StoreError>;
 
@@ -65,6 +68,7 @@ pub struct RebuildSummary {
 const MIGRATIONS: &[&str] = &[
     include_str!("migrations/001_core.sql"),
     include_str!("migrations/002_search.sql"),
+    include_str!("migrations/003_assertions.sql"),
 ];
 
 impl KbStore {
@@ -101,6 +105,14 @@ impl KbStore {
         // Validate the whole canonical chain on every opening. Existing projection
         // rows may be cached, but no altered/truncated journal is silently accepted.
         store.synchronize(true)?;
+        let projected_version: usize = store.connection()?.query_row(
+            "SELECT projection_version FROM projection_state WHERE singleton=1",
+            [],
+            |row| row.get(0),
+        )?;
+        if projected_version != MIGRATIONS.len() {
+            store.rebuild_locked()?;
+        }
         Ok(store)
     }
 
@@ -190,14 +202,14 @@ impl KbStore {
         let record = journal::Record {
             schema_version: 1,
             sequence: state.sequence + 1,
-            previous_sha256: state.sha256,
+            previous_sha256: state.sha256.clone(),
             event,
         };
         let bytes = serde_json::to_vec(&record)?;
         let hash = digest(&bytes);
         // Validate the complete change before touching the canonical log.
         projection::apply(&transaction, &self.directory, &record)?;
-        journal::append(&self.directory, &bytes, state.bytes)?;
+        let stamp = journal::append(&self.directory, &bytes, &state)?;
         projection::checkpoint(
             &transaction,
             &record,
@@ -207,6 +219,7 @@ impl KbStore {
                 + u64::try_from(bytes.len())
                     .map_err(|_| StoreError::Invalid("record too large".into()))?
                 + 1,
+            &stamp,
         )?;
         transaction.commit()?;
         Ok(())
@@ -225,12 +238,22 @@ impl KbStore {
     /// the previous snapshot until commit; WAL files are never renamed or deleted.
     pub fn rebuild(&self) -> Result<RebuildSummary> {
         let _guard = journal::lock(&self.directory)?;
+        self.rebuild_locked()
+    }
+
+    fn rebuild_locked(&self) -> Result<RebuildSummary> {
         let mut connection = self.connection()?;
         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        // Check cached canonical hashes before discarding their independent mirror.
+        journal::replay(&transaction, &self.directory, true)?;
         projection::clear(&transaction)?;
         journal::replay(&transaction, &self.directory, true)?;
         journal::mirror_lists(&transaction, &self.directory)?;
         let summary = summary(&transaction)?;
+        transaction.execute(
+            "UPDATE projection_state SET projection_version=?1 WHERE singleton=1",
+            [MIGRATIONS.len()],
+        )?;
         transaction.commit()?;
         Ok(summary)
     }
