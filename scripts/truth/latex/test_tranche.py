@@ -14,10 +14,11 @@ from tranche import (ARTIFACTS, FORMAT, REVIEW_FORMAT, attach_tranche, covered, 
                      verify_correction_files)
 
 
-def fixture(visual_kind='figure'):
+def fixture(visual_kind='figure', extra_source=''):
     source = r'\begin{document}\begin{figure}\caption{A small chart.}\label{fig:a}\end{figure}\begin{equation}abcdefghij=12345\label{eq:a}\end{equation}\end{document}'
     if visual_kind == 'table':
         source = source.replace('{figure}', '{table}').replace(r'\label{fig:a}', r'cell\label{fig:a}')
+    source = source.replace(r'\end{document}', extra_source + r'\end{document}')
     files, members = read_archive(source.encode())
     name = next(iter(files)); parsed = parse_project(files)
     text = visual_kind.title() + ' 1. A small chart. ' + ('cell ' if visual_kind == 'table' else '') + 'abcdefghij=12345 (1)'
@@ -137,6 +138,11 @@ def seal(docs):
 
 
 class TrancheTests(unittest.TestCase):
+    def test_should_reject_tranche_membership_when_raw_caret_notation_can_change_tokens(self):
+        candidate, native, source, docs, images = fixture(extra_source='\n% ^^0a\\label{fig:a}\n')
+        with self.assertRaisesRegex(ValueError, 'pre-tokenization substitution'):
+            validate_tranche(canonical(candidate), canonical(native), source, seal(docs), images)
+
     def test_should_preserve_automatic_exclusions_when_complete_blind_mixed_inventory_is_reviewed(self):
         candidate, native, source, docs, images = fixture()
         result = validate_tranche(canonical(candidate), canonical(native), source, seal(docs), images)
@@ -311,6 +317,31 @@ class TrancheTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 validate_crosswalk(docs, candidate, ids, {'primary-' + k: v for k, v in ids.items()})
 
+    def test_should_share_literal_reference_grammar_when_tranche_binds_a_comma_label(self):
+        for duplicate in (False, True):
+            source = (r'\begin{document}\begin{equation}\label{e,x}abcdefghij=12345\end{equation}'
+                      + (r'\label{e,x}' if duplicate else '') + r'Equation \ref{e,x}\end{document}')
+            files = {'main.tex': source}; parsed = parse_project(files); link = parsed['links'][0]
+            self.assertEqual(link['targets'], ['e,x'])
+            member = link['source_members'][0]; target = parsed['objects'][0]['id']
+            source_digest = sha256(source[member['start']:member['end']].encode())
+            number = {'start': 9, 'end': 10}; phrase = {'start': 0, 'end': 10}
+            docs = {'primary': {'counts': {'source_reference': 1}, 'references': [{
+                'id': 'primary-reference', 'source_occurrence': {'member': member['path'], 'start': member['start'], 'end': member['end']},
+                'target_label': 'e,x', 'target_id': 'primary-equation', 'target_kind': 'equation',
+                'native_number': number, 'native_occurrence': phrase}]},
+                'independent_corrected': {'counts': {'explicit_reference_occurrences': 1}, 'section_destinations': [], 'references': [{
+                    'id': 'independent-reference', 'source': {'member': member, 'text_sha256': source_digest}, 'source_label': 'e,x',
+                    'unresolved_targets': [], 'destination_id': 'independent-equation', 'destination_kind': 'equation',
+                    'native_number_span': number, 'native_phrase_span': phrase}]}}
+            args = (docs, {'source_inventory': parsed}, files, {'text': 'Equation 1', 'pages': [{'number': 1, 'start': 0, 'end': 10}]},
+                    {'independent-equation': target}, {'primary-equation': target})
+            with self.subTest(duplicate=duplicate):
+                if duplicate:
+                    with self.assertRaisesRegex(ValueError, 'ambiguous source reference'): validate_references(*args)
+                else:
+                    self.assertEqual(validate_references(*args)[0][0]['target'], target)
+
     def test_should_retain_typed_visual_and_section_references_when_every_source_occurrence_is_bound(self):
         source = r'\ref{e}\ref{f}\ref{s}\section{End}\label{s}'
         text = 'Equation 1 Figure 2 Section 3'
@@ -337,6 +368,22 @@ class TrancheTests(unittest.TestCase):
         self.assertEqual([row['target'] for row in refs], ['eq'])
         self.assertEqual([row['target'] for row in visuals], ['fig'])
         self.assertEqual([row['target'] for row in sections], ['section:s'])
+        for label in ('e', 'f', 's'):
+            changed = deepcopy(candidate)
+            changed['source_inventory']['ambiguous_labels'] = {label: {'candidate_count': 2, 'roles': ['object', 'section']}}
+            with self.subTest(ambiguous=label), self.assertRaisesRegex(ValueError, 'ambiguous source reference'):
+                validate_references(docs, changed, files, index, {'eq': 'eq', 'fig': 'fig'}, {'eq': 'eq', 'fig': 'fig'})
+        for destination in ('eq', 'fig', 'section:s'):
+            changed = deepcopy(candidate)
+            changed['source_inventory']['unverified_label_names'] = {r'\alias': {'occurrences': [0], 'candidate_count': 1}}
+            reduced = deepcopy(docs)
+            for key in ('primary', 'independent_corrected'):
+                reduced[key]['references'] = [r for r in reduced[key]['references'] if r.get('destination_id', r.get('target_id')) == destination]
+                reduced[key]['counts'] = {k: 1 for k in reduced[key]['counts']}
+            member = reduced['independent_corrected']['references'][0]['source']['member']
+            changed['source_inventory']['links'] = [l for l in links if l['source_members'] == [member]]
+            with self.subTest(dynamic_destination=destination), self.assertRaisesRegex(ValueError, 'unverified source label names'):
+                validate_references(reduced, changed, files, index, {'eq': 'eq', 'fig': 'fig'}, {'eq': 'eq', 'fig': 'fig'})
         for changed in ['section:s', 'missing']:
             altered = deepcopy(docs); altered['independent_corrected']['references'][0]['destination_id'] = changed
             altered['independent_corrected']['references'][0]['destination_kind'] = 'section'

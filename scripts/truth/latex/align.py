@@ -4,6 +4,7 @@ import re
 import unicodedata
 
 from archive import UnsupportedSource
+from parser import reference_names_verified
 
 
 def utf16(value):
@@ -180,6 +181,16 @@ def align_references(parsed, aligner, aligned_objects):
     for number, link in enumerate(parsed["links"]):
         if link["kind"] != "reference":
             continue
+        ambiguous = {key: parsed.get('ambiguous_labels', {})[key]['candidate_count']
+                     for key in dict.fromkeys(link['targets']) if key in parsed.get('ambiguous_labels', {})}
+        if ambiguous:
+            excluded.append({'link': number, 'reason': 'reference label has multiple source claims',
+                             'requested_labels': list(link['targets']), 'ambiguous_labels': ambiguous})
+            continue
+        if not reference_names_verified(parsed, link['targets']):
+            excluded.append({'link': number, 'reason': 'source label naming is unverified',
+                             'requested_labels': list(link['targets'])})
+            continue
         if link.get("unsupported_context_commands"):
             excluded.append({"link": number, "reason": "unresolved source commands prevent complete reference context"})
             continue
@@ -204,6 +215,11 @@ def align_references(parsed, aligner, aligned_objects):
 def align_paper(parsed, index, threshold=0.95):
     if type(threshold) not in (float, int) or not 0 < threshold <= 1:
         raise ValueError("alignment threshold must be finite and in (0,1]")
+    if len({row['id'] for row in parsed['objects']}) != len(parsed['objects']):
+        raise UnsupportedSource('source object identities are duplicated before alignment')
+    occurrences = [row['source_occurrence_id'] for row in parsed['objects'] if 'source_occurrence_id' in row]
+    if len(set(occurrences)) != len(occurrences):
+        raise UnsupportedSource('source object occurrences are duplicated before alignment')
     aligner = TextAlignment(index)
     objects, entries, excluded = [], [], []
     entry_matches = {}
@@ -273,13 +289,17 @@ def align_paper(parsed, index, threshold=0.95):
         if link["kind"] != "reference":
             continue
         targets = [parsed["label_targets"].get(key) for key in set(link["targets"])]
-        unknown_reference_targets |= any(target is None for target in targets)
+        unknown_reference_targets |= (not reference_names_verified(parsed, link['targets'])
+                                      or any(target is None for target in targets)
+                                      or any(key in parsed.get('ambiguous_labels', {}) for key in link['targets']))
         relevant_reference_links.extend((number, target) for target in targets if object_kinds.get(target) in ("equation", "statement"))
     reference_pairs = {(row["source_link"], row["target"]) for row in references}
     object_links_complete = (inventory_known and (bool(relevant_reference_links) or negative_evidence) and not unknown_reference_targets and not parsed["coverage"].get("unsupported_reference_commands")
                              and all(pair in reference_pairs for pair in relevant_reference_links)
                              and all(kind in eligible_kinds for kind in {object_kinds[target] for _, target in relevant_reference_links}))
     proof_links_complete = ("proof" in eligible_kinds and "statement" in eligible_kinds
+                            and all(reference_names_verified(parsed, row['proof_target_labels']) for row in parsed['objects'] if row['kind'] == 'proof' and row['proof_target_labels'])
+                            and not any(label in parsed.get('ambiguous_labels', {}) for row in parsed['objects'] if row['kind'] == 'proof' for label in row['proof_target_labels'])
                             and all(row["proof_targets"] and all(target in object_kinds and object_kinds[target] == "statement" for target in row["proof_targets"]) for row in objects if row["kind"] == "proof"))
     metrics = {"O1": figure_tables, "O2": False, "O3": "equation" in eligible_kinds,
                "O4": object_links_complete, "O5": "statement" in eligible_kinds, "O6": proof_links_complete,

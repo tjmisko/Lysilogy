@@ -226,7 +226,7 @@ acceptance are unchanged.
   Preserve arbitrary/empty mask uncertainty, native anchors and both immutable cohorts. Never
   substitute a mask's bounding frame for its painted support. A bounded negative experiment
   is reportable; O1/O2 targets and complete region denominators remain unchanged.
-- [ ] **#107 Preserve source objects with ambiguous duplicate labels** (after #105; part of #97).
+- [x] **#107 Preserve source objects with ambiguous duplicate labels** (after #105; part of #97).
   Branch `fix/e8.3-duplicate-labels`. Owns current evaluation-only source parser/alignment,
   manual consumer guards and tests in `scripts/truth/latex/`, new-generation evidence/contract.
   Keep source-occurrence objects distinct, every ambiguous reference counted but unresolved,
@@ -4092,3 +4092,154 @@ date, last merged issue, in-flight branches and their state, next action, and op
   is still blocked. Do not ask permission again. User-terminal script remains
   ~/.config/lysilogy/apply-codex-kb-network-permissions.py, then Codex restart; no automatic
   profile edit can succeed on current read-only ~/.codex mount. All phase/system exits remain.
+
+
+### 2026-09-13 23:12 UTC — corrected duplicate comparison complete; mask and layout checks continue
+
+- Last merged issue remains #106/PR112 at e1fe6a38925c90de5189462ead96725439d69f73.
+  Remote completed-branch deletion and main docs push fa841d4 both succeeded. Phase A/Wave A2;
+  scorecard1/5 gates available/pass and3/30 objectives at target (O1/O2/O30). No phase exit,
+  system acceptance or new truth publication. All10 unrelated preview hashes remain unchanged.
+- #107 corrected source05d33352da50af754ff76765ba64746bb5215f84 is independently clear,
+  review3d2c3c767385876abdc78644a5866003f77c573269939c075e1828239197feae. It treats raw
+  ^^ notation before comment/definition masking as unknown lexical semantics; exact markers
+  remain evidence and affected automatic/manual truth is withheld. Direct-source snapshot
+  `duplicate-labels/comparison-05d3335-source-loader-v1/launch.json` SHA
+  e41103ace2e7e723ce08e01b5763c382363b9e759e9924d9d78aa21f71be15a3; independent runner review
+  f19f33b17255f2142af509c6502d112f5969ad19a0c2dd8d00182a9ae768f521. Corrected first7 passed,
+  receipt916617ebac2cc2dc1aac9cd57ff90a1711c8559a0abbfed76e6b3771f4799ecc; independent
+  first7 review4dbc2f3a47c41bafb341b90527b20790389a424a598da54596cc6253d6f81ef2.
+- Corrected702 TTY2552 completed exit0,870.997910s,315696KiB,$0/no external calls. All90 prior
+  duplicate failures recover and all612 prior successes remain;702 source parses/assemblies,
+  zero raw accepted and zero eligible metrics. Receipt a77d28ff2c0a49181bbc31d12cbd34f4ce88d56637d1add6a93ffff58f0132f9;
+  reportcd8b553701b769ff1318d28f3d236c76d5385b425d912328835a00434b376970; ledger
+  4dc2517e867846197d1a580f19701446bba48e0fc913bc65d2d5b145c6730a9e. Historical f24 generation
+  remains immutable. Comparison951f05dd5163d9597b8a8f93fdadc2511ec58cf940cd531a2bbb08178a87fc0d
+  confirms all702 object/link/entry occurrence inventories unchanged,27 corrected target arguments
+  across10 papers,88 papers with lexical evidence and one eligibility loss:2007.05954 has five raw
+  ^^ markers in svjour3.cls, so its prior O5/O6 negatives are withheld. Do not relax the guard.
+  Main ordinary integration405c6a3d050219338376c7fee8fa6b2c20f3db4c passed276 latex/35 collector
+  tests. Closure045e80cd9e283ca7fb154ad711dc465cfbcac3c3481ff82ab36b900e7aab5d0b:14 derivation
+  modules unchanged,79 production/collector/Cargo files equal main,37 frozen-release files exact.
+  Owner finish_corpus_proxy prepares final review/report/draft; full gates await another window.
+- #111 branch `fix/e1.1-mask-regions`, owner finish_benchmark, clean own baseline fa841d4 passed,
+  receipt134f8526cf8dffd3784cbc78ec7f191e400c9960c857c66dc02a77fe37d59e01. First source
+  cd360fb311b1a020643ebbdf05e696c1caac4ebc, follow-up3f2599288acfe7ae3bc0ef951ecc2ca10ee318de.
+  Independent packet12 cases/31 variants remains frozen, SHA
+  deeef753e886092f54d841cc2e746387085d5c8351daf15ceea24d5bb0cde892. Native index/truth/scoring
+  unchanged. Reviewer found the new embedded masks.js missing from collector implementation-file
+  inventory; owner must fix and test. Formatting/37 Python tests pass; compiled validation,
+  /dev/stdin compatibility and reviewer binary replay pending. #111 now owns the sole heavy window;
+  no changed-truth measurement authorized until source/compiled review clears. Continuation
+  `mask-regions/resume-3f25992.json` SHA5e8c3bb9e6c78013d85de86398d10917935f9a37f4e5cbbda13f00173af56e99.
+- #110 root branch `feat/e8.3-source-layout-probe`: f7e9544 primitives independently clear,
+ 35 tests, all72 runtime files/19168 entries and30 frozen selected inputs verified. Review
+  `review-layout-primitives-f7e9544/review.json` SHA
+  bb77e338d13238739ae38e3a68a356b648bd37ed5f83cda2c5372ef39fc4baae. Runtime-v2 inventory
+  fd2fa9e27a350cb97aed83b7eb17b59274b35ec24f488cb4e3bb180419ad2a3a adds the exact installed
+  font map. Synthetic-v4 generated document builds and repeat-renders exactly at96/192,
+  .867170224s, receipt28cdd1ed243434e804fcdf7c1db43ad13de51f9c1c7af562e249a15b1422cf01.
+  Its3 earlier module bytes differ from committed f7 and no exact copies exist: retain it as
+  historical capability evidence, never exact current-source execution evidence.
+- New #110 committed delta255e2c6a4054d4e08cfd9a8ad6885dea81bc34a1 adds source-only frozen
+  execution with exact independent-review binding, Python/bwrap/unshare pins, per-process
+  absolute batch deadline, population/deadline/changed-tool tests and generated TeX engine,
+  format, shell, path, infinite-compilation and mathematical-fidelity cases. Tiny tests passed
+  (4batch/5loader/12policy/6experiment). New actual TeX suite remains unrun while111 compiles.
+  Review requested; final snapshot must copy committed bytes. Nextroot: prepare pinned synthetic
+  evidence, run after window release, address review, ordinary main merge/full gates, freeze/review
+  selection+runner and bounded10 experiment. No deposited TeX/PDF build has executed. #110 may
+  finish as an honest exploratory no-go; #97 approximately500-paper K1 requirement remains open.
+- Native queue remains paused before26:7250unique/6299scale,3701scale indexes remain. No downloads.
+  Resume pinned --start26 only after allocated implementation windows. #109 remains queued after107.
+  #25/PR94, #33, #71/PR93 and #72/PR95 remain held on actual provider truth/dependencies. Allfour
+  hosts are permanently approved but current config grants remain absent/effectively blocked;
+  the managed ~/.codex mount is read-only even after approved escalation. User-terminal action is
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart Codex. Do not ask
+  approval again. Continue offline work. Root/finish_benchmark/finish_corpus_proxy are three
+  implementers; review_ready_prs is separate. Use followup_task to wake an idle reviewer.
+
+
+### 2026-09-13 23:49 UTC — #107 merged; confined ten-paper experiment is a measured no-go
+
+- Last merged issue: **#107/PR113**, merge ca1f2c9756f4aa25682ccbe0ca076fbe536a0052 at
+  23:46:42Z, reviewed head dfb878c072046b9107472fc8b2f02c2251654a41. Final independent
+  review `review-duplicate-labels-05d3335/final-pr-dfb878c/review.json` SHA
+  c0f354497e03d731941466090ce982bdc692b2e0bf94177e4da00a2666772ca9 is clear. Root verified
+  all196 portable evidence artifacts outside the completed worktree; reviewer verified320
+  total references and207 gate fingerprints. Completed worktree/target and local/remote
+  branch removed. Main fast-forwarded; all10 unrelated preview hashes remain exact.
+- #107 retains all90 recovered failures and612 earlier parses, with no current automatic
+  metric admission. Complete source occurrences/links/entries remain;27 literal-comma
+  reference corrections affect10 papers,88 papers retain raw ^^ evidence, and the prior sole
+  empty O5/O6 candidate is conservatively withheld. Frozen K1 v1/v2 replay pairs are exact.
+  Final gates pass362 Rust/421 Python/85 Node. Initial G5 missing-TypeScript failure remains;
+  the locked local package was restored offline and affected G5/replays passed. Inherited
+  O1/O2 first became unavailable because the collector fingerprints changed align.py. Actual
+  current-v2 refresh44027ba4162479e09c16c5771eb89f39957b4efb5fcf405aa49508aca023b1de
+  restores available O1=1/O2=.9076006899903768, all23 decisions/predictions unchanged from106.
+  Report `2026-09-13-kb-duplicate-labels.md`; machine `eval/evidence/k1-duplicate-labels.json`.
+- GitHub generated PR113's default merge message without the requested conventional subject
+  or co-author trailer. Do not rewrite published history. Future gh merges must pass explicit
+  conventional --subject and a --body-file ending Co-Authored-By: Codex <noreply@openai.com>.
+  Ordinary main merges continue instead of unapproved rebase; newer main changes at113 merge
+  were documentation only, with exact gated source closure retained.
+- Root #110 is pushed at8c153b342f47588f5f5c4aeaf156b6d3ce9da333 in
+  `feat/e8.3-source-layout-probe`. It includes main integration dbf2cd1 and the corrected
+  absolute deadline: setup and Popen consume the same budget; pre-spawn expiry prevents launch,
+  and post-spawn expiry triggers cleanup. Three independent mocked cases and the original
+  reviewer reproduction pass. Generated-only first run255e2c6 failed a test literal LaTeX vs
+  installed LaTeX2e; corrected08ff194 passed7/7 and remains historical. Current exact-source
+  synthetic `synthetic-8c153b3-v1/receipt.json` SHA
+  2a4cb03532d1d069cae457ef2cefacb24b7ad7a91a40ede56d0076695e1a99cf passes7/7 in8.952154s,
+  453 artifacts/45 confinement receipts/16 rasters. Source/layout tests total57 new cases.
+- #110 full `gates-8c153b3/receipt.json` aca2073e9eb9dcf25915666b08c0cb0fedde76120a51b144e1ec01fa358c0c28
+  passes fmt/strictClippy/own CLI/G5,362 Rust/440 Python/85 Node,89.286s. Logs and own binary
+  archived outside worktree. Objects --check exited0 but O1/O2 became unavailable because
+  src/eval/g5.py is in the broad collector fingerprint; do not call that a measured pass.
+  Next root: ordinary merge latest107/main, rerun applicable integrated gates, refresh actual
+  retained-v2 collector with own bridge, require all23 outcomes unchanged and explicitly
+  available O1/O2, finish report/machine evidence/draft PR and independent final review.
+- **#110 actual ten-paper experiment completed**, TTY61080 exit0,15.785762s. Frozen snapshot
+  `source-layout-probe/experiment-8c153b3-v1/launch.json` SHA
+  0b02e7bfc0faa9f4fdff157d8345c0c086c7f03c2b5c95ca9a14deb30429f725 was independently cleared
+  by `review-layout-launch-08ff194/correction-8c153b3/review.json` SHA
+  0d967578086257e9fece3172aa59a730da931788d4f8de72a81e15e9a86752f3 before execution. Bootstrap
+  compiled only verified copied source bytes. Execution receipt
+  fc4f6de170b1b87d630312ad7b903f7e9fd545e6e77ad04dce6b46b8aec1bea7; full batch
+  613e314ff3eaffa07f4beeb16591a82f2e6cf4bb772db79f73bf06ef69b48d60. All10 remain selected.
+  Only1911.08525v2 builds (8 original/8 rebuilt pages);0 exact page/resolution pairs of16,
+  hence1/10 builds and0/10 matching complete documents: exploratory NO-GO. Nine stop at missing
+  classes/packages in the frozen runtime. No installs/source fixes/engine fallback or rerun.
+  All45 process output/inode bounds pass, max controller-lifetime child RSS59840KiB,0 calls/$0.
+  Original30 source/PDF/index bindings and frozen inputs unchanged; no truth admission.
+- #110 actual root summary `source-layout-probe/actual-summary-8c153b3.json` SHA
+  f752298e989db796a28cd3ed9e7f4b7ad2688c51a614f364dbbd0bde283e2d97 binds669 final artifacts/
+  313741984bytes. Reviewer is now auditing actual results. First-pass output hashes record
+  earlier states of inodes deliberately reused on pass2; only final mutable bytes and separate
+  per-pass logs/receipts remain, not copied first-pass outputs. State that limitation. External
+  report draft `report-body-before-metric.md` has one METRIC_REFRESH_PENDING placeholder;
+  replace it only after current available metrics. #97 stays open; no experimental target lowered.
+- #111 current pushed d596880 in `fix/e1.1-mask-regions`, owner finish_benchmark. First actual
+  eb551e7 completed43.231s, receipt5a63565a431aa9338c65b90c5d7c1b1b890ed4e6578cdf9aafeb96a91cb8326e:
+  old v1 exact, v2 O1=1/O2=.9107793204006069, Figure6 recovered IoU .98928554; Figures4/5 zero.
+  Exact compiled probe ac7a9b8a3329b41b87107a3e0c176e2c7ae210f0ecc4a8ed8965ee349795c081
+  proved default serde_json f64 parsing shifted three values1ULP. Existing float_roundtrip=[]
+  feature adds no dependencies and fixes exact parsing without a tolerance. Source6568e73
+  independently clear; d596880 only clarifies test matrix type. Corrected all-target368 Rust,
+  Clippy and zero-difference probe pass, receipt a99da5a8e4531f8af11bb19d5df02cf77b752e9c397b1c4ee7a703fa5f6e21e6.
+  Compiled/second-runner review004a7ec057852b96c64f0ef1d0b1e793861bd24eea2c67bb39786ab417704fb6
+  clear. Owner is allocated the next ~45s second v1/v2 actual; check mailbox for terminal state.
+  Standalone resume `mask-regions/resume-d596880.json` edea3bcf28bedc978e9ab128f6e64c94193344a8a68e1e2873e36d558e1ffd82.
+- #109 is now ready after107. Assign finish_corpus_proxy `fix/e8.3-bibtex-fields` via required
+  gh worktree create from updated main, current parser/BibTeX scanner/tests/contract/report only.
+  Own CLI before, inert percent/brace/quote tests, reviewed eight-failure plus prior-success
+  comparison, immutable releases and full gates/PR review. No speculative recovery forecast.
+  Root110 + owner111 + owner109 are at most three implementations; review_ready_prs separate.
+- Still PhaseA/WaveA2. Main scorecard1/5 gates available/pass,3/30 objectives at target
+  (O1/O2/O30). Historical O25/O26 misses retain follow-ups21/22; broad K1 retains97. No new
+  follow-up issue or phase/system completion. Native queue paused before26,7250unique/6299scale
+  verified,3701scale remain; no downloads. #25/PR94, #33, #71/PR93, #72/PR95 still blocked on
+  actual provider truth/dependencies. Allfour host grants are already approved but managed
+  ~/.codex remains read-only and grants ineffective. User-terminal script remains
+  ~/.config/lysilogy/apply-codex-kb-network-permissions.py, then restart; do not ask again.
