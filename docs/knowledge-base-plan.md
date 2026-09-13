@@ -371,6 +371,14 @@ hashes, conservative clip/state handling and per-paper limits are specified in
 and .90/.75 targets remain fixed; a new measurement is required before acceptance.
 
 
+Expanded-cohort repair (#106) preserves that boundary with detector version3 and graphics
+version2: only explicitly supported opaque full-page groups and exact rectangular clipping
+paths may expose additional image placements. Image masks remain unavailable in the first
+measured iteration. Repeated numeric columns support below-grid table captions; one numbered
+heading cannot establish a table. The short sentence-continuation caption guard is independent
+of the longer prose barrier that bounds diagram regions. Both immutable K1 cohorts are measured
+separately, with their original matching and complete denominators retained.
+
 ### E1.2 Backend bibliography extraction and parsing
 
 Move bibliography detection and entry splitting from `paperLinks.ts` to the backend, and persist

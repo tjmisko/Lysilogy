@@ -2,7 +2,7 @@ use super::{Figure, FigureReference, ReadingIndex, ReadingToken, TextRange, nati
 use crate::domain::TextRect;
 
 /// Changes to derived caption/region behavior invalidate objects, not native anchors.
-pub const DETECTOR_VERSION: u16 = 2;
+pub const DETECTOR_VERSION: u16 = 3;
 
 struct Caption<'a> {
     paragraph: &'a super::Paragraph,
@@ -129,11 +129,19 @@ fn continues_prose(
     let first_rect = union(first.rects.iter().copied());
     let font = first_rect.y_max - first_rect.y_min;
     let prior = union(preceding.iter().flat_map(|t| t.rects.iter().copied()));
+    let short_reference = preceding.len() >= 6
+        && matches!(last.text.to_ascii_lowercase().as_str(), "in" | "see")
+        && preceding.iter().all(|token| {
+            token
+                .rects
+                .iter()
+                .all(|rect| (rect.y_min - prior.y_min).abs() < font * 0.4)
+        });
     font > 0.0
-        && prose_barrier(&preceding, font)
+        && (prose_barrier(&preceding, font) || short_reference)
         && caption.y_min >= last_rect.y_max
         && caption.y_min - last_rect.y_max < font * 0.6
-        && (prior.x_min - caption.x_min).abs() < font
+        && (prior.x_min - caption.x_min).abs() < font * if short_reference { 2.0 } else { 1.0 }
         && (last_rect.y_max - last_rect.y_min - font).abs() < font * 0.15
 }
 
@@ -338,6 +346,18 @@ fn canonical_roman(text: &str) -> bool {
     remaining.is_empty()
 }
 
+fn page_font(index: &ReadingIndex, page: u32) -> f32 {
+    let mut fonts = index
+        .tokens
+        .iter()
+        .filter(|t| t.page == page)
+        .flat_map(|t| t.rects.iter().map(|r| r.y_max - r.y_min))
+        .filter(|h| *h > 0.0)
+        .collect::<Vec<_>>();
+    fonts.sort_by(f32::total_cmp);
+    fonts.get(fonts.len() / 2).copied().unwrap_or(10.0)
+}
+
 fn figure_region(
     index: &ReadingIndex,
     candidate: &Caption<'_>,
@@ -351,19 +371,18 @@ fn figure_region(
         .pages
         .iter()
         .find(|candidate| candidate.number == page)?;
-    let mut fonts = index
-        .tokens
-        .iter()
-        .filter(|t| t.page == page)
-        .flat_map(|t| t.rects.iter().map(|r| r.y_max - r.y_min))
-        .filter(|h| *h > 0.0)
-        .collect::<Vec<_>>();
-    fonts.sort_by(f32::total_cmp);
-    let body_font = fonts.get(fonts.len() / 2).copied().unwrap_or(10.0);
+    let body_font = page_font(index, page);
     if candidate.kind == "Table"
         && let Some(below) = table_below(index, candidate, captions, body_font, images)
     {
         return Some(below);
+    }
+    if candidate.kind == "Table"
+        && let Some(above) = table_above(index, candidate, captions, body_font, images)
+    {
+        // Tables also put captions below a grid. Repeated printed numeric cells
+        // provide a stronger grid cue than a generic diagram/prose rectangle.
+        return Some(above);
     }
     let top = prose_top(index, candidate, captions, body_font, dimensions.height);
     let height = caption.y_min - top;
@@ -632,6 +651,14 @@ fn member_spans(index: &ReadingIndex, page: u32, rect: TextRect) -> Vec<TextRang
 }
 
 // Tables commonly put their captions above the grid, unlike figure captions.
+fn remember_rows(rows: &mut Vec<f32>, text: &[&ReadingToken], font: f32) {
+    for cell in text.iter().flat_map(|token| &token.rects) {
+        if rows.iter().all(|y| (*y - cell.y_min).abs() > font * 0.4) {
+            rows.push(cell.y_min);
+        }
+    }
+}
+
 fn table_below(
     index: &ReadingIndex,
     candidate: &Caption<'_>,
@@ -667,6 +694,7 @@ fn table_below(
         .unwrap_or(dimensions.height);
     let mut bounds = None;
     let mut numeric = false;
+    let mut rows = Vec::new();
     for (paragraph, text, rect) in candidates {
         let gap_limit = if bounds.is_some() {
             font * 2.0
@@ -688,10 +716,11 @@ fn table_below(
             .collect::<Vec<_>>()
             .join(" ");
         numeric |= content.chars().filter(char::is_ascii_digit).count() >= 2;
+        remember_rows(&mut rows, &text, font);
         bounds = Some(bounds.map_or(rect, |r| union([r, rect].into_iter())));
     }
     let mut bounds = bounds?;
-    if bounds.y_max - bounds.y_min <= font {
+    if rows.len() < 2 {
         return None;
     }
     // The caption may end before the last column. Extend across the established
@@ -732,6 +761,135 @@ fn table_below(
         dimensions.width,
         caption.y_max,
         image_barrier,
+    ))
+}
+
+fn numeric_cell(token: &ReadingToken) -> bool {
+    let text = token.text.trim_matches(['(', ')', '[', ']', ',', '%']);
+    text.chars().any(|ch| ch.is_ascii_digit()) && text.parse::<f32>().is_ok_and(f32::is_finite)
+}
+
+fn table_column_rows(numeric: &[TextRect], caption_y: f32, font: f32) -> Option<Vec<f32>> {
+    if numeric.len() > 256 {
+        return None;
+    }
+    let mut best = Vec::<f32>::new();
+    for anchor in numeric {
+        let mut column = numeric
+            .iter()
+            .filter(|cell| (cell.x_min - anchor.x_min).abs() < font * 0.5)
+            .map(|cell| cell.y_min)
+            .collect::<Vec<_>>();
+        column.sort_by(f32::total_cmp);
+        column.dedup_by(|a, b| (*a - *b).abs() < font * 0.4);
+        let mut run = Vec::new();
+        // Start nearest the caption so unrelated earlier numeric columns cannot
+        // establish a disconnected band of supposed table rows.
+        for y in column.into_iter().rev() {
+            if run.last().is_some_and(|last: &f32| *last - y > font * 2.2) {
+                break;
+            }
+            run.push(y);
+        }
+        if run.len() >= 2 && caption_y - run[0] < font * 5.0 && run.len() > best.len() {
+            best = run;
+        }
+    }
+    (!best.is_empty()).then_some(best)
+}
+
+fn table_above(
+    index: &ReadingIndex,
+    candidate: &Caption<'_>,
+    captions: &[Caption<'_>],
+    font: f32,
+    images: &[TextRect],
+) -> Option<TextRect> {
+    let dimensions = index
+        .pages
+        .iter()
+        .find(|page| page.number == candidate.page)?;
+    let caption = candidate.rect;
+    let mut lower = dimensions.height.mul_add(-0.4, caption.y_min).max(0.0);
+    for other in captions.iter().filter(|other| other.page == candidate.page) {
+        if other.rect.y_max < caption.y_min && horizontal_gap(other.rect, caption) == 0.0 {
+            lower = lower.max(font.mul_add(0.4, other.rect.y_max));
+        }
+    }
+    for image in images {
+        if image.y_max < caption.y_min && horizontal_gap(*image, caption) == 0.0 {
+            lower = lower.max(image.y_max);
+        }
+    }
+    let cells = index
+        .objects
+        .paragraph
+        .iter()
+        .filter(|paragraph| {
+            !captions
+                .iter()
+                .any(|c| c.paragraph.start == paragraph.start)
+        })
+        .flat_map(|paragraph| paragraph_tokens(index, paragraph, candidate.page))
+        .filter(|token| {
+            !token.rects.is_empty()
+                && token.rects.iter().all(|rect| {
+                    rect.y_min >= lower
+                        && rect.y_max <= caption.y_min
+                        && rect.x_min >= caption.x_min - font
+                        && rect.x_max <= caption.x_max + font
+                })
+        })
+        .collect::<Vec<_>>();
+    if cells.len() > 2048 {
+        return None;
+    }
+    let numeric = cells
+        .iter()
+        .copied()
+        .filter(|token| numeric_cell(token))
+        .map(|token| union(token.rects.iter().copied()))
+        .collect::<Vec<_>>();
+    let best = table_column_rows(&numeric, caption.y_min, font)?;
+    let (&last, &first) = (best.first()?, best.last()?);
+    let mut members = cells
+        .iter()
+        .copied()
+        .filter(|token| {
+            token
+                .rects
+                .iter()
+                .all(|rect| best.iter().any(|y| (rect.y_min - y).abs() < font * 0.4))
+        })
+        .collect::<Vec<_>>();
+    // Include one adjacent printed header row, keeping arbitrary earlier prose
+    // out of the grid. The resulting region still consists of observed tokens.
+    let header_y = cells
+        .iter()
+        .flat_map(|token| &token.rects)
+        .filter(|rect| {
+            rect.y_min < font.mul_add(-0.4, first) && rect.y_min >= font.mul_add(-2.2, first)
+        })
+        .map(|rect| rect.y_min)
+        .max_by(f32::total_cmp);
+    if let Some(y) = header_y {
+        members.extend(cells.iter().copied().filter(|token| {
+            token
+                .rects
+                .iter()
+                .all(|rect| (rect.y_min - y).abs() < font * 0.4)
+        }));
+    }
+    let bounds = union(members.iter().flat_map(|token| token.rects.iter().copied()));
+    if bounds.y_max < last || bounds.x_min >= bounds.x_max {
+        return None;
+    }
+    Some(padded(
+        bounds,
+        font * 0.4,
+        dimensions.width,
+        lower,
+        caption.y_min,
     ))
 }
 
@@ -910,6 +1068,76 @@ mod tests {
     }
 
     #[test]
+    fn should_reject_a_duplicate_caption_when_a_short_indented_sentence_continues_into_its_reference()
+     {
+        let index = fixture(&[
+            (
+                "Figure 4: Independently placed schematic.",
+                "caption",
+                50.0,
+                80.0,
+            ),
+            (
+                "We explain the model and its changes in",
+                "float",
+                62.0,
+                200.0,
+            ),
+            (
+                "Figure 4. A further sentence describes the method.",
+                "caption",
+                50.0,
+                213.0,
+            ),
+        ]);
+        let figures = find(&index);
+        assert_eq!(figures.len(), 1);
+        assert!(figures[0].caption.contains("Independently placed"));
+        assert_eq!(figures[0].references.len(), 1);
+        // The body-boundary detector has its separate multi-line threshold.
+        let previous = &index.objects.paragraph[1];
+        assert!(!prose_barrier(&paragraph_tokens(&index, previous, 1), 10.0));
+    }
+
+    #[test]
+    fn should_preserve_a_true_caption_when_nearby_text_lacks_sentence_continuation_evidence() {
+        for (label, x, y) in [
+            ("A short diagram label", 62.0, 200.0),
+            ("We explain the model and its changes here", 62.0, 200.0),
+            ("We explain the model and its changes in.", 62.0, 200.0),
+            ("We explain the model and its changes in", 62.0, 180.0),
+            ("We explain the model and its changes in", 330.0, 200.0),
+        ] {
+            let index = fixture(&[
+                (label, "float", x, y),
+                (
+                    "Figure 4: A separate authored caption.",
+                    "caption",
+                    50.0,
+                    213.0,
+                ),
+            ]);
+            assert_eq!(find(&index).len(), 1, "{label}; {x}; {y}");
+        }
+    }
+
+    #[test]
+    fn should_keep_short_diagram_labels_when_the_caption_continuation_guard_changes() {
+        let index = fixture(&[
+            (
+                "Several independent descriptors are combined in",
+                "float",
+                70.0,
+                100.0,
+            ),
+            ("Output", "float", 70.0, 130.0),
+            ("Figure 1: Full diagram.", "caption", 50.0, 170.0),
+        ]);
+        let region = find(&index)[0].rect.unwrap();
+        assert!(region.y_min < 100.0 && region.y_max > 130.0);
+    }
+
+    #[test]
     fn should_exclude_page_whitespace_and_caption_when_plot_labels_bound_a_diagram() {
         let index = fixture(&[
             ("Upper label", "float", 100.0, 150.0),
@@ -957,6 +1185,97 @@ mod tests {
         let rect = result[0].rect.unwrap();
         assert!(
             rect.x_min > 90.0 && rect.x_max < 200.0 && rect.y_min > 120.0 && rect.y_max < 180.0
+        );
+    }
+
+    #[test]
+    fn should_recover_grid_above_caption_when_following_numbered_heading_is_not_a_table() {
+        let index = fixture(&[
+            ("Method", "float", 80.0, 130.0),
+            ("Score", "float", 210.0, 130.0),
+            ("First", "float", 80.0, 146.0),
+            ("0.553", "float", 210.0, 146.0),
+            ("Second", "float", 80.0, 162.0),
+            ("0.603", "float", 210.0, 162.0),
+            (
+                "Table I: Comparison of independently measured model scores.",
+                "caption",
+                50.0,
+                185.0,
+            ),
+            ("2.2. Further experiments", "body", 50.0, 222.0),
+        ]);
+        let table = &find(&index)[0];
+        let rect = table.rect.unwrap();
+        assert!(rect.y_min < 130.0 && rect.y_min > 120.0);
+        assert!(rect.y_max > 172.0 && rect.y_max < 185.0);
+        assert!(rect.x_min > 70.0 && rect.x_max > 225.0 && rect.x_max < 245.0);
+        assert!(
+            table
+                .spans
+                .iter()
+                .all(|span| span.end <= index.objects.paragraph[5].end)
+        );
+    }
+
+    #[test]
+    fn should_withhold_a_table_region_when_its_only_neighbor_is_one_numbered_heading() {
+        let mut index = fixture(&[
+            (
+                "Table 1: A caption with unavailable grid geometry.",
+                "caption",
+                50.0,
+                100.0,
+            ),
+            ("2.2. Further experiments", "body", 50.0, 135.0),
+        ]);
+        // The heading is slightly taller than the median native font, as is
+        // common with bold text; that cannot manufacture a second printed row.
+        for token in index.tokens.iter_mut().skip(8) {
+            token.rects[0].y_max += 1.0;
+        }
+        assert!(find(&index)[0].rect.is_none());
+    }
+
+    #[test]
+    fn should_use_repeated_cell_rows_when_multiline_table_columns_look_like_prose() {
+        let mut index = fixture(&[
+            ("Method", "body", 70.0, 130.0),
+            ("Independent baseline method alpha", "body", 70.0, 146.0),
+            ("Independent baseline method beta", "body", 70.0, 162.0),
+            ("Independent baseline method gamma", "body", 70.0, 178.0),
+            ("Score", "body", 250.0, 130.0),
+            ("0.55", "body", 250.0, 146.0),
+            ("0.60", "body", 250.0, 162.0),
+            ("0.58", "body", 250.0, 178.0),
+            (
+                "Table II: Detailed results for the independent comparison methods.",
+                "caption",
+                50.0,
+                200.0,
+            ),
+            (
+                "A neighboring column with separate native text",
+                "body",
+                350.0,
+                178.0,
+            ),
+        ]);
+        index.objects.paragraph[0].end = index.objects.paragraph[3].end;
+        index.objects.paragraph.drain(1..4);
+        assert!(prose_barrier(
+            &paragraph_tokens(&index, &index.objects.paragraph[0], 1),
+            10.0
+        ));
+        let table = &find(&index)[0];
+        let rect = table.rect.unwrap();
+        assert!(rect.y_min < 130.0 && rect.y_max > 188.0 && rect.y_max < 200.0);
+        assert!(rect.x_min < 70.0 && rect.x_max > 265.0 && rect.x_max < 300.0);
+        assert!(
+            table
+                .spans
+                .iter()
+                .any(|span| utf16_slice(&index.text, span.start, span.end).contains("gamma"))
         );
     }
 

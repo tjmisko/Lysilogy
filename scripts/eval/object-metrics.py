@@ -26,7 +26,8 @@ KINDS = ('figure', 'table')
 VERSION = 'figure-table-metrics-v5'
 TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2')
 NATIVE_BASIS_FORMAT = 'native-json-f32-v1'
-DETECTOR_VERSION = 2
+DETECTOR_VERSION = 3
+GRAPHICS_VERSION = 2
 MAX_JSON = 32 * 1024 * 1024
 
 
@@ -305,7 +306,7 @@ def validate_derivation(row, artifact, index):
 
 def validate_graphics(row, artifact, paper, index, cache):
     evidence=artifact.get('graphics')
-    require(isinstance(evidence,dict) and evidence.get('version')==1,'current source factory omitted graphics evidence')
+    require(isinstance(evidence,dict) and type(evidence.get('version')) is int and evidence['version']==GRAPHICS_VERSION,'current source factory omitted graphics evidence')
     basis_raw=row['graphics_basis_json'].encode();basis=document(basis_raw)
     require(basis==dict(evidence,generation='') and digest(basis_raw)==evidence['generation'],'graphics generation differs')
     require(evidence['native_generation']==artifact['reading_index_generation'] and evidence['pdf_sha256']==paper['pdf_sha256'],'graphics native/PDF identity differs')
@@ -313,7 +314,7 @@ def validate_graphics(row, artifact, paper, index, cache):
     expected_tool=str(Path(expected_tool).resolve()) if expected_tool else None
     require(evidence.get('tool_path')==expected_tool,'graphics tool path differs')
     require(evidence.get('tool_sha256')==(digest(read(Path(expected_tool),128*1024*1024)) if expected_tool else None),'graphics executable changed')
-    require(evidence['cache_key']==digest(canonical([1,evidence['native_generation'],evidence['pdf_sha256'],evidence['tool_sha256']])),'graphics cache identity differs')
+    require(evidence['cache_key']==digest(canonical([GRAPHICS_VERSION,evidence['native_generation'],evidence['pdf_sha256'],evidence['tool_sha256']])),'graphics cache identity differs')
     pages=evidence['pages'];require(isinstance(pages,list) and len(pages)<=400,'invalid graphics page inventory')
     page_ids=[page['page'] for page in pages]
     require(all(type(number) is int and 1<=number<=400 for number in page_ids),'invalid graphics page number')
