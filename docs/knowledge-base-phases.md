@@ -164,7 +164,7 @@ acceptance are unchanged.
   FTS5). Include the 500k-Work synthetic neighborhood query benchmark from the design section.
 - [x] **#35 E2.3 Person name parser** (after #34). Branch `feat/e2.3-names`. Owns
   `src/kb/names.rs`. Pure functions plus a large table-driven test.
-- [ ] **#36 E2.4 Title normalizer** (after #34). Branch `feat/e2.4-titles`. Owns
+- [x] **#36 E2.4 Title normalizer** (after #34). Branch `feat/e2.4-titles`. Owns
   `src/kb/titles.rs`. Pure functions; the FTS5 index population itself lands with #33 or #38,
   whichever merges later.
 - [ ] **#71 E8.4 Reference, acquisition, and read-next truth** (after #68, #63). Branch
@@ -186,6 +186,19 @@ acceptance are unchanged.
 
 ### Phase A notes
 
+- #36 merged in PR #89 (`0987241`) after independent clearance of final head `11027dd`.
+  `kb::titles::title_key` folds common presentation variants while retaining negation, math
+  operators/script binding, and unknown TeX argument structure. `title_similarity` is bounded
+  multiset character-trigram Dice scoring for candidate generation; even a fuzzy score of one
+  does not establish exact equality or identity. #33 must use the shared title key for its FTS5
+  projection when resumed. Ten tests include 52 equivalent and 35 distinguishing title pairs;
+  review reproduced and fixed fraction/group, minus, Unicode-script, and escaped-brace collisions.
+  Final integrated G5 passed 305 Rust, 80 Python and 85 Node tests. O30 remains 0/10k; real
+  resolver metrics remain unavailable without truth/collectors. No gate, target or baseline
+  changed. Report `docs/experiment-reports/2026-09-13-title-normalizer.md` and evidence
+  `eval/evidence/title-normalizer.json` retain exact before/after receipts and the Unicode audit.
+  Root verified source/result/log hashes and archived 21 raw receipts at
+  `~/.cache/lysilogy/review-evidence/pr89/`; branch/worktree removed after merge.
 - #35 merged in PR #87 (`e066946`) after independent review of final head `4de6251` and
   all required gates. `kb::names` preserves raw input, unranked component alternatives, and
   coarse family/first-initial candidate keys. Particles, suffixes, compact capitals, and bare
@@ -916,3 +929,87 @@ date, last merged issue, in-flight branches and their state, next action, and op
   #21/#22; no old source fingerprints were re-attested after adding the parser. No new follow-up
   issues were opened in this checkpoint. All ten unrelated main-checkout preview changes were
   rechecked byte-for-byte against `/tmp/lysilogy-preview-before.json` and remain untouched.
+
+### 2026-09-13 — missing public PDF stops corpus; availability follow-up started
+
+- Last merged issue remains **#35 / PR #87**, merge `e066946`, progress through `26b4adc`.
+  Phase/wave **A/A2**; full goal remains active. #25 now has its own worktree
+  `.worktrees/feat/e1.2-bibliography`, branch `feat/e1.2-bibliography`, agent `finish_benchmark`.
+  It started from `26b4adc`; baseline evaluation/implementation is underway, no PR yet.
+- #36 `feat/e2.4-titles` remains in its matching worktree, agent `review_ready_prs`.
+  Independent reviewer `finish_benchmark` cleared source `1558119` after reproducing and fixing
+  math-argument minus, letter/digit script, and escaped-brace collisions. Final integrated gates,
+  evidence review, and draft PR are still required. Review probes are retained at
+  `~/.cache/lysilogy/review-titles/`.
+- #33 is **paused at a clean committed checkpoint `7fed742`**, branch `feat/e2.1-kb-store`
+  in `.worktrees/feat/e2.1-kb-store`; it has integrated main/#35. No PR, Rust gates or O28 run
+  yet. Eight Python collector tests and the local SQLite/FTS smoke passed. Missing registry
+  dependencies remain blocked on the pending exact two-host permission question described in
+  the preceding entry; no user approval or config change has arrived. Do not bypass that denial.
+- **Corpus exec session 9593 is terminal, exit 1** (handle confirmed). Metadata and selection
+  succeeded, but inventory preparation failed with `Selected PDF unavailable in public bucket:
+  1801.00600`, before any manifest/PDF/source was admitted. A new rate-coordinated OAI GetRecord
+  confirms header and metadata ID `1801.00600`, title *Static Free Space Detection with Laser
+  Scanner using Occupancy Grid Maps*, and `created=2020-06-30`; an exact-prefix GCS listing is
+  empty. The record therefore is not evidence of a parser ID mismatch. 733 selected IDs predate
+  2020 despite their OAI created years; do not rewrite upstream metadata dates without evidence.
+  The original 514,249 records, 10,951-paper frozen selection and its hash in the previous entry,
+  and fetched inventories remain intact. Log: `~/.cache/lysilogy/arxiv-corpus-proxy.log`.
+  Final receipt: **45:13.98 wall time, 3,732,208 KiB peak RSS, $0**, no PDF/source downloads.
+  There is now **no live corpus process**. Do not restart the unchanged failing command.
+- Opened **follow-up #88** on epic #67 and added it to project 12. Agent `finish_corpus_proxy`
+  switched from paused #33 to `fix/e8.2-corpus-availability`, creating its own matching worktree.
+  The fix must qualify deterministic candidates by actual public-object availability, retain exact
+  tier/category/year quotas and exclusion evidence, and provide explicit safe recovery of this
+  zero-artifact frozen run. Preserve the original selection; refuse reselection after admitted
+  artifacts; never silently shrink tiers or change pinned versions. Implement, test, independently
+  review, and perform bounded live verification before resuming the full download. No destructive
+  repair or manual selection edit has been performed.
+- Current active implementations are #25/#36/#88 (three maximum); #33's target is idle. Keep one
+  heavy gate window at a time. Next: merge reviewed #36, review/fix #88 and resume downloads;
+  continue #25 and start remaining ready #71/#72 as slots free. Scorecard unchanged: G5 passes,
+  O30=0/10k (**1/5 gates, 1/30 objectives**); historical O25/O26 misses have open #21/#22.
+  New follow-up #88 is open. All unrelated main-preview edits and unrelated worktrees remain
+  untouched; protected-file fingerprints are `/tmp/lysilogy-preview-before.json`.
+
+### 2026-09-13 — title normalizer merged; remaining A2 builders
+
+- Last merged issue: **#36 / PR #89**, merge `0987241`, independently cleared final head
+  `11027dd`. Its branch/worktree was removed after root verified and archived the raw receipts.
+  This continuation merged #35 and #36 and opened #88; the full goal remains active and
+  incomplete. Current phase/wave **A/A2**, no phase exit report yet.
+- Active #25 `feat/e1.2-bibliography` in `.worktrees/feat/e1.2-bibliography`, agent
+  `finish_benchmark`: baseline completed; bibliography/backend artifact edits are underway and
+  uncommitted, no PR. Active #88 `fix/e8.2-corpus-availability` in its matching worktree, agent
+  `finish_corpus_proxy`: 52-test corpus/O30/G5 baseline passed, availability/recovery implementation
+  is underway and uncommitted, no PR. Both began at `26b4adc` and need current-main integration
+  before final gates. Next slot is #71 `feat/e8.4-reference-truth`, agent `review_ready_prs`;
+  verify blockers #68/#63, create the worktree with `gh worktree create --branch`, then build
+  K2/K5 first and K7 after bibliography plus scale mapping. #72 remains ready in A2.
+- #33 remains paused at clean `7fed742` in `.worktrees/feat/e2.1-kb-store`. Preserve its
+  `target/kb-post-checkpoint-unfinished.patch` and `target/kb-resume-notes.md`: the patch contains
+  additional tests and an unfinished journal-stamp hardening attempt, with known misplaced/missing
+  edits; do not apply blindly. On resume, integrate #36's title key into the FTS5 projection,
+  finish/review the store, obtain actual Rust gates and the full O28 measurement, and keep G4
+  unavailable until genuine K2 exists. The K2/G4 adapter contract remains provisional and must
+  avoid a dependency on Phase B's #40 or fabricated local copies.
+- **No corpus process is running.** Session 9593 ended with the confirmed missing GCS object
+  `1801.00600`; metadata, frozen selection and inventories remain unchanged. See the preceding
+  entry for exact hashes, 514,249 metadata / 1,000 eval / 10,000 scale counts and the
+  45:13.98 / 3,732,208-KiB receipt. A cached-inventory audit covered 98 selected IDs across
+  40 complete months, with only that ID missing among those checked. #88 will retain the seed
+  and per-stratum ranking, select enough valid available objects, and freeze their versions and
+  inventory evidence. Proposed explicit `recover-selection --reason …` archives the old
+  zero-artifact selection before atomic replacement and refuses any admitted files/receipts/
+  partials or manifest entries. Root approved this implementation design; actual corpus repair
+  still awaits independent source review. Do not rerun the unchanged failing download command.
+- The exact registry-host approval is still pending: root asked to add `index.crates.io` and
+  `static.crates.io`; automatic approval review rejected persistent grants without explicit
+  authorization. Script `~/.config/lysilogy/apply-codex-rust-registry-permissions.py` is validated
+  but unapplied. No answer/config change has arrived. Continue independent work; do not bypass
+  this rejection. All three implementation slots are reserved for #25/#88/#71, with #33 paused.
+- Scorecard remains **1/5 gates (G5)** and **1/30 objectives (O30=0/10k)**; latest integrated
+  G5 count is **305 Rust / 80 Python / 85 Node**. Historical O25/O26 misses remain assigned to
+  open #21/#22. Follow-up #88 is open on epic #67/project12. The ten unrelated main-preview
+  files were checked again against `/tmp/lysilogy-preview-before.json` after the merge and are
+  byte-identical. Unrelated `/tmp` worktrees remain untouched.
