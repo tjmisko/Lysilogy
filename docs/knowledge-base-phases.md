@@ -1013,3 +1013,58 @@ date, last merged issue, in-flight branches and their state, next action, and op
   open #21/#22. Follow-up #88 is open on epic #67/project12. The ten unrelated main-preview
   files were checked again against `/tmp/lysilogy-preview-before.json` after the merge and are
   byte-identical. Unrelated `/tmp` worktrees remain untouched.
+
+### 2026-09-13 — reviewed corpus recovery running; truth builders underway
+
+- Last merged issue remains **#36 / PR #89**, merge `0987241`; main progress checkpoint
+  `2c3a557`. This continuation merged #35 and #36. Phase/wave **A/A2**; the full goal remains
+  active and incomplete. No phase exit has run.
+- **Corpus recovery is live in unified exec session `80353`**, launched from reviewed source
+  `013911a` in `.worktrees/fix/e8.2-corpus-availability`. Poll that session before starting any
+  corpus mutation; process listings in other tool namespaces are not authoritative. Command:
+  `python3 -B -u scripts/corpus/corpus.py --root /home/tjmisko/Corpora/arxiv --proxy-env HTTPS_PROXY recover-selection --reason 'Selected PDF 1801.00600 is absent from the public GCS bucket (verified 2026-09-13).'`,
+  wrapped in `/usr/bin/time -v`, appending to
+  `~/.cache/lysilogy/arxiv-corpus-recovery.log`. At 07:55:19 UTC, 70 consulted inventory months
+  were checkpointed; schema-1 selection remains published and no manifest exists. The exact
+  original selection is archived under
+  `selection-recovery/c0a206cab1d997c793bd5853d1e25c24cb5f281cb30992c3e1b0f8b9445c28bb/`.
+  Do not duplicate or restart this process until its handle confirms exit. Checkpoints permit
+  the identical recovery command after an actual interruption.
+- #88 has **draft PR #90**, head `2802e44`, branch `fix/e8.2-corpus-availability` in its matching
+  worktree, agent `finish_corpus_proxy`. Independent reviewer `review_ready_prs` cleared source
+  `96b702d`; later source bytes are unchanged. Final integrated gates passed **305 Rust / 103
+  Python / 85 Node**, formatting, strict Clippy, all targets, G5 and scale evaluation; O30 is
+  0/10k. Evidence/report accurately mark live verification pending. Next: record recovery's
+  new selection hash, exact quotas, exclusions, wall time/RSS; run a bounded
+  `download --tier eval --limit 1` with the same proxy to verify both PDF and version-matched
+  source. Fold those receipts into PR90, independently review the final evidence, then merge
+  and resume the full corpus in a retained exec session. Do not detach a process from a short
+  tool namespace. K0 remains incomplete.
+- #25 `feat/e1.2-bibliography`, agent `finish_benchmark`, remains active in its matching
+  worktree, with backend bibliography/schema edits underway and no PR. #71 now owns
+  `.worktrees/feat/e8.4-reference-truth`, branch `feat/e8.4-reference-truth`, agent
+  `review_ready_prs`, based on `2c3a557`. Commit `f83c8b4` adds cache/GraphHttp original-fetch
+  provenance and a narrow provider freeze helper; 39 citation-graph tests, two helper tests
+  and strict Clippy passed. Offline K2/K5/K7 builders are next. Raw provider snapshots remain
+  external; only derived labels are committed. K2 must avoid system WorkId/PaperId dependencies;
+  K5 uses referenced works' actual field/year/OA metadata; K7 needs #25 and real scale mapping.
+- #33 remains paused at `7fed742` with its unfinished patch/resume notes preserved as above.
+  Its Rust dependencies remain unavailable. Three implementation slots are #25/#88/#71;
+  #72 is ready but has no active worktree. Use one heavy Rust gate window at a time.
+- **Exact network permission question now covers four hosts**, superseding the earlier
+  two-host question: `index.crates.io`, `static.crates.io`, `api.crossref.org` and
+  `api.openalex.org`. No approval or configuration change has arrived. The provider hosts were
+  each explicitly rejected by the effective allowlist; a direct GraphHttp probe also failed
+  without obtaining truth. Do not bypass denied hosts or assert a missing credential without
+  evidence. Automatic approval review previously rejected the two-registry-host persistent
+  grant because exact user authorization was absent. The new validated, **unapplied** script
+  `~/.config/lysilogy/apply-codex-kb-network-permissions.py` changes only those four entries;
+  `--check` passed. An approval for only two hosts would not authorize all four. After explicit
+  approval, try the exact allowed script automatically; if the Codex config mount remains
+  read-only, provide the normal-terminal command. A daemon restart is needed for effective
+  policy; save a fresh session checkpoint first. Approved OAI/GCS access and corpus storage
+  are working; export source access awaits the bounded download.
+- Scorecard remains **1/5 gates (G5)** and **1/30 objectives (O30=0/10k)**. Historical O25/O26
+  misses retain follow-ups #21/#22; #88 remains open. No targets or hard gates changed. Main
+  checkout still contains only the ten protected unrelated preview changes plus this docs
+  checkpoint; preserve those changes and all unrelated worktrees.
