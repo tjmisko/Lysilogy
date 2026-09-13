@@ -31,8 +31,9 @@ Valid raw/profile disagreement excludes the slot. Repeating one raw ORCID on sev
 positions excludes every affected slot, including when another slot also has a different
 problem. Invalid raw IDs, invalid profile IDs, missing raw IDs, profile-only evidence, malformed
 names and contradictions have separate reason counts; reasons can overlap, while each excluded
-mention is counted once. Names containing an ORCID-like identifier are excluded from evaluation
-inputs, including compact or Unicode-obfuscated forms.
+mention is counted once. Names containing an ORCID-like identifier or explicit OpenAlex author
+URL/prefix are excluded from evaluation inputs, including compatibility-width and control
+obfuscation. Ordinary names starting with A are not treated as provider IDs.
 
 Across works, a provider profile associated with multiple valid raw ORCIDs is reported as a
 profile-clustering conflict. The profile ID neither merges these people nor invalidates otherwise
@@ -86,7 +87,9 @@ python3 scripts/truth/person_truth.py features \
 
 Use the actual build timestamp, after all source fetch/freeze and K2 build times. The loader
 requires exact source bytes, endpoints, requested/returned DOI identity, and immutable dates.
-`features` emits only opaque mention ID, raw name, work DOI and array index. Expected ORCIDs,
+The `features` file boundary validates K4's content-derived version before projecting. Its pure
+projection function remains independent of label values. `features` emits only opaque mention
+ID, raw name, work DOI and array index. Expected ORCIDs,
 observed ORCIDs, resolved profile IDs, source pointers and clusters stay in evaluator-only truth.
 Consumers must use this projection rather than giving the complete K4 document to a resolver.
 

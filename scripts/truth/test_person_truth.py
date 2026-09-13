@@ -153,6 +153,18 @@ class PersonTruthTests(unittest.TestCase):
         self.assertEqual({"missing_authorships": 1, "missing_provider_record": 1, "not_requested": 1}, labels["coverage"]["work_status"])
         self.assertEqual(2, labels["coverage"]["requested_works"])
 
+    def should_exclude_profile_ids_when_raw_names_contain_explicit_openalex_author_identifiers(self):
+        names = ["https://openalex.org/A123456789", "Example (openalex:A123456789)",
+                 "Example https://ｏｐｅｎａｌｅｘ．ｏｒｇ/Ａ１２３４５６７８９", "Example openalex:\u200bA123456789",
+                 "Example https://open\u200balex.org/A123456789", "Example openalex:\x00A123456789"]
+        for name in names:
+            with self.subTest(name=name):
+                labels = build([[authorship(name)]])
+                self.assertFalse(labels["mentions"][0]["eligible"])
+                self.assertEqual([], person.features(labels)["mentions"])
+        self.assertIsNone(person.name_problem("Alex A. Example"))
+        self.assertIsNone(person.name_problem("A123 Example"))
+
     def should_report_observed_truncation_when_work_completeness_is_uncertain(self):
         for record, count, status in [({}, 99, "unknown"), ({}, 100, "possible_provider_cap"),
                                      ({"is_authors_truncated": True}, 100, "observed_truncated"),
@@ -276,6 +288,13 @@ class PersonTruthTests(unittest.TestCase):
                 original = output.read_bytes()
                 self.assertEqual(0, person.main(["features", "--k4", str(output), "--output", str(projected)]))
                 self.assertNotIn(ALPHA, projected.read_text())
+                original_features = projected.read_bytes()
+                drifted = truth.read_json(output)
+                drifted["mentions"][0]["input"]["raw_name"] = "A Different Input"
+                output.write_text(truth.canonical(drifted))
+                self.assertEqual(1, person.main(["features", "--k4", str(output), "--output", str(projected)]))
+                self.assertEqual(original_features, projected.read_bytes())
+                output.write_bytes(original)
                 source_path = root / "responses" / (response["body_sha256"] + ".json")
                 source_path.write_text("{}")
                 self.assertEqual(1, person.main(command))

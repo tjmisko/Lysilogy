@@ -59,16 +59,18 @@ def name_problem(value):
     scan = re.sub(r"[\u2010-\u2015\u2212]", "-", scan)
     if re.search(r"orcid\s*(?:[.:/]|\b)|[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{3}[0-9Xx]", scan, re.I):
         return "identifier_in_raw_name"
+    if re.search(r"(?:openalex\.org\s*/|openalex\s*:)\s*A[0-9]+", scan, re.I):
+        return "profile_identifier_in_raw_name"
     return None
 
 
-def checked_k2(k2):
-    if k2.get("schema_version") != 1 or k2.get("truth_set") != "K2":
-        raise TruthError("Person membership requires a versioned K2 truth set")
-    original = {key: value for key, value in k2.items() if key != "version"}
-    expected = f"K2-{timestamp(k2['built_at']).date()}-{fingerprint(original)[:16]}"
-    if k2.get("version") != expected:
-        raise TruthError("K2 version differs from its content fingerprint")
+def checked_truth(value, kind):
+    if value.get("schema_version") != 1 or value.get("truth_set") != kind:
+        raise TruthError(f"Person truth input requires a versioned {kind} truth set")
+    original = {key: field for key, field in value.items() if key != "version"}
+    expected = f"{kind}-{timestamp(value['built_at']).date()}-{fingerprint(original)[:16]}"
+    if value.get("version") != expected:
+        raise TruthError(f"{kind} version differs from its content fingerprint")
 
 
 def universe(k2=None, selection=None):
@@ -89,7 +91,7 @@ def universe(k2=None, selection=None):
             raise TruthError("K4 work membership exceeds its work bound")
 
     if k2 is not None:
-        checked_k2(k2)
+        checked_truth(k2, "K2")
         inputs.append({"kind": "K2", "version": k2["version"], "built_at": k2["built_at"],
                        "content_sha256": fingerprint(k2)})
         if not isinstance(k2.get("works"), list) or not isinstance(k2.get("cases"), list):
@@ -327,7 +329,9 @@ def main(argv=None):
         elif args.command == "build":
             result = build_k4(read_json(args.universe), load_snapshots(args.frozen_root, read_json(args.manifest)), args.built_at)
         else:
-            result = features(read_json(args.k4))
+            labels = read_json(args.k4)
+            checked_truth(labels, "K4")
+            result = features(labels)
         write_immutable(args.output, (canonical(result) + "\n").encode())
         print(canonical({key: result[key] for key in ("kind", "truth_set", "version", "coverage", "total_requests") if key in result}))
         return 0
