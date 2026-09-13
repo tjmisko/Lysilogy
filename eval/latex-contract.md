@@ -60,3 +60,29 @@ count. Duplicate/invalid IDs and missing positions receive no extra credit and a
 from rank four or five. A missing model result contributes zero with its full denominator.
 Malformed or ambiguous rankings fail the collector. A consensus rank may be shown for display,
 but it is not used to score O11. The target remains at least 0.70.
+
+Manual figure/table evidence is a separate overlay over an immutable automatic candidate.
+`manual.py` rehashes the frozen PDF/source/index and every original page render, then requires
+an independent complete-region review and a separately reviewed source-to-visual association for
+every source figure/table. The overlay never changes automatic confidence or exclusions. A
+specific reviewed script-containing caption can receive manual evidence while its automatic
+script-binding exclusion remains. Unknown source inventories cannot be repaired by caption boxes.
+Three distinct blind panelist identities and exact vote/prompt/packet receipts are required;
+identical rankings from independent agents are valid. The original panel receipts have two explicit
+page-hash field spellings; the adapter accepts agreeing aliases and rejects conflicting duplicates.
+An exact packet hash binds paper identity when the receipt omits its redundant arXiv ID.
+Manual assembly remains exploratory until the final stratified publication requirements pass.
+
+O1 uses one-to-one matching by kind and independent caption identity/membership. Region overlap
+never chooses a match. Every unmatched prediction, including duplicates, is a false positive;
+every unmatched truth object is a false negative. Matching must freeze deterministic ambiguity
+and tie handling before prediction inspection. O2 is the median IoU over **every annotated truth
+object**. A missed object, absent region or invalid predicted page/rectangle contributes zero.
+The matching chosen for O1 is reused for O2, so a prediction cannot be selected for favorable
+region overlap. Rectangles use one-based pages and PDF points from the unrotated CropBox's
+upper-left corner; invalid coordinates never become repaired boxes. Multiple rectangles use
+geometric unions per page before intersection/union area, avoiding overlapping-area double
+counting. Matched-only IoU may be reported separately as a diagnostic, with its denominator.
+A supported empty paper contributes O1 false-positive opportunities; it adds no annotated object
+to O2, whose empty overall cohort is unavailable rather than a passing measurement. Targets
+remain O1 F1 at least 0.90 and O2 median IoU at least 0.75.

@@ -57,3 +57,28 @@ The full-build path currently refuses publication until the coverage and indepen
 contract is implemented and satisfied; exploratory reports explicitly retain that limitation.
 Every aligned candidate retains the complete parsed object/entry/link inventory and its hash
 alongside omissions, so numeric link indices and all metric denominators remain auditable.
+
+A reviewed manual bundle can be assembled without model or network calls:
+
+```sh
+python3 -B scripts/truth/latex/manual.py \
+  --candidate k1-2104.01511-candidate-d75ddba.json \
+  --region-bundle k1-region-annotation/2104.01511v1 \
+  --panel-bundle k1-panel-pilot/2104.01511v1-d75ddba
+```
+
+Those paths are relative to `~/.cache/lysilogy`. The tool uses the frozen full-eval input/map
+receipts by default and writes an external hash-addressed candidate plus execution receipt.
+It rehashes original artifacts and all reviewed page images, retains automatic exclusions,
+and binds three distinct blinded panel identities. This is a reproducible exploratory manual
+candidate, not a publication or a production O11 score. Prior agent judgment dollar costs
+remain unknown when the harness does not expose them.
+
+Unsupported numbering is retained explicitly: labeled suppressed equations remain candidates
+with uncertain numbering, including standalone/starred environments. Numbering aliases withhold
+inventory certification. Clipped link contexts and unsupported text rendering retain source
+occurrences and member spans, while resource bounds still abort the paper. Mathematical
+alphabets and script grouping require independently preserved semantics. Only the visually
+identical micro-sign/Greek-mu encoding alias is folded in otherwise strict math alignment;
+ordinary prose emphasis remains supported. Source payloads that are PDFs are reported as
+unavailable TeX, rather than corrupt source archives.

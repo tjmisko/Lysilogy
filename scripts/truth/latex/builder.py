@@ -30,7 +30,7 @@ POLICY = {'version': VERSION, 'seed': 'k1-latex-strata-v1', 'target_papers': 500
           'source_limits': vars(Limits()), 'main_selection': 'unique root or byte-equivalent resolved closure; title substring overlap is diagnostic only',
           'bibliography_inventory': 'all deposited entries and printed source citation occurrences must align',
           'region_truth': 'independent full-region annotations only; caption token geometry is never full-region truth'}
-IMPLEMENTATION = ['scripts/truth/latex/' + name for name in ('archive.py', 'tex.py', 'parser.py', 'align.py', 'builder.py')] + ['examples/k1_index.rs', 'src/library.rs', 'src/store.rs', 'src/domain.rs', 'src/source_index.rs', 'src/source_index/cache.rs', 'src/source_index/native.rs', 'src/source_index/paragraphs.rs', 'src/source_index/ocr.rs', 'src/source_index/figures.rs', 'scripts/corpus/corpus.py', 'scripts/corpus/selection.json', 'Cargo.toml', 'Cargo.lock']
+IMPLEMENTATION = ['scripts/truth/latex/' + name for name in ('archive.py', 'tex.py', 'parser.py', 'align.py', 'builder.py', 'annotations.py', 'panel.py', 'manual.py')] + ['examples/k1_index.rs', 'src/library.rs', 'src/store.rs', 'src/domain.rs', 'src/source_index.rs', 'src/source_index/cache.rs', 'src/source_index/native.rs', 'src/source_index/paragraphs.rs', 'src/source_index/ocr.rs', 'src/source_index/figures.rs', 'scripts/corpus/corpus.py', 'scripts/corpus/selection.json', 'Cargo.toml', 'Cargo.lock']
 
 
 def canonical(value):
@@ -247,6 +247,35 @@ def derive_paper(paper, mapped, root, data_root):
                   source_sha256=paper['source']['sha256'], index=mapped['index'], stratum=paper['stratum'],
                   main_evidence=main_evidence, source_members=members)
     return result
+
+
+def attach_manual_regions(candidate_raw, paper, mapped, root, data_root, bundle_root):
+    """Rehash every external input before validating a reviewed manual overlay."""
+    from annotations import apply_regions, document
+    candidate = document(candidate_raw)
+    if candidate['arxiv_id'] != paper['arxiv_id'] or candidate['paper_id'] != mapped['paper_id'] or candidate['index'] != mapped['index']:
+        raise ValueError('manual candidate differs from frozen paper/index identities')
+    for kind in ('pdf', 'source'):
+        expected = paper[kind]
+        actual, count = fingerprint_file(safe_file(root, expected['path']))
+        if candidate[kind + '_sha256'] != actual or actual != expected['sha256'] or count != expected['bytes']:
+            raise ValueError('manual source/PDF bytes differ from the frozen receipts')
+    index_path = safe_file(data_root, mapped['index']['path'])
+    if index_path.stat().st_size > 32 * 1024 * 1024:
+        raise ValueError('manual index exceeds its byte bound')
+    index_raw = index_path.read_bytes()
+    names = ('regions-root-v1.json', 'review-independent-v1.json', 'source-associations-root-v1.json', 'source-associations-independent-review-v1.json')
+    receipts = []
+    for name in names:
+        path = safe_file(bundle_root, name)
+        if path.stat().st_size > 32 * 1024 * 1024:
+            raise ValueError('manual receipt exceeds its byte bound')
+        receipts.append(path.read_bytes())
+    annotation = document(receipts[0])
+    for relative, expected in annotation['page_render_sha256'].items():
+        if fingerprint_file(safe_file(bundle_root, relative), cap=32 * 1024 * 1024)[0] != expected:
+            raise ValueError('manual page render differs from the reviewed bytes')
+    return apply_regions(candidate_raw, index_raw, *receipts)
 
 
 def publication_problems(snapshot, results):
