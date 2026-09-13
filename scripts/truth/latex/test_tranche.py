@@ -14,11 +14,13 @@ from tranche import (ARTIFACTS, FORMAT, REVIEW_FORMAT, attach_tranche, covered, 
                      verify_correction_files)
 
 
-def fixture():
+def fixture(visual_kind='figure'):
     source = r'\begin{document}\begin{figure}\caption{A small chart.}\label{fig:a}\end{figure}\begin{equation}abcdefghij=12345\label{eq:a}\end{equation}\end{document}'
+    if visual_kind == 'table':
+        source = source.replace('{figure}', '{table}').replace(r'\label{fig:a}', r'cell\label{fig:a}')
     files, members = read_archive(source.encode())
     name = next(iter(files)); parsed = parse_project(files)
-    text = 'Figure 1. A small chart. abcdefghij=12345 (1)'
+    text = visual_kind.title() + ' 1. A small chart. ' + ('cell ' if visual_kind == 'table' else '') + 'abcdefghij=12345 (1)'
     native = {'index': {'text': text, 'pages': [{'number': 1, 'start': 0, 'end': len(text), 'width': 100, 'height': 100}], 'tokens': []}}
     index_raw = canonical(native)
     candidate = {'arxiv_id': 'synthetic', 'paper_id': 'a' * 16, 'index': {'path': 'index.json', 'sha256': sha256(index_raw)},
@@ -38,7 +40,7 @@ def fixture():
     caption_start = source.index('A small chart.'); caption_end = caption_start + len('A small chart.')
     equation_start = text.index('abcdefghij'); equation_end = equation_start + len('abcdefghij=12345')
     number_start = text.index('(1)')
-    fig = next(row for row in parsed['objects'] if row['kind'] == 'figure')
+    fig = next(row for row in parsed['objects'] if row['kind'] == visual_kind)
     eq = next(row for row in parsed['objects'] if row['kind'] == 'equation')
     independent_objects = []; primary_objects = []
     for label, row in [('fig-original', fig), ('eq-original', eq)]:
@@ -47,18 +49,23 @@ def fixture():
                     'source_labels': row['labels'], 'printed_label': '1', 'pages': [1], 'parent_object': None, 'nested_objects': []}
         primary = {'id': 'primary-' + label, 'kind': row['kind'], 'source_environment': primary_source(span['start'], span['end']),
                    'printed_number': '1', 'body_region': {'page': 1, 'x_min': 10, 'y_min': 10, 'x_max': 30, 'y_max': 30}}
-        if row['kind'] == 'figure':
-            original.update(caption_native_spans=[{'start': 0, 'end': equation_start - 1}],
+        if row['kind'] in ('figure', 'table'):
+            caption_native_end = text.index('A small chart.') + len('A small chart.')
+            original.update(caption_native_spans=[{'start': 0, 'end': caption_native_end}],
                             caption_command_source={'start': source.index('\\caption'), 'end': caption_end + 1},
                             caption_source=member(caption_start, caption_end),
                             visual_body_region={'page': 1, 'rects': [{'x_min': 10, 'y_min': 10, 'x_max': 30, 'y_max': 30}]})
-            primary.update(native_caption_members=[{'start': 0, 'end': equation_start - 1}],
+            primary.update(native_caption_members=[{'start': 0, 'end': caption_native_end}],
                            source_caption=primary_source(caption_start, caption_end))
+            if row['kind'] == 'table':
+                body = {'start': text.index('cell'), 'end': text.index('cell') + 4}
+                original['body_native_spans'] = [body]; primary['native_body_members'] = [deepcopy(body)]
         else:
             original.update(body_native_spans=[{'start': equation_start, 'end': equation_end}],
                             number_native_spans=[{'start': number_start, 'end': number_start + 3}], native_fidelity='No semantic quote asserted')
             primary.update(native_body_members=[{'start': equation_start, 'end': equation_end}],
-                           native_printed_number={'start': number_start, 'end': number_start + 3})
+                           native_printed_number={'start': number_start, 'end': number_start + 3},
+                           printed_number_region={'page': 1, 'x_min': 75, 'y_min': 6, 'x_max': 81, 'y_max': 12})
         independent_objects.append(original); primary_objects.append(primary)
     inputs = [{'path': key + '.json', 'sha256': sha256(canonical(value))} for key, value in
               [('packet', packet), ('source_export', source_export), ('native_export', exported)]]
@@ -67,11 +74,11 @@ def fixture():
                 'excluded_material_not_accessed': ['Detector outputs', 'Automatic/parser inventories', 'Other annotator labels']}
     identity = {key: packet[key] for key in ('arxiv_id', 'paper_id', 'version')}
     primary = {'annotator_role': 'primary', 'paper': identity, 'protocol': protocol, 'inputs': inputs, 'objects': primary_objects,
-               'counts': {'formal_statement': 0, 'proof': 0, 'captioned_algorithm': 0, 'figure': 1, 'table': 0, 'numbered_equation': 1, 'source_reference': 0},
+               'counts': {'formal_statement': 0, 'proof': 0, 'captioned_algorithm': 0, 'figure': int(visual_kind == 'figure'), 'table': int(visual_kind == 'table'), 'numbered_equation': 1, 'source_reference': 0},
                'headings': [], 'manual_lists': [], 'narrative_procedure_candidates': [], 'references': [], 'citations': []}
     independent = {**identity, 'annotator': 'independent secondary', 'inspection_order': 'all originals before source/native',
                    'pages_inspected': [1], 'objects': independent_objects, 'bibliography': [],
-                   'counts': {'formal_statement': 0, 'formal_proof': 0, 'formal_algorithm': 0, 'figure': 1, 'table': 0, 'numbered_equation': 1, 'explicit_reference_occurrences': 0},
+                   'counts': {'formal_statement': 0, 'formal_proof': 0, 'formal_algorithm': 0, 'figure': int(visual_kind == 'figure'), 'table': int(visual_kind == 'table'), 'numbered_equation': 1, 'explicit_reference_occurrences': 0},
                    'statement_role_candidates': [], 'manual_procedures_and_role_candidates': [],
                    'section_destinations': [], 'references': [], 'citations': []}
     def ref(value):
@@ -100,7 +107,7 @@ def fixture():
                 correction_receipt={'inventory': ref(independent)}, math=math, math_receipt=math_receipt, construction=construction,
                 visual_review={'primary_inventory_sha256': sha256(canonical(primary)), 'independent_inventory_sha256': sha256(canonical(independent)),
                                'verdict': 'clear_full_body_regions_for_later_validated_assembly',
-                               'regions': [{'kind': 'figure', 'printed_number': '1', 'page': 1, 'full_body_basis': 'independent full region review',
+                               'regions': [{'kind': visual_kind, 'printed_number': '1', 'page': 1, 'full_body_basis': 'independent full region review',
                                             'body_pdf_points': {'x_min': 10.5, 'y_min': 10.5, 'x_max': 30, 'y_max': 30}, 'body_pixels_192dpi': [28, 28, 80, 80]}]},
                 math_review={'status': 'clear_independent_math_region_supplement_not_truth_admission',
                              'supplement_sha256': sha256(canonical(math)), 'supplement_receipt_sha256': sha256(canonical(math_receipt)),
@@ -113,7 +120,7 @@ def fixture():
                       'artifacts': {}, 'source_inventory_sha256': candidate['source_inventory_sha256'],
                       'annotators': {'primary': 'first', 'independent': 'secondary'}, 'reviewer': 'third',
                       'initial_enumeration_before_source_and_native': True, 'later_crosswalk_reviewed_after_annotation_freeze': True,
-                      'pages_inspected': [1], 'complete_kind_counts': {'figure': 1, 'table': 0, 'equation': 1, 'statement': 0, 'proof': 0, 'algorithm': 0},
+                      'pages_inspected': [1], 'complete_kind_counts': {'figure': int(visual_kind == 'figure'), 'table': int(visual_kind == 'table'), 'equation': 1, 'statement': 0, 'proof': 0, 'algorithm': 0},
                       'reference_counts': {'all': 0, 'O4': 0, 'visual': 0, 'non_object': 0}}
     docs['object_crosswalk'] = {'source_inventory_canonical_sha256': candidate['source_inventory_sha256'], 'unmatched_parsed_object_ids': [],
                                'crosswalk': [{'independent_id': identifier, 'primary_id': 'primary-' + identifier, 'parsed_ids': [row['id']],
@@ -215,6 +222,64 @@ class TrancheTests(unittest.TestCase):
             candidate, native, source, docs, images = fixture(); mutation(docs)
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 validate_tranche(canonical(candidate), canonical(native), source, seal(docs), images)
+
+    def test_should_reject_cross_page_geometry_when_regions_disagree_with_native_owners(self):
+        for kind in ('figure', 'table'):
+            candidate, native, source, docs, _ = fixture(kind); index = native['index']; files, _ = read_archive(source)
+            start = len(index['text']); index['text'] += 'cell on another page'
+            index['pages'].append({'number': 2, 'start': start, 'end': len(index['text']), 'width': 100, 'height': 100})
+            validate_objects(docs, seal(docs), candidate, files, index)
+            mutations = [lambda d: d['math']['objects'][0]['printed_number_boxes'][0].update(page=2),
+                         lambda d: d['primary']['objects'][0]['body_region'].update(page=2),
+                         lambda d: d['primary']['objects'][1]['body_region'].update(page=2),
+                         lambda d: d['primary']['objects'][1]['printed_number_region'].update(page=2),
+                         lambda d: d['independent_corrected']['objects'][1].update(pages=[True])]
+            if kind == 'table':
+                def move_table_body(d):
+                    d['independent_corrected']['objects'][0]['body_native_spans'] = [{'start': start, 'end': start + 4}]
+                    d['primary']['objects'][0]['native_body_members'] = [{'start': start, 'end': start + 4}]
+                mutations.append(move_table_body)
+            for mutation in mutations:
+                changed = deepcopy(docs); mutation(changed)
+                changed['math_receipt']['supplement_sha256'] = sha256(canonical(changed['math']))
+                changed['math_receipt']['supplement_bytes'] = len(canonical(changed['math']))
+                changed['math_review']['supplement_sha256'] = sha256(canonical(changed['math']))
+                changed['math_review']['supplement_receipt_sha256'] = sha256(canonical(changed['math_receipt']))
+                changed['visual_review']['primary_inventory_sha256'] = sha256(canonical(changed['primary']))
+                with self.subTest(kind=kind, mutation=mutation), self.assertRaises(ValueError):
+                    validate_objects(changed, seal(changed), candidate, files, index)
+
+    def test_should_reject_reused_or_empty_reference_numbers_when_source_occurrences_are_distinct(self):
+        source = r'\ref{e} and \ref{e}'; text = 'Equation 1 and Equation 1'
+        index = {'text': text, 'pages': [{'number': 1, 'start': 0, 'end': len(text)}]}
+        candidate = {'source_inventory': {'objects': [{'id': 'equation-source', 'kind': 'equation'}],
+                                          'label_targets': {'e': 'equation-source'}, 'links': []}}
+        docs = {'primary': {'references': [], 'counts': {'source_reference': 2}},
+                'independent_corrected': {'references': [], 'section_destinations': [], 'counts': {'explicit_reference_occurrences': 2}}}
+        for n, (s, t) in enumerate([(0, 0), (source.rindex(r'\ref'), text.rindex('Equation'))]):
+            member = {'path': 'main.tex', 'start': s, 'end': s + len(r'\ref{e}')}
+            phrase = {'start': t, 'end': t + len('Equation 1')}; number = {'start': phrase['end'] - 1, 'end': phrase['end']}
+            candidate['source_inventory']['links'].append({'kind': 'reference', 'source_members': [member], 'targets': ['e']})
+            docs['independent_corrected']['references'].append({'id': 'i' + str(n), 'source': {'member': member, 'text_sha256': sha256(source[member['start']:member['end']].encode())},
+                'unresolved_targets': [], 'source_label': 'e', 'native_number_span': deepcopy(number), 'native_phrase_span': deepcopy(phrase), 'destination_id': 'i-equation', 'destination_kind': 'equation'})
+            docs['primary']['references'].append({'id': 'p' + str(n), 'source_occurrence': {'member': 'main.tex', 'start': member['start'], 'end': member['end']},
+                'target_label': 'e', 'native_number': deepcopy(number), 'native_occurrence': deepcopy(phrase), 'target_id': 'p-equation', 'target_kind': 'equation'})
+        args = (candidate, {'main.tex': source}, index, {'i-equation': 'equation-source'}, {'p-equation': 'equation-source'})
+        self.assertEqual(len(validate_references(docs, *args)[0]), 2)
+        for case in ('reused', 'whitespace', 'outside_phrase'):
+            changed = deepcopy(docs); independent = changed['independent_corrected']['references']; primary = changed['primary']['references']
+            if case == 'reused':
+                for a, b in [('native_number_span', 'native_number'), ('native_phrase_span', 'native_occurrence')]:
+                    independent[1][a] = deepcopy(independent[0][a]); primary[1][b] = deepcopy(primary[0][b])
+            elif case == 'whitespace':
+                independent[0]['native_number_span'] = primary[0]['native_number'] = {'start': 8, 'end': 9}
+            else:
+                independent[0]['native_phrase_span'] = primary[0]['native_occurrence'] = {'start': 0, 'end': 8}
+            with self.subTest(case=case), self.assertRaises(ValueError): validate_references(changed, *args)
+        # One shared phrase may describe two independently located numbers.
+        for row in docs['independent_corrected']['references']: row['native_phrase_span'] = {'start': 0, 'end': len(text)}
+        for row in docs['primary']['references']: row['native_occurrence'] = {'start': 0, 'end': len(text)}
+        self.assertEqual(len(validate_references(docs, *args)[0]), 2)
 
     def test_should_reject_page_type_and_geometry_errors_when_spans_or_rectangles_are_malformed(self):
         index = {'text': 'A😀 B', 'pages': [{'number': 1, 'start': 0, 'end': 5, 'width': 100, 'height': 100}]}

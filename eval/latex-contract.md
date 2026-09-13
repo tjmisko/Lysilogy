@@ -164,7 +164,11 @@ source occurrence, full caption/body membership and reviewed visual geometry.
 Both original inventories must agree on non-whitespace native character positions;
 source arguments and UTF-16/page boundaries are checked against actual bytes.
 Mathematical body and printed-number boxes require the original independent
-supplement and a separate visual review. Lossy native text never becomes semantic
+supplement and a separate visual review. Both annotators' visual geometry, table
+body memberships, and mathematical body/number regions must use their actual
+native page owners. Reference numbers require non-whitespace, nonoverlapping
+native occurrence membership contained in their declared phrases; contextual
+phrases may overlap around different numbers. Lossy native text never becomes semantic
 quotation truth. Every retained informal role needs a reviewed original-scope
 disposition; unresolved roles prevent a complete negative cohort.
 

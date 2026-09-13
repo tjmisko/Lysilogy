@@ -92,6 +92,15 @@ def covered(rows, index):
     return result
 
 
+def member_pages(rows, index):
+    result = set()
+    for row in rows:
+        owners = [page['number'] for page in index['pages'] if page['start'] <= row['start'] < row['end'] <= page['end']]
+        require(len(owners) == 1, 'manual membership has no unique native page owner')
+        result.update(owners)
+    return result
+
+
 def rectangle(page, values, index, pixels=None, dpi=96):
     pages = {row['number']: row for row in index['pages']}
     require(type(page) is int and page in pages and len(values) == 4, 'manual region page/shape is invalid')
@@ -317,13 +326,17 @@ def validate_objects(docs, raws, candidate, files, index):
             rectangle(page, [native_region['rects'][0][k] for k in ('x_min', 'y_min', 'x_max', 'y_max')], index)
             original = other['body_region']
             rectangle(original['page'], [original[k] for k in ('x_min', 'y_min', 'x_max', 'y_max')], index)
+            exact(original['page'], page, 'primary and independent visual body pages disagree')
+            if row['kind'] == 'table':
+                body = native_members(row['body_native_spans'], index)
+                require(body and member_pages(body, index) == {page}, 'table body membership is outside its visual page')
             key = (row['kind'], row['printed_label'], page)
             require(key in visuals and key not in used_visuals, 'visual review omits/repeats a source occurrence')
             used_visuals.add(key); chosen = visuals[key]
             require(chosen.get('full_body_basis'), 'selected visual region lacks a review basis')
             region = rectangle(page, [chosen['body_pdf_points'][k] for k in ('x_min', 'y_min', 'x_max', 'y_max')],
                                index, chosen['body_pixels_192dpi'], 192)
-            require(row['pages'] == [page], 'visual object names different pages')
+            exact(row['pages'], [page], 'visual object names different pages')
             require(all(next(p for p in index['pages'] if p['number'] == page)['start'] <= s['start'] < s['end']
                         <= next(p for p in index['pages'] if p['number'] == page)['end'] for s in spans),
                     'caption is outside its visual object page')
@@ -354,10 +367,15 @@ def validate_objects(docs, raws, candidate, files, index):
             exact(comparison['selected_number_boxes'], supplement['printed_number_boxes'], 'reviewed math number geometry differs')
             regions = [rectangle(r['page'], r['rect'], index, r['pixels_96dpi']) for r in supplement['visual_body_boxes']]
             number_regions = [rectangle(r['page'], r['rect'], index, r['pixels_96dpi']) for r in supplement['printed_number_boxes']]
-            require(regions and number_regions and {r['page'] for r in regions} == set(row['pages']), 'math page inventory differs')
-            require(all(any(page['number'] == region['page'] and page['start'] <= span['start'] < span['end'] <= page['end']
-                            for region in regions for page in index['pages']) for span in spans),
-                    'mathematical membership lies outside its visual pages')
+            body_pages, number_pages = member_pages(spans, index), member_pages(numbers, index)
+            exact(row['pages'], sorted(body_pages), 'math object names different native pages')
+            require(regions and number_regions and {r['page'] for r in regions} == body_pages
+                    and {r['page'] for r in number_regions} == number_pages and number_pages <= body_pages,
+                    'mathematical body/number geometry differs from native page ownership')
+            for name, owners in [('body_region', body_pages), ('printed_number_region', number_pages)]:
+                original = other[name]
+                rectangle(original['page'], [original[k] for k in ('x_min', 'y_min', 'x_max', 'y_max')], index)
+                require({original['page']} == owners, 'primary mathematical geometry differs from native page ownership')
             output_math.append({**common, 'printed_heading': row['printed_label'], 'spans': spans, 'region': regions,
                                 'printed_number_spans': numbers, 'printed_number_regions': number_regions,
                                 'source_parent_object': None, 'source_child_objects': [], 'semantic_quote_truth': False,
@@ -422,7 +440,7 @@ def validate_references(docs, candidate, files, index, id_map, primary_map):
     exact(independent['counts']['explicit_reference_occurrences'], len(links), 'independent declared reference inventory differs')
     sources = {row['id']: row for row in candidate['source_inventory']['objects']}
     sections = unique(independent['section_destinations'], 'id', 'section destination repeats an ID')
-    seen = set(); primary_seen = set(); references = []; visual = []; non_objects = []
+    seen = set(); primary_seen = set(); native_seen = set(); references = []; visual = []; non_objects = []
     for row in independent['references']:
         require(row['unresolved_targets'] == [], 'manual reference has an unresolved target')
         member, digest = source_member(row['source']['member'], files)
@@ -437,8 +455,13 @@ def validate_references(docs, candidate, files, index, id_map, primary_map):
         exact(other['target_label'], row['source_label'], 'reference label inventories disagree')
         spans = native_members([row['native_number_span']], index)
         exact(spans, native_members([other['native_number']], index), 'reference numeric occurrence disagrees')
-        exact(native_members([row['native_phrase_span']], index), native_members([other['native_occurrence']], index),
-              'reference phrase occurrence disagrees')
+        phrase = native_members([row['native_phrase_span']], index)
+        exact(phrase, native_members([other['native_occurrence']], index), 'reference phrase occurrence disagrees')
+        require(phrase[0]['start'] <= spans[0]['start'] < spans[0]['end'] <= phrase[0]['end'],
+                'reference number is outside its declared phrase')
+        points = covered(spans, index)
+        require(points and not points & native_seen, 'reference numeric occurrence is empty or reused')
+        native_seen.update(points)
         declared = row['destination_id']; expected = candidate['source_inventory']['label_targets'].get(row['source_label'])
         common = {'source_link': number, 'source_members': [member], 'span': spans[0]}
         if declared in id_map:
