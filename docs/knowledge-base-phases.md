@@ -3963,3 +3963,45 @@ date, last merged issue, in-flight branches and their state, next action, and op
   progress does not change those host grants. Merged scorecard remains1/5 gates available/pass,
   3/30objectives at target; branch #106 measurement is above, not merged acceptance. #97~500,
   phase exits, final Playwright/all5gates/24of30objectives/production10k/system report remain.
+
+### 2026-09-13 21:47 UTC — root worktree prepared; command-semantics correction queued
+
+- Last merge remains #105/PR108, Phase A/Wave A2. Main4a45fe9 pushed. Root created
+  `.worktrees/feat/e8.3-source-layout-probe` with `gh worktree create`; branch is entirely
+  clean at4a45fe91b0d6da787ebe765363beb908c15b9986, with no implementation edits yet.
+  Its own-CLI baseline is prepared, not run:
+  `~/.cache/lysilogy/source-layout-probe/before-4a45fe9/run.py` SHA
+  29bbef1d079d0536d8ed025504fb34c78a6518873ceec982c2ccda3b8ed52fc4.
+  `source-layout-probe/implementation-plan-v1.md` records the concrete runtime, confinement,
+  selection and measurement choices to continue. The synthetic preflight is independently
+  clear only within its scope: `review-source-layout-preflight-v2/review.json` SHA
+  c53cb6897fe4da682edb83de1b4cbf2d0df5b3e5c21f83f6b316269f423b4f0f. No deposited TeX
+  program has executed. Empty-environment discovery finds trusted PDFLaTeX format at
+  `/var/lib/texmf/web2c/pdftex/pdflatex.fmt`; system texmf.cnf under
+  `/usr/share/texlive/texmf-dist/web2c/`, engine `/usr/bin/pdftex`, libraries under/lib64.
+- #106 current corrected source **7c36787** is independently clear, including Unicode
+  numeric-label and missing-token-geometry controls. Receipt
+  `review-expanded-regions-14e6d3d/source-review-7c36787.json` SHA
+  040a5c879b4ab98544ffd3bb19c80edb635162947fc1b53feee1c64f20969c38. First actual
+  measurement independently replayed all15/23 IoUs and old-paper equality; receipt
+  `first-measurement-review.json` SHA2227e3eec3b204fa732cf531a74826e5d0c42657cb817a18bf047992c7f68dbb.
+  Owner finish_benchmark has `targeted-iteration8` and second-measurement runner82313a8a
+  prepared, unlaunched. Standalone continuation `expanded-k1-regions/resume-7c36787.json`.
+  After #107's running comparison ends, schedule these corrected compiled gates and exact
+  reviewer binary replay, then the second v1/v2 measure. Root110 baseline can use the
+  interval while reviewer checks the compiled artifact. No heavy overlap.
+- #107 f24f735 comparison **TTY46633 remains running**,622/702 complete at last check,
+  zero errors; do not infer final counts/admissions from that prefix. Owner found a real
+  command-semantics defect: standard ref/eqref keys containing commas must remain literal,
+  while cref/Cref list forms split them. Existing O6 rendering guards withhold the affected
+  automatic path, but source target metadata must still be fixed. Source/worktree/snapshot
+  stay unchanged until this run ends. External `duplicate-labels/comma-target-preparation/`
+  contains the shared correction and110 focused tests, with original defect receipt
+  `comma-target-original-probe.json` SHA38e1d19dcc1f280c0d4362ca14bba1d777690ca93e9ea847debce66c2ea6d9bd.
+  After terminal completion retain this full generation, audit actual affected papers/spans,
+  apply/review the correction and prepare a new reviewed measurement generation. Never
+  relabel the frozen f24 result. Reviewer review_ready_prs agrees this is a required fix.
+- Root/finish_benchmark/finish_corpus_proxy are the three implementers; reviewer remains
+  separate. Native queue is still paused before26,7,250unique/6,299scale verified. No
+  downloads, new PR, merge or changed merged scorecard. All pending host/phase/system holds
+  in the preceding entry remain; ten unrelated main preview hashes remain unchanged.
