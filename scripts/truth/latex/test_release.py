@@ -4,7 +4,9 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from release import build_release, evidence_paths, write_immutable
+from release import build_release, evidence_paths, write_immutable, validate_automatic_reports, automatic_source_identity
+from annotations import canonical
+from archive import sha256
 
 
 def fixture():
@@ -17,6 +19,30 @@ def fixture():
     config={'version':'k1-limited-v1','build_date':'2026-09-13','target_papers':500,'coverage_followup':'https://github.com/tjmisko/Lysilogy/issues/97','selection_bias':'Two manually selected complete papers; no generalization','publication_deviation':'Limited all-kind release; original target remains unmet','papers':[{'arxiv_id':row['arxiv_id'],'paper_id':row['paper_id'],'candidate':'external/'+row['arxiv_id']+'.json'} for row in papers]}
     inputs={'papers':[{'arxiv_id':row['arxiv_id'],'version':1,'stratum':row['stratum'],'pdf':{'sha256':row['pdf_sha256']},'source':{'sha256':row['source_sha256']}} for row in papers]}
     return papers,config,inputs,[]
+
+
+def automatic_fixture(cache):
+    inputs={'papers':[{'arxiv_id':'2001.00001','stratum':['cs.AI',2020]}]}
+    config={'inputs':'inputs.json','indexes':'indexes.json','automatic_builds':[]}
+    evidence={'inputs.json':'a'*64,'indexes.json':'b'*64}
+    sources={'archive.py':b'def read(): return 1\n','tex.py':b'def render(): return 1\n','parser.py':b'def parse(): return 1\n','align.py':b'def align(): return 1\n','builder.py':b'IMPLEMENTATION = ["new"]\ndef derive(): return 1\n'}
+    for label,head in [('historical','1234567'),('current','abcdef0')]:
+        directory=cache/label;(directory/'modules').mkdir(parents=True);(directory/'papers').mkdir()
+        modules={}
+        for name,raw in sources.items():
+            if name=='builder.py':raw=raw.replace(b'new',b'old')
+            if label=='historical' and name=='align.py':raw=raw.replace(b'1',b'0')
+            (directory/'modules'/name).write_bytes(raw);modules[name]=sha256(raw)
+        inventory={'objects':[]};metrics={f'O{i}':False for i in range(1,12)}
+        candidate={'arxiv_id':'2001.00001','stratum':['cs.AI',2020],'accepted':False,'bibliography_eligible':False,'metric_eligibility':metrics,'source_inventory':inventory,'source_inventory_sha256':sha256(canonical(inventory))}
+        candidate_raw=canonical(candidate);(directory/'papers/paper.json').write_bytes(candidate_raw)
+        summary={'arxiv_id':'2001.00001','stratum':['cs.AI',2020],'accepted':False,'candidate_path':'papers/paper.json','candidate_sha256':sha256(candidate_raw),'source_inventory_sha256':candidate['source_inventory_sha256'],'metrics':metrics}
+        report={'head':head,'input_sha256':evidence['inputs.json'],'index_map_sha256':evidence['indexes.json'],'papers':1,'counts':{'parsed':1,'accepted':0,'bibliography_eligible':0},'eligible_metrics':{key:0 for key in metrics},'network_calls':0,'model_calls':0,'external_cost_usd':0,'final_k1_publication':False,'wall_seconds':1,'peak_rss_kib':1}
+        runner=b'inert runner receipt';launch={'head':head,'modules':modules,'runner_sha256':sha256(runner)}
+        for name,raw in [('report.json',canonical(report)),('papers.jsonl',canonical(summary)+b'\n'),('launch.json',canonical(launch)),('run.py',runner)]:
+            (directory/name).write_bytes(raw);evidence[label+'/'+name]=sha256(raw)
+        config['automatic_builds'].append({'label':label,'tested_head':head,'path':label+'/report.json','paper_summaries':label+'/papers.jsonl','launch':label+'/launch.json','runner':label+'/run.py'})
+    return cache,config,inputs,evidence,sources
 
 
 class ReleaseTests(unittest.TestCase):
@@ -52,6 +78,36 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'pin every'):evidence_paths(config)
         for name in ('packet.json','root-v1.json','independent-v1.json','independent-v1-receipt.json','reconciliation-independent-v1.json'):config['evidence_sha256']['objects/'+name]='d'
         self.assertEqual(len(evidence_paths(config)),8)
+
+    def test_should_bind_current_automatic_coverage_when_only_fingerprint_lists_changed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            arguments=automatic_fixture(Path(directory))
+            history=validate_automatic_reports(*arguments)
+            self.assertEqual(history[1]['summary']['papers'],1)
+            self.assertEqual(history[1]['summary']['counts']['parsed'],1)
+            self.assertEqual(automatic_source_identity('builder.py',b'IMPLEMENTATION=[]\ndef derive(): return 1'),automatic_source_identity('builder.py',b'IMPLEMENTATION=["manual"]\ndef derive(): return 1'))
+
+    def test_should_reject_historical_report_relabeling_when_current_coverage_is_required(self):
+        with tempfile.TemporaryDirectory() as directory:
+            arguments=automatic_fixture(Path(directory));config=arguments[1]
+            config['automatic_builds'][1]={**config['automatic_builds'][0],'label':'current'}
+            with self.assertRaisesRegex(ValueError,'report identities must differ'):validate_automatic_reports(*arguments)
+
+    def test_should_reject_incomplete_or_fabricated_counts_when_full_automatic_denominators_are_required(self):
+        for mutation in (lambda report:report.update(papers=0),lambda report:report.update(eligible_metrics={}),lambda report:report['counts'].update(parsed=0),lambda report:report.update(head='9999999')):
+            with self.subTest(mutation=mutation),tempfile.TemporaryDirectory() as directory:
+                arguments=automatic_fixture(Path(directory));path=Path(directory)/'current/report.json'
+                import json
+                report=json.loads(path.read_bytes());mutation(report);path.write_bytes(canonical(report));arguments[3]['current/report.json']=sha256(path.read_bytes())
+                with self.assertRaises(ValueError):validate_automatic_reports(*arguments)
+
+    def test_should_reject_changed_derivation_or_candidates_when_current_receipts_claim_old_bytes(self):
+        for target in ('source','candidate'):
+            with self.subTest(target=target),tempfile.TemporaryDirectory() as directory:
+                arguments=automatic_fixture(Path(directory))
+                if target=='source':arguments[4]['align.py']=b'def align(): return 99\n'
+                else:(Path(directory)/'current/papers/paper.json').write_bytes(b'changed candidate')
+                with self.assertRaises(ValueError):validate_automatic_reports(*arguments)
 
     def test_should_preserve_published_bytes_when_repeated_or_conflicting_releases_are_requested(self):
         with tempfile.TemporaryDirectory() as directory:

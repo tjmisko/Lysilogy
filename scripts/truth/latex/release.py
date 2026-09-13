@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Publish a versioned, explicitly limited K1 release from reviewed external bundles."""
 import argparse
+import ast
 from collections import Counter
 from datetime import datetime, timezone
 import json
@@ -128,7 +129,7 @@ def build_release(assemblies, config, inputs, history):
 
 def evidence_paths(config):
     required = {config['inputs'], config['indexes']}
-    required.update(item[key] for item in config['automatic_builds'] for key in ('path','paper_summaries'))
+    required.update(item[key] for item in config['automatic_builds'] for key in ('path','paper_summaries','launch','runner'))
     for paper in config['papers']:
         required.add(paper['candidate'])
         for field, names in [('region_bundle', ('regions-root-v1.json','review-independent-v1.json','source-associations-root-v1.json','source-associations-independent-review-v1.json')),
@@ -142,6 +143,64 @@ def evidence_paths(config):
 
 def verify_evidence(cache, config):
     return {path: sha256(bounded(cache, path)) for path in evidence_paths(config)}
+
+
+def automatic_source_identity(name, raw):
+    if name != 'builder.py':
+        return sha256(raw)
+    tree = ast.parse(raw)
+    # The fingerprint list names additional manual/publication adapters; it does
+    # not participate in derive_paper. No other code or constants may differ.
+    tree.body = [node for node in tree.body if not (isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and node.targets[0].id == 'IMPLEMENTATION')]
+    return sha256(ast.dump(tree, include_attributes=False).encode())
+
+
+def validate_automatic_reports(cache, config, inputs, evidence, current_sources):
+    builds = config['automatic_builds']
+    require(len(builds) == 2 and {row['label'] for row in builds} == {'historical','current'}, 'release needs distinct historical/current automatic runs')
+    require(len({row['path'] for row in builds}) == len({evidence[row['path']] for row in builds}) == len({row['tested_head'] for row in builds}) == 2, 'historical/current automatic report identities must differ')
+    frozen = {row['arxiv_id']: row for row in inputs['papers']}
+    history = []
+    for specification in builds:
+        report = document(bounded(cache,specification['path']))
+        launch = document(bounded(cache,specification['launch']))
+        require(re.fullmatch(r'[0-9a-f]{7,40}', specification['tested_head']) and report['head'] == launch['head'] == specification['tested_head'], 'automatic report lacks the declared tested source identity')
+        require(report['input_sha256'] == evidence[config['inputs']] and report['index_map_sha256'] == evidence[config['indexes']], 'automatic coverage report used different frozen inputs')
+        require(type(report['papers']) is int and report['papers'] == len(frozen) == len(inputs['papers']) and report['papers'] > 0, 'automatic coverage denominator is not the complete frozen population')
+        require(set(report['counts']) == {'parsed','accepted','bibliography_eligible'} and set(report['eligible_metrics']) == set(METRICS), 'automatic report count/metric keys are incomplete')
+        require(all(type(value) is int and 0 <= value <= report['papers'] for value in list(report['counts'].values()) + list(report['eligible_metrics'].values())), 'automatic coverage counts are invalid')
+        require(report['network_calls'] == report['model_calls'] == 0 and report['final_k1_publication'] is False, 'automatic report scope is not offline exploratory coverage')
+        module_root = str(Path(specification['launch']).parent / 'modules')
+        require(set(current_sources).issubset(launch['modules']), 'automatic launch omits required module fingerprints')
+        for name, expected in launch['modules'].items():
+            require(re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*\.py', name), 'automatic module name is unsafe')
+            raw = bounded(cache,module_root+'/'+name)
+            require(sha256(raw) == expected, 'automatic launched module bytes changed')
+            if specification['label'] == 'current' and name in current_sources:
+                require(automatic_source_identity(name,raw) == automatic_source_identity(name,current_sources[name]), 'current automatic report does not test current derivation source')
+        runner_hash = evidence[specification['runner']]
+        if 'runner_sha256' in launch: require(launch['runner_sha256'] == runner_hash, 'automatic launch binds another runner')
+        summaries = [document(line) for line in bounded(cache,specification['paper_summaries']).splitlines()]
+        require(len(summaries) == len(frozen) and {row['arxiv_id'] for row in summaries} == set(frozen), 'automatic summary population is incomplete or duplicated')
+        counts = {'parsed':0,'accepted':0,'bibliography_eligible':0}; metrics = dict.fromkeys(METRICS,0)
+        for summary in summaries:
+            require(summary['stratum'] == frozen[summary['arxiv_id']]['stratum'] and type(summary['accepted']) is bool, 'automatic paper identity/stratum/result differs from frozen population')
+            if 'error' in summary:
+                require(summary['accepted'] is False and 'candidate_path' not in summary, 'failed automatic paper cannot also claim accepted truth')
+                continue
+            candidate_path = str(Path(specification['path']).parent / summary['candidate_path'])
+            candidate_raw = bounded(cache,candidate_path)
+            require(sha256(candidate_raw) == summary['candidate_sha256'], 'automatic candidate differs from its frozen summary hash')
+            candidate = document(candidate_raw)
+            require(candidate['arxiv_id'] == summary['arxiv_id'] and candidate['stratum'] == summary['stratum'] and candidate['accepted'] == summary['accepted'], 'automatic candidate differs from paper summary identity/result')
+            require(set(candidate['metric_eligibility']) == set(METRICS) and candidate['metric_eligibility'] == summary['metrics'] and all(type(value) is bool for value in candidate['metric_eligibility'].values()), 'automatic per-paper metric inventory differs')
+            require(type(candidate['accepted']) is bool and type(candidate['bibliography_eligible']) is bool, 'automatic per-paper acceptance is malformed')
+            require(candidate['source_inventory_sha256'] == summary['source_inventory_sha256'] == sha256(canonical(candidate['source_inventory'])), 'automatic complete source inventory hash differs')
+            counts['parsed'] += 1; counts['accepted'] += int(candidate['accepted']); counts['bibliography_eligible'] += int(candidate['bibliography_eligible'])
+            for metric, eligible in candidate['metric_eligibility'].items(): metrics[metric] += int(eligible)
+        require(counts == report['counts'] and metrics == report['eligible_metrics'], 'automatic aggregate counts contradict complete candidate inventory')
+        history.append({'path':specification['path'],'sha256':evidence[specification['path']], 'paper_summaries':specification['paper_summaries'],'paper_summaries_sha256':evidence[specification['paper_summaries']], 'launch_sha256':evidence[specification['launch']], 'runner_sha256':runner_hash, 'label':specification['label'], 'tested_modules':launch['modules'], 'summary':{key:report[key] for key in ('head','papers','counts','eligible_metrics','wall_seconds','peak_rss_kib','network_calls','model_calls','external_cost_usd')}})
+    return history
 
 
 def checked_output_ancestors(path):
@@ -192,15 +251,9 @@ def main():
     assemblies=[]
     for paper in config['papers']:
         assemblies.append(assemble(cache,corpus,data,paper['candidate'],paper.get('region_bundle'),paper.get('panel_bundle'),config['inputs'],config['indexes'],paper.get('object_bundle'),paper.get('bibliography_bundle')))
-    history=[]
-    for row in config['automatic_builds']:
-        report=document(bounded(cache,row['path']))
-        require(report['input_sha256'] == before[config['inputs']] and report['index_map_sha256'] == before[config['indexes']], 'automatic coverage report used different frozen inputs')
-        summaries=bounded(cache,row['paper_summaries']).splitlines()
-        summary_rows=[document(line) for line in summaries]
-        require(len(summary_rows) == report['papers'] and len({item['arxiv_id'] for item in summary_rows}) == report['papers'], 'automatic per-paper summary inventory is incomplete or duplicated')
-        require({item['arxiv_id'] for item in summary_rows} == {item['arxiv_id'] for item in document(bounded(cache,config['inputs']))['papers']}, 'automatic coverage summaries differ from the frozen eval population')
-        history.append({'path':row['path'],'sha256':before[row['path']],'paper_summaries':row['paper_summaries'],'paper_summaries_sha256':before[row['paper_summaries']],'label':row['label'],'summary':{key:report[key] for key in ('head','papers','counts','eligible_metrics','wall_seconds','peak_rss_kib','network_calls','model_calls','external_cost_usd')}})
+    inputs=document(bounded(cache,config['inputs']))
+    current_sources={name:(repo/'scripts/truth/latex'/name).read_bytes() for name in ('archive.py','tex.py','parser.py','align.py','builder.py')}
+    history=validate_automatic_reports(cache,config,inputs,before,current_sources)
     release,bibliography=build_release(assemblies,config,document(bounded(cache,config['inputs'])),history)
     require(before==verify_evidence(cache,config) and implementation==fingerprint_sources() and config_path.read_bytes()==config_raw,'release inputs or implementation changed during assembly')
     release['provenance']={'build_config_sha256':sha256(config_raw),'implementation':implementation,'evidence_sha256':before}
