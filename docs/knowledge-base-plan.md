@@ -123,6 +123,13 @@ resolve. A split mints a new ID and records which observations moved.
 - **Bibliography entries** resolve through DOI/arXiv extraction, then Crossref
   `query.bibliographic`, Semantic Scholar `/paper/search/match`, and OpenAlex search, with a model
   parse only as a last resort.
+- **Bibliography author labels** preserve an explicitly printed institutional or collective
+  first author as a known literal for field extraction. This does not establish a Person or an
+  individual authorship identity. The independently observed institution must not become an
+  unknown field merely because no individual is named. Composed/decomposed accent presentations
+  retain their raw source/native evidence and use the declared Unicode comparison rule. This
+  resolves the manual K1 field-role question without changing O9's target or denominators;
+  see the 2026-09-13 sixth-paper review recorded in the phases session log.
 
 ## Metrics and objectives
 
