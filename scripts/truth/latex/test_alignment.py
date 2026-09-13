@@ -17,6 +17,17 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_withhold_semantic_math_alphabets_when_a_plain_text_collision_exists(self):
+        for command in ('mathbb', 'mathcal', 'mathbf', 'mathsf', 'mathrm', 'mathit', 'operatorname'):
+            source = document(r'\begin{equation}' + chr(92) + command + r'{R}+constant=12345\end{equation}')
+            parsed = parse_project({'main.tex': source})
+            result = align_paper(parsed, {'text': 'ℝ+constant=12345 Other prose R+constant=12345'})
+            with self.subTest(command=command):
+                self.assertIn('unverified_math_alphabet:' + command, parsed['objects'][0]['unsupported_commands'])
+                self.assertFalse(result['metric_eligibility']['O3'])
+        prose = parse_project({'main.tex': document(r'\begin{theorem}\textbf{All elements have a complete bounded representation.}\end{theorem}')})
+        self.assertTrue(align_paper(prose, {'text': 'All elements have a complete bounded representation.'})['metric_eligibility']['O5'])
+
     def test_should_fold_the_mu_encoding_alias_when_math_case_and_script_semantics_stay_distinct(self):
         aligner = TextAlignment({'text': 'longvariable+µ=constant'})
         self.assertIsNotNone(aligner.unique('longvariable+μ=constant', math=True)[0])

@@ -203,7 +203,7 @@ See \ref{fig:a} and \eqref{eq:a}; evidence \cite{source}.
         renderer = Renderer()
         self.assertEqual(renderer.plain(r"\mathbf a + \mathbb N + \mathcal D"), "a + N + D")
         self.assertEqual(renderer.plain(r"\mathbf\alpha"), "α")
-        self.assertEqual(renderer.unsupported, {})
+        self.assertTrue(renderer.unsupported['unverified_math_alphabet:mathbf'])
 
     def test_should_accept_single_tokens_when_a_declared_macro_uses_unbraced_arguments(self):
         renderer = Renderer(r'\newcommand{\format}[1]{\mathbf{#1}}')

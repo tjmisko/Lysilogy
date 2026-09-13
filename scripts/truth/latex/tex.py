@@ -234,6 +234,7 @@ def expand_project(files, limits=Limits(), selected_main=None):
 ACCENTS = {"'": "\u0301", '`': "\u0300", '^': "\u0302", '"': "\u0308", '~': "\u0303", '=': "\u0304", '.': "\u0307", 'c': "\u0327", 'v': "\u030c", 'u': "\u0306", 'H': "\u030b"}
 SYMBOLS = {"alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ", "epsilon": "ε", "theta": "θ", "lambda": "λ", "mu": "μ", "pi": "π", "sigma": "σ", "phi": "φ", "psi": "ψ", "omega": "ω", "Gamma": "Γ", "Delta": "Δ", "Theta": "Θ", "Lambda": "Λ", "Pi": "Π", "Sigma": "Σ", "Phi": "Φ", "Psi": "Ψ", "Omega": "Ω", "times": "×", "cdot": "·", "leq": "≤", "geq": "≥", "neq": "≠", "infty": "∞", "ldots": "…", "dots": "…", "LaTeX": "LaTeX", "TeX": "TeX", "&": "&", "%": "%", "_": "_", "#": "#", "$": "$", "{": "{", "}": "}", "textendash": "–", "textemdash": "—", "textasciitilde": "~", "textbackslash": "\\", "ss": "ß", "ae": "æ", "oe": "œ", "o": "ø", "l": "ł"}
 FORMATTING = {"textbf", "textit", "texttt", "textrm", "textsf", "textsc", "emph", "mbox", "hbox", "text", "mathrm", "mathbf", "mathit", "mathbb", "mathcal", "mathsf", "operatorname", "ensuremath", "url", "path", "nolinkurl", "enquote", "MakeUppercase", "MakeLowercase", "bibnamefont", "bibfnamefont", "citenamefont"}
+SEMANTIC_MATH_FORMATTING = {"mathrm", "mathbf", "mathit", "mathbb", "mathcal", "mathsf", "operatorname"}
 SILENT = {"bf", "it", "em", "rm", "sc", "sf", "tt", "bfseries", "itshape", "scshape", "normalfont", "newblock", "protect", "relax", "noindent", "leavevmode", "small", "footnotesize", "scriptsize", "displaystyle", "textstyle", "left", "right", "centering", "hfill", "vfill", "unskip", "ignorespaces", "allowbreak", "penalty", "nobreak", "quad", "qquad", ",", ";", ":", "!", " ", "/", "\\", "bgroup", "egroup"}
 DROP_ARGUMENT = {"label", "tag", "tag*", "index", "vspace", "hspace", "vskip", "hskip", "bibliographystyle", "setlength", "addcontentsline"}
 
@@ -318,6 +319,9 @@ class Renderer:
                 output.append(SYMBOLS[name])
             elif name in FORMATTING:
                 self.math_seen += name == "ensuremath"
+                if name in SEMANTIC_MATH_FORMATTING:
+                    self.math_seen += 1
+                    self.unsupported["unverified_math_alphabet:" + name] += 1
                 value, at = token_argument(text, at)
                 output.append(self.plain(value, depth + 1, budget))
             elif name in ("href", "bibinfo", "bibfield"):
