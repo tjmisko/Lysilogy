@@ -15,7 +15,15 @@ LAYOUT_ENVIRONMENTS = {"document", "abstract", "thebibliography", "itemize", "en
 def equation_rows(node, text):
     """Only top-level row separators create separately numbered equations."""
     if node["environment"].rstrip("*") not in ("align", "gather", "eqnarray"):
-        return [{**node, "explicit_tag": bool(list(argument_commands(text[node["content_start"]:node["content_end"]], {"tag"})))}]
+        raw = text[node["content_start"]:node["content_end"]]
+        tagged = bool(list(argument_commands(raw, {"tag"})))
+        if node["environment"].rstrip("*") in ("equation", "multline"):
+            suppressed = node["environment"].endswith("*") or bool(re.search(r"\\(?:nonumber|notag)\b", raw))
+            if suppressed and not tagged:
+                if list(argument_commands(raw, {"label"})):
+                    return [{**node, "numbering_uncertain": True, "explicit_tag": False}]
+                return []
+        return [{**node, "explicit_tag": tagged}]
     start, depth, rows, at = node["content_start"], 0, [], node["content_start"]
     for match in COMMAND.finditer(text, node["content_start"], node["content_end"]):
         if match.start() < at:

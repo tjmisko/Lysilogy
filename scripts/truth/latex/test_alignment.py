@@ -320,13 +320,15 @@ class AlignmentTests(unittest.TestCase):
         self.assertFalse(result['alignment']['empty_inventory_document_verified'])
 
     def test_should_keep_unrelated_cohorts_when_an_unnumbered_equation_label_is_uncertain(self):
-        source = document(r'\begin{figure}\caption{A complete independent visual caption.}\end{figure}\begin{align*}abcdefghi=12345\label{ambiguous}\end{align*}')
-        result = align_paper(parse_project({'main.tex': source}), {'text': 'A complete independent visual caption. abcdefghi=12345'})
-        self.assertTrue(result['metric_eligibility']['O1'])
-        self.assertFalse(result['metric_eligibility']['O3'])
-        self.assertEqual(result['kind_coverage']['equation']['expected'], 1)
-        self.assertEqual(result['kind_coverage']['equation']['aligned'], 0)
-        self.assertIn('ambiguous_equation_numbering', result['excluded_objects'][0]['unsupported_commands'])
+        for environment, suppression in [('align*', ''), ('gather*', ''), ('eqnarray*', ''), ('equation*', ''), ('multline*', ''), ('equation', r'\nonumber'), ('multline', r'\notag')]:
+            source = document(r'\begin{figure}\caption{A complete independent visual caption.}\end{figure}' + r'\begin{' + environment + r'}abcdefghi=12345\label{ambiguous}' + suppression + r'\end{' + environment + '}')
+            result = align_paper(parse_project({'main.tex': source}), {'text': 'A complete independent visual caption. abcdefghi=12345'})
+            with self.subTest(environment=environment, suppression=suppression):
+                self.assertTrue(result['metric_eligibility']['O1'])
+                self.assertFalse(result['metric_eligibility']['O3'])
+                self.assertEqual(result['kind_coverage']['equation']['expected'], 1)
+                self.assertEqual(result['kind_coverage']['equation']['aligned'], 0)
+                self.assertIn('ambiguous_equation_numbering', result['excluded_objects'][0]['unsupported_commands'])
 
 
 if __name__ == "__main__":
