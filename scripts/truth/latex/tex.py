@@ -309,7 +309,7 @@ class Renderer:
                 count, value = self.macros[name]
                 arguments = []
                 for _ in range(count):
-                    argument, at = group(text, at)
+                    argument, at = token_argument(text, at)
                     arguments.append(argument)
                 for number, argument in reversed(list(enumerate(arguments, 1))):
                     value = value.replace("#" + str(number), argument)

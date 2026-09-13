@@ -37,7 +37,8 @@ def equation_rows(node, text):
         suppressed = bool(re.search(r"\\(?:nonumber|notag)\b", raw)) or node["environment"].endswith("*")
         if suppressed and not tagged:
             if list(argument_commands(raw, {"label"})):
-                raise UnsupportedSource("unnumbered equation row has an ambiguous label")
+                output.append({**node, "start": start, "content_start": start, "content_end": end, "end": end,
+                               "equation_row": True, "numbering_uncertain": True, "explicit_tag": False})
             continue
         output.append({**node, "start": start, "content_start": start, "content_end": end, "end": end,
                        "equation_row": True, "explicit_tag": tagged})
@@ -298,7 +299,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
         kind = "statement" if environment in statements or base in statements else ENVIRONMENTS.get(base)
         if not kind or not document["content_start"] <= node["start"] < document["content_end"]:
             continue
-        if kind == "equation" and environment.endswith("*") and not node.get("explicit_tag"):
+        if kind == "equation" and environment.endswith("*") and not node.get("explicit_tag") and not node.get("numbering_uncertain"):
             continue  # Unnumbered display math is outside numbered-equation truth.
         raw = text[node["content_start"]:node["content_end"]]
         label_rows = list(owned_commands(node, {"label"}))
@@ -311,6 +312,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
         before_math = renderer.math_seen
         rendered = renderer.plain(selected)
         unknown = dict(renderer.unsupported - before)
+        if node.get("numbering_uncertain"):
+            unknown["ambiguous_equation_numbering"] = 1
         has_math = kind == "equation" or renderer.math_seen > before_math
         if has_math and any(char in rendered for char in "^_"):
             # Flattened PDF text does not establish which tokens belong to a
@@ -323,6 +326,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
                "labels": label_keys, "text": rendered, "text_sha256": sha256(rendered.encode()),
                "caption": rendered if caption_rows else None, "unsupported_commands": unknown,
                "contains_math": has_math,
+               "numbering_uncertain": node.get("numbering_uncertain", False),
                "statement_type": statements.get(environment, statements.get(base)), "proof_target_labels": [],
                "number_hint": str(numbering[kind]) if kind in ("figure", "table", "algorithm") else None}
         if kind == "proof" and node["option"]:

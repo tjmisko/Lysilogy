@@ -180,6 +180,10 @@ See \ref{fig:a} and \eqref{eq:a}; evidence \cite{source}.
         self.assertEqual(renderer.plain(r"\mathbf\alpha"), "α")
         self.assertEqual(renderer.unsupported, {})
 
+    def test_should_accept_single_tokens_when_a_declared_macro_uses_unbraced_arguments(self):
+        renderer = Renderer(r'\newcommand{\format}[1]{\mathbf{#1}}')
+        self.assertEqual(renderer.plain(r'\format a + \format\alpha'), 'a + α')
+
     def test_should_assign_nested_labels_when_a_statement_contains_a_numbered_equation(self):
         raw = document(r"\begin{theorem}\label{thm:a}A statement \begin{equation}x=1\label{eq:a}\end{equation}\end{theorem}")
         rows = parse_project({"main.tex": raw})["objects"]
