@@ -12,7 +12,7 @@ use tokio::{io::AsyncReadExt, process::Command, sync::Semaphore};
 use super::{IndexDocument, ReadingPage};
 use crate::{Error, Result, domain::TextRect};
 
-pub const VERSION: u16 = 1;
+pub const VERSION: u16 = 2;
 const PAGE_BYTES: usize = 16 * 1024 * 1024;
 const TOTAL_BYTES: usize = 64 * 1024 * 1024;
 const MAX_PAGES: usize = 64;
@@ -434,13 +434,29 @@ fn record_image(
     value: &Tag<'_>,
     page: &ReadingPage,
     visible: bool,
+    clips: &[Clip],
     images: &mut Vec<TextRect>,
     unsupported: &mut usize,
 ) -> Result<()> {
     if images.len() + *unsupported >= 256 {
         return Err(invalid());
     }
-    if visible && let Ok(rect) = image_rect(value, page) {
+    if visible && let Ok(mut rect) = image_rect(value, page) {
+        for clip in clips {
+            match clip {
+                Clip::Unknown => {
+                    *unsupported += 1;
+                    return Ok(());
+                }
+                Clip::Rectangle(bounds) => {
+                    let Some(cropped) = intersection(rect, *bounds) else {
+                        // A supported empty intersection paints no part of this image.
+                        return Ok(());
+                    };
+                    rect = cropped;
+                }
+            }
+        }
         images.push(rect);
     } else {
         *unsupported += 1;
@@ -448,8 +464,244 @@ fn record_image(
     Ok(())
 }
 
+enum Clip {
+    Unknown,
+    Rectangle(TextRect),
+}
+
+fn intersection(a: TextRect, b: TextRect) -> Option<TextRect> {
+    let rect = TextRect {
+        x_min: a.x_min.max(b.x_min),
+        y_min: a.y_min.max(b.y_min),
+        x_max: a.x_max.min(b.x_max),
+        y_max: a.y_max.min(b.y_max),
+    };
+    (rect.x_min < rect.x_max && rect.y_min < rect.y_max).then_some(rect)
+}
+
+// MuPDF's trace matrices already map path coordinates into page space. Only
+// one explicitly closed, axis-aligned rectangular subpath is understood here;
+// arbitrary path and image masks still withhold images until their pop_clip.
+struct RectanglePath {
+    transform: [f32; 6],
+    points: Vec<(f32, f32)>,
+    closed: bool,
+}
+
+impl RectanglePath {
+    fn new(value: &Tag<'_>) -> Option<Self> {
+        if !matches!(value.attrs.get("winding"), Some(&"nonzero" | &"eofill"))
+            || value
+                .attrs
+                .keys()
+                .any(|key| !matches!(*key, "winding" | "transform"))
+        {
+            return None;
+        }
+        Some(Self {
+            transform: numbers::<6>(value.attrs.get("transform")?).ok()?,
+            points: Vec::new(),
+            closed: false,
+        })
+    }
+
+    fn push(&mut self, value: &Tag<'_>) -> Option<()> {
+        if !value.empty || self.closed {
+            return None;
+        }
+        if value.name == "closepath" && value.attrs.is_empty() {
+            self.closed = true;
+            return Some(());
+        }
+        if (value.name != "moveto" || !self.points.is_empty())
+            && (value.name != "lineto" || self.points.is_empty())
+        {
+            return None;
+        }
+        if self.points.len() >= 5 || value.attrs.len() != 2 {
+            return None;
+        }
+        let [x] = numbers::<1>(value.attrs.get("x")?).ok()?;
+        let [y] = numbers::<1>(value.attrs.get("y")?).ok()?;
+        self.points.push((x, y));
+        Some(())
+    }
+
+    fn finish(mut self) -> Option<TextRect> {
+        let same = |a: (f32, f32), b: (f32, f32)| (a.0 - b.0) == 0.0 && (a.1 - b.1) == 0.0;
+        if self.points.len() == 5 && same(self.points[0], self.points[4]) {
+            self.points.pop();
+        }
+        if !self.closed || self.points.len() != 4 {
+            return None;
+        }
+        let [xx, yx, xy, yy, tx, ty] = self.transform;
+        if !((yx == 0.0 && xy == 0.0 && xx != 0.0 && yy != 0.0)
+            || (xx == 0.0 && yy == 0.0 && yx != 0.0 && xy != 0.0))
+        {
+            return None;
+        }
+        for position in 0..4 {
+            let a = self.points[position];
+            let b = self.points[(position + 1) % 4];
+            // Exactly one coordinate changes on each edge; crossed/degenerate
+            // quadrilaterals are not rectangular clipping paths.
+            if ((a.0 - b.0) == 0.0) == ((a.1 - b.1) == 0.0)
+                || same(a, self.points[(position + 2) % 4])
+            {
+                return None;
+            }
+        }
+        let points = self
+            .points
+            .iter()
+            .map(|&(x, y)| {
+                (
+                    xx.mul_add(x, xy.mul_add(y, tx)),
+                    yx.mul_add(x, yy.mul_add(y, ty)),
+                )
+            })
+            .collect::<Vec<_>>();
+        if points.iter().any(|(x, y)| !x.is_finite() || !y.is_finite()) {
+            return None;
+        }
+        let rect = TextRect {
+            x_min: points.iter().map(|p| p.0).fold(f32::INFINITY, f32::min),
+            y_min: points.iter().map(|p| p.1).fold(f32::INFINITY, f32::min),
+            x_max: points.iter().map(|p| p.0).fold(f32::NEG_INFINITY, f32::max),
+            y_max: points.iter().map(|p| p.1).fold(f32::NEG_INFINITY, f32::max),
+        };
+        (rect.x_min < rect.x_max && rect.y_min < rect.y_max).then_some(rect)
+    }
+}
+
+fn drawing_scope(stack: &[&str]) -> bool {
+    stack.starts_with(&["document", "page"]) && stack[2..].iter().all(|name| *name == "group")
+}
+
+fn supported_group(value: &Tag<'_>, page: &ReadingPage) -> bool {
+    value.attrs.len() == 5
+        && value.attrs.get("isolated") == Some(&"1")
+        && value.attrs.get("knockout") == Some(&"0")
+        && value.attrs.get("blendmode") == Some(&"Normal")
+        && value.attrs.get("alpha") == Some(&"1")
+        && value.attrs.get("bbox").is_some_and(|bbox| {
+            numbers::<4>(bbox).is_ok_and(|[x0, y0, x1, y1]| {
+                x0 == 0.0
+                    && y0 == 0.0
+                    && (x1 - page.width).abs() <= 0.01
+                    && (y1 - page.height).abs() <= 0.01
+            })
+        })
+}
+
 /// Trace commands already carry page-space matrices. Unsupported drawing state
 /// never becomes a claimed image rectangle; native text geometry is untouched.
+#[derive(Default)]
+struct TraceState<'a> {
+    stack: Vec<&'a str>,
+    clips: Vec<Clip>,
+    clip_floors: Vec<usize>,
+    clip_path: Option<RectanglePath>,
+    observed_images: usize,
+    unsafe_state: bool,
+    images: Vec<TextRect>,
+    unsupported: usize,
+}
+
+impl<'a> TraceState<'a> {
+    fn close(&mut self, name: &str) -> Result<()> {
+        if self.stack.pop() != Some(name) {
+            return Err(invalid());
+        }
+        let floor = self.clip_floors.pop().ok_or_else(invalid)?;
+        if matches!(name, "group" | "page") && self.clips.len() != floor {
+            return Err(invalid());
+        }
+        if name == "clip_path"
+            && let Some(rect) = self.clip_path.take().and_then(RectanglePath::finish)
+        {
+            *self.clips.last_mut().ok_or_else(invalid)? = Clip::Rectangle(rect);
+        }
+        Ok(())
+    }
+
+    fn observe(&mut self, value: &Tag<'a>, page: &ReadingPage) -> Result<()> {
+        if value.name == "group" {
+            if !drawing_scope(&self.stack) || value.empty {
+                return Err(invalid());
+            }
+            self.unsafe_state |= !supported_group(value, page);
+        } else if value.name == "metatext" {
+            if !drawing_scope(&self.stack) || value.empty {
+                return Err(invalid());
+            }
+            self.unsafe_state |= value.attrs.len() != 2
+                || value.attrs.get("type") != Some(&"actualtext")
+                || !value.attrs.contains_key("txt");
+        } else if !known_command(value.name) {
+            self.unsafe_state = true;
+        }
+        if self.stack.last() == Some(&"clip_path")
+            && self
+                .clip_path
+                .as_mut()
+                .is_some_and(|path| path.push(value).is_none())
+        {
+            self.clip_path = None;
+        }
+        if (value.name.starts_with("clip_") || value.name == "pop_clip")
+            && (!drawing_scope(&self.stack) || (value.name == "pop_clip" && !value.empty))
+        {
+            return Err(invalid());
+        }
+        if value.name.starts_with("clip_") {
+            self.clips.push(Clip::Unknown);
+            if value.name == "clip_path" && !value.empty {
+                self.clip_path = RectanglePath::new(value);
+            }
+        }
+        if value.name == "pop_clip" {
+            let floor = self
+                .stack
+                .iter()
+                .zip(&self.clip_floors)
+                .rev()
+                .find(|(name, _)| matches!(**name, "group" | "page"))
+                .map_or(0, |(_, floor)| *floor);
+            if self.clips.len() <= floor {
+                return Err(invalid());
+            }
+            self.clips.pop();
+        }
+        if value.name == "fill_image" {
+            self.observed_images += 1;
+            if self.observed_images > 256 {
+                return Err(invalid());
+            }
+            if !drawing_scope(&self.stack) {
+                self.unsafe_state = true;
+            }
+            record_image(
+                value,
+                page,
+                !self.unsafe_state,
+                &self.clips,
+                &mut self.images,
+                &mut self.unsupported,
+            )?;
+        }
+        if !value.empty {
+            self.stack.push(value.name);
+            self.clip_floors.push(self.clips.len());
+        }
+        if self.stack.len() > 128 || self.clips.len() > 128 {
+            return Err(invalid());
+        }
+        Ok(())
+    }
+}
+
 pub fn parse_trace(raw: &[u8], page: &ReadingPage) -> Result<(Vec<TextRect>, usize)> {
     if raw.len() > PAGE_BYTES
         || !page.width.is_finite()
@@ -461,13 +713,9 @@ pub fn parse_trace(raw: &[u8], page: &ReadingPage) -> Result<(Vec<TextRect>, usi
     }
     let text = std::str::from_utf8(raw).map_err(|_| invalid())?;
     let mut rest = text;
-    let mut stack = Vec::new();
-    let mut images = Vec::new();
-    let mut unsupported = 0;
+    let mut state = TraceState::default();
     let mut pages = 0;
     let mut document_seen = false;
-    let mut clips = 0_usize;
-    let mut unsafe_state = false;
     let mut declaration_seen = false;
     while let Some(start) = rest.find('<') {
         if !rest[..start].trim().is_empty() {
@@ -480,77 +728,48 @@ pub fn parse_trace(raw: &[u8], page: &ReadingPage) -> Result<(Vec<TextRect>, usi
             && raw_tag.ends_with('?')
             && !document_seen
             && !declaration_seen
-            && stack.is_empty()
+            && state.stack.is_empty()
         {
             declaration_seen = true;
             continue;
         }
         let value = tag(raw_tag)?;
         if value.close {
-            if stack.pop() != Some(value.name) {
-                return Err(invalid());
-            }
+            state.close(value.name)?;
             continue;
         }
         if value.name == "document" {
-            if document_seen || !stack.is_empty() || value.empty {
+            if document_seen || !state.stack.is_empty() || value.empty {
                 return Err(invalid());
             }
             document_seen = true;
         } else if value.name == "page" {
-            if stack.as_slice() != ["document"] || pages != 0 || value.empty {
+            if state.stack.as_slice() != ["document"] || pages != 0 || value.empty {
                 return Err(invalid());
             }
             pages += 1;
             validate_page(&value, page)?;
-        } else if !stack.contains(&"page") {
+        } else if !state.stack.contains(&"page") {
             return Err(invalid());
         }
-        if !known_command(value.name) {
-            unsafe_state = true;
-        }
-        if (value.name.starts_with("clip_") || value.name == "pop_clip")
-            && (stack.as_slice() != ["document", "page"]
-                || (value.name == "pop_clip" && !value.empty))
-        {
-            return Err(invalid());
-        }
-        if value.name.starts_with("clip_") {
-            clips = clips.checked_add(1).ok_or_else(invalid)?;
-        }
-        if value.name == "pop_clip" {
-            clips = clips.checked_sub(1).ok_or_else(invalid)?;
-        }
-        if value.name == "fill_image" {
-            if stack.as_slice() != ["document", "page"] {
-                unsafe_state = true;
-            }
-            record_image(
-                &value,
-                page,
-                clips == 0 && !unsafe_state,
-                &mut images,
-                &mut unsupported,
-            )?;
-        }
-        if !value.empty {
-            stack.push(value.name);
-        }
-        if stack.len() > 128 || clips > 128 {
-            return Err(invalid());
-        }
+        state.observe(&value, page)?;
     }
-    if !rest.trim().is_empty() || !stack.is_empty() || pages != 1 || !document_seen || clips != 0 {
+    if !rest.trim().is_empty()
+        || !state.stack.is_empty()
+        || pages != 1
+        || !document_seen
+        || !state.clips.is_empty()
+    {
         return Err(invalid());
     }
-    if unsafe_state {
-        if unsupported + images.len() == 0 {
+    if state.unsafe_state {
+        if state.unsupported + state.images.len() == 0 {
             return Err(invalid());
         }
-        unsupported += images.len();
-        images.clear();
+        state.unsupported += state.images.len();
+        state.images.clear();
     }
-    Ok((images, unsupported))
+    Ok((state.images, state.unsupported))
 }
 
 impl GraphicsEvidence {
@@ -618,11 +837,59 @@ mod tests {
             let (images, _) = result.unwrap_or_else(|error| panic!("{}: {error}", case["name"]));
             assert_eq!(
                 serde_json::to_value(images).unwrap(),
-                case["rects"],
+                *case
+                    .get("graphics_v2_rects")
+                    .unwrap_or_else(|| &case["rects"]),
                 "{}",
                 case["name"]
             );
         }
+    }
+
+    #[test]
+    fn should_preserve_exact_scoped_bounds_when_groups_and_rectangular_clips_are_supported() {
+        let packet: serde_json::Value =
+            serde_json::from_str(include_str!("../../eval/fixtures/graphics-scopes.json")).unwrap();
+        for case in packet["cases"].as_array().unwrap() {
+            let raw = case["trace"].as_str().unwrap().as_bytes();
+            assert_eq!(digest(raw), case["sha256"].as_str().unwrap());
+            let result = parse_trace(raw, &page());
+            if case["disposition"] == "rejected" {
+                assert!(result.is_err(), "{}", case["name"]);
+                continue;
+            }
+            if case["disposition"] == "rejected_or_unsupported" && result.is_err() {
+                continue;
+            }
+            let (images, excluded) = result.unwrap_or_else(|e| panic!("{}: {e}", case["name"]));
+            assert_eq!(
+                serde_json::to_value(images).unwrap(),
+                case["rects"],
+                "{}",
+                case["name"]
+            );
+            assert_eq!(
+                excluded,
+                usize::try_from(case["unsupported_images"].as_u64().unwrap()).unwrap(),
+                "{}",
+                case["name"]
+            );
+        }
+    }
+
+    #[test]
+    fn should_reject_excess_images_when_supported_clips_hide_every_placement() {
+        let clip = "<clip_path winding=\"nonzero\" transform=\"1 0 0 1 0 0\"><moveto x=\"300\" y=\"300\"/><lineto x=\"310\" y=\"300\"/><lineto x=\"310\" y=\"310\"/><lineto x=\"300\" y=\"310\"/><closepath/></clip_path>";
+        let raw = trace(&format!(
+            "{clip}{}<pop_clip/>",
+            image("100 0 0 50 20 30").repeat(256)
+        ));
+        assert_eq!(parse_trace(&raw, &page()).unwrap(), (vec![], 0));
+        let excessive = trace(&format!(
+            "{clip}{}<pop_clip/>",
+            image("100 0 0 50 20 30").repeat(257)
+        ));
+        assert!(parse_trace(&excessive, &page()).is_err());
     }
 
     #[test]

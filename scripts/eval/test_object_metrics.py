@@ -118,16 +118,16 @@ class ObjectMetricTests(unittest.TestCase):
             mocked=patch.object(m.shutil,'which',return_value=str(tool));mocked.start();self.addCleanup(mocked.stop)
             paper,artifact,index=fixture();raw=b'<synthetic trace />';sha=m.digest(raw)
             path=cache/'object-graphics-traces'/(sha+'.xml');path.parent.mkdir();path.write_bytes(raw)
-            evidence={'version':1,'native_generation':artifact['reading_index_generation'],'pdf_sha256':paper['pdf_sha256'],
+            evidence={'version':m.GRAPHICS_VERSION,'native_generation':artifact['reading_index_generation'],'pdf_sha256':paper['pdf_sha256'],
                 'tool_sha256':m.digest(tool.read_bytes()),'tool_path':str(tool),'cache_key':'','generation':'','pages':[{'page':1,'status':'complete','trace_sha256':sha,'images':[rectangle()],'unsupported_images':0}]}
-            evidence['cache_key']=m.digest(m.canonical([1,evidence['native_generation'],evidence['pdf_sha256'],evidence['tool_sha256']]))
+            evidence['cache_key']=m.digest(m.canonical([m.GRAPHICS_VERSION,evidence['native_generation'],evidence['pdf_sha256'],evidence['tool_sha256']]))
             def seal(e):
                 e['generation']='';basis=m.canonical(e).decode();e['generation']=m.digest(basis.encode());return basis
             basis=seal(evidence);artifact['graphics']=evidence
             row={'graphics_basis_json':basis,'graphics_traces':[{'page':1,'sha256':sha,'path':str(path)}]}
             # Pure receipt validation does not execute a tool or fetch a resource.
             self.assertEqual(m.validate_graphics(row,artifact,paper,index,cache)['trace_hashes'],{str(path):sha})
-            for field,value in [('pdf_sha256','c'*64),('native_generation','foreign'),('cache_key','wrong'),('tool_path','/not-a-tool')]:
+            for field,value in [('version',1),('version',2.0),('pdf_sha256','c'*64),('native_generation','foreign'),('cache_key','wrong'),('tool_path','/not-a-tool')]:
                 changed=copy.deepcopy(artifact);changed['graphics'][field]=value
                 changed_row={**row,'graphics_basis_json':seal(changed['graphics'])}
                 with self.subTest(field=field),self.assertRaises(ValueError):m.validate_graphics(changed_row,changed,paper,index,cache)
@@ -140,8 +140,8 @@ class ObjectMetricTests(unittest.TestCase):
     def should_reject_graphics_inventory_drift_when_rehashed_page_evidence_is_incoherent(self):
         with tempfile.TemporaryDirectory() as directory,patch.object(m.shutil,'which',return_value=None):
             cache=Path(directory);paper,artifact,index=fixture()
-            base={'version':1,'native_generation':artifact['reading_index_generation'],'pdf_sha256':paper['pdf_sha256'],
-                'tool_sha256':None,'tool_path':None,'cache_key':m.digest(m.canonical([1,artifact['reading_index_generation'],paper['pdf_sha256'],None])),
+            base={'version':m.GRAPHICS_VERSION,'native_generation':artifact['reading_index_generation'],'pdf_sha256':paper['pdf_sha256'],
+                'tool_sha256':None,'tool_path':None,'cache_key':m.digest(m.canonical([m.GRAPHICS_VERSION,artifact['reading_index_generation'],paper['pdf_sha256'],None])),
                 'generation':'','pages':[{'page':1,'status':'tool_unavailable','trace_sha256':None,'images':[],'unsupported_images':0}]}
             for mutate in [lambda e:e['pages'].append(e['pages'][0]),lambda e:e['pages'].clear(),
                 lambda e:e['pages'][0].update(images=[rectangle()]),lambda e:e['pages'][0].update(status='complete'),
@@ -160,7 +160,7 @@ class ObjectMetricTests(unittest.TestCase):
             altered=copy.deepcopy(index);altered[key]=None
             with self.subTest(key=key),self.assertRaisesRegex(ValueError,'native text, tokens, geometry or provenance differs'):
                 m.validate_derivation(row,artifact,altered)
-        for changes in [{'figure_detector_version':1},{'figure_detector_version':True},{'figure_detector_generation':'forged'}]:
+        for changes in [{'figure_detector_version':1},{'figure_detector_version':2},{'figure_detector_version':True},{'figure_detector_generation':'forged'}]:
             with self.subTest(changes=changes),self.assertRaises(ValueError):m.validate_derivation(row,{**artifact,**changes},index)
         for changes in [{'native_basis_format':'unknown'},{'native_schema_version':7}]:
             with self.subTest(changes=changes),self.assertRaises(ValueError):m.validate_derivation({**row,**changes},artifact,index)
