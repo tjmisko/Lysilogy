@@ -225,6 +225,12 @@ acceptance are unchanged.
   manual consumer guards and tests in `scripts/truth/latex/`, new-generation evidence/contract.
   Keep source-occurrence objects distinct, every ambiguous reference counted but unresolved,
   and all source/math/native guards. Retained v1/v2 modules and truth are immutable.
+- [ ] **#109 Preserve literal BibTeX field syntax** (after #107; part of #97).
+  Branch `fix/e8.3-bibtex-fields`. Owns the current bounded BibTeX scanner in
+  `scripts/truth/latex/parser.py` or a narrow extracted module, focused fixtures/tests,
+  `eval/latex-contract.md` and measured evidence. Preserve literal percent characters and
+  brace-protected quotes; do not infer printed field roles from database metadata. Keep
+  all malformed-input/resource/ambiguity guards and immutable v1/v2 implementations.
 
 ### Wave A3
 
@@ -3792,3 +3798,69 @@ date, last merged issue, in-flight branches and their state, next action, and op
   hashes remain protected, and no vault/private paths were touched. Scorecard remains
  1/5 available/pass gates,3/30 at-target objectives O1/O2/O30 on limited truth; #97's~500
   target, final Playwright/all5gates/24of30objectives/production10k and system report remain.
+
+### 2026-09-13 21:10 UTC — source review and remaining manual evidence
+
+- Last merged issue remains #105 / PR108 (`7ef8fda`), Phase A / Wave A2. No new PR has
+  opened or merged in this interval. The main checkout still contains only its original
+  ten protected PDF-preview changes plus this docs update; their hashes were verified.
+- #106 clean baseline completed at3b44b1e: own CLI build96.19s, v1 collector12.86s,
+  v2 collector12.46s, objects --check0.20s, unchanged source inputs. Receipt
+  `expanded-k1-regions/before-3b44b1e/receipt.json` SHA
+  1cf3497a6194492c6ebbd351ea215c12232cf24f2a63a4635b5bc7e49b110c3e.
+  Owner finish_benchmark has source changes in its existing worktree and currently owns
+  the heavy window for warm targeted Rust/strict Clippy checks. All77 source-index tests
+  passed; Clippy helper/style fixes are being rerun before the source checkpoint. Preserve
+  the failed first text-only-table regression check; fallback corrected and tested.
+  No changed-K1 measurement yet. Separate reviewer review_ready_prs is available after
+  the current #107 runner check. Queue remains PAUSED BEFORE25; do not start native work
+  until root releases this window.
+- #107 clean own-CLI/objects baseline also passed,92.035824s. Receipt
+  `duplicate-labels/before-3b44b1e/receipt.json` SHA
+  07d7bcc3480a4ceaf86e0f2449fcef16d2b2fb5c8e46da315872affa1b3c3de5.
+  Source checkpoint **f24f73592e8b5bfe258fbbe90c3c98245b07a794** is independently CLEAR:
+  `review-duplicate-labels-f24f735/review.json` SHA
+  53a9c5d4c278560f629cdae9ca66ed944e4cc5f78706d7b2296fb17fdaddde2c.
+  Reviewer ran257 offline tests and7 probe groups including20,000 ownership comparisons;
+  root rehashed28 source fingerprints and all3 log/probe bindings. The prior1a4fff9
+  checkpoint was locally amended only to add the required conventional commit prefix;
+  both have treee8bc02e01699cffbe5a56c7b5cc139568b771fcb and unchanged body/trailer.
+  Owner finish_corpus_proxy is preparing the separately reviewed first7/702 offline
+  selection/runner. No actual derive run, native rebuild or new truth admission yet.
+- Root cleared the2001.05217 geometry proposal against all18 original body pairs and
+  exact source identities, with14 independent complete native number tokens re-derived.
+  Proposal `manual-tranche-v1/reconciliation/2001.05217/geometry-independent-review-v1/geometry-reconciliation.json`
+  SHA84c8131f7f9403fe2103d30463ebd9aa26ea83d9d9e344f8dae60eb881b778f0;
+  independent receipte2c4c5c5ae16a22a56c9f2cb5e1c12ad55b4285049130b48e1ca92a41cd568de;
+  root-review-v1.json SHA500d10b4155666e3ed1a6fc31029180452094b0b858ee34b5fe0d202f07f11db.
+  These paths are beneath `~/.cache/lysilogy/k1-coverage/`. Root re-viewed originalpages3/6/7,
+  other pages covered by earlier full inspection and current separate all7 review.17 primary
+  body boxes plus independent Figure4 retained. Eq2.4 native font-bound overhang is~0.30pt
+  within explicit1.5pt visual uncertainty. No independent prior manual number rectangles
+  are invented; future codec must preserve native-proposal provenance. No truth admission.
+- Root also applied the existing collective-author field policy to2001 entries7/15:
+  both originals already contain `JLQCD collaboration` / `HotQCD collaboration`, with
+  identical source/native memberships. Independent null first-author values were solely
+  a pending policy decision and their separately observed collective records are preserved.
+  `reconciliation/2001.05217/root-collective-author-review-v1.json` SHA
+  886d4d7cc69f7d85c3dc272d8c8606d3fbd0079a68d402b4e401343ff7d6f196 is independently clear
+  after reviewer originalpage7/6input-hash checks.43 to45 known field roles is preparatory,
+  not a score or Person identity; native `H OT QCD` fragmentation remains unchanged.
+  Mathematical-title transcription, reference completeness and codec checks remain.
+- New **#109**, attached to E8 #67 and project12, is blocked by #107's shared parser.
+  Root reproduced valid quoted/braced percent strings and brace-protected embedded
+  quotes with synthetic installed-BibTeX fixtures only. Current parser rejects percent
+  cases after TeX comment stripping and truncates the protected-quote title. Evidence
+  `bibtex-quoted-field-diagnostic-20260913/receipt.json` SHA
+  0c292649bad28afd69e378ea442b3db9f7f913036cc2474deb4c4e65d12a073c, retained generated
+  aux/bib/bst, exact bbl/logs; each reference invocation0.006–0.007s,0network/models/$0.
+  No deposited source program executed. Original542da50 ledger has8 matching quoted-field
+  failures, allhep-th; this is only a diagnostic population, not a recovery forecast.
+- Scale remains7,000 unique/1,000eval/6,049scale,3,951scale indexes remaining; no downloads.
+  Batch24 audit and pinned queue/runner are as in the prior entry, PAUSE unchanged before25.
+  About76.4GB free exceeds20GiBfloor. After implementation windows, resume `--start 25 --check`
+  then retainedTTY `--start 25` using the pinned queue from the previous entry.
+  #25/PR94, #33, #71/PR93 and #72/PR95 holds remain unchanged. Four-host approval persists;
+  effective profile application/restart is pending and must not be re-requested. Gates
+  remain1/5 available/pass;3/30 objectives at target O1/O2/O30. All phase/system acceptance
+  work, #97's~500 coverage and production10k verification remain outstanding.
