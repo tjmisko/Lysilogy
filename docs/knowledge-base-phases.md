@@ -697,3 +697,28 @@ date, last merged issue, in-flight branches and their state, next action, and op
   metrics unavailable. No new merges, objective misses, or follow-up issues this continuation.
   This is the second consecutive goal-turn observation of the same environment blocker. The
   full project goal remains active; it is neither complete nor narrowed to the completed work.
+
+### 2026-09-12 — third blocker audit: goal blocked pending environment change
+
+- Previous goal turn classified as no progress toward feature completion: it revalidated the
+  same external blocker and saved continuity, without changing the next executable action.
+  This third consecutive goal turn again confirms both required storage roots are absent and
+  their existing parents report `ST_RDONLY` and no write access. The blocked audit threshold is
+  satisfied; mark the full project goal blocked, not complete. No objective or scope is reduced.
+- Current phase/wave A/A1; last merged issue #83 / PR #84 (`481e911`), last planned issue #20 /
+  PR #80 (`94ddacc`). No new merges or follow-ups in this continuation. Scorecard remains G5
+  passing and O30 = 0/10k: 1/5 gates and 1/30 objectives at target; other metrics unavailable.
+- Draft PR #82 remains open and reviewed at `65d2c418bd63f5f07138169b09b5f2d2833b6a91`;
+  branch `feat/e0.1-scale-bench` has a clean retained worktree at
+  `/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e0.1-scale-bench`. It has no unresolved code
+  findings but cannot complete #19 without its real 10k baseline. No background downloads,
+  benchmark processes, or corpus files exist. Main's unrelated preview changes remain intact.
+- Resume requires writable `/home/tjmisko/.cache/lysilogy` and `/home/tjmisko/Corpora`, plus
+  corpus host access (OAI-PMH was previously allowlist-blocked). After that external change,
+  synchronize the retained branch with main using a normal merge, run
+  `python3 scripts/bench/run.py` at its default 10,000 count, refresh the provider collector,
+  and run scale/tests eval checks. Review the real baseline and any misses before merging
+  PR #82 and completing A1. Start the corpus background harvest/download using
+  `scripts/corpus/README.md` as soon as its storage/network requirements permit. Never relocate
+  large data into the repository or `/tmp`. The preceding full session checkpoint records
+  validation artifacts, all prior merges, and the exact protected main-checkout file list.
