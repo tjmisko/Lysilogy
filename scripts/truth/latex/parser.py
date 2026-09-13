@@ -137,6 +137,7 @@ def bibtex_fields(files, renderer):
 
 def markup_fields(raw, renderer):
     labels, provenance = {}, {}
+    first_author_seen = False
     raw = mask_regions(raw, definition_regions(raw))
     for match in COMMAND.finditer(raw):
         if match[1] not in ("bibinfo", "bibfield"):
@@ -147,11 +148,15 @@ def markup_fields(raw, renderer):
         # explicitly delimited bibinfo{author} establishes a first-author label.
         if name == "author" and match[1] == "bibfield":
             continue
+        if name == "author":
+            if first_author_seen:
+                continue
+            first_author_seen = True
         field = {"title": "title", "year": "year", "author": "first_author"}.get(name)
         if field and field not in labels:
             before = renderer.unsupported.copy()
             value = renderer.plain(value)
-            if field == "first_author" and re.search(r"\band\b|\bet\s+al\b|;", value):
+            if field == "first_author" and re.search(r"\band\b|\bet\s+al\b|;", value, flags=re.IGNORECASE):
                 continue
             if value and renderer.unsupported == before and (field != "year" or re.fullmatch(r"(?:18|19|20)\d{2}[a-z]?", value)):
                 labels[field] = value

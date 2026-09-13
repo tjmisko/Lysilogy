@@ -143,6 +143,11 @@ See \ref{fig:a} and \eqref{eq:a}; evidence \cite{source}.
         ambiguous = source.replace(r'\bibinfo{author}{A. Smith} and \bibinfo{author}{B. Jones}', 'A. Smith and B. Jones')
         self.assertEqual(parse_project({'main.tex': ambiguous})['entries'][0]['field_labels'], {})
 
+    def test_should_not_promote_later_authors_when_the_first_author_slot_is_unknown(self):
+        for authors in ('A. One and B. Two', 'A. ONE AND B. TWO'):
+            source = document(r'\begin{thebibliography}{9}\bibitem{one}\bibinfo{author}{' + authors + r'}\bibinfo{author}{C. Three}. A title.\end{thebibliography}')
+            self.assertEqual(parse_project({'main.tex': source})['entries'][0]['field_labels'], {})
+
     def test_should_withhold_stale_fields_when_active_bibtex_disagrees_with_rendered_evidence(self):
         files = {"main.tex": document(r"\bibliography{used}"), "main.bbl": r"\begin{thebibliography}{9}\bibitem{one}Smith. Correct unique published title. 2021.\end{thebibliography}",
                  "used.bib": '@article{one, author={Wrong Author},title={An unrelated manuscript},year={1999}}'}
