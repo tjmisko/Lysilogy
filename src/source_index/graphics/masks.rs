@@ -414,7 +414,7 @@ mod tests {
     use super::*;
     use serde_json::{Value, json};
     fn fixtures() -> Value {
-        serde_json::from_str(include_str!("../../../..//eval/fixtures/mask-events.json")).unwrap()
+        serde_json::from_str(include_str!("../../../eval/fixtures/mask-events.json")).unwrap()
     }
     fn page() -> ReadingPage {
         ReadingPage {
@@ -447,9 +447,7 @@ mod tests {
         let data = fixtures();
         assert_eq!(
             data["independent_packet_sha256"],
-            digest(include_bytes!(
-                "../../../..//eval/fixtures/mask-support.json"
-            ))
+            digest(include_bytes!("../../../eval/fixtures/mask-support.json"))
         );
         let cases = data["cases"].as_array().unwrap();
         assert_eq!(cases.len(), 43);
