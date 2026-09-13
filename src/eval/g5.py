@@ -17,9 +17,21 @@ import time
 import unittest
 
 MODELS = ("codex", "claude", "gemini", "aider", "ollama")
-TOOLS = ("sh", "bash", "env", "node", "npm", "python3", "cc", "gcc", "as", "ld", "ar",
+TOOLS = ("sh", "bash", "env", "node", "npm", "python3", "cc", "gcc", "as", "ld", "mold", "ld.mold", "ar",
          "pkg-config", "git", "pdftotext", "pdfinfo", "pdftoppm", "tesseract", "printf", "cat", "sleep",
          "mkdir", "chmod", "cp", "dirname", "basename", "head", "sed", "uname", "nice")
+
+
+def tooling_path(bin_dir):
+    bin_dir.mkdir(exist_ok=True)
+    for path in bin_dir.iterdir():
+        if not path.is_symlink():
+            raise RuntimeError(f"unexpected file in generated executable directory: {path}")
+        path.unlink()
+    for name in TOOLS:
+        found = shutil.which(name)
+        if found:
+            (bin_dir / name).symlink_to(Path(found).resolve())
 
 
 def tooling_tests(directory):
@@ -90,15 +102,7 @@ def run():
             raise RuntimeError("network isolation probe unexpectedly connected")
     # No routing to any external interface exists. Keep loopback down as created.
     bin_dir = output / "bin"
-    bin_dir.mkdir(exist_ok=True)
-    for path in bin_dir.iterdir():
-        if not path.is_symlink():
-            raise RuntimeError(f"unexpected file in generated executable directory: {path}")
-        path.unlink()
-    for name in TOOLS:
-        found = shutil.which(name)
-        if found:
-            (bin_dir / name).symlink_to(Path(found).resolve())
+    tooling_path(bin_dir)
     for name in ("cargo", "rustc", "rustdoc"):
         resolved = subprocess.check_output(["rustup", "which", name], text=True).strip()
         (bin_dir / name).symlink_to(resolved)
