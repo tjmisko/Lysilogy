@@ -81,7 +81,10 @@ wrapper hashes are rechecked after derivation. The optional Linux wrapper restri
 to768MiB address space,8 CPU seconds, no core file and16MiB regular-file output. Pipe output
 is separately bounded, cancellation kills the child, and each mask command has a10s wall
 limit shortened to the remaining30s paper budget. Missing wrapper/tool support remains explicit.
-No arbitrary PDF-supplied JavaScript executes. The trusted script arrives through stdin.
+No arbitrary PDF-supplied JavaScript executes. The trusted script arrives through seekable stdin from an unnamed, private regular file under
+`~/.cache/lysilogy`. Existing `rustix` APIs open every cache ancestor without following symlinks;
+`O_TMPFILE` creates no replaceable directory entry. The owner stays open through completion and
+checks exact embedded bytes before/after. Unsupported file semantics leave masks unavailable.
 
 The adapter decodes at most4million pixels per image and6million opacity samples per page,
 including attached-mask verification, with512 ordered image/mask events and4096-pixel axis

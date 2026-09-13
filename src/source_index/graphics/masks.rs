@@ -6,10 +6,7 @@ use std::{
     path::{Path, PathBuf},
     process::Stdio,
 };
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    process::Command,
-};
+use tokio::{io::AsyncReadExt, process::Command};
 
 pub const SCRIPT: &str = include_str!("masks.js");
 const PIXELS: usize = 4_000_000;
@@ -33,6 +30,7 @@ impl MaskRuntime {
             script_sha256: digest(SCRIPT.as_bytes()),
         })
     }
+    #[must_use]
     pub fn key(&self) -> (&Path, &str, &str) {
         (
             &self.wrapper_path,
@@ -62,6 +60,10 @@ pub async fn collect(
     page: u32,
     limit: usize,
 ) -> Result<Vec<u8>> {
+    let mut script = seekable_script()?;
+    let input = script
+        .try_clone()
+        .map_err(|error| Error::io("mask script handle", error))?;
     let mut child = Command::new(&runtime.wrapper_path)
         .args([
             "--as=805306368:805306368",
@@ -74,27 +76,14 @@ pub async fn collect(
         .args(["run", "/dev/stdin"])
         .arg(source)
         .arg(page.to_string())
-        .stdin(Stdio::piped())
+        .stdin(Stdio::from(input))
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true)
         .spawn()
         .map_err(|error| Error::io(&runtime.wrapper_path, error))?;
-    let mut input = child.stdin.take().ok_or_else(invalid)?;
     let stdout = child.stdout.take().ok_or_else(invalid)?;
     let stderr = child.stderr.take().ok_or_else(invalid)?;
-    let send = async {
-        input
-            .write_all(SCRIPT.as_bytes())
-            .await
-            .map_err(|error| Error::io("mask script stdin", error))?;
-        input
-            .shutdown()
-            .await
-            .map_err(|error| Error::io("mask script stdin", error))?;
-        drop(input);
-        Ok::<_, Error>(())
-    };
     let read = async {
         let mut bytes = Vec::new();
         stdout
@@ -119,11 +108,12 @@ pub async fn collect(
         }
         Ok(bytes)
     };
-    let ((), raw, errors) = tokio::try_join!(send, read, errors)?;
+    let (raw, errors) = tokio::try_join!(read, errors)?;
     let status = child
         .wait()
         .await
         .map_err(|error| Error::io(program, error))?;
+    verify_script(&mut script)?;
     if !status.success() {
         return Err(Error::CommandFailed {
             program: "mutool mask opacity".into(),
@@ -132,6 +122,105 @@ pub async fn collect(
         });
     }
     Ok(raw)
+}
+
+// IEEE equality deliberately treats signed zero as equal, matching trace parsing.
+fn exact_coordinates<const N: usize>(left: [f64; N], right: [f64; N]) -> bool {
+    left.into_iter()
+        .zip(right)
+        .all(|(a, b)| a.partial_cmp(&b) == Some(std::cmp::Ordering::Equal))
+}
+
+fn verify_script(file: &mut std::fs::File) -> Result<()> {
+    use std::io::{Read, Seek};
+    file.rewind()
+        .map_err(|error| Error::io("mask script rewind", error))?;
+    let mut bytes = Vec::new();
+    (&mut *file)
+        .take(u64::try_from(SCRIPT.len()).unwrap_or(u64::MAX) + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| Error::io("mask script verification", error))?;
+    if bytes != SCRIPT.as_bytes() {
+        return Err(invalid());
+    }
+    file.rewind()
+        .map_err(|error| Error::io("mask script rewind", error))?;
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn secure_directory(path: &Path) -> Result<std::fs::File> {
+    use rustix::fs::{Mode, OFlags, open, openat};
+    use std::path::Component;
+    let flags = OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC;
+    if !path.is_absolute() {
+        return Err(invalid());
+    }
+    let mut directory = std::fs::File::from(
+        open("/", flags, Mode::empty()).map_err(|error| Error::io(path, error.into()))?,
+    );
+    for component in path.components() {
+        match component {
+            Component::RootDir => (),
+            Component::Normal(name) => {
+                directory = std::fs::File::from(
+                    openat(&directory, name, flags, Mode::empty())
+                        .map_err(|error| Error::io(path, error.into()))?,
+                );
+            }
+            _ => return Err(invalid()),
+        }
+    }
+    Ok(directory)
+}
+
+#[cfg(target_os = "linux")]
+fn script_in(directory: &std::fs::File) -> Result<std::fs::File> {
+    use rustix::fs::{Mode, OFlags, openat};
+    use std::io::Write;
+    // No directory entry ever names this inode: it cannot replace or follow an existing file.
+    let mut file = std::fs::File::from(
+        openat(
+            directory,
+            ".",
+            OFlags::RDWR | OFlags::TMPFILE | OFlags::CLOEXEC,
+            Mode::RUSR | Mode::WUSR,
+        )
+        .map_err(|error| Error::io("unnamed mask script", error.into()))?,
+    );
+    file.write_all(SCRIPT.as_bytes())
+        .map_err(|error| Error::io("mask script write", error))?;
+    verify_script(&mut file)?;
+    Ok(file)
+}
+
+#[cfg(target_os = "linux")]
+fn seekable_script() -> Result<std::fs::File> {
+    use rustix::fs::{Mode, OFlags, mkdirat, openat};
+    let home = std::env::var_os("HOME").ok_or_else(invalid)?;
+    let mut directory = secure_directory(Path::new(&home))?;
+    for name in [".cache", "lysilogy"] {
+        if let Err(error) = mkdirat(&directory, name, Mode::RUSR | Mode::WUSR | Mode::XUSR)
+            && error != rustix::io::Errno::EXIST
+        {
+            return Err(Error::io(name, error.into()));
+        }
+        directory = std::fs::File::from(
+            openat(
+                &directory,
+                name,
+                OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC,
+                Mode::empty(),
+            )
+            .map_err(|error| Error::io(name, error.into()))?,
+        );
+    }
+    script_in(&directory)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn seekable_script() -> Result<std::fs::File> {
+    Err(invalid())
 }
 
 #[derive(Debug, Deserialize)]
@@ -161,7 +250,8 @@ struct Image {
     height: u32,
     components: u32,
     bits: u32,
-    image_mask: bool,
+    #[serde(rename = "image_mask")]
+    stencil: bool,
     interpolate: bool,
     color_key: Option<Vec<f64>>,
     decode: Option<Vec<f64>>,
@@ -201,7 +291,7 @@ impl Image {
     fn plain(&self) -> bool {
         self.pixels().is_some()
             && self.bits == 8
-            && !self.image_mask
+            && !self.stencil
             && !self.interpolate
             && self.color_key.is_none()
             && self.decode.is_none()
@@ -263,7 +353,10 @@ impl Receipt {
         let receipt: Self = serde_json::from_slice(raw)?;
         if receipt.schema_version != 1
             || receipt.page != page.number
-            || receipt.bounds != [0.0, 0.0, f64::from(page.width), f64::from(page.height)]
+            || !exact_coordinates(
+                receipt.bounds,
+                [0.0, 0.0, f64::from(page.width), f64::from(page.height)],
+            )
             || receipt.operations.len() > 512
         {
             return Err(invalid());
@@ -289,14 +382,14 @@ impl Receipt {
         }
         Ok(receipt)
     }
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.operations.len()
     }
     pub fn binds(&self, position: usize, value: &Tag<'_>) -> Result<()> {
         let operation = self.operations.get(position).ok_or_else(invalid)?;
         let matrix = numbers::<6>(value.attrs.get("transform").ok_or_else(invalid)?)?;
         if operation.kind != value.name
-            || operation.matrix != matrix.map(f64::from)
+            || !exact_coordinates(operation.matrix, matrix.map(f64::from))
             || Some(operation.image.width) != value.attrs.get("width").and_then(|v| v.parse().ok())
             || Some(operation.image.height)
                 != value.attrs.get("height").and_then(|v| v.parse().ok())
@@ -323,7 +416,7 @@ impl Receipt {
             || image.kind != "fill_image"
             || mask.error.is_some()
             || image.error.is_some()
-            || mask.matrix != image.matrix
+            || !exact_coordinates(mask.matrix, image.matrix)
             || mask.image != opacity.image
             || image.mask.as_ref() != Some(opacity)
             || !image.image.plain()
@@ -363,12 +456,12 @@ fn transformed_bounds(
     bounds: [u32; 4],
     width: u32,
     height: u32,
-    m: [f64; 6],
+    matrix: [f64; 6],
     page: &ReadingPage,
 ) -> Result<TextRect> {
-    let [a, b, c, d, e, f] = m;
-    if !((b == 0.0 && c == 0.0 && a != 0.0 && d != 0.0)
-        || (a == 0.0 && d == 0.0 && b != 0.0 && c != 0.0))
+    let [scale_x, skew_y, skew_x, scale_y, origin_x, origin_y] = matrix;
+    if !((skew_y == 0.0 && skew_x == 0.0 && scale_x != 0.0 && scale_y != 0.0)
+        || (scale_x == 0.0 && scale_y == 0.0 && skew_y != 0.0 && skew_x != 0.0))
     {
         return Err(invalid());
     }
@@ -381,7 +474,10 @@ fn transformed_bounds(
     .map(|(x, y)| {
         let x = f64::from(x) / f64::from(width);
         let y = f64::from(y) / f64::from(height);
-        (a.mul_add(x, c.mul_add(y, e)), b.mul_add(x, d.mul_add(y, f)))
+        (
+            scale_x.mul_add(x, skew_x.mul_add(y, origin_x)),
+            skew_y.mul_add(x, scale_y.mul_add(y, origin_y)),
+        )
     });
     let low_x = points.iter().map(|p| p.0).fold(f64::INFINITY, f64::min);
     let low_y = points.iter().map(|p| p.1).fold(f64::INFINITY, f64::min);
@@ -442,6 +538,43 @@ mod tests {
     fn rect_values(rect: TextRect) -> [f64; 4] {
         [rect.x_min, rect.y_min, rect.x_max, rect.y_max].map(f64::from)
     }
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn should_keep_a_seekable_private_script_when_the_child_needs_regular_stdin() {
+        use std::io::{Read, Seek, Write};
+        use std::os::unix::fs::{MetadataExt, PermissionsExt};
+        let root = tempfile::tempdir().unwrap();
+        let directory = secure_directory(root.path()).unwrap();
+        let mut file = script_in(&directory).unwrap();
+        let metadata = file.metadata().unwrap();
+        assert!(metadata.is_file());
+        assert_eq!(metadata.nlink(), 0);
+        assert_eq!(metadata.permissions().mode() & 0o777, 0o600);
+        let mut child = file.try_clone().unwrap();
+        let mut text = String::new();
+        child.read_to_string(&mut text).unwrap();
+        assert_eq!(text, SCRIPT);
+        verify_script(&mut file).unwrap();
+        assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
+        child.rewind().unwrap();
+        child.write_all(b"foreign").unwrap();
+        assert!(verify_script(&mut file).is_err());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn should_reject_symlinked_cache_ancestors_when_preparing_the_trusted_script() {
+        let root = tempfile::tempdir().unwrap();
+        let real = root.path().join("real");
+        std::fs::create_dir(&real).unwrap();
+        let link = root.path().join("alias");
+        std::os::unix::fs::symlink(&real, &link).unwrap();
+        assert!(secure_directory(&link).is_err());
+        assert!(secure_directory(&link.join("nested")).is_err());
+        assert!(secure_directory(Path::new("relative")).is_err());
+        assert!(secure_directory(&real).is_ok());
+    }
+
     #[test]
     fn should_use_complete_pixel_support_when_independent_mask_fixtures_define_the_evidence() {
         let data = fixtures();

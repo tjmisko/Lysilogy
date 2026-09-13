@@ -441,7 +441,7 @@ def publish_measurement(repo, paths, observation, payload):
 
 
 def implementation_files(repo, truth_version=TRUTH_VERSIONS[0]):
-    files=[release_paths(truth_version)['config'],'eval/native-basis-vectors.json','Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
+    files=['src/source_index/graphics/masks.js',release_paths(truth_version)['config'],'eval/native-basis-vectors.json','Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
     for root in ('src','scripts/truth/latex'):
         if (repo/root).is_dir():
             files.extend(str(p.relative_to(repo)) for p in (repo/root).rglob('*') if p.is_file() and p.suffix in ('.rs','.py') and not p.name.startswith('test'))

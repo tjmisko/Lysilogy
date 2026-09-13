@@ -167,10 +167,12 @@ pub async fn collect(
         .acquire()
         .await
         .map_err(|_| Error::Task("Graphics worker unavailable".into()))?;
-    let started = Instant::now();
-    let mut total = 0;
+    let mut budget = MaskBudget {
+        started: Instant::now(),
+        total: 0,
+        receipts: Vec::new(),
+    };
     let mut traces = Vec::new();
-    let mut mask_receipts = Vec::new();
     for (position, page) in pages.iter().enumerate() {
         let mut result = PageGraphics {
             page: *page,
@@ -181,19 +183,23 @@ pub async fn collect(
             mask: None,
         };
         if position >= MAX_PAGES
-            || total >= TOTAL_BYTES
-            || started.elapsed() > Duration::from_secs(30)
+            || budget.total >= TOTAL_BYTES
+            || budget.started.elapsed() > Duration::from_secs(30)
         {
             result.status = "resource_limit".into();
         } else if let Some(program) = &prepared.program {
             let mut command = trace_command(program, source, *page);
             let output = tokio::time::timeout(
                 Duration::from_secs(5),
-                super::bounded_command(&mut command, "mutool", PAGE_BYTES.min(TOTAL_BYTES - total)),
+                super::bounded_command(
+                    &mut command,
+                    "mutool",
+                    PAGE_BYTES.min(TOTAL_BYTES - budget.total),
+                ),
             )
             .await;
             if let Ok(Ok(raw)) = output {
-                total += raw.len();
+                budget.total += raw.len();
                 result.trace_sha256 = Some(digest(&raw));
                 if let Some(native) = document.index.pages.iter().find(|p| p.number == *page)
                     && let Ok((images, unsupported)) = parse_trace(&raw, native)
@@ -201,48 +207,16 @@ pub async fn collect(
                     result.images = images;
                     result.unsupported_images = unsupported;
                     if unsupported > 0 && raw.windows(15).any(|part| part == b"clip_image_mask") {
-                        let mut mask = MaskPageEvidence {
-                            status: "tool_unavailable".into(),
-                            receipt_sha256: None,
-                            supported_images: 0,
-                            empty_images: 0,
-                        };
-                        if total >= TOTAL_BYTES || started.elapsed() >= Duration::from_secs(30) {
-                            mask.status = "resource_limit".into();
-                        } else if let Some(runtime) = &prepared.evidence.mask_runtime {
-                            let remaining =
-                                Duration::from_secs(30).saturating_sub(started.elapsed());
-                            let output = tokio::time::timeout(
-                                Duration::from_secs(10).min(remaining),
-                                masks::collect(
-                                    runtime,
-                                    program,
-                                    source,
-                                    *page,
-                                    PAGE_BYTES.min(TOTAL_BYTES - total),
-                                ),
-                            )
-                            .await;
-                            if let Ok(Ok(mask_raw)) = output {
-                                total += mask_raw.len();
-                                mask.receipt_sha256 = Some(digest(&mask_raw));
-                                mask.status = "unsupported_receipt".into();
-                                if let Ok(receipt) = masks::Receipt::parse(&mask_raw, native)
-                                    && let Ok(parsed) =
-                                        parse_trace_with_masks(&raw, native, Some(&receipt))
-                                {
-                                    mask.status = "evaluated".into();
-                                    mask.supported_images = parsed.mask_supported;
-                                    mask.empty_images = parsed.mask_empty;
-                                    result.images = parsed.images;
-                                    result.unsupported_images = parsed.unsupported;
-                                }
-                                mask_receipts.push((*page, mask_raw));
-                            } else {
-                                mask.status = "tool_failed".into();
-                            }
-                        }
-                        result.mask = Some(mask);
+                        supplement_mask(
+                            prepared.evidence.mask_runtime.as_ref(),
+                            program,
+                            source,
+                            native,
+                            &raw,
+                            &mut result,
+                            &mut budget,
+                        )
+                        .await;
                     }
                     result.status = if result.unsupported_images == 0 {
                         "complete"
@@ -285,8 +259,65 @@ pub async fn collect(
     Ok(GraphicsDocument {
         evidence: prepared.evidence,
         traces,
-        mask_receipts,
+        mask_receipts: budget.receipts,
     })
+}
+
+struct MaskBudget {
+    started: Instant,
+    total: usize,
+    receipts: Vec<(u32, Vec<u8>)>,
+}
+
+async fn supplement_mask(
+    runtime: Option<&MaskRuntime>,
+    program: &Path,
+    source: &Path,
+    native: &ReadingPage,
+    raw: &[u8],
+    result: &mut PageGraphics,
+    budget: &mut MaskBudget,
+) {
+    let mut mask = MaskPageEvidence {
+        status: "tool_unavailable".into(),
+        receipt_sha256: None,
+        supported_images: 0,
+        empty_images: 0,
+    };
+    if budget.total >= TOTAL_BYTES || budget.started.elapsed() >= Duration::from_secs(30) {
+        mask.status = "resource_limit".into();
+    } else if let Some(runtime) = runtime {
+        let remaining = Duration::from_secs(30).saturating_sub(budget.started.elapsed());
+        let output = tokio::time::timeout(
+            Duration::from_secs(10).min(remaining),
+            masks::collect(
+                runtime,
+                program,
+                source,
+                native.number,
+                PAGE_BYTES.min(TOTAL_BYTES - budget.total),
+            ),
+        )
+        .await;
+        if let Ok(Ok(mask_raw)) = output {
+            budget.total += mask_raw.len();
+            mask.receipt_sha256 = Some(digest(&mask_raw));
+            mask.status = "unsupported_receipt".into();
+            if let Ok(receipt) = masks::Receipt::parse(&mask_raw, native)
+                && let Ok(parsed) = parse_trace_with_masks(raw, native, Some(&receipt))
+            {
+                mask.status = "evaluated".into();
+                mask.supported_images = parsed.mask_supported;
+                mask.empty_images = parsed.mask_empty;
+                result.images = parsed.images;
+                result.unsupported_images = parsed.unsupported;
+            }
+            budget.receipts.push((native.number, mask_raw));
+        } else {
+            mask.status = "tool_failed".into();
+        }
+    }
+    result.mask = Some(mask);
 }
 
 fn trace_command(program: &Path, source: &Path, page: u32) -> Command {
@@ -757,39 +788,7 @@ impl<'a> TraceState<'a> {
             self.clips.pop();
         }
         if value.name == "fill_image" {
-            self.observed_images += 1;
-            if self.observed_images > 256 {
-                return Err(invalid());
-            }
-            if !drawing_scope(&self.stack) {
-                self.unsafe_state = true;
-            }
-            let supported_mask = if !self.unsafe_state
-                && image_rect(value, page).is_ok()
-                && let [Clip::Mask(mask_position)] = self.clips.as_slice()
-                && let Some(receipt) = self.receipt
-            {
-                receipt.region(*mask_position, position, page).ok()
-            } else {
-                None
-            };
-            if let Some(rect) = supported_mask {
-                if let Some(rect) = rect {
-                    self.images.push(rect);
-                    self.mask_supported += 1;
-                } else {
-                    self.mask_empty += 1;
-                }
-            } else {
-                record_image(
-                    value,
-                    page,
-                    !self.unsafe_state,
-                    &self.clips,
-                    &mut self.images,
-                    &mut self.unsupported,
-                )?;
-            }
+            self.observe_image(value, page, position)?;
         }
         if !value.empty {
             self.stack.push(value.name);
@@ -797,6 +796,47 @@ impl<'a> TraceState<'a> {
         }
         if self.stack.len() > 128 || self.clips.len() > 128 {
             return Err(invalid());
+        }
+        Ok(())
+    }
+    fn observe_image(
+        &mut self,
+        value: &Tag<'a>,
+        page: &ReadingPage,
+        position: usize,
+    ) -> Result<()> {
+        self.observed_images += 1;
+        if self.observed_images > 256 {
+            return Err(invalid());
+        }
+        if !drawing_scope(&self.stack) {
+            self.unsafe_state = true;
+        }
+        let supported_mask = if !self.unsafe_state
+            && image_rect(value, page).is_ok()
+            && let [Clip::Mask(mask_position)] = self.clips.as_slice()
+            && let Some(receipt) = self.receipt
+        {
+            receipt.region(*mask_position, position, page).ok()
+        } else {
+            None
+        };
+        if let Some(rect) = supported_mask {
+            if let Some(rect) = rect {
+                self.images.push(rect);
+                self.mask_supported += 1;
+            } else {
+                self.mask_empty += 1;
+            }
+        } else {
+            record_image(
+                value,
+                page,
+                !self.unsafe_state,
+                &self.clips,
+                &mut self.images,
+                &mut self.unsupported,
+            )?;
         }
         Ok(())
     }

@@ -112,6 +112,13 @@ class ObjectMetricTests(unittest.TestCase):
         self.assertIn('scripts/truth/latex/versioned.py',files)
         self.assertIn('eval/implementations/k1-limited-v1/manifest.json',files)
         self.assertIn('eval/implementations/k1-limited-v1/parser.py',files)
+    def should_fingerprint_embedded_javascript_when_the_bridge_compiles_the_mask_adapter(self):
+        for version in m.TRUTH_VERSIONS:
+            files=m.implementation_files(m.ROOT,version)
+            self.assertEqual(files.count('src/source_index/graphics/masks.js'),1)
+            self.assertEqual(m.read(m.ROOT/'src/source_index/graphics/masks.js'),
+                             (m.ROOT/'src/source_index/graphics/masks.js').read_bytes())
+
     def should_bind_graphics_receipts_when_the_source_factory_retains_traces(self):
         with tempfile.TemporaryDirectory() as directory:
             cache=Path(directory);tool=cache/'tool';tool.write_bytes(b'independent tool bytes')
