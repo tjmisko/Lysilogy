@@ -269,6 +269,37 @@ release. The external v2 configuration is a deliberately incomplete review
 template, retaining the 500-paper target and explicit selection bias. No new
 truth release or detector measurement has run.
 
+
+Independent review of the new validator found page ownership and repeated-reference
+membership gaps. Corrected source `1b41313` passes 235 offline tests and the
+independent malformed-page, reused-occurrence and out-of-phrase probes. Actual
+CLI assembly reproduces the same labels and exclusions in 0.310 seconds with
+72,464 KiB peak child RSS. Exact canonical JSON comparison confirms that only the
+producer implementation receipt changed.
+
+The fresh frozen comparison at `542da50` completed all 1,000 original inputs using
+the original 999-success index map: 612 parsed and 388 source/index failures,
+1,032.039 seconds, 453,392 KiB peak RSS, no network/model calls or external cost.
+Its one raw accepted paper, `2007.05954`, has only complete empty O5/O6 inventories;
+all other metric cohorts are empty. This result remains under independent
+source/PDF review and supplies no automatic paper to the proposed new release.
+The owner and root independently rehashed all 612 candidate/inventory pairs
+(121,450,396 bytes), exact input order, mapped identities and reported counters.
+The later manual-only corrections do not change the six-module automatic
+execution closure; the report retains its actual `542da50` source identity.
+
+Version-aware replay and collector dispatch at `8987d13` pass 238 truth and 35
+collector tests. Actual v1 replay still reproduces both immutable payloads.
+V2 has its own fixed retained module inventory and remains disabled until its
+reviewed release manifest is pinned. A review found that separate immediate
+harness inputs would give O1/O2 duplicate owners; the correction keeps one active
+explicitly selected cohort and freezes exact prior/new input and observation
+bytes outside the active directory. Matching, geometry and score arithmetic
+remain unchanged. The completed proposed v2 build configuration contains the two
+prior reviewed papers plus `2210.11141`; no new payload or measurement has been
+published. Issue #105 owns this bounded improvement. Issue #97 remains open with
+the approximately 500-paper target unchanged; three papers do not meet it.
+
 ## Retained evidence
 
 The machine-readable companion is
