@@ -86,7 +86,7 @@ roles to the document body while preserving unknown preamble semantics.
 
 ## Validation and remaining work
 
-Current lightweight validation passes 198 offline tests with Python warnings
+Source-capability validation passed 198 offline tests with Python warnings
 treated as errors. Tests cover macro argument visibility/multiplicity, literal
 and stored roles, original include spans, math fidelity, section hierarchy,
 declaration scope/redefinitions, reserved environment names and valid controls.
@@ -107,9 +107,30 @@ The clean before checks for the affected objects and bibliography suites passed
 using an explicitly rooted, source-equivalent borrowed CLI, with all 72
 Rust/Cargo/config inputs compared against `fd024fc`. The producer source and
 binary hash are retained, along with the limitation that no standalone Cargo
-JSON CLI build receipt existed. Final validation must use this worktree's own
-build and all required gates; it has not yet run. No final scorecard delta,
-expanded truth release or completion of issue #97 is claimed.
+JSON CLI build receipt existed. A later clean before checkpoint `7c6296e` built
+and selected this worktree's CLI from Cargo artifact JSON, then passed both
+affected suites in 96.978 seconds (1,015,088 KiB peak child RSS). Its binary
+SHA-256 is `31d3f1257fc8b1da24c94425d02f6e16f1954b60f2f2557507d2cefa47457753`.
+
+The mixed-overlay/native-export adapter and exact JSON type correction were
+independently cleared at `3154815`. All 212 LaTeX tooling tests pass. Formatting,
+strict Clippy, all Rust targets, the offline O30 collector, and objects,
+bibliography and scale checks passed. G5 subsequently passed **350 Rust / 353
+Python / 85 Node tests**. The initial G5 attempt exposed missing TypeScript in
+the fresh worktree; its failure remains retained. Offline npm setup encountered
+a read-only default cache and then a sandbox-blocked registry request. The exact
+locked TypeScript 5.9.3 tarball was instead verified from the local content cache
+and unpacked through bounded regular-file paths without scripts or networking.
+Only G5 was rerun after that environment repair. The initial gate attempt took
+57.660 seconds (1,234,368 KiB peak child RSS); the successful G5 retry and immutable
+truth replay took 11.554 seconds (156,048 KiB). The replay itself took 4.550 seconds
+and reproduced both historical payload hashes exactly. The selected CLI binary
+remained identical to the before build.
+
+These checks retain O30 = 0/10,000. Objects and bibliography have unchanged
+unavailable collector inputs in this worktree; that is not a new performance
+measurement or regression. No expanded truth release or completion of issue #97
+is claimed.
 
 Further namespace probing is deferred because no material coverage payoff has
 been established. The next concrete step is independent annotation of a frozen
@@ -152,8 +173,8 @@ and independent annotators have separate output directories and first enumerate
 the complete paper without a parser inventory. Independent export verification
 confirmed the allowlists against the original bytes, and rendering produced all
 43 original pages at 96 dpi in 2.851 seconds with 72,464 KiB peak child RSS.
-The first paper was assigned to both reviewers; their labels remain unread by
-the implementation agent until both are frozen. Existing reconciled annotation
+The first paper was assigned to both reviewers; its labels were read by the
+implementation agent only after both inventories froze. Existing reconciled annotation
 contracts remain the publication boundary. This pilot will measure annotation
 throughput, complete per-kind coverage and demonstrated tooling gaps before
 committing to the remaining 14 papers. Selection and packet preparation alone
@@ -161,9 +182,36 @@ admit no truth, and the page cap introduces an explicit short-paper bias.
 
 A read-only adapter assessment identified combined visual/math bundle
 composition, typed reference roles and blinded native-export provenance as
-potential first gaps. Per-kind completeness and a manual occurrence inventory
-also need evidence-based treatment if the reconciled pilot demonstrates those
-limits. No adapter relaxation was implemented ahead of the annotations.
+the first gaps. After both annotations froze, the reviewed adapter permits
+separately validated overlays against the same unchanged candidate, retains
+figure/table references separately from the O4 denominator, and rehashes the
+exact allowlisted native export actually shown to annotators. It rejects changed
+candidate fields, conflicting object identities or negative claims, and resealed
+export changes including JSON boolean/number substitutions. Existing complete
+math-kind and source-provenance checks remain in force.
+
+For `2210.11141v1`, the two frozen annotations and root reconciliation agree on
+12 source object occurrences (six figures, two tables, four equations), 25
+bibliography entries, 49 citation groups/75 pairs, and 20 reference occurrences.
+Seventeen independent field memberships were corrected in a new version to
+restore combining marks and hyphens; all 75 field values and source roles stayed
+unchanged. Original and corrected receipt chains remain separate. The original
+issue scope excludes seven retained informal problem/procedure candidates from
+formal statement, proof and algorithm inventories; no automatic guard changed.
+
+A source-only parse after annotation freezing reproduces all 12 object
+occurrences, all 25 entry identities and all 69 citation/reference source links.
+Entry source boundaries differ only by retained trailing parser whitespace.
+Sixteen references target objects: three equation references belong to O4 and
+13 visual references remain separately typed. The parse took 0.075 seconds and
+41,392 KiB RSS, with no alignment, detector reads or external calls. Automatic
+source and rendering exclusions remain recorded. Four independently supplied
+equation body boxes, reviewed source/PDF mathematical identity, and an explicit
+post-freeze construction-packet reconciliation are still required. The original
+blind packet never contained the later parsed inventory; the adapter does not
+claim that it did. Bibliography's independently read plain field roles also need
+their own validated path rather than fabricated structured commands. This
+checkpoint admits no new truth.
 
 ## Retained evidence
 
