@@ -1,6 +1,8 @@
 """Derive evaluation objects and links from source structure, not PDF detectors."""
 from collections import Counter
 from bisect import bisect_right
+import heapq
+import json
 import re
 
 from archive import Limits, UnsupportedSource, sha256
@@ -106,6 +108,118 @@ def argument_commands(text, names, start=0, end=None):
             options.append(option)
         value, at = group(text, at)
         yield {"command": match[1], "value": value, "options": options, "start": match.start(), "end": at}
+
+
+def source_identities(objects, expanded, files, limits):
+    """Keep unique historical IDs, disambiguating every colliding occurrence."""
+    if len(objects) > limits.expansion_steps:
+        raise UnsupportedSource('source object occurrence count exceeds its bound')
+    identity = {'main': expanded.main, 'expanded_text_sha256': sha256(expanded.text.encode()),
+                'decoded_file_sha256': {name: sha256(files[name].encode())
+                                        for name in sorted({piece['path'] for piece in expanded.pieces})}}
+    encode = lambda value: json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
+    identity['sha256'] = sha256(encode(identity))
+    provisional = Counter(row['id'] for row in objects)
+    seen, final_ids, evidence_bytes = set(), set(), 0
+    for row in objects:
+        raw = encode({'version': 'latex-source-occurrence-v1', 'project': identity['sha256'],
+                      'kind': row['kind'], 'environment': row['environment'],
+                      'span': row['source_span'], 'members': row['source_members']})
+        evidence_bytes += len(raw)
+        if evidence_bytes > limits.text_bytes:
+            raise UnsupportedSource('source occurrence evidence exceeds its byte bound')
+        occurrence = sha256(raw)
+        if occurrence in seen:
+            raise UnsupportedSource('source object occurrence identity is duplicated')
+        seen.add(occurrence)
+        row['source_occurrence_id'] = occurrence
+        row['provisional_id'] = row['id']
+        if provisional[row['id']] > 1:
+            row['id'] = 'object:source-occurrence:' + occurrence
+        if row['id'] in final_ids:
+            raise UnsupportedSource('resolved source object identity is duplicated')
+        final_ids.add(row['id'])
+    return identity
+
+
+def interval_owners(points, intervals):
+    """Innermost lexical scopes, with a bounded sorted sweep instead of joins."""
+    ordered = sorted(enumerate(intervals), key=lambda pair: pair[1]['start'])
+    active, at = [], 0
+    for point in points:
+        while at < len(ordered) and ordered[at][1]['start'] <= point['start']:
+            number, scope = ordered[at]
+            heapq.heappush(active, (-scope['start'], scope['end'], number, scope))
+            at += 1
+        while active and active[0][1] <= point['start']:
+            heapq.heappop(active)
+        yield active[0][3] if active and point['end'] <= active[0][1] else None
+
+
+def label_inventory(objects, entries, nodes, headings, scan, document, expanded, limits):
+    """Record naming claims independently of complete object existence.
+
+    These are lexical source occurrences subject to all existing execution
+    guards. A repeated command is ambiguous even when both owners are equal.
+    Raw object label spellings are evidence, never a second resolution table.
+    """
+    labels = []
+    for row in argument_commands(scan, {'label'}, document['content_start'], document['content_end']):
+        labels.append(row)
+        if len(labels) > limits.expansion_steps:
+            raise UnsupportedSource('source label occurrence count exceeds its bound')
+    scopes = [{'start': row['source_span']['start'], 'end': row['source_span']['end'],
+               'role': 'object', 'object_id': row['id'], 'kind': row['kind']} for row in objects]
+    scopes.extend({'start': row['source_span']['start'], 'end': row['source_span']['end'],
+                   'role': 'bibliography_entry', 'entry_id': row['id']} for row in entries)
+    scopes.extend({'start': node['start'], 'end': node['end'], 'role': node['environment'].rstrip('*')}
+                  for node in nodes if node['environment'].rstrip('*') in {'subfigure', 'subtable'})
+    ranks = {name: rank for rank, name in enumerate(('part', 'chapter', 'section', 'subsection', 'subsubsection', 'paragraph', 'subparagraph'))}
+    boundaries = {rank: [row['start'] for row in headings if ranks[row['command'].rstrip('*')] <= rank]
+                  for rank in ranks.values()}
+    for row in headings:
+        following = boundaries[ranks[row['command'].rstrip('*')]]
+        number = bisect_right(following, row['start'])
+        scopes.append({'start': row['start'], 'end': following[number] if number < len(following) else document['content_end'],
+                       'role': 'section', 'command': row['command']})
+    lists = [{'start': n['content_start'], 'end': n['content_end'], 'environment': n['environment']}
+             for n in nodes if n['environment'].rstrip('*') in {'enumerate', 'itemize', 'description'}]
+    items = [{'start': m.start(), 'end': m.end()} for m in COMMAND.finditer(scan, document['content_start'], document['content_end'])
+             if m[1].rstrip('*') == 'item']
+    if len(items) + len(scopes) > limits.expansion_steps:
+        raise UnsupportedSource('source label owner scope count exceeds its bound')
+    previous = {}
+    for item, owner in zip(items, interval_owners(items, lists)):
+        if owner is None:
+            continue
+        key = (owner['start'], owner['end'])
+        if key in previous:
+            previous[key]['end'] = item['start']
+        scope = {'start': item['start'], 'end': owner['end'], 'role': 'item', 'environment': owner['environment']}
+        scopes.append(scope)
+        previous[key] = scope
+    occurrences, groups, evidence_bytes = [], {}, 0
+    for row, owner in zip(labels, interval_owners(labels, scopes)):
+        owner = owner or {'role': 'unknown'}
+        claim = {'label': row['value'].strip(), 'source_span': {'start': row['start'], 'end': row['end']},
+                 'source_members': expanded.origins(row['start'], row['end']), 'owner': dict(owner)}
+        evidence_bytes += len(json.dumps(claim, ensure_ascii=False).encode())
+        if evidence_bytes > limits.text_bytes:
+            raise UnsupportedSource('source label evidence exceeds its byte bound')
+        groups.setdefault(claim['label'], []).append(len(occurrences))
+        occurrences.append(claim)
+    ambiguous, targets = {}, {}
+    for label, numbers in groups.items():
+        if len(numbers) > 1:
+            owners = [occurrences[n]['owner'] for n in numbers]
+            ambiguous[label] = {'occurrences': numbers, 'candidate_count': len(numbers),
+                                'candidate_object_ids': list(dict.fromkeys(o['object_id'] for o in owners if o['role'] == 'object')),
+                                'roles': sorted({o['role'] for o in owners})}
+        else:
+            owner = occurrences[numbers[0]]['owner']
+            if owner['role'] == 'object':
+                targets[label] = owner['object_id']
+    return occurrences, ambiguous, targets
 
 
 def equation_aliases(text, scan):
@@ -442,7 +556,13 @@ def parse_project(files, limits=Limits(), selected_main=None):
             source_semantics["redefined_macro:" + name] = count
 
     structural = CITES | REFS | {"begin", "end", "label", "caption", "bibitem", "input", "include", "bibliography", "newtheorem",
-                               "tag", "notag", "nonumber", "numberwithin", "counterwithin", "setcounter", "addtocounter", "stepcounter", "refstepcounter"}
+                               "tag", "notag", "nonumber", "numberwithin", "counterwithin", "setcounter", "addtocounter", "stepcounter", "refstepcounter",
+                               "part", "chapter", "section", "subsection", "subsubsection", "paragraph", "subparagraph", "item"}
+    # Even one attempted definition can change a known source consumer (or fail
+    # because the name exists). Neither outcome establishes our literal model.
+    for name, count in renderer.definition_counts.items():
+        if name in structural:
+            source_semantics["defined_source_primitive:" + name] = count
 
     macro_structure = {}
 
@@ -720,7 +840,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
         if kind == "proof" and node["option"]:
             row["proof_heading"] = render_text(renderer, node["option"])
             row["unsupported_commands"].update(renderer.unsupported - before)
-            row["proof_target_labels"] = [item["value"].strip() for item in argument_commands(node["option"], REFS)]
+            row["proof_target_labels"] = [key.strip() for item in argument_commands(node["option"], REFS)
+                                          for key in item["value"].split(',')]
             row["proof_heading_source"] = node["option"]
         objects.append(row)
     bibliographies = [node for node in nodes if node["environment"] == "thebibliography"]
@@ -897,16 +1018,19 @@ def parse_project(files, limits=Limits(), selected_main=None):
                       "source_layout_context": layout_context,
                       "context_exclusion": context_error,
                       "unsupported_context_commands": unknown_context})
-    label_targets = {}
-    for row in objects:
-        for label in row["labels"]:
-            if label in label_targets:
-                raise UnsupportedSource("object label is duplicated")
-            label_targets[label] = row["id"]
+    source_identity = source_identities(objects, expanded, files, limits)
+    label_occurrences, ambiguous_labels, label_targets = label_inventory(
+        objects, entries, nodes, formal_headings, scan, document, expanded, limits)
+    for link in links:
+        if link['kind'] == 'reference':
+            link['ambiguous_targets'] = {key: ambiguous_labels[key]['candidate_count']
+                                         for key in dict.fromkeys(link['targets']) if key in ambiguous_labels}
     preceding_statement = None
     for row in objects:
         row["proof_targets"] = [label_targets.get(label) for label in row["proof_target_labels"]]
         if row["kind"] == "proof":
+            row['ambiguous_proof_target_labels'] = {key: ambiguous_labels[key]['candidate_count']
+                                                   for key in dict.fromkeys(row['proof_target_labels']) if key in ambiguous_labels}
             if row["proof_target_labels"]:
                 row["proof_linkage"] = "explicit source label in proof heading"
             elif row.get("proof_heading_source"):
@@ -931,8 +1055,11 @@ def parse_project(files, limits=Limits(), selected_main=None):
             document_probe["unsupported_commands"]["unverified_script_binding"] = 1
     return {"main": expanded.main, "source_map": expanded.pieces, "objects": objects, "entries": entries, "links": links,
             "empty_inventory_document_probe": document_probe,
-            "label_targets": label_targets, "statement_definitions": definitions,
+            "source_identity": source_identity, "label_occurrences": label_occurrences,
+            "ambiguous_labels": ambiguous_labels, "label_targets": label_targets, "statement_definitions": definitions,
             "coverage": {**expanded.coverage, "unsupported_commands": dict(renderer.unsupported),
+                         'label_resolution': {'occurrences': len(label_occurrences), 'ambiguous_names': len(ambiguous_labels),
+                                              'ambiguous_occurrences': sum(row['candidate_count'] for row in ambiguous_labels.values())},
                          "resolved_equation_aliases": {name: {"command": row["command"], "environment": row["value"],
                              "definition": expanded.origins(row["definition_start"], row["definition_end"]),
                              "invocations": [expanded.origins(event["start"], event["end"]) for event in environment_events if event.get("alias") == name]}

@@ -337,6 +337,11 @@ class TrancheTests(unittest.TestCase):
         self.assertEqual([row['target'] for row in refs], ['eq'])
         self.assertEqual([row['target'] for row in visuals], ['fig'])
         self.assertEqual([row['target'] for row in sections], ['section:s'])
+        for label in ('e', 'f', 's'):
+            changed = deepcopy(candidate)
+            changed['source_inventory']['ambiguous_labels'] = {label: {'candidate_count': 2, 'roles': ['object', 'section']}}
+            with self.subTest(ambiguous=label), self.assertRaisesRegex(ValueError, 'ambiguous source reference'):
+                validate_references(docs, changed, files, index, {'eq': 'eq', 'fig': 'fig'}, {'eq': 'eq', 'fig': 'fig'})
         for changed in ['section:s', 'missing']:
             altered = deepcopy(docs); altered['independent_corrected']['references'][0]['destination_id'] = changed
             altered['independent_corrected']['references'][0]['destination_kind'] = 'section'

@@ -438,7 +438,7 @@ def validate_references(docs, candidate, files, index, id_map, primary_map):
             'complete reference occurrence counts differ')
     exact(primary['counts']['source_reference'], len(links), 'primary declared reference inventory differs')
     exact(independent['counts']['explicit_reference_occurrences'], len(links), 'independent declared reference inventory differs')
-    sources = {row['id']: row for row in candidate['source_inventory']['objects']}
+    sources = unique(candidate['source_inventory']['objects'], 'id', 'source object inventory repeats an ID')
     sections = unique(independent['section_destinations'], 'id', 'section destination repeats an ID')
     seen = set(); primary_seen = set(); native_seen = set(); references = []; visual = []; non_objects = []
     for row in independent['references']:
@@ -452,6 +452,8 @@ def validate_references(docs, candidate, files, index, id_map, primary_map):
         require(number not in seen and other['id'] not in primary_seen, 'manual reference occurrence reused')
         seen.add(number); primary_seen.add(other['id'])
         exact(source['targets'], [row['source_label']], 'reference source target differs')
+        require(not any(label in candidate['source_inventory'].get('ambiguous_labels', {}) for label in source['targets']),
+                'ambiguous source reference cannot acquire a manual object or section destination')
         exact(other['target_label'], row['source_label'], 'reference label inventories disagree')
         spans = native_members([row['native_number_span']], index)
         exact(spans, native_members([other['native_number']], index), 'reference numeric occurrence disagrees')
@@ -485,7 +487,8 @@ def validate_references(docs, candidate, files, index, id_map, primary_map):
 
 
 def validate_crosswalk(docs, candidate, id_map, primary_map):
-    parsed = candidate['source_inventory']; objects = {row['id']: row for row in parsed['objects']}
+    parsed = candidate['source_inventory']
+    objects = unique(parsed['objects'], 'id', 'source object inventory repeats an ID')
     crosswalk = docs['object_crosswalk']
     exact(crosswalk['source_inventory_canonical_sha256'], candidate['source_inventory_sha256'], 'post-freeze source inventory differs')
     rows = unique(crosswalk['crosswalk'], 'independent_id', 'post-freeze object crosswalk repeats an occurrence')

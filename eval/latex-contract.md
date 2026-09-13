@@ -15,6 +15,34 @@ semantics that could hide inventory, unknown object environments, or duplicate s
 one PDF span conservatively exclude every metric. Per-kind support may become more precise only
 with an independently reviewed capability boundary.
 
+The current source parser records object existence separately from reference naming (#107).
+Every object has a `source_occurrence_id` SHA-256 over the versioned occurrence format,
+kind/environment, expanded offsets, ordered original members and a project commitment. That
+project commitment binds the selected main, expanded text and decoded source-member hashes.
+Unique historical IDs remain unchanged. Every row in a colliding provisional-ID group receives
+`object:source-occurrence:<digest>`; no first or last row keeps a privileged name. Authored labels
+that collide with generated fallback IDs follow the same rule. Final IDs and occurrence digests
+must be unique before alignment dictionaries; repeated includes retain distinct expanded offsets.
+
+`label_occurrences` retains each scanned command, its original members, expanded offsets and
+lexical owner/role, including sections, list items, bibliography entries and subfigures/tables.
+Every repeated label command is ambiguous, even when the owner is the same object. The bounded
+`ambiguous_labels` catalog indexes those occurrences and records candidate counts/owners;
+`label_targets` contains only unique object destinations. An object's original `labels` spellings
+are lexical evidence and do not provide a second resolution table. Definitions/comments use
+the existing inert masks; unknown execution, stored arguments and defined source primitives
+remain independently unsupported. Naming ambiguity alone is not a global source-semantics veto.
+
+Ambiguous reference occurrences keep every requested label and their exact source spans, with
+an explicit exclusion and candidate count. They do not expand into speculative edges. Any such
+reference withholds O4 under its complete-paper rule. Ambiguous explicit proof targets withhold
+O6 and never fall back to proximity; genuinely unnamed proofs retain the confirmed nearest
+preceding statement rule. Both current manual consumers reject ambiguous labels before object
+or non-object destination classification. Detection counts may retain complete distinct objects
+only under all existing source/rendering/native guards; duplicate bibliography keys remain fatal.
+The retained v1/v2 modules, payloads and configuration remain immutable. New candidate metadata
+does not rewrite their inventories or change their version-selected replay.
+
 | Metric | Complete inventory required from a paper |
 | --- | --- |
 | O1 | All figures and all tables, including independently supported empty inventories |
