@@ -3425,3 +3425,90 @@ date, last merged issue, in-flight branches and their state, next action, and op
   all5gates/24of30objectives andproduction10kacceptance/finalreport remain outstanding. Do not
   claim preparatory indexes or manualassembly as system acceptance. Ordinary merges only; no
   rebase without asking, no sudo/rm-rf/private/env access, no full_model batch.
+
+### 2026-09-13 19:32 UTC — current automatic run, separate validator review, seven frozen pairs
+
+- Last implementation merge remains #101 / PR104 (a54de426); Phase A, Wave A2.
+  Main before this checkpoint7b666c4. No new implementation merged in this interval.
+  #33 tree905c341 remains uncompiled without missing Rust dependencies; #71 draftPR93d5e12aa,
+  #72 draftPR95c867ec6 await genuine provider truth; #25 draftPR94/201c53c remains independently
+  reviewed but held for K2/fullO9. #97 tree feat/e8.3-k1-coverage430e03c has two reviewer fixes
+  in progress. No rebase; ordinary main merges. User PDF-preview files remain protected.
+- Four persistent host grants remain explicitly approved, but saved profile grants are absent
+  and actual Rust host access is blocked. The exact-four-host script remains
+  `~/.config/lysilogy/apply-codex-kb-network-permissions.py`; the prior approved attempt failed
+  at its backup write because the Codex config mount is read-only, before mutation. User has
+  been given the terminal command and restart instruction; no further approval is needed.
+  Both corpus/cache storage write probes passed. No approved-host bypass attempted.
+- Batch20 completed250/250,442.848734s/226624KiB; outputSHA
+  acf3b671f12b0cf7c27320bb8339c145d022017cd2d9b8ce830e868853465acf.
+  Root audit `~/.cache/lysilogy/native-index-after-batch20-review.json` SHA
+  d6446d33c2e0dfda89f6d52394743b1e9526ccfb676ab621320a693dbe1fb63d rehashed722357142B.
+  Now6000unique indexes:1000eval/5049scale,49overlap. Registry10951unchanged. Preparation only.
+  Corpus downloads complete; no downloads running, no user-vault/data-root mutation.
+- Sole heavy job is NEW current-source1000truth run in retainedTTY1911, owned by
+  finish_corpus_proxy: `python3 -B -u ~/.cache/lysilogy/k1-full-alignment-542da50/execute.py`.
+  Root launch review SHA c701aa1de96fec269501ee13e0e7986329dfd55d91544f6d292d947053cc2f30.
+  Exactly original1000 inputs and original999success/1failure map,13committed modules,
+  30s/paper/1.5GiB. New directory and exclusive outputs; historical4ada537 remains unchanged.
+  New report must be independently audited before release. Batch21 waits for this window.
+- Current-source gate archive independent root audit COMPLETE:
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-gates-542da50/root-review.json` SHA
+  f6e5f61476a67d0829cb7f189ca908a50bc3aaf6cc6966398976527ab4f8775f.
+  All54archived/original artifacts,160actual/git-pinned source files,22command logs and15G5logs
+  rehashed. Actual G5 counts350Rust/374Python/85Node, isolated loopback-only namespace,
+  ENETUNREACH and model CLIs absent. Immutablev1 replay reproduced both exact payload hashes.
+  This does not replace the fresh release/collector measurement still pending.
+- Separate reviewer review_ready_prs found two synthetic validator gaps at430e03c:
+  contradictory geometry page provenance and reuse of one native occurrence by distinct source
+  references. Owner is fixing with regression tests. Actual first2210assembly has distinct20refs
+  and no observed corruption; reviewer independently replayed assembly and21artifact closure,
+  verified54gate artifacts/160source hashes, passed19tranche+42related tests.
+  `~/.cache/lysilogy/review-tranche-independent-430e03c/review.json` SHA
+  64b4b889de683111202b49efe4b8612ac4b2b167b58df10cc36bc5206e3afb7d;
+  gate-audit.json SHA0d68fefcb50bbe10126f3830cd769e008d1197f96127be38ec3c41b173a404da.
+  Hold publication until fixes reviewed. If only manual-codec code changes, audit automatic
+  dependency closure explicitly; never relabel an older automatic computation as current.
+- All seven primary/independent annotations now frozen. Seventh2303.07834v2 primaryinventory
+  SHA635c12cd4f478f6d69020a19db937fbd0c0cd8faafa4eb96159693891900ef33,
+  receiptc6d56203b96417d315f7436ac74dc3606920123c1fa6aa0b2f06378de8609765,
+  1701.388s. Independentinventory6e05f16e071de3ccf0ad9b5d1e792c7b1bd5d160f803a09ca42479d93b747274,
+  receipt86fd6f659ba9aa92c4ce468b0290eb772a5b7f0e691b977c3fda5b93896f4490,1379.688s.
+  Both0fig/1table/1algorithm/9statements/6headedproofs+2unheadedrolecandidates,
+  22numeric+4nameddisplays/11bib33fields/31cite37pairs. Independent18unnumberedunits versus
+  primary16 needs reconciliation; macro/literal references also differ in grouping.
+  finish_benchmark is preparing mechanical post-freeze comparison (author-produced tooling,
+  not independent adjudication). Root must inspect script/results and all7originalpages.
+- All following relative paths use `~/.cache/lysilogy/k1-coverage/manual-tranche-v1/`.
+  Fifth2002.03492 primary additive correction-v2.json SHA
+  87ad05335c99f5dd4fb51aa6b4c93219acc2252f8d2e7c52e7aff74fb0d2c440,
+  receipt eb92ca05612e48bb91b9552ea55a7b433bf2cfd71df88d71c9d8e7400bd17ca6.
+  Root replay/own original pages3/5 review clear; `reconciliation/2002.03492/root-correction-review-v2.json`
+  SHAc4476172ada7ce756a7d3036d3b3e6ccb11f388e590e3bab679e21ee8b5511f3.
+  All33object memberships now agree with independent inventory. Restored2denominators,
+  3terminalperiods,2proofexponentchars;19boundedoperations, originals/source/ownership/links
+  unchanged. Kang2019 is award-edition evidence, publicationyearunknown;59knownfields.
+  CurlyO’Neill display fixed. Authored title-role punctuation retained. Finalformal/region
+  adjudication and suitable nested codec remain pending.
+- Sixth2207.03024 root all5originalpages viewed, page3reinspected. Initialcomparison
+  `reconciliation/2207.03024/initial-comparison.json` SHA
+  8a2691391e8f2562f1c0dcea8aa15522c0bbd2f60f1cf3e41fff4824cecfb73c:
+  428/251source,345/257native,5625primarytokenbindings;19objects/ownership,22entries,
+  28cite37pairs/20refgroups agree. Structural/field review
+  `root-structural-field-review-v1.json` SHAaa63aaa1870bdb17a819309e1c5bc77386408be9e62fd0a6cb78c21a521249b1.
+  56exactfields+7canonically equivalent accent presentations+3known institutional literals=66.
+  Both authors observed exact institutional source/native spans; no Person inferred. Decision
+  recorded in plan. Algorithm full-membership differences are exactly separate captions;
+  body/steps agree7/15lines. Eq4/5/8/9 share source environments pairwise, but distinct row bodies
+  agree; labels remain metadata. Six reference differences are phrase-vs-number scope,
+  source/targets agree; retain eq2left/right subtargets. Fig3m=4/m=6 conflict and native glyph
+  losses stay unresolved. Finalgeometry/roles/referencepolicy and complete codec still pending.
+- Scorecard unchanged: main historical1/5gates and3/30objectives(O1/O2/O30), limited2-paper K1;
+  current#97gate branch1/5 and1/30O30 pending fresh collector. Approx500K1target remains unmet;
+  no target lowered. No follow-up issue opened this interval; #97coverage/#103titles remain open.
+  Next: review fixes/current1000results, publish bounded next release with fresh version-aware
+  collector, draft/review/merge#97 with honest coverage followup if reasonable effort exhausted.
+  Remaining six manual papers are later evidence, not a reason to indefinitely hold the first
+  independently completed improvement. Continue batch21 afterward. On effective host restart,
+  prioritize#33/#71→#72/#25, then earliest-readyA3. Alllaterphases/Playwright/systemgates,
+  24/30objectives,production10kscenario/finalreport still outstanding.
