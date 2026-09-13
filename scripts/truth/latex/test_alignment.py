@@ -330,6 +330,14 @@ class AlignmentTests(unittest.TestCase):
                 self.assertEqual(result['kind_coverage']['equation']['aligned'], 0)
                 self.assertIn('ambiguous_equation_numbering', result['excluded_objects'][0]['unsupported_commands'])
 
+    def test_should_withhold_equation_negatives_when_transitive_macros_change_numbering(self):
+        for command in (r'\tag{A}', r'\nonumber', r'\notag'):
+            source = document(r'\begin{figure}\caption{An independently complete figure caption.}\end{figure}\begin{equation*}abcdefghi=12345\outer\end{equation*}', r'\newcommand{\inner}{' + command + r'}\newcommand{\outer}{\inner}')
+            result = align_paper(parse_project({'main.tex': source}), {'text': 'An independently complete figure caption. abcdefghi=12345 (A)'})
+            with self.subTest(command=command):
+                self.assertFalse(result['metric_eligibility']['O3'])
+                self.assertFalse(result['accepted'])
+
 
 if __name__ == "__main__":
     unittest.main()

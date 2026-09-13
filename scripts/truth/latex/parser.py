@@ -208,7 +208,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
         if count > 1:
             source_semantics["redefined_macro:" + name] = count
 
-    structural = CITES | REFS | {"begin", "end", "label", "caption", "bibitem", "input", "include", "bibliography", "newtheorem"}
+    structural = CITES | REFS | {"begin", "end", "label", "caption", "bibitem", "input", "include", "bibliography", "newtheorem",
+                               "tag", "notag", "nonumber", "numberwithin", "counterwithin", "setcounter", "addtocounter", "stepcounter", "refstepcounter"}
 
     macro_structure = {}
 
