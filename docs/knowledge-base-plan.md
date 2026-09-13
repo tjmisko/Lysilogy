@@ -232,7 +232,9 @@ Implementation decision: `paper-identities.json` is canonical state under the da
 the canonical library root. A `PaperId` is initially path-derived and is retained on a unique
 hash-proven move; artifact directories never move or merge. Missing identities remain as
 tombstones. Replaced content and ambiguous duplicate/move groups receive separate identities;
-the scan API and CLI report duplicate paths and unresolved identity groups. Reusing an unrelated
+the scan API and CLI report duplicate paths and unresolved identity groups. Unresolved prior IDs
+are persisted by content hash, so provisional new IDs do not hide conflicts on subsequent scans
+or restarts. Reports follow current paths; absent sources do not resolve a conflict. Reusing an unrelated
 library with the same data root is rejected. Legacy artifacts at an unchanged path are adopted
 on the first identity scan; moves made before any content hash was recorded cannot be inferred.
 
@@ -243,7 +245,9 @@ No note is read, moved, or rewritten during discovery; existing authored source 
 are preserved verbatim. Registry transactions use a cross-process lock and a synced atomic
 replacement, and refresh publication is serialized. Hashes are streamed and cached by size/mtime
 with inode/ctime safeguards so atomic replacement with preserved size/mtime is detected. Source
-stamps are checked around hashing and extraction; an unresolved content change requires a rescan.
+stamps are checked around hashing and extraction. Extraction must finish with exactly its freshly
+verified initial stamp: even restored original bytes cannot validate output read during a temporary
+change. An unresolved content change requires a rescan.
 
 Acceptance: moving or renaming a mapped PDF preserves analysis, highlights, notes linkage, reader
 tools, and objects; duplicate PDFs at two paths are reported rather than silently merged; hashing

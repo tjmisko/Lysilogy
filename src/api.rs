@@ -661,7 +661,7 @@ impl AppState {
                 Error::PaperNotFound(id.to_string()),
             )
         })?;
-        entry
+        let verified_source = entry
             .verify_source()
             .await
             .map_err(|error| (ProcessingStage::Discovery, error))?;
@@ -678,8 +678,8 @@ impl AppState {
             .extract(&entry.source_path, &entry.overview.metadata)
             .await
             .map_err(|error| (ProcessingStage::Extraction, error))?;
-        entry
-            .verify_source()
+        verified_source
+            .verify_unchanged()
             .await
             .map_err(|error| (ProcessingStage::Extraction, error))?;
         self.store
@@ -2579,6 +2579,62 @@ esac
         assert!(state.load_or_extract(&id).await.is_ok());
         assert!(state.store.load_extraction(&id).await.unwrap().is_some());
         assert_eq!(state.library().await.papers[0].id, id);
+    }
+
+    #[tokio::test]
+    async fn should_discard_extraction_when_source_changes_and_is_restored_during_extraction() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let library = tempdir().unwrap();
+        let data = tempdir().unwrap();
+        let commands = tempdir().unwrap();
+        let source = library.path().join("original.pdf");
+        tokio::fs::write(&source, b"ORIGINAL").await.unwrap();
+        let executable = commands.path().join("extract-fixture.py");
+        tokio::fs::write(&executable, r#"#!/usr/bin/python3
+import pathlib, sys, time
+base = pathlib.Path(__file__).parent
+source = pathlib.Path(sys.argv[4] if sys.argv[1].startswith('-') else sys.argv[1])
+def wait(name):
+    until = time.monotonic() + 5
+    while not (base / name).exists():
+        if time.monotonic() > until:
+            raise RuntimeError('fixture timeout')
+        time.sleep(.001)
+if sys.argv[1] == '-raw':
+    source.write_bytes(b'WRONG')
+    (base / 'changed').touch()
+    wait('layout-done')
+    wait('info-done')
+    source.write_bytes(b'ORIGINAL')
+    print('WRONG')
+elif sys.argv[1] == '-bbox-layout':
+    wait('changed')
+    text = source.read_text()
+    print('<doc><page width="612" height="792"><word xMin="50" yMin="50" xMax="100" yMax="65">' + text + '</word></page></doc>')
+    (base / 'layout-done').touch()
+else:
+    wait('changed')
+    print('Title: ' + source.read_text())
+    (base / 'info-done').touch()
+"#).await.unwrap();
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let state = AppState::with_services(
+            library.path(),
+            data.path(),
+            PdfExtractor::with_programs(&executable, &executable),
+            AnalysisService::default(),
+        )
+        .await
+        .unwrap();
+        let id = state.library().await.papers[0].id.clone();
+        assert!(state.markdown(&id).await.is_err());
+        assert_eq!(tokio::fs::read(&source).await.unwrap(), b"ORIGINAL");
+        assert!(commands.path().join("layout-done").is_file());
+        assert!(commands.path().join("info-done").is_file());
+        for artifact in ["extraction.json", "layout.json", "source.txt", "source.md"] {
+            assert!(!state.store.paper_dir(&id).join(artifact).exists());
+        }
     }
 
     #[test]

@@ -30,19 +30,35 @@ pub struct CatalogEntry {
 
 impl CatalogEntry {
     /// Reject changed content before using this identity's source or extraction.
-    pub(crate) async fn verify_source(&self) -> Result<()> {
+    pub(crate) async fn verify_source(&self) -> Result<VerifiedSource> {
         let stamp = FileStamp::read(&self.source_path).await?;
-        if stamp == self.source_stamp {
-            return Ok(());
+        if stamp != self.source_stamp {
+            let (hash, _) = hash_pdf(&self.source_path, &stamp).await?;
+            if self.overview.content_hash.as_deref() != Some(&hash) {
+                return Err(Error::InvalidRequest(
+                    "PDF content changed; rescan the library before using this paper.".into(),
+                ));
+            }
         }
-        let (hash, _) = hash_pdf(&self.source_path, &stamp).await?;
-        if self.overview.content_hash.as_deref() == Some(&hash) {
-            Ok(())
-        } else {
-            Err(Error::InvalidRequest(
-                "PDF content changed; rescan the library before using this paper.".into(),
-            ))
+        Ok(VerifiedSource {
+            path: self.source_path.clone(),
+            stamp,
+        })
+    }
+}
+
+pub(crate) struct VerifiedSource {
+    path: PathBuf,
+    stamp: FileStamp,
+}
+
+impl VerifiedSource {
+    /// Even restored bytes may have yielded extraction from intermediate content.
+    pub(crate) async fn verify_unchanged(&self) -> Result<()> {
+        if FileStamp::read(&self.path).await? != self.stamp {
+            return Err(changed_during_scan());
         }
+        Ok(())
     }
 }
 
@@ -71,11 +87,7 @@ impl LibraryCatalog {
         let identity_guard = store.lock_identities().await?;
         let saved = store.load_identities().await?;
         let bootstrap = saved.is_none();
-        let mut registry = saved.unwrap_or_else(|| IdentityRegistry {
-            schema_version: 1,
-            library_root: root.clone(),
-            records: BTreeMap::new(),
-        });
+        let mut registry = saved.unwrap_or_else(|| IdentityRegistry::new(root.clone()));
         registry.validate(&root)?;
         let mut paths = WalkDir::new(&root)
             .follow_links(false)
@@ -335,6 +347,10 @@ pub(crate) struct IdentityRegistry {
     schema_version: u16,
     library_root: PathBuf,
     records: BTreeMap<PaperId, PaperIdentity>,
+    /// Prior identities whose association cannot safely be inferred. IDs persist
+    /// independently of the provisional identities allocated to current paths.
+    #[serde(default)]
+    unresolved: BTreeMap<String, BTreeSet<PaperId>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -347,6 +363,15 @@ struct PaperIdentity {
 }
 
 impl IdentityRegistry {
+    const fn new(library_root: PathBuf) -> Self {
+        Self {
+            schema_version: 1,
+            library_root,
+            records: BTreeMap::new(),
+            unresolved: BTreeMap::new(),
+        }
+    }
+
     fn validate(&self, root: &Path) -> Result<()> {
         if self.schema_version != 1 || self.library_root != root {
             return Err(Error::InvalidRequest("The paper identity registry has an unsupported schema or belongs to a different library root; use that library's data root.".into()));
@@ -371,6 +396,19 @@ impl IdentityRegistry {
                 return Err(Error::InvalidRequest(
                     "Paper identity registry is invalid; its canonical records were not changed."
                         .into(),
+                ));
+            }
+        }
+        for (hash, ids) in &self.unresolved {
+            if ids.is_empty()
+                || ids.iter().any(|id| {
+                    self.records
+                        .get(id)
+                        .is_none_or(|record| record.content_hash != *hash)
+                })
+            {
+                return Err(Error::InvalidRequest(
+                    "Paper identity registry has invalid unresolved associations.".into(),
                 ));
             }
         }
@@ -414,7 +452,6 @@ impl IdentityRegistry {
                 used.insert((*id).clone());
             }
         }
-        let mut conflicts = Vec::new();
         for (hash, files) in by_hash {
             let unmatched: Vec<_> = files
                 .iter()
@@ -434,14 +471,10 @@ impl IdentityRegistry {
                 assigned.insert(unmatched[0].relative.clone(), id.clone());
                 used.insert(id);
             } else if !candidates.is_empty() {
-                conflicts.push(IdentityConflict {
-                    content_hash: hash.to_owned(),
-                    current_paths: unmatched.iter().map(|file| file.relative.clone()).collect(),
-                    previous_paths: candidates
-                        .iter()
-                        .map(|(_, record)| record.relative_path.clone())
-                        .collect(),
-                });
+                self.unresolved
+                    .entry(hash.to_owned())
+                    .or_default()
+                    .extend(candidates.iter().map(|(id, _)| (*id).clone()));
             }
         }
         for record in self.records.values_mut() {
@@ -475,7 +508,35 @@ impl IdentityRegistry {
             );
             result.push(id);
         }
-        Ok((result, duplicates, conflicts))
+        Ok((result, duplicates, self.identity_conflicts()))
+    }
+
+    fn identity_conflicts(&self) -> Vec<IdentityConflict> {
+        let mut active: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
+        for record in self.records.values().filter(|record| record.active) {
+            active
+                .entry(&record.content_hash)
+                .or_default()
+                .insert(&record.relative_path);
+        }
+        self.unresolved
+            .iter()
+            .map(|(hash, ids)| IdentityConflict {
+                content_hash: hash.clone(),
+                current_paths: active
+                    .get(hash.as_str())
+                    .into_iter()
+                    .flatten()
+                    .map(|path| (*path).to_owned())
+                    .collect(),
+                previous_paths: ids
+                    .iter()
+                    .map(|id| self.records[id].relative_path.clone())
+                    .collect::<BTreeSet<_>>()
+                    .into_iter()
+                    .collect(),
+            })
+            .collect()
     }
 
     async fn allocate_id(
@@ -897,7 +958,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_keep_old_ids_unassigned_when_duplicate_moves_are_ambiguous() {
+    async fn should_keep_unresolved_associations_when_duplicate_moves_remain_ambiguous() {
         let root = tempfile::tempdir().unwrap();
         let data = tempfile::tempdir().unwrap();
         let store = ArtifactStore::new(data.path());
@@ -907,6 +968,11 @@ mod tests {
                 .unwrap();
         }
         let first = LibraryCatalog::scan(root.path(), &store).await.unwrap();
+        let previous_ids: BTreeSet<_> = first
+            .overviews()
+            .into_iter()
+            .map(|paper| paper.id)
+            .collect();
         tokio::fs::rename(root.path().join("a.pdf"), root.path().join("c.pdf"))
             .await
             .unwrap();
@@ -923,6 +989,82 @@ mod tests {
             ["c.pdf", "d.pdf"]
         );
         assert_eq!(second.duplicates()[0].paths, ["c.pdf", "d.pdf"]);
+        let provisional_ids: BTreeSet<_> = second
+            .overviews()
+            .into_iter()
+            .map(|paper| paper.id)
+            .collect();
+        assert_eq!(
+            second.identity_conflicts()[0].previous_paths,
+            ["a.pdf", "b.pdf"]
+        );
+        for reopened in [&store, &ArtifactStore::new(data.path())] {
+            let repeated = LibraryCatalog::scan(root.path(), reopened).await.unwrap();
+            assert_eq!(repeated.identity_conflicts().len(), 1);
+            assert_eq!(
+                repeated.identity_conflicts()[0].previous_paths,
+                ["a.pdf", "b.pdf"]
+            );
+            assert_eq!(
+                repeated.identity_conflicts()[0].current_paths,
+                ["c.pdf", "d.pdf"]
+            );
+            assert_eq!(
+                repeated
+                    .overviews()
+                    .into_iter()
+                    .map(|paper| paper.id)
+                    .collect::<BTreeSet<_>>(),
+                provisional_ids
+            );
+            let registry = reopened.load_identities().await.unwrap().unwrap();
+            assert_eq!(registry.unresolved.values().next(), Some(&previous_ids));
+        }
+        tokio::fs::rename(root.path().join("c.pdf"), root.path().join("e.pdf"))
+            .await
+            .unwrap();
+        let moved = LibraryCatalog::scan(root.path(), &store).await.unwrap();
+        assert_eq!(moved.identity_conflicts().len(), 1);
+        assert_eq!(
+            moved.identity_conflicts()[0].current_paths,
+            ["d.pdf", "e.pdf"]
+        );
+        for path in ["d", "e"] {
+            tokio::fs::rename(
+                root.path().join(format!("{path}.pdf")),
+                root.path().join(format!("{path}.held")),
+            )
+            .await
+            .unwrap();
+        }
+        let absent = LibraryCatalog::scan(root.path(), &store).await.unwrap();
+        assert_eq!(absent.identity_conflicts().len(), 1);
+        assert!(absent.identity_conflicts()[0].current_paths.is_empty());
+        assert!(absent.overviews().is_empty());
+    }
+
+    #[tokio::test]
+    async fn should_verify_current_stamp_when_same_content_is_touched_before_extraction() {
+        let root = tempfile::tempdir().unwrap();
+        let data = tempfile::tempdir().unwrap();
+        let path = root.path().join("original.pdf");
+        tokio::fs::write(&path, b"original bytes").await.unwrap();
+        let catalog = LibraryCatalog::scan(root.path(), &ArtifactStore::new(data.path()))
+            .await
+            .unwrap();
+        let id = catalog.overviews()[0].id.clone();
+        let entry = catalog.get(&id).unwrap();
+        let replacement = root.path().join("replacement.held");
+        tokio::fs::write(&replacement, b"original bytes")
+            .await
+            .unwrap();
+        tokio::fs::rename(&replacement, &path).await.unwrap();
+        assert_ne!(FileStamp::read(&path).await.unwrap(), entry.source_stamp);
+        let verified = entry.verify_source().await.unwrap();
+        verified.verify_unchanged().await.unwrap();
+        tokio::fs::write(&path, b"other bytes").await.unwrap();
+        tokio::fs::write(&path, b"original bytes").await.unwrap();
+        assert!(verified.verify_unchanged().await.is_err());
     }
 
     #[tokio::test]
@@ -969,6 +1111,12 @@ mod tests {
         let bytes = tokio::fs::read(&path).await.unwrap();
         assert!(LibraryCatalog::scan(other.path(), &store).await.is_err());
         assert_eq!(tokio::fs::read(&path).await.unwrap(), bytes);
+        let mut invalid: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        invalid["unresolved"] = json!({"unrecorded hash": ["0000000000000000"]});
+        let invalid_bytes = serde_json::to_vec(&invalid).unwrap();
+        tokio::fs::write(&path, &invalid_bytes).await.unwrap();
+        assert!(LibraryCatalog::scan(root.path(), &store).await.is_err());
+        assert_eq!(tokio::fs::read(&path).await.unwrap(), invalid_bytes);
         tokio::fs::write(&path, b"{broken canonical state")
             .await
             .unwrap();
