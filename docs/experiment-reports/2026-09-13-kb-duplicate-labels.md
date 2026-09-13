@@ -178,10 +178,43 @@ receipt SHA `045e80cd9e283ca7fb154ad711dc465cfbcac3c3481ff82ab36b900e7aab5d0b`).
 Main's separately merged #106 measurement has O1 = 1.0 and O2 = 0.9076006899903768
 on the unchanged three-paper, 23-region K1 v2 cohort. The clean #107 before check
 had O1 = 0.9787234042553191 and O2 = 0.7570080448318404. That detector improvement
-belongs to #106; this evaluation parser change introduces no detector measurement,
-scoring change, baseline reset or new truth.
+belongs to #106; this evaluation parser change introduces no detector behavior,
+scoring change, baseline reset or new truth value. A later refresh of that same
+collector, described below, binds the unchanged measurement to current source bytes.
 
-Final integrated gates and final PR review remain pending. Exact run scripts,
+## Final checks and retained measurement
+
+At integrated `df1a11f`, formatting, strict all-target/all-feature Clippy, Rust
+all-targets, 276 focused truth tests, 35 collector tests, and objects/bibliography/
+scale checks passed. The initial G5 run failed only because the fresh worktree lacked
+TypeScript for the API Node test. That failure remains intact (receipt SHA
+`1e775eec335b950ebe68662df073df4f39162dad6e62f5979e2bbda893fff931`).
+The exact locked TypeScript 5.9.3 archive was read from the local cache, verified
+against its SHA-512 lock integrity and safely unpacked into 132 individually hashed
+files; no install scripts or network calls ran. The affected G5 check and remaining
+replays then passed: **362 Rust / 421 Python / 85 Node tests**, with both v1/v2
+payload pairs reproduced exactly. The retry receipt SHA is
+`b0012190ff821f5dcccc9b9c74bec2b0377a8c2710774fe43da53f53107d8885`.
+The initial checks took 68.345 seconds / 1,247,648 KiB peak child RSS; the retry and
+replays took 16.708 seconds / 151,344 KiB. All 207 recorded source/evidence input
+bytes were unchanged during those checks. Both G5 runs' 30 raw command logs and
+their receipts are archived outside the worktree, including the original failure.
+
+The first objects check exited successfully but reported O1/O2 unavailable: the
+inherited input correctly detected four stale current-parser fingerprints even
+though v2 replay uses retained modules. Exit status alone did not establish metric
+availability. After independent plan/wrapper review, the unchanged current
+collector was rerun on the same three frozen papers. It reproduced all three paper
+records, 23 object decisions, complete predictions, object commitments and both scores exactly, then
+the own-worktree CLI verified available O1 = 1.0 and O2 = 0.9076006899903768.
+The refresh took 13.637 seconds / 276,384 KiB peak RSS and $0 external cost (receipt
+SHA `44027ba4162479e09c16c5771eb89f39957b4efb5fcf405aa49508aca023b1de`).
+It rebuilt only the current measurement bridge offline; it did not rebuild a native
+index, change truth/scoring/targets, or reset baselines. The old input and observation
+remain immutable in collector history. Both selected executable files and their
+Cargo receipts/logs are retained outside the worktree with exact hashes.
+
+Final PR review remains pending. Exact run scripts,
 source fingerprints, ledgers, receipts and retained review paths are indexed in
 `eval/evidence/k1-duplicate-labels.json`. Every historical run and frozen truth
 version remains unchanged. The 298 other failures were not rerun, and no result here
