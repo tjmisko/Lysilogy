@@ -40,9 +40,9 @@ python3 scripts/corpus/corpus.py --proxy-env HTTPS_PROXY run
 the process environment. It never reads an environment file. The value must be an `http://`
 CONNECT proxy URL; Python's standard transport does not implement TLS to an `https://` proxy,
 so that scheme is rejected rather than silently changing its security properties. Destination
-HTTPS certificate and hostname verification remain enabled. Missing or malformed configuration fails instead
-of choosing another proxy. Ambient
-proxies remain disabled unless this option is present. Python's standard `NO_PROXY` exclusions
+HTTPS certificate and hostname verification remain enabled. Missing or malformed configuration
+fails instead of choosing another proxy. Ambient proxies remain disabled unless this option is
+present. Python's standard `NO_PROXY` exclusions
 still apply. Put credentials in the approved process environment, never the command line; proxy
 values are not logged or saved in corpus metadata, and transport errors redact them.
 
@@ -145,8 +145,8 @@ PDF bytes against the pinned GCS MD5/size as well as their local SHA-256 receipt
 papers and modified provenance fail verification even when local artifact hashes still match.
 
 Selection currently loads the harvested bibliographic records into memory. Selection's peak RSS
-remains unmeasured because no live harvest has reached that stage. The next optimization, if measurement warrants
-it, is to stream compact SQLite ID/category/year candidates through bounded per-stratum heaps
+remains unmeasured because no live harvest has reached that stage. If measurement warrants it,
+the next optimization is to stream compact SQLite ID/category/year candidates through bounded per-stratum heaps
 and then load full metadata only for selected IDs.
 
 Live K0 counts and corpus-dependent scorecard measurements remain unavailable until a real build
@@ -156,5 +156,9 @@ by the runtime domain allowlist. No download was started or moved into an altern
 
 After storage permission was repaired, the first live attempt failed direct DNS resolution
 before committing any metadata (93.08 seconds; peak RSS 30,096 KiB). A root-agent proxy probe
-then hit the tool's active host allowlist, a separate environment boundary. The proxy option
-addresses transport compatibility; no live metadata or download success is claimed by that fix.
+then hit the tool's active host allowlist, a separate environment boundary. After the user
+restarted the daemon, the root agent received a valid 1,890-byte OAI-PMH Identify response through
+the explicitly selected proxy and started the resumable corpus build. This proves transport
+access; complete K0 selection, downloads and verification remain outstanding. The measured
+validation and its limits are retained in
+[the transport report](../../docs/experiment-reports/2026-09-12-corpus-proxy-transport.md).

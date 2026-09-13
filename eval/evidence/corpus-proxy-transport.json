@@ -1,0 +1,598 @@
+{
+  "after": {
+    "implementation": [
+      {
+        "path": "scripts/corpus/corpus.py",
+        "sha256": "a6c255363e888e2c603fcaa478630feb59ba617b4851a8ccca9e3e07ab428c0b"
+      },
+      {
+        "path": "scripts/corpus/test_corpus.py",
+        "sha256": "606734e309432c850722a64aa57cc2c69593de6a8acefd72d468b71dc2c81f5e"
+      }
+    ],
+    "isolated_tests": {
+      "commands": [
+        {
+          "command": [
+            "cargo",
+            "test",
+            "--offline",
+            "--all-targets"
+          ],
+          "cwd": ".",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/00.log",
+          "wall_seconds": 0.9185622590011917
+        },
+        {
+          "command": [
+            "python3",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/src/eval/g5.py",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z",
+            "--tooling-tests",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/scripts/corpus"
+          ],
+          "cwd": ".",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/01.log",
+          "wall_seconds": 0.1654025969983195
+        },
+        {
+          "command": [
+            "python3",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/src/eval/g5.py",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z",
+            "--tooling-tests",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/scripts/eval"
+          ],
+          "cwd": ".",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/02.log",
+          "wall_seconds": 0.2701576340041356
+        },
+        {
+          "command": [
+            "npm",
+            "--script-shell",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z/script-shell",
+            "run",
+            "test:api"
+          ],
+          "cwd": "web",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/03.log",
+          "wall_seconds": 0.8762828740000259
+        },
+        {
+          "command": [
+            "npm",
+            "--script-shell",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z/script-shell",
+            "run",
+            "test:paper-links"
+          ],
+          "cwd": "web",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/04.log",
+          "wall_seconds": 0.47184811499755597
+        },
+        {
+          "command": [
+            "npm",
+            "--script-shell",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z/script-shell",
+            "run",
+            "test:pdf-visual-bounds"
+          ],
+          "cwd": "web",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/05.log",
+          "wall_seconds": 0.46957505700265756
+        },
+        {
+          "command": [
+            "npm",
+            "--script-shell",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z/script-shell",
+            "run",
+            "test:reading-index-cache"
+          ],
+          "cwd": "web",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/06.log",
+          "wall_seconds": 0.4660824480015435
+        },
+        {
+          "command": [
+            "npm",
+            "--script-shell",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z/script-shell",
+            "run",
+            "test:section-figures"
+          ],
+          "cwd": "web",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/07.log",
+          "wall_seconds": 0.41561646400077734
+        },
+        {
+          "command": [
+            "npm",
+            "--script-shell",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z/script-shell",
+            "run",
+            "test:section-scope"
+          ],
+          "cwd": "web",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/08.log",
+          "wall_seconds": 0.41559663000225555
+        },
+        {
+          "command": [
+            "npm",
+            "--script-shell",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z/script-shell",
+            "run",
+            "test:source-text"
+          ],
+          "cwd": "web",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/09.log",
+          "wall_seconds": 0.46657466100441525
+        },
+        {
+          "command": [
+            "npm",
+            "--script-shell",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z/script-shell",
+            "run",
+            "test:spatial-navigation"
+          ],
+          "cwd": "web",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/10.log",
+          "wall_seconds": 0.4179038549991674
+        },
+        {
+          "command": [
+            "npm",
+            "--script-shell",
+            "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z/script-shell",
+            "run",
+            "test:vimrc"
+          ],
+          "cwd": "web",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/11.log",
+          "wall_seconds": 0.4153742950002197
+        },
+        {
+          "command": [
+            "node",
+            "--experimental-strip-types",
+            "--test",
+            "scripts/cursor-document.test.mjs"
+          ],
+          "cwd": "web",
+          "exit_code": 0,
+          "log": "target/eval-g5/20260913T063141.318942875Z/12.log",
+          "wall_seconds": 0.26502384900231846
+        }
+      ],
+      "interfaces": [
+        "lo"
+      ],
+      "model_clis_absent": {
+        "aider": true,
+        "claude": true,
+        "codex": true,
+        "gemini": true,
+        "ollama": true
+      },
+      "network_namespace": "net:[4026535087]",
+      "network_probe_errno": 101,
+      "parent_network_namespace": "net:[4026534649]",
+      "passed": true,
+      "path": "/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport/target/eval-g5/20260913T063141.318942875Z/bin",
+      "schema_version": 1,
+      "wall_seconds": 6.054558634998102
+    },
+    "live_transport": {
+      "corpus_log": "/home/tjmisko/.cache/lysilogy/arxiv-corpus-proxy.log",
+      "downloaded_pdfs": 0,
+      "downloaded_sources": 0,
+      "harvest_complete": false,
+      "harvest_set": "cs:cs:CV",
+      "identify_response_bytes": 1890,
+      "identify_response_valid_oai": true,
+      "metadata_papers": 53300,
+      "observed_at": "2026-09-13T06:32:45.923044Z",
+      "observer": "root agent; authorized corpus build, separate from offline tests",
+      "process_confirmed_live": true,
+      "selected_k0_papers": 0,
+      "selection_exists": false,
+      "transport_option": "--proxy-env HTTPS_PROXY",
+      "window_start": "2026-09-13"
+    },
+    "provider_collector": {
+      "collector": "provider-budgets-v1",
+      "cost_usd": 0,
+      "implementation": [
+        {
+          "path": "src/citation_graph/budget.rs",
+          "sha256": "8851c2fd9127b4baea91d12a9e3445e33e1ac4f138c8b1a6065e980a24d20276",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "src/citation_graph/cache.rs",
+          "sha256": "4b7e8aac4b7529a55391a0616418a01d09863dc351eff292d61da7b308bfa9e7",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "src/citation_graph/http.rs",
+          "sha256": "2fd49f42a149a10ec266643701ec1754b3f12d8ab425fb19601e7c9efd00e466",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "src/citation_graph/mod.rs",
+          "sha256": "c956138db7ed89700a7ba5574b93724d692dbe876273324e3572f788558d4f7b",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "examples/provider_budget_eval.rs",
+          "sha256": "4f627acd1a09c1345c8a744e32054c4562b25fb275a01c04a79b3bce461398f2",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "scripts/eval/provider-budgets.py",
+          "sha256": "b553a086209c1d265b3c1a2898992736bc17b68799f1442be742ecd227755888",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "Cargo.toml",
+          "sha256": "cda81b2f25d3546e509ae8f34ea4d56a461bd4b99239f320a7a38b937af5bc36",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "Cargo.lock",
+          "sha256": "b305f36d9dbb0932067d49ddbc80c471ed9ea1f115daa048b72096744c8592a9",
+          "version": "e7.1-v1"
+        }
+      ],
+      "metrics": {
+        "O30": {
+          "cases": 10000,
+          "evidence": [
+            {
+              "path": "eval/inputs/provider-budget-observations.json",
+              "sha256": "652cce8669163944e95582aa51a81cb3781ed1388fe75a36842202230707d030",
+              "version": "provider-budget-observations-v1"
+            }
+          ],
+          "sample": {
+            "method": "value",
+            "value": 0
+          }
+        }
+      },
+      "schema_version": 1,
+      "suite": "scale",
+      "truth_sets": {
+        "recorded fixtures": {
+          "path": "eval/truth/provider-budget-batch.json",
+          "sha256": "3272d90d6aa27b2c8081ef5ff6e7c823d840bc645bf7c6a69859e83d8f6b5cd9",
+          "version": "provider-budget-batch-v1"
+        }
+      },
+      "wall_seconds": 0.631137584001408
+    },
+    "quality_gates": {
+      "cargo_clippy": {
+        "command": "cargo clippy --offline --all-targets --all-features -- -D warnings",
+        "log_tail": [
+          "    Checking lysilogy v0.1.0 (/home/tjmisko/Projects/Lysilogy/.worktrees/fix/e8.2-corpus-proxy-transport)",
+          "    Finished `dev` profile [unoptimized] target(s) in 23.50s"
+        ],
+        "passed": true
+      },
+      "cargo_fmt": {
+        "command": "cargo fmt --all -- --check",
+        "passed": true
+      },
+      "cargo_test": {
+        "command": "cargo test --offline --all-targets",
+        "passed": true,
+        "rust_tests": 277
+      }
+    },
+    "scale_run": {
+      "baseline_before": {
+        "G5": 1.0,
+        "O30": 0.0
+      },
+      "collectors": {
+        "scale/provider-budgets": {
+          "input": {
+            "path": "eval/inputs/scale/provider-budgets.json",
+            "sha256": "a4fe7550379f208467f544cef52169935d6be94947ef4172f986ddba2895a60e",
+            "version": "provider-budgets-v1"
+          },
+          "metrics": [
+            "O30"
+          ]
+        }
+      },
+      "commit": "a92c9944baf3e213035784b221a031274fe75d64",
+      "costs_usd": {
+        "scale/provider-budgets": 0.0
+      },
+      "dirty": false,
+      "failures": [],
+      "metrics": {
+        "O25": {
+          "cases": 0,
+          "evidence": [],
+          "reason": "no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built",
+          "truth_sets": {},
+          "value": null
+        },
+        "O26.render": {
+          "cases": 0,
+          "evidence": [],
+          "reason": "no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built",
+          "truth_sets": {},
+          "value": null
+        },
+        "O26.search": {
+          "cases": 0,
+          "evidence": [],
+          "reason": "no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built",
+          "truth_sets": {},
+          "value": null
+        },
+        "O27": {
+          "cases": 0,
+          "evidence": [],
+          "reason": "no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built",
+          "truth_sets": {},
+          "value": null
+        },
+        "O28": {
+          "cases": 0,
+          "evidence": [],
+          "reason": "no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built",
+          "truth_sets": {},
+          "value": null
+        },
+        "O29": {
+          "cases": 0,
+          "evidence": [],
+          "reason": "no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built",
+          "truth_sets": {},
+          "value": null
+        },
+        "O30": {
+          "cases": 10000,
+          "evidence": [
+            {
+              "path": "src/citation_graph/budget.rs",
+              "sha256": "8851c2fd9127b4baea91d12a9e3445e33e1ac4f138c8b1a6065e980a24d20276",
+              "version": "e7.1-v1"
+            },
+            {
+              "path": "src/citation_graph/cache.rs",
+              "sha256": "4b7e8aac4b7529a55391a0616418a01d09863dc351eff292d61da7b308bfa9e7",
+              "version": "e7.1-v1"
+            },
+            {
+              "path": "src/citation_graph/http.rs",
+              "sha256": "2fd49f42a149a10ec266643701ec1754b3f12d8ab425fb19601e7c9efd00e466",
+              "version": "e7.1-v1"
+            },
+            {
+              "path": "src/citation_graph/mod.rs",
+              "sha256": "c956138db7ed89700a7ba5574b93724d692dbe876273324e3572f788558d4f7b",
+              "version": "e7.1-v1"
+            },
+            {
+              "path": "examples/provider_budget_eval.rs",
+              "sha256": "4f627acd1a09c1345c8a744e32054c4562b25fb275a01c04a79b3bce461398f2",
+              "version": "e7.1-v1"
+            },
+            {
+              "path": "scripts/eval/provider-budgets.py",
+              "sha256": "b553a086209c1d265b3c1a2898992736bc17b68799f1442be742ecd227755888",
+              "version": "e7.1-v1"
+            },
+            {
+              "path": "Cargo.toml",
+              "sha256": "cda81b2f25d3546e509ae8f34ea4d56a461bd4b99239f320a7a38b937af5bc36",
+              "version": "e7.1-v1"
+            },
+            {
+              "path": "Cargo.lock",
+              "sha256": "b305f36d9dbb0932067d49ddbc80c471ed9ea1f115daa048b72096744c8592a9",
+              "version": "e7.1-v1"
+            },
+            {
+              "path": "eval/inputs/provider-budget-observations.json",
+              "sha256": "652cce8669163944e95582aa51a81cb3781ed1388fe75a36842202230707d030",
+              "version": "provider-budget-observations-v1"
+            }
+          ],
+          "reason": null,
+          "truth_sets": {
+            "recorded fixtures": {
+              "path": "eval/truth/provider-budget-batch.json",
+              "sha256": "3272d90d6aa27b2c8081ef5ff6e7c823d840bc645bf7c6a69859e83d8f6b5cd9",
+              "version": "provider-budget-batch-v1"
+            }
+          },
+          "value": 0.0
+        }
+      },
+      "schema_version": 1,
+      "suite": "scale",
+      "timestamp": "2026-09-13T06:31:41.143125662Z",
+      "wall_seconds": {
+        "scale/provider-budgets": 0.631137584001408
+      }
+    },
+    "test_counts": {
+      "node": 84,
+      "python": 61,
+      "rust": 277
+    },
+    "tests_run": {
+      "baseline_before": {
+        "G5": 1.0,
+        "O30": 0.0
+      },
+      "collectors": {},
+      "commit": "a92c9944baf3e213035784b221a031274fe75d64",
+      "costs_usd": {
+        "tests": 0.0
+      },
+      "dirty": true,
+      "failures": [],
+      "metrics": {
+        "G5": {
+          "cases": 1,
+          "evidence": [
+            {
+              "path": "target/eval-g5/20260913T063141.318942875Z/evidence.json",
+              "sha256": "378b7a7025cfff819571b6b79dc55420a517ea55989dcf6e1a541a567dd19274",
+              "version": "g5-network-namespace-v1"
+            }
+          ],
+          "reason": null,
+          "truth_sets": {},
+          "value": 1.0
+        }
+      },
+      "schema_version": 1,
+      "suite": "tests",
+      "timestamp": "2026-09-13T06:31:41.318927583Z",
+      "wall_seconds": {
+        "tests": 6.146764001
+      }
+    }
+  },
+  "before": {
+    "G5": {
+      "cases": 1,
+      "evidence": [
+        {
+          "path": "target/eval-g5/20260913T052905.428091417Z/evidence.json",
+          "sha256": "a70d61452ccd80fd6604c484aea93c0601084fad2a14e343e958de5c41ab037e",
+          "version": "g5-network-namespace-v1"
+        }
+      ],
+      "reason": null,
+      "truth_sets": {},
+      "value": 1.0
+    },
+    "O30": {
+      "cases": 10000,
+      "evidence": [
+        {
+          "path": "src/citation_graph/budget.rs",
+          "sha256": "8851c2fd9127b4baea91d12a9e3445e33e1ac4f138c8b1a6065e980a24d20276",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "src/citation_graph/cache.rs",
+          "sha256": "4b7e8aac4b7529a55391a0616418a01d09863dc351eff292d61da7b308bfa9e7",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "src/citation_graph/http.rs",
+          "sha256": "2fd49f42a149a10ec266643701ec1754b3f12d8ab425fb19601e7c9efd00e466",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "src/citation_graph/mod.rs",
+          "sha256": "c956138db7ed89700a7ba5574b93724d692dbe876273324e3572f788558d4f7b",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "examples/provider_budget_eval.rs",
+          "sha256": "4f627acd1a09c1345c8a744e32054c4562b25fb275a01c04a79b3bce461398f2",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "scripts/eval/provider-budgets.py",
+          "sha256": "b553a086209c1d265b3c1a2898992736bc17b68799f1442be742ecd227755888",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "Cargo.toml",
+          "sha256": "cda81b2f25d3546e509ae8f34ea4d56a461bd4b99239f320a7a38b937af5bc36",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "Cargo.lock",
+          "sha256": "b305f36d9dbb0932067d49ddbc80c471ed9ea1f115daa048b72096744c8592a9",
+          "version": "e7.1-v1"
+        },
+        {
+          "path": "eval/inputs/provider-budget-observations.json",
+          "sha256": "652cce8669163944e95582aa51a81cb3781ed1388fe75a36842202230707d030",
+          "version": "provider-budget-observations-v1"
+        }
+      ],
+      "reason": null,
+      "truth_sets": {
+        "recorded fixtures": {
+          "path": "eval/truth/provider-budget-batch.json",
+          "sha256": "3272d90d6aa27b2c8081ef5ff6e7c823d840bc645bf7c6a69859e83d8f6b5cd9",
+          "version": "provider-budget-batch-v1"
+        }
+      },
+      "value": 0.0
+    },
+    "corpus_tests": {
+      "log": ".....{\"action\":\"harvest\",\"complete\":true,\"records\":1,\"set\":\"cs:cs:LG\"}\n{\"action\":\"harvest\",\"complete\":true,\"records\":1,\"set\":\"cs:cs:LG\"}\n...{\"action\":\"harvest\",\"complete\":false,\"records\":1,\"set\":\"cs:cs:LG\"}\n{\"action\":\"harvest\",\"complete\":true,\"records\":1,\"set\":\"cs:cs:LG\"}\n{\"action\":\"harvest\",\"complete\":true,\"records\":1,\"set\":\"cs:cs:LG\"}\n.......{\"action\":\"select\",\"papers\":9,\"sha256\":\"536c3720295a9e8e527acd98e2fcf54b3849f80bd6888688d19d4ba01632273c\"}\n.{\"action\":\"harvest\",\"complete\":false,\"records\":1,\"set\":\"cs:cs:LG\"}\n{\"action\":\"harvest\",\"complete\":true,\"records\":1,\"set\":\"cs:cs:LG\"}\n................{\"action\":\"harvest\",\"complete\":true,\"records\":1,\"set\":\"cs:cs:LG\"}\n.{\"action\":\"harvest\",\"complete\":false,\"records\":1,\"set\":\"cs:cs:LG\"}\n{\"action\":\"harvest\",\"complete\":true,\"records\":1,\"set\":\"cs:cs:LG\"}\n........\n----------------------------------------------------------------------\nRan 41 tests in 0.022s\n\nOK\n",
+      "passed": 41
+    },
+    "kind": "retained historical pre-change validation; not a fresh pre-change eval run",
+    "live_transport": {
+      "corpus_papers": 0,
+      "peak_rss_kib": 30096,
+      "result": "direct DNS resolution failed before first committed metadata page",
+      "wall_seconds": 93.08
+    },
+    "receipt": {
+      "path": "eval/evidence/provider-lease-unlock.json",
+      "sha256": "181eebe477db295d23152ef57db66daff1fa69bbaafa98fa45e2f7a12bd51aea"
+    },
+    "scale_run": {
+      "commit": "76a91c279274b6679d4bddf76c18fd8407a6c339",
+      "dirty": false,
+      "failures": [],
+      "timestamp": "2026-09-13T05:29:05.043939702Z"
+    },
+    "test_counts": {
+      "node": 84,
+      "python": 50,
+      "rust": 277
+    },
+    "tests_run": {
+      "commit": "76a91c279274b6679d4bddf76c18fd8407a6c339",
+      "dirty": false,
+      "failures": [],
+      "timestamp": "2026-09-13T05:29:05.428076084Z"
+    }
+  },
+  "issue": 85,
+  "measurement_limits": [
+    "The original before eval command was not run on this issue before implementation; retained main-line baseline evidence is labelled historical.",
+    "G5 reports dirty=true after the scale scorecard was generated; implementation was clean and its hashes are retained.",
+    "No corpus-dependent objective is claimed. K0 and complete tier verification remain required."
+  ],
+  "model_cost_usd": 0,
+  "schema_version": 1
+}
