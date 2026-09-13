@@ -462,7 +462,10 @@ fn fold_initial(ch: char) -> char {
 /// evidence. Lossy keys are intentionally not suitable for equality decisions.
 #[must_use]
 pub fn family_keys(family: &str) -> BTreeSet<String> {
-    let normalized: String = normalize_printed(family).to_lowercase();
+    let normalized: String = normalize_printed(family)
+        .nfkc()
+        .flat_map(char::to_lowercase)
+        .collect();
     let transliterated = normalized
         .replace('ä', "ae")
         .replace('ö', "oe")
@@ -471,7 +474,11 @@ pub fn family_keys(family: &str) -> BTreeSet<String> {
         .iter()
         .map(|variant| {
             let mut key = String::new();
-            for ch in variant.nfkd().filter(|ch| !is_combining_mark(*ch)) {
+            for ch in variant
+                .nfkd()
+                .filter(|ch| !is_combining_mark(*ch))
+                .flat_map(char::to_lowercase)
+            {
                 match ch {
                     'ß' => key.push_str("ss"),
                     'ς' => key.push('σ'),
@@ -696,6 +703,25 @@ mod tests {
             let a = parse_name(left).blocking_keys();
             let b = parse_name(right).blocking_keys();
             assert!(!a.is_disjoint(&b), "{left} / {right}: {a:?} / {b:?}");
+        }
+    }
+
+    #[test]
+    fn should_fold_decomposed_case_when_names_use_compatibility_styled_letters() {
+        for (left, right) in [
+            ("𝐌𝐮𝐥𝐥𝐞𝐫, 𝐉𝐨𝐡𝐧", "Muller, John"),
+            ("𝕊𝕞𝕚𝕥𝕙, 𝕁𝕠𝕙𝕟", "Smith, John"),
+            ("𝐌𝐮\u{308}ller, 𝐉ohn", "Mueller, John"),
+            ("ＭＵＬＬＥＲ, ＪＯＨＮ", "Muller, John"),
+        ] {
+            let a = parse_name(left);
+            let b = parse_name(right);
+            assert!(
+                !a.blocking_keys().is_disjoint(&b.blocking_keys()),
+                "{left}: {a:?}"
+            );
+            assert_eq!(a.raw, left);
+            assert_eq!(a.alternatives[0].initials()[0], "j");
         }
     }
 
