@@ -2,7 +2,7 @@
 import unittest
 
 from align import TextAlignment, align_paper, utf16
-from parser import parse_project
+from parser import parse_project, INVENTORY_ONLY_PRIMITIVES
 from test_latex import document
 
 
@@ -17,6 +17,36 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_keep_other_kinds_exhaustive_when_standard_atoms_have_unverified_math_rendering(self):
+        commands=('eta','tau','rho','zeta','nu','Xi','varepsilon','rightarrow','to','gets','Leftrightarrow','mapsto','ell','cdots','mid','langle','Big','textsuperscript')
+        for name in commands:
+            source=document(r'\begin{figure}\caption{A complete independently authored visual caption.}\end{figure}'
+                            + r'\begin{equation}abcdefghij' + chr(92)+name+r'{x}=12345\end{equation}')
+            parsed=parse_project({'main.tex':source})
+            result=align_paper(parsed,{'text':'A complete independently authored visual caption. abcdefghijx=12345'})
+            with self.subTest(name=name):
+                self.assertIn(name,INVENTORY_ONLY_PRIMITIVES)
+                self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+                self.assertTrue(result['metric_eligibility']['O1'])
+                self.assertFalse(result['metric_eligibility']['O3'])
+                self.assertIn(name,parsed['objects'][1]['unsupported_commands'])
+
+    def test_should_keep_font_and_linebreak_inventory_when_the_caption_itself_is_complete(self):
+        source=document(r'{\Large Introductory material.}\newline {\tiny A small note.}'
+                        +r'\begin{figure}\caption{A complete independently authored visual caption.}\end{figure}')
+        parsed=parse_project({'main.tex':source})
+        result=align_paper(parsed,{'text':'Introductory material. A small note. A complete independently authored visual caption.'})
+        self.assertTrue(result['metric_eligibility']['O1'])
+        self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+
+    def test_should_withhold_inventory_when_a_standard_atom_is_redefined_to_hide_structure(self):
+        for definition in (r'\newcommand{\eta}{\begin{theorem}A hidden theorem.\end{theorem}}',
+                           r'\def\eta{\begin{theorem}A hidden theorem.\end{theorem}}',
+                           r'\newcommand{\inner}{\begin{theorem}A hidden theorem.\end{theorem}}\newcommand{\eta}{\inner}'):
+            parsed=parse_project({'main.tex':document(r'\eta\begin{figure}\caption{A complete independent visual caption.}\end{figure}',definition)})
+            self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+            self.assertFalse(align_paper(parsed,{'text':'A hidden theorem. A complete independent visual caption.'})['metric_eligibility']['O1'])
+
     def test_should_distinguish_inventory_support_when_standard_math_is_still_unrenderable(self):
         source = document(r'\begin{figure}\caption{A complete independ\"ent figure caption.}\end{figure}\begin{equation}x\in A+\tilde{x}\end{equation}', r'\setlength{\parindent}{0pt}\setlength{\textwidth}{10cm}')
         parsed = parse_project({'main.tex': source})

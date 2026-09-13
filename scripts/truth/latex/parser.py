@@ -13,6 +13,24 @@ REFS = {"ref", "eqref", "autoref", "cref", "Cref", "vref"}
 # environments. This inventory capability does not imply faithful rendering:
 # commands absent from Renderer still withhold their enclosing object's text.
 INVENTORY_ONLY_PRIMITIVES = {"in", "notin", "ni", "subset", "subseteq", "supset", "supseteq", "sim", "simeq", "approx", "equiv", "cong", "propto", "perp", "parallel", "forall", "exists", "neg", "land", "lor", "cup", "cap", "emptyset", "pm", "mp", "div", "circ", "tilde", "widetilde", "limits", "nolimits", "textwidth", "linewidth", "columnwidth", "hsize", "vsize", "parindent", "parskip", "baselineskip", "abovecaptionskip", "belowcaptionskip", "tabcolsep", "arraycolsep"}
+# Finite standard atoms have no object/entry/link side effect. Their glyph,
+# delimiter size, script placement and font distinctions remain unverified by
+# Renderer. In particular, these are not transparent rendering wrappers.
+INVENTORY_ONLY_PRIMITIVES |= {
+    "zeta", "eta", "iota", "kappa", "nu", "xi", "rho", "tau", "upsilon", "Xi", "Upsilon",
+    "varepsilon", "vartheta", "varpi", "varrho", "varsigma", "varphi",
+    "ell", "hbar", "imath", "jmath", "Re", "Im", "aleph", "wp",
+    "rightarrow", "leftarrow", "to", "gets", "leftrightarrow", "Rightarrow", "Leftarrow", "Leftrightarrow",
+    "longrightarrow", "longleftarrow", "longleftrightarrow", "Longrightarrow", "Longleftarrow", "Longleftrightarrow",
+    "mapsto", "longmapsto", "uparrow", "downarrow", "updownarrow", "Uparrow", "Downarrow", "Updownarrow",
+    "le", "ge", "ne", "ll", "gg", "prec", "succ", "preceq", "succeq", "asymp", "doteq", "vdash", "dashv",
+    "setminus", "uplus", "sqcap", "sqcup", "oplus", "ominus", "otimes", "oslash", "odot", "bullet", "star",
+    "cdots", "vdots", "ddots", "prime", "angle", "triangle", "triangleleft", "triangleright", "top", "bot",
+    "langle", "rangle", "lbrace", "rbrace", "lfloor", "rfloor", "lceil", "rceil", "vert", "Vert", "|", "mid",
+    "big", "Big", "bigg", "Bigg", "bigl", "bigr", "Bigl", "Bigr", "biggl", "biggr", "Biggl", "Biggr",
+    "textsuperscript", "textsubscript",
+    "tiny", "normalsize", "large", "Large", "LARGE", "huge", "Huge", "newline",
+}
 LAYOUT_ENVIRONMENTS = {"document", "abstract", "thebibliography", "itemize", "enumerate", "description", "center", "quote", "quotation", "minipage", "tabular", "tabularx", "tabular*", "array", "split", "aligned", "alignedat", "subequations", "subfigure", "subtable", "algorithmic", "algorithmicx", "algorithmic*", "flushleft", "flushright", "IEEEkeywords", "keywords", "tikzpicture", "picture", "adjustbox", "threeparttable", "tablenotes", "multicols", "spacing", "doublespace", "singlespace", "small", "footnotesize", "landscape"}
 
 
