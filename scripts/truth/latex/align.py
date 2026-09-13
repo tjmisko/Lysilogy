@@ -266,7 +266,7 @@ def align_paper(parsed, index, threshold=0.95):
         unknown_reference_targets |= any(target is None for target in targets)
         relevant_reference_links.extend((number, target) for target in targets if object_kinds.get(target) in ("equation", "statement"))
     reference_pairs = {(row["source_link"], row["target"]) for row in references}
-    object_links_complete = (inventory_known and not unknown_reference_targets and bool(relevant_reference_links)
+    object_links_complete = (inventory_known and not unknown_reference_targets and not parsed["coverage"].get("unsupported_reference_commands") and bool(relevant_reference_links)
                              and all(pair in reference_pairs for pair in relevant_reference_links)
                              and all(kind in eligible_kinds for kind in {object_kinds[target] for _, target in relevant_reference_links}))
     proof_links_complete = ("proof" in eligible_kinds and "statement" in eligible_kinds

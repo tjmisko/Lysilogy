@@ -23,7 +23,7 @@ import corpus
 from align import align_paper, normalized
 from archive import Limits, UnsupportedSource, read_archive, sha256
 from parser import argument_commands, parse_project
-from tex import Renderer, comments, definition_regions, expand_project, main_candidates, mask_regions
+from tex import Renderer, comments, definition_regions, expand_project, local_style_dependencies, main_candidates, mask_regions
 
 VERSION = 'k1-latex-v1'
 POLICY = {'version': VERSION, 'seed': 'k1-latex-strata-v1', 'target_papers': 500, 'alignment_threshold': 0.95,
@@ -175,6 +175,8 @@ def choose_main(files, index, members=None):
     for name in candidates:
         try:
             expanded = expand_project(files, selected_main=name)
+            if local_style_dependencies(files, name, expanded.text):
+                raise UnsupportedSource('local package/class semantics prevent complete root equivalence')
             bib = sorted(sha256(files[path].encode()) for path in expanded.coverage['bibliography_files'])
             resources = []
             inventory = {row['path']: row['sha256'] for row in members or []}

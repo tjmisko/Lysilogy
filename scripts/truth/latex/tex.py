@@ -127,6 +127,25 @@ def main_candidates(files):
                   and re.search(r"\\(?:documentclass|documentstyle)\b|\\begin\s*\{document\}", mask_regions(comments(value), definition_regions(comments(value)))))
 
 
+def local_style_dependencies(files, main, text):
+    """Find used deposited packages/classes without interpreting their code."""
+    output = set()
+    scan = mask_regions(comments(text), definition_regions(comments(text)))
+    for command in COMMAND.finditer(scan):
+        if command[1] not in {"usepackage", "RequirePackage", "documentclass", "documentstyle", "LoadClass"}:
+            continue
+        _, pos = group(scan, command.end(), "[", "]", False)
+        names, _ = group(scan, pos)
+        suffix = ".sty" if command[1] in {"usepackage", "RequirePackage"} else ".cls"
+        for name in names.split(","):
+            name = safe_name(name.strip())
+            if "\\" in name or any(char in name for char in "{}#~"):
+                raise UnsupportedSource("dynamic package/class name is unsupported")
+            name += suffix
+            output.update(path for path in {str(PurePosixPath(main).parent / name), name} if path in files)
+    return sorted(output)
+
+
 def expand_project(files, limits=Limits(), selected_main=None):
     cleaned = {name: comments(value) for name, value in files.items()}
     candidates = main_candidates(files)

@@ -3,7 +3,7 @@ from collections import Counter
 import re
 
 from archive import Limits, UnsupportedSource, sha256
-from tex import COMMAND, Renderer, comments, definition_regions, expand_project, group, mask_regions, skip_space
+from tex import COMMAND, Renderer, comments, definition_regions, expand_project, group, local_style_dependencies, mask_regions, skip_space
 
 STANDARD_STATEMENTS = {name: name for name in ("theorem", "lemma", "corollary", "proposition", "definition", "assumption", "remark", "claim", "conjecture", "example")}
 ENVIRONMENTS = {"figure": "figure", "table": "table", "equation": "equation", "align": "equation", "gather": "equation", "multline": "equation", "eqnarray": "equation", "proof": "proof", "algorithm": "algorithm", "algorithm2e": "algorithm", "listing": "algorithm", "lstlisting": "algorithm"}
@@ -172,6 +172,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
     # TeX conditionals and scoped/repeated definitions affect what exists, not
     # just its presentation. We do not execute them or certify their inventory.
     source_semantics = Counter()
+    for path in local_style_dependencies(files, expanded.main, text):
+        source_semantics["uninterpreted_local_style:" + path] += 1
     for command in COMMAND.finditer(scan):
         name = command[1].rstrip("*")
         if (name.startswith("if") and name != "iff") or name in {"else", "fi", "unless", "newif", "csname", "endcsname", "let", "futurelet"}:
@@ -196,7 +198,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
             if len(seen) > limits.expansion_steps:
                 raise UnsupportedSource("macro dependency closure exceeds its bound")
             commands = {item[1].rstrip("*") for item in COMMAND.finditer(renderer.macros[current][1])}
-            if commands & structural:
+            if commands & structural or any("ref" in command.casefold() or "cite" in command.casefold() for command in commands):
                 macro_structure[name] = True
                 return True
             pending.extend(commands - seen)
@@ -236,6 +238,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
             source_semantics["literal_environment:" + row["value"]] += 1
     for name in reachable & {"verb", "Verb", "lstinline", "mintinline"}:
         source_semantics["literal_command:" + name] += 1
+    unsupported_references = {name: 1 for name in sorted(reachable) if "ref" in name.casefold() and name not in REFS}
     statements = dict(STANDARD_STATEMENTS)
     definitions, ignored = [], Counter()
     for match in COMMAND.finditer(scan):
@@ -408,4 +411,5 @@ def parse_project(files, limits=Limits(), selected_main=None):
                          "unsupported_source_semantics": dict(source_semantics),
                          "objects_by_kind": dict(Counter(row["kind"] for row in objects)),
                          "bibliography_entries": len(entries), "citation_commands": sum(row["kind"] == "citation" for row in links),
-                         "unsupported_citation_commands": dict(unsupported_citations)}}
+                         "unsupported_citation_commands": dict(unsupported_citations),
+                         "unsupported_reference_commands": unsupported_references}}

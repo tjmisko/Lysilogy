@@ -246,6 +246,25 @@ class AlignmentTests(unittest.TestCase):
         self.assertFalse(result['metric_eligibility']['O10'])
         self.assertEqual(len(result['excluded_citations']), 1)
 
+    def test_should_withhold_inventory_when_a_local_style_can_inject_hidden_objects(self):
+        source = document(r'\begin{theorem}A visible distinctive theorem.\end{theorem}', r'\usepackage{local}')
+        files = {'main.tex': source, 'local.sty': r'\AtBeginDocument{\begin{theorem}An injected hidden theorem.\end{theorem}}'}
+        result = align_paper(parse_project(files), {'text': 'An injected hidden theorem. A visible distinctive theorem.'})
+        self.assertFalse(result['accepted'])
+        self.assertFalse(any(result['metric_eligibility'].values()))
+        self.assertIn('uninterpreted_local_style:local.sty', result['coverage']['unsupported_source_semantics'])
+
+    def test_should_withhold_object_links_when_unsupported_reference_variants_add_occurrences(self):
+        source = document(r'\begin{theorem}\label{a}A first distinctive theorem.\end{theorem}\begin{theorem}\label{b}A second distinctive theorem.\end{theorem} '
+                          r'The independently named statement is \ref{a} with a uniquely matching context.' + '\n\n' + r'Also \crefrange{a}{b}.')
+        parsed = parse_project({'main.tex': source})
+        text = 'A first distinctive theorem. A second distinctive theorem. The independently named statement is 1 with a uniquely matching context. Also Theorems1–2.'
+        result = align_paper(parsed, {'text': text})
+        self.assertTrue(result['metric_eligibility']['O5'])
+        self.assertEqual(len(result['references']), 1)
+        self.assertFalse(result['metric_eligibility']['O4'])
+        self.assertIn('crefrange', result['coverage']['unsupported_reference_commands'])
+
 
 if __name__ == "__main__":
     unittest.main()

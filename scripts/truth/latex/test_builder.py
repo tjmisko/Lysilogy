@@ -45,6 +45,14 @@ class BuilderTests(unittest.TestCase):
         self.assertEqual(selected, 'a/main.tex')
         self.assertEqual(evidence['equivalent_roots'], sorted(files))
 
+    def test_should_reject_root_equivalence_when_local_styles_have_uninterpreted_semantics(self):
+        source = document('Visible content.', r'\usepackage{local}')
+        files = {'a/main.tex': source, 'b/main.tex': source,
+                 'a/local.sty': r'\AtBeginDocument{Additional first text.}',
+                 'b/local.sty': r'\AtBeginDocument{Different second text.}'}
+        with self.assertRaisesRegex(UnsupportedSource, 'non-equivalent'):
+            choose_main(files, {'text': '', 'pages': []})
+
     def test_should_hash_binary_members_when_source_equivalence_needs_resource_provenance(self):
         raw = tar([('main.tex', document('A body.').encode(), tarfile.REGTYPE), ('image.pdf', b'\0binary', tarfile.REGTYPE)])
         files, members = read_archive(raw)
