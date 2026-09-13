@@ -105,6 +105,27 @@ only equation/statement references contribute to O4. All proofs retain explicit 
 source association provenance. The overlay grants only its completely reviewed kinds, does not
 change the automatic candidate, and cannot itself satisfy stratified K1 publication.
 
+Mixed visual/math papers may supply both region and object bundles. Each bundle
+is validated independently against the same original candidate bytes before its
+named overlay is composed; duplicate IDs, changed original fields and conflicting
+absent-kind claims are rejected. Missing manual kinds remain explicitly listed.
+The existing complete-kind requirements are unchanged: composition does not
+make partial annotations eligible. References to figures/tables retain their
+exact source/native memberships and target roles separately from O4; they may
+not be relabeled as section references or silently omitted.
+
+Blind annotators may read `k1-native-allowlist-v1` exports containing only native
+text, pages and word rectangles, with exact UTF-16 page text. Assembly rehashes
+the actual export path under the dedicated cache and recomputes its complete
+fixed allowlist from the frozen original index and mapped PaperId. Its receipt
+binds the export format, original index hash and actual export hash. Embedded
+historical detector figures/objects are never part of that export. Legacy raw
+index evidence remains supported for the original reviewed bundles. Initial
+blind inventories and later source-inventory reconciliation must keep their
+separate input/receipt histories; a projected native export alone does not
+satisfy source-inventory, full-region or mathematical visual-review requirements.
+The pinned `k1-limited-v1` implementation and published bytes remain unchanged.
+
 Manual bibliography evidence uses a separately accepted complete comparison. Every independently
 parsed entry and citation command must survive, with one target pair per printed destination.
 Both annotations and comparison agree on complete UTF-16 members, printed numbering, all known

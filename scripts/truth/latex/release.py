@@ -73,6 +73,8 @@ def build_release(assemblies, config, inputs, history):
             row['objects'].extend(compact_object(item) for item in overlay['objects'])
             row['references'] = overlay['references']; row['associated_content'] = overlay['associated_content']
             row['non_object_references'] = overlay['non_object_references']
+            if overlay.get('other_object_references'):
+                row['other_object_references'] = overlay['other_object_references']
             row['metric_eligibility'].update(overlay['metric_eligibility'])
             row['reviewed_absent_kinds'] = overlay['reviewed_absent_kinds']
             if set(row['reviewed_absent_kinds']) == {'figure','table'}:

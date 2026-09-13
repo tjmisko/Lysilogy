@@ -5,12 +5,13 @@ This never publishes final K1 or measures a production ranking. All path options
 other than corpus/data roots are relative to ~/.cache/lysilogy.
 """
 import argparse
+from copy import deepcopy
 from datetime import datetime, timezone
 import json
 from pathlib import Path
 import time
 
-from annotations import document
+from annotations import document, require
 from archive import sha256
 from builder import atomic_json, attach_manual_regions, canonical, fingerprint_file, fingerprint_sources, safe_file
 from panel import bind_panel
@@ -37,6 +38,54 @@ def verify_panel_images(cache, packet_raw):
     return verified
 
 
+def verify_annotator_native_input(cache, data_root, mapped, inputs):
+    """Verify what was actually shown, while retaining the legacy raw-index path."""
+    index_path = safe_file(data_root, mapped['index']['path'])
+    index_raw = bounded(data_root, mapped['index']['path'])
+    require(sha256(index_raw) == mapped['index']['sha256']
+            and inputs['reading_index']['sha256'] == mapped['index']['sha256'],
+            'annotator native index differs from the frozen mapping')
+    declaration = inputs.get('native_export')
+    if declaration is None:
+        require(inputs['reading_index']['path'] == str(index_path),
+                'annotator index path differs from the verified input')
+        return None
+    require('path' not in inputs['reading_index'] or inputs['reading_index']['path'] == str(index_path),
+            'blind export origin path contradicts the frozen native mapping')
+    from native_exports import verify_native_export
+    declared = declaration.get('path')
+    require(isinstance(declared, str) and Path(declared).is_absolute(),
+            'blind native export path must be absolute within the dedicated cache')
+    relative = str(Path(declared).relative_to(cache))
+    result = verify_native_export(index_raw, bounded(cache, relative), mapped['paper_id'], declaration)
+    result['path'] = declared
+    return result
+
+
+def compose_overlays(candidate_raw, overlays):
+    """Combine separately validated deltas against one unchanged candidate."""
+    candidate = document(candidate_raw)
+    output = deepcopy(candidate)
+    require(overlays, 'no independently validated manual overlay supplied')
+    allowed = {'manual_figure_table_overlay', 'manual_object_overlay', 'manual_bibliography_overlay'}
+    for result in overlays:
+        extra = set(result) - set(candidate)
+        require(len(extra) == 1 and extra <= allowed and set(candidate) <= set(result)
+                and {key: result.get(key) for key in candidate} == candidate,
+                'manual overlay changed the original candidate or unexpected fields')
+        name = next(iter(extra))
+        require(name not in output, 'manual overlay was supplied twice')
+        output[name] = result[name]
+    visual = output.get('manual_figure_table_overlay', {})
+    objects = output.get('manual_object_overlay', {})
+    all_objects = visual.get('objects', []) + objects.get('objects', [])
+    require(len({row['id'] for row in all_objects}) == len(all_objects), 'manual overlay object identities collide')
+    require(not set(objects.get('reviewed_absent_kinds', []))
+            & {row['kind'] for row in visual.get('objects', [])},
+            'manual visual objects contradict reviewed absent kinds')
+    return output
+
+
 def attach_objects(cache, corpus_root, data_root, candidate_raw, paper, mapped, bundle_relative):
     from object_annotations import apply_object_overlay
     candidate = document(candidate_raw)
@@ -60,8 +109,8 @@ def attach_objects(cache, corpus_root, data_root, candidate_raw, paper, mapped, 
     for kind in ('pdf', 'source'):
         if inputs[kind]['path'] != str(artifact_paths[kind]) or packet[kind] != paper[kind]:
             raise ValueError('annotated artifact path differs from the frozen corpus receipt')
-    index_path = safe_file(data_root, mapped['index']['path'])
-    if inputs['reading_index']['path'] != str(index_path) or inputs['packet']['path'] != str(bundle_root / 'packet.json'):
+    native_input = verify_annotator_native_input(cache, data_root, mapped, inputs)
+    if inputs['packet']['path'] != str(bundle_root / 'packet.json'):
         raise ValueError('annotator packet/index path differs from the verified input')
     serializer = receipt['serializer']
     serializer_relative = str(Path(serializer['path']).relative_to(cache))
@@ -87,7 +136,10 @@ def attach_objects(cache, corpus_root, data_root, candidate_raw, paper, mapped, 
         verified[declared] = actual
     if artifact_paths['source'].stat().st_size > 64 * 1024 * 1024:
         raise ValueError('manual source archive exceeds its compressed byte bound')
-    return apply_object_overlay(candidate_raw, bounded(data_root, mapped['index']['path']), artifact_paths['source'].read_bytes(), *raws, verified)
+    output = apply_object_overlay(candidate_raw, bounded(data_root, mapped['index']['path']), artifact_paths['source'].read_bytes(), *raws, verified)
+    if native_input:
+        output['manual_object_overlay']['verified_native_export'] = native_input
+    return output
 
 
 def attach_bibliography(cache, corpus_root, data_root, candidate_raw, paper, mapped, bundle_relative):
@@ -105,8 +157,8 @@ def attach_bibliography(cache, corpus_root, data_root, candidate_raw, paper, map
         actual, count = fingerprint_file(path)
         if actual != expected['sha256'] or count != expected['bytes'] or actual != candidate[kind + '_sha256'] or inputs[kind]['path'] != str(path) or packet[kind] != expected:
             raise ValueError('bibliography artifact differs from actual frozen source/PDF')
-    index_path = safe_file(data_root, mapped['index']['path'])
-    if inputs['reading_index']['path'] != str(index_path) or inputs['packet']['path'] != str(bundle_root / 'bibliography-packet.json') or receipt['annotation']['path'] != str(bundle_root / 'bibliography-independent-v1.json'):
+    native_input = verify_annotator_native_input(cache, data_root, mapped, inputs)
+    if inputs['packet']['path'] != str(bundle_root / 'bibliography-packet.json') or receipt['annotation']['path'] != str(bundle_root / 'bibliography-independent-v1.json'):
         raise ValueError('bibliography evidence paths differ from verified inputs')
     for declared in [receipt['serializer'], review['review_script'], inputs['bounded_archive_module']]:
         relative = str(Path(declared['path']).relative_to(cache))
@@ -132,7 +184,10 @@ def attach_bibliography(cache, corpus_root, data_root, candidate_raw, paper, map
     source_path = safe_file(corpus_root, paper['source']['path'])
     if source_path.stat().st_size > 64 * 1024 * 1024:
         raise ValueError('bibliography source exceeds compressed byte bound')
-    return apply_bibliography_overlay(candidate_raw, bounded(data_root, mapped['index']['path']), source_path.read_bytes(), *raws, verified)
+    output = apply_bibliography_overlay(candidate_raw, bounded(data_root, mapped['index']['path']), source_path.read_bytes(), *raws, verified)
+    if native_input:
+        output['manual_bibliography_overlay']['verified_native_export'] = native_input
+    return output
 
 
 def assemble(cache, corpus_root, data_root, candidate_relative, region_relative, panel_relative=None,
@@ -145,15 +200,19 @@ def assemble(cache, corpus_root, data_root, candidate_relative, region_relative,
     mappings = [paper for paper in indexes['papers'] if paper['paper_id'] == candidate['paper_id']]
     if len(papers) != 1 or len(mappings) != 1:
         raise ValueError('manual candidate lacks unique frozen paper and mapped identities')
-    if bool(region_relative) == bool(object_relative):
-        raise ValueError('exactly one manual region/object bundle is required')
+    if not region_relative and not object_relative:
+        raise ValueError('at least one manual region/object bundle is required')
+    if panel_relative and not region_relative:
+        raise ValueError('figure-ranking panel requires a figure/table region bundle')
+    overlays = []
     if object_relative:
-        if panel_relative:
-            raise ValueError('figure-ranking panel requires a figure/table region bundle')
-        output = attach_objects(cache, corpus_root, data_root, candidate_raw, papers[0], mappings[0], object_relative)
-    else:
+        overlays.append(attach_objects(cache, corpus_root, data_root, candidate_raw, papers[0], mappings[0], object_relative))
+    if region_relative:
         region_root = safe_file(cache, region_relative + '/regions-root-v1.json').parent
-        output = attach_manual_regions(candidate_raw, papers[0], mappings[0], corpus_root, data_root, region_root)
+        overlays.append(attach_manual_regions(candidate_raw, papers[0], mappings[0], corpus_root, data_root, region_root))
+    if bibliography_relative:
+        overlays.append(attach_bibliography(cache, corpus_root, data_root, candidate_raw, papers[0], mappings[0], bibliography_relative))
+    output = compose_overlays(candidate_raw, overlays)
     if panel_relative:
         read_panel = lambda name: bounded(cache, panel_relative + '/' + name)
         packet_raw = read_panel('packet.json')
@@ -162,21 +221,26 @@ def assemble(cache, corpus_root, data_root, candidate_relative, region_relative,
                             [read_panel(f'vote-evaluator-{number}.json') for number in range(1, 4)],
                             read_panel('panel-root-review-v1.json'), read_panel('scoring-policy-v1.json'),
                             bounded(data_root, candidate['index']['path']), bounded(region_root, 'regions-root-v1.json'), verified_images)
-    if bibliography_relative:
-        bibliography = attach_bibliography(cache, corpus_root, data_root, candidate_raw, papers[0], mappings[0], bibliography_relative)
-        output['manual_bibliography_overlay'] = bibliography['manual_bibliography_overlay']
     output['manual_assembly'] = {'inputs_sha256': sha256(inputs_raw), 'index_map_sha256': sha256(indexes_raw),
                                  'candidate_sha256': sha256(candidate_raw), 'final_k1_publication': False,
                                  'source_inventory_policy': 'exact historical candidate retained; no automatic-confidence change'}
+    reviewed_kinds = set()
+    if 'manual_figure_table_overlay' in output:
+        reviewed_kinds.update(('figure', 'table'))
+    if 'manual_object_overlay' in output:
+        reviewed_kinds.update(('equation', 'statement', 'proof', 'algorithm'))
+        reviewed_kinds.update(output['manual_object_overlay']['reviewed_absent_kinds'])
+    if 'manual_bibliography_overlay' in output:
+        reviewed_kinds.add('bib_entry')
+    output['manual_assembly']['omitted_manual_kinds'] = sorted({'figure', 'table', 'equation', 'statement', 'proof', 'algorithm', 'bib_entry'} - reviewed_kinds)
     return output
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--candidate', required=True)
-    bundles = parser.add_mutually_exclusive_group(required=True)
-    bundles.add_argument('--region-bundle')
-    bundles.add_argument('--object-bundle')
+    parser.add_argument('--region-bundle')
+    parser.add_argument('--object-bundle')
     parser.add_argument('--panel-bundle')
     parser.add_argument('--bibliography-bundle')
     parser.add_argument('--inputs', default='k1-full-eval-inputs.json')
