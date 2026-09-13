@@ -1,4 +1,6 @@
 //! Bounded, provenance-preserving citation discovery. Edges are not evidence of influence.
+pub mod budget;
+pub mod cache;
 mod crossref;
 mod http;
 mod openalex;
@@ -33,6 +35,24 @@ pub enum Provider {
 }
 
 impl Provider {
+    #[must_use]
+    pub const fn index(self) -> usize {
+        match self {
+            Self::Openalex => 0,
+            Self::SemanticScholar => 1,
+            Self::Opencitations => 2,
+            Self::Crossref => 3,
+        }
+    }
+    #[must_use]
+    pub const fn slug(self) -> &'static str {
+        match self {
+            Self::Openalex => "openalex",
+            Self::SemanticScholar => "semantic_scholar",
+            Self::Opencitations => "opencitations",
+            Self::Crossref => "crossref",
+        }
+    }
     pub const ALL: [Self; 4] = [
         Self::Openalex,
         Self::SemanticScholar,
