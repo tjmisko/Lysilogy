@@ -115,7 +115,14 @@ An objective may be explicitly reset using `--justification eval/justifications/
 ```
 
 The reason and hashed report are retained in `eval/baselines.json` adjustment history, along
-with previous and new values. Target changes require evidence in the design plan and a code
+with previous and new values. Every first-parent Git commit touching the baseline file is
+audited, including deletions: committing a weaker number cannot bypass the ratchet. Each
+weakening must append a new adjustment matching the previous value, and its report must already
+exist with the recorded hash at that commit. Later report edits neither invalidate a justified
+historical change nor repair a previously unjustified one. Existing adjustment history cannot be
+removed or modified. Commit an improved baseline before resetting from that improved value;
+several directly chained justified resets may share a commit. Shallow repositories must fetch
+their history before evaluation can verify this invariant. Target changes require evidence in the design plan and a code
 review of `registry.rs`; justification only changes the objective baseline.
 
 ## G5 isolation

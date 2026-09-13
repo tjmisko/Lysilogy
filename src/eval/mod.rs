@@ -124,7 +124,7 @@ impl Default for Baselines {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Adjustment {
     pub metric: String,
@@ -132,7 +132,7 @@ pub struct Adjustment {
     pub value: f64,
     pub justification: Justification,
 }
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Justification {
     pub reason: String,
@@ -423,20 +423,127 @@ fn validate_baselines(baselines: &Baselines) -> Result<()> {
 }
 
 fn verify_committed_baselines(root: &Path, current: &Baselines) -> Result<()> {
+    if git(root, &["rev-parse", "--is-shallow-repository"])? == "true" {
+        return Err(Error::InvalidRequest(
+            "baseline validation requires complete first-parent Git history".into(),
+        ));
+    }
+    // Audit only commits that change the baseline on the integration history. A
+    // committed weakening cannot become trusted merely by becoming HEAD.
+    let history = git(
+        root,
+        &[
+            "log",
+            "--first-parent",
+            "--full-history",
+            "--reverse",
+            "--format=%H",
+            "HEAD",
+            "--",
+            "eval/baselines.json",
+        ],
+    )?;
+    let mut previous = Baselines::default();
+    for commit in history.lines() {
+        let baseline = historical_file(root, commit, "eval/baselines.json")?
+            .map(|bytes| serde_json::from_slice::<Baselines>(&bytes))
+            .transpose()?
+            .unwrap_or_default();
+        validate_baselines(&baseline)?;
+        verify_baseline_transition(&previous, &baseline, |evidence| {
+            verify_historical_evidence(root, commit, evidence)
+        })
+        .map_err(|error| Error::InvalidRequest(format!("baseline history at {commit}: {error}")))?;
+        previous = baseline;
+    }
+    verify_baseline_changes(root, &previous, current)
+}
+
+fn historical_file(root: &Path, commit: &str, path: &str) -> Result<Option<Vec<u8>>> {
+    measurement::validate_relative_path(path)?;
+    let entry = git(
+        root,
+        &[
+            "--literal-pathspecs",
+            "ls-tree",
+            "--format=%(objectmode) %(objectname)",
+            commit,
+            "--",
+            path,
+        ],
+    )?;
+    if entry.is_empty() {
+        return Ok(None);
+    }
+    let Some((mode, object)) = entry.split_once(' ') else {
+        return Err(Error::InvalidRequest(format!(
+            "invalid historical evidence entry: {path}"
+        )));
+    };
+    if !matches!(mode, "100644" | "100755") {
+        return Err(Error::InvalidRequest(format!(
+            "historical evidence is not a regular file: {path}"
+        )));
+    }
     let output = Command::new("git")
-        .args(["show", "HEAD:eval/baselines.json"])
+        .args(["cat-file", "blob", object])
         .current_dir(root)
         .output()
         .map_err(|error| Error::io(root, error))?;
     if !output.status.success() {
-        // First introduction of the harness or an isolated fixture repository.
-        return Ok(());
+        return Err(Error::InvalidRequest(format!(
+            "cannot read historical evidence: {path}"
+        )));
     }
-    let committed: Baselines = serde_json::from_slice(&output.stdout)?;
-    verify_baseline_changes(root, &committed, current)
+    Ok(Some(output.stdout))
+}
+
+fn verify_historical_evidence(root: &Path, commit: &str, evidence: &EvidenceFile) -> Result<bool> {
+    use sha2::{Digest, Sha256};
+    if evidence.version.trim().is_empty() {
+        return Ok(false);
+    }
+    Ok(historical_file(root, commit, &evidence.path)?
+        .is_some_and(|bytes| format!("{:x}", Sha256::digest(bytes)) == evidence.sha256))
 }
 
 fn verify_baseline_changes(root: &Path, previous: &Baselines, current: &Baselines) -> Result<()> {
+    verify_baseline_transition(previous, current, |evidence| {
+        measurement::verify(root, evidence)
+    })
+}
+
+fn verify_baseline_transition(
+    previous: &Baselines,
+    current: &Baselines,
+    mut verify_evidence: impl FnMut(&EvidenceFile) -> Result<bool>,
+) -> Result<()> {
+    if !current.adjustments.starts_with(&previous.adjustments) {
+        return Err(Error::InvalidRequest(
+            "baseline adjustment history was removed or modified".into(),
+        ));
+    }
+    let additions = &current.adjustments[previous.adjustments.len()..];
+    for change in additions {
+        let definition = definitions()
+            .into_iter()
+            .find(|d| d.id == change.metric)
+            .ok_or_else(|| {
+                Error::InvalidRequest(format!("unknown baseline adjustment {}", change.metric))
+            })?;
+        if definition.kind != Kind::Objective
+            || !definition.valid_value(change.previous)
+            || !definition.valid_value(change.value)
+            || !definition.improves(change.previous, change.value)
+            || change.justification.reason.trim().len() < 20
+            || !verify_evidence(&change.justification.evidence)?
+        {
+            return Err(Error::InvalidRequest(format!(
+                "invalid recorded justification for {}",
+                change.metric
+            )));
+        }
+    }
     for (id, old) in &previous.metrics {
         let definition = definitions()
             .into_iter()
@@ -447,19 +554,19 @@ fn verify_baseline_changes(root: &Path, previous: &Baselines, current: &Baseline
                 "committed baseline {id} was removed"
             )));
         };
-        if value.to_bits() == old.to_bits() || definition.improves(*value, *old) {
-            continue;
+        let mut justified = *old;
+        // Several resets may occur before one commit. Each must start at the
+        // preceding recorded value; an improvement must be committed before a
+        // reset from that improved baseline. Old adjustments cannot be reused.
+        for change in additions.iter().filter(|change| change.metric == *id) {
+            if change.previous.to_bits() != justified.to_bits() {
+                return Err(Error::InvalidRequest(format!(
+                    "baseline adjustment for {id} does not match its previous value"
+                )));
+            }
+            justified = change.value;
         }
-        let adjustment = current
-            .adjustments
-            .iter()
-            .rev()
-            .find(|change| change.metric == *id && change.value.to_bits() == value.to_bits());
-        if definition.kind == Kind::Gate
-            || !matches!(adjustment, Some(change)
-            if change.justification.reason.trim().len() >= 20
-                && measurement::verify(root, &change.justification.evidence)?)
-        {
+        if value.to_bits() != justified.to_bits() && !definition.improves(*value, justified) {
             return Err(Error::InvalidRequest(format!(
                 "committed baseline {id} weakened without a recorded justification"
             )));

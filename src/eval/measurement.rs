@@ -8,7 +8,7 @@ use std::{
     path::{Component, Path},
 };
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct EvidenceFile {
     pub path: String,
@@ -127,11 +127,17 @@ pub struct Input {
     pub wall_seconds: f64,
 }
 
-pub fn safe_file(root: &Path, relative: &str) -> Result<std::path::PathBuf> {
+pub(crate) fn validate_relative_path(relative: &str) -> Result<()> {
     let path = Path::new(relative);
     if !path.components().all(|part| matches!(part, Component::Normal(name) if name != ".secrets" && name != ".env" && !name.to_string_lossy().starts_with(".env."))) {
         return Err(Error::InvalidRequest(format!("evidence path must be a safe repository-relative file: {relative}")));
     }
+    Ok(())
+}
+
+pub fn safe_file(root: &Path, relative: &str) -> Result<std::path::PathBuf> {
+    validate_relative_path(relative)?;
+    let path = Path::new(relative);
     let canonical = root
         .join(path)
         .canonicalize()
