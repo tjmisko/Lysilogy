@@ -26,7 +26,7 @@ CURRENT_VERSION = 'k1-limited-v2'
 CURRENT_MODULES = MODULES | {'native_exports.py', 'tranche.py'}
 # Filled only after the separately reviewed immutable release is constructed.
 # An unpublished version cannot be selected successfully.
-CURRENT_MANIFEST_SHA256 = None
+CURRENT_MANIFEST_SHA256 = 'fdd6d2c5e9ec5f03f6461b15fe01c92ab93151a68ed695a661183616379446ae'
 MAX_DOCUMENT = 1024 * 1024
 
 
