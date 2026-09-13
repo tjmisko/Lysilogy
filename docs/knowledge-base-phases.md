@@ -2570,3 +2570,99 @@ date, last merged issue, in-flight branches and their state, next action, and op
   O2. Main misses remain #101 (O1/O2), #21/#22 (historical O25/O26), #103 (title component).
   Follow-ups opened this continuation: **#97, #98, #101, #103**. All later phases and final
   running-app Playwright/10k acceptance remain outstanding; no phase/system report complete.
+
+### 2026-09-13 — full source comparison audited; graphics compiling
+
+- **Phase A / Wave A2**, last merged issue **#96 / PR102** (`d074dae`), main before this
+  docs checkpoint `7ec28d6`. No new issue merge or phase exit. Earlier continuation merges:
+  #35, #36, #91, #88, #70, #98, #96. Main remains docs-only; protect the ten preview files
+  recorded in `/tmp/lysilogy-preview-before.json`. No rebase approval exists; ordinary main
+  integration remains the documented alternative.
+- **#97 full comparison completed, exec13944 exit0**, source
+  `4ada537dd7aaaab8e3fa0f00b60a5369d4d2bfd3`, immutable directory
+  `~/.cache/lysilogy/k1-full-alignment-4ada537/`. Same frozen1000 inputs/original999-success
+  map, 30 s/paper and 1.5 GiB limits. **617 parsed, 383 failed, one raw automatic admission,
+  zero defensible new truth papers**. The sole admission `2007.05954` has manually formatted
+  References and author/year citations despite an empty parsed bibliography. Its procedural
+  list also invalidates an unreviewed algorithm-negative claim: nine literal item commands,
+  eight active after removing a commented item. No truth publication occurred.
+- Completed comparison wall **997.138481 s**, peak **499,824 KiB**, zero network/models/$0.
+  Receipt SHA `2827baf051989435f77dd765ef543aa0ec403eb971bdacf70142eb72339b9c36`, report
+  `211525f280560b1abfdece63c0878870ce92a80f6cf889f49ebc8849cc10cec8`, paper ledger
+  `3c99db2152488b07d4378eac0a40e73d89da861d46f951d1563015e4f6d51a0c`. Owner audit
+  `owner-audit.json` SHA `37b15a3b4aab6f476d0112af67eec334b273423beec2d57c83e62bedac54e548`;
+  independent root audit `root-review.json` SHA
+  `53e41b07626f0f57916a433d62db0a270262c117455f56e0873c14e0b03e3ae4`. Root rehashed all617
+  candidate payloads (**119,831,173 bytes**), original inventory hashes, source/PDF/index/
+  PaperId bindings, exact1000 order/42strata, seven parsing-status changes against the old
+  run, actual contradictory source excerpts, and the unchanged two-paper truth release.
+  `root-audit.py` is retained alongside the receipt. Earlier runs and unlaunched9680f86 stay
+  untouched. The required approximately500-paper stratified target remains unmet.
+- #97 owner **`finish_corpus_proxy`**, worktree `feat/e8.3-k1-coverage`, no PR. Post-run math
+  guards at8fb41d0 initially missed clipped reference/citation contexts inside array-like
+  layouts. Separate reviewer reproduced that false admission; corrected source
+  **`d36801faed4fd6837cd79274c4359bb75b7c2eae`** passes182 tests and8 independent probes,
+  preserving original included-file spans. Receipt
+  `review-math-layout-independent-d36801f/review.json`, SHA
+  `4234a2977d9ca9ffd2c0bd901457991f2713e174e50f9139bc0d06b787793277`. Owner now adds
+  conservative source-role guards for unparsed references/procedures, then finite source
+  capabilities selected from actual exclusions. Review before another versioned full run;
+  never relabel the completed failed attempt or weaken truth/score targets.
+- **#101 owns the short heavy compile window**, owner **`review_ready_prs`**, worktree
+  `fix/e1.1-figure-detection`, no PR. Committed graphics integration567e488/958f839 adds
+  bounded installed-mutool image placements, exact caption-page coverage, shared async
+  production cache/API/metric factory and independent trace generation. Eight compiled
+  graphics tests passed (12.82 s, peak1,236,112 KiB); detector tests found three association
+  gaps in remote numeric table columns, connected labels and image tiles. Correction
+  **`eff226e`** is committed; focused tests/Clippy are being rerun. No new real measurement
+  exists yet. Reviewer **`finish_benchmark`** independently checks combined source/provenance
+  and unchanged fixture expectations without launching another build.
+- Compact native commitment7fa66d7 independently passed9 protocol vectors,15 type probes,
+  eight invalid-number cases, depth64/65 and three actual native indexes; root separately
+  tested25 real indexes/67,542,405 bytes. Review
+  `review-native-commitment-independent-7fa66d7/review.json`, SHA
+  `b924e936e2e1e86d98b9af9e24670c6bab98823fe9505304121cb9ed98132977`.
+  No actual500-paper transport/performance result yet. Independent graphics packet remains
+  `review-graphics-fixtures/packet.json`, SHA
+  `a44584fe4e7c94ef3363876c8827e70c4a173d45b391483559f66f2bcb03c55a`.
+- #101's previous exploratory6180f0a measurement remains **O1=1.0, O2 median=0.0**, eight
+  missing raster figure regions; it is an unaccepted regression. Preserve all original and
+  exploratory predictions under `object-metrics/` and `figure-detection-development/`.
+  Next: finish focused compile, independent combined review, unchanged-K1 remeasurement,
+  then complete gates and draft PR. Do not mistake targeted tests for full G5 clearance.
+- **No corpus downloader/native batch runs now.** Completed batches1–6 plus separate#98
+  retry give **2,500 unique indexes: all1000eval and1549scale**,49overlap. Batch6 root receipt
+  `native-index-after-batch6-review.json` SHA
+  `923c3972553524d83d5b7947fd837f06cf800e49a6a2cc611890d3faba37f156`.
+  Next batch **7**, after#101 releases its short window:
+  `python3 -B -u ~/.cache/lysilogy/run-scale-index-batch.py --batch 7 --limit 250`, followed
+  by `python3 -B ~/.cache/lysilogy/audit-native-index-batch.py --batch 7`. Do not overwrite
+  existing receipts or repeat a batch. Runner SHA
+  `9d8ae083a30808110d09cb94aadad1aeb7bdcc2c76203a8a6c7e07ca0347325b`; audit helper SHA
+  `c37667c8ef614c3df03996939a980c7a43e964925893b1f02fe3bdd48a7228e8`. Portable native
+  helper remains `k1-native-page-isolation-0843453/k1_index`, SHA
+  `3f25b41305452eac7bdfde2b02f77f2dc664b89aa3f5530e26125ed3cda2e4f7`.
+- Corpus complete **10,951 PDFs/1000 sources**, exact eval1000/scale10000, at
+  `~/Corpora/arxiv`; canonical data root `~/.cache/lysilogy/arxiv-kb-data`. Never copy/reset
+  corpus or identities. Registry10951rows SHA
+  `934d7fa7860d8a84639f52fbb7d77c0a721f3b7e4bc8f836b70b8063c4fa835d`. Latest disk free
+  81.56 GiB, available RAM about2.9 GiB; preserve20 GiB floor and one heavy window. Native
+  preparation is not actual production10k acceptance.
+- **#25 / draft PR94** remains clean/pushed/independently reviewed **`df54260`**, source
+  e3539d2, worktree `feat/e1.2-bibliography`. G5 **356Rust/292Python/92Node** and all gates
+  pass; O8/O10=1.0 on35entries/50pairs; title30/35,author/year35/35. **Do not merge without
+  genuine K2/full O9**. #103 retains five title misses. Final review
+  `review-bibliography-df54260/final-review.json` SHA
+  `db4fea17bc31875a00b3429ce725d09270e7e686ea972c60ab6b73fd6203416b`.
+- Paused **#33 `905c341`**, `feat/e2.1-kb-store`, no PR, Rust uncompiled/missing registry
+  dependencies; **#71/PR93 `d5e12aa`**, reference truth; **#72/PR95 `c867ec6`**, person labels
+  stacked on93. Combined40-DOI plan under `reference-truth-plans/` remains unexecuted;
+  actual K2/K4/K5/K7 unavailable. No answer to pending **index.crates.io, static.crates.io,
+  api.crossref.org, api.openalex.org** grants. Original corpus grants work. Do not apply the
+  prepared four-host script or bypass the earlier automatic-review rejection without
+  explicit approval. No rebase, sudo, rm-rf, persistent systemctl or private/env/secrets access.
+- Main scorecard **1/5 gates(G5),1/30 objectives(O30)**; draft#25 reaches O8/O10; exploratory
+  #101 O1 target/O2 regression remains unaccepted. Misses retained under#101(O1/O2),
+  #21/#22(historical O25/O26),#103(title). Follow-ups opened this continuation:
+  **#97,#98,#101,#103**. Continue A2; all later phases, final running-app Playwright,
+  all-gate/80%-objective check, actual10k scenario and final system report remain outstanding.
