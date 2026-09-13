@@ -40,12 +40,13 @@ The source reading-index endpoint retains those historical embedded records unch
 
 Native generation remains the original full index SHA256/ETag. Native-only detector generation
 is SHA256 of UTF-8 `figures:<version>:<native-etag>`. The source-backed generation hashes UTF-8
-`figures:<version>:<native-etag>:graphics:<graphics-generation>`. Graphics version2 binds the
+`figures:<version>:<native-etag>:graphics:<graphics-generation>`. Graphics version3 binds the
 native ETag, exact PDF SHA256, canonical tool path/SHA256, page statuses, raw trace hashes,
 accepted image placements and excluded-image counts. Its generation hashes the exact Rust JSON
 serialization with the `generation` field empty; the collector retains those exact bytes and
 checks their structural equality to the artifact. A separate cache key hashes JSON
-`[2,native-etag,pdf-sha256,tool-sha256]`. Existing native-only objects, changed source/tool bytes,
+`[3,native-etag,pdf-sha256,tool-sha256,mask-runtime]`, where the last item is
+`[wrapper-path,wrapper-sha256,script-sha256]` or null. Existing native-only objects, changed source/tool bytes,
 old detector versions and invalid graphics generations are rebuilt in the product cache.
 Transient tool/resource failures remain explicit and are retried; unavailable tools retain
 native-only geometry, with a new generation when the tool becomes available.
@@ -71,6 +72,41 @@ unit rectangle, clip stack and transparency-group semantics used by this bounded
 DTD declarations, malformed
 framing, duplicate attributes, oversized tags/depth/inventories are rejected. Independently
 specified synthetic traces cover these boundaries without consulting truth regions/predictions.
+
+Mask support in graphics version3 is a separate bounded opacity observation. The original
+XML remains the framing, group, clip and image-order authority. Only pages with excluded
+image-mask operations invoke the fixed `graphics/masks.js` Device adapter. Its source hash,
+canonical `prlimit` wrapper path/hash, and MuPDF hash enter the cache identity; source/tool/
+wrapper hashes are rechecked after derivation. The optional Linux wrapper restricts the child
+to768MiB address space,8 CPU seconds, no core file and16MiB regular-file output. Pipe output
+is separately bounded, cancellation kills the child, and each mask command has a10s wall
+limit shortened to the remaining30s paper budget. Missing wrapper/tool support remains explicit.
+No arbitrary PDF-supplied JavaScript executes. The trusted script arrives through stdin.
+
+The adapter decodes at most4million pixels per image and6million opacity samples per page,
+including attached-mask verification, with512 ordered image/mask events and4096-pixel axis
+limits. Rust binds every event ordinal, kind, exact finite f32 transform and dimensions to the
+original XML sequence. New placements require exactly one active mask and identical image/
+mask dimensions and transforms. The attached mask must have exactly the same complete decoded
+samples and metadata. Both require no interpolation, color-key, decode mapping or orientation
+ambiguity. The base image must independently decode to a pixmap with no alpha and a matching
+1/3/4-component color space. Unmatched transparency cannot inherit mask-only evidence.
+
+Every nonzero decoded opacity sample contributes its full pixel cell, including partial alpha.
+The transformed tight envelope is a candidate rectangle; holes and disconnected interior are
+not asserted painted. An empty mask admits no image. Any additional clip/crop, nested mask,
+unsupported transform or missing pixel provenance keeps the image excluded. In particular,
+intersecting the envelope of an irregular mask with a crop cannot prove that any pixels survive.
+Native diagram/caption ownership remains governed by the existing detector.
+
+Raw opacity receipts remain external under `~/.cache/lysilogy/object-graphics-masks/<sha>.json`;
+only their hashes, evaluation status and admitted/empty counts enter graphics evidence. The
+bridge retains exact bytes and the collector verifies runtime, path, hash, page, status and
+count bindings. XML and opacity bytes share the64MiB paper allowance. Scoring, both immutable
+truth cohorts and complete object denominators are unchanged. Independent synthetic opacity
+fixtures are retained verbatim in `eval/fixtures/mask-support.json`; the test adapter produces
+`mask-events.json` by running the exact trusted script with fake image APIs, preserving all
+43 independently specified outcomes. Tests do not call MuPDF or any network/model provider.
 
 Image tiles seed the nearest compatible caption neighborhood; separately owned columns and
 captions cannot be joined. Native labels extend a bounded connected neighborhood; table bands

@@ -12,7 +12,10 @@ use tokio::{io::AsyncReadExt, process::Command, sync::Semaphore};
 use super::{IndexDocument, ReadingPage};
 use crate::{Error, Result, domain::TextRect};
 
-pub const VERSION: u16 = 2;
+mod masks;
+pub use masks::{MaskPageEvidence, MaskRuntime};
+
+pub const VERSION: u16 = 3;
 const PAGE_BYTES: usize = 16 * 1024 * 1024;
 const TOTAL_BYTES: usize = 64 * 1024 * 1024;
 const MAX_PAGES: usize = 64;
@@ -25,6 +28,8 @@ pub struct GraphicsEvidence {
     pub pdf_sha256: String,
     pub tool_sha256: Option<String>,
     pub tool_path: Option<PathBuf>,
+    #[serde(default)]
+    pub mask_runtime: Option<MaskRuntime>,
     pub cache_key: String,
     pub generation: String,
     pub pages: Vec<PageGraphics>,
@@ -37,6 +42,8 @@ pub struct PageGraphics {
     pub trace_sha256: Option<String>,
     pub images: Vec<TextRect>,
     pub unsupported_images: usize,
+    #[serde(default)]
+    pub mask: Option<MaskPageEvidence>,
 }
 
 pub struct PreparedGraphics {
@@ -48,6 +55,7 @@ pub struct GraphicsDocument {
     pub evidence: GraphicsEvidence,
     /// Optional external experiment evidence; never part of a production object JSON.
     pub traces: Vec<(u32, Vec<u8>)>,
+    pub mask_receipts: Vec<(u32, Vec<u8>)>,
 }
 
 fn digest(bytes: &[u8]) -> String {
@@ -109,11 +117,13 @@ pub async fn prepare(source: &Path, document: &IndexDocument) -> Result<Prepared
         None => None,
     };
     let program = program.filter(|_| tool_sha256.is_some());
+    let mask_runtime = MaskRuntime::prepare().await;
     let cache_key = digest(&serde_json::to_vec(&(
         VERSION,
         &document.etag,
         &pdf_sha256,
         &tool_sha256,
+        mask_runtime.as_ref().map(MaskRuntime::key),
     ))?);
     let tool_path = program.clone();
     Ok(PreparedGraphics {
@@ -124,6 +134,7 @@ pub async fn prepare(source: &Path, document: &IndexDocument) -> Result<Prepared
             pdf_sha256,
             tool_sha256,
             tool_path,
+            mask_runtime,
             cache_key,
             generation: String::new(),
             pages: vec![],
@@ -159,6 +170,7 @@ pub async fn collect(
     let started = Instant::now();
     let mut total = 0;
     let mut traces = Vec::new();
+    let mut mask_receipts = Vec::new();
     for (position, page) in pages.iter().enumerate() {
         let mut result = PageGraphics {
             page: *page,
@@ -166,6 +178,7 @@ pub async fn collect(
             trace_sha256: None,
             images: vec![],
             unsupported_images: 0,
+            mask: None,
         };
         if position >= MAX_PAGES
             || total >= TOTAL_BYTES
@@ -187,7 +200,51 @@ pub async fn collect(
                 {
                     result.images = images;
                     result.unsupported_images = unsupported;
-                    result.status = if unsupported == 0 {
+                    if unsupported > 0 && raw.windows(15).any(|part| part == b"clip_image_mask") {
+                        let mut mask = MaskPageEvidence {
+                            status: "tool_unavailable".into(),
+                            receipt_sha256: None,
+                            supported_images: 0,
+                            empty_images: 0,
+                        };
+                        if total >= TOTAL_BYTES || started.elapsed() >= Duration::from_secs(30) {
+                            mask.status = "resource_limit".into();
+                        } else if let Some(runtime) = &prepared.evidence.mask_runtime {
+                            let remaining =
+                                Duration::from_secs(30).saturating_sub(started.elapsed());
+                            let output = tokio::time::timeout(
+                                Duration::from_secs(10).min(remaining),
+                                masks::collect(
+                                    runtime,
+                                    program,
+                                    source,
+                                    *page,
+                                    PAGE_BYTES.min(TOTAL_BYTES - total),
+                                ),
+                            )
+                            .await;
+                            if let Ok(Ok(mask_raw)) = output {
+                                total += mask_raw.len();
+                                mask.receipt_sha256 = Some(digest(&mask_raw));
+                                mask.status = "unsupported_receipt".into();
+                                if let Ok(receipt) = masks::Receipt::parse(&mask_raw, native)
+                                    && let Ok(parsed) =
+                                        parse_trace_with_masks(&raw, native, Some(&receipt))
+                                {
+                                    mask.status = "evaluated".into();
+                                    mask.supported_images = parsed.mask_supported;
+                                    mask.empty_images = parsed.mask_empty;
+                                    result.images = parsed.images;
+                                    result.unsupported_images = parsed.unsupported;
+                                }
+                                mask_receipts.push((*page, mask_raw));
+                            } else {
+                                mask.status = "tool_failed".into();
+                            }
+                        }
+                        result.mask = Some(mask);
+                    }
+                    result.status = if result.unsupported_images == 0 {
                         "complete"
                     } else {
                         "partial"
@@ -217,10 +274,18 @@ pub async fn collect(
             "Graphics tool changed during derivation".into(),
         ));
     }
+    if let Some(runtime) = &prepared.evidence.mask_runtime
+        && !runtime.unchanged().await
+    {
+        return Err(Error::InvalidRequest(
+            "Mask resource wrapper changed during derivation".into(),
+        ));
+    }
     prepared.evidence.generation = digest(&prepared.evidence.basis_json()?);
     Ok(GraphicsDocument {
         evidence: prepared.evidence,
         traces,
+        mask_receipts,
     })
 }
 
@@ -444,7 +509,7 @@ fn record_image(
     if visible && let Ok(mut rect) = image_rect(value, page) {
         for clip in clips {
             match clip {
-                Clip::Unknown => {
+                Clip::Unknown | Clip::Mask(_) => {
                     *unsupported += 1;
                     return Ok(());
                 }
@@ -466,6 +531,7 @@ fn record_image(
 
 enum Clip {
     Unknown,
+    Mask(usize),
     Rectangle(TextRect),
 }
 
@@ -599,6 +665,10 @@ fn supported_group(value: &Tag<'_>, page: &ReadingPage) -> bool {
 /// never becomes a claimed image rectangle; native text geometry is untouched.
 #[derive(Default)]
 struct TraceState<'a> {
+    receipt: Option<&'a masks::Receipt>,
+    operations: usize,
+    mask_supported: usize,
+    mask_empty: usize,
     stack: Vec<&'a str>,
     clips: Vec<Clip>,
     clip_floors: Vec<usize>,
@@ -655,8 +725,20 @@ impl<'a> TraceState<'a> {
         {
             return Err(invalid());
         }
+        let position = self.operations;
+        if matches!(value.name, "clip_image_mask" | "fill_image") {
+            if let Some(receipt) = self.receipt {
+                receipt.binds(position, value)?;
+            }
+            self.operations += 1;
+        }
         if value.name.starts_with("clip_") {
-            self.clips.push(Clip::Unknown);
+            self.clips
+                .push(if value.name == "clip_image_mask" && value.empty {
+                    Clip::Mask(position)
+                } else {
+                    Clip::Unknown
+                });
             if value.name == "clip_path" && !value.empty {
                 self.clip_path = RectanglePath::new(value);
             }
@@ -682,14 +764,32 @@ impl<'a> TraceState<'a> {
             if !drawing_scope(&self.stack) {
                 self.unsafe_state = true;
             }
-            record_image(
-                value,
-                page,
-                !self.unsafe_state,
-                &self.clips,
-                &mut self.images,
-                &mut self.unsupported,
-            )?;
+            let supported_mask = if !self.unsafe_state
+                && image_rect(value, page).is_ok()
+                && let [Clip::Mask(mask_position)] = self.clips.as_slice()
+                && let Some(receipt) = self.receipt
+            {
+                receipt.region(*mask_position, position, page).ok()
+            } else {
+                None
+            };
+            if let Some(rect) = supported_mask {
+                if let Some(rect) = rect {
+                    self.images.push(rect);
+                    self.mask_supported += 1;
+                } else {
+                    self.mask_empty += 1;
+                }
+            } else {
+                record_image(
+                    value,
+                    page,
+                    !self.unsafe_state,
+                    &self.clips,
+                    &mut self.images,
+                    &mut self.unsupported,
+                )?;
+            }
         }
         if !value.empty {
             self.stack.push(value.name);
@@ -703,6 +803,22 @@ impl<'a> TraceState<'a> {
 }
 
 pub fn parse_trace(raw: &[u8], page: &ReadingPage) -> Result<(Vec<TextRect>, usize)> {
+    let parsed = parse_trace_with_masks(raw, page, None)?;
+    Ok((parsed.images, parsed.unsupported))
+}
+
+struct ParsedTrace {
+    images: Vec<TextRect>,
+    unsupported: usize,
+    mask_supported: usize,
+    mask_empty: usize,
+}
+
+fn parse_trace_with_masks(
+    raw: &[u8],
+    page: &ReadingPage,
+    receipt: Option<&masks::Receipt>,
+) -> Result<ParsedTrace> {
     if raw.len() > PAGE_BYTES
         || !page.width.is_finite()
         || !page.height.is_finite()
@@ -713,7 +829,10 @@ pub fn parse_trace(raw: &[u8], page: &ReadingPage) -> Result<(Vec<TextRect>, usi
     }
     let text = std::str::from_utf8(raw).map_err(|_| invalid())?;
     let mut rest = text;
-    let mut state = TraceState::default();
+    let mut state = TraceState {
+        receipt,
+        ..TraceState::default()
+    };
     let mut pages = 0;
     let mut document_seen = false;
     let mut declaration_seen = false;
@@ -759,17 +878,25 @@ pub fn parse_trace(raw: &[u8], page: &ReadingPage) -> Result<(Vec<TextRect>, usi
         || pages != 1
         || !document_seen
         || !state.clips.is_empty()
+        || receipt.is_some_and(|receipt| receipt.len() != state.operations)
     {
         return Err(invalid());
     }
     if state.unsafe_state {
-        if state.unsupported + state.images.len() == 0 {
+        if state.unsupported + state.images.len() + state.mask_empty == 0 {
             return Err(invalid());
         }
-        state.unsupported += state.images.len();
+        state.unsupported += state.images.len() + state.mask_empty;
         state.images.clear();
+        state.mask_supported = 0;
+        state.mask_empty = 0;
     }
-    Ok((state.images, state.unsupported))
+    Ok(ParsedTrace {
+        images: state.images,
+        unsupported: state.unsupported,
+        mask_supported: state.mask_supported,
+        mask_empty: state.mask_empty,
+    })
 }
 
 impl GraphicsEvidence {
@@ -788,10 +915,13 @@ impl GraphicsEvidence {
             && self.pdf_sha256 == prepared.evidence.pdf_sha256
             && self.tool_sha256 == prepared.evidence.tool_sha256
             && self.tool_path == prepared.evidence.tool_path
-            && !self
-                .pages
-                .iter()
-                .any(|page| matches!(page.status.as_str(), "tool_failed" | "resource_limit"))
+            && self.mask_runtime == prepared.evidence.mask_runtime
+            && !self.pages.iter().any(|page| {
+                matches!(page.status.as_str(), "tool_failed" | "resource_limit")
+                    || page.mask.as_ref().is_some_and(|mask| {
+                        matches!(mask.status.as_str(), "tool_failed" | "resource_limit")
+                    })
+            })
             && self
                 .basis_json()
                 .is_ok_and(|bytes| digest(&bytes) == self.generation)

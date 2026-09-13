@@ -119,35 +119,67 @@ class ObjectMetricTests(unittest.TestCase):
             paper,artifact,index=fixture();raw=b'<synthetic trace />';sha=m.digest(raw)
             path=cache/'object-graphics-traces'/(sha+'.xml');path.parent.mkdir();path.write_bytes(raw)
             evidence={'version':m.GRAPHICS_VERSION,'native_generation':artifact['reading_index_generation'],'pdf_sha256':paper['pdf_sha256'],
-                'tool_sha256':m.digest(tool.read_bytes()),'tool_path':str(tool),'cache_key':'','generation':'','pages':[{'page':1,'status':'complete','trace_sha256':sha,'images':[rectangle()],'unsupported_images':0}]}
-            evidence['cache_key']=m.digest(m.canonical([m.GRAPHICS_VERSION,evidence['native_generation'],evidence['pdf_sha256'],evidence['tool_sha256']]))
+                'tool_sha256':m.digest(tool.read_bytes()),'tool_path':str(tool),'mask_runtime':m.mask_runtime(),'cache_key':'','generation':'','pages':[{'page':1,'status':'complete','trace_sha256':sha,'images':[rectangle()],'unsupported_images':0}]}
+            evidence['cache_key']=m.digest(m.canonical([m.GRAPHICS_VERSION,evidence['native_generation'],evidence['pdf_sha256'],evidence['tool_sha256'],m.mask_runtime_key(m.mask_runtime())]))
             def seal(e):
                 e['generation']='';basis=m.canonical(e).decode();e['generation']=m.digest(basis.encode());return basis
             basis=seal(evidence);artifact['graphics']=evidence
-            row={'graphics_basis_json':basis,'graphics_traces':[{'page':1,'sha256':sha,'path':str(path)}]}
+            row={'graphics_basis_json':basis,'graphics_masks':[],'graphics_traces':[{'page':1,'sha256':sha,'path':str(path)}]}
             # Pure receipt validation does not execute a tool or fetch a resource.
             self.assertEqual(m.validate_graphics(row,artifact,paper,index,cache)['trace_hashes'],{str(path):sha})
             for field,value in [('version',1),('version',2.0),('pdf_sha256','c'*64),('native_generation','foreign'),('cache_key','wrong'),('tool_path','/not-a-tool')]:
                 changed=copy.deepcopy(artifact);changed['graphics'][field]=value
                 changed_row={**row,'graphics_basis_json':seal(changed['graphics'])}
                 with self.subTest(field=field),self.assertRaises(ValueError):m.validate_graphics(changed_row,changed,paper,index,cache)
-            for changed_row in [{**row,'graphics_traces':[]},{**row,'graphics_traces':row['graphics_traces']*2},
-                {**row,'graphics_traces':[{**row['graphics_traces'][0],'path':str(cache/'foreign.xml')}]}]:
+            for changed_row in [{**row,'graphics_masks':[],'graphics_traces':[]},{**row,'graphics_traces':row['graphics_traces']*2},
+                {**row,'graphics_masks':[],'graphics_traces':[{**row['graphics_traces'][0],'path':str(cache/'foreign.xml')}]}]:
                 with self.assertRaises(ValueError):m.validate_graphics(changed_row,artifact,paper,index,cache)
             path.write_bytes(b'changed')
             with self.assertRaisesRegex(ValueError,'trace bytes differ'):m.validate_graphics(row,artifact,paper,index,cache)
+
+    def should_reject_mask_provenance_drift_when_rehashed_receipts_claim_new_placements(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache=Path(directory);tool=cache/'tool';tool.write_bytes(b'independent tool bytes')
+            with patch.object(m.shutil,'which',return_value=str(tool)):
+                paper,artifact,index=fixture();raw=b'<synthetic masked trace />';sha=m.digest(raw)
+                path=cache/'object-graphics-traces'/(sha+'.xml');path.parent.mkdir();path.write_bytes(raw)
+                opacity=m.canonical({'schema_version':1,'page':1,'operations':[]});mask_sha=m.digest(opacity)
+                mask_path=cache/'object-graphics-masks'/(mask_sha+'.json');mask_path.parent.mkdir();mask_path.write_bytes(opacity)
+                runtime=m.mask_runtime()
+                evidence={'version':m.GRAPHICS_VERSION,'native_generation':artifact['reading_index_generation'],'pdf_sha256':paper['pdf_sha256'],
+                    'tool_sha256':m.digest(tool.read_bytes()),'tool_path':str(tool),'mask_runtime':runtime,'cache_key':'','generation':'',
+                    'pages':[{'page':1,'status':'complete','trace_sha256':sha,'images':[rectangle()],'unsupported_images':0,
+                        'mask':{'status':'evaluated','receipt_sha256':mask_sha,'supported_images':1,'empty_images':0}}]}
+                evidence['cache_key']=m.digest(m.canonical([m.GRAPHICS_VERSION,evidence['native_generation'],evidence['pdf_sha256'],evidence['tool_sha256'],m.mask_runtime_key(runtime)]))
+                def seal(e):
+                    e['generation']='';basis=m.canonical(e).decode();e['generation']=m.digest(basis.encode());return basis
+                artifact['graphics']=evidence
+                row={'graphics_basis_json':seal(evidence),'graphics_traces':[{'page':1,'sha256':sha,'path':str(path)}],
+                    'graphics_masks':[{'page':1,'sha256':mask_sha,'path':str(mask_path)}]}
+                self.assertEqual(m.validate_graphics(row,artifact,paper,index,cache)['mask_hashes'],{str(mask_path):mask_sha})
+                for change in [lambda e:e['mask_runtime'].update(script_sha256='0'*64),
+                    lambda e:e['pages'][0]['mask'].update(status='tool_failed'),
+                    lambda e:e['pages'][0]['mask'].update(supported_images=2),
+                    lambda e:e['pages'][0]['mask'].update(empty_images=256)]:
+                    changed=copy.deepcopy(artifact);change(changed['graphics']);changed_row={**row,'graphics_basis_json':seal(changed['graphics'])}
+                    with self.assertRaises(ValueError):m.validate_graphics(changed_row,changed,paper,index,cache)
+                for changed_row in [{**row,'graphics_masks':[]},{**row,'graphics_masks':row['graphics_masks']*2},
+                    {**row,'graphics_masks':[{**row['graphics_masks'][0],'path':str(cache/'foreign.json')}]}]:
+                    with self.assertRaises(ValueError):m.validate_graphics(changed_row,artifact,paper,index,cache)
+                mask_path.write_bytes(b'changed')
+                with self.assertRaisesRegex(ValueError,'mask receipt bytes differ'):m.validate_graphics(row,artifact,paper,index,cache)
 
     def should_reject_graphics_inventory_drift_when_rehashed_page_evidence_is_incoherent(self):
         with tempfile.TemporaryDirectory() as directory,patch.object(m.shutil,'which',return_value=None):
             cache=Path(directory);paper,artifact,index=fixture()
             base={'version':m.GRAPHICS_VERSION,'native_generation':artifact['reading_index_generation'],'pdf_sha256':paper['pdf_sha256'],
-                'tool_sha256':None,'tool_path':None,'cache_key':m.digest(m.canonical([m.GRAPHICS_VERSION,artifact['reading_index_generation'],paper['pdf_sha256'],None])),
+                'tool_sha256':None,'tool_path':None,'mask_runtime':m.mask_runtime(),'cache_key':m.digest(m.canonical([m.GRAPHICS_VERSION,artifact['reading_index_generation'],paper['pdf_sha256'],None,m.mask_runtime_key(m.mask_runtime())])),
                 'generation':'','pages':[{'page':1,'status':'tool_unavailable','trace_sha256':None,'images':[],'unsupported_images':0}]}
             for mutate in [lambda e:e['pages'].append(e['pages'][0]),lambda e:e['pages'].clear(),
                 lambda e:e['pages'][0].update(images=[rectangle()]),lambda e:e['pages'][0].update(status='complete'),
                 lambda e:e['pages'][0].update(unsupported_images=-1)]:
                 evidence=copy.deepcopy(base);mutate(evidence);basis=m.canonical(evidence).decode();evidence['generation']=m.digest(basis.encode());artifact['graphics']=evidence
-                with self.assertRaises(ValueError):m.validate_graphics({'graphics_basis_json':basis,'graphics_traces':[]},artifact,paper,index,cache)
+                with self.assertRaises(ValueError):m.validate_graphics({'graphics_basis_json':basis,'graphics_masks':[],'graphics_traces':[]},artifact,paper,index,cache)
 
     def should_reject_changed_native_basis_when_a_new_detector_generation_is_measured(self):
         _,artifact,index=fixture()

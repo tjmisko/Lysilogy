@@ -1700,6 +1700,7 @@ mod tests {
             trace_sha256: None,
             images: vec![image],
             unsupported_images: 2,
+            mask: None,
         };
         let with_image = find_with_images(&index, &[page]);
         assert_eq!(with_image[0].rect, native[0].rect);
@@ -1779,6 +1780,7 @@ mod tests {
                 trace_sha256: None,
                 images: vec![image],
                 unsupported_images: 2,
+                mask: None,
             };
             let result = find_with_images(&index, &[page]);
             let figure = result
@@ -1800,6 +1802,7 @@ mod tests {
             status: "complete".into(),
             trace_sha256: None,
             unsupported_images: 0,
+            mask: None,
             images: vec![
                 TextRect {
                     x_min: 40.0,
@@ -1858,6 +1861,7 @@ mod tests {
             status: "complete".into(),
             trace_sha256: None,
             unsupported_images: 0,
+            mask: None,
             images: vec![table, plot],
         };
         let figures = find_with_images(&index, &[images]);
@@ -1884,6 +1888,7 @@ mod tests {
             status: "complete".into(),
             trace_sha256: None,
             unsupported_images: 0,
+            mask: None,
             images: vec![rect],
         };
         let objects = find_with_images(&index, &[images]);
