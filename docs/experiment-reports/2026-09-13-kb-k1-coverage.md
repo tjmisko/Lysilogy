@@ -135,11 +135,17 @@ and 762 later rows whose category quota was already filled. The first seven are:
 | 2207.03024v1 | stat.ML / 2022 | 5 |
 | 2303.07834v2 | math.PR / 2023 | 7 |
 
-Prepared blind packets bind all source members and actual PDF/index hashes.
+Independent review reproduced all 1,000 ledger rows, all 21 selected bindings
+and every availability exclusion. Prepared blind packets bind all source members
+and actual PDF/index hashes.
 Their native export contains only text, pages and word rectangles; embedded
 historical detector figures/objects and automatic outcomes are omitted. Primary
 and independent annotators have separate output directories and first enumerate
-the complete paper without a parser inventory. Existing reconciled annotation
+the complete paper without a parser inventory. Independent export verification
+confirmed the allowlists against the original bytes, and rendering produced all
+43 original pages at 96 dpi in 2.851 seconds with 72,464 KiB peak child RSS.
+The first paper was assigned to both reviewers; their labels remain unread by
+the implementation agent until both are frozen. Existing reconciled annotation
 contracts remain the publication boundary. This pilot will measure annotation
 throughput, complete per-kind coverage and demonstrated tooling gaps before
 committing to the remaining 14 papers. Selection and packet preparation alone
