@@ -107,8 +107,12 @@ Exit criteria: all Phase A issues merged; `kb rebuild` produces an empty but mig
 `objects.json` exposes figures, tables, and parsed bibliography entries for a mapped paper; the
 arXiv corpus `eval` and `scale` tiers are downloaded and verified; K1, K2, K3, K4, K5, and K7 exist;
 `lysilogy eval all` runs and `docs/kb-scorecard.md` records baselines for every metric measurable
-so far (at least O1, O2, O8–O10, O25–O27, and the naive exact-key matcher on G1/O14); G4 and G5
-pass.
+so far (at least O1, O2, O8–O10, O25–O26, and the naive exact-key matcher on G1/O14); G4 and G5
+pass. The Phase A report also records E0.1's measured serial/four-worker extractor capacity as
+exploratory evidence. O27 is first measured against the production four-worker batch path in
+E0.5 (Phase B); until that implementation exists, O27 remains unavailable. Its ≥0.70 target,
+Phase B requirement for a measured result (or a measured miss with follow-up), and final system
+acceptance are unchanged.
 
 ### Wave A1 (parallel, no blockers)
 
@@ -182,6 +186,23 @@ pass.
 
 ### Phase A notes
 
+- Follow-up #83 (epic #18) merged in PR #84 (`481e911`). A duplicated or inherited descriptor
+  could retain a provider's flock after the request lease ended. A private guard now explicitly
+  unlocks before releasing the local mutex and covers state read/parse errors too. The exact
+  duplicated-descriptor regression failed before the fix and passes after it; the original
+  cooldown assertion and all admission rules remain unchanged. Independent review cleared final
+  head `164fd9f`; 277 Rust, 50 Python, and 84 Node tests pass under G5. O30 remains 0/10k.
+  Before/after evidence is in `eval/evidence/provider-lease-unlock.json`, with a measured report
+  under `docs/experiment-reports/`. The original intermittent test did not record its returned
+  value; the deterministic reproduction establishes the defect without claiming certainty about
+  that particular failure. Issue closed and branch/worktree removed.
+- O27 sequencing clarification: Phase A previously required an O27 baseline even though E0.5's
+  production worker path is in B1. The current `ingest` loop in `src/main.rs` awaits each paper
+  sequentially; E0.1's four-worker `JoinSet` exists only in its benchmark example. The Phase A
+  exit text now requires the available O25/O26 baselines and separately records exploratory
+  extractor capacity. O27's first production baseline remains required with E0.5, with its
+  unchanged ≥0.70 target and unchanged Phase B/final acceptance. Benchmark-only scheduling must
+  not establish a passing production objective.
 - #20 merged in PR #80 (`94ddacc`) after both independent review findings were fixed and
   independently reproduced again. A strict source stamp now spans fresh extraction, rejecting
   changed-and-restored bytes before artifact publication. The canonical
