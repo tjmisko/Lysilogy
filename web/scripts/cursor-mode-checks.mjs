@@ -44,7 +44,7 @@ export async function checkCursorMode(page,index) {
   assert.equal(await page.locator('.notes-panel').count(),0,'E belongs to WORD-end motion in Cursor mode');
   await page.keyboard.press('i');assert.equal(await reader.getAttribute('data-source-cursor'),'true');
   assert.equal(await page.locator('.notes-panel').count(),0);
-  // A block is one stop; searching inside its caption snaps to its outline.
+  // A block is one stop, while search can focus its original caption text.
   await search('Confusion');
   await page.locator('.pdf-source-mark.is-block-cursor').waitFor();
   const figure=index.figures.find(f=>f.kind==='figure');
@@ -54,11 +54,14 @@ export async function checkCursorMode(page,index) {
   assert.ok(before.startsWith('We compare'));
   await page.keyboard.press('y');
   await page.waitForFunction(caption=>window.copiedSource.startsWith(caption)&&window.copiedSource.includes('[Figure 6 · p. 2](http://lysilogy.test/api/papers/1234567890abcdef/source#page=2)'),figure.caption);
-  await page.keyboard.press('v');await page.locator('.pdf-source-mark.is-block-visual').waitFor();
-  assert.equal(await page.locator('.pdf-source-mark.is-visual').count(),0,'atomic visual selection uses an outline, not individual cells');
-  await page.keyboard.press('y');await page.locator('.pdf-source-mark.is-block-cursor').waitFor();
-  await page.keyboard.press('j');await page.locator('.pdf-source-mark.is-cursor').waitFor();
-  assert.ok(index.text.slice(await offset()).startsWith('was used'),'one j passes the whole figure');
+  await page.keyboard.type('viwy');await page.waitForFunction(()=>window.copiedSource==='Confusion');
+  await page.locator('.pdf-source-mark.is-block-cursor').waitFor();
+  await page.waitForFunction(()=>!document.querySelector('.pdf-reader')?.hasAttribute('data-source-visual'));
+  await page.keyboard.press('j');
+  await page.waitForFunction(text=>{const mark=document.querySelector('.pdf-source-mark.is-cursor');return mark&&text.slice(Number(mark.dataset.sourceOffset)).startsWith('was used');},index.text);
+  await page.keyboard.press('k');await page.keyboard.press('v');await page.locator('.pdf-source-mark.is-block-visual').waitFor();
+  assert.equal(await page.locator('.pdf-source-mark.is-visual').count(),0);
+  await page.keyboard.press('y');
   await search('Evaluation');await page.locator('.pdf-source-mark.is-block-cursor').waitFor();
   await page.keyboard.type('yy');await page.waitForFunction(()=>window.copiedSource.startsWith('Table 5.')&&window.copiedSource.includes('[Table 5 · p. 2]')&&!window.copiedSource.includes('32.91'));
   await page.keyboard.press('C');await page.waitForFunction(()=>!document.querySelector('.pdf-reader')?.hasAttribute('data-source-cursor'));

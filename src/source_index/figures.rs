@@ -1,4 +1,4 @@
-use super::{Figure, FigureReference, ReadingIndex, ReadingToken, native::union};
+use super::{Figure, FigureReference, ReadingIndex, ReadingToken, TextRange, native::union};
 use crate::domain::TextRect;
 
 pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
@@ -16,7 +16,13 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
         };
         let caption_box = union(tokens.iter().flat_map(|token| token.rects.iter().copied()));
         let caption = utf16_slice(&index.text, paragraph.start, paragraph.end);
-        let rect = figure_region(index, first.page, paragraph.start, caption_box);
+        let rect = figure_region(
+            index,
+            first.page,
+            paragraph.start,
+            caption_box,
+            kind == "Table",
+        );
         figures.push(Figure {
             id: format!(
                 "{}-{}",
@@ -29,11 +35,17 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
             caption,
             start: paragraph.start,
             end: paragraph.end,
+            spans: member_spans(index, first.page, rect.unwrap_or(caption_box)),
             rect,
             confidence: "candidate".into(),
             references: Vec::new(),
         });
     }
+    attach_references(index, &mut figures);
+    figures
+}
+
+fn attach_references(index: &ReadingIndex, figures: &mut [Figure]) {
     let all_tokens = index.tokens.iter().collect::<Vec<_>>();
     for token_number in 0..all_tokens.len() {
         let Some((kind, label, start, end)) = label_at(&all_tokens, token_number) else {
@@ -45,7 +57,7 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
         if let Some(token) = referenced.last() {
             labels.extend(range_tail(&token.text));
         }
-        for figure in &mut figures {
+        for figure in figures.iter_mut() {
             if !labels.iter().any(|label| {
                 figure.id
                     == format!(
@@ -82,7 +94,7 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
                 let Some(number) = identifier(&token.text) else {
                     break;
                 };
-                for figure in &mut figures {
+                for figure in figures.iter_mut() {
                     if figure.id
                         == format!(
                             "{}-{}",
@@ -102,7 +114,6 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
             }
         }
     }
-    figures
 }
 
 fn range_tail(text: &str) -> Vec<String> {
@@ -189,16 +200,28 @@ fn figure_region(
     page: u32,
     caption_start: usize,
     caption: TextRect,
+    table: bool,
 ) -> Option<TextRect> {
     let dimensions = index
         .pages
         .iter()
         .find(|candidate| candidate.number == page)?;
+    let mut fonts = index
+        .tokens
+        .iter()
+        .filter(|t| t.page == page)
+        .flat_map(|t| t.rects.iter().map(|r| r.y_max - r.y_min))
+        .filter(|h| *h > 0.0)
+        .collect::<Vec<_>>();
+    fonts.sort_by(f32::total_cmp);
+    let body_font = fonts.get(fonts.len() / 2).copied().unwrap_or(10.0);
+    if table && let Some(below) = table_below(index, page, caption, body_font) {
+        return Some(below);
+    }
     let mut top = dimensions.height * 0.05;
     for paragraph in &index.objects.paragraph {
         if paragraph.start == caption_start
             || !matches!(paragraph.kind.as_str(), "body" | "caption")
-            || paragraph.kind == "body" && paragraph.end - paragraph.start < 100
         {
             continue;
         }
@@ -208,6 +231,9 @@ fn figure_region(
             .filter(|token| token.page == page)
             .collect::<Vec<_>>();
         if text.is_empty() {
+            continue;
+        }
+        if paragraph.kind == "body" && !prose_barrier(&text, body_font) {
             continue;
         }
         let rect = union(text.iter().flat_map(|token| token.rects.iter().copied()));
@@ -243,9 +269,14 @@ fn figure_region(
             })
         })
         .collect::<Vec<_>>();
-    for paragraph in index.objects.paragraph.iter().filter(|p| p.kind == "float") {
+    for paragraph in index
+        .objects
+        .paragraph
+        .iter()
+        .filter(|p| matches!(p.kind.as_str(), "float" | "body" | "list"))
+    {
         let text = tokens(index, paragraph.start, paragraph.end);
-        if text.first().is_none_or(|t| t.page != page) {
+        if text.first().is_none_or(|t| t.page != page) || prose_barrier(&text, body_font) {
             continue;
         }
         let rect = union(text.iter().flat_map(|t| t.rects.iter().copied()));
@@ -277,4 +308,124 @@ pub(super) fn utf16_slice(text: &str, start: usize, end: usize) -> String {
             .take(end.saturating_sub(start))
             .collect::<Vec<_>>(),
     )
+}
+
+// A long diagram label can exceed a character threshold without being prose.
+// Require consecutive printed lines at body size before it bounds a figure.
+fn prose_barrier(text: &[&ReadingToken], body_font: f32) -> bool {
+    let content = text
+        .iter()
+        .map(|t| t.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ");
+    if content.len() < 80 || content.to_ascii_lowercase().starts_with("step ") {
+        return false;
+    }
+    let mut rows = Vec::<TextRect>::new();
+    for rect in text.iter().flat_map(|t| t.rects.iter().copied()) {
+        if rect.y_max - rect.y_min < body_font * 0.90 {
+            continue;
+        }
+        if let Some(row) = rows
+            .iter_mut()
+            .find(|row| (row.y_min - rect.y_min).abs() < body_font * 0.45)
+        {
+            *row = union([*row, rect].into_iter());
+        } else {
+            rows.push(rect);
+        }
+    }
+    rows.sort_by(|a, b| a.y_min.total_cmp(&b.y_min));
+    rows.windows(2).any(|pair| {
+        pair[1].y_min - pair[0].y_min < body_font * 2.2
+            && (pair[0].x_min - pair[1].x_min).abs() < body_font * 2.5
+    })
+}
+
+fn member_spans(index: &ReadingIndex, page: u32, rect: TextRect) -> Vec<TextRange> {
+    let mut spans = Vec::<TextRange>::new();
+    for token in index.tokens.iter().filter(|token| {
+        token.page == page
+            && token.rects.iter().all(|r| {
+                r.x_min >= rect.x_min - 1.0
+                    && r.x_max <= rect.x_max + 1.0
+                    && r.y_min >= rect.y_min - 1.0
+                    && r.y_max <= rect.y_max + 1.0
+            })
+    }) {
+        if let Some(last) = spans.last_mut()
+            && utf16_slice(&index.text, last.end, token.start)
+                .chars()
+                .all(char::is_whitespace)
+        {
+            last.end = token.end;
+        } else {
+            spans.push(TextRange {
+                start: token.start,
+                end: token.end,
+            });
+        }
+    }
+    spans
+}
+
+// Tables commonly put their captions above the grid, unlike figure captions.
+fn table_below(index: &ReadingIndex, page: u32, caption: TextRect, font: f32) -> Option<TextRect> {
+    let mut candidates = index
+        .objects
+        .paragraph
+        .iter()
+        .filter_map(|p| {
+            let text = tokens(index, p.start, p.end);
+            if text.first()?.page != page {
+                return None;
+            }
+            let rect = union(text.iter().flat_map(|t| t.rects.iter().copied()));
+            (rect.y_min >= caption.y_max
+                && rect.x_max > caption.x_min
+                && rect.x_min < caption.x_max)
+                .then_some((p, text, rect))
+        })
+        .collect::<Vec<_>>();
+    candidates.sort_by(|a, b| a.2.y_min.total_cmp(&b.2.y_min));
+    let mut bounds = caption;
+    let mut numeric = false;
+    for (paragraph, text, rect) in candidates {
+        if rect.y_min - bounds.y_max > font * 5.0
+            || paragraph.kind == "caption"
+            || prose_barrier(&text, font)
+        {
+            break;
+        }
+        let content = text
+            .iter()
+            .map(|t| t.text.as_str())
+            .collect::<Vec<_>>()
+            .join(" ");
+        if content.len() > 100 && !matches!(paragraph.kind.as_str(), "float" | "list") {
+            break;
+        }
+        numeric |= content.chars().filter(char::is_ascii_digit).count() >= 2;
+        bounds = union([bounds, rect].into_iter());
+    }
+    if !numeric || bounds.y_max - caption.y_max <= font {
+        return None;
+    }
+    // The caption may end before the last column. Extend across the established
+    // grid's rows, without absorbing a neighboring prose paragraph.
+    for paragraph in &index.objects.paragraph {
+        if paragraph.kind == "caption" {
+            continue;
+        }
+        let text = tokens(index, paragraph.start, paragraph.end);
+        if text.first().is_none_or(|t| t.page != page) || prose_barrier(&text, font) {
+            continue;
+        }
+        let rect = union(text.iter().flat_map(|t| t.rects.iter().copied()));
+        let cell_band = caption.y_max..=bounds.y_max;
+        if cell_band.contains(&rect.y_min) && cell_band.contains(&rect.y_max) {
+            bounds = union([bounds, rect].into_iter());
+        }
+    }
+    Some(bounds)
 }

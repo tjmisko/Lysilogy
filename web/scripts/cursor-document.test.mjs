@@ -65,3 +65,27 @@ test('half-screen movement uses geometry and crosses pages without visiting floa
   assert.equal(cursorLine(doc,moveCursorScreen(doc,final.start,1,200)).page,2);
   assert.equal(cursorLine(doc,moveCursorScreen(doc,doc.lines[6].start,-1,200)).number,6);
 });
+
+test('figure membership overrides prose labels while an inspection projection preserves their text',async()=>{
+  const {cursorTextDocument}=await import('../src/lib/cursorDocument.ts');
+  const {index,cells,table}=fixture();
+  index.figures[0].spans=[{start:cells.start,end:table.end}];
+  index.objects.paragraph.find(p=>p.start===cells.start).kind='body';
+  const doc=cursorDocument(index);
+  assert.equal(cursorBlock(doc,virtualCursor(doc,cells.start)).id,'table-5');
+  const inspection=cursorTextDocument(doc,'table-5');
+  const at=virtualCursor(inspection,index.text.indexOf('32.91'));
+  assert.equal(inspection.index.text.slice(at,at+5),'32.91');
+  assert.equal(doc.lines.length,7,'inspection must not change the original navigation lines');
+});
+
+test('line gutters stay flush across indents and bullets, with independent page columns',async()=>{
+  const {alignLineGutters}=await import('../src/lib/lineGutters.ts');
+  const lines=[52,48,62,74,48,330,326,340,352,326].map((x,i)=>({page:1,rect:{x_min:x,x_max:x+200,y_min:i*14,y_max:i*14+10}}));
+  const figure={page:1,rect:{x_min:80,x_max:550,y_min:200,y_max:350},block:{}};
+  const second={page:2,rect:{x_min:66,x_max:250,y_min:100,y_max:110}};
+  alignLineGutters([...lines,figure,second]);
+  assert.deepEqual(lines.map(l=>l.gutter),[48,48,48,48,48,326,326,326,326,326]);
+  assert.equal(figure.gutter,undefined);
+  assert.equal(second.gutter,66);
+});

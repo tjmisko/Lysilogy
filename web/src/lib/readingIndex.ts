@@ -10,7 +10,7 @@ export type ReadingIndex = {
   pages: ReadingPage[];
   tokens: ReadingToken[];
   objects: Record<"word" | "WORD" | "sentence", TextSpan[]> & { paragraph: (SourceSelection & { kind: string })[] };
-  figures: { kind?: string; id: string; label: string; page: number; caption: string; start: number; end: number; rect: TextRect | null; confidence: string; references: (TextSpan & { page: number; rects: TextRect[] })[] }[];
+  figures: { spans?: TextSpan[]; kind?: string; id: string; label: string; page: number; caption: string; start: number; end: number; rect: TextRect | null; confidence: string; references: (TextSpan & { page: number; rects: TextRect[] })[] }[];
   gaps: { page: number; reason: string }[];
 };
 

@@ -1,10 +1,11 @@
 import { selectionSpans, selectionText, tokensInSpan, type ReadingIndex, type ReadingToken, type SourceSelection, type TextSpan } from './readingIndex.ts';
 import { sourceCursor, sourceGrapheme } from './sourceMotions.ts';
+import { alignLineGutters } from './lineGutters.ts';
 import type { TextRect } from '../types';
 
 export type CursorBlock = SourceSelection & { id: string; label: string; caption: string; page: number; rect: TextRect; kind: 'figure' | 'table' };
 export type CursorSegment = TextSpan & { source: SourceSelection; token: ReadingToken; block?: CursorBlock };
-export type CursorLine = TextSpan & { number: number; page: number; rect: TextRect; block?: CursorBlock };
+export type CursorLine = TextSpan & { number: number; page: number; rect: TextRect; gutter?: number; block?: CursorBlock };
 export type CursorDocument = { index: ReadingIndex; source: ReadingIndex; segments: CursorSegment[]; lines: CursorLine[]; blocks: CursorBlock[] };
 const documents = new WeakMap<ReadingIndex, CursorDocument>();
 const contains = (span: TextSpan, offset: number) => span.start <= offset && offset < span.end;
@@ -28,11 +29,11 @@ export function cursorDocument(source: ReadingIndex): CursorDocument {
   const body=source.objects.paragraph.filter(p=>p.kind==='body').flatMap(selectionSpans);
   const blocks: CursorBlock[]=[];
   for(const figure of source.figures) {
-    const captionTokens=tokensInSpan(source,figure);
+    const captionTokens=tokensInSpan(source,{start:figure.start,end:figure.end});
     const caption=captionTokens.flatMap(t=>t.rects).reduce<TextRect|null>((box,rect)=>box===null?rect:union(box,rect),null);
     if(caption===null)continue;
     const rect=figure.rect??caption;
-    const members=source.tokens.filter(token=>token.page===figure.page && (overlaps(token,figure)
+    const members=figure.spans?.length ? tokensInSpan(source,figure) : source.tokens.filter(token=>token.page===figure.page && (overlaps(token,figure)
       || !body.some(span=>overlaps(span,token)) && token.rects.every(box=>box.x_min>=rect.x_min-1&&box.x_max<=rect.x_max+1&&box.y_min>=rect.y_min-1&&box.y_max<=rect.y_max+1)));
     if(members.length===0)continue;
     blocks.push({...compact(source,members),id:figure.id,label:figure.label,caption:figure.caption,page:figure.page,rect,
@@ -80,6 +81,7 @@ export function cursorDocument(source: ReadingIndex): CursorDocument {
     const tokens=index.tokens.filter(token=>token.page===page.number);
     return {...page,start:tokens[0]?.start??0,end:tokens.at(-1)?.end??0};
   });
+  alignLineGutters(result.lines);
   documents.set(source,result);return result;
 }
 
@@ -149,4 +151,12 @@ export function moveCursorScreen(doc: CursorDocument, cursor: number, direction:
   const target=doc.lines[at];if(target===undefined)return cursor;
   const column=cursor-line.start;
   return sourceCursor(doc.index.text,Math.min(target.end-1,target.start+column));
+}
+
+
+/** Search/Visual mode can inspect an object's original text without changing its
+ * one-stop navigation or the document's line numbering. */
+export function cursorTextDocument(doc: CursorDocument, blockId: string | null): CursorDocument {
+  if (blockId === null) return doc;
+  return cursorDocument({...doc.source, figures: doc.source.figures.filter(figure => figure.id !== blockId)});
 }

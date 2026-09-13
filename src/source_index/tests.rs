@@ -886,3 +886,105 @@ fn table_and_figure_namespaces_and_stacked_bounds_are_independent() {
             .is_empty()
     );
 }
+
+#[test]
+fn figure_members_include_long_body_classified_diagram_labels() {
+    let mut label = prose_line(
+        "Step 1: Bootstrapped annotations from multiple cameras; Step 2: Pose estimation; Step 3: Evaluation through action classification",
+        2,
+        50.0,
+        220.0,
+    );
+    label.block = 1;
+    label.rect.x_max = 550.0;
+    label.rect.y_max = 228.0;
+    let mut caption = prose_line(
+        "Figure 2. Construction of the dataset and benchmark.",
+        4,
+        50.0,
+        350.0,
+    );
+    caption.block = 3;
+    caption.rect.x_max = 550.0;
+    let mut index = assemble(&[page(vec![
+        prose_line(
+            "The preceding paragraph describes the experimental setup and dataset",
+            0,
+            50.0,
+            100.0,
+        ),
+        prose_line(
+            "and continues across a second line of body text in the left column.",
+            1,
+            50.0,
+            114.0,
+        ),
+        label,
+        word("Action classifier", 3, 2, 450.0, 290.0),
+        caption,
+        prose_line(
+            "The next paragraph discusses the results without becoming part of the image.",
+            5,
+            50.0,
+            410.0,
+        ),
+    ])]);
+    let label = index
+        .objects
+        .paragraph
+        .iter_mut()
+        .find(|p| figures::utf16_slice(&index.text, p.start, p.end).starts_with("Step 1"))
+        .unwrap();
+    label.kind = "body".into(); // A text classifier is not authoritative about figure membership.
+    let figures = figures::find(&index);
+    let figure = &figures[0];
+    let text = figure
+        .spans
+        .iter()
+        .map(|s| figures::utf16_slice(&index.text, s.start, s.end))
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(text.contains("Step 1:"), "{figure:#?}");
+    assert!(text.contains("Action classifier"));
+    assert!(!text.contains("preceding paragraph"));
+    assert!(!text.contains("next paragraph"));
+}
+
+#[test]
+fn table_caption_above_cells_bounds_the_grid_and_excludes_following_prose() {
+    let mut caption = prose_line("Table 3. Evaluation of the models.", 0, 50.0, 100.0);
+    caption.rect.x_max = 500.0;
+    let index = assemble(&[page(vec![
+        caption,
+        word("Method", 1, 1, 50.0, 125.0),
+        word("Score", 1, 1, 200.0, 125.0),
+        word("Baseline", 2, 2, 50.0, 140.0),
+        word("32.91", 2, 2, 200.0, 140.0),
+        word("Proposed", 3, 3, 50.0, 155.0),
+        word("54.70", 3, 3, 200.0, 155.0),
+        prose_line(
+            "The results show that the model improves performance across the dataset",
+            4,
+            50.0,
+            195.0,
+        ),
+        prose_line(
+            "and the next paragraph continues with an analysis of the remaining failures.",
+            5,
+            50.0,
+            209.0,
+        ),
+    ])]);
+    let figures = figures::find(&index);
+    let table = &figures[0];
+    assert_eq!(table.kind, "table");
+    assert!(table.rect.unwrap().y_max >= 165.0);
+    let text = table
+        .spans
+        .iter()
+        .map(|s| figures::utf16_slice(&index.text, s.start, s.end))
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(text.contains("54.70"));
+    assert!(!text.contains("results show"));
+}

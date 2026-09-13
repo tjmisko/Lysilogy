@@ -349,8 +349,12 @@ half a screen. `v` starts character selection; `vip`/`vap` still select logical 
 including continuation across pages without intervening floats.
 
 Cursor mode shows relative line numbers by default, with the current line's absolute number.
-`L` cycles relative → absolute → off. Numbers count physical lines across the document;
-a figure or table occupies one line and shows a bounding outline instead of a character cursor.
+`L` cycles relative → absolute → off. Smaller numbers share a flush gutter within each text
+column, including indents and bullets.
+A figure or table is one navigation stop with a bounding outline; its labels, cells, and caption
+do not receive line numbers. Search with `/` to land on their original text, then use `viw`,
+`viW`, or character motions to select and copy it. Normal `j`/`k` still leave the entire object
+in one step.
 In Cursor mode `yy` copies the current line, or the caption and linked source page for an
 indexed figure/table. `y` alone waits for a motion (`yw`, `yj`, `yap`); Visual mode `y`
 copies the selection. PDF content cannot be edited. Escape cancels the current action or

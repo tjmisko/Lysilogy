@@ -7,6 +7,7 @@ export type SourceMark = TextSpan & {
   kind: "match" | "current" | "visual" | "cursor" | "block-cursor" | "block-visual" | "line-number";
   label?: string;
   active?: boolean;
+  gutterX?: number;
   token: ReadingToken;
   geometry?: "native" | "estimated";
   group: number;

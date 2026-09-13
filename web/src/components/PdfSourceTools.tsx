@@ -5,7 +5,7 @@ import { loadReadingIndex, peekReadingIndex } from "../lib/readingIndexCache";
 import type { RegexResult } from "../lib/regexSearch";
 import { inclusiveSourceSpan, moveSourceCursor, moveSourceLine, sourceCursor, sourceGrapheme } from "../lib/sourceMotions";
 import { resolveSourceMarks, type SourceMark } from "../lib/sourceGeometry";
-import { cursorDocument, cursorBlock, cursorCopyText, cursorGrapheme, cursorLine, cursorSelection, moveCursorScreen, originalCursor, virtualCursor } from "../lib/cursorDocument";
+import { cursorDocument, cursorTextDocument, cursorBlock, cursorCopyText, cursorGrapheme, cursorLine, cursorSelection, moveCursorScreen, originalCursor, virtualCursor } from "../lib/cursorDocument";
 import { visiblePdfPage } from "../lib/pdfViewport";
 import "./PdfSourceTools.css";
 
@@ -39,10 +39,12 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
   const [cursorLoading, setCursorLoading] = useState(false);
   const [lineNumberMode, setLineNumberMode] = useState<"relative" | "absolute" | "off">("relative");
   const [yankPending, setYankPending] = useState(false);
+  const [textBlock, setTextBlock] = useState<string | null>(null);
   const cursorGeneration = useRef(0);
   const operatorCount = useRef(1);
   const preferredColumn = useRef<number | null>(null);
   const cursorDoc = useMemo(() => index === null ? null : cursorDocument(index), [index]);
+  const textDoc = useMemo(() => cursorDoc === null ? null : cursorTextDocument(cursorDoc, textBlock), [cursorDoc, textBlock]);
   const [pendingObject, setPendingObject] = useState<"a" | "i" | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -107,6 +109,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
 
   const toggleCursor = useCallback(() => {
     const revision = ++cursorGeneration.current;
+    setTextBlock(null);
     motionPrefix.current = ""; motionCount.current = ""; preferredColumn.current = null;
     setYankPending(false); setPendingObject(null); setVisual(null);
     if (cursorMode) { setCursorMode(false); setCursorLoading(false); return; }
@@ -136,7 +139,9 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     setOutside(null);
     const token = tokensInSpan(data, span)[0];
     if (token !== undefined) onPage(token.page);
-    setCursor(cursorMode ? originalCursor(cursorDocument(data), virtualCursor(cursorDocument(data), span.start)) : span.start);
+    const doc = cursorDocument(data);
+    setTextBlock(cursorMode ? cursorBlock(doc, virtualCursor(doc, span.start))?.id ?? null : null);
+    setCursor(span.start);
     preferredColumn.current = null; setYankPending(false);
     setJump((value) => value + 1);
   }, [cursorMode, inside, onPage]);
@@ -193,16 +198,17 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     return false;
   }, [busy, cursorMode, error, manualCopy, matches.length, message, outside, pendingObject, root, searchOpen, visual, yankPending]);
 
-  const copy = useCallback((selection: SourceSelection, linewise = false) => {
+  const copy = useCallback((selection: SourceSelection, linewise = false, wholeBlock = false) => {
     if (index === null) return;
-    const text = cursorMode && cursorDoc !== null
-      ? cursorCopyText(cursorDoc, selection, new URL(url, window.location.href).href) + (linewise && !cursorDoc.blocks.some(block => selectionSpans(selection).some(span => span.start <= block.start && span.end > block.start)) ? "\n" : "")
-      : selectionText(index, selection);
+    const atomic = cursorMode && cursorDoc !== null && (textBlock === null || wholeBlock);
+    const body = atomic ? cursorCopyText(cursorDoc, selection, new URL(url, window.location.href).href) : selectionText(index, selection);
+    const containsBlock = atomic && cursorDoc.blocks.some(block => selectionSpans(selection).some(span => span.start <= block.start && span.end > block.start));
+    const text = body + (linewise && !containsBlock ? "\n" : "");
     setYankPending(false); setPendingObject(null);
     void navigator.clipboard.writeText(text).then(() => { setMessage(`Yanked ${text.length} characters`); setVisual(null); }).catch(() => {
       setManualCopy(text); setError("Clipboard access was denied. Copy the selected text below.");
     });
-  }, [cursorDoc, cursorMode, index, url]);
+  }, [cursorDoc, cursorMode, index, textBlock, url]);
   const yank = useCallback(() => { if (visual !== null) copy(visual); }, [copy, visual]);
 
   const moveCursorKey = useCallback((event: KeyboardEvent): boolean => {
@@ -210,7 +216,9 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     const halfPage = ["PageDown", "PageUp"].includes(event.key) || event.ctrlKey && ["d", "u"].includes(event.key);
     if (event.ctrlKey && !halfPage) return false;
     if (cursorDoc === null || cursor === null || cursorLoading) return halfPage || /^[hjklwbegyv0-9ai]$/iu.test(event.key) || event.key.startsWith("Arrow");
-    const doc = cursorDoc, at = virtualCursor(doc, cursor), line = cursorLine(doc, at);
+    const atomicMove = visual === null && !yankPending && (halfPage || ["j", "k", "ArrowDown", "ArrowUp", "G"].includes(event.key));
+    const doc = atomicMove ? cursorDoc : textDoc ?? cursorDoc;
+    const at = virtualCursor(doc, cursor), line = cursorLine(doc, at);
     const navigable = pageSubset === undefined ? doc.lines : doc.lines.filter(line => inside(doc.source, cursorSelection(doc, line)));
     const linePosition = navigable.findIndex(candidate => candidate === line);
     if (event.key === "L") { setLineNumberMode(mode => mode === "relative" ? "absolute" : mode === "absolute" ? "off" : "relative"); return true; }
@@ -237,6 +245,11 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     const count = Number(motionCount.current || 1); motionCount.current = "";
     if (event.key === "y") {
       if (visual !== null) copy(visual);
+      else if (yankPending && cursorBlock(cursorDoc, virtualCursor(cursorDoc, cursor)) !== undefined) {
+        const block = cursorBlock(cursorDoc, virtualCursor(cursorDoc, cursor));
+        if (block !== undefined && inside(cursorDoc.source, block)) copy(block, false, true);
+        setYankPending(false);
+      }
       else if (yankPending && line !== undefined) {
         const end = navigable[Math.min(navigable.length - 1, linePosition + operatorCount.current * count - 1)]?.end ?? line.end;
         const selection = cursorSelection(doc, { start: line.start, end });
@@ -303,6 +316,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     const destination = cursorGrapheme(doc, virtualCursor(doc, original));
     if (!inside(doc.source, visual === null ? destination : selected)) return true;
     setCursor(original); if (visual !== null) setVisual(selected);
+    if (visual === null && (atomicMove || cursorBlock(cursorDoc, virtualCursor(cursorDoc, original))?.id !== textBlock)) setTextBlock(null);
     const targetPage = tokensInSpan(doc.source, destination)[0]?.page ?? page;
     if (targetPage !== page) onPage(targetPage);
     else if (halfPage) {
@@ -310,7 +324,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
       if (viewport !== null && viewport !== undefined) viewport.scrollTop += (backwards ? -1 : 1) * viewport.clientHeight * .5 * steps;
     }
     setJump(value => value + 1); return true;
-  }, [copy, crops, cursor, cursorDoc, cursorLoading, cursorMode, inside, onPage, page, pageSubset, pendingObject, root, visual, yankPending]);
+  }, [copy, crops, cursor, cursorDoc, cursorLoading, cursorMode, inside, onPage, page, pageSubset, pendingObject, root, textBlock, textDoc, visual, yankPending]);
 
   const moveMatch = useCallback((direction: number) => {
     if (index === null || matches.length === 0) return;
@@ -338,7 +352,8 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
         if (!mounted.current || revision !== cursorGeneration.current) return;
         if (data.text.length === 0) { setError("No searchable source text is available. Check the extraction limits below."); return; }
         const at = sourceCursor(data.text, cursor ?? data.pages.find((item) => item.number === page)?.start ?? 0);
-        const span = cursorMode ? cursorGrapheme(cursorDocument(data), virtualCursor(cursorDocument(data), at)) : sourceGrapheme(data.text, at);
+        const doc = cursorMode ? textDoc ?? cursorDocument(data) : null;
+        const span = doc !== null ? cursorGrapheme(doc, virtualCursor(doc, at)) : sourceGrapheme(data.text, at);
         if (!inside(data, span)) { land(data, span); return; }
         window.getSelection()?.removeAllRanges();
         visualObject.current = null;
@@ -396,7 +411,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     onPage(destination?.page ?? index.pages.find((item) => item.start <= next && item.end > next)?.number ?? page);
     setJump((value) => value + 1);
     return true;
-  }, [cursor, cursorMode, index, inside, land, loadIndex, matches.length, moveCursorKey, moveMatch, onPage, page, pendingObject, quit, toggleCursor, visual, yank]);
+  }, [cursor, cursorMode, index, inside, land, loadIndex, matches.length, moveCursorKey, moveMatch, onPage, page, pendingObject, quit, textDoc, toggleCursor, visual, yank]);
 
   const pointerCursor = useCallback((pageNumber: number, x: number, y: number) => {
     void loadIndex().then((data) => {
@@ -404,7 +419,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
       if (cursorMode) {
         const block = cursorDocument(data).blocks.find(block => block.page === pageNumber && x >= block.rect.x_min && x <= block.rect.x_max && y >= block.rect.y_min && y <= block.rect.y_max);
         if (block !== undefined && inside(data, block)) {
-          setCursor(block.start); setVisual(null); setYankPending(false); setPendingObject(null);
+          setTextBlock(null); setCursor(block.start); setVisual(null); setYankPending(false); setPendingObject(null);
           preferredColumn.current = null; return;
         }
       }
@@ -447,7 +462,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
       if (lastSpace !== null && lastSpace.start !== firstSpace?.start) selected.push(lastSpace);
       for (const token of selected) {
         if (!pages.has(token.page)) continue;
-        if (cursorMode && kind === "visual" && cursorDoc?.blocks.some(block => selectionSpans(block).some(part => token.start >= part.start && token.end <= part.end))) continue;
+        if (cursorMode && kind === "visual" && cursorDoc?.blocks.some(block => block.id !== textBlock && selectionSpans(block).some(part => token.start >= part.start && token.end <= part.end))) continue;
         for (const rect of token.rects) {
           if (kind === "match" && result.length >= 4000) return;
           result.push({ page: token.page, rect, kind, start: Math.max(token.start, span.start), end: Math.min(token.end, span.end), token, group: span.start });
@@ -462,24 +477,24 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
       const at = virtualCursor(cursorDoc, cursor), activeBlock = cursorBlock(cursorDoc, at);
       for (const block of cursorDoc.blocks) {
         if (!pages.has(block.page)) continue;
-        const selected = visual !== null && selectionSpans(visual).some(part => selectionSpans(block).some(piece => part.start < piece.end && piece.start < part.end));
+        const selected = visual !== null && textBlock !== block.id && selectionSpans(visual).some(part => selectionSpans(block).some(piece => part.start < piece.end && piece.start < part.end));
         if (!selected && block !== activeBlock) continue;
         const token = tokensInSpan(index, block)[0]; if (token === undefined) continue;
         result.push({ start: block.start, end: block.end, page: block.page, rect: block.rect, kind: selected ? "block-visual" : "block-cursor", token, group: block.start });
       }
-      if (activeBlock === undefined) add(sourceGrapheme(index.text, cursor), "cursor");
+      if (activeBlock === undefined || activeBlock.id === textBlock) add(sourceGrapheme(index.text, cursor), "cursor");
       const currentLine = cursorLine(cursorDoc, at);
       if (lineNumberMode !== "off") for (const line of cursorDoc.lines) {
-        if (!pages.has(line.page)) continue;
+        if (!pages.has(line.page) || line.block !== undefined) continue;
         const segment = cursorDoc.segments.find(segment => segment.start === line.start);
         if (segment === undefined || !inside(index, segment.source)) continue;
         const active = currentLine === line;
-        result.push({ ...segment.source, page: line.page, rect: line.rect, kind: "line-number", token: segment.token,
+        result.push({ ...segment.source, page: line.page, rect: line.rect, gutterX: line.gutter, kind: "line-number", token: segment.token,
           group: line.number, label: String(lineNumberMode === "absolute" || active ? line.number : Math.abs(line.number - (currentLine?.number ?? 1))), active });
       }
     } else if (cursor !== null && visual !== null) add(sourceGrapheme(index.text, cursor), "cursor");
     return result;
-  }, [current, cursor, cursorDoc, cursorMode, index, inside, lineNumberMode, markPagesKey, matches, outside, visual]);
+  }, [current, cursor, cursorDoc, cursorMode, index, inside, lineNumberMode, markPagesKey, matches, outside, textBlock, visual]);
 
   useEffect(() => {
     if (cursor === null || outside !== null) return;
@@ -509,7 +524,7 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
   const currentMatch = matches[current];
   const matchToken = index !== null && currentMatch !== undefined ? tokensInSpan(index, currentMatch)[0] : undefined;
   const selectedTokens = index !== null && visual !== null ? tokensInSpan(index, visual) : [];
-  const selectedText = index !== null && visual !== null ? cursorMode && cursorDoc !== null
+  const selectedText = index !== null && visual !== null ? cursorMode && cursorDoc !== null && textBlock === null
     ? cursorCopyText(cursorDoc, visual, new URL(url, window.location.href).href) : selectionText(index, visual) : "";
   const selectedPage = selectedTokens[0]?.page ?? page;
   const provenance = selectedTokens.some((token) => token.provenance === "ocr") ? "OCR" : "Source";

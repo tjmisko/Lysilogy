@@ -22,7 +22,7 @@ use crate::{Error, Result, domain::TextRect};
 
 pub use cache::{IndexDocument, load_cached, load_or_build, load_or_build_priority};
 
-pub const SCHEMA_VERSION: u16 = 5;
+pub const SCHEMA_VERSION: u16 = 6;
 const MAX_PAGES: usize = 400;
 const MAX_OCR_PAGES: usize = 12;
 const MAX_TEXT_BYTES: usize = 4 * 1024 * 1024;
@@ -106,6 +106,9 @@ pub struct Figure {
     pub caption: String,
     pub start: usize,
     pub end: usize,
+    /// Source membership includes labels/cells even when paragraph heuristics call them prose.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub spans: Vec<TextRange>,
     /// A conservative candidate region, not a verified image segmentation.
     pub rect: Option<TextRect>,
     pub confidence: String,
