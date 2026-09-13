@@ -124,3 +124,12 @@ remain negative examples. A release writer reassembles every original bundle and
 pinned evidence before publication; existing version bytes are immutable. Only derived object
 memberships/regions, field labels, source positions, votes and hashes are committed. Full native
 text, deposited source and review excerpts remain in the external cache.
+
+Historical replay selects the verifier belonging to the release version. For
+`k1-limited-v1`, twelve exact reviewed modules and a fixed hash manifest live in
+`eval/implementations/k1-limited-v1/`. An isolated worker compiles only those
+verified source bytes and reproduces both original payload hashes from their
+original evidence. It ignores current parser modules and cached bytecode and
+never rewrites the release. Collector receipts retain the selected manifest,
+module and evidence hashes before and after measurement. Unknown versions fail
+explicitly; a new version requires its own reviewed construction and selection.

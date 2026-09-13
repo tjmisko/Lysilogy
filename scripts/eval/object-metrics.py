@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import types
 
 ROOT = Path(__file__).resolve().parents[2]
 TRUTH = 'eval/truth/k1-limited-v1/objects.json'
@@ -210,30 +211,25 @@ def validate_registry(registry, papers, corpus_pdf_root):
         require(active[name]==1 and paper['paper_id'] not in {ident for ids in registry.get('unresolved',{}).values() for ident in ids}, 'canonical registry identity is ambiguous')
 
 
-def validate_truth(repo, cache, corpus, data, truth_raw):
-    """Replay only independent truth construction; never expose predictions to labels."""
-    sys.path.insert(0,str(repo/'scripts/truth/latex'))
-    import release
-    import manual
-    truth=document(truth_raw);config_raw=read(repo/CONFIG);config=document(config_raw)
-    require(truth['schema_version']==1 and truth['truth_set']=='K1' and truth['origin']=='arxiv-latex' and truth['version']==config['version'], 'unsupported frozen K1 identity')
-    original=truth['provenance']
-    require(digest(config_raw)==original['build_config_sha256'], 'K1 config hash differs')
+def truth_verifier(repo):
+    # Load the application adapter by its exact path; historical parser modules
+    # are loaded only inside its isolated, manifest-verified worker.
+    path=repo/'scripts/truth/latex/versioned.py'
+    verifier=types.ModuleType('k1_versioned_verifier');verifier.__file__=str(path)
+    exec(compile(read(path),str(path),'exec'),verifier.__dict__)
+    return verifier
+
+
+def validate_truth(repo, cache, corpus, data, truth_raw, with_receipt=False):
+    """Replay the selected immutable release without using current parser modules."""
+    truth=document(truth_raw)
+    require(truth['schema_version']==1 and truth['truth_set']=='K1' and truth['origin']=='arxiv-latex', 'unsupported frozen K1 identity')
     # The historical detector is embedded in the frozen native caches. Current
     # wrappers are measured separately, while changed detectors require new caches.
-    require(digest(read(repo/'src/source_index/figures.rs'))==original['implementation']['src/source_index/figures.rs'], 'native cache detector source differs; new-generation measurement required')
-    for path,expected in original['implementation'].items():
-        if path.startswith('scripts/truth/latex/'):
-            require(digest(read(repo/path))==expected,'truth implementation changed')
-    evidence=release.verify_evidence(cache,config)
-    require(evidence==config['evidence_sha256']==original['evidence_sha256'], 'frozen K1 evidence drift')
-    inputs=document(read(cache/config['inputs']))
-    assemblies=[manual.assemble(cache,corpus,data,p['candidate'],p.get('region_bundle'),p.get('panel_bundle'),config['inputs'],config['indexes'],p.get('object_bundle'),p.get('bibliography_bundle')) for p in config['papers']]
-    current={name:read(repo/'scripts/truth/latex'/name) for name in ('archive.py','tex.py','parser.py','align.py','builder.py')}
-    history=release.validate_automatic_reports(cache,config,inputs,evidence,current)
-    rebuilt,_=release.build_release(assemblies,config,inputs,history);rebuilt['provenance']=original
+    require(digest(read(repo/'src/source_index/figures.rs'))==truth['provenance']['implementation']['src/source_index/figures.rs'], 'native cache detector source differs; new-generation measurement required')
+    rebuilt,config,receipt=truth_verifier(repo).replay(repo,cache,corpus,data,truth['version'])
     require(canonical(rebuilt)+b'\n'==truth_raw, 'K1 labels or complete cohort differ from independent evidence')
-    return truth,config
+    return (truth,config,receipt) if with_receipt else (truth,config)
 
 
 def atomic_json(path, value):
@@ -253,6 +249,9 @@ def implementation_files(repo):
     for root in ('src','scripts/truth/latex'):
         if (repo/root).is_dir():
             files.extend(str(p.relative_to(repo)) for p in (repo/root).rglob('*') if p.is_file() and p.suffix in ('.rs','.py') and not p.name.startswith('test'))
+    retained=repo/'eval/implementations/k1-limited-v1'
+    if retained.is_dir():
+        files.extend(str(p.relative_to(repo)) for p in retained.iterdir() if p.is_file() and (p.suffix=='.py' or p.name=='manifest.json'))
     return sorted(set(files))
 
 
@@ -300,7 +299,7 @@ def main():
     build= document(read(ROOT/'target/object-metrics-build.json'))
     sources={path:digest(read(ROOT/path)) for path in implementation_files(ROOT)}
     require(build['executable_sha256']==executable_hash and build['implementation']==sources, 'executable build receipt is stale')
-    truth_raw=read(ROOT/TRUTH);truth,config=validate_truth(ROOT,cache,corpus,data,truth_raw)
+    truth_raw=read(ROOT/TRUTH);truth,config,truth_verification_before=validate_truth(ROOT,cache,corpus,data,truth_raw,True)
     papers=[p for p in truth['papers'] if p['metric_eligibility']['O1']]
     require([p['paper_id'] for p in papers]==truth['coverage']['cohort_papers']['O1'] and papers,'incomplete frozen detection cohort')
     registry_path=data/'paper-identities.json';registry_raw=read(registry_path)
@@ -332,12 +331,12 @@ def main():
         metrics.append(evaluate_paper(paper,artifact,indexes[paper['paper_id']]))
     require(sources=={p:digest(read(ROOT/p)) for p in sources} and read(ROOT/TRUTH)==truth_raw and digest(read(expected,128*1024*1024))==executable_hash,'measurement source or truth changed')
     for path,expected_hash in tracked.items():require(digest(read(Path(path),512*1024*1024))==expected_hash,'canonical input changed during measurement')
-    sys.path.insert(0,str(ROOT/'scripts/truth/latex'));import release
-    require(release.verify_evidence(cache,config)==config['evidence_sha256'],'external truth evidence changed')
+    _,_,truth_verification_after=validate_truth(ROOT,cache,corpus,data,truth_raw,True)
+    require(sources=={p:digest(read(ROOT/p)) for p in sources},'measurement source changed during final truth replay')
     totals={k:sum(p[k] for p in metrics) for k in ('tp','fp','fn','truth_objects','predictions','unknown_truth_regions')}
     values=[v for p in metrics for v in p['region_values']];matched=[v for p in metrics for v in p['matched_region_values']]
     require(totals['truth_objects']>0 and values,'empty objective denominator')
-    observation={'schema_version':1,'collector':VERSION,'truth_sha256':digest(truth_raw),'truth_version':truth['version'],'coverage':truth['coverage'],'summary':totals,'O1':2*totals['tp']/(2*totals['tp']+totals['fp']+totals['fn']),'O2':statistics.median(values),'matched_only_median':statistics.median(matched) if matched else None,'papers':metrics,'object_hashes':object_hashes,'executable_sha256':executable_hash,'build_receipt_sha256':digest(read(ROOT/'target/object-metrics-build.json')),'external_input_hashes':tracked,'network_calls':0,'model_calls':0,'cost_usd':0,'wall_seconds':time.monotonic()-started}
+    observation={'schema_version':1,'collector':VERSION,'truth_sha256':digest(truth_raw),'truth_version':truth['version'],'coverage':truth['coverage'],'truth_verification':{'before':truth_verification_before,'after':truth_verification_after},'summary':totals,'O1':2*totals['tp']/(2*totals['tp']+totals['fp']+totals['fn']),'O2':statistics.median(values),'matched_only_median':statistics.median(matched) if matched else None,'papers':metrics,'object_hashes':object_hashes,'executable_sha256':executable_hash,'build_receipt_sha256':digest(read(ROOT/'target/object-metrics-build.json')),'external_input_hashes':tracked,'network_calls':0,'model_calls':0,'cost_usd':0,'wall_seconds':time.monotonic()-started}
     # Freeze full predictions externally; commit only derived diagnostic records.
     run_root=cache/'object-metrics'/digest(result.stdout)
     atomic_json(run_root/'predictions.json',response)

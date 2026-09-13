@@ -27,6 +27,43 @@ def fixture():
 
 
 class ObjectMetricTests(unittest.TestCase):
+    def should_select_the_original_version_when_current_parser_source_has_changed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);source=root/'src/source_index/figures.rs'
+            source.parent.mkdir(parents=True);source.write_bytes(b'original detector')
+            truth={'schema_version':1,'truth_set':'K1','origin':'arxiv-latex','version':'k1-limited-v1',
+                   'provenance':{'implementation':{'src/source_index/figures.rs':m.digest(source.read_bytes())}}}
+            calls=[]
+            def replay(*args):
+                calls.append(args);return truth,{'version':truth['version']},{'reproduced':True}
+            adapter=SimpleNamespace(replay=replay)
+            with patch.object(m,'truth_verifier',return_value=adapter):
+                result=m.validate_truth(root,root/'cache',root/'corpus',root/'data',m.canonical(truth)+b'\n',True)
+            self.assertEqual(calls[0][-1],'k1-limited-v1');self.assertTrue(result[2]['reproduced'])
+            # No current parser file exists: the historical verifier owns replay.
+            source.write_bytes(b'new detector')
+            with patch.object(m,'truth_verifier',return_value=adapter):
+                with self.assertRaisesRegex(ValueError,'native cache detector source differs'):
+                    m.validate_truth(root,root/'cache',root/'corpus',root/'data',m.canonical(truth)+b'\n')
+            self.assertEqual(len(calls),1)
+
+    def should_reject_foreign_labels_when_versioned_replay_returns_another_payload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);source=root/'src/source_index/figures.rs'
+            source.parent.mkdir(parents=True);source.write_bytes(b'detector')
+            truth={'schema_version':1,'truth_set':'K1','origin':'arxiv-latex','version':'k1-limited-v1',
+                   'provenance':{'implementation':{'src/source_index/figures.rs':m.digest(source.read_bytes())}}}
+            adapter=SimpleNamespace(replay=lambda *args:({**truth,'papers':['foreign']},{},{}))
+            with patch.object(m,'truth_verifier',return_value=adapter):
+                with self.assertRaisesRegex(ValueError,'labels or complete cohort differ'):
+                    m.validate_truth(root,root/'cache',root/'corpus',root/'data',m.canonical(truth)+b'\n')
+
+    def should_fingerprint_retained_modules_when_the_collector_uses_a_versioned_verifier(self):
+        files=m.implementation_files(m.ROOT)
+        self.assertIn('scripts/truth/latex/versioned.py',files)
+        self.assertIn('eval/implementations/k1-limited-v1/manifest.json',files)
+        self.assertIn('eval/implementations/k1-limited-v1/parser.py',files)
+
     def should_use_cargo_selected_artifact_when_inherited_targets_point_elsewhere(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);source=root/'examples/object_metrics.rs';source.parent.mkdir();source.write_text('source')

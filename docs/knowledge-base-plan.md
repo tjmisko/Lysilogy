@@ -1179,6 +1179,15 @@ system acceptance. Detector collectors must report the limited release version a
 Complete reviewed zero-kind papers remain negative examples. Original annotations and automatic
 exclusions remain immutable; only compact independently derived labels are committed.
 
+Coverage expansion compatibility decision (#97, 2026-09-13): retain the twelve exact
+reviewed application modules for `k1-limited-v1` in a bounded, hash-pinned source bundle.
+Historical collectors select that version's isolated verifier, reproduce both original
+payloads from the original evidence, and record verifier/source/evidence fingerprints.
+Current parser improvements cannot silently alter old labels or invalidate replay by
+requiring old and new parser bytes to match. Unknown versions are rejected until their
+own reviewed construction is explicitly selected. This does not change the approximately
+500-paper target, source-semantic guards, or the two-paper release's limited scope.
+
 Acceptance: truth covers every E1 object kind; alignment quality is reported per paper; the suite
 runs offline from the corpus cache.
 
