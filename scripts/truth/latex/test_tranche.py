@@ -14,10 +14,11 @@ from tranche import (ARTIFACTS, FORMAT, REVIEW_FORMAT, attach_tranche, covered, 
                      verify_correction_files)
 
 
-def fixture(visual_kind='figure'):
+def fixture(visual_kind='figure', extra_source=''):
     source = r'\begin{document}\begin{figure}\caption{A small chart.}\label{fig:a}\end{figure}\begin{equation}abcdefghij=12345\label{eq:a}\end{equation}\end{document}'
     if visual_kind == 'table':
         source = source.replace('{figure}', '{table}').replace(r'\label{fig:a}', r'cell\label{fig:a}')
+    source = source.replace(r'\end{document}', extra_source + r'\end{document}')
     files, members = read_archive(source.encode())
     name = next(iter(files)); parsed = parse_project(files)
     text = visual_kind.title() + ' 1. A small chart. ' + ('cell ' if visual_kind == 'table' else '') + 'abcdefghij=12345 (1)'
@@ -137,6 +138,11 @@ def seal(docs):
 
 
 class TrancheTests(unittest.TestCase):
+    def test_should_reject_tranche_membership_when_raw_caret_notation_can_change_tokens(self):
+        candidate, native, source, docs, images = fixture(extra_source='\n% ^^0a\\label{fig:a}\n')
+        with self.assertRaisesRegex(ValueError, 'pre-tokenization substitution'):
+            validate_tranche(canonical(candidate), canonical(native), source, seal(docs), images)
+
     def test_should_preserve_automatic_exclusions_when_complete_blind_mixed_inventory_is_reviewed(self):
         candidate, native, source, docs, images = fixture()
         result = validate_tranche(canonical(candidate), canonical(native), source, seal(docs), images)

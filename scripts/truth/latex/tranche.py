@@ -552,6 +552,8 @@ def validate_tranche(candidate_raw, index_raw, source_raw, raws, verified_images
     history(docs, raws, candidate_raw)
     review = validate_review(docs, raws, candidate)
     files, members = read_archive(source_raw)
+    require(not any('^^' in text for text in files.values()),
+            'manual source membership does not support pre-tokenization substitution')
     exact(docs['source_export']['source_sha256'], sha256(source_raw), 'blind source export names another archive')
     exact(docs['source_export']['text_members'], files, 'blind source export changed a deposited member')
     exact(docs['source_export']['members'], members, 'blind source member inventory is incomplete')

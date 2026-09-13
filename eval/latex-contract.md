@@ -55,6 +55,15 @@ A dynamic lookup without dynamic naming claims withholds only that lookup. Genui
 proofs still use source occurrence order, and naming uncertainty alone does not veto complete
 object detection. Existing execution/category-code guards remain independent; this capability
 does not claim a TeX name expander. Comments and unused definitions remain inert.
+Raw `^^` notation has an additional lexical hazard: TeX substitutes characters before
+tokenization and can thereby alter comment, argument or environment boundaries. The current
+parser scans every deposited text member before comment/definition/include masking, retains
+bounded original marker offsets and member hashes in `raw_lexical_substitutions`, and withholds
+all automatic inventory certainty under `unverified_pre_tokenization_substitution`. A masked
+comment, unused definition or unselected member cannot erase that guard. The remaining parsed
+rows are lexical diagnostics. No substitution is decoded. Both current manual formats reject
+raw `^^` in their independently re-read source archives because their source-membership codec
+does not establish the resulting token stream. This is separate from naming-only uncertainty.
 The retained v1/v2 modules, payloads and configuration remain immutable. New candidate metadata
 does not rewrite their inventories or change their version-selected replay.
 

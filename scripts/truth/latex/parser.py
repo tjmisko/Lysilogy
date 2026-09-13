@@ -127,7 +127,29 @@ def dynamic_label_name(value):
 def reference_names_verified(parsed, labels):
     # An unexpanded naming claim can alias any literal key in this paper.
     # An unexpanded lookup also cannot acquire a destination from its spelling.
-    return not parsed.get('unverified_label_names') and not any(dynamic_label_name(label) for label in labels)
+    return (not parsed.get('unverified_label_names') and not parsed.get('coverage', {}).get('raw_lexical_substitutions')
+            and not any(dynamic_label_name(label) for label in labels))
+
+
+def lexical_substitution_evidence(files, limits):
+    # TeX handles ^^ before tokenization, including comment/group boundaries.
+    # Inspect deposited bytes as decoded by the archive reader, before any
+    # comment/definition/include masking. Do not decode the substitution.
+    evidence, count, evidence_bytes = [], 0, 0
+    for path, text in sorted(files.items()):
+        spans = []
+        for match in re.finditer(r'\^\^', text):
+            count += 1
+            if count > limits.expansion_steps:
+                raise UnsupportedSource('lexical substitution occurrence evidence exceeds its count bound')
+            spans.append({'start': match.start(), 'end': match.end()})
+        if spans:
+            row = {'path': path, 'decoded_text_sha256': sha256(text.encode()), 'spans': spans}
+            evidence_bytes += len(json.dumps(row).encode())
+            if evidence_bytes > limits.text_bytes:
+                raise UnsupportedSource('lexical substitution evidence exceeds its byte bound')
+            evidence.append(row)
+    return evidence
 
 
 def source_identities(objects, expanded, files, limits):
@@ -559,6 +581,7 @@ def markup_fields(raw, renderer):
 
 
 def parse_project(files, limits=Limits(), selected_main=None):
+    lexical_substitutions = lexical_substitution_evidence(files, limits)
     expanded = expand_project(files, limits, selected_main)
     text = expanded.text
     renderer = Renderer(text, limits)
@@ -568,6 +591,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
     # TeX conditionals and scoped/repeated definitions affect what exists, not
     # just its presentation. We do not execute them or certify their inventory.
     source_semantics = Counter()
+    if lexical_substitutions:
+        source_semantics['unverified_pre_tokenization_substitution'] = sum(len(row['spans']) for row in lexical_substitutions)
     for path in local_style_dependencies(files, expanded.main, text):
         source_semantics["uninterpreted_local_style:" + path] += 1
     for command in COMMAND.finditer(scan):
@@ -1042,18 +1067,20 @@ def parse_project(files, limits=Limits(), selected_main=None):
     source_identity = source_identities(objects, expanded, files, limits)
     label_occurrences, ambiguous_labels, label_targets, unverified_label_names = label_inventory(
         objects, entries, nodes, formal_headings, scan, document, expanded, limits)
+    if lexical_substitutions:
+        label_targets = {}
     for link in links:
         if link['kind'] == 'reference':
             link['ambiguous_targets'] = {key: ambiguous_labels[key]['candidate_count']
                                          for key in dict.fromkeys(link['targets']) if key in ambiguous_labels}
-            link['unverified_target_names'] = bool(unverified_label_names) or any(dynamic_label_name(key) for key in link['targets'])
+            link['unverified_target_names'] = bool(unverified_label_names or lexical_substitutions) or any(dynamic_label_name(key) for key in link['targets'])
     preceding_statement = None
     for row in objects:
         row["proof_targets"] = [None if dynamic_label_name(label) else label_targets.get(label) for label in row["proof_target_labels"]]
         if row["kind"] == "proof":
             row['ambiguous_proof_target_labels'] = {key: ambiguous_labels[key]['candidate_count']
                                                    for key in dict.fromkeys(row['proof_target_labels']) if key in ambiguous_labels}
-            row['unverified_proof_target_names'] = bool(row['proof_target_labels']) and (bool(unverified_label_names) or any(dynamic_label_name(key) for key in row['proof_target_labels']))
+            row['unverified_proof_target_names'] = bool(row['proof_target_labels']) and (bool(unverified_label_names or lexical_substitutions) or any(dynamic_label_name(key) for key in row['proof_target_labels']))
             if row["proof_target_labels"]:
                 row["proof_linkage"] = "explicit source label in proof heading"
             elif row.get("proof_heading_source"):
@@ -1082,6 +1109,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
             "ambiguous_labels": ambiguous_labels, "unverified_label_names": unverified_label_names,
             "label_targets": label_targets, "statement_definitions": definitions,
             "coverage": {**expanded.coverage, "unsupported_commands": dict(renderer.unsupported),
+                         'raw_lexical_substitutions': lexical_substitutions,
                          'label_resolution': {'occurrences': len(label_occurrences), 'ambiguous_names': len(ambiguous_labels),
                                               'ambiguous_occurrences': sum(row['candidate_count'] for row in ambiguous_labels.values()),
                                               'unverified_names': len(unverified_label_names),

@@ -104,6 +104,8 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
     require(inputs['candidate_sha256_from_packet'] == sha256(candidate_raw) and inputs['inventory_sha256_from_packet'] == candidate['source_inventory_sha256'], 'independent annotator used another candidate inventory')
     require(inputs['packet']['sha256'] == sha256(packet_raw) and inputs['pdf']['sha256'] == candidate['pdf_sha256'] and inputs['source']['sha256'] == candidate['source_sha256'] and inputs['reading_index']['sha256'] == sha256(index_raw), 'independent annotation used different source/PDF/index artifacts')
     files, members = read_archive(source_raw)
+    require(not any('^^' in text for text in files.values()),
+            'manual source membership does not support pre-tokenization substitution')
     require(inputs['source_members'] == members, 'independent source archive member inventory differs')
     index = wrapper['index']; pages = {row['number']: row for row in index['pages']}
     require(root['viewed_all_pages'] == sorted(pages), 'root did not inspect the complete PDF')

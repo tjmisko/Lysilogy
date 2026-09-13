@@ -18,6 +18,42 @@ def equation(body, labels=''):
 
 
 class DuplicateLabelTests(unittest.TestCase):
+    def test_should_withhold_inventory_when_caret_notation_can_inject_structural_tokens(self):
+        encoded = r'a^^7d^^5cend^^7bequation^^7d^^5cbegin^^7bequation^^7d^^5clabel^^7bb'
+        raw = equation('abcdefghij=12345', '\\label{' + encoded + '}')
+        literal = raw.replace(encoded, r'a}\end{equation}\begin{equation}\label{b')
+        parsed, decoded = parse(raw), parse(literal)
+        self.assertEqual(len(parsed['objects']), 1)
+        self.assertEqual(len(decoded['objects']), 2)
+        result = align_paper(parsed, {'text': 'abcdefghij=12345', 'tokens': []})
+        self.assertFalse(any(result['metric_eligibility'].values()))
+        self.assertIn('unverified_pre_tokenization_substitution', parsed['coverage']['unsupported_source_semantics'])
+        self.assertEqual(parsed['label_targets'], {})
+
+    def test_should_inspect_raw_members_when_caret_notation_appears_before_masking(self):
+        obj = equation('abcdefghij=12345', r'\label{a}')
+        cases = [(obj + '\n% ^^0a\\label{b}\n', '', None),
+                 (obj, r'\newcommand{\unused}{^^5clabel{b}}', None),
+                 (obj + r'\input{part}', '', {'part.tex': '% ^^0a\\label{b}'}),
+                 (obj, '', {'unused.tex': '% ^^0a\\label{b}'})]
+        for body, preamble, included in cases:
+            files = {'main.tex': document(body, preamble), **(included or {})}
+            parsed = parse_project(files)
+            self.assertEqual(len(parsed['objects']), 1)
+            self.assertEqual(parsed['label_targets'], {})
+            evidence = parsed['coverage']['raw_lexical_substitutions']
+            self.assertTrue(evidence)
+            for row in evidence:
+                for span in row['spans']:
+                    self.assertEqual(files[row['path']][span['start']:span['end']], '^^')
+            self.assertFalse(any(align_paper(parsed, {'text': 'abcdefghij=12345', 'tokens': []})['metric_eligibility'].values()))
+
+    def test_should_bound_raw_lexical_evidence_when_caret_tokens_repeat_in_a_comment(self):
+        with self.assertRaisesRegex(UnsupportedSource, 'lexical substitution.*count bound'):
+            parse('% ' + '^^' * 4, limits=Limits(expansion_steps=3))
+        with self.assertRaisesRegex(UnsupportedSource, 'lexical substitution.*byte bound'):
+            parse('% ^^', limits=Limits(text_bytes=5))
+
     def test_should_keep_occurrences_but_withhold_names_when_a_macro_can_alias_a_literal_label(self):
         included = equation('gamma+delta=67890', r'\label{\alias}')
         for preamble in (r'\newcommand{\alias}{a}', r'\newcommand{\other}{a}\newcommand{\alias}{\other}'):

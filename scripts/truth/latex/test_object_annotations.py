@@ -99,6 +99,11 @@ def apply(rows):
 
 
 class ObjectAnnotationTests(unittest.TestCase):
+    def test_should_reject_manual_source_membership_when_raw_caret_notation_can_change_tokens(self):
+        rows = fixture(extra_source='\n% ^^0a\\label{thm:a}\n')
+        with self.assertRaisesRegex(ValueError, 'pre-tokenization substitution'):
+            apply(rows)
+
     def test_should_reject_manual_destinations_when_a_dynamic_claim_can_alias_static_labels(self):
         for launder in (False, True):
             rows = fixture(extra_source=r'\label{\alias}')
