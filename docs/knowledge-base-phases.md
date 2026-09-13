@@ -125,7 +125,7 @@ acceptance are unchanged.
   `Figure` currently lives in `src/source_index.rs` inside the cached `reading-index.json`
   (schema version 6). Wrap it; do not move figure detection or bump the reading-index schema
   unless required. `objects.json` records the reading-index generation it was derived from.
-- [ ] **#19 E0.1 Synthetic 10k vault and benchmarks**. Branch `feat/e0.1-scale-bench`.
+- [x] **#19 E0.1 Synthetic 10k vault and benchmarks**. Branch `feat/e0.1-scale-bench`.
   Owns a generator and benchmark subcommand or script. The vault goes under
   `~/.cache/lysilogy/bench-vault/`. Commit the baseline report to
   `docs/experiment-reports/`.
@@ -186,6 +186,23 @@ acceptance are unchanged.
 
 ### Phase A notes
 
+- #19 merged in PR #82 (`2683dce`), completing A1. The full default run generated and verified
+  10,000 PDFs, persisted all 10,000 extraction artifacts, performed six full extraction trials,
+  and drove the release app with Playwright for three navigations and 60 searches. O25's populated
+  no-change median is **15.503406 s** (target 2 s; follow-up #21); O26's first-render median is
+  **1,757.1 ms** and search p95 **163.4 ms** (targets 500/150 ms; follow-up #22). Both existing
+  issues now record the measured gap and next approach. These initial baselines are ratcheted;
+  targets remain unchanged. All extractor outputs match; serial/four-worker medians are
+  155.140652/45.328635 s, giving exploratory efficiency 0.855644. O27 remains unavailable until
+  production concurrency ships in #23. The original clean-source run took 1,260.601 s and $0;
+  raw observations and screenshot remain in
+  `~/.cache/lysilogy/bench-vault/runs/d2019ea2409e42ceb373a98b03fb08ce`.
+  Reports and derived evidence are committed under `docs/experiment-reports/2026-09-12-e0.1-*`
+  and `eval/evidence/synthetic-benchmark-10k*.json`. Independent review verified physical counts,
+  exact raw observations, all 150 source fingerprints, metric formulas, and retained gates.
+  After integrating #85, final gates passed 279 Rust, 80 Python and 85 Node tests; G5 passes,
+  O30 remains 0/10k. Both completed branches/worktrees are removed. Corpus harvesting continues
+  from already loaded code; independent audit confirmed no remaining worktree dependency.
 - Follow-up #85 (epic #67) merged in PR #86 (`e12adc3`) after independent review and all
   quality gates. Corpus builds can explicitly select `--proxy-env HTTPS_PROXY` (or
   `https_proxy`); this supports HTTP CONNECT transport with normal origin TLS verification.
