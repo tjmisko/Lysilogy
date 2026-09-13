@@ -34,10 +34,24 @@ class SourceTests(unittest.TestCase):
             with self.subTest(spelling=spelling):
                 row = parsed['coverage']['math_operator_declarations'][0]
                 self.assertEqual(row['name'], 'argbest')
-                self.assertTrue(row['inventory_verified'])
+                self.assertTrue(row['literal_definition_verified'])
+                self.assertFalse(row['inventory_verified'])
                 self.assertFalse(row['rendering_verified'])
                 self.assertEqual(row['source_members'], [{'path': 'operators.tex', 'start': 0, 'end': len(spelling)}])
-                self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+
+    def test_should_require_an_executed_package_prefix_when_metadata_or_a_macro_contains_package_tokens(self):
+        declaration = r'\DeclareMathOperator{\argbest}{best}'
+        for loads in (r'\title{\usepackage{amsmath}}', r'\title\usepackage{amsmath}',
+                      r'\author{\RequirePackage{amsmath}}', r'{\usepackage{amsmath}}',
+                      r'\iffalse\usepackage{amsmath}\fi',
+                      r'\newcommand{\loadams}{\usepackage{amsmath}}\loadams'):
+            parsed = parse_project({'main.tex': document('', loads + declaration)})
+            with self.subTest(loads=loads):
+                row = parsed['coverage']['math_operator_declarations'][0]
+                self.assertFalse(row['literal_definition_verified'])
+                self.assertFalse(row['inventory_verified'])
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
 
     def test_should_withhold_operator_declarations_when_scope_lifetime_or_definition_identity_is_unproven(self):
         declaration = r'\DeclareMathOperator{\argbest}{arg best}'

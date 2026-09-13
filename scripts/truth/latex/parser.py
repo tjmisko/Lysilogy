@@ -184,20 +184,45 @@ def environment_commands(scan, aliases, limits):
 
 
 def math_operator_declarations(text, scan, reserved, limits):
-    """Prove the inventory effect of a finite AMS preamble declaration.
+    """Retain finite AMS declaration evidence, withholding unproved namespaces.
 
     amsopn defines a new zero-argument math operator, retaining its literal
     display body; the starred form changes limits placement. Neither form is a
-    source-object producer. We do not infer faithful PDF rendering from this
-    capability, or execute any deposited command in the display body.
+    source-object producer when its name is truly fresh. That freshness is not
+    established by a short reserved-name list. No inventory admission or
+    faithful PDF rendering follows from this partial syntax evidence.
     """
     commands = [match for match in COMMAND.finditer(scan) if match[1].rstrip('*') == 'DeclareMathOperator']
     if len(commands) > limits.expansion_steps:
         raise UnsupportedSource('math operator declaration count exceeds its bound')
     documents = list(argument_commands(scan, {'begin'}))
     document_start = next((row['start'] for row in documents if row['value'] == 'document'), 0)
-    ams_loads = [row for row in argument_commands(scan, {'usepackage', 'RequirePackage'})
-                 if {name.strip() for name in row['value'].split(',')} & {'amsmath', 'amsopn'}]
+    # A token inside title/author metadata, even an unbraced consumed token,
+    # does not prove a package was loaded. Restrict this diagnostic capability
+    # to the literal initial class/package sequence, before any other command.
+    ams_loads = []
+    try:
+        pos = skip_space(text, 0)
+        initial = COMMAND.match(text, pos)
+        if initial and initial[1] in {'documentclass', 'documentstyle'}:
+            _, pos = group(text, initial.end(), '[', ']', False, limits.group_depth)
+            _, pos = group(text, pos, limit=limits.group_depth)
+            while True:
+                pos = skip_space(text, pos)
+                load = COMMAND.match(text, pos)
+                if not load or load[1] not in {'usepackage', 'RequirePackage'}:
+                    break
+                _, pos = group(text, load.end(), '[', ']', False, limits.group_depth)
+                names, pos = group(text, pos, limit=limits.group_depth)
+                if not re.fullmatch(r'[A-Za-z0-9_,. \t\r\n-]+', names):
+                    break
+                if {name.strip() for name in names.split(',')} & {'amsmath', 'amsopn'}:
+                    ams_loads.append({'start': load.start(), 'end': pos})
+                if len(ams_loads) > limits.expansion_steps:
+                    raise UnsupportedSource('package prefix inspection exceeds its bound')
+    except UnsupportedSource as error:
+        if any(word in str(error) for word in ('bound', 'nesting', 'recursion')):
+            raise
     reserved = reserved | set('arccos arcsin arctan arg cos cosh cot coth csc deg det dim exp gcd hom inf injlim ker lg lim liminf limsup ln log max min Pr projlim sec sin sinh sup tan tanh'.split())
     environment_names = set(ENVIRONMENTS) | LAYOUT_ENVIRONMENTS | set(STANDARD_STATEMENTS) | UNVERIFIED_MATH_LAYOUTS | {
         'math', 'displaymath', 'alignat', 'flalign', 'verbatim', 'Verbatim', 'minted', 'alltt', 'comment'}
@@ -264,6 +289,14 @@ def math_operator_declarations(text, scan, reserved, limits):
     for row in rows:
         if row['name'] and repeated[row['name']] != 1:
             row['reason'] = 'operator name is declared more than once'
+        row['literal_definition_verified'] = row['reason'] is None
+        if row['reason'] is None:
+            # A finite name blacklist cannot prove absence from a loaded
+            # package/kernel namespace, especially with generated csname
+            # families. Retain the complete literal-body evidence, but do not
+            # let it remove inventory guards without a reviewed namespace
+            # proof. No caller-supplied trust flag bypasses this boundary.
+            row['reason'] = 'imported control-word namespace has not been independently verified'
     return rows
 
 

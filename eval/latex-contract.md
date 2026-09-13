@@ -173,18 +173,27 @@ step-labeled list outside a parsed algorithm container prevents an algorithm
 absence claim. These source-role exclusions retain original spans and affect the
 relevant metric cohorts; a complete independent kind elsewhere remains usable.
 
-The AMS `DeclareMathOperator` capability accepts a single top-level preamble
-declaration following an explicit `amsmath` or `amsopn` package load. Its new
+The AMS `DeclareMathOperator` diagnostic retains a single top-level preamble
+declaration following an explicit `amsmath` or `amsopn` load in the literal
+initial class/package sequence. A package token inside stored or deferred
+content does not establish an executed load. A new
 control word must not replace an existing primitive, environment entry/exit
 command, or deposited definition. Names beginning with `end` are forbidden by
 LaTeX's declaration contract. The
-its complete body is bounded literal letters/digits/spaces and standard spacing
+complete body is bounded literal letters/digits/spaces and standard spacing
 tokens. Braced and one-token names and the standard starred variant preserve
 their original source spans. Scoped, conditional, repeated, deferred, dynamic,
-and structurally active declarations remain unsupported. The resulting operator
-is known only to have no object-inventory side effect; its mathematical font,
-limits and text rendering remain unverified. This does not certify any local
-package or style implementation.
+and structurally active declarations remain unsupported.
+
+Literal-definition evidence is separate from inventory eligibility. The
+current implementation withholds all such declarations until freshness in the
+complete imported namespace is independently established. A short list of
+known kernel/package names cannot establish this, and neither can an incomplete
+regex catalog that misses generated `csname` names. In particular, failed
+declarations can leave an existing package argument consumer active and change
+which raw source tokens execute. The mathematical font, limits and text
+rendering remain independently unverified. No caller-provided trust flag or
+installed TeX runtime call bypasses the boundary.
 
 This finite contract was checked against installed `amsopn.sty`, whose
 `DeclareMathOperator`/`@declmathop` definitions create a new zero-argument

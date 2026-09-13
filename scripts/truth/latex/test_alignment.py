@@ -41,19 +41,29 @@ class AlignmentTests(unittest.TestCase):
         self.assertEqual(evidence['source_members'], [{'path': 'main.tex', 'start': source.index(r'\section{References}'), 'end': source.index(r'\section{Appendix}')}])
         self.assertFalse(align_paper(parsed, {'text': 'Smith, A. A manually formatted reference. 2020. Ordinary appendix text.'})['bibliography_eligible'])
 
-    def test_should_preserve_other_complete_kinds_when_a_declared_operator_has_unverified_math_rendering(self):
+    def test_should_retain_literal_operator_evidence_when_imported_namespace_and_math_rendering_remain_unverified(self):
         source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
                           r'\begin{equation}\argbest abcdefghij=12345\end{equation}',
                           r'\usepackage{amsmath}\DeclareMathOperator*{\argbest}{arg\,best}')
         parsed = parse_project({'main.tex': source})
-        self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+        self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
         declaration = parsed['coverage']['math_operator_declarations'][0]
-        self.assertTrue(declaration['inventory_verified'])
+        self.assertTrue(declaration['literal_definition_verified'])
+        self.assertFalse(declaration['inventory_verified'])
         self.assertFalse(declaration['rendering_verified'])
         result = align_paper(parsed, {'text': 'An independently complete visual caption. abcdefghij=12345'})
-        self.assertTrue(result['metric_eligibility']['O1'])
+        self.assertFalse(result['metric_eligibility']['O1'])
         self.assertFalse(result['metric_eligibility']['O3'])
         self.assertTrue(next(row for row in parsed['objects'] if row['kind'] == 'equation')['unsupported_commands'])
+
+    def test_should_withhold_namespace_collisions_when_an_imported_command_consumes_a_different_argument_role(self):
+        for name in ('theoremstyle', 'operatornamewithlimits'):
+            source = document('\\' + name + r'{\begin{theorem}This theorem is only a stored argument.\end{theorem}}',
+                              r'\usepackage{amsmath,amsthm}\DeclareMathOperator{' + '\\' + name + '}{style}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(name=name):
+                self.assertFalse(parsed['coverage']['math_operator_declarations'][0]['inventory_verified'])
+                self.assertFalse(any(align_paper(parsed, {'text': 'This theorem is only a stored argument.'})['metric_eligibility'].values()))
 
     def test_should_include_descendant_reference_sections_when_only_a_sibling_or_ancestor_ends_the_role(self):
         for heading, descendant, boundary in (
