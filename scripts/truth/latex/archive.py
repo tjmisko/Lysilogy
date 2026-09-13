@@ -89,8 +89,6 @@ def read_archive(raw, limits=Limits()):
             total += member.size
             if total > limits.expanded_bytes:
                 raise UnsupportedSource("archive members exceed the aggregate byte bound")
-            if PurePosixPath(name).suffix.lower() not in (".tex", ".bbl", ".bib", ".aux", ".sty", ".cls", ".ltx"):
-                continue
             stream = archive.extractfile(member)
             if stream is None:
                 raise UnsupportedSource("archive member cannot be read")
@@ -98,14 +96,16 @@ def read_archive(raw, limits=Limits()):
                 data = stream.read(limits.member_bytes + 1)
             if len(data) != member.size:
                 raise UnsupportedSource("archive member has an inconsistent size")
-            text, encoding = decode_text(data)
-            files[name] = text
+            encoding = None
+            if PurePosixPath(name).suffix.lower() in (".tex", ".bbl", ".bib", ".aux", ".sty", ".cls", ".ltx"):
+                text, encoding = decode_text(data)
+                files[name] = text
             evidence.append({"path": name, "sha256": sha256(data), "bytes": len(data), "encoding": encoding})
     except (tarfile.TarError, OSError, EOFError) as error:
         raise UnsupportedSource("invalid tar source") from error
     finally:
         archive.close()
-    if sum(item["bytes"] for item in evidence) > limits.text_bytes:
+    if sum(item["bytes"] for item in evidence if item["encoding"] is not None) > limits.text_bytes:
         raise UnsupportedSource("source text exceeds its aggregate byte bound")
     if not files:
         raise UnsupportedSource("archive contains no supported text members")

@@ -39,3 +39,13 @@ remain read-only under `~/Corpora/`; all full text and extraction caches remain 
 
 K1 publication, stratified build receipts, and three-agent panel judgments must establish actual
 coverage before this issue is complete. An exploratory parse/alignment pilot is not final K1.
+
+`python3 -B scripts/truth/latex/builder.py --pilot 25` freezes a category/year-stratified
+exploratory input snapshot from verified eval PDF/source pairs, validates manifest/sidecar identity,
+and retains candidates under `~/.cache/lysilogy/k1-builds/`. It builds the offline native helper,
+uses Cargo's reported executable, and fingerprints source, executable, PDF, source archive, and
+index bytes. It never changes corpus files. Main-file ties require a unique source title in the
+actual PDF first page or identical resolved text, active bibliography, and graphics hashes.
+All regular archive members are hash-pinned in memory; binary resources are never decoded as TeX.
+The full-build path currently refuses publication until the coverage and independent panel
+contract is implemented and satisfied; exploratory reports explicitly retain that limitation.
