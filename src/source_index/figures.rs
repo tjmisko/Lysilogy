@@ -518,7 +518,8 @@ fn native_regions(
             if horizontal_gap(rect, caption) == 0.0 {
                 let diagram_label = text.len() <= 12
                     && text.iter().all(|token| {
-                        !token.text.chars().any(|ch| ch.is_ascii_digit())
+                        !token.text.chars().any(char::is_numeric)
+                            && !token.rects.is_empty()
                             && token.rects.iter().all(|r| {
                                 let height = r.y_max - r.y_min;
                                 height > 0.0 && height < body_font * 0.85
@@ -1713,16 +1714,28 @@ mod tests {
 
     #[test]
     fn should_keep_image_bounds_when_native_labels_lack_independent_diagram_enclosure() {
-        for case in ["above_only", "numeric_grid", "separate_caption"] {
-            let bottom_text = if case == "numeric_grid" {
-                "Output 25"
-            } else {
-                "Output"
+        for case in [
+            "above_only",
+            "numeric_grid",
+            "unicode_numeric_grid",
+            "separate_caption",
+            "missing_geometry",
+        ] {
+            let bottom_text = match case {
+                "numeric_grid" => "Output 25",
+                "unicode_numeric_grid" => "٥٦",
+                "missing_geometry" => "Output node",
+                _ => "Output",
             };
             let bottom_y = if case == "above_only" { 90.0 } else { 200.0 };
+            let (top_text, middle_text) = if case == "unicode_numeric_grid" {
+                ("١٢", "٣٤")
+            } else {
+                ("Input", "Encoder")
+            };
             let mut lines = vec![
-                ("Input", "float", 80.0, 80.0),
-                ("Encoder", "float", 200.0, 140.0),
+                (top_text, "float", 80.0, 80.0),
+                (middle_text, "float", 200.0, 140.0),
                 (bottom_text, "float", 220.0, bottom_y),
             ];
             if case == "separate_caption" {
@@ -1743,6 +1756,9 @@ mod tests {
             for token in &mut index.tokens {
                 if token.start < index.objects.paragraph[3].start {
                     token.rects[0].y_max = token.rects[0].y_min + 6.0;
+                }
+                if token.text == "node" {
+                    token.rects.clear();
                 }
             }
             let image = TextRect {
