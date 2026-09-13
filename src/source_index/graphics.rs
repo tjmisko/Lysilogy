@@ -510,6 +510,9 @@ pub fn parse_trace(raw: &[u8], page: &ReadingPage) -> Result<(Vec<TextRect>, usi
         return Err(invalid());
     }
     if unsafe_state {
+        if unsupported + images.len() == 0 {
+            return Err(invalid());
+        }
         unsupported += images.len();
         images.clear();
     }
@@ -671,6 +674,11 @@ mod tests {
             trace("<fill_text><span><g unicode=\"&lt;fill_image x='1'&gt;\"/></span></fill_text>");
         assert!(parse_trace(&quoted, &page()).unwrap().0.is_empty());
     }
+    #[test]
+    fn should_withhold_completion_when_unknown_state_contains_no_observed_images() {
+        assert!(parse_trace(&trace("<unknown_hook/>"), &page()).is_err());
+    }
+
     #[test]
     fn should_enforce_resource_bounds_when_traces_exceed_supported_inventory() {
         assert!(parse_trace(&trace(&image("100 0 0 50 20 30").repeat(257)), &page()).is_err());

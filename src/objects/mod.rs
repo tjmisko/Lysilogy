@@ -218,6 +218,17 @@ pub async fn load_or_build_from_source(
         && cached.figure_detector_version == FIGURE_DETECTOR_VERSION
         && let Some(evidence) = &cached.graphics
         && evidence.reusable_for(&prepared)
+        && evidence
+            .pages
+            .iter()
+            .map(|page| page.page)
+            .collect::<Vec<_>>()
+            == detect_figures(&document.index)
+                .iter()
+                .map(|figure| figure.page)
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect::<Vec<_>>()
         && cached.figure_detector_generation
             == source_detector_generation(&document.etag, &evidence.generation)
     {
