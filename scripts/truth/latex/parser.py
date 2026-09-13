@@ -363,7 +363,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
                 if len(seen) > limits.expansion_steps:
                     raise UnsupportedSource("macro argument dependency closure exceeds its bound")
                 dependencies = {item[1].rstrip("*") for item in COMMAND.finditer(renderer.macros[current][1])}
-                if any(renderer.macros.get(dependency, (0, ""))[0] or STORED_ARGUMENT_ROLES.get(dependency)
+                if any(renderer.macros.get(dependency, (0, ""))[0] or dependency in STORED_ARGUMENT_ROLES
                        for dependency in dependencies):
                     forwarding[name] = True
                     break

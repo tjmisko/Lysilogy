@@ -21,6 +21,7 @@ class AlignmentTests(unittest.TestCase):
         statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
         for definitions, body in ((r'\newcommand{\literal}{\url}', r'\literal{' + statement + '}'),
                                   (r'\newcommand{\middle}{\url}\newcommand{\literal}{\middle}', r'\literal{' + statement + '}'),
+                                  (r'\newcommand{\listing}{\printbibliography}', r'\listing[' + statement + ']'),
                                   (r'\newcommand{\hidden}[1]{#1\index}', r'\hidden{ordinary}{' + statement + '}')):
             parsed = parse_project({'main.tex': document(body, definitions)})
             with self.subTest(definitions=definitions):
