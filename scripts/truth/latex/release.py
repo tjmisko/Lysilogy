@@ -48,9 +48,12 @@ def build_release(assemblies, config, inputs, history):
         require(candidate['arxiv_id'] == specification['arxiv_id'] and candidate['paper_id'] == specification['paper_id'], 'release paper order/identity differs from frozen cohort')
         require(candidate['arxiv_id'] in frozen, 'release paper is outside frozen eval inputs')
         source = frozen[candidate['arxiv_id']]
+        require(re.fullmatch(r'[0-9a-f]{16}', candidate['paper_id']) and type(source['version']) is int and source['version'] > 0, 'release lacks a valid mapped ID and pinned arXiv version')
+        require(candidate['stratum'] == source['stratum'], 'release stratum differs from frozen eval selection')
+        require(all(candidate[key] == source['version'] for key in ('version','arxiv_version') if key in candidate), 'release candidate version differs from frozen source version')
         require(candidate['pdf_sha256'] == source['pdf']['sha256'] and candidate['source_sha256'] == source['source']['sha256'], 'release artifact differs from frozen corpus cohort')
         row = {key: candidate[key] for key in ('arxiv_id', 'paper_id', 'pdf_sha256', 'source_sha256', 'index', 'stratum', 'source_inventory_sha256')}
-        row.update(arxiv_url='https://arxiv.org/abs/' + candidate['arxiv_id'],
+        row.update(arxiv_version=source['version'], arxiv_url='https://arxiv.org/abs/' + candidate['arxiv_id'] + 'v' + str(source['version']),
                    alignment={'quality': 1.0, 'method': 'complete source/PDF inventory independently annotated and reconciled per eligible metric'},
                    objects=[], entries=[], mentions=[], references=[], associated_content=[],
                    metric_eligibility={key: False for key in METRICS}, reviewed_absent_kinds=[],
@@ -109,6 +112,8 @@ def build_release(assemblies, config, inputs, history):
                     'O10': {'citation_target_pairs': sum(len(paper['mentions']) for paper in papers)}, 'O11': {'papers': len(cohort_papers['O11']), 'panelist_top3_opportunities': 9 * len(cohort_papers['O11'])}}
     coverage = {'release_papers': len(papers), 'target_papers': 500, 'target_met': len(papers) >= 500,
                 'frozen_eval_papers': len(frozen), 'cohort_papers': cohort_papers, 'denominators': denominators,
+                'excluded_eval_papers_by_metric': {metric: len(frozen) - len(papers) for metric,papers in cohort_papers.items()},
+                'frozen_eval_strata': dict(Counter(str(paper['stratum']) for paper in frozen.values())),
                 'positive_object_counts': dict(totals), 'strata': dict(strata), 'selection_bias': config['selection_bias'],
                 'publication_deviation': config['publication_deviation'], 'followup': config['coverage_followup'],
                 'automatic_builds': history, 'system_acceptance_claimed': False}
@@ -117,13 +122,13 @@ def build_release(assemblies, config, inputs, history):
                'build_date': config['build_date'], 'coverage': coverage, 'papers': papers}
     bibliography = {key: release[key] for key in ('schema_version','truth_set','origin','alignment_threshold','scope','build_date','coverage')}
     bibliography['version'] = config['version'] + '-bibliography'
-    bibliography['papers'] = [{key: paper[key] for key in ('arxiv_id','paper_id','pdf_sha256','source_sha256','index','alignment','entries','mentions','provenance')} for paper in papers if paper['bibliography_eligible']]
+    bibliography['papers'] = [{key: paper[key] for key in ('arxiv_id','arxiv_version','arxiv_url','paper_id','pdf_sha256','source_sha256','index','alignment','entries','mentions','provenance')} for paper in papers if paper['bibliography_eligible']]
     return release, bibliography
 
 
 def evidence_paths(config):
     required = {config['inputs'], config['indexes']}
-    required.update(item['path'] for item in config['automatic_builds'])
+    required.update(item[key] for item in config['automatic_builds'] for key in ('path','paper_summaries'))
     for paper in config['papers']:
         required.add(paper['candidate'])
         for field, names in [('region_bundle', ('regions-root-v1.json','review-independent-v1.json','source-associations-root-v1.json','source-associations-independent-review-v1.json')),
@@ -139,12 +144,25 @@ def verify_evidence(cache, config):
     return {path: sha256(bounded(cache, path)) for path in evidence_paths(config)}
 
 
+def checked_output_ancestors(path):
+    """Reject redirected output paths before directory creation or file reads."""
+    path = path.absolute()
+    require('..' not in path.parts, 'release output cannot traverse parent directories')
+    for ancestor in reversed((path, *path.parents)):
+        require(not ancestor.is_symlink(), 'release output or staging ancestor is a symlink')
+        if ancestor != path:
+            require(not ancestor.exists() or ancestor.is_dir(), 'release output ancestor is not a directory')
+    return path
+
+
 def write_immutable(output, payloads):
+    output = checked_output_ancestors(output)
     if output.exists():
         require(output.is_dir() and not output.is_symlink() and {path.name for path in output.iterdir()} == set(payloads), 'existing release has unexpected files')
         require(all((output / name).is_file() and not (output / name).is_symlink() and (output / name).read_bytes() == raw for name,raw in payloads.items()), 'published release bytes are immutable; choose a new version')
         return
     stage = output.parent / ('.' + output.name + '-staging-' + sha256(canonical({name:sha256(raw) for name,raw in payloads.items()}))[:16])
+    checked_output_ancestors(stage)
     stage.mkdir(parents=True, exist_ok=True)
     require(not stage.is_symlink() and set(path.name for path in stage.iterdir()).issubset(payloads), 'release staging directory has unexpected files')
     for name,raw in payloads.items():
@@ -178,13 +196,17 @@ def main():
     for row in config['automatic_builds']:
         report=document(bounded(cache,row['path']))
         require(report['input_sha256'] == before[config['inputs']] and report['index_map_sha256'] == before[config['indexes']], 'automatic coverage report used different frozen inputs')
-        history.append({'path':row['path'],'sha256':before[row['path']],'label':row['label'],'summary':{key:report[key] for key in ('head','papers','counts','eligible_metrics','wall_seconds','peak_rss_kib','network_calls','model_calls','external_cost_usd')}})
+        summaries=bounded(cache,row['paper_summaries']).splitlines()
+        summary_rows=[document(line) for line in summaries]
+        require(len(summary_rows) == report['papers'] and len({item['arxiv_id'] for item in summary_rows}) == report['papers'], 'automatic per-paper summary inventory is incomplete or duplicated')
+        require({item['arxiv_id'] for item in summary_rows} == {item['arxiv_id'] for item in document(bounded(cache,config['inputs']))['papers']}, 'automatic coverage summaries differ from the frozen eval population')
+        history.append({'path':row['path'],'sha256':before[row['path']],'paper_summaries':row['paper_summaries'],'paper_summaries_sha256':before[row['paper_summaries']],'label':row['label'],'summary':{key:report[key] for key in ('head','papers','counts','eligible_metrics','wall_seconds','peak_rss_kib','network_calls','model_calls','external_cost_usd')}})
     release,bibliography=build_release(assemblies,config,document(bounded(cache,config['inputs'])),history)
     require(before==verify_evidence(cache,config) and implementation==fingerprint_sources() and config_path.read_bytes()==config_raw,'release inputs or implementation changed during assembly')
     release['provenance']={'build_config_sha256':sha256(config_raw),'implementation':implementation,'evidence_sha256':before}
     bibliography['provenance']=release['provenance']
     payloads={'objects.json':canonical(release)+b'\n','bibliography.json':canonical(bibliography)+b'\n'}
-    output=repo/'eval/truth'/config['version'];output.parent.mkdir(parents=True,exist_ok=True)
+    output=repo/'eval/truth'/config['version'];checked_output_ancestors(output);output.parent.mkdir(parents=True,exist_ok=True)
     write_immutable(output,payloads)
     receipt={'schema_version':1,'release_version':config['version'],'release_paths':{str((output/name).relative_to(repo)):sha256(raw) for name,raw in payloads.items()},'implementation':implementation,'config_sha256':sha256(config_raw),'assembled_at':datetime.now(timezone.utc).isoformat(),'wall_seconds':time.monotonic()-started,'network_calls':0,'model_calls':0,'external_call_cost_usd':0,'prior_agent_judgment_cost_usd':None,'coverage':release['coverage']}
     atomic_json(cache/'k1-release-receipts'/config['version']/(sha256(canonical(receipt))+'.json'),receipt)

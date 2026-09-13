@@ -15,7 +15,7 @@ def fixture():
     figure={**deepcopy(base),'arxiv_id':'2101.00001','paper_id':'fedcba9876543210','manual_figure_table_overlay':{'metric_eligibility':{'O1':True,'O2':True},'objects':[{'id':'figure','kind':'figure','spans':[]},{'id':'table','kind':'table','spans':[]}],'evidence_hashes':{}},'independent_panel':{'identities':[{'agent_identity':str(i)} for i in range(3)],'panelists':[['a','b','c'] for _ in range(3)],'valid_ids':['a','b','c'],**{key:'f'*64 for key in ('packet_sha256','prompt_sha256','review_sha256','scoring_policy_sha256')},'selection_policy':'Explicit manual pilot'}}
     papers=[math,figure]
     config={'version':'k1-limited-v1','build_date':'2026-09-13','target_papers':500,'coverage_followup':'https://github.com/tjmisko/Lysilogy/issues/97','selection_bias':'Two manually selected complete papers; no generalization','publication_deviation':'Limited all-kind release; original target remains unmet','papers':[{'arxiv_id':row['arxiv_id'],'paper_id':row['paper_id'],'candidate':'external/'+row['arxiv_id']+'.json'} for row in papers]}
-    inputs={'papers':[{'arxiv_id':row['arxiv_id'],'pdf':{'sha256':row['pdf_sha256']},'source':{'sha256':row['source_sha256']}} for row in papers]}
+    inputs={'papers':[{'arxiv_id':row['arxiv_id'],'version':1,'stratum':row['stratum'],'pdf':{'sha256':row['pdf_sha256']},'source':{'sha256':row['source_sha256']}} for row in papers]}
     return papers,config,inputs,[]
 
 
@@ -38,6 +38,15 @@ class ReleaseTests(unittest.TestCase):
             rows=fixture();mutate(rows)
             with self.subTest(mutate=mutate),self.assertRaises(ValueError):build_release(*rows)
 
+    def test_should_retain_pinned_versions_when_release_links_are_projected(self):
+        rows=fixture();release,bibliography=build_release(*rows)
+        self.assertEqual(release['papers'][0]['arxiv_version'],1)
+        self.assertEqual(bibliography['papers'][0]['arxiv_url'],'https://arxiv.org/abs/2001.00001v1')
+        rows[0][0]['arxiv_version']=2
+        with self.assertRaisesRegex(ValueError,'candidate version differs'):build_release(*rows)
+        rows=fixture();rows[0][0]['stratum']=['invented',1900]
+        with self.assertRaisesRegex(ValueError,'stratum differs'):build_release(*rows)
+
     def test_should_require_all_external_documents_when_a_bundle_is_pinned(self):
         config={'inputs':'inputs.json','indexes':'indexes.json','automatic_builds':[],'papers':[{'candidate':'candidate.json','object_bundle':'objects'}],'evidence_sha256':{'inputs.json':'a','indexes.json':'b','candidate.json':'c'}}
         with self.assertRaisesRegex(ValueError,'pin every'):evidence_paths(config)
@@ -50,6 +59,14 @@ class ReleaseTests(unittest.TestCase):
             write_immutable(output,payloads);write_immutable(output,payloads)
             with self.assertRaisesRegex(ValueError,'immutable'):write_immutable(output,{'objects.json':b'changed','bibliography.json':b'two'})
             self.assertEqual((output/'objects.json').read_bytes(),b'one')
+
+    def test_should_reject_redirected_ancestors_when_no_release_directory_exists_yet(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);outside=root/'outside';outside.mkdir()
+            (root/'truth').symlink_to(outside,target_is_directory=True)
+            with self.assertRaisesRegex(ValueError,'ancestor is a symlink'):
+                write_immutable(root/'truth/k1-limited-v1',{'objects.json':b'one'})
+            self.assertEqual(list(outside.iterdir()),[])
 
     def test_should_reject_symlink_publication_when_an_existing_release_is_redirected(self):
         with tempfile.TemporaryDirectory() as directory:
