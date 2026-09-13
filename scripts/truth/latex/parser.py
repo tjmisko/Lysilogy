@@ -110,6 +110,15 @@ def argument_commands(text, names, start=0, end=None):
         yield {"command": match[1], "value": value, "options": options, "start": match.start(), "end": at}
 
 
+def target_labels(command, value):
+    """Preserve literal keys; only declared list commands split commas."""
+    values = value.split(",") if command.rstrip("*") in CITES | {"cref", "Cref"} else [value]
+    keys = [key.strip() for key in values]
+    if not all(keys):
+        raise UnsupportedSource("citation/reference has an empty target")
+    return keys
+
+
 def source_identities(objects, expanded, files, limits):
     """Keep unique historical IDs, disambiguating every colliding occurrence."""
     if len(objects) > limits.expansion_steps:
@@ -840,8 +849,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
         if kind == "proof" and node["option"]:
             row["proof_heading"] = render_text(renderer, node["option"])
             row["unsupported_commands"].update(renderer.unsupported - before)
-            row["proof_target_labels"] = [key.strip() for item in argument_commands(node["option"], REFS)
-                                          for key in item["value"].split(',')]
+            row["proof_target_labels"] = [key for item in argument_commands(node["option"], REFS)
+                                          for key in target_labels(item['command'], item['value'])]
             row["proof_heading_source"] = node["option"]
         objects.append(row)
     bibliographies = [node for node in nodes if node["environment"] == "thebibliography"]
@@ -965,9 +974,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
     for row in argument_commands(scan, CITES | REFS):
         if not document["content_start"] <= row["start"] < document["content_end"] or any(start <= row["start"] < end for start, end in occupied):
             continue
-        keys = [key.strip() for key in row["value"].split(",")]
-        if not all(keys):
-            raise UnsupportedSource("citation/reference has an empty target")
+        keys = target_labels(row["command"], row["value"])
         left = text[max(document["content_start"], row["start"] - 500):row["start"]]
         right = text[row["end"]:min(document["content_end"], row["end"] + 500)]
         # Trim at TeX paragraph boundaries and commands so contexts do not invent

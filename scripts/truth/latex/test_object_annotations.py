@@ -13,12 +13,14 @@ from parser import parse_project
 from native_exports import FORMAT, native_projection
 
 
-def fixture(extra_object_kind=None, extra_source='', proof_heading=''):
+def fixture(extra_object_kind=None, extra_source='', proof_heading='', statement_alias='', reference_label='thm:a'):
     source = (r'\documentclass{article}\begin{document}\begin{theorem}\label{thm:a}A complete theorem body.\end{theorem}'
               r'\begin{equation}\label{eq:a}abcdefghi=12345\end{equation}\begin{proof}A complete proof body.\end{proof}'
               r'\begin{algorithm}\label{alg:a}A complete algorithm body.\end{algorithm}See \ref{thm:a}.\section{Related}\label{sec:related}See \ref{sec:related}.\end{document}')
     if extra_object_kind:
         source = source.replace(r'\end{document}', '\\begin{' + extra_object_kind + r'}\caption{A separately displayed visual caption.}\label{visual:a}\end{' + extra_object_kind + r'}See \ref{visual:a}.\end{document}')
+    source = source.replace(r'\label{thm:a}', r'\label{thm:a}' + statement_alias)
+    source = source.replace(r'\ref{thm:a}', '\\ref{' + reference_label + '}')
     source = source.replace(r'\end{document}', extra_source + r'\end{document}')
     source = source.replace(r'\begin{proof}', r'\begin{proof}' + proof_heading)
     source = source.encode()
@@ -97,6 +99,19 @@ def apply(rows):
 
 
 class ObjectAnnotationTests(unittest.TestCase):
+    def test_should_bind_manual_reference_when_one_literal_comma_alias_is_unique(self):
+        rows = fixture(statement_alias=r'\label{a,b}', reference_label='a,b')
+        self.assertEqual(apply(rows)['manual_object_overlay']['references'][0]['target'], 'object:thm:a')
+
+    def test_should_reject_manual_named_proof_when_a_literal_comma_alias_is_ambiguous(self):
+        rows = fixture(statement_alias=r'\label{a,b}', reference_label='a,b', extra_source=r'\label{a,b}',
+                       proof_heading=r'[Proof of \ref{a,b}]')
+        rows[5]['proof_attribution'][0]['explicit_source_ref'] = True
+        rows[4]['objects'][2]['proof_targets'] = ['object:thm:a']
+        reseal(rows)
+        with self.assertRaisesRegex(ValueError, 'ambiguous source labels'):
+            apply(rows)
+
     def test_should_reject_manual_destinations_when_object_and_nonobject_labels_collide(self):
         for extra in (r'\label{thm:a}', r'\begin{enumerate}\item Other claim.\label{thm:a}\end{enumerate}'):
             for launder in (False, True):

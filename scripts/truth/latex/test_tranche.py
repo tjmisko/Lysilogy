@@ -311,6 +311,31 @@ class TrancheTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 validate_crosswalk(docs, candidate, ids, {'primary-' + k: v for k, v in ids.items()})
 
+    def test_should_share_literal_reference_grammar_when_tranche_binds_a_comma_label(self):
+        for duplicate in (False, True):
+            source = (r'\begin{document}\begin{equation}\label{e,x}abcdefghij=12345\end{equation}'
+                      + (r'\label{e,x}' if duplicate else '') + r'Equation \ref{e,x}\end{document}')
+            files = {'main.tex': source}; parsed = parse_project(files); link = parsed['links'][0]
+            self.assertEqual(link['targets'], ['e,x'])
+            member = link['source_members'][0]; target = parsed['objects'][0]['id']
+            source_digest = sha256(source[member['start']:member['end']].encode())
+            number = {'start': 9, 'end': 10}; phrase = {'start': 0, 'end': 10}
+            docs = {'primary': {'counts': {'source_reference': 1}, 'references': [{
+                'id': 'primary-reference', 'source_occurrence': {'member': member['path'], 'start': member['start'], 'end': member['end']},
+                'target_label': 'e,x', 'target_id': 'primary-equation', 'target_kind': 'equation',
+                'native_number': number, 'native_occurrence': phrase}]},
+                'independent_corrected': {'counts': {'explicit_reference_occurrences': 1}, 'section_destinations': [], 'references': [{
+                    'id': 'independent-reference', 'source': {'member': member, 'text_sha256': source_digest}, 'source_label': 'e,x',
+                    'unresolved_targets': [], 'destination_id': 'independent-equation', 'destination_kind': 'equation',
+                    'native_number_span': number, 'native_phrase_span': phrase}]}}
+            args = (docs, {'source_inventory': parsed}, files, {'text': 'Equation 1', 'pages': [{'number': 1, 'start': 0, 'end': 10}]},
+                    {'independent-equation': target}, {'primary-equation': target})
+            with self.subTest(duplicate=duplicate):
+                if duplicate:
+                    with self.assertRaisesRegex(ValueError, 'ambiguous source reference'): validate_references(*args)
+                else:
+                    self.assertEqual(validate_references(*args)[0][0]['target'], target)
+
     def test_should_retain_typed_visual_and_section_references_when_every_source_occurrence_is_bound(self):
         source = r'\ref{e}\ref{f}\ref{s}\section{End}\label{s}'
         text = 'Equation 1 Figure 2 Section 3'

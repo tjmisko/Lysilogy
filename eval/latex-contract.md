@@ -40,6 +40,10 @@ O6 and never fall back to proximity; genuinely unnamed proofs retain the confirm
 preceding statement rule. Both current manual consumers reject ambiguous labels before object
 or non-object destination classification. Detection counts may retain complete distinct objects
 only under all existing source/rendering/native guards; duplicate bibliography keys remain fatal.
+Reference arguments follow each supported command's grammar: `ref`, `eqref`, `autoref` and
+`vref` retain a complete trimmed literal key, including commas. Only `cref`/`Cref` and the
+supported citation commands split comma lists. Proof headings share this parser, so a literal
+comma key cannot become two named proof destinations or evade its ambiguity catalog.
 The retained v1/v2 modules, payloads and configuration remain immutable. New candidate metadata
 does not rewrite their inventories or change their version-selected replay.
 

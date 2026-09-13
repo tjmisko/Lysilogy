@@ -154,6 +154,47 @@ class DuplicateLabelTests(unittest.TestCase):
         with self.assertRaisesRegex(UnsupportedSource, 'identities are duplicated'):
             align_paper(parsed, {'text': 'abcdefghij=12345', 'tokens': []})
 
+    def test_should_preserve_literal_comma_keys_when_plain_references_name_one_object(self):
+        for command in ('ref', 'eqref', 'autoref', 'vref', 'ref*'):
+            with self.subTest(command=command):
+                parsed = parse(equation('abcdefghij=12345', r'\label{a,b}') + '\\' + command + '{a,b}')
+                self.assertEqual(parsed['links'][0]['targets'], ['a,b'])
+                self.assertEqual(parsed['label_targets']['a,b'], 'object:a,b')
+                self.assertEqual(parsed['links'][0]['ambiguous_targets'], {})
+
+    def test_should_retain_literal_comma_ambiguity_when_duplicate_names_have_ordinary_prefixes(self):
+        body = (equation('abcdefghij=12345', r'\label{a,b}') + equation('klmnopqrst=67890', r'\label{a,b}')
+                + equation('uvwxyzabcd=23456', r'\label{a}') + equation('efghijklmn=78901', r'\label{b}'))
+        for command in ('ref', 'eqref', 'autoref', 'vref'):
+            parsed = parse(body + '\\' + command + '{a,b}')
+            with self.subTest(command=command):
+                self.assertEqual(parsed['links'][0]['targets'], ['a,b'])
+                self.assertEqual(parsed['links'][0]['ambiguous_targets'], {'a,b': 2})
+                result = align_paper(parsed, {'text': ' '.join(o['text'] for o in parsed['objects']), 'tokens': []})
+                self.assertEqual(result['excluded_references'][0]['ambiguous_labels'], {'a,b': 2})
+                self.assertFalse(result['metric_eligibility']['O4'])
+
+    def test_should_split_only_list_reference_commands_when_plain_keys_contain_commas(self):
+        body = equation('abcdefghij=12345', r'\label{a}') + equation('klmnopqrst=67890', r'\label{b}')
+        parsed = parse(body + r'\ref{a,b}\cref{a,b}\Cref{a,b}')
+        self.assertEqual([r['targets'] for r in parsed['links']], [['a,b'], ['a', 'b'], ['a', 'b']])
+        self.assertNotIn('a,b', parsed['label_targets'])
+
+    def test_should_share_reference_grammar_when_proof_headings_name_comma_keys(self):
+        body = (r'\begin{theorem}\label{a}First complete independent assertion.\end{theorem}'
+                r'\begin{lemma}\label{b}Second complete independent assertion.\end{lemma}')
+        for command in ('ref', 'eqref', 'autoref', 'vref', 'cref', 'Cref'):
+            parsed = parse(body + r'\begin{proof}[By ' + '\\' + command + r'{a,b}]A complete argument.\end{proof}')
+            grouped = command in ('cref', 'Cref')
+            with self.subTest(command=command):
+                self.assertEqual(parsed['objects'][-1]['proof_target_labels'], ['a', 'b'] if grouped else ['a,b'])
+                self.assertEqual(parsed['objects'][-1]['proof_targets'], ['object:a', 'object:b'] if grouped else [None])
+                self.assertEqual(parsed['links'][0]['targets'], parsed['objects'][-1]['proof_target_labels'])
+                self.assertNotIn('nearest', parsed['objects'][-1]['proof_linkage'])
+        literal = body + r'\begin{theorem}\label{a,b}Third independently named assertion.\end{theorem}'
+        parsed = parse(literal + r'\begin{proof}[By \ref{a,b}]A complete argument.\end{proof}')
+        self.assertEqual(parsed['objects'][-1]['proof_targets'], ['object:a,b'])
+
     def test_should_bound_duplicate_evidence_when_many_commands_share_one_object(self):
         parsed = parse(equation('abcdefghij=12345', r'\label{x}' * 100), limits=Limits(expansion_steps=150))
         self.assertEqual(parsed['ambiguous_labels']['x']['occurrences'], list(range(100)))
