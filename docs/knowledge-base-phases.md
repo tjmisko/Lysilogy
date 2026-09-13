@@ -178,12 +178,19 @@ acceptance are unchanged.
   `feat/e8.3-latex-truth`. Owns the LaTeX parser and PDF aligner used only for evaluation.
   Brought forward from A3 so #25 can be measured against independent K1 before merging;
   this resolves a sequencing cycle under the user's detector-before-truth merge restriction.
-- [ ] **#96 Figure/table metric collector** (follow-up to #24; after #70).
+- [x] **#96 Figure/table metric collector** (follow-up to #24; after #70).
   Branch `feat/e1.1-object-metrics`. Owns `scripts/eval/object-metrics.py`, its tests, optional
   `examples/object_metrics.rs`, the matching contract and evidence/report. Run the actual objects
   path against frozen K1 inventories; measure O1 and independently annotated full-region O2.
   Keep caption geometry separate, count duplicates/misses, preserve PaperIds and exact generations.
   This missing measurement follow-up is required for the existing Phase A O1/O2 baselines.
+- [ ] **#101 Measured figure/table detection and region fixes** (follow-up to #24/#96; after #96).
+  Branch `fix/e1.1-figure-detection`. Owns `src/source_index/figures.rs` and focused detector
+  fixtures; minimal current-generation object/evaluation adapters as required. Recover Roman
+  tables, distinguish prose references from captions, and tighten excessive body rectangles.
+  Preserve frozen K1/index/registry artifacts, exact native anchor bindings, the #96 matching
+  contract and all-truth O2 denominator. Measure actual current production behavior; cached old
+  detector predictions cannot establish a new result. Coordinate object plumbing with #25.
 - [ ] **#71 E8.4 Reference, acquisition, and read-next truth** (after #68, #63). Branch
   `feat/e8.4-reference-truth`. K7 needs parsed bibliographies of the scale tier; build the K2 and
   K5 parts first and finish K7 once #25 and the corpus mapping are available.
@@ -211,6 +218,17 @@ acceptance are unchanged.
 
 ### Phase A notes
 
+- #96 merged in PR #102 (`d074dae`) after final independent clearance of `5d5c567`.
+  First real limited-K1 baselines are **O1 0.7692307692** (10TP/1FP/5FN) and
+  **O2 0.2448506858** over all 15 independently annotated bodies, with zero unknown regions.
+  Both targets are missed and retained under #101. All ten figures match; five Roman tables
+  are missing and one prose Figure 2 is an extra prediction. Every matched predicted region
+  contains its entire true body but is 1.80–9.13 times too large; tighten excess coverage.
+  G5 passes **320 Rust / 278 Python / 85 Node**, with 24 new Python and three bridge tests.
+  Measurement took 4.570 s, zero network/models/$0. See
+  [the report](experiment-reports/2026-09-13-object-metrics.md) and committed compact observations.
+  Exact corpus/registry/index bytes and immutable truth are unchanged. Raw gates/predictions
+  are external; worktree/branches removed after separate portability verification.
 - #98 merged in PR #100 (`46f11e0`) after exact-head independent clearance of `8f27253`.
   Eleven new offline tests and final G5 **317 Rust / 254 Python / 85 Node** pass. The one
   failed paper now persists 45 native + 2 OCR pages, with original native failures on pages
@@ -2109,3 +2127,111 @@ date, last merged issue, in-flight branches and their state, next action, and op
   misses are on its draft branch, while historical O25/O26 misses remain under #21/#22.
   Follow-ups opened this continuation: #97 and #98; #96 already existed. Final system
   report is not yet due because the system definition of done has not passed.
+
+### 2026-09-13 — figure/table baselines merged; measured detector work next
+
+- Still **Phase A / Wave A2**. Last merged issue **#96 / PR102**, merge
+  `d074dae96d9158c75add4ba9cc6fb27be1adf5bb`, reviewed head
+  `5d5c567d0f39ecec3f50fc0e99ff7f7a1f814e39`. Earlier this continuation merged
+  #35/PR87, #36/PR89, #91/PR92, #88/PR90, #70/PR99 and #98/PR100. No phase exit or system
+  acceptance. Main permits docs commits only; all ten unrelated preview file hashes still
+  match `/tmp/lysilogy-preview-before.json`. No merged issue worktree remains.
+- **#96 actual baselines are now on main:** O1 = 0.7692307692 (10TP/1FP/5FN),
+  O2 = 0.2448506858 over all 15 independently region-annotated objects, zero unknowns.
+  Ten figures match; all five Roman tables I–V are missing; one prose Figure 2 is extra.
+  Matched-only IoU median 0.2906506211 is diagnostic only. Root independently showed every
+  matched box contains the entire true body but has 1.80–9.13 times its area; the problem is
+  excessive surrounding coverage. Retained diagnostic:
+  `~/.cache/lysilogy/object-metrics/root-region-diagnostic-v1.json`. **#101** on E1/#12 and
+  project12 records both misses, unchanged targets and next fixes; it is ready in A2.
+- #96 report: `docs/experiment-reports/2026-09-13-object-metrics.md`; evidence:
+  `eval/evidence/object-metrics.json`, `object-metrics-observations.json` and
+  `object-metrics-integration.json`. Measured source `8558886`, final warm gates `32b7341`
+  include main `fd024fc`, with all 77 measurement implementation hashes unchanged.
+  G5 actually ran **320 Rust / 278 Python / 85 Node**; all required checks pass. Original
+  4.570 s measurement was not repeated during docs-only integration. Zero network/models/$0.
+  Exact corpus/registry/index/truth hashes remain unchanged. No detector changed in #96.
+- Separate final source review tested 24 Python scenarios, 200 independent integer-grid
+  IoU/union cases and byte-identical K1 reconstruction before predictions. Final PR and
+  integrated evidence review rehashed all source/log/result dependencies and reproduced
+  every actual match/IoU. Latest receipt:
+  `~/.cache/lysilogy/review-object-metrics-5d5c567/final-integration-review.json`.
+  Root additionally verified 156 final references (4,415,876 bytes) and all target receipt
+  archive aliases: `~/.cache/lysilogy/review-evidence/pr102/root-reference-review.json` SHA
+  `96cf4a6bd675b0e888351173eada075d644288f3d8fe24c8e4855a6251ed63ef`, portability SHA
+  `0dda1841980d8816a90ae979305e31adb322d3c17799a61a9761cfae2eb73042`.
+  #96's clean worktree/local/remote branch are removed; no runtime dependency remains.
+- **Scale batch4 / exec44342 completed exit 0:** 250/250 indexes, **430.352604 s /
+  244,160 KiB peak child RSS**, zero network/models/$0. All 10,951 canonical identity rows
+  and the entire registry bytes are unchanged. Output SHA
+  `51cc5c8091a19edd92de480411b8f6fa1aae77fa1fa751b904478a0e59140b98` in
+  `~/.cache/lysilogy/scale-index-batches/batch-0004/`. Root independently rehashed all 250
+  new indexes (758,290,872 bytes) and audited the aggregate identities/tiers in 0.817 s.
+  Receipt `native-index-after-batch4-review.json`, SHA
+  `fcec08a0025fbbf507c293fae955ffb2928cc15758172ebf40db969fb218fd91`.
+- **2,000 unique successful indexes** now exist: all 1,000 eval papers and 1,049 scale
+  papers (49 overlap). This includes the separately retained successful #98 retry; the old
+  failed map/receipt stays unchanged. There is no corpus download, alignment run or native
+  scale batch running. The complete corpus remains 10,951 PDFs / 1,000 sources at
+  `~/Corpora/arxiv/`, all scale/eval quotas verified. Canonical data root is
+  `~/.cache/lysilogy/arxiv-kb-data`; never reset it or repeat selection recovery.
+- Next native batch is **5**, using `run-scale-index-batch.py --batch 5 --limit 250` under
+  the cache. Runner SHA `9d8ae083a30808110d09cb94aadad1aeb7bdcc2c76203a8a6c7e07ca0347325b`;
+  portable helper `k1-native-page-isolation-0843453/k1_index` SHA
+  `3f25b41305452eac7bdfde2b02f77f2dc664b89aa3f5530e26125ed3cda2e4f7`.
+  Source/build fingerprints and older runner versions remain external. Wait for root's
+  coordinated heavy window; these preparation batches are not production O25/O27 acceptance.
+- **#25 / draft PR94** owner `finish_benchmark`, worktree `feat/e1.2-bibliography`, has
+  completed one measured iteration at **`aae7369`** after main integration `ed6dfc3`.
+  First baseline `779f0c2` remains immutable under
+  `~/.cache/lysilogy/bibliography-k1-first-measurement/`: O8 .289855, O10 precision .261905 /
+  recall .22. General physical-line/keyed-continuation fixes plus four adversarial tests
+  improved O8 to **.916667** (33TP/4FP/2FN) and O10 to **.738462 precision / .96 recall**
+  (48TP/17FP/2FN). K1 fields: title27/35, author33/35, year33/35; O9 still unavailable
+  without genuine K2. The truth/matching contract was unchanged.
+- #25 owns the current short build/remeasurement window. Its next uncommitted iteration
+  distinguishes publication-year continuation lines from actual four-digit keys, and
+  withholds ambiguous parenthesized/superscript numbers when established bracket citations
+  do not provide an explicit mixed-citation cue. Remaining extras were six footnotes,
+  four math indices, four parenthesized list numbers and an equation label. Preserve
+  candidate IDs/raw occurrences without links, pure superscript documents and evidenced
+  four-digit printed keys. Add adversarial tests, remeasure identical K1, and independently
+  review source after iteration. Integrate new main/#96, retain the union of measured
+  baselines and run its actual objects collector once under the current wrapper. Keep PR94
+  draft pending real K2/full O9; surviving misses need measured follow-ups after reasonable effort.
+- **#97** owner `finish_corpus_proxy`, fresh worktree `feat/e8.3-k1-coverage` based on
+  `fd024fc`. Before checks objects/bibliography passed with explicit --root using a proven
+  source-equivalent reviewed CLI: 72 Rust/Cargo/config inputs identical, receipt
+  `~/.cache/lysilogy/k1-coverage/before-fd024fc/receipt.json`, SHA
+  `59ac2c493dc7cc0e9e6e3a961c0eb84ddba07cc351e9376565723e9802060cb5`.
+  It is now writing a version-selected old verifier bundle under
+  `eval/implementations/k1-limited-v1/` and `scripts/truth/latex/versioned.py`; no committed
+  source checkpoint or PR yet. Exact reviewed module bytes and a pinned manifest/isolated
+  worker must reproduce the immutable old release independently of later parser changes.
+  Fixed bundle depth preserves old ROOT semantics. Integrate #96's new collector into
+  this worktree for dispatch; never edit its removed worktree or immutable truth/config.
+- #97 next adds finite standard symbol/Greek and provably equivalent source capabilities
+  with adversarial tests, retaining redefinition/local-style/unknown-control-flow guards.
+  Keep the same frozen 1,000 inputs and original 999 valid indexes for comparable full
+  runs; no full run or cold Rust compile until its heavy window. Prior full automatic
+  result: 622 parsed / 1,000, zero admitted cohorts. The two-paper limited release covers
+  every E1 kind but the approximately500-paper stratified target remains unmet. No truth
+  target, matching denominator or hard gate may be relaxed.
+- **#101** will be assigned to `review_ready_prs` after this docs checkpoint, branch
+  `fix/e1.1-figure-detection` (not yet created). Its owned files and required current-
+  production generation/anchor binding are in Wave A2 and the issue. Coordinate shared
+  object plumbing with #25 and verifier dispatch with #97. Begin source/light tests while
+  #25 owns compilation; measure before and after with frozen truth and separate review.
+- Paused: **#33 `905c341`**, `feat/e2.1-kb-store`, no PR; reviewed Rust remains uncompiled
+  because rusqlite/fallible dependencies are absent. **#71/PR93 `d5e12aa`**, reference
+  truth; **#72/PR95 `c867ec6`**, person labels stacked on93. Their actual provider truths
+  remain unavailable. Frozen combined 40-DOI plan under `reference-truth-plans/` is unexecuted.
+  No answer yet to extra grants for **index.crates.io, static.crates.io, api.crossref.org,
+  api.openalex.org**. Original storage/three corpus-host grants work. Do not apply the
+  four-host permission script or bypass prior auto-review rejection without explicit approval.
+- Next: continue measured #25 fixes, #97 verifier/capability work and #101 detector fixes;
+  launch scale batch5 when the short gates release capacity. Every later phase and the
+  final running-app Playwright/10k scenario remain outstanding. Main scorecard:
+  **1/5 gates (G5), 1/30 objectives (O30)**, now with O1/O2 measured misses under #101.
+  Historical O25/O26 misses remain under #21/#22. Follow-ups opened this continuation:
+  #97, #98 and #101; #96 already existed. No phase/system report is claimed complete.
