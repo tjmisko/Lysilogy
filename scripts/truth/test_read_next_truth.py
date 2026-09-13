@@ -37,6 +37,7 @@ class ReadNextTruthTests(unittest.TestCase):
         self.assertEqual(["B"], fold["expected_targets"])
         features = holdout.features_for_fold(graph, fold)
         self.assertNotIn("expected_targets", features)
+        self.assertNotIn("source_record", str(features))
         self.assertEqual([], features["outgoing"]["A"])
         self.assertEqual(2, plan["coverage"]["eligible_folds"])
 

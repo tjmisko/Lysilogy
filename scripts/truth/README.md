@@ -77,7 +77,8 @@ Every edge view is oriented **citing → cited**, including incoming provider qu
 constructing fold features, the builder removes every edge whose canonical source is the held-out
 paper from all bibliography/provider views. It then recomputes the union, incoming/outgoing
 adjacency and degrees. Other papers' edges into the query remain available. Raw provider payloads
-and cached features are refused as observation inputs. The future ranking adapter must consume
+and cached features are refused as observation inputs. Evidence locations also stay out of feature
+output so the ranker cannot reopen an unfiltered provider record. The future ranking adapter must consume
 only `features_for_fold` output, never the retained base graph or the fold's expected targets.
 
 `fold_plan` creates deterministic, seed-ordered compact fold records against one fingerprinted

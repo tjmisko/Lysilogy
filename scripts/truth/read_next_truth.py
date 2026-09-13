@@ -12,7 +12,8 @@ from reference_truth import TruthError, doi, fingerprint, text, year
 
 
 def alias_key(value):
-    if not isinstance(value, str) or not value or len(value) > 512 or any(c.isspace() for c in value):
+    if (not isinstance(value, str) or not value or len(value) > 512
+            or any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in value)):
         raise TruthError("Graph identity must be a bounded nonempty identifier")
     if normalized := doi(value):
         return "doi:" + normalized
@@ -86,7 +87,10 @@ def fold_features(graph, query):
     """Withhold the query's outgoing edges in ALL views before deriving any graph features."""
     held_out = canonical_query(graph, query)
     nodes = [{key: node[key] for key in ("id", "title", "year")} for node in graph["nodes"]]
-    views = {name: [dict(edge) for edge in edges if edge["source"] != held_out]
+    # Evidence locations can identify a whole provider record whose raw payload
+    # also contains held-out references. They belong in truth provenance only.
+    views = {name: [{key: edge[key] for key in ("source", "target")}
+                    for edge in edges if edge["source"] != held_out]
              for name, edges in graph["views"].items()}
     union = {(edge["source"], edge["target"]) for edges in views.values() for edge in edges}
     outgoing = {node["id"]: [] for node in nodes}
