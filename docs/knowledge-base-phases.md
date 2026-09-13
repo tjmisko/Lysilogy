@@ -174,7 +174,7 @@ acceptance are unchanged.
 - [x] **#91 Canonical arXiv source endpoint** (follow-up to #69/#85). Branch
   `fix/e8.2-source-endpoint`. Use the approved host's `/src/` endpoint while preserving legitimate
   legacy source receipts; keep redirect refusal, version pinning and all transport safeguards.
-- [ ] **#70 E8.3 arXiv LaTeX object truth** (after #68, #69, #24). Branch
+- [x] **#70 E8.3 arXiv LaTeX object truth** (after #68, #69, #24). Branch
   `feat/e8.3-latex-truth`. Owns the LaTeX parser and PDF aligner used only for evaluation.
   Brought forward from A3 so #25 can be measured against independent K1 before merging;
   this resolves a sequencing cycle under the user's detector-before-truth merge restriction.
@@ -211,6 +211,18 @@ acceptance are unchanged.
 
 ### Phase A notes
 
+- #70 merged in PR #99 (`0dc68dc`) after independent clearance of exact head `4563702`.
+  The immutable `k1-limited-v1` release contains two complete independently reviewed paper
+  cohorts: 23 objects, 35 bibliography entries / 105 known fields, 40 citation groups / 50
+  target pairs, ten O4 pairs and nine panel scoring opportunities. A complete negative visual
+  inventory is retained. Both output files reproduced byte-for-byte; no detector objective is
+  measured by truth publication. Current automatic coverage is 622 parsed / 1,000 inputs and
+  zero eligible cohorts, preserving unsupported-source exclusions. Approximately 500-paper
+  coverage remains unmet under #97. Final G5 passed **306 Rust / 254 Python / 85 Node**;
+  all 144 LaTeX tooling tests and required Rust/eval gates passed, O30 remains 0/10k. See
+  [the release report](experiment-reports/2026-09-13-kb-latex-truth.md), the pinned build config,
+  and `eval/evidence/latex-truth-release.json`. #96 may now measure O1/O2 against the frozen
+  complete inventories; #25 can measure its K1 components, while genuine K2 is still required.
 - K0 downloads and full verification completed on 2026-09-13: **10,951 unique PDFs / 1,000
   sources**, including all **10,000 scale PDFs** and **1,000 eval PDF/source pairs**. The final
   production run exited 0 after SHA-256/MD5/size verification, with no problems. Root separately
@@ -1892,3 +1904,104 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Scorecard unchanged: **1/5 gates (G5), 1/30 objectives (O30)**; O25/O26 misses retain #21/#22.
   Follow-ups opened this continuation: #97 coverage and #98 extraction availability; #96 remains
   measurement work. Main's ten unrelated PDF-preview files remain protected and unchanged.
+
+### 2026-09-13 — K1 release merged; object measurement and failed-page recovery active
+
+- Still **Phase A / Wave A2**. Last merged issue is now **#70 / PR99**, merge
+  `0dc68dc5ccf3ab699126e2ca6136b0413b79f1cb`; independently cleared head
+  `4563702608f7c47581c39c077058381382c2499a`. Main was fast-forwarded with all ten protected
+  PDF-preview files byte-identical to `/tmp/lysilogy-preview-before.json`. No phase exit or
+  system acceptance is claimed. Earlier merges this continuation: #35/PR87, #36/PR89,
+  #91/PR92 and #88/PR90. Conventional commits retain the Codex co-author trailer.
+- **K1 limited release is published** under `eval/truth/k1-limited-v1/`.
+  Objects SHA `0afccc35dc5eedb48b4df4e30ee33e06dac02a07f0b7cab6d6f5c53743202976`;
+  bibliography SHA `a821d3070768175f2de7022928a6a19f6ef8cddce9edef726448447e24fc7c82`.
+  Two papers in cs.LG/2021 and econ.TH/2025 cover every E1 kind, with 15 visual objects,
+  eight math/statement/proof/algorithm objects, 35 entries / 105 fields, 40 citation groups /
+  50 target pairs, ten O4 pairs, nine panel scoring opportunities and one complete visual
+  negative. Selection bias and all automatic exclusions remain explicit; approximately
+  500-paper coverage is unmet under #97. No detector objective is inferred from publication.
+- Independent final review: `~/.cache/lysilogy/review-latex-4563702/final-review.json`.
+  Reviewer reproduced both output hashes in memory; rehashed all 2×1,000 input ledger
+  identities and 626+622 full candidates (231,576,011 bytes), source inventories and exact
+  artifact/PaperId/index bindings; verified 33 config documents, 71 raw receipts/logs and
+  25 implementation hashes. Required Rust/eval gates and all 144 LaTeX tests passed.
+  G5 actually ran **306 Rust / 254 Python / 85 Node** tests; O30 remains 0/10,000.
+  Report: `docs/experiment-reports/2026-09-13-kb-latex-truth.md`; final evidence:
+  `eval/evidence/latex-truth-release.json`. Historical checkpoint evidence remains separate.
+- Current full automatic run **exec64263 completed exit 0** at reviewed automatic source
+  `9d3bd42`: 622 parsed / 1,000 inputs, zero admitted cohorts, 378 source/index failures,
+  two timeouts, 992.856 s wrapper time / 470,192 KiB peak RSS, zero external calls/$0.
+  Directory `~/.cache/lysilogy/k1-full-alignment-9d3bd42/`; report SHA
+  `24cf2c681e131575ed190ebaa9014c8ca055a7b00b0c044d4219cbe57140e1a8`.
+  Root rehashed all current candidate/inventory bytes and reproduced aggregates; use
+  `root-review-v2.json`, SHA
+  `314436ab2f0261d660ea5b2e860b900c796e5586c077bbe96cd84e5d4bb55708`.
+  v2 corrects one historical diagnostic label, retaining the first receipt. Four new
+  duplicate-label rejections explain the historical 626-to-622 parsed change; no lost
+  automatic admissions. #97 now records both runs and finite source-support next ideas.
+- **No corpus download or native scale batch is running.** Corpus construction is complete:
+  10,951 unique PDFs / 1,000 sources, all 1,000 eval pairs and 10,000 scale PDFs, final
+  content verification clean. Corpus stays exclusively `~/Corpora/arxiv/`; dedicated data
+  root is `~/.cache/lysilogy/arxiv-kb-data`. Do not repeat selection recovery or reset its
+  canonical identity registry. Full corpus report/receipts are in the preceding entry.
+- **Scale batch3 exec40146 completed exit 0**: 250/250 successful, 576.425545 s /
+  235,680 KiB RSS, all 9,789 preexisting identity rows preserved. Output SHA
+  `1796dd422c4971b4b229ccc6b8cc197bb4146a77092e087b392df7306777d654`.
+  Batches1–3 plus full eval contain 1,750 unique requests / **1,749 successful indexes**,
+  including 999 eval and 799 scale (49 overlap), retaining only the failed eval paper
+  2308.05883v2. Root aggregate receipt `native-index-after-batch3-review.json` under the
+  cache, SHA `e999a0e86f50ebfc58689f017361dc2be77a6f0a73da30bbae34933a714d04af`.
+  This is preparation, not an actual production O25/O27 or end-to-end 10k result.
+- Before #70 cleanup, root preserved the exact 8 MB standalone helper and source under
+  `~/.cache/lysilogy/native-tools/9583e52411a0fc80466bfa4ad9f50d671d79ad8b218b9f4b5fccec506f7350c9/`,
+  with a portability receipt. Runtime dependency audit and empty-request probe passed;
+  no whole Rust target was copied. External `run-scale-index-batch.py` now uses this
+  portable binary/source and an external batch cwd, with no #70 worktree dependency.
+  New runner SHA `6d6bc57462b3c11b77edce2e5f8ccca09207f43ea2ff7baec35001557d1dcc34`;
+  original runner is archived by hash under `native-tools/runner-history/`. Before cleanup,
+  owner `finish_corpus_proxy` is archiving the remaining small gate receipts into
+  `~/.cache/lysilogy/review-evidence/pr99/`; verify that archive, then remove only the owned
+  clean `feat/e8.3-latex-truth` worktree/branches. No remaining #70 process exists.
+- **#98** owner `finish_benchmark`, branch/worktree `fix/e0-reading-index-page-failure`.
+  Source independently clear through **`5cc01999074c3ff06959479da473b50ae8f615c7`**; ordinary
+  main integration is **`0843453`**. Twelve new tests and all standalone Rust/eval gates
+  passed (G5 316 Rust / 110 Python / 85 Node). A compiled read-only comparison proves all
+  45 valid pages of the actual 47-page PDF match strict parser words, geometry, ordering
+  and sentence IDs exactly; only pages30/34 are withheld, 0.466 s. Evidence:
+  `~/.cache/lysilogy/page-failure-development/after-5cc0199-1789301371330023893/compatibility-v2/`.
+  No coordinate swapping, native-text invention or schema6 cache invalidation.
+- **#98 owns the heavy window now** for current-main warm gates and the one failed-paper
+  retry (2308.05883v2, PaperId `e723f251047f05c0`). No PR yet. All 1,749 existing indexes
+  were independently hashed before retry (5.15 GB / 11.73 s), and all 10,928 registry rows
+  retained in `~/.cache/lysilogy/page-failure-development/actual-retry/`. Verify these remain
+  unchanged after retry; preserve the original failed map/receipt. Freeze the new standalone
+  helper and exact Cargo-selected build fingerprints for later batches. `finish_corpus_proxy`
+  will independently review the actual retry, integrated gates and eventual draft PR.
+- **#96** owner `review_ready_prs`, fresh branch/worktree `feat/e1.1-object-metrics` from
+  `0dc68dc`, implementing the frozen collector/contract and offline tests. No PR or metric
+  yet. O1 matches kind and independently printed caption identity/membership one-to-one,
+  never region overlap; duplicates/unmatched predictions are FP and missed truth FN.
+  O2 includes all independently region-annotated truth objects, with missed/invalid regions
+  scoring zero. Preserve exact index/PDF/source/objects generation and registry bytes.
+  Source/light Python work may proceed; coordinate with root before compilation/measurement.
+  #97 branch `feat/e8.3-k1-coverage` does not yet exist; starts after #98 review frees a slot.
+- Paused drafts remain **#25/PR94 `46ff41b`**, **#71/PR93 `d5e12aa`**, **#72/PR95 `c867ec6`
+  (stacked on93)**. #25 can now run K1 O8/O10 measurements but still needs genuine K2 for
+  complete O9. #33 remains **`905c341`**, no PR, source reviewed but Rust uncompiled because
+  rusqlite/fallible dependencies are absent. No genuine provider cache exists. The combined
+  frozen 40-DOI Crossref plan remains unexecuted under `~/.cache/lysilogy/reference-truth-plans/`.
+- Original corpus storage/three-host grants are effective. Additional grants for
+  **index.crates.io, static.crates.io, api.crossref.org, api.openalex.org** remain pending,
+  with no user answer. Do not apply `~/.config/lysilogy/apply-codex-kb-network-permissions.py`
+  or bypass the earlier auto-review rejection without explicit approval. Standing rebase
+  restriction remains in force; integrate main using ordinary merge commits. Never read
+  denied private paths or environment/secrets files. Main is docs-only; never stage its
+  unrelated PDF-preview changes. No destructive vault/data operations are authorized.
+- Next: finish #70 evidence archive/cleanup; complete and independently review/merge #98;
+  let #96 build and measure, then resume bounded scale batch4 with the new helper and start
+  #97 finite source-support experiments. Run #25's real K1 collector when its short window
+  is available. Continue the remaining phases after A2 blockers clear. Scorecard remains
+  **1/5 gates (G5), 1/30 objectives (O30)**; historical O25/O26 misses retain #21/#22.
+  Follow-ups opened this continuation are #97 and #98; #96 was already open. System
+  acceptance and final `docs/experiment-reports/<date>-kb-system.md` remain outstanding.
