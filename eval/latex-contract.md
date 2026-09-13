@@ -15,6 +15,58 @@ semantics that could hide inventory, unknown object environments, or duplicate s
 one PDF span conservatively exclude every metric. Per-kind support may become more precise only
 with an independently reviewed capability boundary.
 
+The current source parser records object existence separately from reference naming (#107).
+Every object has a `source_occurrence_id` SHA-256 over the versioned occurrence format,
+kind/environment, expanded offsets, ordered original members and a project commitment. That
+project commitment binds the selected main, expanded text and decoded source-member hashes.
+Unique historical IDs remain unchanged. Every row in a colliding provisional-ID group receives
+`object:source-occurrence:<digest>`; no first or last row keeps a privileged name. Authored labels
+that collide with generated fallback IDs follow the same rule. Final IDs and occurrence digests
+must be unique before alignment dictionaries; repeated includes retain distinct expanded offsets.
+
+`label_occurrences` retains each scanned command, its original members, expanded offsets and
+lexical owner/role, including sections, list items, bibliography entries and subfigures/tables.
+Every repeated label command is ambiguous, even when the owner is the same object. The bounded
+`ambiguous_labels` catalog indexes those occurrences and records candidate counts/owners;
+`label_targets` contains only unique object destinations. An object's original `labels` spellings
+are lexical evidence and do not provide a second resolution table. Definitions/comments use
+the existing inert masks; unknown execution, stored arguments and defined source primitives
+remain independently unsupported. Naming ambiguity alone is not a global source-semantics veto.
+
+Ambiguous reference occurrences keep every requested label and their exact source spans, with
+an explicit exclusion and candidate count. They do not expand into speculative edges. Any such
+reference withholds O4 under its complete-paper rule. Ambiguous explicit proof targets withhold
+O6 and never fall back to proximity; genuinely unnamed proofs retain the confirmed nearest
+preceding statement rule. Both current manual consumers reject ambiguous labels before object
+or non-object destination classification. Detection counts may retain complete distinct objects
+only under all existing source/rendering/native guards; duplicate bibliography keys remain fatal.
+Reference arguments follow each supported command's grammar: `ref`, `eqref`, `autoref` and
+`vref` retain a complete trimmed literal key, including commas. Only `cref`/`Cref` and the
+supported citation commands split comma lists. Proof headings share this parser, so a literal
+comma key cannot become two named proof destinations or evade its ambiguity catalog.
+Dynamic label spellings containing a control token (`\`), active tilde (`~`) or TeX's
+`^^` character notation are never expanded or normalized into hypothetical names.
+`unverified_label_names` retains their occurrence indices and reason; original spellings,
+object identities and literal duplicate counts remain intact. Such a naming claim may alias
+any static key, so the entire paper's proven `label_targets` table is withheld. Every reference
+and explicit proof lookup records unverified naming and cannot acquire a destination through
+either automatic alignment or either current manual consumer, including section classification.
+A dynamic lookup without dynamic naming claims withholds only that lookup. Genuinely unnamed
+proofs still use source occurrence order, and naming uncertainty alone does not veto complete
+object detection. Existing execution/category-code guards remain independent; this capability
+does not claim a TeX name expander. Comments and unused definitions remain inert.
+Raw `^^` notation has an additional lexical hazard: TeX substitutes characters before
+tokenization and can thereby alter comment, argument or environment boundaries. The current
+parser scans every deposited text member before comment/definition/include masking, retains
+bounded original marker offsets and member hashes in `raw_lexical_substitutions`, and withholds
+all automatic inventory certainty under `unverified_pre_tokenization_substitution`. A masked
+comment, unused definition or unselected member cannot erase that guard. The remaining parsed
+rows are lexical diagnostics. No substitution is decoded. Both current manual formats reject
+raw `^^` in their independently re-read source archives because their source-membership codec
+does not establish the resulting token stream. This is separate from naming-only uncertainty.
+The retained v1/v2 modules, payloads and configuration remain immutable. New candidate metadata
+does not rewrite their inventories or change their version-selected replay.
+
 | Metric | Complete inventory required from a paper |
 | --- | --- |
 | O1 | All figures and all tables, including independently supported empty inventories |

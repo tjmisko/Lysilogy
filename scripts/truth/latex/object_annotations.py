@@ -5,6 +5,7 @@ import math
 
 from annotations import canonical, document, require
 from archive import read_archive, sha256
+from parser import reference_names_verified
 
 KINDS = {'equation', 'statement', 'proof', 'algorithm'}
 
@@ -103,6 +104,8 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
     require(inputs['candidate_sha256_from_packet'] == sha256(candidate_raw) and inputs['inventory_sha256_from_packet'] == candidate['source_inventory_sha256'], 'independent annotator used another candidate inventory')
     require(inputs['packet']['sha256'] == sha256(packet_raw) and inputs['pdf']['sha256'] == candidate['pdf_sha256'] and inputs['source']['sha256'] == candidate['source_sha256'] and inputs['reading_index']['sha256'] == sha256(index_raw), 'independent annotation used different source/PDF/index artifacts')
     files, members = read_archive(source_raw)
+    require(not any('^^' in text for text in files.values()),
+            'manual source membership does not support pre-tokenization substitution')
     require(inputs['source_members'] == members, 'independent source archive member inventory differs')
     index = wrapper['index']; pages = {row['number']: row for row in index['pages']}
     require(root['viewed_all_pages'] == sorted(pages), 'root did not inspect the complete PDF')
@@ -121,8 +124,8 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
         require(row['text'] == encoded[page['start'] * 2:page['end'] * 2].decode('utf-16-le'), 'manual packet page text differs from native index')
     parsed = candidate['source_inventory']
     require(packet['objects'] == parsed['objects'] and packet['links'] == parsed['links'], 'manual packet changed the complete source object/link inventory')
+    require(len({row['id'] for row in parsed['objects']}) == len(parsed['objects']), 'complete source object identities are duplicated')
     all_sources = {row['id']: row for row in parsed['objects']}
-    require(len(all_sources) == len(parsed['objects']), 'complete source object identities are duplicated')
     sources = {key: row for key, row in all_sources.items() if row['kind'] in KINDS}
     objects = independent['objects']
     require(len(objects) == len(sources) and {row['id'] for row in objects} == set(sources) and set(comparison['objects_verified']) == set(sources), 'manual object inventory is incomplete or duplicated')
@@ -184,6 +187,10 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
         proof, statement = attribution['proof'], attribution['statement']
         require(proof not in proof_targets and proof in sources and sources[proof]['kind'] == 'proof' and statement in sources and sources[statement]['kind'] == 'statement', 'manual proof attribution is duplicated or has invalid endpoint roles')
         if attribution['explicit_source_ref']:
+            require(reference_names_verified(parsed, sources[proof]['proof_target_labels']),
+                    'unverified source label names cannot acquire a manual proof destination')
+            require(not any(label in parsed.get('ambiguous_labels', {}) for label in sources[proof]['proof_target_labels']),
+                    'ambiguous source labels cannot establish explicit proof attribution')
             expected = {parsed['label_targets'].get(label) for label in sources[proof]['proof_target_labels']}
             require(statement in expected, 'explicit proof attribution lacks a named source target')
             basis = 'explicit source target, independently visually reviewed'
@@ -210,6 +217,10 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
         matched = [number for number, link in source_refs.items() if member_identity(link['source_members']) == member_identity(row['source_members'])]
         require(len(matched) == 1 and matched[0] not in source_numbers, 'independent reference membership is ambiguous or duplicated')
         number = matched[0]; link = source_refs[number]
+        require(reference_names_verified(parsed, link['targets']),
+                'unverified source label names cannot acquire a manual reference destination')
+        require(not any(label in parsed.get('ambiguous_labels', {}) for label in link['targets']),
+                'ambiguous source reference cannot acquire a manual destination')
         targets = {parsed['label_targets'].get(label) for label in link['targets']}
         require(targets == {row['target']} and row['target'] in all_sources
                 and all_sources[row['target']]['kind'] in KINDS | {'figure', 'table'},
@@ -229,6 +240,10 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
     require(len(non_objects) == len(source_refs) - len(source_numbers) and {row['source_link'] for row in non_objects} == set(source_refs) - source_numbers, 'unknown reference target roles remain outside the manual comparison')
     for row in non_objects:
         number = row['source_link']; declared = root_refs[number]
+        require(reference_names_verified(parsed, source_refs[number]['targets']),
+                'unverified source label names cannot become a non-object role')
+        require(not any(label in parsed.get('ambiguous_labels', {}) for label in source_refs[number]['targets']),
+                'ambiguous source reference cannot become a non-object role')
         require(not any(parsed['label_targets'].get(label) in all_sources for label in source_refs[number]['targets']), 'object reference cannot be relabeled as a non-object role')
         require(row['source_label'] == declared['source_target_label'], 'comparison non-object source label differs')
         checked_members(row['source_members'], files, source_refs[number]['source_members'])
