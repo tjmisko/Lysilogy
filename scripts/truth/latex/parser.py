@@ -216,6 +216,35 @@ def parse_project(files, limits=Limits(), selected_main=None):
         name = command[1].rstrip("*")
         if structural_macro(name):
             source_semantics["structural_macro:" + name] += 1
+    # Unimplemented low-level definitions can hide structure through aliases.
+    # Track all referenced macro names transitively, without executing a body.
+    reachable = {command[1].rstrip("*") for command in COMMAND.finditer(scan)}
+    pending = list(reachable)
+    while pending:
+        name = pending.pop()
+        if name in renderer.macros:
+            extra = {command[1].rstrip("*") for command in COMMAND.finditer(renderer.macros[name][1])} - reachable
+            reachable.update(extra)
+            pending.extend(extra)
+        if len(reachable) > limits.expansion_steps:
+            raise UnsupportedSource("macro dependency inventory exceeds its bound")
+    for start, end in definition_regions(text):
+        definition = COMMAND.match(text, start)
+        kind = definition[1].rstrip("*")
+        if kind in {"def", "gdef", "edef", "xdef"}:
+            name = COMMAND.match(text, skip_space(text, definition.end()))
+            if name and name[1] in reachable:
+                source_semantics["unsupported_definition:" + kind + ":" + name[1]] += 1
+        elif kind in {"newenvironment", "renewenvironment"}:
+            name, _ = group(text, definition.end())
+            if any(row["value"] == name for row in argument_commands(scan, {"begin"})):
+                source_semantics["unsupported_environment_definition:" + name] += 1
+    literal_environments = {"verbatim", "Verbatim", "lstlisting", "minted", "alltt", "comment"}
+    for row in argument_commands(scan, {"begin"}):
+        if row["value"].rstrip("*") in literal_environments:
+            source_semantics["literal_environment:" + row["value"]] += 1
+    for name in reachable & {"verb", "Verb", "lstinline", "mintinline"}:
+        source_semantics["literal_command:" + name] += 1
     statements = dict(STANDARD_STATEMENTS)
     definitions, ignored = [], Counter()
     for match in COMMAND.finditer(scan):

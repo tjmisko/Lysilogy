@@ -158,6 +158,27 @@ class AlignmentTests(unittest.TestCase):
             self.assertEqual(result["objects"], [])
             self.assertEqual(parsed["objects"][0]["unsupported_commands"], {"unverified_script_binding": 1})
 
+    def test_should_withhold_low_level_macro_truth_when_definitions_hide_structure(self):
+        visible = r"\begin{theorem}A visible distinctive theorem.\end{theorem}"
+        for kind in ('def', 'gdef', 'edef', 'xdef'):
+            definition = '\\' + kind + r'\hidden{\begin{theorem}Hidden theorem content.\end{theorem}}'
+            parsed = parse_project({'main.tex': document(visible + r'\outer', definition + r'\newcommand{\outer}{\hidden}')})
+            self.assertFalse(align_paper(parsed, {'text': 'A visible distinctive theorem. Hidden theorem content.'})['accepted'])
+            self.assertIn('unsupported_definition:' + kind + ':hidden', parsed['coverage']['unsupported_source_semantics'])
+
+    def test_should_withhold_redefined_environments_when_their_body_is_not_interpreted(self):
+        source = document(r'\begin{theorem}A visible distinctive theorem.\end{theorem}', r'\renewenvironment{theorem}{\begin{figure}}{\end{figure}}')
+        result = align_paper(parse_project({'main.tex': source}), {'text': 'A visible distinctive theorem.'})
+        self.assertFalse(result['accepted'])
+
+    def test_should_withhold_literal_code_truth_when_code_contains_fake_tex_objects(self):
+        visible = ''.join(r'\begin{theorem}Distinct actual theorem number ' + str(number) + r'.\end{theorem}' for number in range(20))
+        code = r'\begin{lstlisting}\begin{theorem}This fake theorem is literal code.\end{theorem}\end{lstlisting}'
+        text = ' '.join('Distinct actual theorem number ' + str(number) + '.' for number in range(20)) + ' This fake theorem is literal code.'
+        result = align_paper(parse_project({'main.tex': document(visible + code)}), {'text': text})
+        self.assertFalse(result['accepted'])
+        self.assertIn('literal_environment:lstlisting', result['coverage']['unsupported_source_semantics'])
+
 
 if __name__ == "__main__":
     unittest.main()
