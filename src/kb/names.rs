@@ -232,7 +232,7 @@ fn parse_unmarked(name: &str, mut suffix: Option<String>, output: &mut Candidate
 
 fn parse_words(words: &[&str], suffix: Option<String>, output: &mut Candidates) {
     if words.len() == 1 {
-        if is_word(words[0]) && !is_explicit_initial(words[0]) {
+        if is_word(words[0]) && !(words[0].contains('.') && is_explicit_initial(words[0])) {
             output.insert(NameParts {
                 family_name: words[0].to_owned(),
                 given_names: Vec::new(),
@@ -276,9 +276,9 @@ fn add_parts(
 ) {
     if family_words.is_empty()
         || given_words.is_empty()
-        || family_words
-            .iter()
-            .any(|word| !is_word(word) || !family_explicit && is_explicit_initial(word))
+        || family_words.iter().any(|word| {
+            !is_word(word) || !family_explicit && word.contains('.') && is_explicit_initial(word)
+        })
         || given_words.iter().any(|word| !is_word(word))
     {
         return;
@@ -834,6 +834,16 @@ mod tests {
         for raw in ["Le", "Van", "Al"] {
             assert_eq!(parse_name(raw).alternatives[0].order, NameOrder::Undivided);
         }
+    }
+
+    #[test]
+    fn should_preserve_both_orders_when_a_bare_letter_could_be_a_family_name_or_initial() {
+        let parsed = parse_name("O Kye");
+        assert!(has_parts(&parsed, "O", &["Kye"], &[]));
+        assert!(has_parts(&parsed, "Kye", &["O"], &[]));
+        assert!(parsed.is_ambiguous());
+        assert!(parse_name("A. B.").alternatives.is_empty());
+        assert_eq!(parse_name("O").alternatives[0].order, NameOrder::Undivided);
     }
 
     #[test]

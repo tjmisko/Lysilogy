@@ -519,8 +519,9 @@ alternatives when order is ambiguous.
 
 Implementation contract: `kb::names::parse_name` retains the exact raw string and returns an
 unranked set of component interpretations. Commas delimit family-first forms; unmarked full
-names retain both orders and compound-family boundaries. Initial groups constrain candidate
-splits without using surname dictionaries or inferring ethnicity. Compact capital groups and
+names retain both orders and compound-family boundaries. Period-marked initial groups constrain
+candidate splits; bare letters retain the literal family-name interpretation too. Neither surname
+dictionaries nor inferred ethnicity choose an order. Compact capital groups and
 unmarked Roman suffixes keep their alternative word/initial interpretations. A single undivided
 name receives no given-name initial or wildcard blocking key.
 
