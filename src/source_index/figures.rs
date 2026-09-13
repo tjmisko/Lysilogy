@@ -8,7 +8,7 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
             continue;
         }
         let tokens = tokens(index, paragraph.start, paragraph.end);
-        let Some((label, _, _)) = label_at(&tokens, 0) else {
+        let Some((kind, label, _, _)) = label_at(&tokens, 0) else {
             continue;
         };
         let Some(first) = tokens.first() else {
@@ -18,8 +18,13 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
         let caption = utf16_slice(&index.text, paragraph.start, paragraph.end);
         let rect = figure_region(index, first.page, paragraph.start, caption_box);
         figures.push(Figure {
-            id: format!("figure-{}", label.to_ascii_lowercase()),
-            label: format!("Figure {label}"),
+            id: format!(
+                "{}-{}",
+                kind.to_ascii_lowercase(),
+                label.to_ascii_lowercase()
+            ),
+            kind: kind.to_ascii_lowercase(),
+            label: format!("{kind} {label}"),
             page: first.page,
             caption,
             start: paragraph.start,
@@ -31,7 +36,7 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
     }
     let all_tokens = index.tokens.iter().collect::<Vec<_>>();
     for token_number in 0..all_tokens.len() {
-        let Some((label, start, end)) = label_at(&all_tokens, token_number) else {
+        let Some((kind, label, start, end)) = label_at(&all_tokens, token_number) else {
             continue;
         };
         let token = all_tokens[token_number];
@@ -41,10 +46,14 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
             labels.extend(range_tail(&token.text));
         }
         for figure in &mut figures {
-            if !labels
-                .iter()
-                .any(|label| figure.id == format!("figure-{}", label.to_ascii_lowercase()))
-                || (figure.start <= start && start < figure.end)
+            if !labels.iter().any(|label| {
+                figure.id
+                    == format!(
+                        "{}-{}",
+                        kind.to_ascii_lowercase(),
+                        label.to_ascii_lowercase()
+                    )
+            }) || (figure.start <= start && start < figure.end)
             {
                 continue;
             }
@@ -59,7 +68,7 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
             });
         }
         // Plural references: "Figures 1, 2 and 3" and bounded "Figs. 1–3".
-        if ["figures", "figs"].iter().any(|prefix| {
+        if ["figures", "figs", "tables"].iter().any(|prefix| {
             all_tokens[token_number]
                 .text
                 .to_ascii_lowercase()
@@ -74,7 +83,12 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
                     break;
                 };
                 for figure in &mut figures {
-                    if figure.id == format!("figure-{}", number.to_ascii_lowercase())
+                    if figure.id
+                        == format!(
+                            "{}-{}",
+                            kind.to_ascii_lowercase(),
+                            number.to_ascii_lowercase()
+                        )
                         && !(figure.start <= start && start < figure.end)
                     {
                         figure.references.push(FigureReference {
@@ -125,21 +139,32 @@ fn tokens(index: &ReadingIndex, start: usize, end: usize) -> Vec<&ReadingToken> 
         .collect()
 }
 
-fn label_at(tokens: &[&ReadingToken], number: usize) -> Option<(String, usize, usize)> {
+fn label_at(
+    tokens: &[&ReadingToken],
+    number: usize,
+) -> Option<(&'static str, String, usize, usize)> {
     let token = tokens.get(number)?;
     let lower = token.text.to_ascii_lowercase();
-    let prefix = ["figures", "figure", "figs.", "fig.", "figs", "fig"]
-        .iter()
-        .find(|prefix| lower.starts_with(**prefix))?;
+    let kind = if lower.starts_with("tab") {
+        "Table"
+    } else {
+        "Figure"
+    };
+    let prefix = [
+        "figures", "figure", "figs.", "fig.", "figs", "fig", "tables", "table", "tab.",
+    ]
+    .iter()
+    .find(|prefix| lower.starts_with(**prefix))?;
     let suffix = token.text.get(prefix.len()..)?.trim();
     if !suffix.is_empty() {
-        return identifier(suffix).map(|label| (label, token.start, token.end));
+        return identifier(suffix.split_whitespace().next()?)
+            .map(|label| (kind, label, token.start, token.end));
     }
     let next = tokens.get(number + 1)?;
     if next.page != token.page || next.start.saturating_sub(token.end) > 3 {
         return None;
     }
-    identifier(&next.text).map(|label| (label, token.start, next.end))
+    identifier(&next.text).map(|label| (kind, label, token.start, next.end))
 }
 
 fn identifier(text: &str) -> Option<String> {
@@ -172,8 +197,8 @@ fn figure_region(
     let mut top = dimensions.height * 0.05;
     for paragraph in &index.objects.paragraph {
         if paragraph.start == caption_start
-            || paragraph.kind != "body"
-            || paragraph.end - paragraph.start < 100
+            || !matches!(paragraph.kind.as_str(), "body" | "caption")
+            || paragraph.kind == "body" && paragraph.end - paragraph.start < 100
         {
             continue;
         }
@@ -195,12 +220,53 @@ fn figure_region(
     if height < 35.0 || height > dimensions.height * 0.70 {
         return None;
     }
-    Some(TextRect {
+    let mut bounds = TextRect {
         x_min: (caption.x_min - 8.0).max(0.0),
         y_min: top,
         x_max: (caption.x_max + 8.0).min(dimensions.width),
         y_max: (caption.y_max + 4.0).min(dimensions.height),
-    })
+    };
+    // Captions are often much narrower than the table rows/chart labels above
+    // them. Include the associated float, while keeping adjacent captions apart.
+    let captions = index
+        .objects
+        .paragraph
+        .iter()
+        .filter(|p| p.kind == "caption")
+        .filter_map(|p| {
+            let text = tokens(index, p.start, p.end);
+            (text.first()?.page == page).then(|| {
+                (
+                    p.start,
+                    union(text.iter().flat_map(|t| t.rects.iter().copied())),
+                )
+            })
+        })
+        .collect::<Vec<_>>();
+    for paragraph in index.objects.paragraph.iter().filter(|p| p.kind == "float") {
+        let text = tokens(index, paragraph.start, paragraph.end);
+        if text.first().is_none_or(|t| t.page != page) {
+            continue;
+        }
+        let rect = union(text.iter().flat_map(|t| t.rects.iter().copied()));
+        if rect.y_min < top || rect.y_max > caption.y_min {
+            continue;
+        }
+        let nearest = captions
+            .iter()
+            .filter(|(_, c)| c.y_min >= rect.y_max)
+            .min_by(|(_, a), (_, b)| {
+                let distance = |c: &TextRect| {
+                    let dx = (c.x_min - rect.x_max).max(rect.x_min - c.x_max).max(0.0);
+                    dx * dx + 4.0 * (c.y_min - rect.y_max).powi(2)
+                };
+                distance(a).total_cmp(&distance(b))
+            });
+        if nearest.is_some_and(|(start, _)| *start == caption_start) {
+            bounds = union([bounds, rect].into_iter());
+        }
+    }
+    Some(bounds)
 }
 
 pub(super) fn utf16_slice(text: &str, start: usize, end: usize) -> String {

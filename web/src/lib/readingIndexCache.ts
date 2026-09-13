@@ -20,7 +20,7 @@ function canonicalUrl(url: string): string {
 function readingIndex(value: unknown): ReadingIndex {
   if (typeof value !== "object" || value === null) throw new Error("The source index response is invalid.");
   const index = value as Partial<Omit<ReadingIndex, "objects">> & { objects?: ReadingIndex["objects"] | null };
-  if (typeof index.schema_version !== "number" || ![1, 2, 3, 4].includes(index.schema_version)
+  if (typeof index.schema_version !== "number" || ![1, 2, 3, 4, 5].includes(index.schema_version)
     || typeof index.text !== "string" || !Array.isArray(index.tokens) || !Array.isArray(index.pages)
     || !Array.isArray(index.figures) || !Array.isArray(index.gaps) || index.objects === undefined || index.objects === null
     || !["word", "WORD", "sentence", "paragraph"].every((key) => Array.isArray(index.objects?.[key as keyof ReadingIndex["objects"]]))) {

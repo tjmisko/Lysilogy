@@ -282,8 +282,8 @@ Press `?` in the app for the complete, contextual guide.
 | `R` | Rotate continuous scrolling: vertical / horizontal |
 | `+` / `-` | One fewer / one more page column in Overview (up to 10) |
 | `[` / `]` | Previous / next paper, or PDF page |
-| `Ctrl-d` / `Ctrl-u` | Page forward / back in PDF; half-screen in text views |
-| `PageDown` / `PageUp` | Page forward / back in PDF; full-screen in text views |
+| `Ctrl-d` / `Ctrl-u` | Half-screen down / up; turn PDF page at the scrolling edge |
+| `PageDown` / `PageUp` | Half-screen in PDF; full-screen in text views |
 | `/` | Regex search in the paper; filter the focused library input |
 | `v` | Start source visual selection, digest selection, or map sentence marking |
 | `o` | Swap the moving end of a visual selection |
@@ -341,6 +341,23 @@ limits, and the document-level verification approach.
 PDF mode renders a PDF.js text layer over the page image. Drag over a passage—even across lines or
 the two-page spread—to copy it or open **Ask about this** with the passage and its first page already
 filled in. Selections retain PDF-page coordinates and text-item offsets for future persistent marks.
+Press `C` to enter or leave **Cursor mode**, a read-only Vim block cursor over the PDF.
+`j`/`k` and arrows follow printed lines, with counts (`3j`); `h`/`l`, `w`/`b`, `e`/`E`,
+and `(`/`)` move by characters, words, and sentences. `0`/`$` reach line boundaries;
+`gg`/`G` reach the first/last line. PageDown/PageUp and Ctrl-d/Ctrl-u move the cursor
+half a screen. `v` starts character selection; `vip`/`vap` still select logical paragraphs,
+including continuation across pages without intervening floats.
+
+Cursor mode shows relative line numbers by default, with the current line's absolute number.
+`L` cycles relative → absolute → off. Numbers count physical lines across the document;
+a figure or table occupies one line and shows a bounding outline instead of a character cursor.
+In Cursor mode `yy` copies the current line, or the caption and linked source page for an
+indexed figure/table. `y` alone waits for a motion (`yw`, `yj`, `yap`); Visual mode `y`
+copies the selection. PDF content cannot be edited. Escape cancels the current action or
+selection before leaving the mode. Notes retain their separate editable Vim buffer.
+Figure/table bounds use detected captions and nearby indexed floats; when image geometry
+is unavailable, the outline falls back to the caption. Rebuilt source indexes include tables.
+
 Image-only pages can be indexed locally with Tesseract for search and visual text objects; missing tools or unfinished pages are reported as search gaps.
 Unanalyzed papers open directly in source reading, with PDF/Text tabs and one Analyze action.
 Passage questions work before analysis; extraction runs on demand without creating an analysis.

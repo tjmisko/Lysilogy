@@ -844,3 +844,45 @@ fn logical_paragraph_can_continue_through_more_than_two_pages() {
     assert_eq!(index.objects.paragraph[0].spans.len(), 3);
     assert!(paragraph_texts(&index)[0].contains("which provides a further"));
 }
+
+#[test]
+fn table_and_figure_namespaces_and_stacked_bounds_are_independent() {
+    let index = assemble(&floating_continuation_pages());
+    let figures = figures::find(&index);
+    let table = figures.iter().find(|f| f.id == "table-5").unwrap();
+    let figure = figures.iter().find(|f| f.id == "figure-6").unwrap();
+    assert_eq!(table.kind, "table");
+    assert_eq!(figure.kind, "figure");
+    assert!(figure.rect.unwrap().y_min > table.rect.unwrap().y_max - 4.0);
+    let source = page(vec![
+        word("See", 0, 0, 50.0, 50.0),
+        word("Table", 0, 0, 100.0, 50.0),
+        word("1", 0, 0, 150.0, 50.0),
+        word("for results.", 0, 0, 200.0, 50.0),
+        word("Table", 1, 1, 50.0, 200.0),
+        word("1.", 1, 1, 100.0, 200.0),
+        word("Measurements.", 1, 1, 150.0, 200.0),
+        word("Figure", 2, 2, 50.0, 400.0),
+        word("1.", 2, 2, 100.0, 400.0),
+        word("A diagram.", 2, 2, 150.0, 400.0),
+    ]);
+    let index = assemble(&[source]);
+    let figures = figures::find(&index);
+    assert_eq!(
+        figures
+            .iter()
+            .find(|f| f.id == "table-1")
+            .unwrap()
+            .references
+            .len(),
+        1
+    );
+    assert!(
+        figures
+            .iter()
+            .find(|f| f.id == "figure-1")
+            .unwrap()
+            .references
+            .is_empty()
+    );
+}

@@ -947,9 +947,9 @@ export function App() {
         setToolbarPinned((value) => !value); setToolbarPeek(false); return;
       }
       if (!isEditableTarget(event.target) && event.key === "E" && !home) {
-        // The PDF's WORD-end motion owns E in Visual mode, regardless of the
+        // The PDF's WORD-end motion owns E in Visual/Cursor mode, regardless of the
         // registration order of the app and reader's capture listeners.
-        if (document.querySelector('.pdf-reader[data-source-visual="true"]') !== null) return;
+        if (document.querySelector('.pdf-reader[data-source-visual="true"], .pdf-reader[data-source-cursor="true"]') !== null) return;
         event.preventDefault(); event.stopImmediatePropagation();
         if (notesOpen) requestNotesClose(); else openNotes();
         return;

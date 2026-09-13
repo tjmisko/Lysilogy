@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { checkCursorPaging } from './cursor-mode-checks.mjs';
 import { checkPdfFits, checkVisualFitPages, pressVisualFit } from './pdf-fit-checks.mjs';
 
 // All source material is synthetic; this suite never opens a reading-library path.
@@ -195,6 +196,11 @@ try {
   assert.equal(indexRequests.length,1,'opening the PDF warms its index before any search');
   assert.equal(indexRequests[0].priority,'background');
   assert.equal(await page.locator('.pdf-source-tools').count(),0,'warming is quiet');
+  await page.keyboard.press('C');
+  await page.getByText('Cursor mode · loading…',{exact:true}).waitFor();
+  await page.keyboard.press('C');
+  await page.waitForFunction(()=>!document.querySelector('.pdf-reader')?.hasAttribute('data-source-cursor'));
+
   await page.keyboard.press('/');
   const search=page.getByRole('textbox',{name:'Search paper with regular expression'});
   await search.fill('evidence');await search.press('Enter');
@@ -212,6 +218,7 @@ try {
   indexGate=null;initialIndex.resolve();await warmed;
   assert.deepEqual(abortedIndexRequests,[],'leaving a reader does not abort its indexing request');
   assert.equal(await page.locator('.pdf-source-tools').count(),0,'completion does not reopen an old search');
+  await checkCursorPaging(page,readingIndex);
   await page.keyboard.press('/');await search.fill('evidence');await search.press('Enter');
   await page.waitForFunction(()=>document.querySelector('.pdf-source-status')?.textContent.includes('1 / 88'));
   assert.equal(indexRequests.length,1,'the warmed index is reused for search');

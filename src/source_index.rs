@@ -22,7 +22,7 @@ use crate::{Error, Result, domain::TextRect};
 
 pub use cache::{IndexDocument, load_cached, load_or_build, load_or_build_priority};
 
-pub const SCHEMA_VERSION: u16 = 4;
+pub const SCHEMA_VERSION: u16 = 5;
 const MAX_PAGES: usize = 400;
 const MAX_OCR_PAGES: usize = 12;
 const MAX_TEXT_BYTES: usize = 4 * 1024 * 1024;
@@ -98,6 +98,8 @@ pub struct Paragraph {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Figure {
+    #[serde(default)]
+    pub kind: String,
     pub id: String,
     pub label: String,
     pub page: u32,
