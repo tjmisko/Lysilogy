@@ -105,6 +105,86 @@ only equation/statement references contribute to O4. All proofs retain explicit 
 source association provenance. The overlay grants only its completely reviewed kinds, does not
 change the automatic candidate, and cannot itself satisfy stratified K1 publication.
 
+Mixed visual/math papers may supply both region and object bundles. Each bundle
+is validated independently against the same original candidate bytes before its
+named overlay is composed; duplicate IDs, changed original fields and conflicting
+absent-kind claims are rejected. Missing manual kinds remain explicitly listed.
+The existing complete-kind requirements are unchanged: composition does not
+make partial annotations eligible. References to figures/tables retain their
+exact source/native memberships and target roles separately from O4; they may
+not be relabeled as section references or silently omitted.
+
+Blind annotators may read `k1-native-allowlist-v1` exports containing only native
+text, pages and word rectangles, with exact UTF-16 page text. Assembly rehashes
+the actual export path under the dedicated cache and recomputes its complete
+fixed allowlist from the frozen original index and mapped PaperId. Its receipt
+binds the export format, original index hash and actual export hash. Embedded
+historical detector figures/objects are never part of that export. Legacy raw
+index evidence remains supported for the original reviewed bundles. Initial
+blind inventories and later source-inventory reconciliation must keep their
+separate input/receipt histories; a projected native export alone does not
+satisfy source-inventory, full-region or mathematical visual-review requirements.
+The pinned `k1-limited-v1` implementation and published bytes remain unchanged.
+
+The explicit `k1-manual-tranche-v1` evidence format handles inventories first
+enumerated independently from every original PDF page, before either annotator
+reads source/native exports. Its later candidate and source crosswalk are separate
+inputs, never attributed to the initial blind inspection. `--tranche-bundle`
+selects this validator directly and cannot be mixed with legacy bundle arguments;
+a legacy validation failure never selects it automatically. Automatic candidate
+bytes, unsupported source programs and alignment failures remain unchanged.
+Complete independent visual inventories provide a separate source of evidence;
+they do not turn a local style program into supported automatic source semantics.
+
+The manifest declares schema version 1 and exactly 21 cache-relative artifacts:
+policy, selection, original packet, source/native exports, both original inventories
+and receipts, corrected independent inventory and receipt, mathematical supplement
+and receipt, initial/role/visual/math reviews, later construction, object/link
+crosswalks, and final review. Each declaration has a path, SHA-256 and byte count.
+The reader rejects symlink/traversal paths, rehashes actual corpus/index/image
+inputs, reproduces the native allowlist and deposited source-member export, and
+rechecks the evidence closure after validation. Aggregate JSON evidence is bounded
+at 64 MiB; individual documents, object counts and cumulative native membership
+are also bounded. Equality guards preserve JSON number/boolean types.
+Release configuration pins the explicit tranche manifest before and after
+assembly; that manifest pins the complete nested artifact closure rehashed by
+the validator. Selecting another bundle without its matching manifest hash fails.
+Bibliography-only correction metadata must match its receipt and original hashes;
+appended limitations retain every prior limitation as an exact ordered prefix.
+Reviewed informal-role crosswalks may pair a contained primary body span with an
+independent full passage including its heading. They preserve the complete outer
+source excerpt and explicit reviewed IDs; disjoint or cross-member spans fail.
+
+This format's first codec supports complete direct figure, table and numbered
+equation inventories plus independently reviewed empty formal statement, proof
+and captioned algorithm/listing inventories. Positive formal objects, nested
+ownership and multipart visual bodies require another explicit codec and fail
+here. Each admitted kind keeps its whole independent inventory, including every
+source occurrence, full caption/body membership and reviewed visual geometry.
+Both original inventories must agree on non-whitespace native character positions;
+source arguments and UTF-16/page boundaries are checked against actual bytes.
+Mathematical body and printed-number boxes require the original independent
+supplement and a separate visual review. Both annotators' visual geometry, table
+body memberships, and mathematical body/number regions must use their actual
+native page owners. Reference numbers require non-whitespace, nonoverlapping
+native occurrence membership contained in their declared phrases; contextual
+phrases may overlap around different numbers. Lossy native text never becomes semantic
+quotation truth. Every retained informal role needs a reviewed original-scope
+disposition; unresolved roles prevent a complete negative cohort.
+
+The `k1-manual-tranche-review-v1` final review binds every other artifact hash,
+the canonical source inventory hash, two distinct original annotator identities,
+a distinct reviewer, all inspected pages, all six kind counts, and complete
+reference counts (`all`, `O4`, `visual`, `non_object`). It requires the explicit
+`clear_complete_visual_math_inventory` verdict, no findings, and separately stated
+initial-enumeration and post-freeze-crosswalk histories. Every reference retains
+both annotation IDs and its source/native occurrence; deposited labels prevent
+visual or equation references from becoming section references. All citation
+occurrences remain in the crosswalk, but bibliography field-role validation and
+O8–O11 are explicitly omitted by this codec. No tranche assembly itself publishes
+truth, changes the approximately 500-paper target, or alters the immutable v1
+release or its verifier.
+
 Manual bibliography evidence uses a separately accepted complete comparison. Every independently
 parsed entry and citation command must survive, with one target pair per printed destination.
 Both annotations and comparison agree on complete UTF-16 members, printed numbering, all known
@@ -124,3 +204,93 @@ remain negative examples. A release writer reassembles every original bundle and
 pinned evidence before publication; existing version bytes are immutable. Only derived object
 memberships/regions, field labels, source positions, votes and hashes are committed. Full native
 text, deposited source and review excerpts remain in the external cache.
+
+Historical replay selects the verifier belonging to the release version. For
+`k1-limited-v1`, twelve exact reviewed modules and a fixed hash manifest live in
+`eval/implementations/k1-limited-v1/`. An isolated worker compiles only those
+verified source bytes and reproduces both original payload hashes from their
+original evidence. It ignores current parser modules and cached bytecode and
+never rewrites the release. Collector receipts retain the selected manifest,
+module and evidence hashes before and after measurement. Unknown versions fail
+explicitly; a new version requires its own reviewed construction and selection.
+
+Coverage expansion distinguishes known inventory effects from faithful rendering.
+Finite standard Greek/math atoms, font sizes and line breaks cannot introduce
+objects; an unsupported glyph, script, or font representation still withholds
+the enclosing text from alignment. Arbitrary hooks, local programs and structural
+redefinitions retain their exclusions. Structural tokens passed as custom-macro
+arguments do not establish a live inventory: the macro may discard, duplicate, or
+reorder them. The reader retains their original invocation/argument/object spans
+as unsupported evidence. Nested custom argument forwarding, including tail calls
+to standard stored/literal consumers that may consume additional caller tokens,
+remains unverified rather than being
+expanded. An explicit standard argument-role registry likewise withholds structural
+tokens in URLs, keys, filenames, field roles and stored title/author/date content;
+these slots cannot certify immediate visibility or multiplicity. Visible `href`
+text and ordinary formatting arguments keep their separate rendering contract.
+Unimplemented literal delimiter forms remain unsupported. Argument inspection has
+cumulative byte/step limits and treats a star following a control word as a
+separate TeX token. A direct equation boundary alias is supported
+only when one global preamble `newcommand` or plain `def` has no arguments and its
+entire body is one literal `begin` or `end` for a known equation environment.
+Events retain the original invocation and definition positions; source text is
+never rewritten. Scoped, repeated, indirect, parameterized and executable variants
+remain unsupported, and equation row/numbering guards still apply.
+
+Known mathematical array/alignment layout can preserve a source object inventory
+without proving its rendered text. Array column declarations, row grouping and
+matrix binding are not ordinary prose; objects, entries or contexts containing
+these layouts retain an explicit fidelity exclusion until independently verified
+geometry is available. This does not exclude another completely aligned kind.
+
+An explicit References/Bibliography heading with content outside parsed entry
+containers, or unmarked content inside a bibliography container, prevents a
+negative bibliography/citation claim. A formal section includes all descendant
+headings until the next sibling or ancestor; heading syntax itself is separate
+from entry content, so a nested, completely parsed bibliography remains usable.
+Likewise, a procedural heading or a
+step-labeled list outside a parsed algorithm container prevents an algorithm
+absence claim. These source-role exclusions retain original spans and affect the
+relevant metric cohorts; a complete independent kind elsewhere remains usable.
+
+The AMS `DeclareMathOperator` diagnostic retains a single top-level preamble
+declaration following an explicit `amsmath` or `amsopn` load in the literal
+initial class/package sequence. A package token inside stored or deferred
+content does not establish an executed load. A new
+control word must not replace an existing primitive, environment entry/exit
+command, or deposited definition. Names beginning with `end` are forbidden by
+LaTeX's declaration contract. The
+complete body is bounded literal letters/digits/spaces and standard spacing
+tokens. Braced and one-token names and the standard starred variant preserve
+their original source spans. Scoped, conditional, repeated, deferred, dynamic,
+and structurally active declarations remain unsupported.
+
+Literal-definition evidence is separate from inventory eligibility. The
+current implementation withholds all such declarations until freshness in the
+complete imported namespace is independently established. A short list of
+known kernel/package names cannot establish this, and neither can an incomplete
+regex catalog that misses generated `csname` names. In particular, failed
+declarations can leave an existing package argument consumer active and change
+which raw source tokens execute. The mathematical font, limits and text
+rendering remain independently unverified. No caller-provided trust flag or
+installed TeX runtime call bypasses the boundary.
+
+This finite contract was checked against installed `amsopn.sty`, whose
+`DeclareMathOperator`/`@declmathop` definitions create a new zero-argument
+operator, with the star selecting limits behavior and a preamble-only guard.
+The inspected file SHA-256 is
+`c50239a5acc1037ff4df482878e5546be3cd9b8ac725151bc14748a103d800a8`.
+The implementation reads no installed TeX files at runtime and executes no TeX.
+
+The fixed version adapter supports the historical `k1-limited-v1` and the bounded
+`k1-limited-v2` release. V1's twelve retained source files, manifest, configuration
+and payloads remain unchanged. V2 retains fourteen exact application modules,
+adding the native-export and manual-tranche validators, under its own manifest.
+Each version's manifest hash is pinned in the adapter and binds the original
+configuration, output hashes and module bytes. An unpublished version has no pin
+and cannot be selected. The isolated worker compiles only that selected retained
+inventory; mutable parser files and cached bytecode cannot supply its semantics.
+Replay checks the complete source/evidence history and reproduces both payloads,
+without publishing files or executing deposited TeX. This permits later parser
+changes while preserving both prior baselines. The three-paper release is the
+bounded work in issue #105; issue #97's approximately 500-paper target stays open.

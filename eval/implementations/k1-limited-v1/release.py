@@ -73,8 +73,6 @@ def build_release(assemblies, config, inputs, history):
             row['objects'].extend(compact_object(item) for item in overlay['objects'])
             row['references'] = overlay['references']; row['associated_content'] = overlay['associated_content']
             row['non_object_references'] = overlay['non_object_references']
-            if overlay.get('other_object_references'):
-                row['other_object_references'] = overlay['other_object_references']
             row['metric_eligibility'].update(overlay['metric_eligibility'])
             row['reviewed_absent_kinds'] = overlay['reviewed_absent_kinds']
             if set(row['reviewed_absent_kinds']) == {'figure','table'}:
@@ -134,11 +132,6 @@ def evidence_paths(config):
     required.update(item[key] for item in config['automatic_builds'] for key in ('path','paper_summaries','launch','runner'))
     for paper in config['papers']:
         required.add(paper['candidate'])
-        if paper.get('tranche_bundle'):
-            # This manifest pins every nested document's path/hash/size. The
-            # explicit tranche reader validates that entire closure and rehashes
-            # it after assembly; the release also pins this root before/after.
-            required.add(paper['tranche_bundle'] + '/manifest.json')
         for field, names in [('region_bundle', ('regions-root-v1.json','review-independent-v1.json','source-associations-root-v1.json','source-associations-independent-review-v1.json')),
                              ('object_bundle', ('packet.json','root-v1.json','independent-v1.json','independent-v1-receipt.json','reconciliation-independent-v1.json')),
                              ('bibliography_bundle', ('packet.json','bibliography-packet.json','bibliography-root-v1.json','bibliography-independent-v1.json','bibliography-independent-v1-receipt.json','bibliography-reconciliation-independent-v1.json')),
@@ -267,7 +260,7 @@ def main():
     before=verify_evidence(cache,config);require(before==config['evidence_sha256'],'release external evidence differs from frozen hashes')
     assemblies=[]
     for paper in config['papers']:
-        assemblies.append(assemble(cache,corpus,data,paper['candidate'],paper.get('region_bundle'),paper.get('panel_bundle'),config['inputs'],config['indexes'],paper.get('object_bundle'),paper.get('bibliography_bundle'),paper.get('tranche_bundle')))
+        assemblies.append(assemble(cache,corpus,data,paper['candidate'],paper.get('region_bundle'),paper.get('panel_bundle'),config['inputs'],config['indexes'],paper.get('object_bundle'),paper.get('bibliography_bundle')))
     inputs=document(bounded(cache,config['inputs']))
     current_sources={name:(repo/'scripts/truth/latex'/name).read_bytes() for name in ('archive.py','tex.py','parser.py','align.py','builder.py')}
     history=validate_automatic_reports(cache,config,inputs,before,current_sources)

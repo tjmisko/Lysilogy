@@ -81,6 +81,16 @@ class ReleaseTests(unittest.TestCase):
         for name in ('packet.json','root-v1.json','independent-v1.json','independent-v1-receipt.json','reconciliation-independent-v1.json'):config['evidence_sha256']['objects/'+name]='d'
         self.assertEqual(len(evidence_paths(config)),8)
 
+    def test_should_pin_explicit_tranche_manifest_when_its_nested_evidence_is_selected(self):
+        config={'inputs':'inputs.json','indexes':'indexes.json','automatic_builds':[],
+                'papers':[{'candidate':'candidate.json','tranche_bundle':'tranche'}],
+                'evidence_sha256':{'inputs.json':'a','indexes.json':'b','candidate.json':'c'}}
+        with self.assertRaisesRegex(ValueError,'pin every'):evidence_paths(config)
+        config['evidence_sha256']['tranche/manifest.json']='d'
+        self.assertEqual(evidence_paths(config),set(config['evidence_sha256']))
+        config['papers'][0]['tranche_bundle']='other-version'
+        with self.assertRaisesRegex(ValueError,'pin every'):evidence_paths(config)
+
     def test_should_bind_current_automatic_coverage_when_only_fingerprint_lists_changed(self):
         with tempfile.TemporaryDirectory() as directory:
             arguments=automatic_fixture(Path(directory))

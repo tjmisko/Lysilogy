@@ -101,3 +101,16 @@ corpus root and agree with each source hash and path. Changed truth, source, ind
 registry or evidence fail before publication. External raw artifacts stay in the dedicated cache;
 only compact observation identities/counts/IoUs/hashes and collector inputs enter the repo.
 Tests use synthetic arithmetic/provenance fixtures only; they never register objective values.
+
+Collector v5 accepts an explicit `--truth-version k1-limited-v1|k1-limited-v2`;
+v1 remains the default. The selected version fixes the configuration, retained
+verifier manifest and module inventory, truth payload, build receipt, and output
+paths. V2 writes `object-metrics-k1-limited-v2.json` observations. The harness
+keeps one active `figure-table.json` input for the explicitly selected cohort.
+Before replacement, the collector preserves the exact prior input and observation
+bytes with a hash manifest under `eval/evidence/object-metrics-history/`; it also
+freezes every new pair there. These histories sit outside the active input folder,
+so overlapping releases cannot create duplicate O1/O2 owners.
+Both versions use identical matching, arithmetic, geometry and native/detector
+provenance checks. Coverage always identifies the selected immutable cohort;
+results from the two releases must not be combined as disjoint samples.

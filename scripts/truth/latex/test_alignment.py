@@ -2,7 +2,7 @@
 import unittest
 
 from align import TextAlignment, align_paper, utf16
-from parser import parse_project
+from parser import parse_project, INVENTORY_ONLY_PRIMITIVES
 from test_latex import document
 
 
@@ -17,6 +17,372 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_withhold_false_negatives_when_operator_names_collide_with_environment_entry_or_exit_commands(self):
+        for name, declaration in (('claim', r'\newtheorem{claim}{Claim}'), ('customclaim', r'\newtheorem{customclaim}{Claim}'),
+                                  ('equation', ''), ('customenv', r'\newenvironment{customenv}{Visible start}{Visible end}')):
+            source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                              + '\\' + name + ' Every input has an output.\\end' + name,
+                              r'\usepackage{amsmath}' + declaration + r'\DeclareMathOperator{' + '\\' + name + '}{name}'
+                              + r'\DeclareMathOperator{\end' + name + '}{endname}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(name=name):
+                self.assertFalse(any(row['inventory_verified'] for row in parsed['coverage']['math_operator_declarations']))
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+                result = align_paper(parsed, {'text': 'An independently complete visual caption. Every input has an output.'})
+                self.assertFalse(any(result['metric_eligibility'].values()))
+
+    def test_should_keep_preamble_command_roles_separate_when_heading_names_are_formatting_parameters(self):
+        source = document(r'\section{References}Smith, A. A manually formatted reference. 2020.'
+                          r'\section{Appendix}Ordinary appendix text.',
+                          r'\titleformat{\section}[runin]{\normalfont\bfseries}{\relax\thesection.~}{0pt}{}[.]')
+        parsed = parse_project({'main.tex': source})
+        self.assertIn('unknown_inventory_command:titleformat', parsed['coverage']['unsupported_source_semantics'])
+        evidence = parsed['coverage']['unparsed_source_roles'][0]
+        self.assertEqual(evidence['source_members'], [{'path': 'main.tex', 'start': source.index(r'\section{References}'), 'end': source.index(r'\section{Appendix}')}])
+        self.assertFalse(align_paper(parsed, {'text': 'Smith, A. A manually formatted reference. 2020. Ordinary appendix text.'})['bibliography_eligible'])
+
+    def test_should_retain_literal_operator_evidence_when_imported_namespace_and_math_rendering_remain_unverified(self):
+        source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                          r'\begin{equation}\argbest abcdefghij=12345\end{equation}',
+                          r'\usepackage{amsmath}\DeclareMathOperator*{\argbest}{arg\,best}')
+        parsed = parse_project({'main.tex': source})
+        self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+        declaration = parsed['coverage']['math_operator_declarations'][0]
+        self.assertTrue(declaration['literal_definition_verified'])
+        self.assertFalse(declaration['inventory_verified'])
+        self.assertFalse(declaration['rendering_verified'])
+        result = align_paper(parsed, {'text': 'An independently complete visual caption. abcdefghij=12345'})
+        self.assertFalse(result['metric_eligibility']['O1'])
+        self.assertFalse(result['metric_eligibility']['O3'])
+        self.assertTrue(next(row for row in parsed['objects'] if row['kind'] == 'equation')['unsupported_commands'])
+
+    def test_should_withhold_namespace_collisions_when_an_imported_command_consumes_a_different_argument_role(self):
+        for name in ('theoremstyle', 'operatornamewithlimits'):
+            source = document('\\' + name + r'{\begin{theorem}This theorem is only a stored argument.\end{theorem}}',
+                              r'\usepackage{amsmath,amsthm}\DeclareMathOperator{' + '\\' + name + '}{style}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(name=name):
+                self.assertFalse(parsed['coverage']['math_operator_declarations'][0]['inventory_verified'])
+                self.assertFalse(any(align_paper(parsed, {'text': 'This theorem is only a stored argument.'})['metric_eligibility'].values()))
+
+    def test_should_include_descendant_reference_sections_when_only_a_sibling_or_ancestor_ends_the_role(self):
+        for heading, descendant, boundary in (
+                ('section', 'subsection', 'section'),
+                ('chapter', 'subsubsection', 'part'),
+                ('subsection', 'paragraph', 'section')):
+            entry = r'\begin{thebibliography}{9}\bibitem{one}A complete independently identifiable source entry.\end{thebibliography}'
+            for contents in ('Smith, A. A manually formatted book reference. 2020.', entry, entry + ' Another manually written reference. 2021.'):
+                source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                                  + '\\' + heading + '{References}\\' + descendant + '{Books}' + contents
+                                  + '\\' + boundary + '{Appendix}Ordinary appendix text.')
+                parsed = parse_project({'main.tex': source})
+                result = align_paper(parsed, {'text': 'An independently complete visual caption. [1] A complete independently identifiable source entry. Smith, A. A manually formatted book reference. 2020. Another manually written reference. 2021. Ordinary appendix text.'})
+                with self.subTest(heading=heading, descendant=descendant, contents=contents):
+                    self.assertTrue(result['metric_eligibility']['O1'])
+                    self.assertEqual(result['bibliography_eligible'], contents == entry)
+                    if contents != entry:
+                        evidence = parsed['coverage']['unparsed_source_roles'][0]
+                        self.assertEqual(evidence['source_members'], [{'path': 'main.tex', 'start': source.index('\\' + heading + '{References}'), 'end': source.index('\\' + boundary + '{Appendix}')}])
+                        self.assertFalse(any(result['metric_eligibility'][key] for key in ('O8', 'O9', 'O10')))
+
+    def test_should_withhold_bibliography_negatives_when_explicit_reference_headings_have_unparsed_content(self):
+        for heading in (r'\section*{References}', r'\subsection{Bibliography}', '\n'+r'\textbf{References}'+'\n'):
+            source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                              + heading + '\nSmith, A. A manually formatted source reference. 2020.\n'
+                              + r'\section{Appendix}Ordinary appendix text.')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(heading=heading):
+                self.assertEqual(parsed['entries'], [])
+                evidence = parsed['coverage']['unparsed_source_roles'][0]
+                self.assertEqual(evidence['kind'], 'bib_entry')
+                self.assertEqual(evidence['source_members'][-1]['end'], source.index(r'\section{Appendix}'))
+                result = align_paper(parsed, {'text': 'An independently complete visual caption. Smith, A. A manually formatted source reference. 2020. Ordinary appendix text.'})
+                self.assertTrue(result['metric_eligibility']['O1'])
+                self.assertFalse(any(result['metric_eligibility'][key] for key in ('O8', 'O9', 'O10')))
+
+    def test_should_keep_complete_bibliography_headings_when_their_contents_are_all_in_parsed_entries(self):
+        entry = r'\begin{thebibliography}{9}\bibitem{one}A complete independently identifiable source entry.\end{thebibliography}'
+        source = document(r'\section*{References}' + entry + r'\section{Appendix}Ordinary appendix text.')
+        parsed = parse_project({'main.tex': source})
+        self.assertFalse(parsed['coverage']['unparsed_source_roles'])
+        self.assertTrue(align_paper(parsed, {'text': '[1] A complete independently identifiable source entry. Ordinary appendix text.'})['bibliography_eligible'])
+        # A parsed entry elsewhere does not account for an additional manual one.
+        extra = parse_project({'main.tex': source.replace(entry, 'Another manually formatted reference. 2021. ' + entry)})
+        self.assertFalse(align_paper(extra, {'text': '[1] A complete independently identifiable source entry.'})['bibliography_eligible'])
+
+    def test_should_withhold_unmarked_bibliography_entries_when_text_precedes_or_replaces_bibitem_markers(self):
+        for suffix in ('', r'\bibitem{one}A separately marked source entry.'):
+            source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                              + r'\begin{thebibliography}{9}A manually written reference. 2020.' + suffix + r'\end{thebibliography}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(marked=bool(suffix)):
+                self.assertIn('unparsed_bibliography_prefix', parsed['coverage']['unsupported_bibliography_commands'])
+                self.assertFalse(align_paper(parsed, {'text': 'An independently complete visual caption. A manually written reference. 2020. [1] A separately marked source entry.'})['bibliography_eligible'])
+
+    def test_should_withhold_procedure_negatives_when_step_lists_or_algorithm_headings_lack_a_parsed_container(self):
+        for procedure in (r'\begin{enumerate}[Step 1:]\item Select an input.\item Return a result.\end{enumerate}',
+                          r'\section{Algorithm 1}Select an input and return a result.'):
+            source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}' + procedure)
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(procedure=procedure):
+                self.assertEqual(parsed['coverage']['unsupported_kind_inventory']['algorithm'], 1)
+                self.assertEqual(parsed['coverage']['unparsed_source_roles'][0]['kind'], 'algorithm')
+                result = align_paper(parsed, {'text': 'An independently complete visual caption. Select an input. Return a result.'})
+                self.assertTrue(result['metric_eligibility']['O1'])
+                self.assertFalse(result['metric_eligibility']['O7'])
+
+    def test_should_recognize_compact_step_numbers_when_the_role_is_not_a_longer_ordinary_word(self):
+        for label, expected in (('Step1:', True), ('STEP2:', True), ('Step 1:', True), ('Step~1:', True),
+                                ('stepwise:', False), ('steppe:', False)):
+            source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                              + r'\begin{enumerate}[' + label + r']\item Select an input.\end{enumerate}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(label=label):
+                self.assertEqual(bool(parsed['coverage']['unsupported_kind_inventory'].get('algorithm')), expected)
+                self.assertEqual(align_paper(parsed, {'text': 'An independently complete visual caption. Select an input.'})['metric_eligibility']['O7'], not expected)
+        for heading, expected in (('Algorithm1', True), ('Procedure2', True), ('Algorithmic properties', False)):
+            parsed = parse_project({'main.tex': document('\\section{' + heading + '}Select an input.')})
+            with self.subTest(heading=heading):
+                self.assertEqual(bool(parsed['coverage']['unsupported_kind_inventory'].get('algorithm')), expected)
+
+    def test_should_preserve_supported_empty_or_contained_inventories_when_no_unparsed_source_role_exists(self):
+        ordinary = parse_project({'main.tex': document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                                   r'\begin{enumerate}\item A list of components.\end{enumerate}\begin{thebibliography}{9}\end{thebibliography}')})
+        self.assertFalse(ordinary['coverage']['unparsed_source_roles'])
+        result = align_paper(ordinary, {'text': 'An independently complete visual caption. A list of components.'})
+        self.assertTrue(result['metric_eligibility']['O7'])
+        self.assertTrue(result['metric_eligibility']['O8'])
+        contained = parse_project({'main.tex': document(r'\begin{algorithm}\caption{A complete algorithm caption.}\begin{enumerate}[Step 1:]\item Select an input.\end{enumerate}\end{algorithm}')})
+        self.assertFalse(contained['coverage']['unsupported_kind_inventory'])
+
+    def test_should_retain_enclosing_layout_exclusions_when_reference_or_citation_context_is_clipped(self):
+        for command, metric in (('ref', 'O4'), ('cite', 'O10')):
+            layout = r'\begin{array}{c}the independent statement ' + chr(92) + command + r'{one} supports the whole argument\end{array}'
+            body = (r'\begin{theorem}\label{one}Every input has a unique bounded output.\end{theorem}$' + layout + '$'
+                    + r'\begin{thebibliography}{9}\bibitem{one}A complete independently identifiable source entry.\end{thebibliography}')
+            source = document(body)
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(command=command):
+                link = parsed['links'][0]
+                self.assertEqual(link['unsupported_context_commands']['unverified_math_layout:array'], 1)
+                self.assertTrue(link['math_context'])
+                self.assertEqual(link['source_layout_context'], [{'environment': 'array', 'source_members': [
+                    {'path': 'main.tex', 'start': source.index(layout), 'end': source.index(layout) + len(layout)}]}])
+                result = align_paper(parsed, {'text': 'Every input has a unique bounded output. cthe independent statement 1 supports the whole argument [1] A complete independently identifiable source entry.'})
+                self.assertFalse(result['metric_eligibility'][metric])
+
+    def test_should_withhold_flat_math_layout_collisions_when_rows_and_columns_are_unverified(self):
+        for environment, parameter in (('array', '{c}'), ('aligned', ''), ('alignedat', '{2}'), ('split', '')):
+            source = document(r'\begin{equation}\begin{' + environment + '}' + parameter
+                              + r'abcdefghij\\klmnopqrst\end{' + environment + r'}\end{equation}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(environment=environment):
+                self.assertEqual(len(parsed['objects']), 1)
+                self.assertIn('unverified_math_layout:' + environment, parsed['objects'][0]['unsupported_commands'])
+                self.assertFalse(align_paper(parsed, {'text': parsed['objects'][0]['text']})['metric_eligibility']['O3'])
+
+    def test_should_keep_other_inventory_kinds_when_only_mathematical_layout_fidelity_is_unknown(self):
+        parsed = parse_project({'main.tex': document(r'\begin{equation}\begin{array}{c}abcdefghij\\klmnopqrst\end{array}\end{equation}'
+                               r'\begin{figure}\caption{A complete independently authored visual caption.}\end{figure}')})
+        result = align_paper(parsed, {'text': 'cabcdefghij klmnopqrst A complete independently authored visual caption.'})
+        self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+        self.assertFalse(result['metric_eligibility']['O3'])
+        self.assertTrue(result['metric_eligibility']['O1'])
+
+    def test_should_withhold_inline_layout_fidelity_when_a_statement_or_entry_has_a_flat_text_collision(self):
+        expression = r'\begin{array}{c}abcdefghij\\klmnopqrst\end{array}'
+        for body, collection, metric in ((r'\begin{theorem}The condition $' + expression + r'$ determines the result.\end{theorem}', 'objects', 'O5'),
+                                          (r'\begin{thebibliography}{9}\bibitem{one}The condition $' + expression + r'$ determines the result.\end{thebibliography}', 'entries', 'O8')):
+            parsed = parse_project({'main.tex': document(body)})
+            with self.subTest(metric=metric):
+                row = parsed[collection][0]
+                self.assertIn('unverified_math_layout:array', row['unsupported_commands'])
+                self.assertFalse(align_paper(parsed, {'text': row['text']})['metric_eligibility'][metric])
+
+    def test_should_withhold_a_stored_argument_tail_alias_when_its_definition_hides_the_consumer(self):
+        statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        for definitions, body in ((r'\newcommand{\literal}{\url}', r'\literal{' + statement + '}'),
+                                  (r'\newcommand{\middle}{\url}\newcommand{\literal}{\middle}', r'\literal{' + statement + '}'),
+                                  (r'\newcommand{\listing}{\printbibliography}', r'\listing[' + statement + ']'),
+                                  (r'\newcommand{\hidden}[1]{#1\index}', r'\hidden{ordinary}{' + statement + '}')):
+            parsed = parse_project({'main.tex': document(body, definitions)})
+            with self.subTest(definitions=definitions):
+                self.assertTrue(any(name.startswith('unverified_macro_argument_forwarding:') for name in parsed['coverage']['unsupported_source_semantics']))
+                self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output.'})['metric_eligibility']['O5'])
+
+    def test_should_withhold_literal_or_stored_objects_when_standard_argument_roles_do_not_execute_them(self):
+        statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        cases = [(name, '\\' + name + '{', '}') for name in
+                 ('index', 'title', 'author', 'date', 'label', 'includegraphics', 'url', 'path', 'nolinkurl', 'ref', 'cite')]
+        cases += [('href', r'\href{', '}{visible text}'), ('bibinfo', r'\bibinfo{', '}{visible text}'),
+                  ('bibfield', r'\bibfield{', '}{visible text}'), ('setlength', r'\setlength{\textwidth}{', '}'),
+                  ('addcontentsline', r'\addcontentsline{toc}{section}{', '}')]
+        for name, prefix, suffix in cases:
+            source = document(prefix + statement + suffix)
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(command=name):
+                self.assertIn('structural_stored_argument:' + name, parsed['coverage']['unsupported_source_semantics'])
+                self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output.'})['metric_eligibility']['O5'])
+                evidence = next(row for row in parsed['coverage']['unverified_stored_arguments'] if row['command'] == name)
+                member = evidence['source_members'][0]
+                self.assertEqual(source[member['start']:member['end']], '{' + statement + '}')
+                self.assertEqual(len(parsed['objects']), 1)
+
+    def test_should_withhold_structural_options_when_citation_or_bibliography_keys_are_not_body_content(self):
+        statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        for body in (r'\cite[' + statement + ']{one}',
+                     r'\begin{thebibliography}{9}\bibitem[' + statement + r']{one}A complete independent entry.\end{thebibliography}'):
+            parsed = parse_project({'main.tex': document(body)})
+            with self.subTest(body=body):
+                self.assertTrue(parsed['coverage']['unverified_stored_arguments'])
+                self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output. A complete independent entry.'})['metric_eligibility']['O5'])
+
+    def test_should_withhold_accepted_aliases_when_their_tokens_are_stored_in_metadata(self):
+        for name in ('index', 'title', 'url', 'label'):
+            parsed = parse_project({'main.tex': document('\\' + name + r'{\be abcdefghij=12345\ee}',
+                                    r'\def\be{\begin{equation}}\def\ee{\end{equation}}')})
+            with self.subTest(command=name):
+                self.assertEqual(parsed['coverage']['objects_by_kind']['equation'], 1)
+                self.assertIn('structural_stored_argument:' + name, parsed['coverage']['unsupported_source_semantics'])
+                self.assertFalse(align_paper(parsed, {'text': 'abcdefghij=12345'})['metric_eligibility']['O3'])
+
+    def test_should_preserve_visible_href_and_formatting_content_when_metadata_roles_are_structurally_empty(self):
+        source = document(r'\begin{theorem}\textbf{Every input has a unique bounded output.}\end{theorem}'
+                          r'\href{https://example.test}{\begin{theorem}Every output has a distinct finite encoding.\end{theorem}}',
+                          r'\title{An ordinary title}\author{A. Author}\date{2025}')
+        parsed = parse_project({'main.tex': source})
+        self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+        self.assertTrue(align_paper(parsed, {'text': 'Every input has a unique bounded output. Every output has a distinct finite encoding.'})['metric_eligibility']['O5'])
+
+    def test_should_withhold_literal_delimiter_syntax_when_raw_contents_might_be_mistaken_for_objects(self):
+        source = document(r'\url|\begin{theorem}Every input has a unique bounded output.\end{theorem}|')
+        parsed = parse_project({'main.tex': source})
+        self.assertIn('unverified_stored_arguments:url', parsed['coverage']['unsupported_source_semantics'])
+        self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output.'})['metric_eligibility']['O5'])
+
+    def test_should_withhold_raw_object_inventory_when_macro_arguments_are_discarded_duplicated_or_reordered(self):
+        first = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        second = r'\begin{theorem}Every output has a distinct finite encoding.\end{theorem}'
+        cases = ((r'\newcommand{\wrap}[1]{}', r'\wrap{' + first + '}', [first]),
+                 (r'\newcommand{\wrap}[1]{#1#1}', r'\wrap{' + first + '}', [first]),
+                 (r'\newcommand{\wrap}[2]{#2#1}', r'\wrap{' + first + '}{' + second + '}', [first, second]))
+        for preamble, body, expected in cases:
+            source = document(body, preamble)
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(preamble=preamble):
+                self.assertIn('structural_macro_argument:wrap', parsed['coverage']['unsupported_source_semantics'])
+                self.assertEqual(len(parsed['objects']), len(expected))
+                for item, raw in zip(parsed['objects'], expected):
+                    self.assertEqual(item['source_members'], [{'path': 'main.tex', 'start': source.index(raw), 'end': source.index(raw) + len(raw)}])
+                evidence = parsed['coverage']['unverified_macro_arguments'][0]
+                member = evidence['source_members'][0]
+                self.assertEqual(source[member['start']:member['end']], '{' + first + '}')
+                self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output. Every output has a distinct finite encoding.'})['metric_eligibility']['O5'])
+
+    def test_should_withhold_nested_argument_forwarding_when_zero_argument_aliases_can_consume_caller_tokens(self):
+        statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        definitions = (r'\newcommand{\discard}[1]{}\newcommand{\outer}[1]{\discard{#1}}',
+                       r'\newcommand{\discard}[1]{}\newcommand{\middle}{\discard}\newcommand{\outer}{\middle}',
+                       r'\newcommand{\discard}[1]{}\newcommand{\outer}[1]{#1\discard}')
+        for preamble in definitions:
+            source = document(r'\outer{ordinary text}{' + statement + '}', preamble)
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(preamble=preamble):
+                self.assertIn('unverified_macro_argument_forwarding:outer', parsed['coverage']['unsupported_source_semantics'])
+                self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output.'})['metric_eligibility']['O5'])
+
+    def test_should_withhold_aliased_math_inventory_when_a_custom_macro_consumes_its_source_argument(self):
+        for use in ('', '#1', '#1#1'):
+            source = document(r'\wrap{\be abcdefghij=12345\ee}',
+                              r'\def\be{\begin{equation}}\def\ee{\end{equation}}\newcommand{\wrap}[1]{' + use + '}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(use=use):
+                self.assertEqual(parsed['coverage']['objects_by_kind']['equation'], 1)
+                self.assertIn('structural_macro_argument:wrap', parsed['coverage']['unsupported_source_semantics'])
+                self.assertEqual(parsed['coverage']['unverified_macro_arguments'][0]['commands'], ['be', 'ee'])
+                self.assertFalse(align_paper(parsed, {'text': 'abcdefghij=12345'})['metric_eligibility']['O3'])
+
+    def test_should_withhold_link_denominators_when_a_custom_argument_hides_a_reference(self):
+        source = document(r'\begin{theorem}\label{one}Every input has a unique bounded output.\end{theorem}'
+                          r'The independent statement \discard{\ref{one}} supports the complete argument.',
+                          r'\newcommand{\discard}[1]{}')
+        parsed = parse_project({'main.tex': source})
+        self.assertEqual(len(parsed['links']), 1)
+        self.assertIn('structural_macro_argument:discard', parsed['coverage']['unsupported_source_semantics'])
+        self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output. The independent statement 1 supports the complete argument.'})['metric_eligibility']['O4'])
+
+    def test_should_preserve_literal_star_argument_boundaries_when_custom_macros_consume_plain_tokens(self):
+        statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        for body, preamble in ((r'\discard*{' + statement + '}', r'\newcommand{\discard}[1]{}'),
+                               (r'\discard\alpha*{' + statement + '}', r'\newcommand{\discard}[2]{}')):
+            parsed = parse_project({'main.tex': document(body, preamble)})
+            with self.subTest(body=body):
+                self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+                self.assertEqual(parsed['coverage']['unverified_macro_arguments'], [])
+                self.assertTrue(align_paper(parsed, {'text': 'Every input has a unique bounded output.'})['metric_eligibility']['O5'])
+
+    def test_should_preserve_leading_math_brackets_when_literal_or_aliased_environments_have_no_options(self):
+        for environment in ('equation','align','gather','multline','eqnarray'):
+            for starred in (False,True):
+                for aliased in (False,True):
+                    env=environment+('*' if starred else '')
+                    begin,end=(r'\be',r'\ee') if aliased else (r'\begin{'+env+'}',r'\end{'+env+'}')
+                    preamble=r'\def\be{\begin{'+env+r'}}\def\ee{\end{'+env+'}}' if aliased else ''
+                    body=begin+r'[x,y]+abcdefghij=12345'+(r'\tag{A}' if starred else '')+end
+                    parsed=parse_project({'main.tex':document(body,preamble)})
+                    with self.subTest(environment=env,aliased=aliased):
+                        self.assertEqual(parsed['objects'][0]['text'],'[x,y]+abcdefghij=12345')
+                        result=align_paper(parsed,{'text':'+abcdefghij=12345'})
+                        self.assertFalse(result['metric_eligibility']['O3'])
+
+    def test_should_keep_supported_proof_and_float_options_when_math_brackets_are_preserved(self):
+        source=document(r'\begin{theorem}\label{one}Every input has a unique bounded output.\end{theorem}'
+                        +r'\begin{proof}[Proof of Theorem~\ref{one}]A constructive proof of the stated result.\end{proof}'
+                        +r'\begin{figure}[ht]\caption{An independent complete visual caption.}\end{figure}')
+        parsed=parse_project({'main.tex':source})
+        self.assertEqual(parsed['objects'][1]['proof_targets'],['object:one'])
+        self.assertEqual(parsed['objects'][1]['text'],'A constructive proof of the stated result.')
+        self.assertEqual(parsed['objects'][2]['text'],'An independent complete visual caption.')
+
+    def test_should_not_certify_an_empty_equation_cohort_when_aliases_have_literal_star_tokens(self):
+        source=document(r'\be* abcdefghij=12345\ee*\begin{figure}\caption{A complete independent visual caption.}\end{figure}',
+                        r'\def\be{\begin{equation}}\def\ee{\end{equation}}')
+        parsed=parse_project({'main.tex':source})
+        self.assertEqual(parsed['coverage']['objects_by_kind']['equation'],1)
+        result=align_paper(parsed,{'text':'A complete independent visual caption. abcdefghij=12345'})
+        self.assertTrue(result['metric_eligibility']['O1'])
+        self.assertFalse(result['metric_eligibility']['O3'])
+
+    def test_should_keep_other_kinds_exhaustive_when_standard_atoms_have_unverified_math_rendering(self):
+        commands=('eta','tau','rho','zeta','nu','Xi','varepsilon','rightarrow','to','gets','Leftrightarrow','mapsto','ell','cdots','mid','langle','Big','textsuperscript')
+        for name in commands:
+            source=document(r'\begin{figure}\caption{A complete independently authored visual caption.}\end{figure}'
+                            + r'\begin{equation}abcdefghij' + chr(92)+name+r'{x}=12345\end{equation}')
+            parsed=parse_project({'main.tex':source})
+            result=align_paper(parsed,{'text':'A complete independently authored visual caption. abcdefghijx=12345'})
+            with self.subTest(name=name):
+                self.assertIn(name,INVENTORY_ONLY_PRIMITIVES)
+                self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+                self.assertTrue(result['metric_eligibility']['O1'])
+                self.assertFalse(result['metric_eligibility']['O3'])
+                self.assertIn(name,parsed['objects'][1]['unsupported_commands'])
+
+    def test_should_keep_font_and_linebreak_inventory_when_the_caption_itself_is_complete(self):
+        source=document(r'{\Large Introductory material.}\newline {\tiny A small note.}'
+                        +r'\begin{figure}\caption{A complete independently authored visual caption.}\end{figure}')
+        parsed=parse_project({'main.tex':source})
+        result=align_paper(parsed,{'text':'Introductory material. A small note. A complete independently authored visual caption.'})
+        self.assertTrue(result['metric_eligibility']['O1'])
+        self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+
+    def test_should_withhold_inventory_when_a_standard_atom_is_redefined_to_hide_structure(self):
+        for definition in (r'\newcommand{\eta}{\begin{theorem}A hidden theorem.\end{theorem}}',
+                           r'\def\eta{\begin{theorem}A hidden theorem.\end{theorem}}',
+                           r'\newcommand{\inner}{\begin{theorem}A hidden theorem.\end{theorem}}\newcommand{\eta}{\inner}'):
+            parsed=parse_project({'main.tex':document(r'\eta\begin{figure}\caption{A complete independent visual caption.}\end{figure}',definition)})
+            self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+            self.assertFalse(align_paper(parsed,{'text':'A hidden theorem. A complete independent visual caption.'})['metric_eligibility']['O1'])
+
     def test_should_distinguish_inventory_support_when_standard_math_is_still_unrenderable(self):
         source = document(r'\begin{figure}\caption{A complete independ\"ent figure caption.}\end{figure}\begin{equation}x\in A+\tilde{x}\end{equation}', r'\setlength{\parindent}{0pt}\setlength{\textwidth}{10cm}')
         parsed = parse_project({'main.tex': source})

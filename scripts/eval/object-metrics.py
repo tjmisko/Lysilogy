@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import types
 
 ROOT = Path(__file__).resolve().parents[2]
 TRUTH = 'eval/truth/k1-limited-v1/objects.json'
@@ -22,7 +23,8 @@ CONFIG = 'eval/truth/k1-limited-v1-build.json'
 TRACE = 'eval/inputs/evidence/object-metrics.json'
 INPUT = 'eval/inputs/objects/figure-table.json'
 KINDS = ('figure', 'table')
-VERSION = 'figure-table-metrics-v4'
+VERSION = 'figure-table-metrics-v5'
+TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2')
 NATIVE_BASIS_FORMAT = 'native-json-f32-v1'
 DETECTOR_VERSION = 2
 MAX_JSON = 32 * 1024 * 1024
@@ -214,29 +216,24 @@ def validate_registry(registry, papers, corpus_pdf_root):
         require(active[name]==1 and paper['paper_id'] not in {ident for ids in registry.get('unresolved',{}).values() for ident in ids}, 'canonical registry identity is ambiguous')
 
 
-def validate_truth(repo, cache, corpus, data, truth_raw):
-    """Replay only independent truth construction; never expose predictions to labels."""
-    sys.path.insert(0,str(repo/'scripts/truth/latex'))
-    import release
-    import manual
-    truth=document(truth_raw);config_raw=read(repo/CONFIG);config=document(config_raw)
-    require(truth['schema_version']==1 and truth['truth_set']=='K1' and truth['origin']=='arxiv-latex' and truth['version']==config['version'], 'unsupported frozen K1 identity')
-    original=truth['provenance']
-    require(digest(config_raw)==original['build_config_sha256'], 'K1 config hash differs')
+def truth_verifier(repo):
+    # Load the application adapter by its exact path; historical parser modules
+    # are loaded only inside its isolated, manifest-verified worker.
+    path=repo/'scripts/truth/latex/versioned.py'
+    verifier=types.ModuleType('k1_versioned_verifier');verifier.__file__=str(path)
+    exec(compile(read(path),str(path),'exec'),verifier.__dict__)
+    return verifier
+
+
+def validate_truth(repo, cache, corpus, data, truth_raw, with_receipt=False):
+    """Replay the selected immutable release without using current parser modules."""
+    truth=document(truth_raw)
+    require(truth['schema_version']==1 and truth['truth_set']=='K1' and truth['origin']=='arxiv-latex', 'unsupported frozen K1 identity')
     # Current detector output is rederived from immutable native coordinates.
-    # validate_derivation binds that independently versioned generation below.
-    for path,expected in original['implementation'].items():
-        if path.startswith('scripts/truth/latex/'):
-            require(digest(read(repo/path))==expected,'truth implementation changed')
-    evidence=release.verify_evidence(cache,config)
-    require(evidence==config['evidence_sha256']==original['evidence_sha256'], 'frozen K1 evidence drift')
-    inputs=document(read(cache/config['inputs']))
-    assemblies=[manual.assemble(cache,corpus,data,p['candidate'],p.get('region_bundle'),p.get('panel_bundle'),config['inputs'],config['indexes'],p.get('object_bundle'),p.get('bibliography_bundle')) for p in config['papers']]
-    current={name:read(repo/'scripts/truth/latex'/name) for name in ('archive.py','tex.py','parser.py','align.py','builder.py')}
-    history=release.validate_automatic_reports(cache,config,inputs,evidence,current)
-    rebuilt,_=release.build_release(assemblies,config,inputs,history);rebuilt['provenance']=original
+    # validate_derivation binds that separately versioned generation below.
+    rebuilt,config,receipt=truth_verifier(repo).replay(repo,cache,corpus,data,truth['version'])
     require(canonical(rebuilt)+b'\n'==truth_raw, 'K1 labels or complete cohort differ from independent evidence')
-    return truth,config
+    return (truth,config,receipt) if with_receipt else (truth,config)
 
 
 def canonical_native_float(value):
@@ -361,16 +358,64 @@ def atomic_json(path, value):
         finally:pending.unlink(missing_ok=True)
 
 
-def implementation_files(repo):
-    files=[CONFIG,'eval/native-basis-vectors.json','Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
+def release_paths(version):
+    require(version in TRUTH_VERSIONS, 'unsupported collector truth version')
+    return {'truth': 'eval/truth/' + version + '/objects.json',
+            'config': 'eval/truth/' + version + '-build.json',
+            'trace': TRACE if version == TRUTH_VERSIONS[0] else 'eval/inputs/evidence/object-metrics-' + version + '.json',
+            'input': INPUT}
+
+
+def freeze_measurement(repo, input_raw, observation_raw, paths):
+    """Preserve exact original bytes outside the harness's active input directory."""
+    manifest={'schema_version':1,'original_paths':{'input':paths['input'],'observation':paths['trace']},
+              'sha256':{'input.json':digest(input_raw),'observation.json':digest(observation_raw)}}
+    payloads={'input.json':input_raw,'observation.json':observation_raw,'manifest.json':canonical(manifest)+b'\n'}
+    folder=repo/'eval/evidence/object-metrics-history'/digest(canonical(manifest))
+    require(not any(p.is_symlink() for p in (folder,*folder.parents)), 'symlinked measurement history')
+    folder.mkdir(parents=True,exist_ok=True)
+    for name,raw in payloads.items():
+        require(len(raw)<=8*1024*1024,'measurement history exceeds bound')
+        path=folder/name
+        if path.exists():require(read(path)==raw,'immutable measurement history differs')
+        else:
+            with path.open('xb') as stream:stream.write(raw);stream.flush();os.fsync(stream.fileno())
+    return str(folder.relative_to(repo))
+
+
+def publish_measurement(repo, paths, observation, payload):
+    # The harness scans every immediate JSON input and rejects duplicate metric
+    # owners. Keep one active input; preserve overlapping prior cohorts as history.
+    active=repo/INPUT
+    if active.exists() or active.is_symlink():
+        old_raw=read(active);old=document(old_raw)
+        old_version=old['truth_sets']['K1']['version'];old_paths=release_paths(old_version)
+        require(set(old['metrics'])=={'O1','O2'} and old['suite']=='objects', 'existing input has another metric owner')
+        old_observation=read(repo/old_paths['trace'])
+        for metric in old['metrics'].values():
+            require(any(row['path']==old_paths['trace'] and row['sha256']==digest(old_observation)
+                        for row in metric['evidence']), 'prior observation differs from its input')
+        freeze_measurement(repo,old_raw,old_observation,old_paths)
+    input_raw=canonical(payload)+b'\n';observation_raw=canonical(observation)+b'\n'
+    archive=freeze_measurement(repo,input_raw,observation_raw,paths)
+    atomic_json(repo/paths['trace'],observation)
+    atomic_json(repo/INPUT,payload)
+    return archive
+
+
+def implementation_files(repo, truth_version=TRUTH_VERSIONS[0]):
+    files=[release_paths(truth_version)['config'],'eval/native-basis-vectors.json','Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
     for root in ('src','scripts/truth/latex'):
         if (repo/root).is_dir():
             files.extend(str(p.relative_to(repo)) for p in (repo/root).rglob('*') if p.is_file() and p.suffix in ('.rs','.py') and not p.name.startswith('test'))
+    retained=repo/'eval/implementations'/truth_version
+    if retained.is_dir():
+        files.extend(str(p.relative_to(repo)) for p in retained.iterdir() if p.is_file() and (p.suffix=='.py' or p.name=='manifest.json'))
     return sorted(set(files))
 
 
-def build_bridge(repo):
-    sources={p:digest(read(repo/p)) for p in implementation_files(repo)}
+def build_bridge(repo, truth_version=TRUTH_VERSIONS[0]):
+    sources={p:digest(read(repo/p)) for p in implementation_files(repo,truth_version)}
     environment=dict(os.environ,CARGO_BUILD_JOBS='1',CARGO_PROFILE_DEV_DEBUG='0',CARGO_PROFILE_TEST_DEBUG='0',CARGO_INCREMENTAL='0',CARGO_NET_OFFLINE='true',CARGO_TARGET_DIR=str(repo/'target'))
     environment.pop('CARGO_BUILD_TARGET',None)
     command=['cargo','build','--offline','--example','object_metrics','--message-format=json']
@@ -381,7 +426,7 @@ def build_bridge(repo):
     expected=repo/'target/debug/examples/object_metrics'
     require(len(artifacts)==1 and artifacts[0]['executable']==str(expected) and artifacts[0]['target'].get('src_path')==str(repo/'examples/object_metrics.rs') and artifacts[0]['target'].get('kind')==['example'],'Cargo selected another executable')
     require(sources=={p:digest(read(repo/p)) for p in sources},'source changed during bridge build')
-    receipt={'schema_version':1,'command':command,'implementation':sources,'executable_sha256':digest(read(expected,128*1024*1024)),'cargo_stdout_sha256':digest(result.stdout),'cargo_stderr_sha256':digest(result.stderr),'selected_artifact':artifacts[0],'wall_seconds':time.monotonic()-started}
+    receipt={'schema_version':1,'truth_version':truth_version,'command':command,'implementation':sources,'executable_sha256':digest(read(expected,128*1024*1024)),'cargo_stdout_sha256':digest(result.stdout),'cargo_stderr_sha256':digest(result.stderr),'selected_artifact':artifacts[0],'wall_seconds':time.monotonic()-started}
     cache=Path.home()/'.cache/lysilogy/object-metrics/builds'/digest(canonical(receipt))
     cache.mkdir(parents=True,exist_ok=True)
     for name,raw in [('cargo.jsonl',result.stdout),('stderr.log',result.stderr)]:
@@ -395,25 +440,28 @@ def build_bridge(repo):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--truth-version', choices=TRUTH_VERSIONS, default=TRUTH_VERSIONS[0], help='Explicit immutable cohort; preserve prior observations/input before selecting the active cohort')
     parser.add_argument('--build',action='store_true',help='Build the exact worktree bridge and freeze its Cargo receipt')
     parser.add_argument('--executable',type=Path,help='Cargo-built object_metrics executable in this worktree target/debug/examples')
     args=parser.parse_args();started=time.monotonic()
+    paths=release_paths(args.truth_version)
     if args.build:
-        build_bridge(ROOT);return
+        build_bridge(ROOT,args.truth_version);return
     require(args.executable is not None, '--executable is required for measurement')
     cache=Path.home()/'.cache/lysilogy';corpus=Path.home()/'Corpora/arxiv';data=cache/'arxiv-kb-data'
     expected=ROOT/'target/debug/examples/object_metrics'
     # A mutable receipt alone never establishes a current executable. Invoke
     # Cargo on every measurement and verify its exact selected artifact.
-    build_bridge(ROOT)
+    build_bridge(ROOT,args.truth_version)
     require(args.executable.absolute()==expected, 'executable must be the current worktree example')
     executable_raw=read(expected,128*1024*1024);executable_hash=digest(executable_raw)
     # Cargo JSON output binds the executable to its build, target, source and
     # dependency graph; inherited CARGO_TARGET_DIR/CARGO_BUILD_TARGET cannot select it.
     build= document(read(ROOT/'target/object-metrics-build.json'))
-    sources={path:digest(read(ROOT/path)) for path in implementation_files(ROOT)}
-    require(build['executable_sha256']==executable_hash and build['implementation']==sources, 'executable build receipt is stale')
-    truth_raw=read(ROOT/TRUTH);truth,config=validate_truth(ROOT,cache,corpus,data,truth_raw)
+    sources={path:digest(read(ROOT/path)) for path in implementation_files(ROOT,args.truth_version)}
+    require(build['truth_version']==args.truth_version and build['executable_sha256']==executable_hash and build['implementation']==sources, 'executable build receipt is stale')
+    truth_raw=read(ROOT/paths['truth']);truth,config,truth_verification_before=validate_truth(ROOT,cache,corpus,data,truth_raw,True)
+    require(truth['version']==args.truth_version and config['version']==args.truth_version, 'selected collector truth version differs')
     papers=[p for p in truth['papers'] if p['metric_eligibility']['O1']]
     require([p['paper_id'] for p in papers]==truth['coverage']['cohort_papers']['O1'] and papers,'incomplete frozen detection cohort')
     registry_path=data/'paper-identities.json';registry_raw=read(registry_path)
@@ -446,22 +494,22 @@ def main():
         tracked.update(derivation['graphics']['trace_hashes'])
         object_hashes[paper['paper_id']]={'rust_serialized_sha256':row['object_sha256'],'canonical_sha256':digest(canonical(artifact)),'derivation':derivation}
         metrics.append(evaluate_paper(paper,artifact,indexes[paper['paper_id']]))
-    require(sources=={p:digest(read(ROOT/p)) for p in sources} and read(ROOT/TRUTH)==truth_raw and digest(read(expected,128*1024*1024))==executable_hash,'measurement source or truth changed')
+    require(sources=={p:digest(read(ROOT/p)) for p in sources} and read(ROOT/paths['truth'])==truth_raw and digest(read(expected,128*1024*1024))==executable_hash,'measurement source or truth changed')
     for path,expected_hash in tracked.items():require(digest(read(Path(path),512*1024*1024))==expected_hash,'canonical input changed during measurement')
-    sys.path.insert(0,str(ROOT/'scripts/truth/latex'));import release
-    require(release.verify_evidence(cache,config)==config['evidence_sha256'],'external truth evidence changed')
+    _,_,truth_verification_after=validate_truth(ROOT,cache,corpus,data,truth_raw,True)
+    require(sources=={p:digest(read(ROOT/p)) for p in sources},'measurement source changed during final truth replay')
     totals={k:sum(p[k] for p in metrics) for k in ('tp','fp','fn','truth_objects','predictions','unknown_truth_regions')}
     values=[v for p in metrics for v in p['region_values']];matched=[v for p in metrics for v in p['matched_region_values']]
     require(totals['truth_objects']>0 and values,'empty objective denominator')
-    observation={'schema_version':1,'collector':VERSION,'truth_sha256':digest(truth_raw),'truth_version':truth['version'],'coverage':truth['coverage'],'summary':totals,'O1':2*totals['tp']/(2*totals['tp']+totals['fp']+totals['fn']),'O2':statistics.median(values),'matched_only_median':statistics.median(matched) if matched else None,'papers':metrics,'object_hashes':object_hashes,'executable_sha256':executable_hash,'build_receipt_sha256':digest(read(ROOT/'target/object-metrics-build.json')),'external_input_hashes':tracked,'network_calls':0,'model_calls':0,'cost_usd':0,'wall_seconds':time.monotonic()-started}
+    observation={'schema_version':1,'collector':VERSION,'truth_sha256':digest(truth_raw),'truth_version':truth['version'],'coverage':truth['coverage'],'truth_verification':{'before':truth_verification_before,'after':truth_verification_after},'summary':totals,'O1':2*totals['tp']/(2*totals['tp']+totals['fp']+totals['fn']),'O2':statistics.median(values),'matched_only_median':statistics.median(matched) if matched else None,'papers':metrics,'object_hashes':object_hashes,'executable_sha256':executable_hash,'build_receipt_sha256':digest(read(ROOT/'target/object-metrics-build.json')),'external_input_hashes':tracked,'network_calls':0,'model_calls':0,'cost_usd':0,'wall_seconds':time.monotonic()-started}
     # Freeze full predictions externally; commit only derived diagnostic records.
     run_root=cache/'object-metrics'/digest(result.stdout)
     atomic_json(run_root/'predictions.json',response)
     observation['predictions_sha256']=digest(canonical(response)+b'\n')
-    atomic_json(ROOT/TRACE,observation)
     evidence=lambda p,v:{'path':p,'version':v,'sha256':digest(read(ROOT/p))}
-    payload={'schema_version':1,'suite':'objects','collector':VERSION,'implementation':[evidence(p,VERSION) for p in sources],'truth_sets':{'K1':evidence(TRUTH,truth['version'])},'metrics':{'O1':{'sample':{'method':'f1','true_positive':totals['tp'],'false_positive':totals['fp'],'false_negative':totals['fn']},'cases':totals['truth_objects'],'evidence':[evidence(TRACE,VERSION)]},'O2':{'sample':{'method':'median','values':values},'cases':len(values),'evidence':[evidence(TRACE,VERSION)]}},'cost_usd':0,'wall_seconds':observation['wall_seconds']}
-    atomic_json(ROOT/INPUT,payload)
+    observation_evidence={'path':paths['trace'],'version':VERSION,'sha256':digest(canonical(observation)+b'\n')}
+    payload={'schema_version':1,'suite':'objects','collector':VERSION,'implementation':[evidence(p,VERSION) for p in sources],'truth_sets':{'K1':evidence(paths['truth'],truth['version'])},'metrics':{'O1':{'sample':{'method':'f1','true_positive':totals['tp'],'false_positive':totals['fp'],'false_negative':totals['fn']},'cases':totals['truth_objects'],'evidence':[observation_evidence]},'O2':{'sample':{'method':'median','values':values},'cases':len(values),'evidence':[observation_evidence]}},'cost_usd':0,'wall_seconds':observation['wall_seconds']}
+    publish_measurement(ROOT,paths,observation,payload)
     print(json.dumps({k:observation[k] for k in ('summary','O1','O2','matched_only_median','wall_seconds')},sort_keys=True))
 
 

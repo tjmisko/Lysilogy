@@ -6,7 +6,7 @@ import unittest
 
 from archive import Limits, UnsupportedSource, read_archive
 from parser import parse_project
-from tex import Renderer, comments, expand_project, group
+from tex import Renderer, comments, expand_project, group, token_argument
 
 
 def document(body, preamble=""):
@@ -25,6 +25,140 @@ def tar(members):
 
 
 class SourceTests(unittest.TestCase):
+    def test_should_retain_exact_declaration_origins_when_literal_math_operators_are_loaded_in_the_preamble(self):
+        for spelling in (r'\DeclareMathOperator{\argbest}{arg best}', r'\DeclareMathOperator*\argbest{arg\,best}'):
+            included = spelling + '\n'
+            source = document(r'\begin{equation}\argbest abcdefghij=12345\end{equation}',
+                              r'\usepackage{amsthm, amsmath}\input{operators}')
+            parsed = parse_project({'main.tex': source, 'operators.tex': included})
+            with self.subTest(spelling=spelling):
+                row = parsed['coverage']['math_operator_declarations'][0]
+                self.assertEqual(row['name'], 'argbest')
+                self.assertTrue(row['literal_definition_verified'])
+                self.assertFalse(row['inventory_verified'])
+                self.assertFalse(row['rendering_verified'])
+                self.assertEqual(row['source_members'], [{'path': 'operators.tex', 'start': 0, 'end': len(spelling)}])
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+
+    def test_should_require_an_executed_package_prefix_when_metadata_or_a_macro_contains_package_tokens(self):
+        declaration = r'\DeclareMathOperator{\argbest}{best}'
+        for loads in (r'\title{\usepackage{amsmath}}', r'\title\usepackage{amsmath}',
+                      r'\author{\RequirePackage{amsmath}}', r'{\usepackage{amsmath}}',
+                      r'\iffalse\usepackage{amsmath}\fi',
+                      r'\newcommand{\loadams}{\usepackage{amsmath}}\loadams'):
+            parsed = parse_project({'main.tex': document('', loads + declaration)})
+            with self.subTest(loads=loads):
+                row = parsed['coverage']['math_operator_declarations'][0]
+                self.assertFalse(row['literal_definition_verified'])
+                self.assertFalse(row['inventory_verified'])
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+
+    def test_should_withhold_operator_declarations_when_scope_lifetime_or_definition_identity_is_unproven(self):
+        declaration = r'\DeclareMathOperator{\argbest}{arg best}'
+        for before, after, in_body in (
+                ('{', '}', False), (r'\begingroup', r'\endgroup', False),
+                (r'\begin{center}', r'\end{center}', False), (r'\iffalse', r'\fi', False),
+                ('', '', True), ('', declaration, False),
+                (r'\newcommand{\argbest}{other}', '', False), ('', r'\def\argbest{other}', False),
+                (r'\newcommand{\DeclareMathOperator}[2]{}', '', False)):
+            value = before + declaration + after
+            parsed = parse_project({'main.tex': document(value if in_body else '', r'\usepackage{amsmath}' + ('' if in_body else value))})
+            with self.subTest(before=before, after=after, in_body=in_body):
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+                self.assertFalse(any(row['inventory_verified'] for row in parsed['coverage']['math_operator_declarations']))
+        for preamble in (declaration, declaration + r'\usepackage{amsmath}',
+                         r'\usepackage{amsmath}\DeclareMathOperator{\Pr}{Prob}',
+                         r'\usepackage{amsmath}\DeclareMathOperator{\alpha}{alpha}',
+                         r'\usepackage{amsmath}\DeclareMathOperator{\endfresh}{endfresh}'):
+            parsed = parse_project({'main.tex': document('', preamble)})
+            self.assertFalse(any(row['inventory_verified'] for row in parsed['coverage']['math_operator_declarations']))
+
+    def test_should_withhold_operator_bodies_when_they_contain_dynamic_structural_or_unbounded_tokens(self):
+        for value in (r'\begin{theorem}Hidden theorem.\end{theorem}', r'\ref{hidden}', r'#1',
+                      r'\text{arg}', r'\operatorname{best}', r'arg_{best}', '', 'a' * 257):
+            parsed = parse_project({'main.tex': document('', r'\usepackage{amsmath}\DeclareMathOperator{\argbest}{' + value + '}')})
+            with self.subTest(value=value):
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+                self.assertFalse(parsed['coverage']['math_operator_declarations'][0]['inventory_verified'])
+
+    def test_should_withhold_deferred_declaration_arguments_when_a_macro_reaches_the_standard_consumer(self):
+        source = document(r'\declarelater{\later}{\begin{theorem}Hidden theorem.\end{theorem}}',
+                          r'\usepackage{amsmath}\DeclareMathOperator{\argbest}{best}\newcommand{\declarelater}{\DeclareMathOperator}')
+        parsed = parse_project({'main.tex': source})
+        self.assertIn('unverified_macro_argument_forwarding:declarelater', parsed['coverage']['unsupported_source_semantics'])
+
+    def test_should_bound_stored_argument_inspection_when_nested_metadata_repeats_source_spans(self):
+        source = document(r'\title{\title{\title{' + 'a' * 200 + '}}}')
+        self.assertLess(len(source), 400)
+        with self.assertRaisesRegex(UnsupportedSource, 'stored argument inspection exceeds its cumulative bound'):
+            parse_project({'main.tex': source}, Limits(text_bytes=400))
+
+    def test_should_leave_literal_star_tokens_when_consuming_unbraced_control_word_arguments(self):
+        self.assertEqual(token_argument(r'\alpha*tail', 0), (r'\alpha', 6))
+        self.assertEqual(token_argument(r'\*tail', 0), (r'\*', 2))
+        self.assertEqual(Renderer().plain(r'\textbf\alpha*tail'), 'α*tail')
+
+    def test_should_bound_cumulative_argument_inspection_when_nested_custom_calls_repeat_source_spans(self):
+        payload = 'a' * 200
+        source = document(r'\outer{\outer{\outer{' + payload + '}}}', r'\newcommand{\outer}[1]{}')
+        self.assertLess(len(source), 400)
+        with self.assertRaisesRegex(UnsupportedSource, 'macro argument inspection exceeds its cumulative bound'):
+            parse_project({'main.tex': source}, Limits(text_bytes=400))
+
+    def test_should_preserve_deposited_spans_when_literal_equation_aliases_replace_boundaries(self):
+        for definitions in (r'\newcommand{\be}{\begin{equation}}\newcommand{\ee}{\end{equation}}',
+                            r'\def\be{\begin{equation}}\def\ee{\end{equation}}'):
+            source=document(r'\be abcdefghij=12345\label{eq:one}\ee',definitions)
+            parsed=parse_project({'main.tex':source})
+            self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+            self.assertEqual(len(parsed['objects']),1)
+            row=parsed['objects'][0]
+            self.assertEqual(row['id'],'object:eq:one')
+            start=source.index(r'\be abcdefghij');end=source.index(r'\ee',start)+3
+            self.assertEqual(row['source_members'],[{'path':'main.tex','start':start,'end':end}])
+            aliases=parsed['coverage']['resolved_equation_aliases']
+            self.assertEqual(aliases['be']['invocations'],[[{'path':'main.tex','start':start,'end':start+3}]])
+            self.assertEqual(source[aliases['be']['definition'][0]['start']:aliases['be']['definition'][0]['end']],definitions.split(r'\newcommand{\ee}')[0] if definitions.startswith(r'\newcommand') else r'\def\be{\begin{equation}}')
+
+    def test_should_keep_numbered_rows_when_literal_align_aliases_have_distinct_labels(self):
+        source=document(r'\ba abcdefghij=12345\label{one}\\klmnopqrst=67890\label{two}\ea',
+                        r'\def\ba{\begin{align}}\def\ea{\end{align}}')
+        parsed=parse_project({'main.tex':source})
+        self.assertEqual([row['id'] for row in parsed['objects']],['object:one','object:two'])
+        self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+        self.assertLessEqual(parsed['objects'][0]['source_members'][-1]['end'],parsed['objects'][1]['source_members'][0]['start'])
+
+    def test_should_retain_literal_stars_when_zero_argument_equation_aliases_precede_them(self):
+        source=document(r'\be* abcdefghij=12345\ee*',r'\def\be{\begin{equation}}\def\ee{\end{equation}}')
+        parsed=parse_project({'main.tex':source})
+        self.assertEqual(len(parsed['objects']),1)
+        row=parsed['objects'][0]
+        self.assertEqual(row['text'],'* abcdefghij=12345')
+        start=source.index(r'\be*');end=source.index(r'\ee*')+3
+        self.assertEqual(row['source_members'],[{'path':'main.tex','start':start,'end':end}])
+        self.assertEqual(parsed['coverage']['resolved_equation_aliases']['be']['invocations'],[[{'path':'main.tex','start':start,'end':start+3}]])
+
+    def test_should_reject_alias_inventory_when_definitions_are_scoped_repeated_or_indirect(self):
+        definitions=(r'{\def\be{\begin{equation}}}',r'\bgroup\def\be{\begin{equation}}\egroup',
+                     r'\def\be#1{\begin{equation}#1}',r'\newcommand{\be}[1]{\begin{equation}#1}',
+                     r'\def\be{\begin{equation}}\def\be{}',r'\edef\be{\begin{equation}}',
+                     r'\newcommand{\inner}{\begin{equation}}\newcommand{\be}{\inner}')
+        for definition in definitions:
+            with self.subTest(definition=definition):
+                try:
+                    parsed=parse_project({'main.tex':document(r'\be abcdefghij=12345\ee',definition+r'\def\ee{\end{equation}}')})
+                except UnsupportedSource:
+                    continue
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+                self.assertNotIn('be',parsed['coverage']['resolved_equation_aliases'])
+
+    def test_should_withhold_transitive_wrappers_when_only_direct_alias_invocations_are_inventoried(self):
+        source=document(r'\outer abcdefghij=12345\close',r'\def\be{\begin{equation}}\newcommand{\outer}{\be}\def\ee{\end{equation}}\newcommand{\close}{\ee}')
+        parsed=parse_project({'main.tex':source})
+        self.assertEqual(parsed['objects'],[])
+        self.assertIn('structural_macro:outer',parsed['coverage']['unsupported_source_semantics'])
+        self.assertIn('structural_macro:close',parsed['coverage']['unsupported_source_semantics'])
+
     def test_should_omit_only_literal_penalty_parameters_when_bibliography_spacing_is_deposited(self):
         self.assertEqual(Renderer().plain(r'12:\penalty0 2121--2159'), '12: 2121–2159')
         self.assertEqual(Renderer().plain(r'12\penalty-100 (1)'), '12 (1)')

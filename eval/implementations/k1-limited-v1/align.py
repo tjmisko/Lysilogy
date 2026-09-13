@@ -258,12 +258,11 @@ def align_paper(parsed, index, threshold=0.95):
     eligible_kinds, kind_coverage = [], {}
     for kind in ("figure", "table", "equation", "statement", "proof", "algorithm"):
         expected, count = expected_kinds[kind], aligned_kinds[kind]
-        kind_inventory_unknown = parsed['coverage'].get('unsupported_kind_inventory', {}).get(kind, 0)
-        eligible = inventory_known and not kind_inventory_unknown and count == expected and (expected > 0 or negative_evidence)
+        eligible = inventory_known and count == expected and (expected > 0 or negative_evidence)
         if eligible:
             eligible_kinds.append(kind)
         kind_coverage[kind] = {"expected": expected, "aligned": count, "eligible": eligible,
-                               "reason": "complete independent inventory" if eligible else "source inventory semantics are unsupported" if not inventory_known else "source inventory of this kind is unsupported" if kind_inventory_unknown else "no source objects of this kind" if not expected else "not every source object aligns"}
+                               "reason": "complete independent inventory" if eligible else "source inventory semantics are unsupported" if not inventory_known else "no source objects of this kind" if not expected else "not every source object aligns"}
     figure_tables = all(kind in eligible_kinds for kind in ("figure", "table"))
     bibliography_eligible = inventory_known and bibliography_complete and (bool(parsed["entries"]) or expected_links > 0 or negative_evidence)
     object_kinds = {row["id"]: row["kind"] for row in parsed["objects"]}

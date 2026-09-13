@@ -1209,6 +1209,31 @@ system acceptance. Detector collectors must report the limited release version a
 Complete reviewed zero-kind papers remain negative examples. Original annotations and automatic
 exclusions remain immutable; only compact independently derived labels are committed.
 
+Coverage expansion compatibility decision (#97, 2026-09-13): retain the twelve exact
+reviewed application modules for `k1-limited-v1` in a bounded, hash-pinned source bundle.
+Historical collectors select that version's isolated verifier, reproduce both original
+payloads from the original evidence, and record verifier/source/evidence fingerprints.
+Current parser improvements cannot silently alter old labels or invalidate replay by
+requiring old and new parser bytes to match. Unknown versions are rejected until their
+own reviewed construction is explicitly selected. This does not change the approximately
+500-paper target, source-semantic guards, or the two-paper release's limited scope.
+
+Bounded tranche decision (#105, 2026-09-13): a second manual protocol may admit
+independently complete kinds after both annotators first inspect the original source,
+native text and full PDF pages. A separate post-freeze source crosswalk and accepted
+review bind their original histories; annotators are never represented as having seen
+later parser output. The first codec supports complete direct figure/table/equation
+inventories and separately verified formal negatives, with typed reference ownership
+and independent body/number geometry. Unsupported positive formal/nested structures
+and bibliography cohorts remain omitted. Automatic exclusions are preserved. The
+three-paper `k1-limited-v2` retains fourteen fixed application modules and its own
+manifest/configuration/output pins, while v1 remains unchanged. The collector explicitly
+selects a version, keeps one active metric owner and archives prior observation/input
+bytes. Any baseline transition between overlapping cohorts requires an evidence-bound
+justification and separate old/new denominators; objective targets are unchanged.
+This bounded release closes #105 only. The approximately 500-paper requirement in #97
+and broad system acceptance remain open.
+
 Acceptance: truth covers every E1 object kind; alignment quality is reported per paper; the suite
 runs offline from the corpus cache.
 

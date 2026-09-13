@@ -121,9 +121,7 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
         require(row['text'] == encoded[page['start'] * 2:page['end'] * 2].decode('utf-16-le'), 'manual packet page text differs from native index')
     parsed = candidate['source_inventory']
     require(packet['objects'] == parsed['objects'] and packet['links'] == parsed['links'], 'manual packet changed the complete source object/link inventory')
-    all_sources = {row['id']: row for row in parsed['objects']}
-    require(len(all_sources) == len(parsed['objects']), 'complete source object identities are duplicated')
-    sources = {key: row for key, row in all_sources.items() if row['kind'] in KINDS}
+    sources = {row['id']: row for row in parsed['objects'] if row['kind'] in KINDS}
     objects = independent['objects']
     require(len(objects) == len(sources) and {row['id'] for row in objects} == set(sources) and set(comparison['objects_verified']) == set(sources), 'manual object inventory is incomplete or duplicated')
     counts = dict(Counter(row['kind'] for row in objects))
@@ -205,31 +203,24 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
     source_refs = {number: link for number, link in enumerate(parsed['links']) if link['kind'] == 'reference'}
     root_refs = {row['source_link']: row for row in root['references']}
     require(len(root_refs) == len(root['references']) and set(root_refs) == set(source_refs), 'root reference inventory omits or duplicates source occurrences')
-    reference_rows, other_reference_rows, source_numbers = [], [], set()
+    reference_rows, source_numbers = [], set()
     for row in independent['object_references']:
         matched = [number for number, link in source_refs.items() if member_identity(link['source_members']) == member_identity(row['source_members'])]
         require(len(matched) == 1 and matched[0] not in source_numbers, 'independent reference membership is ambiguous or duplicated')
         number = matched[0]; link = source_refs[number]
         targets = {parsed['label_targets'].get(label) for label in link['targets']}
-        require(targets == {row['target']} and row['target'] in all_sources
-                and all_sources[row['target']]['kind'] in KINDS | {'figure', 'table'},
-                'manual reference target differs from its source label or supported role')
+        require(targets == {row['target']} and row['target'] in sources, 'manual reference target differs from its source label')
         span = checked_span(row['number_occurrence'], index['text'])
         root_row = root_refs[number]
         require(root_row['target'] == row['target'] and all(root_row['span'][key] == span[key] for key in ('start', 'end', 'native_text_sha256')), 'independent printed reference positions or targets disagree')
         source_numbers.add(number)
-        bound = {'source_link': number, 'target': row['target'], **span}
-        if row['target'] in sources:
-            reference_rows.append(bound)
-        else:
-            other_reference_rows.append({**bound, 'target_kind': all_sources[row['target']]['kind'],
-                                         'source_members': checked_members(row['source_members'], files, link['source_members'])})
+        reference_rows.append({'source_link': number, 'target': row['target'], **span})
     require(set(comparison['object_reference_source_links_verified']) == source_numbers, 'comparison omits independently annotated object references')
     non_objects = comparison['non_object_references_verified']
     require(len(non_objects) == len(source_refs) - len(source_numbers) and {row['source_link'] for row in non_objects} == set(source_refs) - source_numbers, 'unknown reference target roles remain outside the manual comparison')
     for row in non_objects:
         number = row['source_link']; declared = root_refs[number]
-        require(not any(parsed['label_targets'].get(label) in all_sources for label in source_refs[number]['targets']), 'object reference cannot be relabeled as a non-object role')
+        require(not any(parsed['label_targets'].get(label) in sources for label in source_refs[number]['targets']), 'object reference cannot be relabeled as a non-object role')
         require(row['source_label'] == declared['source_target_label'], 'comparison non-object source label differs')
         checked_members(row['source_members'], files, source_refs[number]['source_members'])
         checked_members(declared['source_members'], files, source_refs[number]['source_members'])
@@ -247,10 +238,8 @@ def apply_object_overlay(candidate_raw, index_raw, source_raw, packet_raw, root_
     overlay = {'objects': output_objects, 'automatic_candidate_retained': True, 'final_k1_publication': False,
                'verified_image_paths': verified_images,
                'reviewed_absent_kinds': absent_kinds, 'associated_content': ancillary, 'references': reference_rows, 'non_object_references': non_objects,
-               'reference_coverage': {'source_occurrences': len(source_refs), 'object_occurrences': len(reference_rows) + len(other_reference_rows), 'O4_occurrences': len(relevant_refs)},
+               'reference_coverage': {'source_occurrences': len(source_refs), 'object_occurrences': len(reference_rows), 'O4_occurrences': len(relevant_refs)},
                'metric_eligibility': {'O3': True, 'O4': True, 'O5': True, 'O6': True, 'O7': True},
                'evidence_hashes': {'candidate_sha256': sha256(candidate_raw), 'source_inventory_sha256': candidate['source_inventory_sha256'], 'packet_sha256': sha256(packet_raw), 'root_annotation_sha256': sha256(root_raw), 'independent_annotation_sha256': sha256(independent_raw), 'independent_receipt_sha256': sha256(independent_receipt_raw), 'comparison_sha256': sha256(comparison_raw)}}
-    if other_reference_rows:
-        overlay['other_object_references'] = other_reference_rows
     result = deepcopy(candidate); result['manual_object_overlay'] = overlay
     return result

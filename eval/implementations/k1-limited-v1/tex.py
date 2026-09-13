@@ -105,10 +105,7 @@ def token_argument(text, at):
     if text[at] == "{":
         return group(text, at)
     match = COMMAND.match(text, at)
-    # A star is a separate TeX character token, even when a higher-level
-    # LaTeX command happens to interpret it as an optional command variant.
-    end = match.end() - int(match[1].endswith('*') and len(match[1]) > 1) if match else at + 1
-    return text[at:end], end
+    return (match[0], match.end()) if match else (text[at], at + 1)
 
 
 @dataclass
@@ -238,8 +235,6 @@ ACCENTS = {"'": "\u0301", '`': "\u0300", '^': "\u0302", '"': "\u0308", '~': "\u0
 SYMBOLS = {"alpha": "α", "beta": "β", "gamma": "γ", "delta": "δ", "epsilon": "ε", "theta": "θ", "lambda": "λ", "mu": "μ", "pi": "π", "sigma": "σ", "phi": "φ", "psi": "ψ", "omega": "ω", "Gamma": "Γ", "Delta": "Δ", "Theta": "Θ", "Lambda": "Λ", "Pi": "Π", "Sigma": "Σ", "Phi": "Φ", "Psi": "Ψ", "Omega": "Ω", "times": "×", "cdot": "·", "leq": "≤", "geq": "≥", "neq": "≠", "infty": "∞", "ldots": "…", "dots": "…", "LaTeX": "LaTeX", "TeX": "TeX", "&": "&", "%": "%", "_": "_", "#": "#", "$": "$", "{": "{", "}": "}", "textendash": "–", "textemdash": "—", "textasciitilde": "~", "textbackslash": "\\", "ss": "ß", "ae": "æ", "oe": "œ", "o": "ø", "l": "ł"}
 FORMATTING = {"textbf", "textit", "texttt", "textrm", "textsf", "textsc", "emph", "mbox", "hbox", "text", "mathrm", "mathbf", "mathit", "mathbb", "mathcal", "mathsf", "operatorname", "ensuremath", "url", "path", "nolinkurl", "enquote", "MakeUppercase", "MakeLowercase", "bibnamefont", "bibfnamefont", "citenamefont"}
 SEMANTIC_MATH_FORMATTING = {"mathrm", "mathbf", "mathit", "mathbb", "mathcal", "mathsf", "operatorname"}
-UNVERIFIED_MATH_LAYOUTS = {"array", "aligned", "alignedat", "split", "gathered", "cases", "dcases",
-                           "matrix", "pmatrix", "bmatrix", "Bmatrix", "vmatrix", "Vmatrix", "smallmatrix", "subarray"}
 SILENT = {"bf", "it", "em", "rm", "sc", "sf", "tt", "bfseries", "itshape", "scshape", "normalfont", "newblock", "protect", "relax", "noindent", "leavevmode", "small", "footnotesize", "scriptsize", "displaystyle", "textstyle", "left", "right", "centering", "hfill", "vfill", "unskip", "ignorespaces", "allowbreak", "penalty", "nobreak", "quad", "qquad", ",", ";", ":", "!", " ", "/", "\\", "bgroup", "egroup"}
 DROP_ARGUMENT = {"label", "tag", "tag*", "index", "vspace", "hspace", "vskip", "hskip", "bibliographystyle", "setlength", "addcontentsline"}
 
@@ -336,11 +331,6 @@ class Renderer:
             elif name in ("begin", "end"):
                 environment, at = group(text, at)
                 self.math_seen += environment.rstrip("*") in {"equation", "align", "aligned", "gather", "multline", "eqnarray", "split"}
-                if environment.rstrip('*') in UNVERIFIED_MATH_LAYOUTS:
-                    # Flat text cannot establish row/column binding or discard
-                    # layout parameters such as array's column declaration.
-                    # Keep inventory, but never certify this diagnostic text.
-                    self.unsupported['unverified_math_layout:' + environment] += 1
             elif name in DROP_ARGUMENT:
                 _, at = group(text, at, required=False)
             elif name == "penalty":

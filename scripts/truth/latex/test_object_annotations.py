@@ -1,6 +1,7 @@
 """Offline semantic/ownership boundaries for independently reviewed object truth."""
 from copy import deepcopy
 import unittest
+import json
 import tempfile
 from pathlib import Path
 from manual import attach_objects
@@ -9,23 +10,27 @@ from annotations import canonical
 from archive import read_archive, sha256
 from object_annotations import apply_object_overlay
 from parser import parse_project
+from native_exports import FORMAT, native_projection
 
 
-def fixture():
+def fixture(extra_object_kind=None):
     source = (r'\documentclass{article}\begin{document}\begin{theorem}\label{thm:a}A complete theorem body.\end{theorem}'
               r'\begin{equation}\label{eq:a}abcdefghi=12345\end{equation}\begin{proof}A complete proof body.\end{proof}'
-              r'\begin{algorithm}\label{alg:a}A complete algorithm body.\end{algorithm}See \ref{thm:a}.\section{Related}\label{sec:related}See \ref{sec:related}.\end{document}').encode()
+              r'\begin{algorithm}\label{alg:a}A complete algorithm body.\end{algorithm}See \ref{thm:a}.\section{Related}\label{sec:related}See \ref{sec:related}.\end{document}')
+    if extra_object_kind:
+        source = source.replace(r'\end{document}', '\\begin{' + extra_object_kind + r'}\caption{A separately displayed visual caption.}\label{visual:a}\end{' + extra_object_kind + r'}See \ref{visual:a}.\end{document}')
+    source = source.encode()
     files, members = read_archive(source); parsed = parse_project(files)
     text, rows, root_rows = '', [], []
-    for number, obj in enumerate(parsed['objects']):
+    for number, obj in enumerate(row for row in parsed['objects'] if row['kind'] in {'statement', 'equation', 'proof', 'algorithm'}):
         body = obj['text']; start = len(text); text += body + '\n'
         span = {'start': start, 'end': start + len(body), 'text': body, 'text_utf8_sha256': sha256(body.encode())}
         source_members = [{**row, 'utf8_sha256': sha256(files[row['path']][row['start']:row['end']].encode())} for row in obj['source_members']]
         rows.append({'id': obj['id'], 'kind': obj['kind'], 'labels': obj['labels'], 'printed_heading': obj['kind'], 'source_members': source_members,
                      'direct_index_spans': [span], 'visual_body_boxes': [{'page': 1, 'pixels_96dpi': [0, number * 40, 100, number * 40 + 30], 'pdf_points': {'x_min': 0, 'y_min': number * 30, 'x_max': 75, 'y_max': number * 30 + 22.5}}], 'source_parent_object': None, 'source_child_objects': [], 'source_vs_pdf_math': {'judgment': 'visually agrees'}, 'reading_index_fidelity': {'judgment': 'lossy'}})
         root_rows.append({'source_id': obj['id'], 'proof_targets': obj['proof_targets'], 'source_members': source_members, 'separately_annotated_nested_objects': [], 'spans': [{**span, 'native_text_sha256': span['text_utf8_sha256']}], 'regions': [{'page': 1, 'rect': rows[-1]['visual_body_boxes'][0]['pdf_points'], 'role': 'body'}]})
-    ref_start = len(text); text += '1 2'
-    index = {'index': {'text': text, 'pages': [{'number': 1, 'start': 0, 'end': len(text), 'width': 612, 'height': 792}]}}
+    ref_start = len(text); text += '1 2' + (' 3' if extra_object_kind else '')
+    index = {'index': {'text': text, 'tokens': [], 'pages': [{'number': 1, 'start': 0, 'end': len(text), 'width': 612, 'height': 792}]}}
     candidate = {'arxiv_id': '2001.00001', 'paper_id': 'actual-mapped-id', 'pdf_sha256': '1' * 64, 'source_sha256': sha256(source), 'index': {'path': 'papers/actual/index.json', 'sha256': sha256(canonical(index))}, 'source_inventory': parsed, 'source_inventory_sha256': sha256(canonical(parsed)), 'automatic_exclusions': ['unchanged']}
     image = {'path': 'page-1.png', 'sha256': '2' * 64}
     packet = {'arxiv_id': candidate['arxiv_id'], 'paper_id': candidate['paper_id'], 'candidate_sha256': sha256(canonical(candidate)), 'inventory_sha256': candidate['source_inventory_sha256'], 'index': candidate['index'], 'pdf': {'sha256': candidate['pdf_sha256']}, 'source': {'sha256': candidate['source_sha256']}, 'images': [image], 'page_text': [{'page': 1, 'text': text}], 'objects': parsed['objects'], 'links': parsed['links']}
@@ -40,6 +45,15 @@ def fixture():
     section_span = {'start': ref_start + 2, 'end': ref_start + 3, 'native_text_sha256': sha256(b'2')}
     root['references'].append({'source_link': section_number, 'target': 'section:related', 'source_target_label': 'sec:related', 'source_members': section_source, 'printed': '2', 'span': section_span})
     comparison['non_object_references_verified'] = [{'source_link': section_number, 'target': 'section:related', 'source_label': 'sec:related', 'source_members': deepcopy(section_source), 'printed': '2', 'span': {'start': ref_start + 2, 'end': ref_start + 3}}]
+    if extra_object_kind:
+        visual_number = next(i for i, row in enumerate(parsed['links']) if row['targets'] == ['visual:a'])
+        visual_source = parsed['links'][visual_number]['source_members']
+        visual_span = {'start': ref_start + 4, 'end': ref_start + 5, 'text': '3', 'text_utf8_sha256': sha256(b'3')}
+        root['references'].append({'source_link': visual_number, 'target': 'object:visual:a', 'span': {**visual_span, 'native_text_sha256': sha256(b'3')}})
+        independent['object_references'].append({'source_members': visual_source, 'target': 'object:visual:a', 'number_occurrence': visual_span})
+        comparison['object_reference_source_links_verified'].append(visual_number)
+        root['complete_visual_inventory'][extra_object_kind] = 1
+        comparison['complete_inventory_verified'][extra_object_kind] = 1
     result = [candidate, index, source, packet, root, independent, receipt, comparison, {'page-1.png': '2' * 64}]
     reseal(result); return result
 
@@ -81,6 +95,29 @@ def apply(rows):
 
 
 class ObjectAnnotationTests(unittest.TestCase):
+    def test_should_retain_visual_reference_roles_when_a_paper_also_contains_math_objects(self):
+        for kind in ('figure', 'table'):
+            rows = fixture(kind)
+            overlay = apply(rows)['manual_object_overlay']
+            with self.subTest(kind=kind):
+                self.assertEqual(overlay['reference_coverage'], {'source_occurrences': 3, 'object_occurrences': 2, 'O4_occurrences': 1})
+                self.assertEqual(overlay['other_object_references'][0]['target_kind'], kind)
+                self.assertEqual(overlay['other_object_references'][0]['target'], 'object:visual:a')
+                self.assertEqual(len(overlay['references']), 1)
+                self.assertEqual(len(overlay['non_object_references']), 1)
+
+    def test_should_reject_visual_reference_role_laundering_when_source_labels_identify_a_figure(self):
+        rows = fixture('figure'); ref = rows[4]['references'][-1]; number = ref['source_link']
+        ref.update(target='section:invented', source_target_label='visual:a')
+        rows[5]['object_references'].pop(); rows[7]['object_reference_source_links_verified'].remove(number)
+        rows[7]['non_object_references_verified'].append({'source_link': number, 'target': 'section:invented'})
+        reseal(rows)
+        with self.assertRaisesRegex(ValueError, 'object reference cannot'): apply(rows)
+
+    def test_should_reject_incomplete_visual_reference_coverage_when_an_annotation_omits_the_occurrence(self):
+        rows = fixture('table'); rows[5]['object_references'].pop(); reseal(rows)
+        with self.assertRaises(ValueError): apply(rows)
+
     def test_should_preserve_automatic_truth_when_complete_manual_membership_is_attached(self):
         rows = fixture(); before = deepcopy(rows[0]); result = apply(rows)
         self.assertEqual(rows[0], before)
@@ -97,6 +134,26 @@ class ObjectAnnotationTests(unittest.TestCase):
             self.assertEqual(len(attach_objects(*arguments)['manual_object_overlay']['objects']), 4)
             (Path(directory)/'bundle/page-1.png').write_bytes(b'changed image')
             with self.assertRaisesRegex(ValueError, 'original/detail image differs'): attach_objects(*arguments)
+
+    def test_should_bind_the_actual_blind_export_when_annotators_did_not_read_raw_index_predictions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory); arguments = materialize(cache)
+            index_raw = (cache/'data/papers/actual/index.json').read_bytes()
+            exported = canonical(native_projection(index_raw, 'actual-mapped-id'))
+            (cache/'native.json').write_bytes(exported)
+            bundle = cache/'bundle'
+            independent = json.loads((bundle/'independent-v1.json').read_bytes())
+            independent['inputs']['reading_index'].pop('path')
+            independent['inputs']['native_export'] = {'format': FORMAT, 'path': str(cache/'native.json'), 'sha256': sha256(exported), 'bytes': len(exported), 'index_sha256': sha256(index_raw)}
+            independent_raw = canonical(independent); (bundle/'independent-v1.json').write_bytes(independent_raw)
+            receipt = json.loads((bundle/'independent-v1-receipt.json').read_bytes())
+            receipt['annotation'].update(sha256=sha256(independent_raw), bytes=len(independent_raw))
+            receipt_raw = canonical(receipt); (bundle/'independent-v1-receipt.json').write_bytes(receipt_raw)
+            comparison = json.loads((bundle/'reconciliation-independent-v1.json').read_bytes())
+            comparison.update(independent_annotation_sha256=sha256(independent_raw), independent_receipt_sha256=sha256(receipt_raw))
+            (bundle/'reconciliation-independent-v1.json').write_bytes(canonical(comparison))
+            result = attach_objects(*arguments)
+            self.assertEqual(result['manual_object_overlay']['verified_native_export']['sha256'], sha256(exported))
 
     def test_should_reject_changed_source_or_serializer_when_manual_receipts_claim_old_bytes(self):
         for relative in ('corpus/paper.src', 'serializer.py'):

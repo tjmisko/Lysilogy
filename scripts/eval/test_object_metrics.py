@@ -28,6 +28,90 @@ def fixture():
 
 
 class ObjectMetricTests(unittest.TestCase):
+    def should_preserve_prior_measurements_when_a_second_truth_version_is_selected(self):
+        original=m.release_paths('k1-limited-v1');expanded=m.release_paths('k1-limited-v2')
+        self.assertEqual(original,{'truth':m.TRUTH,'config':m.CONFIG,'trace':m.TRACE,'input':m.INPUT})
+        self.assertTrue(all(original[key]!=expanded[key] for key in ('truth','config','trace')))
+        self.assertEqual(original['input'],expanded['input'])
+        self.assertIn('eval/truth/k1-limited-v2-build.json',m.implementation_files(m.ROOT,'k1-limited-v2'))
+        for version in ('../k1-limited-v1','latest','',None):
+            with self.subTest(version=version),self.assertRaisesRegex(ValueError,'unsupported collector truth version'):
+                m.release_paths(version)
+
+    def should_keep_one_active_metric_owner_when_a_later_cohort_is_published(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo=Path(directory);previous=None
+            for version in m.TRUTH_VERSIONS:
+                paths=m.release_paths(version);observation={'truth_version':version,'measurement':'synthetic'}
+                raw=m.canonical(observation)+b'\n'
+                evidence={'path':paths['trace'],'sha256':m.digest(raw)}
+                payload={'suite':'objects','truth_sets':{'K1':{'version':version}},
+                         'metrics':{key:{'evidence':[evidence]} for key in ('O1','O2')}}
+                archive=repo/m.publish_measurement(repo,paths,observation,payload)
+                self.assertEqual((archive/'input.json').read_bytes(),m.canonical(payload)+b'\n')
+                self.assertEqual((archive/'observation.json').read_bytes(),raw)
+                self.assertEqual([p.name for p in (repo/'eval/inputs/objects').glob('*.json')],['figure-table.json'])
+                if previous:
+                    folder,old_input,old_observation=previous
+                    self.assertEqual((folder/'input.json').read_bytes(),old_input)
+                    self.assertEqual((folder/'observation.json').read_bytes(),old_observation)
+                previous=archive,m.canonical(payload)+b'\n',raw
+            self.assertEqual(m.document((repo/m.INPUT).read_bytes())['truth_sets']['K1']['version'],'k1-limited-v2')
+
+    def should_reject_changed_prior_observations_when_a_new_cohort_would_replace_them(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo=Path(directory);paths=m.release_paths('k1-limited-v1')
+            old={'suite':'objects','truth_sets':{'K1':{'version':'k1-limited-v1'}},
+                 'metrics':{key:{'evidence':[{'path':paths['trace'],'sha256':'a'*64}]} for key in ('O1','O2')}}
+            m.atomic_json(repo/m.INPUT,old);m.atomic_json(repo/paths['trace'],{'changed':True})
+            with self.assertRaisesRegex(ValueError,'prior observation differs'):
+                m.publish_measurement(repo,m.release_paths('k1-limited-v2'),{}, {})
+            self.assertEqual(m.document((repo/m.INPUT).read_bytes()),old)
+
+    def should_dispatch_the_selected_cohort_when_new_truth_is_validated(self):
+        truth={'schema_version':1,'truth_set':'K1','origin':'arxiv-latex','version':'k1-limited-v2'}
+        adapter=SimpleNamespace(replay=lambda *args:(truth,{'version':args[-1]},{'version':args[-1]}))
+        with patch.object(m,'truth_verifier',return_value=adapter):
+            got=m.validate_truth(m.ROOT,Path('/cache'),Path('/corpus'),Path('/data'),m.canonical(truth)+b'\n',True)
+        self.assertEqual(got[1]['version'],'k1-limited-v2')
+        self.assertEqual(got[2]['version'],'k1-limited-v2')
+
+    def should_select_the_original_version_when_current_parser_and_detector_sources_have_changed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);source=root/'src/source_index/figures.rs'
+            source.parent.mkdir(parents=True);source.write_bytes(b'original detector')
+            truth={'schema_version':1,'truth_set':'K1','origin':'arxiv-latex','version':'k1-limited-v1',
+                   'provenance':{'implementation':{'src/source_index/figures.rs':m.digest(source.read_bytes())}}}
+            calls=[]
+            def replay(*args):
+                calls.append(args);return truth,{'version':truth['version']},{'reproduced':True}
+            adapter=SimpleNamespace(replay=replay)
+            with patch.object(m,'truth_verifier',return_value=adapter):
+                result=m.validate_truth(root,root/'cache',root/'corpus',root/'data',m.canonical(truth)+b'\n',True)
+            self.assertEqual(calls[0][-1],'k1-limited-v1');self.assertTrue(result[2]['reproduced'])
+            # No current parser file exists: the historical verifier owns replay.
+            source.write_bytes(b'new detector')
+            with patch.object(m,'truth_verifier',return_value=adapter):
+                repeated=m.validate_truth(root,root/'cache',root/'corpus',root/'data',m.canonical(truth)+b'\n')
+            self.assertEqual(repeated,(truth,{'version':truth['version']}));self.assertEqual(len(calls),2)
+            # Actual prediction generations are checked separately by validate_derivation.
+
+    def should_reject_foreign_labels_when_versioned_replay_returns_another_payload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);source=root/'src/source_index/figures.rs'
+            source.parent.mkdir(parents=True);source.write_bytes(b'detector')
+            truth={'schema_version':1,'truth_set':'K1','origin':'arxiv-latex','version':'k1-limited-v1',
+                   'provenance':{'implementation':{'src/source_index/figures.rs':m.digest(source.read_bytes())}}}
+            adapter=SimpleNamespace(replay=lambda *args:({**truth,'papers':['foreign']},{},{}))
+            with patch.object(m,'truth_verifier',return_value=adapter):
+                with self.assertRaisesRegex(ValueError,'labels or complete cohort differ'):
+                    m.validate_truth(root,root/'cache',root/'corpus',root/'data',m.canonical(truth)+b'\n')
+
+    def should_fingerprint_retained_modules_when_the_collector_uses_a_versioned_verifier(self):
+        files=m.implementation_files(m.ROOT)
+        self.assertIn('scripts/truth/latex/versioned.py',files)
+        self.assertIn('eval/implementations/k1-limited-v1/manifest.json',files)
+        self.assertIn('eval/implementations/k1-limited-v1/parser.py',files)
     def should_bind_graphics_receipts_when_the_source_factory_retains_traces(self):
         with tempfile.TemporaryDirectory() as directory:
             cache=Path(directory);tool=cache/'tool';tool.write_bytes(b'independent tool bytes')
