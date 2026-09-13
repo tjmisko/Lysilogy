@@ -105,6 +105,15 @@ tar, plain TeX, or a PDF-only submission; the receipt records the format, so tru
 exclude papers without LaTeX instead of treating PDF source bytes as labels. Archives remain
 unextracted. A missing source or bucket object fails explicitly with progress saved.
 
+New source requests use the canonical, version-pinned
+`https://export.arxiv.org/src/<id>v<n>` endpoint. Previously verified source receipts from
+`https://export.arxiv.org/e-print/<id>v<n>` remain valid only for that exact same ID and version;
+resume preserves their original URL, fetch timestamp and bytes without a new request. Wrong
+hosts, versions, paths, query strings or fragments are rejected. Existing unverified bytes are
+left untouched. This compatibility applies only to source receipts; PDF generation URLs stay
+exact. It also covers a legacy source whose file and receipt were saved before its manifest
+update. Automatic redirects remain disabled.
+
 Disk projection is printed before inventory/download begins, then again using pinned PDF sizes.
 The default floor is 20 GiB, PDF estimate 4 MiB and source estimate 8 MiB; actual usage varies by
 paper. Every streamed chunk rechecks the floor and each file is capped at 256 MiB. Metadata and
@@ -117,7 +126,7 @@ Policy checked on 2026-09-12 against [arXiv's API terms](https://info.arxiv.org/
 [OAI notes](https://info.arxiv.org/help/oa/index.html), and
 [bulk harvesting guidance](https://info.arxiv.org/help/bulk_data.html#custom-programmatic-harvesting).
 Metadata uses `https://oaipmh.arxiv.org/oai`; eval sources use
-`https://export.arxiv.org/e-print/<id>v<n>`. Both share a cross-process lock and a three-second
+`https://export.arxiv.org/src/<id>v<n>`. Both share a cross-process lock and a three-second
 minimum between requests, including retries, and hold the lock through response consumption.
 This is more conservative than the bulk page's four-request burst allowance and meets the API
 terms' single-connection rule. All other arXiv tools on the same machine must coordinate with
@@ -135,10 +144,13 @@ link readers to each paper's arXiv abstract/download page. Never commit PDFs or 
 
 ## Current verification boundary
 
-The 52 offline tests cover deterministic strata, OAI paging/refresh/deletion/token expiry and
+The 59 offline tests cover deterministic strata, OAI paging/refresh/deletion/token expiry and
 midnight boundaries, pinned GCS versions, file integrity/resume, truncated and HTML payload
 rejection, request pacing and cooldown persistence, free-space failures, unsafe roots,
 symlinks, explicit proxy selection and redaction, and a full fixture download/verify/resume cycle.
+They also cover canonical source requests, exact legacy receipt compatibility, preserved bytes
+and timestamps, interrupted manifest updates, invalid receipt kinds/hashes and continued
+redirect refusal.
 `verify` validates the frozen selection against the configured fingerprint, every manifest
 paper against that selection, artifact paths and URLs against the pinned paper version, and
 PDF bytes against the pinned GCS MD5/size as well as their local SHA-256 receipt. Extra manifest
