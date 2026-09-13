@@ -17,6 +17,15 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_not_certify_an_empty_equation_cohort_when_aliases_have_literal_star_tokens(self):
+        source=document(r'\be* abcdefghij=12345\ee*\begin{figure}\caption{A complete independent visual caption.}\end{figure}',
+                        r'\def\be{\begin{equation}}\def\ee{\end{equation}}')
+        parsed=parse_project({'main.tex':source})
+        self.assertEqual(parsed['coverage']['objects_by_kind']['equation'],1)
+        result=align_paper(parsed,{'text':'A complete independent visual caption. abcdefghij=12345'})
+        self.assertTrue(result['metric_eligibility']['O1'])
+        self.assertFalse(result['metric_eligibility']['O3'])
+
     def test_should_keep_other_kinds_exhaustive_when_standard_atoms_have_unverified_math_rendering(self):
         commands=('eta','tau','rho','zeta','nu','Xi','varepsilon','rightarrow','to','gets','Leftrightarrow','mapsto','ell','cdots','mid','langle','Big','textsuperscript')
         for name in commands:

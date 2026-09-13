@@ -48,6 +48,16 @@ class SourceTests(unittest.TestCase):
         self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
         self.assertLessEqual(parsed['objects'][0]['source_members'][-1]['end'],parsed['objects'][1]['source_members'][0]['start'])
 
+    def test_should_retain_literal_stars_when_zero_argument_equation_aliases_precede_them(self):
+        source=document(r'\be* abcdefghij=12345\ee*',r'\def\be{\begin{equation}}\def\ee{\end{equation}}')
+        parsed=parse_project({'main.tex':source})
+        self.assertEqual(len(parsed['objects']),1)
+        row=parsed['objects'][0]
+        self.assertEqual(row['text'],'* abcdefghij=12345')
+        start=source.index(r'\be*');end=source.index(r'\ee*')+3
+        self.assertEqual(row['source_members'],[{'path':'main.tex','start':start,'end':end}])
+        self.assertEqual(parsed['coverage']['resolved_equation_aliases']['be']['invocations'],[[{'path':'main.tex','start':start,'end':start+3}]])
+
     def test_should_reject_alias_inventory_when_definitions_are_scoped_repeated_or_indirect(self):
         definitions=(r'{\def\be{\begin{equation}}}',r'\bgroup\def\be{\begin{equation}}\egroup',
                      r'\def\be#1{\begin{equation}#1}',r'\newcommand{\be}[1]{\begin{equation}#1}',

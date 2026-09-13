@@ -152,10 +152,15 @@ def environment_commands(scan, aliases, limits):
     rows = list(argument_commands(scan, {"begin", "end"}))
     extra = []
     for match in COMMAND.finditer(scan):
-        if match[1] in aliases:
+        name = match[1].rstrip('*')
+        if name in aliases:
             if any(row['start'] <= match.start() < row['end'] for row in rows):
                 raise UnsupportedSource('equation alias inside an environment name is unsupported')
-            extra.append({**aliases[match[1]], "alias": match[1], "start": match.start(), "end": match.end(), "options": []})
+            # The shared scanner recognizes starred LaTeX commands, but these
+            # zero-argument aliases consume only the control-word token. A
+            # following star is ordinary authored input inside/after the math.
+            end = match.end() - int(match[1].endswith('*'))
+            extra.append({**aliases[name], "alias": name, "start": match.start(), "end": end, "options": []})
             if len(extra) > limits.expansion_steps:
                 raise UnsupportedSource('equation alias invocation count exceeds its bound')
     return sorted(rows + extra, key=lambda row: row['start'])
