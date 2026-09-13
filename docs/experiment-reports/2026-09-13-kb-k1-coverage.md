@@ -103,10 +103,47 @@ JSON CLI build receipt existed. Final validation must use this worktree's own
 build and all required gates; it has not yet run. No final scorecard delta,
 expanded truth release or completion of issue #97 is claimed.
 
-The next work is complete-body proof of further reusable declarations and
-wrappers, using the measured source barriers to prioritize effort. Another full
-comparison requires stable independently reviewed source and the shared heavy
-execution window. Every missed target and unchanged denominator remains visible.
+Further namespace probing is deferred because no material coverage payoff has
+been established. The next concrete step is independent annotation of a frozen
+seven-paper pilot, one paper per category, within a planned 21-paper tranche.
+Issue #97 remains open and the approximately 500-paper target is unchanged.
+Another full automatic comparison requires a material, independently reviewed
+capability change and the shared execution window.
+
+## Availability-selected annotation pilot
+
+The policy was frozen before selection and independently reviewed. It takes the
+first three new available papers per category in the original frozen 1,000-input
+array order, with an eight-page cap; the first one per category forms the pilot.
+Availability means matching actual source/PDF/original-index bytes and safely
+readable TeX source. Parser success, source object counts, detector outputs and
+automatic alignment outcomes are absent from the selection criteria. A selected
+paper with parsing, ambiguity or annotation problems remains selected.
+
+The selector filled all 21 slots (128 pages) in 9.436 seconds, with 187,936 KiB
+peak RSS and no external calls. Its full ledger retains 214 page-cap exclusions,
+one unavailable original index, the two already published papers, 21 selections
+and 762 later rows whose category quota was already filled. The first seven are:
+
+| Paper | Frozen category/year | Pages |
+| --- | --- | ---: |
+| 2210.11141v1 | cs.CV / 2022 | 5 |
+| 2310.04162v1 | cs.RO / 2023 | 8 |
+| 2001.05217v1 | hep-th / 2020 | 7 |
+| 2409.03655v1 | cs.LG / 2024 | 6 |
+| 2002.03492v1 | econ.TH / 2020 | 5 |
+| 2207.03024v1 | stat.ML / 2022 | 5 |
+| 2303.07834v2 | math.PR / 2023 | 7 |
+
+Prepared blind packets bind all source members and actual PDF/index hashes.
+Their native export contains only text, pages and word rectangles; embedded
+historical detector figures/objects and automatic outcomes are omitted. Primary
+and independent annotators have separate output directories and first enumerate
+the complete paper without a parser inventory. Existing reconciled annotation
+contracts remain the publication boundary. This pilot will measure annotation
+throughput, complete per-kind coverage and demonstrated tooling gaps before
+committing to the remaining 14 papers. Selection and packet preparation alone
+admit no truth, and the page cap introduces an explicit short-paper bias.
 
 ## Retained evidence
 
