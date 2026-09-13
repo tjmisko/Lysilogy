@@ -231,6 +231,13 @@ acceptance are unchanged.
   `eval/latex-contract.md` and measured evidence. Preserve literal percent characters and
   brace-protected quotes; do not infer printed field roles from database metadata. Keep
   all malformed-input/resource/ambiguity guards and immutable v1/v2 implementations.
+- [ ] **#110 Test confined source-layout reconstruction** (after #105; experiment for #97).
+  Branch `feat/e8.3-source-layout-probe`. Root owns new `scripts/truth/layout/` runner,
+  adversarial synthetic tests/contracts and experiment report; minimal G5 tooling registration
+  only if needed. Independently review confinement and a frozen availability-only10-paper
+  selection before any deposited source execution. Fixed PDFLaTeX only, bounded resources,
+  no network or host-home mount. Keep current parser and all retained truth unchanged.
+  A documented experimental no-go does not close #97 or lower its coverage requirement.
 
 ### Wave A3
 
@@ -3864,3 +3871,95 @@ date, last merged issue, in-flight branches and their state, next action, and op
   effective profile application/restart is pending and must not be re-requested. Gates
   remain1/5 available/pass;3/30 objectives at target O1/O2/O30. All phase/system acceptance
   work, #97's~500 coverage and production10k verification remain outstanding.
+
+### 2026-09-13 21:31 UTC — first measured fixes; 702-paper comparison running
+
+- Last merged issue remains #105 / PR108 (`7ef8fda`), Phase A / Wave A2. Main137198f
+  pushed before this docs update. No new implementation PR/merge yet. All10 unrelated
+  main PDF-preview hashes remain unchanged. New issues this interval #109 and #110 are
+  attached to E8 #67 and project12; #109 waits for #107's shared parser, #110 is root-owned.
+- Batch25 completed250/250 in431.086346s; receipt
+  `scale-index-batches/batch-0025/receipt.json` SHA
+  6c4c1deb7b059191cae7f4deee14a476d13110487d3a84924f17252d8d034637;
+  root audit `native-index-after-batch25-review.json` SHA
+  436f82ffdb683a5ac322a32c10ee836c3da7f44ab6374027050511aad9f494c4.
+  Counts7,250unique/1,000eval/6,299scale,3,701scale remain. TTY78979 exited0,
+  **PAUSED BEFORE26**. Current sentinel: `Pause at next verified boundary for reviewed
+  #107 derivation and #106 metric windows; root coordinates.` No native process/download
+  runs. Resume pinned queue with `--start 26 --check`, then `--start 26` only after windows.
+- #106 source7f1bffaf9bf814fb2faff66b2fc9ab18e914499a has independent source/runner
+  clearance `review-expanded-regions-14e6d3d/source-review-7f1bffa.json` SHA
+  1799ed1a3ba71030691053457f70de43e51f28757de5f1f42cafb895cd386918. Corrected targeted
+  runTTY1828 exited0: strictClippy18.29s,79Rust source-index tests14.53s,35Python0.18s.
+  Independent exact Cargo-binary replay25figure/12graphics tests cleared:
+  `compiled-clearance-7f1bffa.json` SHA
+  2b78a10c0959d5cd03a95242ab9a9a9341f69d27aaa9b7a77490b8feff2c3995.
+  Actual after-runTTY94059 exited0; receipt
+  `expanded-k1-regions/after-7f1bffa-first-iteration/receipt.json` SHA
+  2cfc320ca6fc5eae3231fa051353cd5eb3453a29d7a2ff5872f12d45d6e09841. Build11.83s,
+  v1collector12.00s,v2collector12.83s, objects --check passed and all original inputs
+  preserved. v1 remains O1=1/O2=.9107793204006069 with both old paper records identical.
+  v2 improves O1=1 (23TP/0FP/0FN), O2=.9076006899903768/all23, unknown0; observation
+  2a18bde80d39c3c0cda52be0fcd93890d565d10287a24e3fef6bf3d06c4a9912,
+  predictionsd3c81d37e22fd0b1c9b7f9fb80a9e925be429e28371778a1c72b52643428ccfb.
+  Retain this first result. New Figure1 worsened .757008→.202630 because admitted partial
+  raster inserts replace a larger owned native diagram extent. Owner finish_benchmark is
+  adding a narrow native-label-enclosure composition fix with independent synthetic table,
+  one-sided-label and other-caption controls. Reviewer agrees the seam; no new source
+  checkpoint/build/measurement yet. Masked Figures4/5/6 stillzero; no truth/scoring edits.
+- #107 source remains independently clearf24f735. Corrected immutable runner snapshot
+  `duplicate-labels/comparison-f24f735-source-loader-v2/launch.json` SHA
+  1b3c3a1071e6c0784555c633eea8f473a956e43ca5df8080af9d37bdd68460ec;
+  reviewer `runner-review-source-loader-v2.json` SHA
+  35caf6fa9f4bc08eb90aec36b146a08f2d685192cd8637b4d7ba0e45de16f409. Direct verified
+  source loader replaces normal imports after reviewer demonstrated that -I/-B still
+  allows cached bytecode. Exact14modules and7/702/298 populations verified;4loader tests
+  and5independent boundaries pass. Root rehashed13 absolute review file bindings.
+  Historical542da50 used normal imports too: its current snapshot has14.py files/no cache,
+  no old execution mismatch observed, but no explicit runtime no-bytecode attestation.
+  Preserve that precise historical limitation; immutable truth source-only replay is separate.
+- First7 actualTTY9363 exited0,4.695105s wrapper/4.539s source+alignment,102656KiB,0calls/$0.
+  All7 source parses/candidate assemblies recovered;0raw accepted/0eligible/0published.
+  Actual receipt355ba395fc11cbb6801821d1234b1883028fdf60cce4bdf83253521e02332209,
+  report1221b2be7b65ae94bcb174a5eccb67a696b938f44b3ebf63387cb57d4ec266b2,
+  ledger13e084aaaa513adadfbdea5d49215214659517a747022d0f6b63d806f23d745d.
+  Independent first7-review.json SHA
+  7e2dc565bfdc2866f408edb857410cd62cc3544b73cc9250e6699301dcde78d5 verifies485occurrences,
+  1,826memberships,394claims/all42duplicate contexts, all21original files/14payloads;
+  all28ambiguous references excluded. **702 comparison RUNNING, retainedTTY46633**;
+  exact `execute.py comparison` in the same cleared snapshot. Owner finish_corpus_proxy;
+  comparison.log, comparison/ output and final comparison-receipt.json.42completed at
+  last interim,42source/candidate successes, no error; these are partial counts only.
+  This owns the heavy window. Wait for terminal completion and separate full-result review.
+- Root2001 reference reconciliation now retains13 matching macro references (4equation,
+  9figure), agreeing exact source/target/phrase identities and nested primary number spans.
+  It also confirms the independent literal `next section` at source8374:8386/native6372:6384
+  on originalpage2 targets immediately following section2 Chebyshev filtering onpage3.
+  Primary originally omitted this literal; no original is rewritten or prior independent
+  number-only subspan invented. `k1-coverage/manual-tranche-v1/reconciliation/2001.05217/root-reference-review-v1.json`
+  SHA3a26ac3d85fe0efbac9c2178e1eb1a54510f6655c6c6a7084243cdd37f183563. Futurecodec remains.
+  #109 raw eight-paper survey `bibtex-quoted-field-diagnostic-20260913/eight-paper-source-survey-v1.json`
+  SHAe47df1391ec86256281d3e0c3c51c610c57db5bbf92c27cd789330c97d5da812 confirms literal
+  citation-percent metadata in all8 selected archives; no parser/align execution or recovery claim.
+- #110 begins with synthetic confinement capability evidence, not a paper compile. Original
+  bubblewrap --unshare-all fails NETLINK_ROUTE socket setup, receipt
+  `k1-coverage/source-layout-feasibility-20260913/root-confinement-preflight-v1.json`
+  SHA54f80308bdae4ed24ebd443406a4a8cd62bb377d94754bf4c22b9be79a158aab. A safe alternative
+  first creates a fresh empty net namespace with unshare, then confines mounts/PIDs using
+  bubblewrap; no loopback setup or host-network sharing. Synthetic v1 child succeeded but
+  its outer wrapper wrongly required a route header; failed wrapper retained in
+  isolated-net-preflight-v1/failure-receipt.json SHA
+  ef335c27ae76150941a1562c263af201e76ce6c0f8ce401c87bf0e3f8c635bfe. Corrected retained
+  run-isolated-net-preflight-v2.py checks empty-or-header-only routes and preserves parent
+  namespace observations. v2receipt SHA
+  d47e6c0a212fd6e172a6d78a85f07d92b795e73d2afb88bd673335a19e68d578,0.019897s: fresh
+  net/PID namespaces, no host home, read-only input and isolated output checks pass.
+  No TeX/deposited program, network/model call, sudo or persistent system change occurred.
+  Full adversarial/resource/runtime/selection review is still required before any source
+  experiment. Root next creates feat/e8.3-source-layout-probe worktree and prepares its
+  clean own-CLI baseline; build waits until #107 releases the shared heavy window.
+- #25/PR94, #33, #71/PR93 and #72/PR95 holds remain. Four-host approval is permanent but
+  profile application/restart remains pending; do not re-request approval. Source isolation
+  progress does not change those host grants. Merged scorecard remains1/5 gates available/pass,
+  3/30objectives at target; branch #106 measurement is above, not merged acceptance. #97~500,
+  phase exits, final Playwright/all5gates/24of30objectives/production10k/system report remain.
