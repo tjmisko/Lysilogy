@@ -134,7 +134,8 @@ address, and constructs an allowlisted PATH with no `codex`, `claude`, `gemini`,
 `ollama`. It executes Rust tests with Cargo offline, all `test*.py` unittest suites beneath
 nonhidden `scripts/` directories (collecting both `test*` and `should_*` methods and rejecting
 empty suites), and all
-`test`/`test:*` frontend package scripts (rechecking PATH after npm adds its executable paths), retaining separate logs plus `evidence.json` beneath `target/eval-g5/<run>/`. It fails
+`test`/`test:*` frontend package scripts (rechecking PATH after npm adds its executable paths),
+plus frontend `web/scripts/*.test.mjs` files not named or statically imported by those commands, retaining separate logs plus `evidence.json` beneath `target/eval-g5/<run>/`. It fails
 closed if isolation or a command fails; no missing-tool condition produces a pass.
 
 Browser smoke scripts are separate phase/system verification because some require absent corpus

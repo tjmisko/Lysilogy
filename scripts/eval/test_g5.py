@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import subprocess
+import runpy
 import sys
 import tempfile
 import unittest
@@ -45,6 +46,18 @@ class Fixture(unittest.TestCase):
 """)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("failure must reach G5", result.stderr)
+
+    def should_include_unregistered_frontend_tests_when_package_commands_omit_them(self):
+        discover = runpy.run_path(str(ROOT / "src/eval/g5.py"))["unregistered_web_tests"]
+        with tempfile.TemporaryDirectory() as temporary:
+            web = Path(temporary)
+            (web / "scripts").mkdir()
+            for name in ("registered.test.mjs", "objects.test.mjs", "smoke.mjs"):
+                (web / "scripts" / name).write_text("fixture")
+            self.assertEqual(discover(web, ["node --test ./scripts/registered.test.mjs"]),
+                             ["scripts/objects.test.mjs"])
+            (web / "scripts/registered.test.mjs").write_text("import './objects.test.mjs';")
+            self.assertEqual(discover(web, ["node --test ./scripts/registered.test.mjs"]), [])
 
     def should_fail_when_a_tooling_suite_collects_no_tests(self):
         with tempfile.TemporaryDirectory() as temporary:

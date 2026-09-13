@@ -8,6 +8,8 @@ import json
 import os
 from pathlib import Path
 import shutil
+import shlex
+import re
 import socket
 import subprocess
 import sys
@@ -30,6 +32,26 @@ def tooling_tests(directory):
         print(f"G5 FAIL: no tooling tests collected in {directory}", file=sys.stderr)
         return 1
     return 0 if unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful() else 1
+
+
+def unregistered_web_tests(web, script_commands):
+    # Some frontend fixture suites intentionally have no npm convenience script.
+    # Keep package commands intact and also run those otherwise omitted files.
+    named = {token.removeprefix("./") for command in script_commands
+             for token in shlex.split(command)}
+    files = {str(path.relative_to(web)): path for path in sorted((web / "scripts").glob("*.test.mjs"))}
+    pending = list(named.intersection(files))
+    while pending:
+        name = pending.pop()
+        # Follow static side-effect imports, such as test:api importing objects
+        # tests, without loading modules or reading outside the discovered files.
+        imported = re.findall(r"\bimport\s+['\"]([^'\"]+\.test\.mjs)['\"]", files[name].read_text())
+        for relative in imported:
+            candidate = os.path.normpath(str(Path(name).parent / relative))
+            if candidate in files and candidate not in named:
+                named.add(candidate)
+                pending.append(candidate)
+    return [name for name in files if name not in named]
 
 
 def run():
@@ -102,6 +124,9 @@ def run():
             commands.append((root, ["python3", str(Path(__file__).resolve()), str(root),
                                    str(output), "--tooling-tests", str(directory)]))
     commands.extend((root / "web", ["npm", "--script-shell", str(shell_guard), "run", name]) for name in scripts)
+    omitted = unregistered_web_tests(root / "web", [package["scripts"][name] for name in scripts])
+    if omitted:
+        commands.append((root / "web", ["node", "--experimental-strip-types", "--test", *omitted]))
     results = []
     for index, (cwd, command) in enumerate(commands):
         log = output / f"{index:02d}.log"
