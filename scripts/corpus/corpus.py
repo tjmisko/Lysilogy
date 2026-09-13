@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build K0 outside the repository, using only Python's standard library.
 
-Network is used only by explicit harvest/download/run commands. See README.md for
+Network is used only by explicit corpus build commands. See README.md for
 policy, provenance, frozen selection semantics, and the isolated mapping command.
 """
 
@@ -29,7 +29,8 @@ import xml.etree.ElementTree as ET
 
 OAI = "https://oaipmh.arxiv.org/oai"
 GCS = "https://storage.googleapis.com"
-EXPORT = "https://export.arxiv.org/e-print/"
+EXPORT = "https://export.arxiv.org/src/"
+LEGACY_EXPORT = "https://export.arxiv.org/e-print/"
 USER_AGENT = "Lysilogy-K0/1.0 (research corpus; https://github.com/tjmisko/Lysilogy)"
 PROXY_ENV_VARS = ("HTTPS_PROXY", "https_proxy")
 MIB = 1024 * 1024
@@ -55,12 +56,40 @@ def fingerprint(value):
     return hashlib.sha256(canonical(value).encode()).hexdigest()
 
 
+def fingerprint_records(records):
+    """Hash the canonical array without allocating another full metadata copy."""
+    digest = hashlib.sha256(b"[")
+    for index, record in enumerate(records):
+        if index:
+            digest.update(b",")
+        digest.update(canonical(record).encode())
+    digest.update(b"]")
+    return digest.hexdigest()
+
+
+def sync_directory(path):
+    descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def durable_directory(path):
+    if path.is_symlink():
+        raise CorpusError("Corpus storage cannot use symlinks")
+    if not path.exists():
+        durable_directory(path.parent)
+        path.mkdir()
+        sync_directory(path.parent)
+
+
 def atomic_json(path, value):
     atomic_text(path, canonical(value) + "\n")
 
 
 def atomic_text(path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
+    durable_directory(path.parent)
     partial = path.with_name(path.name + ".partial")
     try:
         partial.unlink(missing_ok=True)
@@ -69,6 +98,30 @@ def atomic_text(path, value):
             out.flush()
             os.fsync(out.fileno())
         partial.replace(path)
+        sync_directory(path.parent)
+    finally:
+        partial.unlink(missing_ok=True)
+
+
+def immutable_text(path, value):
+    """Publish durable archive bytes without ever replacing an existing archive."""
+    durable_directory(path.parent)
+    if path.parent.is_symlink() or path.is_symlink():
+        raise CorpusError("Corpus archive cannot use symlinks")
+    if path.exists():
+        if path.read_bytes() != value.encode():
+            raise CorpusError("Existing corpus archive differs; leaving it untouched")
+        return
+    partial = path.with_name(path.name + ".partial")
+    try:
+        partial.unlink(missing_ok=True)
+        with partial.open("x", encoding="utf-8") as out:
+            out.write(value)
+            out.flush()
+            os.fsync(out.fileno())
+        os.link(partial, path)
+        sync_directory(path.parent)
+        sync_directory(path.parent.parent)
     finally:
         partial.unlink(missing_ok=True)
 
@@ -379,7 +432,7 @@ def harvest(root, config, http, refresh=False):
                                  "complete": state["complete"]}), flush=True)
 
 
-def select_papers(papers, config):
+def select_papers(papers, config, qualify=None):
     """Stable SHA-256 ordering and disjoint category/year strata within each tier."""
     selected = {}
     unique = {paper["id"]: paper for paper in papers}
@@ -397,47 +450,240 @@ def select_papers(papers, config):
             if len(candidates) < count:
                 raise CorpusError(f"Insufficient metadata for {tier} {stratum}: {len(candidates)} available, {count} needed")
             ranked = sorted(candidates, key=lambda p: (fingerprint([config["seed"], tier, p["id"]]), p["id"]))
-            for paper in ranked[:count]:
+            accepted = 0
+            for paper in ranked:
+                if accepted == count:
+                    break
+                if qualify:
+                    paper = qualify(paper)
+                    if paper is None:
+                        continue
                 entry = selected.setdefault(paper["id"], {**paper, "tiers": [], "strata": {}})
                 entry["tiers"].append(tier)
                 entry["strata"][tier] = list(stratum)
+                accepted += 1
+            if accepted != count:
+                raise CorpusError(f"Insufficient available PDFs for {tier} {stratum}: {accepted} available, {count} needed")
     return [selected[key] for key in sorted(selected)]
 
 
-def select(root, config):
-    output = root / "selection.json"
-    existing = read_json(output)
-    if existing:
-        if existing["config_sha256"] != fingerprint(config):
-            raise CorpusError("Selection already frozen with a different config; use a new corpus root")
-        return existing
+def selection_metadata(root, config):
     with contextlib.closing(connect(root)) as db:
         for set_spec in set(config["sets"].values()):
             row = db.execute("SELECT body FROM harvests WHERE set_spec=?", (set_spec,)).fetchone()
             if not row or not json.loads(row[0])["complete"]:
                 raise CorpusError("Complete every configured metadata harvest before freezing selection")
         papers = [json.loads(row[0]) for row in db.execute("SELECT body FROM papers ORDER BY id")]
-    chosen = select_papers(papers, config)
-    selection = {"schema_version": 1, "config_sha256": fingerprint(config),
-                 "metadata_sha256": fingerprint(papers), "selection_sha256": fingerprint(chosen),
-                 "papers": chosen}
-    atomic_json(output, selection)
-    print(canonical({"action": "select", "papers": len(chosen), "sha256": selection["selection_sha256"]}), flush=True)
+    return papers
+
+
+def remote_problem(remote, identifier, maximum):
+    """Return a stable exclusion reason; malformed public inventory is not a PDF."""
+    if remote is None:
+        return "missing_public_pdf"
+    if not isinstance(remote, dict):
+        return "invalid_object_record"
+    matched = OBJECT_PATTERN.fullmatch(str(remote.get("name", "")))
+    if (not matched or matched[2] != identifier or matched[1] != identifier[:4]
+            or type(remote.get("version")) is not int or int(matched[3]) != remote["version"]):
+        return "invalid_object_identity"
+    generation = remote.get("generation")
+    if not isinstance(generation, str) or not re.fullmatch(r"[1-9][0-9]{0,30}", generation):
+        return "invalid_object_generation"
+    if type(remote.get("bytes")) is not int or not 0 < remote["bytes"] <= maximum:
+        return "invalid_or_oversized_object_bytes"
+    try:
+        if not isinstance(remote.get("md5"), str) or len(base64.b64decode(remote["md5"], validate=True)) != 16:
+            return "invalid_object_md5"
+    except ValueError:
+        return "invalid_object_md5"
+    return None
+
+
+def inventory_snapshot(root, proof):
+    expected = "availability/inventories/" + proof["sha256"] + ".json"
+    if not re.fullmatch(r"[0-9a-f]{64}", proof["sha256"]) or proof["path"] != expected:
+        raise CorpusError("Invalid inventory snapshot identity")
+    path = root / expected
+    if any(parent.is_symlink() for parent in (path, path.parent, path.parent.parent)):
+        raise CorpusError("Corpus inventory snapshots cannot use symlinks")
+    payload = path.read_bytes()
+    if hashlib.sha256(payload).hexdigest() != proof["sha256"]:
+        raise CorpusError("Inventory snapshot fingerprint mismatch")
+    state = json.loads(payload)
+    if state.get("complete") is not True or state.get("token") or not isinstance(state.get("objects"), dict):
+        raise CorpusError("Availability requires a complete inventory snapshot")
+    return state
+
+
+class Availability:
+    """Durable consulted inputs keep interrupted selection independent of later listings."""
+
+    def __init__(self, root, config, http, metadata_hash, checkpoint):
+        self.root, self.config, self.http, self.checkpoint = root, config, http, checkpoint
+        if any(path.is_symlink() for path in (root / "availability", root / "availability/inventories",
+                                               checkpoint, checkpoint.parent)):
+            raise CorpusError("Corpus availability storage cannot use symlinks")
+        inputs = {"config_sha256": fingerprint(config), "metadata_sha256": metadata_hash}
+        self.state = read_json(checkpoint, {**inputs, "inventories": {}})
+        if any(self.state[key] != value for key, value in inputs.items()):
+            raise CorpusError("Selection inputs changed during preparation; use a new corpus root")
+        self.objects, self.exclusions = {}, {}
+
+    def qualify(self, paper):
+        identifier, month = paper["id"], paper["id"][:4]
+        if month not in self.objects:
+            proof = self.state["inventories"].get(month)
+            if proof is None:
+                inventory(self.root, month, self.http)
+                source = self.root / "inventory" / (month + ".json")
+                payload = source.read_bytes().decode("utf-8")
+                digest = hashlib.sha256(payload.encode()).hexdigest()
+                proof = {"path": "availability/inventories/" + digest + ".json", "sha256": digest,
+                         "listing_url": GCS + "/storage/v1/b/arxiv-dataset/o?" +
+                         urllib.parse.urlencode({"prefix": f"arxiv/arxiv/pdf/{month}/"})}
+                check_space(self.root, len(payload.encode()), int(self.config["free_space_floor_gib"] * GIB))
+                immutable_text(self.root / proof["path"], payload)
+                self.state["inventories"][month] = proof
+                atomic_json(self.checkpoint, self.state)
+            self.objects[month] = inventory_snapshot(self.root, proof)["objects"]
+        remote = self.objects[month].get(identifier)
+        reason = remote_problem(remote, identifier, self.config["max_file_mib"] * MIB)
+        digest = self.state["inventories"][month]["sha256"]
+        if reason:
+            self.exclusions[identifier] = {"id": identifier, "reason": reason,
+                                          "inventory_sha256": digest, "remote_pdf": remote}
+            return None
+        return {**paper, "remote_pdf": remote, "inventory_sha256": digest}
+
+    def evidence(self):
+        return {"algorithm": "sha256-strata-public-pdf-v1", "inventories": self.state["inventories"],
+                "max_pdf_bytes": self.config["max_file_mib"] * MIB,
+                "exclusions": [self.exclusions[key] for key in sorted(self.exclusions)]}
+
+
+def prepare_selection(root, config, http, checkpoint, original=None):
+    papers = selection_metadata(root, config)
+    metadata_hash = fingerprint_records(papers)
+    if original and metadata_hash != original["metadata_sha256"]:
+        raise CorpusError("Metadata changed since the failed selection; recovery needs its original snapshot")
+    if original and fingerprint(select_papers(papers, config)) != original["selection_sha256"]:
+        raise CorpusError("Legacy selection differs from its recorded metadata and config")
+    estimate = sum(spec["count"] for spec in config["tiers"].values()) * config["estimated_pdf_mib"] * MIB
+    estimate += config["tiers"]["eval"]["count"] * config["estimated_source_mib"] * MIB
+    print(canonical({"action": "selection_preflight", **check_space(root, estimate, int(config["free_space_floor_gib"] * GIB))}), flush=True)
+    availability = Availability(root, config, http, metadata_hash, checkpoint)
+    if original:
+        for paper in original["papers"]:
+            availability.qualify(paper)
+        if not availability.exclusions:
+            raise CorpusError("Legacy selection has no unavailable PDFs; recovery would not repair an availability failure")
+    try:
+        chosen = select_papers(papers, config, availability.qualify)
+    except CorpusError:
+        evidence = availability.evidence()
+        immutable_text(checkpoint.parent / ("failed-" + fingerprint(evidence) + ".json"), canonical(evidence) + "\n")
+        raise
+    evidence = availability.evidence()
+    selection = {"schema_version": 2, "config_sha256": fingerprint(config), "metadata_sha256": metadata_hash,
+                 "selection_sha256": fingerprint(chosen), "papers": chosen,
+                 "availability": evidence, "availability_sha256": fingerprint(evidence)}
+    validate_selection(selection, config)
     return selection
+
+
+def select(root, config, http):
+    output = root / "selection.json"
+    existing = read_json(output)
+    if existing:
+        if existing["config_sha256"] != fingerprint(config):
+            raise CorpusError("Selection already frozen with a different config; use a new corpus root")
+        validate_selection(existing, config)
+        return existing
+    selection = prepare_selection(root, config, http, root / "availability/selection-inputs.json")
+    atomic_json(output, selection)
+    print(canonical({"action": "select", "papers": len(selection["papers"]), "sha256": selection["selection_sha256"]}), flush=True)
+    return selection
+
+
+def require_zero_artifacts(root):
+    for name in ("manifest.jsonl", "manifest.jsonl.partial"):
+        path = root / name
+        if path.is_symlink() or (path.exists() and (name.endswith(".partial") or path.read_bytes().strip())):
+            raise CorpusError("Selection recovery requires zero manifest entries and no pending manifest")
+    for name in ("pdf", "source"):
+        path = root / name
+        if path.is_symlink() or (path.exists() and (not path.is_dir() or any(path.iterdir()))):
+            raise CorpusError("Selection recovery refuses artifacts, receipts and partial downloads")
+
+
+def recover_selection(root, config, http, reason):
+    require_zero_artifacts(root)
+    if not reason.strip() or len(reason.encode()) > 4096:
+        raise CorpusError("Recovery requires a nonempty failure reason of at most 4096 bytes")
+    output = root / "selection.json"
+    raw = output.read_bytes().decode("utf-8")
+    original = json.loads(raw)
+    validate_selection(original, config)
+    # If publication succeeded just before a crash, validate the immutable staged
+    # replacement and return it; never perform a second selection.
+    recovery = original.get("recovery")
+    old_hash = recovery["original_file_sha256"] if recovery else hashlib.sha256(raw.encode()).hexdigest()
+    if not re.fullmatch(r"[0-9a-f]{64}", old_hash):
+        raise CorpusError("Invalid recovery archive identity")
+    archive = root / "selection-recovery" / old_hash
+    if any(path.is_symlink() for path in (archive, archive.parent)):
+        raise CorpusError("Corpus recovery archives cannot use symlinks")
+    replacement_path = archive / "replacement.json"
+    if any((archive / name).is_symlink() for name in ("replacement.json", "original-selection.json", "request.json", "inputs.json")):
+        raise CorpusError("Corpus recovery archives cannot use symlinks")
+    if recovery:
+        if not replacement_path.is_file() or replacement_path.read_bytes() != raw.encode():
+            raise CorpusError("Published selection differs from staged recovery archive")
+        archived = archive / "original-selection.json"
+        if hashlib.sha256(archived.read_bytes()).hexdigest() != old_hash:
+            raise CorpusError("Original recovery archive fingerprint mismatch")
+        if read_json(archive / "request.json") != recovery or recovery["reason"] != reason:
+            raise CorpusError("Recovery reason differs from the archived request")
+        validate_availability(root, original)
+        return original
+    if original.get("schema_version") != 1:
+        raise CorpusError("Recovery is limited to legacy metadata-only selections")
+    immutable_text(archive / "original-selection.json", raw)
+    request = {"schema_version": 1, "original_file_sha256": old_hash,
+               "original_selection_sha256": original["selection_sha256"], "reason": reason}
+    immutable_text(archive / "request.json", canonical(request) + "\n")
+    replacement = read_json(replacement_path)
+    if replacement is None:
+        replacement = prepare_selection(root, config, http, archive / "inputs.json", original)
+        replacement["recovery"] = request
+        immutable_text(replacement_path, canonical(replacement) + "\n")
+    elif replacement.get("recovery") != request:
+        raise CorpusError("Staged recovery does not match the archived request")
+    validate_selection(replacement, config)
+    validate_availability(root, replacement)
+    require_zero_artifacts(root)
+    atomic_json(output, replacement)
+    print(canonical({"action": "recover_selection", "original_sha256": old_hash,
+                     "papers": len(replacement["papers"]), "sha256": replacement["selection_sha256"]}), flush=True)
+    return replacement
 
 
 def gcs_objects(payload, month):
     objects = {}
     for item in payload.get("items", []):
         matched = OBJECT_PATTERN.fullmatch(item.get("name", ""))
-        if not matched or matched[1] != month or not item.get("md5Hash"):
+        if not matched or matched[1] != month:
             continue
         identifier, version = matched[2], int(matched[3])
         if identifier[:4] != month:
             raise CorpusError("GCS object has inconsistent paper/month identity")
         if identifier not in objects or version > objects[identifier]["version"]:
-            objects[identifier] = {"version": version, "name": item["name"], "bytes": int(item["size"]),
-                                   "md5": item["md5Hash"], "generation": item["generation"]}
+            size = item.get("size")
+            if isinstance(size, str) and re.fullmatch(r"[0-9]{1,20}", size):
+                size = int(size)
+            objects[identifier] = {"version": version, "name": item["name"], "bytes": size,
+                                   "md5": item.get("md5Hash"), "generation": item.get("generation")}
     return objects
 
 
@@ -476,6 +722,16 @@ def verified(path, receipt):
                 and digest_file(path) == {key: receipt[key] for key in ("sha256", "md5", "bytes")})
 
 
+def receipt_url_matches(actual, expected, kind):
+    """Keep historical provenance only for the exact same pinned source version."""
+    if actual == expected:
+        return True
+    if kind != "source":
+        return False
+    matched = re.fullmatch(re.escape(EXPORT) + r"(\d{4}\.\d{4,5}v[1-9]\d*)", expected)
+    return bool(matched and actual == LEGACY_EXPORT + matched[1])
+
+
 def fetch_file(path, url, kind, http, floor, maximum, expected=None):
     if path.parent.is_symlink() or path.is_symlink():
         raise CorpusError("Corpus artifacts cannot use symlinks")
@@ -483,7 +739,8 @@ def fetch_file(path, url, kind, http, floor, maximum, expected=None):
     if receipt_path.is_symlink():
         raise CorpusError("Corpus receipts cannot use symlinks")
     receipt = read_json(receipt_path)
-    if receipt and receipt.get("url") == url and verified(path, receipt):
+    if (receipt and receipt.get("kind") == kind
+            and receipt_url_matches(receipt.get("url"), url, kind) and verified(path, receipt)):
         if not expected or all(receipt[key] == expected[key] for key in ("md5", "bytes")):
             return receipt, False
     if path.exists():
@@ -561,6 +818,72 @@ def validate_selection(selection, config):
     for paper in chosen:
         if not ID_PATTERN.fullmatch(paper["id"]) or not paper["tiers"] or not set(paper["tiers"]) <= {"eval", "scale"}:
             raise CorpusError("Invalid paper ID or tier in frozen selection")
+    if selection.get("schema_version", 1) not in (1, 2):
+        raise CorpusError("Unsupported frozen selection schema")
+    if selection.get("schema_version") == 2:
+        if fingerprint(selection["availability"]) != selection.get("availability_sha256"):
+            raise CorpusError("Availability evidence fingerprint mismatch")
+        if selection["availability"]["max_pdf_bytes"] != config["max_file_mib"] * MIB:
+            raise CorpusError("Availability size cap differs from the configured cap")
+        counts = {}
+        for paper in chosen:
+            if paper["tiers"] != sorted(set(paper["tiers"])):
+                raise CorpusError("Frozen tiers must be unique and sorted")
+            problem = remote_problem(paper["remote_pdf"], paper["id"], config["max_file_mib"] * MIB)
+            if problem:
+                raise CorpusError("Frozen PDF is invalid: " + problem)
+            for tier in paper["tiers"]:
+                spec = config["tiers"][tier]
+                categories = [c for c in paper["categories"] if c in spec["categories"]]
+                expected = [categories[0], int(paper["created"][:4])] if categories else None
+                if expected is None or paper["strata"].get(tier) != expected or expected[1] not in spec["years"]:
+                    raise CorpusError("Frozen stratum differs from original metadata")
+                key = (tier, *expected)
+                counts[key] = counts.get(key, 0) + 1
+        for tier, spec in config["tiers"].items():
+            strata = sorted((c, y) for c in spec["categories"] for y in spec["years"])
+            quota, extra = divmod(spec["count"], len(strata))
+            if any(counts.get((tier, *s), 0) != quota + (i < extra) for i, s in enumerate(strata)):
+                raise CorpusError("Frozen available selection does not meet exact stratum quotas")
+
+
+def validate_availability(root, selection):
+    if selection.get("schema_version") != 2:
+        return
+    evidence = selection["availability"]
+    if evidence.get("algorithm") != "sha256-strata-public-pdf-v1":
+        raise CorpusError("Unsupported availability algorithm")
+    for month, proof in evidence["inventories"].items():
+        if not re.fullmatch(r"[0-9]{4}", month):
+            raise CorpusError("Invalid inventory month")
+        expected_url = GCS + "/storage/v1/b/arxiv-dataset/o?" + urllib.parse.urlencode({"prefix": f"arxiv/arxiv/pdf/{month}/"})
+        if proof["listing_url"] != expected_url:
+            raise CorpusError("Inventory provenance has an unexpected listing URL")
+        objects = inventory_snapshot(root, proof)["objects"]
+        rows = [p for p in selection["papers"] if p["id"][:4] == month]
+        rows += [p for p in evidence["exclusions"] if p["id"][:4] == month]
+        for paper in rows:
+            if paper["inventory_sha256"] != proof["sha256"] or paper["remote_pdf"] != objects.get(paper["id"]):
+                raise CorpusError("Frozen object differs from preserved inventory evidence")
+    if any(p["id"][:4] not in evidence["inventories"] for p in selection["papers"] + evidence["exclusions"]):
+        raise CorpusError("Missing inventory evidence for a frozen candidate")
+    for paper in evidence["exclusions"]:
+        if paper["reason"] != remote_problem(paper["remote_pdf"], paper["id"], evidence["max_pdf_bytes"]):
+            raise CorpusError("Exclusion reason differs from preserved object evidence")
+    recovery = selection.get("recovery")
+    if recovery:
+        old_hash = recovery["original_file_sha256"]
+        if not re.fullmatch(r"[0-9a-f]{64}", old_hash):
+            raise CorpusError("Invalid recovery archive identity")
+        archive = root / "selection-recovery" / old_hash
+        paths = [archive / name for name in ("original-selection.json", "request.json", "replacement.json")]
+        if any(path.is_symlink() for path in [archive.parent, archive, *paths]):
+            raise CorpusError("Corpus recovery archives cannot use symlinks")
+        original = paths[0].read_bytes()
+        if (hashlib.sha256(original).hexdigest() != old_hash or read_json(paths[1]) != recovery
+                or read_json(paths[2]) != selection
+                or json.loads(original)["selection_sha256"] != recovery["original_selection_sha256"]):
+            raise CorpusError("Recovery archive differs from frozen provenance")
 
 
 def validate_entry(entry, paper, selection_hash):
@@ -573,6 +896,8 @@ def validate_entry(entry, paper, selection_hash):
             or int(matched[3]) != entry["version"] or remote["version"] != entry["version"]
             or not str(remote["generation"]).isdigit() or remote["bytes"] <= 0):
         raise CorpusError("Manifest identity differs from pinned paper selection")
+    if "remote_pdf" in paper and remote != paper["remote_pdf"]:
+        raise CorpusError("Manifest PDF differs from availability-pinned selection")
     if len(base64.b64decode(remote["md5"], validate=True)) != 16:
         raise CorpusError("Pinned PDF has an invalid MD5 hash")
 
@@ -588,7 +913,7 @@ def artifact_location(entry, kind):
 
 def validate_receipt(entry, kind, receipt):
     path, url = artifact_location(entry, kind)
-    if receipt["path"] != path or receipt["url"] != url or receipt["kind"] != kind:
+    if receipt["path"] != path or not receipt_url_matches(receipt["url"], url, kind) or receipt["kind"] != kind:
         raise CorpusError("Artifact path, URL or kind differs from pinned paper version")
     if kind == "pdf" and any(receipt[key] != entry["remote_pdf"][key] for key in ("md5", "bytes")):
         raise CorpusError("PDF receipt differs from pinned GCS hash or size")
@@ -604,6 +929,7 @@ def validate_receipt(entry, kind, receipt):
 def download(root, config, http, tier="all", sources=True, limit=None):
     selection = read_json(root / "selection.json")
     validate_selection(selection, config)
+    validate_availability(root, selection)
     papers = [paper for paper in selection["papers"] if tier == "all" or tier in paper["tiers"]]
     if limit is not None:
         papers = papers[:limit]
@@ -621,9 +947,11 @@ def download(root, config, http, tier="all", sources=True, limit=None):
         entry = entries.get(identifier)
         if not entry:
             month = identifier[:4]
-            if month not in inventories:
-                inventories[month] = inventory(root, month, http)
-            remote = inventories[month].get(identifier)
+            remote = paper.get("remote_pdf")
+            if remote is None:
+                if month not in inventories:
+                    inventories[month] = inventory(root, month, http)
+                remote = inventories[month].get(identifier)
             if not remote:
                 raise CorpusError(f"Selected PDF unavailable in public bucket: {identifier}")
             entries[identifier] = {key: paper[key] for key in
@@ -670,6 +998,7 @@ def status(root, verify=False, config=None):
         config = config or load_config(Path(__file__).with_name("selection.json"))
         try:
             validate_selection(selection, config)
+            validate_availability(root, selection)
         except (CorpusError, ValueError, KeyError, TypeError) as error:
             result["problems"].append("Invalid frozen selection: " + str(error))
             print(canonical(result), flush=True)
@@ -751,6 +1080,8 @@ def main(argv=None):
     harvest_parser = commands.add_parser("harvest", help="Resume OAI metadata harvest")
     harvest_parser.add_argument("--refresh", action="store_true", help="Fetch updates since each completed harvest")
     commands.add_parser("select", help="Freeze deterministic stratified selection")
+    recovery_parser = commands.add_parser("recover-selection", help="Explicitly repair a legacy zero-artifact selection")
+    recovery_parser.add_argument("--reason", required=True, help="Observed failure retained in the immutable recovery archive")
     for name in ("download", "run"):
         sub = commands.add_parser(name, help="Download selected papers" if name == "download" else "Harvest, select, download and verify")
         sub.add_argument("--tier", choices=("all", "eval", "scale"), default="all")
@@ -768,7 +1099,7 @@ def main(argv=None):
             return 0 if status(root, args.command == "verify", config) else 1
         root.mkdir(parents=True, exist_ok=True)
         for name in (".corpus.lock", "metadata.sqlite", "metadata.sqlite-wal", "metadata.sqlite-shm",
-                     "selection.json", "manifest.jsonl", "inventory", "pdf", "source"):
+                     "selection.json", "manifest.jsonl", "inventory", "pdf", "source", "availability", "selection-recovery"):
             if (root / name).is_symlink():
                 raise CorpusError("Corpus storage cannot use symlinks: " + name)
         with (root / ".corpus.lock").open("a+") as lock:
@@ -780,7 +1111,9 @@ def main(argv=None):
             if args.command in {"harvest", "run"}:
                 harvest(root, config, http, getattr(args, "refresh", False))
             if args.command in {"select", "run"}:
-                select(root, config)
+                select(root, config, http)
+            if args.command == "recover-selection":
+                recover_selection(root, config, http, args.reason)
             if args.command in {"download", "run"}:
                 download(root, config, http, args.tier, not args.no_sources, args.limit)
             if args.command == "run" and args.tier == "all" and not args.no_sources and args.limit is None:

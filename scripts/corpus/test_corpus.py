@@ -74,11 +74,336 @@ def papers():
             for index in indices]
 
 
+def remote(identifier, **changes):
+    payload = b"%PDF-1.7 fixture"
+    return {"version": 2, "name": f"arxiv/arxiv/pdf/{identifier[:4]}/{identifier}v2.pdf",
+            "bytes": len(payload), "md5": base64.b64encode(hashlib.md5(payload, usedforsecurity=False).digest()).decode(),
+            "generation": "123", **changes}
+
+
 class CorpusTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="lysilogy-corpus-unit-")
         self.root = Path(self.temporary.name)
         self.addCleanup(self.temporary.cleanup)
+
+    def seed_metadata(self):
+        config = small_config()
+        with contextlib.closing(corpus.connect(self.root)) as db, db:
+            for paper in papers():
+                db.execute("INSERT INTO papers VALUES (?, ?)", (paper["id"], corpus.canonical(paper)))
+            for set_spec in config["sets"].values():
+                db.execute("INSERT INTO harvests VALUES (?, ?)", (set_spec, '{"complete":true}'))
+        return config
+
+    def seed_inventories(self, missing=(), overrides=None):
+        for month in ("2001", "2101"):
+            objects = {p["id"]: remote(p["id"]) for p in papers() if p["id"][:4] == month and p["id"] not in missing}
+            objects.update({key: value for key, value in (overrides or {}).items() if key[:4] == month})
+            corpus.atomic_json(self.root / "inventory" / (month + ".json"), {"complete": True, "token": "", "objects": objects})
+
+    def legacy_selection(self):
+        config = self.seed_metadata()
+        chosen = corpus.select_papers(papers(), config)
+        selection = {"schema_version": 1, "config_sha256": corpus.fingerprint(config),
+                     "metadata_sha256": corpus.fingerprint(papers()), "selection_sha256": corpus.fingerprint(chosen),
+                     "papers": chosen}
+        # Metadata SELECT orders IDs, which is also the canonical hash order.
+        selection["metadata_sha256"] = corpus.fingerprint(sorted(papers(), key=lambda p: p["id"]))
+        corpus.atomic_json(self.root / "selection.json", selection)
+        self.seed_inventories(missing=[chosen[0]["id"]])
+        return config, selection
+
+    def should_fill_identical_stratum_quotas_when_ranked_public_pdfs_are_missing(self):
+        config = self.seed_metadata()
+        original = corpus.select_papers(papers(), config)
+        missing = [original[0]["id"], original[-1]["id"]]
+        self.seed_inventories(missing)
+        chosen = corpus.select(self.root, config, FakeHttp([]))
+        self.assertEqual(2, chosen["schema_version"])
+        self.assertTrue(set(missing).isdisjoint(p["id"] for p in chosen["papers"]))
+        expected = corpus.select_papers([p for p in papers() if p["id"] not in missing], config)
+        self.assertEqual([(p["id"], p["tiers"], p["strata"]) for p in expected],
+                         [(p["id"], p["tiers"], p["strata"]) for p in chosen["papers"]])
+        self.assertEqual(4, sum("eval" in p["tiers"] for p in chosen["papers"]))
+        self.assertEqual(8, sum("scale" in p["tiers"] for p in chosen["papers"]))
+        self.assertTrue(any(p["tiers"] == ["eval", "scale"] for p in chosen["papers"]))
+        self.assertTrue(set(missing) <= {p["id"] for p in chosen["availability"]["exclusions"]})
+        corpus.validate_availability(self.root, chosen)
+
+    def should_exclude_invalid_latest_objects_when_inventory_fields_are_unusable(self):
+        identifier = "2001.00001"
+        cases = [(None, "missing_public_pdf"), ({}, "invalid_object_identity"),
+                 (remote(identifier, name="arxiv/arxiv/pdf/2101/2001.00001v2.pdf"), "invalid_object_identity"),
+                 (remote(identifier, version=3), "invalid_object_identity"),
+                 (remote(identifier, generation="0"), "invalid_object_generation"),
+                 (remote(identifier, generation="1?bad"), "invalid_object_generation"),
+                 (remote(identifier, bytes=0), "invalid_or_oversized_object_bytes"),
+                 (remote(identifier, bytes=True), "invalid_or_oversized_object_bytes"),
+                 (remote(identifier, bytes=101), "invalid_or_oversized_object_bytes"),
+                 (remote(identifier, md5="invalid"), "invalid_object_md5")]
+        for value, expected in cases:
+            with self.subTest(value=value):
+                self.assertEqual(expected, corpus.remote_problem(value, identifier, 100))
+        objects = corpus.gcs_objects({"items": [
+            {"name": "arxiv/arxiv/pdf/2001/2001.00001v2.pdf", "size": "bad", "generation": "123"},
+            {"name": "arxiv/arxiv/pdf/2001/2001.00001v1.pdf", "size": "10", "generation": "122", "md5Hash": remote(identifier)["md5"]}]}, "2001")
+        self.assertEqual(2, objects[identifier]["version"])
+        self.assertEqual("invalid_or_oversized_object_bytes", corpus.remote_problem(objects[identifier], identifier, 100))
+
+    def should_record_invalid_object_evidence_when_replacements_keep_full_quotas(self):
+        config = self.seed_metadata()
+        identifier = corpus.select_papers(papers(), config)[0]["id"]
+        self.seed_inventories(overrides={identifier: remote(identifier, md5=None)})
+        chosen = corpus.select(self.root, config, FakeHttp([]))
+        row = next(p for p in chosen["availability"]["exclusions"] if p["id"] == identifier)
+        self.assertEqual("invalid_object_md5", row["reason"])
+        self.assertIsNone(row["remote_pdf"]["md5"])
+        self.assertTrue(all(p["id"] != identifier for p in chosen["papers"]))
+
+    def should_keep_selection_unpublished_when_available_stratum_capacity_is_insufficient(self):
+        config = self.seed_metadata()
+        self.seed_inventories(missing=[p["id"] for p in papers() if p["created"].startswith("2020") and p["categories"] == ["cs.LG"]])
+        with self.assertRaisesRegex(corpus.CorpusError, "Insufficient available PDFs.*0 available, 1 needed"):
+            corpus.select(self.root, config, FakeHttp([]))
+        self.assertFalse((self.root / "selection.json").exists())
+        evidence = list((self.root / "availability").glob("failed-*.json"))
+        self.assertEqual(1, len(evidence))
+        self.assertEqual(6, len(corpus.read_json(evidence[0])["exclusions"]))
+
+    def should_preserve_observed_created_year_when_identifier_predates_the_stratum(self):
+        config = self.seed_metadata()
+        with contextlib.closing(corpus.connect(self.root)) as db, db:
+            row = {"id": "1801.00600", "created": "2020-06-30", "categories": ["cs.LG"]}
+            db.execute("INSERT INTO papers VALUES (?, ?)", (row["id"], corpus.canonical(row)))
+        self.seed_inventories()
+        corpus.atomic_json(self.root / "inventory/1801.json", {"complete": True, "token": "", "objects": {}})
+        availability = corpus.Availability(self.root, config, FakeHttp([]), "fixture", self.root / "availability/inputs.json")
+        self.assertIsNone(availability.qualify(row))
+        self.assertEqual("2020-06-30", row["created"])
+        self.assertEqual("missing_public_pdf", availability.exclusions[row["id"]]["reason"])
+
+    def should_reuse_preserved_inventory_when_selection_preparation_is_interrupted(self):
+        config = self.seed_metadata()
+        self.seed_inventories()
+        original = corpus.Availability.qualify
+        visited = []
+        def interrupt(instance, paper):
+            qualified = original(instance, paper)
+            visited.append(paper["id"])
+            if len(visited) == 2:
+                raise KeyboardInterrupt()
+            return qualified
+        with patch.object(corpus.Availability, "qualify", interrupt), self.assertRaises(KeyboardInterrupt):
+            corpus.select(self.root, config, FakeHttp([]))
+        checkpoint = corpus.read_json(self.root / "availability/selection-inputs.json")
+        for month in checkpoint["inventories"]:
+            corpus.atomic_json(self.root / "inventory" / (month + ".json"), {"complete": True, "token": "", "objects": {}})
+        chosen = corpus.select(self.root, config, FakeHttp([]))
+        self.assertEqual(8, sum("scale" in p["tiers"] for p in chosen["papers"]))
+        self.assertTrue(set(visited) <= {p["id"] for p in chosen["papers"]})
+
+    def should_archive_exact_original_when_explicit_zero_artifact_recovery_succeeds(self):
+        config, legacy = self.legacy_selection()
+        original_bytes = (self.root / "selection.json").read_bytes()
+        recovered = corpus.recover_selection(self.root, config, FakeHttp([]), "Selected PDF unavailable in public bucket")
+        archive = self.root / "selection-recovery" / hashlib.sha256(original_bytes).hexdigest()
+        self.assertEqual(original_bytes, (archive / "original-selection.json").read_bytes())
+        self.assertNotEqual(legacy["selection_sha256"], recovered["selection_sha256"])
+        self.assertEqual(recovered, corpus.recover_selection(self.root, config, FakeHttp([]), "Selected PDF unavailable in public bucket"))
+        self.assertEqual(recovered, corpus.select(self.root, config, FakeHttp([])))
+        with self.assertRaisesRegex(corpus.CorpusError, "reason differs"):
+            corpus.recover_selection(self.root, config, FakeHttp([]), "changed reason")
+
+    def should_resume_staged_recovery_when_publication_is_interrupted(self):
+        config, _ = self.legacy_selection()
+        old = (self.root / "selection.json").read_bytes()
+        atomic = corpus.atomic_json
+        def interrupt(path, value):
+            if path == self.root / "selection.json":
+                raise KeyboardInterrupt()
+            return atomic(path, value)
+        with patch.object(corpus, "atomic_json", interrupt), self.assertRaises(KeyboardInterrupt):
+            corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+        self.assertEqual(old, (self.root / "selection.json").read_bytes())
+        with patch.object(corpus, "prepare_selection", side_effect=AssertionError("must reuse staged replacement")):
+            recovered = corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+        self.assertEqual(2, recovered["schema_version"])
+
+    def should_leave_failed_original_intact_when_recovery_capacity_is_insufficient(self):
+        config, _ = self.legacy_selection()
+        original = (self.root / "selection.json").read_bytes()
+        self.seed_inventories(missing=[p["id"] for p in papers()])
+        with self.assertRaisesRegex(corpus.CorpusError, "Insufficient available PDFs"):
+            corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDFs")
+        self.assertEqual(original, (self.root / "selection.json").read_bytes())
+        self.assertEqual(original, next((self.root / "selection-recovery").glob("*/original-selection.json")).read_bytes())
+
+    def should_refuse_recovery_before_network_when_any_manifest_or_artifact_is_admitted(self):
+        config, _ = self.legacy_selection()
+        original = (self.root / "selection.json").read_bytes()
+        for name, payload in [("manifest.jsonl", "{}\n"), ("manifest.jsonl.partial", ""),
+                              ("pdf/paper.pdf", "%PDF-test"), ("pdf/paper.pdf.partial", "partial"),
+                              ("source/paper.src.verified.json", "{}"), ("source/paper.src", "source")]:
+            with self.subTest(name=name):
+                path = self.root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(payload)
+                with self.assertRaises(corpus.CorpusError):
+                    corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+                self.assertEqual(payload, path.read_text())
+                path.unlink()
+        self.assertEqual(original, (self.root / "selection.json").read_bytes())
+        self.assertFalse((self.root / "selection-recovery").exists())
+
+    def should_refuse_recovery_when_original_metadata_or_archive_was_changed(self):
+        config, _ = self.legacy_selection()
+        original = (self.root / "selection.json").read_bytes()
+        archive = self.root / "selection-recovery" / hashlib.sha256(original).hexdigest()
+        corpus.immutable_text(archive / "original-selection.json", "tampered\n")
+        with self.assertRaisesRegex(corpus.CorpusError, "archive differs"):
+            corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+        self.assertEqual("tampered\n", (archive / "original-selection.json").read_text())
+        (archive / "original-selection.json").unlink()
+        with contextlib.closing(corpus.connect(self.root)) as db, db:
+            db.execute("DELETE FROM papers WHERE id='2001.00001'")
+        with self.assertRaisesRegex(corpus.CorpusError, "Metadata changed"):
+            corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+        self.assertEqual(original, (self.root / "selection.json").read_bytes())
+
+    def should_reject_corrupt_inventory_snapshot_when_frozen_selection_is_downloaded(self):
+        config = self.seed_metadata()
+        self.seed_inventories()
+        chosen = corpus.select(self.root, config, FakeHttp([]))
+        proof = next(iter(chosen["availability"]["inventories"].values()))
+        (self.root / proof["path"]).write_text("{}")
+        with self.assertRaisesRegex(corpus.CorpusError, "snapshot fingerprint"):
+            corpus.download(self.root, config, FakeHttp([]), limit=1)
+
+    def should_use_frozen_object_without_listing_when_inventory_changes_after_selection(self):
+        config = self.seed_metadata()
+        self.seed_inventories()
+        chosen = corpus.select(self.root, config, FakeHttp([]))
+        self.seed_inventories(overrides={p["id"]: remote(p["id"], version=3, generation="456") for p in papers()})
+        client = FakeHttp([b"%PDF-1.7 fixture", b"\\documentclass{article}"])
+        corpus.download(self.root, config, client, tier="eval", limit=1)
+        self.assertEqual(2, len(client.calls))
+        self.assertIn("v2.pdf?generation=123", client.calls[0])
+        self.assertTrue(client.calls[1].endswith("v2"))
+        entry = next(iter(corpus.read_manifest(self.root).values()))
+        paper = next(p for p in chosen["papers"] if p["id"] == entry["id"])
+        entry["remote_pdf"]["generation"] = "456"
+        with self.assertRaisesRegex(corpus.CorpusError, "availability-pinned"):
+            corpus.validate_entry(entry, paper, chosen["selection_sha256"])
+
+    def should_refuse_preparation_before_inventory_when_disk_estimate_breaks_floor(self):
+        config = self.seed_metadata()
+        with patch.object(corpus, "check_space", side_effect=corpus.CorpusError("Insufficient disk space")):
+            with self.assertRaisesRegex(corpus.CorpusError, "Insufficient disk space"):
+                corpus.select(self.root, config, FakeHttp([]))
+        self.assertFalse((self.root / "selection.json").exists())
+        self.assertFalse((self.root / "inventory").exists())
+
+    def should_hash_identical_canonical_metadata_when_streaming_its_fingerprint(self):
+        for records in ([], papers(), [{"unicode": "Σø", "lines": "a\nb"}]):
+            self.assertEqual(corpus.fingerprint(records), corpus.fingerprint_records(records))
+
+    def should_preserve_original_newlines_when_archiving_a_legacy_selection(self):
+        config, legacy = self.legacy_selection()
+        original = (json.dumps(legacy, indent=2).replace("\n", "\r\n") + "\r\n").encode()
+        (self.root / "selection.json").write_bytes(original)
+        corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+        archive = self.root / "selection-recovery" / hashlib.sha256(original).hexdigest()
+        self.assertEqual(original, (archive / "original-selection.json").read_bytes())
+
+    def should_resume_without_reselection_when_crash_follows_final_publication(self):
+        config, _ = self.legacy_selection()
+        atomic = corpus.atomic_json
+        def interrupt(path, value):
+            atomic(path, value)
+            if path == self.root / "selection.json":
+                raise KeyboardInterrupt()
+        with patch.object(corpus, "atomic_json", interrupt), self.assertRaises(KeyboardInterrupt):
+            corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+        original = (self.root / "selection.json").read_bytes()
+        with patch.object(corpus, "prepare_selection", side_effect=AssertionError("must not reselect")):
+            corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+        self.assertEqual(original, (self.root / "selection.json").read_bytes())
+        (self.root / "source").mkdir()
+        (self.root / "source/paper.src.partial").write_bytes(b"")
+        with self.assertRaisesRegex(corpus.CorpusError, "partial downloads"):
+            corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+
+    def should_reproduce_selection_bytes_when_metadata_and_inventory_snapshots_match(self):
+        config = self.seed_metadata()
+        self.seed_inventories(missing=["2001.00001"])
+        first = corpus.select(self.root, config, FakeHttp([]))
+        root = self.root
+        with tempfile.TemporaryDirectory(prefix="lysilogy-corpus-unit-") as other:
+            self.root = Path(other)
+            try:
+                self.seed_metadata()
+                self.seed_inventories(missing=["2001.00001"])
+                second = corpus.select(self.root, config, FakeHttp([]))
+                self.assertEqual(first, second)
+                self.assertEqual((root / "selection.json").read_bytes(), (self.root / "selection.json").read_bytes())
+            finally:
+                self.root = root
+
+    def should_reject_rehashed_version_or_quota_changes_when_selection_is_corrupted(self):
+        config = self.seed_metadata()
+        self.seed_inventories()
+        selected = corpus.select(self.root, config, FakeHttp([]))
+        modified = copy.deepcopy(selected)
+        modified["papers"][0]["remote_pdf"]["generation"] = "456"
+        modified["selection_sha256"] = corpus.fingerprint(modified["papers"])
+        corpus.validate_selection(modified, config)
+        with self.assertRaisesRegex(corpus.CorpusError, "preserved inventory"):
+            corpus.validate_availability(self.root, modified)
+        modified = copy.deepcopy(selected)
+        modified["papers"].pop()
+        modified["selection_sha256"] = corpus.fingerprint(modified["papers"])
+        with self.assertRaisesRegex(corpus.CorpusError, "exact stratum quotas"):
+            corpus.validate_selection(modified, config)
+
+    def should_leave_other_files_untouched_when_recovery_archive_contains_a_symlink(self):
+        config, _ = self.legacy_selection()
+        raw = (self.root / "selection.json").read_bytes()
+        archive = self.root / "selection-recovery" / hashlib.sha256(raw).hexdigest()
+        archive.mkdir(parents=True)
+        outside = self.root / "fixture-protected.json"
+        outside.write_text("protected")
+        (archive / "original-selection.json").symlink_to(outside)
+        with self.assertRaisesRegex(corpus.CorpusError, "symlinks"):
+            corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+        self.assertEqual("protected", outside.read_text())
+        self.assertEqual(raw, (self.root / "selection.json").read_bytes())
+
+    def should_reject_changed_archive_when_recovered_selection_is_verified(self):
+        config, _ = self.legacy_selection()
+        selected = corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+        archive = self.root / "selection-recovery" / selected["recovery"]["original_file_sha256"]
+        (archive / "request.json").write_text("{}")
+        with self.assertRaisesRegex(corpus.CorpusError, "archive differs"):
+            corpus.validate_availability(self.root, selected)
+
+    def should_route_explicit_recovery_when_cli_selects_a_proxy_and_failure_reason(self):
+        config = small_config()
+        client = FakeHttp([])
+        with patch.object(corpus, "validate_root", return_value=self.root), \
+                patch.object(corpus, "load_config", return_value=config), \
+                patch.object(corpus, "Http", return_value=client), \
+                patch.object(corpus, "recover_selection") as recovery:
+            self.assertEqual(0, corpus.main(["--proxy-env", "HTTPS_PROXY", "recover-selection", "--reason", "missing PDF"]))
+        recovery.assert_called_once_with(self.root, config, client, "missing PDF")
+
+    def should_refuse_recovery_when_rehashed_legacy_rows_do_not_match_metadata(self):
+        config, legacy = self.legacy_selection()
+        legacy["papers"][0]["created"] = "2020-09-13"
+        legacy["selection_sha256"] = corpus.fingerprint(legacy["papers"])
+        corpus.atomic_json(self.root / "selection.json", legacy)
+        with self.assertRaisesRegex(corpus.CorpusError, "recorded metadata and config"):
+            corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
 
     def should_select_identical_papers_when_seed_config_and_metadata_match(self):
         config = small_config()
@@ -353,14 +678,15 @@ class CorpusTests(unittest.TestCase):
                 db.execute("INSERT INTO papers VALUES (?, ?)", (paper["id"], corpus.canonical(paper)))
             for set_spec in config["sets"].values():
                 db.execute("INSERT INTO harvests VALUES (?, ?)", (set_spec, '{"complete":true}'))
-        first = corpus.select(self.root, config)
+        self.seed_inventories()
+        first = corpus.select(self.root, config, FakeHttp([]))
         with db:
             db.execute("DELETE FROM papers")
         db.close()
-        self.assertEqual(first, corpus.select(self.root, config))
+        self.assertEqual(first, corpus.select(self.root, config, FakeHttp([])))
         config["seed"] = "new"
         with self.assertRaisesRegex(corpus.CorpusError, "different config"):
-            corpus.select(self.root, config)
+            corpus.select(self.root, config, FakeHttp([]))
 
     def should_resume_without_redownloading_when_verified_file_exists(self):
         payload = b"%PDF-1.7\nsynthetic test bytes\n%%EOF"
@@ -521,12 +847,103 @@ class CorpusTests(unittest.TestCase):
         config, paper, client = self.complete_fixture()
         manifest = corpus.read_manifest(self.root)
         self.assertEqual(2, manifest[paper["id"]]["version"])
-        self.assertEqual("https://export.arxiv.org/e-print/2001.00001v2", client.calls[-1])
+        self.assertEqual("https://export.arxiv.org/src/2001.00001v2", client.calls[-1])
         self.assertIn("?generation=123", client.calls[-2])
         offline = FakeHttp([])
         with contextlib.redirect_stdout(io.StringIO()):
             corpus.download(self.root, config, offline)
         self.assertEqual([], offline.calls)
+
+    def should_use_canonical_source_location_when_a_pdf_version_is_pinned(self):
+        path, url = corpus.artifact_location({"id": "0812.5080", "version": 5}, "source")
+        self.assertEqual("source/0812.5080v5.src", path)
+        self.assertEqual("https://export.arxiv.org/src/0812.5080v5", url)
+
+    def should_reuse_legacy_source_receipts_when_an_admitted_corpus_is_upgraded(self):
+        config, paper, _ = self.complete_fixture()
+        entries = corpus.read_manifest(self.root)
+        source = entries[paper["id"]]["source"]
+        source["url"] = corpus.LEGACY_EXPORT + paper["id"] + "v2"
+        path = self.root / source["path"]
+        receipt = {key: value for key, value in source.items() if key != "path"}
+        receipt_path = path.with_name(path.name + ".verified.json")
+        corpus.atomic_json(receipt_path, receipt)
+        corpus.write_manifest(self.root, entries)
+        original_bytes, original_receipt = path.read_bytes(), receipt_path.read_bytes()
+        offline = FakeHttp([])
+        corpus.download(self.root, config, offline)
+        self.assertEqual([], offline.calls)
+        self.assertEqual(entries, corpus.read_manifest(self.root))
+        self.assertEqual(original_bytes, path.read_bytes())
+        self.assertEqual(original_receipt, receipt_path.read_bytes())
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(corpus.status(self.root, verify=True, config=config))
+
+    def should_resume_legacy_source_provenance_when_its_manifest_update_was_interrupted(self):
+        config, paper, _ = self.complete_fixture()
+        entries = corpus.read_manifest(self.root)
+        source = entries[paper["id"]]["source"]
+        path = self.root / source["path"]
+        receipt = {key: value for key, value in source.items() if key != "path"}
+        receipt["url"] = corpus.LEGACY_EXPORT + paper["id"] + "v2"
+        corpus.atomic_json(path.with_name(path.name + ".verified.json"), receipt)
+        entries[paper["id"]]["source"] = None
+        corpus.write_manifest(self.root, entries)
+        offline = FakeHttp([])
+        corpus.download(self.root, config, offline)
+        self.assertEqual([], offline.calls)
+        recovered = corpus.read_manifest(self.root)[paper["id"]]["source"]
+        self.assertEqual({**receipt, "path": source["path"]}, recovered)
+        self.assertEqual(receipt["fetched_at"], recovered["fetched_at"])
+
+    def should_reject_legacy_source_aliases_when_identity_or_route_is_different(self):
+        config, paper, _ = self.complete_fixture()
+        entry = corpus.read_manifest(self.root)[paper["id"]]
+        source = entry["source"]
+        expected = corpus.EXPORT + paper["id"] + "v2"
+        legacy = corpus.LEGACY_EXPORT + paper["id"] + "v2"
+        for url in [corpus.LEGACY_EXPORT + paper["id"] + "v1", corpus.LEGACY_EXPORT + "2001.00002v2",
+                    corpus.LEGACY_EXPORT + paper["id"], legacy + "?download=1", legacy + "#fragment",
+                    legacy.replace("https://", "http://"), legacy.replace("export.arxiv.org", "arxiv.org"),
+                    legacy.replace("export.arxiv.org", "oaipmh.arxiv.org"), legacy.replace("/e-print/", "/other/")]:
+            with self.subTest(url=url):
+                self.assertFalse(corpus.receipt_url_matches(url, expected, "source"))
+                with self.assertRaisesRegex(corpus.CorpusError, "pinned paper version"):
+                    corpus.validate_receipt(entry, "source", {**source, "url": url})
+        self.assertFalse(corpus.receipt_url_matches(legacy, expected, "pdf"))
+        with self.assertRaisesRegex(corpus.CorpusError, "pinned paper version"):
+            corpus.validate_receipt(entry, "source", {**source, "url": legacy, "path": "source/2001.00001v1.src"})
+
+    def should_preserve_existing_source_bytes_when_a_legacy_receipt_is_invalid(self):
+        config, paper, _ = self.complete_fixture()
+        source = corpus.read_manifest(self.root)[paper["id"]]["source"]
+        path = self.root / source["path"]
+        receipt = {key: value for key, value in source.items() if key != "path"}
+        receipt["url"] = corpus.LEGACY_EXPORT + paper["id"] + "v1"
+        receipt_path = path.with_name(path.name + ".verified.json")
+        corpus.atomic_json(receipt_path, receipt)
+        original = path.read_bytes(), receipt_path.read_bytes()
+        with self.assertRaisesRegex(corpus.CorpusError, "leaving it untouched"):
+            corpus.download(self.root, config, FakeHttp([]))
+        self.assertEqual(original, (path.read_bytes(), receipt_path.read_bytes()))
+
+    def should_keep_redirects_disabled_when_a_source_response_moves_again(self):
+        with self.assertRaisesRegex(corpus.CorpusError, "Unexpected HTTP redirect"):
+            corpus.NoRedirect().redirect_request(None, None, 301, "Moved", {}, corpus.EXPORT + "0812.5080v5")
+
+    def should_refuse_legacy_receipt_reuse_when_its_kind_or_bytes_do_not_match(self):
+        path = self.root / "source/2001.00001v2.src"
+        legacy = corpus.LEGACY_EXPORT + "2001.00001v2"
+        receipt, _ = corpus.fetch_file(path, legacy, "source", FakeHttp([b"\\documentclass{article}"]), 0, 1024)
+        receipt_path = path.with_name(path.name + ".verified.json")
+        original_bytes = path.read_bytes()
+        for changed in ({**receipt, "kind": "pdf"}, {**receipt, "sha256": "0" * 64}):
+            with self.subTest(changed=changed):
+                corpus.atomic_json(receipt_path, changed)
+                with self.assertRaisesRegex(corpus.CorpusError, "leaving it untouched"):
+                    corpus.fetch_file(path, corpus.EXPORT + "2001.00001v2", "source", FakeHttp([]), 0, 1024)
+                self.assertEqual(original_bytes, path.read_bytes())
+                self.assertEqual(changed, corpus.read_json(receipt_path))
 
     def should_reject_symlink_receipt_when_it_points_outside_corpus(self):
         path = self.root / "paper.pdf"

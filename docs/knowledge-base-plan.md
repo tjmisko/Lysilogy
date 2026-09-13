@@ -586,6 +586,21 @@ Tests: should normalize "$\alpha$-Divergence" and "α-divergence" to the same ke
 "Title: Subtitle" and "Title - Subtitle" as equal; should not equate "Attention Is All You Need" with
 a paper titled "Attention Is Not All You Need".
 
+Implementation contract: `kb::titles::title_key` folds compatibility Unicode, letter diacritics,
+case, ordinary punctuation and known LaTeX presentation commands. Words, negation, repetition,
+mathematical operators and script grouping remain significant. Unknown LaTeX command names retain
+their spelling and case, and their argument braces remain explicit; unsupported macros are not
+silently interpreted or removed. This is a syntactic decoder, not a TeX execution engine.
+
+`title_similarity` uses a multiset character-trigram Sørensen–Dice score, with two boundary
+sentinels on each side of the normalized title and repeated grams counted. Empty inputs score
+zero. Unequal keys above 1,024 Unicode characters score zero to bound fuzzy work and memory;
+exact nonempty equality remains comparable at any length. A fuzzy score is not a probability:
+different strings can share a gram multiset, so exact title equality must use the key itself.
+Neither helper makes entity identity decisions or claims resolver metrics before K3 exists.
+E2.1 owns the SQLite FTS5 table and populates it with `title_key` when the two branches integrate;
+there is one database index, rather than a second in-memory candidate store.
+
 Blocked by: E2.2
 
 ### E2.5 Resolution gold set and evaluation
@@ -1102,7 +1117,7 @@ and `/tmp`, at a configurable root (default `~/Corpora/arxiv/`, `LYSILOGY_CORPUS
   (`https://storage.googleapis.com/arxiv-dataset/arxiv/arxiv/pdf/<YYMM>/<id>v<n>.pdf`; listing via
   the JSON API). No `gsutil` is required.
 - **Sources:** fetch LaTeX sources for the `eval` tier per paper from
-  `https://export.arxiv.org/e-print/<id>`, with a shared single-connection budget of at most one request every
+  `https://export.arxiv.org/src/<id>v<n>`, with a shared single-connection budget of at most one request every
   three seconds, including retries. This follows the stricter
   [API terms](https://info.arxiv.org/help/api/tou.html), checked 2026-09-12; the bulk
   harvesting page separately permits four-request bursts. The requester-pays S3 bucket
@@ -1121,6 +1136,30 @@ selection/version freezing, format and hash verification limits, isolated scale 
 background resume. OAI modification dates are only incremental-harvest bounds; submitted-year
 strata use `created`. Sources explicitly request the pinned PDF version. Missing artifacts or
 sparse strata fail without silently reducing the tier count.
+
+Follow-up #88 qualifies each deterministically ranked candidate against a completed public PDF
+inventory before filling its original category/year quota. Schema-2 selections pin version,
+generation, size and MD5; immutable consulted inventory snapshots and excluded-ID reasons retain
+the availability boundary. Invalid or oversized latest objects are excluded, never silently
+replaced with an older version. The original OAI `created` value remains unchanged when an ID
+suggests an earlier year. Identical metadata, config and inventory snapshots reproduce selection;
+interrupted preparation checkpoints its consulted inputs.
+
+The first full harvest exposed missing PDF `1801.00600` after a metadata-only selection froze.
+An explicit `recover-selection --reason …` may repair only a legacy schema-1 selection with zero
+manifest rows and no artifacts, receipts or partials. It archives exact original bytes and the
+failure reason, verifies the original metadata snapshot, retains unavailable original members as
+exclusion evidence, and durably stages a full-quota replacement before atomic publication.
+Interrupted publication resumes the staged replacement; archives are immutable, and any admitted
+artifact prevents recovery. Ordinary resume never reselects a frozen corpus. No metric target,
+host, proxy/TLS policy, request pacing, source-version rule or disk floor changes.
+
+Follow-up #91 uses the canonical `/src/` endpoint after live verification showed `/e-print/`
+returns HTTP 301. The exact same pinned ID/version's previously verified `/e-print/` source
+receipt remains reusable and keeps its original URL, time and bytes, including after an
+interrupted manifest update. No new request follows the legacy redirect; other host/path/version
+aliases remain invalid. PDF generation URLs remain exact. Automatic redirect refusal, TLS,
+shared arXiv pacing and the free-space floor are unchanged.
 
 Direct transport is the default. Managed environments may explicitly select their approved
 HTTP CONNECT proxy for HTTPS destinations with `--proxy-env HTTPS_PROXY` (or `https_proxy`).

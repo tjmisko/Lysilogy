@@ -164,9 +164,20 @@ acceptance are unchanged.
   FTS5). Include the 500k-Work synthetic neighborhood query benchmark from the design section.
 - [x] **#35 E2.3 Person name parser** (after #34). Branch `feat/e2.3-names`. Owns
   `src/kb/names.rs`. Pure functions plus a large table-driven test.
-- [ ] **#36 E2.4 Title normalizer** (after #34). Branch `feat/e2.4-titles`. Owns
+- [x] **#36 E2.4 Title normalizer** (after #34). Branch `feat/e2.4-titles`. Owns
   `src/kb/titles.rs`. Pure functions; the FTS5 index population itself lands with #33 or #38,
   whichever merges later.
+- [x] **#88 Corpus availability recovery** (follow-up to #69). Branch
+  `fix/e8.2-corpus-availability`. Preserve exact quotas and immutable availability evidence;
+  explicit recovery is limited to the original zero-artifact selection. PR #90 merged after
+  independent verification of the actual recovery and canonical source download.
+- [x] **#91 Canonical arXiv source endpoint** (follow-up to #69/#85). Branch
+  `fix/e8.2-source-endpoint`. Use the approved host's `/src/` endpoint while preserving legitimate
+  legacy source receipts; keep redirect refusal, version pinning and all transport safeguards.
+- [ ] **#70 E8.3 arXiv LaTeX object truth** (after #68, #69, #24). Branch
+  `feat/e8.3-latex-truth`. Owns the LaTeX parser and PDF aligner used only for evaluation.
+  Brought forward from A3 so #25 can be measured against independent K1 before merging;
+  this resolves a sequencing cycle under the user's detector-before-truth merge restriction.
 - [ ] **#71 E8.4 Reference, acquisition, and read-next truth** (after #68, #63). Branch
   `feat/e8.4-reference-truth`. K7 needs parsed bibliographies of the scale tier; build the K2 and
   K5 parts first and finish K7 once #25 and the corpus mapping are available.
@@ -174,8 +185,6 @@ acceptance are unchanged.
 
 ### Wave A3
 
-- [ ] **#70 E8.3 arXiv LaTeX object truth** (after #68, #69, #24). Branch
-  `feat/e8.3-latex-truth`. Owns the LaTeX parser and PDF aligner used only for evaluation.
 - [ ] **#37 E2.5 Resolution gold set and evaluation** (after #25, #69). Branch `feat/e2.5-gold-set`.
   Owns `src/kb/gold/`; reports through the E8.1 `resolution` suite. Mine ~200 name and title pairs
   from parsed bibliographies in `local-articles` and the arXiv corpus, including hard negatives. Store only bibliographic
@@ -186,6 +195,51 @@ acceptance are unchanged.
 
 ### Phase A notes
 
+- #88 merged in PR #90 (`e60acb9`) after independent clearance of exact head `5a2fc45`.
+  Recovery preserved the original selection bytes, 136 public inventory proofs and all stratum
+  quotas: 15 exclusions replaced 14 original IDs, retaining 1,000 eval / 10,000 scale / 10,951
+  union papers. The 514,249-record metadata hash is unchanged. Review checked actual original,
+  staged and published bytes, pinned inventory objects and the bounded source receipt. Final
+  integrated G5 passed **305 Rust / 110 Python / 85 Node**; O30 remains 0/10k. The report and
+  `eval/evidence/corpus-availability.json` retain all checkpoints; root independently verified
+  and archived 63 raw receipts under `~/.cache/lysilogy/review-evidence/pr90/`. Worktree/branch
+  removed after a separate runtime-dependency audit confirmed the loaded eval download needs
+  only absolute corpus/cache paths. Main's source hash now matches the queued full-run guard.
+  Corpus completion and K0 acceptance remain pending; never repeat selection recovery after
+  admitting artifacts.
+- #91 merged in PR #92 (`ca7d8d7`) after final independent clearance of `a540894`.
+  New source requests use version-pinned `export.arxiv.org/src/`; exact legacy `/e-print/`
+  receipts remain valid with their original bytes, URL and fetch time. Redirects remain refused.
+  Seven new tests cover compatibility, interrupted manifest updates, identity/kind/hash rejection
+  and byte preservation. Final G5 passed **305 Rust / 87 Python / 85 Node**, O30 remains 0/10k.
+  A live run in the independently reviewed #88+#91 integration rehashed/reused `0812.5080v5.pdf`
+  and admitted its source: 21,993 bytes, SHA-256
+  `8b95087c0ab3a43d4f021459374bc52a66a4baae9211174f83984cb12f250c1d`, 3.19 s, 240,608 KiB RSS,
+  $0 model cost. Root and reviewer checked both actual files and receipts. The report and
+  `eval/evidence/corpus-source-endpoint.json` distinguish this integrated live run from the
+  standalone branch gates. Root archived and verified 35 raw receipts under
+  `~/.cache/lysilogy/review-evidence/pr92/`; branch/worktree removed. K0 remains incomplete.
+- Sequencing adjustment on 2026-09-13: #70's independent K1 construction moves from A3 to A2.
+  #25 ports bibliography detection and owns O8–O10, while the user's direct instruction requires
+  detector truth and measurements before merge. Building K1 after every A2 merge would create a
+  cycle. All #70 issue blockers (#68/#69/#24) are already closed; only its implementation wave
+  changes. No truth quality requirement, metric target, hard gate or detector merge gate is
+  relaxed. Start #70 when the corpus follow-ups free an implementation slot; keep #25 draft until
+  its real collector runs. The collector uses independent K1 IDs and UTF-16 spans, penalizes
+  missed segmentation in field accuracy, and reports unknown truth-field coverage separately.
+- #36 merged in PR #89 (`0987241`) after independent clearance of final head `11027dd`.
+  `kb::titles::title_key` folds common presentation variants while retaining negation, math
+  operators/script binding, and unknown TeX argument structure. `title_similarity` is bounded
+  multiset character-trigram Dice scoring for candidate generation; even a fuzzy score of one
+  does not establish exact equality or identity. #33 must use the shared title key for its FTS5
+  projection when resumed. Ten tests include 52 equivalent and 35 distinguishing title pairs;
+  review reproduced and fixed fraction/group, minus, Unicode-script, and escaped-brace collisions.
+  Final integrated G5 passed 305 Rust, 80 Python and 85 Node tests. O30 remains 0/10k; real
+  resolver metrics remain unavailable without truth/collectors. No gate, target or baseline
+  changed. Report `docs/experiment-reports/2026-09-13-title-normalizer.md` and evidence
+  `eval/evidence/title-normalizer.json` retain exact before/after receipts and the Unicode audit.
+  Root verified source/result/log hashes and archived 21 raw receipts at
+  `~/.cache/lysilogy/review-evidence/pr89/`; branch/worktree removed after merge.
 - #35 merged in PR #87 (`e066946`) after independent review of final head `4de6251` and
   all required gates. `kb::names` preserves raw input, unranked component alternatives, and
   coarse family/first-initial candidate keys. Particles, suffixes, compact capitals, and bare
@@ -916,3 +970,369 @@ date, last merged issue, in-flight branches and their state, next action, and op
   #21/#22; no old source fingerprints were re-attested after adding the parser. No new follow-up
   issues were opened in this checkpoint. All ten unrelated main-checkout preview changes were
   rechecked byte-for-byte against `/tmp/lysilogy-preview-before.json` and remain untouched.
+
+### 2026-09-13 — missing public PDF stops corpus; availability follow-up started
+
+- Last merged issue remains **#35 / PR #87**, merge `e066946`, progress through `26b4adc`.
+  Phase/wave **A/A2**; full goal remains active. #25 now has its own worktree
+  `.worktrees/feat/e1.2-bibliography`, branch `feat/e1.2-bibliography`, agent `finish_benchmark`.
+  It started from `26b4adc`; baseline evaluation/implementation is underway, no PR yet.
+- #36 `feat/e2.4-titles` remains in its matching worktree, agent `review_ready_prs`.
+  Independent reviewer `finish_benchmark` cleared source `1558119` after reproducing and fixing
+  math-argument minus, letter/digit script, and escaped-brace collisions. Final integrated gates,
+  evidence review, and draft PR are still required. Review probes are retained at
+  `~/.cache/lysilogy/review-titles/`.
+- #33 is **paused at a clean committed checkpoint `7fed742`**, branch `feat/e2.1-kb-store`
+  in `.worktrees/feat/e2.1-kb-store`; it has integrated main/#35. No PR, Rust gates or O28 run
+  yet. Eight Python collector tests and the local SQLite/FTS smoke passed. Missing registry
+  dependencies remain blocked on the pending exact two-host permission question described in
+  the preceding entry; no user approval or config change has arrived. Do not bypass that denial.
+- **Corpus exec session 9593 is terminal, exit 1** (handle confirmed). Metadata and selection
+  succeeded, but inventory preparation failed with `Selected PDF unavailable in public bucket:
+  1801.00600`, before any manifest/PDF/source was admitted. A new rate-coordinated OAI GetRecord
+  confirms header and metadata ID `1801.00600`, title *Static Free Space Detection with Laser
+  Scanner using Occupancy Grid Maps*, and `created=2020-06-30`; an exact-prefix GCS listing is
+  empty. The record therefore is not evidence of a parser ID mismatch. 733 selected IDs predate
+  2020 despite their OAI created years; do not rewrite upstream metadata dates without evidence.
+  The original 514,249 records, 10,951-paper frozen selection and its hash in the previous entry,
+  and fetched inventories remain intact. Log: `~/.cache/lysilogy/arxiv-corpus-proxy.log`.
+  Final receipt: **45:13.98 wall time, 3,732,208 KiB peak RSS, $0**, no PDF/source downloads.
+  There is now **no live corpus process**. Do not restart the unchanged failing command.
+- Opened **follow-up #88** on epic #67 and added it to project 12. Agent `finish_corpus_proxy`
+  switched from paused #33 to `fix/e8.2-corpus-availability`, creating its own matching worktree.
+  The fix must qualify deterministic candidates by actual public-object availability, retain exact
+  tier/category/year quotas and exclusion evidence, and provide explicit safe recovery of this
+  zero-artifact frozen run. Preserve the original selection; refuse reselection after admitted
+  artifacts; never silently shrink tiers or change pinned versions. Implement, test, independently
+  review, and perform bounded live verification before resuming the full download. No destructive
+  repair or manual selection edit has been performed.
+- Current active implementations are #25/#36/#88 (three maximum); #33's target is idle. Keep one
+  heavy gate window at a time. Next: merge reviewed #36, review/fix #88 and resume downloads;
+  continue #25 and start remaining ready #71/#72 as slots free. Scorecard unchanged: G5 passes,
+  O30=0/10k (**1/5 gates, 1/30 objectives**); historical O25/O26 misses have open #21/#22.
+  New follow-up #88 is open. All unrelated main-preview edits and unrelated worktrees remain
+  untouched; protected-file fingerprints are `/tmp/lysilogy-preview-before.json`.
+
+### 2026-09-13 — title normalizer merged; remaining A2 builders
+
+- Last merged issue: **#36 / PR #89**, merge `0987241`, independently cleared final head
+  `11027dd`. Its branch/worktree was removed after root verified and archived the raw receipts.
+  This continuation merged #35 and #36 and opened #88; the full goal remains active and
+  incomplete. Current phase/wave **A/A2**, no phase exit report yet.
+- Active #25 `feat/e1.2-bibliography` in `.worktrees/feat/e1.2-bibliography`, agent
+  `finish_benchmark`: baseline completed; bibliography/backend artifact edits are underway and
+  uncommitted, no PR. Active #88 `fix/e8.2-corpus-availability` in its matching worktree, agent
+  `finish_corpus_proxy`: 52-test corpus/O30/G5 baseline passed, availability/recovery implementation
+  is underway and uncommitted, no PR. Both began at `26b4adc` and need current-main integration
+  before final gates. Next slot is #71 `feat/e8.4-reference-truth`, agent `review_ready_prs`;
+  verify blockers #68/#63, create the worktree with `gh worktree create --branch`, then build
+  K2/K5 first and K7 after bibliography plus scale mapping. #72 remains ready in A2.
+- #33 remains paused at clean `7fed742` in `.worktrees/feat/e2.1-kb-store`. Preserve its
+  `target/kb-post-checkpoint-unfinished.patch` and `target/kb-resume-notes.md`: the patch contains
+  additional tests and an unfinished journal-stamp hardening attempt, with known misplaced/missing
+  edits; do not apply blindly. On resume, integrate #36's title key into the FTS5 projection,
+  finish/review the store, obtain actual Rust gates and the full O28 measurement, and keep G4
+  unavailable until genuine K2 exists. The K2/G4 adapter contract remains provisional and must
+  avoid a dependency on Phase B's #40 or fabricated local copies.
+- **No corpus process is running.** Session 9593 ended with the confirmed missing GCS object
+  `1801.00600`; metadata, frozen selection and inventories remain unchanged. See the preceding
+  entry for exact hashes, 514,249 metadata / 1,000 eval / 10,000 scale counts and the
+  45:13.98 / 3,732,208-KiB receipt. A cached-inventory audit covered 98 selected IDs across
+  40 complete months, with only that ID missing among those checked. #88 will retain the seed
+  and per-stratum ranking, select enough valid available objects, and freeze their versions and
+  inventory evidence. Proposed explicit `recover-selection --reason …` archives the old
+  zero-artifact selection before atomic replacement and refuses any admitted files/receipts/
+  partials or manifest entries. Root approved this implementation design; actual corpus repair
+  still awaits independent source review. Do not rerun the unchanged failing download command.
+- The exact registry-host approval is still pending: root asked to add `index.crates.io` and
+  `static.crates.io`; automatic approval review rejected persistent grants without explicit
+  authorization. Script `~/.config/lysilogy/apply-codex-rust-registry-permissions.py` is validated
+  but unapplied. No answer/config change has arrived. Continue independent work; do not bypass
+  this rejection. All three implementation slots are reserved for #25/#88/#71, with #33 paused.
+- Scorecard remains **1/5 gates (G5)** and **1/30 objectives (O30=0/10k)**; latest integrated
+  G5 count is **305 Rust / 80 Python / 85 Node**. Historical O25/O26 misses remain assigned to
+  open #21/#22. Follow-up #88 is open on epic #67/project12. The ten unrelated main-preview
+  files were checked again against `/tmp/lysilogy-preview-before.json` after the merge and are
+  byte-identical. Unrelated `/tmp` worktrees remain untouched.
+
+### 2026-09-13 — reviewed corpus recovery running; truth builders underway
+
+- Last merged issue remains **#36 / PR #89**, merge `0987241`; main progress checkpoint
+  `2c3a557`. This continuation merged #35 and #36. Phase/wave **A/A2**; the full goal remains
+  active and incomplete. No phase exit has run.
+- **Corpus recovery is live in unified exec session `80353`**, launched from reviewed source
+  `013911a` in `.worktrees/fix/e8.2-corpus-availability`. Poll that session before starting any
+  corpus mutation; process listings in other tool namespaces are not authoritative. Command:
+  `python3 -B -u scripts/corpus/corpus.py --root /home/tjmisko/Corpora/arxiv --proxy-env HTTPS_PROXY recover-selection --reason 'Selected PDF 1801.00600 is absent from the public GCS bucket (verified 2026-09-13).'`,
+  wrapped in `/usr/bin/time -v`, appending to
+  `~/.cache/lysilogy/arxiv-corpus-recovery.log`. At 07:55:19 UTC, 70 consulted inventory months
+  were checkpointed; schema-1 selection remains published and no manifest exists. The exact
+  original selection is archived under
+  `selection-recovery/c0a206cab1d997c793bd5853d1e25c24cb5f281cb30992c3e1b0f8b9445c28bb/`.
+  Do not duplicate or restart this process until its handle confirms exit. Checkpoints permit
+  the identical recovery command after an actual interruption.
+- #88 has **draft PR #90**, head `2802e44`, branch `fix/e8.2-corpus-availability` in its matching
+  worktree, agent `finish_corpus_proxy`. Independent reviewer `review_ready_prs` cleared source
+  `96b702d`; later source bytes are unchanged. Final integrated gates passed **305 Rust / 103
+  Python / 85 Node**, formatting, strict Clippy, all targets, G5 and scale evaluation; O30 is
+  0/10k. Evidence/report accurately mark live verification pending. Next: record recovery's
+  new selection hash, exact quotas, exclusions, wall time/RSS; run a bounded
+  `download --tier eval --limit 1` with the same proxy to verify both PDF and version-matched
+  source. Fold those receipts into PR90, independently review the final evidence, then merge
+  and resume the full corpus in a retained exec session. Do not detach a process from a short
+  tool namespace. K0 remains incomplete.
+- #25 `feat/e1.2-bibliography`, agent `finish_benchmark`, remains active in its matching
+  worktree, with backend bibliography/schema edits underway and no PR. #71 now owns
+  `.worktrees/feat/e8.4-reference-truth`, branch `feat/e8.4-reference-truth`, agent
+  `review_ready_prs`, based on `2c3a557`. Commit `f83c8b4` adds cache/GraphHttp original-fetch
+  provenance and a narrow provider freeze helper; 39 citation-graph tests, two helper tests
+  and strict Clippy passed. Offline K2/K5/K7 builders are next. Raw provider snapshots remain
+  external; only derived labels are committed. K2 must avoid system WorkId/PaperId dependencies;
+  K5 uses referenced works' actual field/year/OA metadata; K7 needs #25 and real scale mapping.
+- #33 remains paused at `7fed742` with its unfinished patch/resume notes preserved as above.
+  Its Rust dependencies remain unavailable. Three implementation slots are #25/#88/#71;
+  #72 is ready but has no active worktree. Use one heavy Rust gate window at a time.
+- **Exact network permission question now covers four hosts**, superseding the earlier
+  two-host question: `index.crates.io`, `static.crates.io`, `api.crossref.org` and
+  `api.openalex.org`. No approval or configuration change has arrived. The provider hosts were
+  each explicitly rejected by the effective allowlist; a direct GraphHttp probe also failed
+  without obtaining truth. Do not bypass denied hosts or assert a missing credential without
+  evidence. Automatic approval review previously rejected the two-registry-host persistent
+  grant because exact user authorization was absent. The new validated, **unapplied** script
+  `~/.config/lysilogy/apply-codex-kb-network-permissions.py` changes only those four entries;
+  `--check` passed. An approval for only two hosts would not authorize all four. After explicit
+  approval, try the exact allowed script automatically; if the Codex config mount remains
+  read-only, provide the normal-terminal command. A daemon restart is needed for effective
+  policy; save a fresh session checkpoint first. Approved OAI/GCS access and corpus storage
+  are working; export source access awaits the bounded download.
+- Scorecard remains **1/5 gates (G5)** and **1/30 objectives (O30=0/10k)**. Historical O25/O26
+  misses retain follow-ups #21/#22; #88 remains open. No targets or hard gates changed. Main
+  checkout still contains only the ten protected unrelated preview changes plus this docs
+  checkpoint; preserve those changes and all unrelated worktrees.
+
+### 2026-09-13 — recovery succeeded; PDF downloads live; source endpoint follow-up
+
+- Last merged issue remains **#36 / PR #89**, merge `0987241`; prior main progress checkpoint
+  `0030399`. This continuation merged #35/#36 and opened #88/#91. Phase/wave **A/A2**, full goal
+  incomplete. #70 has moved into A2 for the detector/truth sequencing reason recorded above.
+- **Recovery session `80353` is terminal, exit 0**: 20:25.86 wall time, 3,330,592 KiB peak RSS,
+  $0 model cost. The replacement contains **1,000 eval / 10,000 scale / 10,951 unique papers**,
+  136 immutable consulted inventories and 15 recorded exclusions; 14 original selected IDs were
+  replaced. Metadata is unchanged, original archive bytes match their hash, and the staged
+  replacement exactly matches publication. New selection hash:
+  `172d18c2eeb8a640ead81f55261619800e2728553c7b25f87a191393d25b3e5f`; file hash:
+  `5c2a5f7c556fadf947ac129040e00c9c4d68399ec067fddff5649179a0d1a686`.
+  Recovery log `~/.cache/lysilogy/arxiv-corpus-recovery.log`, SHA-256
+  `c7211489ab3a31ee10f206d25906a15bdd08476abc35f1dff8c478e27837c5ce`.
+  **Artifacts are now admitted; never run selection recovery again.**
+- Bounded verification session `97620` is terminal, exit 1 after downloading and verifying
+  `0812.5080v5.pdf`; source `/e-print/0812.5080v5` returned HTTP 301. Receipt: 4.00 s,
+  240,944 KiB peak RSS, $0; log `~/.cache/lysilogy/arxiv-corpus-bounded-verification.log`, SHA-256
+  `5dfe8b3f3cefa8c5598690bf5ecd74edf50e6021bfb030aaf32e201cd8578518`. A shared-rate-coordinated
+  no-follow probe showed the redirect stays on **export.arxiv.org**, to `/src/0812.5080v5` with
+  no query/credentials. A direct canonical request returned HTTP 200, application/gzip,
+  21,993 bytes, SHA-256 `8b95087c0ab3a43d4f021459374bc52a66a4baae9211174f83984cb12f250c1d`
+  in 0.450 s. Those probe bytes were not persisted as corpus source. Effective access to all
+  three approved corpus hosts is now verified; no additional host grant is needed for this fix.
+- **PDF-only full-union download is live in retained TTY exec session `94057`**, from reviewed
+  #88 source in `.worktrees/fix/e8.2-corpus-availability`:
+  `/usr/bin/time -v python3 -B -u scripts/corpus/corpus.py --root /home/tjmisko/Corpora/arxiv --proxy-env HTTPS_PROXY download --no-sources`,
+  appending to `~/.cache/lysilogy/arxiv-corpus-pdfs.log`. At 08:16:51 UTC it was progressing
+  through older selected IDs. Root owns this mutation. Poll its handle; do not start another
+  corpus mutator. When #91 is reviewed, root can send Ctrl-C through this TTY session to stop
+  gracefully, confirm exit/checkpoints, run the bounded source verification on schema-2-aware
+  integrated code, then prioritize the eval tier's sources and resume the remaining PDFs.
+- #88 PR #90 remains draft at `1c401e1` before its pending live-receipt docs update. Its source
+  remains reviewed; final gates at integrated `9ba9fe5` passed 75 corpus tests and G5
+  305 Rust / 103 Python / 85 Node, O30=0/10k. The implementation is paused pending **new #91**
+  on epic #67/project12. Agent `finish_corpus_proxy` is assigned `fix/e8.2-source-endpoint`, to
+  create its own worktree from current main and implement only canonical source URLs plus
+  compatibility with valid legacy receipts. It has the next heavy gate window. Preserve #88's
+  worktree/target; do not change its source during the running PDF download. Independent
+  reviewer `review_ready_prs` will review #91 before root live verification. Merge #91, integrate
+  it into #88 with an ordinary merge, finish #90's live/evidence review and merge it, then start
+  #70. No rebase is authorized under the standing restriction.
+- #25 remains in `feat/e1.2-bibliography`, agent `finish_benchmark`. Source checkpoint `084a677`
+  includes the production backend, schema2 and frontend links, with a successful pilot Playwright
+  smoke. Independent review found DOI/newline overjoining, wrapped unnumbered-entry splitting,
+  duplicate bracket-key/author-year occurrences, and a frontend figure-link fallback regression
+  inside the bibliography. Fixes and regression fixtures are in the working tree, awaiting
+  lightweight verification and commit; neither review group has final clearance yet. An offline
+  O8/O9/O10 collector and shared K1 truth contract are being implemented. No PR/real metrics yet.
+- #71 `feat/e8.4-reference-truth`, agent `review_ready_prs`, is committed through `40e1973`.
+  K2/K5 builders and freeze tooling have 22 passing Python tests; K7 compact fold construction is
+  underway. Root review fixed exact request/result identity validation, separate 128-MiB aggregate
+  versus 8-MiB response limits, seeded stratum order and request-manifest descriptor substitution.
+  Root independently reproduced the last defect before the fix and verified rejection afterward.
+  K7 will withhold the held-out citing paper's edges from every normalized view and recompute
+  derived graph features; only independently known mapped candidates enter the universe. Real
+  K2/K5 labels still require provider access; K7 requires real mapped scale/local graph inputs.
+- #33 stays paused at `7fed742` with its target notes/unfinished patch preserved. #72 is ready
+  but unstarted. The exact **four-host** permission question is still unanswered; the validated
+  config script remains unapplied. Do not bypass the previous automatic approval rejection.
+  Active implementations are #25/#71/#91; #88 awaits verification. After recovery, memory
+  recovered to about 2.7 GiB available; continue one heavy gate window at a time.
+- Scorecard remains **1/5 gates (G5)** and **1/30 objectives (O30=0/10k)**. O25/O26 misses retain
+  #21/#22; new follow-ups are #88/#91. No targets changed. All ten protected main-preview files
+  were independently fingerprinted again and remain unchanged; unrelated worktrees are intact.
+
+### 2026-09-13 — canonical source endpoint merged; priority eval download running
+
+- Last merged issue: **#91 / PR #92**, merge `ca7d8d75ebc8957cd800c1567e83cbfcdc81d727`;
+  final reviewed head `a540894`. Its worktree/branch are removed. This continuation has merged
+  #35/#36/#91 and opened #88/#91 (91 now closed). Current phase/wave **A/A2**; no phase exit.
+- **Only live corpus mutation is retained TTY exec `97363`.** It first downloads the complete
+  eval tier's PDFs/sources using loaded reviewed integration code from
+  `.worktrees/fix/e8.2-corpus-availability/scripts/corpus/corpus.py`, logging to
+  `~/.cache/lysilogy/arxiv-corpus-eval-priority.log`. On success, the same shell checks that
+  main's corpus.py SHA-256 equals
+  `82991d0ad9e4c1beb277402836426a03dff6a4ed2a886bdc4524b80ef8812930`, then runs the full corpus
+  `run` command from main, logging to `~/.cache/lysilogy/arxiv-corpus-full-resume.log`. Both
+  stages use `/usr/bin/time -v`, Python `-B -u`, root `/home/tjmisko/Corpora/arxiv` and
+  `--proxy-env HTTPS_PROXY`. A differing main source or failed eval stage stops the shell with
+  progress retained. Poll this handle before any new mutation. The first command reads its
+  config/code paths only at startup; root audited remaining `__file__` callsites, and reviewer
+  should confirm before removing that worktree. The shell's cwd is the permanent main checkout;
+  it writes no files there. Later stages use only permanent main paths.
+- PDF-only TTY session `94057` is terminal after requested Ctrl-C (tool exit 1); the root lock
+  was independently free and both manifest and sidecars agreed on **1,125 PDFs / 2,495,826,730
+  bytes**. Its time wrapper did not retain a completion footer, so no completed wall/RSS receipt
+  is claimed. Recovery `80353`, failed bounded `97620`, and successful bounded `65998` are also
+  terminal. The new bounded run took **3.19 s / 240,608 KiB**, reused the PDF and admitted source
+  `0812.5080v5`; actual bytes and source identity are verified. Receipt/log:
+  `~/.cache/lysilogy/arxiv-corpus-source-endpoint-verification.{json,log}`. The log SHA-256 is
+  `8a4d295852a8daa24801549030691e94c0c1a2b7168bdb10e91a3779c40c244a`. The standalone receipt
+  records a message-only amendment from first-fetch `a975703` to identical-tree `06dc693`,
+  independently verified by the reviewer. No reselection is permitted after artifact admission.
+- #88 / draft PR #90 now has local reviewed integration `06dc693` in its existing worktree.
+  Root resolved only documentation conflicts, retaining both fixes; all **82 corpus tests**
+  and combined fmt/strict Clippy/all-targets/O30/scale/G5 checks passed. New gate logs and commands
+  are under `target/kb-availability-integrated-06dc693/`; the generated scorecard is the only
+  temporary dirty file. Agent `finish_corpus_proxy` is resuming #88 report/evidence work, then
+  integrating this main progress checkpoint with an ordinary merge. Next: final integrated
+  receipt/review, merge90, remove its branch/worktree after runtime-dependency audit, start #70.
+  Running source bytes must remain unchanged. PR90's prior pushed receipt head was `78d91ce`.
+- #25 branch `feat/e1.2-bibliography` is clean through `9e34011`. Parser reviewer independently
+  cleared all 23 tests after corrections through `e51a865`; root independently cleared the
+  frontend bibliography mask fix at `5c2d63a` and the later frontend diff is unchanged. At
+  `1fe91cf`, typecheck/lint/build and production-backend Playwright smoke passed. The new metric
+  collector's 13 tests pass, but review found a possible stale executable when Cargo uses a
+  custom target directory; it must use/fingerprint the actual compiler artifact. That correction
+  and final current-main integration/gates remain required. K1/K2 measurements are still pending.
+- #71 agent `review_ready_prs` has normally integrated `ca7d8d7` into its existing branch and
+  is waiting for this docs checkpoint before its serial full gate window. The prior clean
+  `a3aa30b` checkpoint had 33 passing truth tests, including compact K7 mechanics, exact frozen
+  provenance and K2 field-label contracts. No actual K2/K5/K7 truth is claimed. It will retain
+  a clearly partial draft/report while live provider and mapped graph inputs remain unavailable.
+  #25 released the build window; #71 goes next, then the short #88 integration refresh.
+- #33 remains paused at `7fed742`; preserve its patch/notes, and audit canonical Person
+  identifiers on resume as well as the earlier title-key/index/metadata aggregation concerns.
+  #72 is unstarted. The exact four-host grant question is still unanswered and its validated
+  script unapplied. No provider/registry bypass, config change or new credential requirement.
+- Scorecard: **1/5 gates (G5), 1/30 objectives (O30=0/10k)**. Historical O25/O26 misses retain
+  #21/#22; #88 stays open, #91 is resolved. All protected main-preview changes and unrelated
+  worktrees remain untouched. Full eval/scale corpus acceptance and all later phases remain.
+
+
+### 2026-09-13 — availability recovery merged; LaTeX truth starts
+
+- Last merged issue: **#88 / PR #90**, merge `e60acb9865b045c1414e535864f3483c9a489f1b`,
+  final independently cleared head `5a2fc45`. This continuation has merged #35/#36/#91/#88;
+  current phase/wave **A/A2**, no phase exit. PR90's clean worktree and local/remote branch
+  are removed. Main corpus.py is exactly
+  `82991d0ad9e4c1beb277402836426a03dff6a4ed2a886bdc4524b80ef8812930`.
+- **Only live corpus mutation remains retained TTY exec `97363`.** It downloads eval PDF/source
+  pairs, currently progressing through 2021 IDs, to the external corpus root. Its loaded code
+  remains valid after worktree cleanup, independently audited. The subsequent full `run` uses
+  permanent main paths and its exact source hash guard now passes. Poll this handle; do not
+  launch another mutator. Logs remain `~/.cache/lysilogy/arxiv-corpus-eval-priority.log` and,
+  after transition, `arxiv-corpus-full-resume.log`. Prior corpus sessions are terminal as logged
+  above. All three approved corpus hosts and both storage roots have effective access.
+- Agent `finish_corpus_proxy` next starts **#70**, branch `feat/e8.3-latex-truth`, from this
+  main checkpoint. Build independent K1 from the eval corpus; parse without executing LaTeX,
+  preserve truth provenance/coverage, and use independently extracted PDF text for alignment.
+  Coordinate K1's exact UTF-16 bibliography contract with #25. Three-agent O11 panel occurs
+  only after actual candidates/evidence exist; no model calls in ordinary tests.
+- **#25** remains clean through `97067fc` in `feat/e1.2-bibliography`, agent `finish_benchmark`.
+  Parser, collector and frontend reviews are clear; collector now resolves Cargo's actual
+  compiler artifact and fingerprints its executable. Next normally merge this main checkpoint,
+  run full gates, record report/evidence and open a draft. **Hold merge until real K1/K2
+  measurements**; no detector metric is inferred from synthetic fixtures. It owns the next
+  heavy gate window. Runtime/source review notes remain in external cache.
+- **#71 / draft PR #93** is safely committed/pushed at `d5e12aa` in
+  `feat/e8.4-reference-truth`, agent `review_ready_prs`. Final integrated gates at `83b2244`
+  pass: **309 Rust / 120 Python / 85 Node**, O30=0/10k, 33 truth tests. Actual K2/K5/K7 remain
+  pending, so this partial draft must not merge. GitHub temporarily returned 502 on draft
+  creation; the later retry succeeded, with no credential issue. No running build remains.
+  The agent can start **#72** offline person-label tooling next; reuse the frozen provenance
+  contract, keep actual labels pending until approved provider access exists.
+- **#33** stays paused at `7fed742`; preserve target notes/unfinished patch and earlier review
+  concerns. Implementation slots are #25/#70/#72 with #71/#33 paused. At most one heavy Rust
+  gate window at a time. Use ordinary main merges; no rebase is authorized.
+- Exact four-host permission question remains unanswered: `index.crates.io`, `static.crates.io`,
+  `api.crossref.org`, `api.openalex.org`. The validated four-host config script is unapplied.
+  Existing provider response caches are empty. Do not bypass denied hosts or infer missing
+  credentials. The earlier automatic review rejected the persistent two-host registry grant
+  because it lacked exact user authorization; this is separate from the approved corpus hosts.
+- Scorecard remains **1/5 gates (G5), 1/30 objectives (O30=0/10k)**. Historical O25/O26 misses
+  retain #21/#22; follow-ups #88/#91 are now resolved. All ten protected main-preview files
+  remain byte-identical and unrelated worktrees are untouched. Full phase/system acceptance
+  and later phases remain outstanding.
+
+
+### 2026-09-13 — bibliography draft and independent truth checkpoints
+
+- Last merged issue remains **#88 / PR90** (`e60acb9`); main progress checkpoint `cc329dd`.
+  Current phase/wave **A/A2**. Only corpus mutator remains retained TTY exec **97363**, logging
+  eval pairs to `~/.cache/lysilogy/arxiv-corpus-eval-priority.log` before its guarded permanent-main
+  full run. It continues successfully; no new corpus process or reselection was started.
+- **#25 / draft PR #94**, branch `feat/e1.2-bibliography`, is clean/pushed at `3ff7055`, tested
+  source `b779eb1`. Both root and independent reviewer cleared that partial checkpoint: root
+  verified 28 source fingerprints, 16 final gate logs, 14 G5 logs and two screenshot hashes,
+  then inspected both screenshots. G5 **329 Rust / 124 Python / 90 Node**, 7.650 seconds;
+  all final gates 64.534 seconds, zero model calls/cost. Parser/collector/frontend source remains
+  identical to reviewed `97067fc`. Actual K1/K2 O8–O10 measurements are still required before merge.
+  A newly identified test-helper issue is being fixed by `finish_benchmark`: its inherited custom
+  Cargo target can differ from the hardcoded fixture executable path. Earlier default-target
+  measurements remain valid; add a focused regression, refresh affected gates/evidence and get
+  independent narrow review before pausing #25.
+- **#70**, `feat/e8.3-latex-truth`, agent `finish_corpus_proxy`, starts from `cc329dd`; all blockers
+  are closed. Evaluation-only archive/parser/aligner code and native reading-index helper are
+  planned under `scripts/truth/latex/` and `examples/`. The helper will map the read-only corpus PDF
+  root into dedicated `~/.cache/lysilogy/arxiv-kb-data` using canonical registry PaperIds. Preserve
+  that registry across reruns. Alignment consumes raw PDF index text/tokens, never production
+  object predictions. The fresh worktree's initial G5 found absent TypeScript dependencies;
+  the agent is reusing installed frontend dependencies and rerunning baseline, then releases
+  the heavy window for #25's narrow correction.
+- Root's read-only structural survey selected 25 actual source archives across all seven eval
+  strata from 400 available pairs. Results: 19 tar, five standalone, one above the survey's
+  32-MiB expansion cap; 20 have bibitem syntax, 14 include .bib, 17 include .bbl, four have explicit
+  bibfield/bibinfo syntax, 12 have newtheorem syntax, nine have multiple document candidates.
+  Counts include comments/definitions and are **not truth labels or K1 exclusions**. No files
+  extracted, no corpus mutation/network/model calls; 0.402 seconds, $0. Script/report are
+  `~/.cache/lysilogy/k1-source-survey.{py,json}`. Use these cases to test source-main ambiguity,
+  standalone gzip handling and explicit field-label coverage.
+- **#71 / draft PR #93** remains safely paused at `d5e12aa`, tested source `83b2244`, with no
+  actual K2/K5/K7 publication. Root independently reran all 33 truth tests, inspected K7
+  withholding/alias/provenance behavior and the Rust timestamp path, and verified 12 source hashes,
+  11 gate logs and 15 G5 logs. No additional code finding. Review receipt:
+  `~/.cache/lysilogy/review-reference-truth-root.json`. Actual input acceptance is still held.
+- **#72**, `feat/e8.5-person-labels`, agent `review_ready_prs`, is active. It reuses #71's frozen
+  provenance contract as an explicit stacked dependency. K4 mention identity is work DOI plus
+  authorship array index. Raw deposited ORCIDs back labels; profile-propagated ORCIDs alone do
+  not. Preserve raw/profile values, validate checksums, exclude conflicting slots and repeated
+  same-work ORCIDs, and report profile clustering conflicts separately. Official OpenAlex
+  documentation supports this distinction; the design/report will cite it. Clustering features
+  exclude ORCID labels and resolved OpenAlex author IDs. No actual provider access or K4 yet.
+- **#33** remains at `7fed742`, with an existing uncommitted `.gitignore` `.worktrees/` addition
+  preserved. Agent `finish_benchmark` has read its code/notes but will resume edits only after
+  #25's helper correction. Planned bounded work: aggregate all current bound observations across
+  refresh/merge/split; validate canonical Person identifiers; use shared title_key in FTS; add
+  nonunique indexed identifier lookup; resolve retained journal-prefix validation patch carefully.
+  Rust validation/O28/G4 remain unrun until registry access and actual K2 are available. Preserve
+  `target/kb-resume-notes.md` and the unfinished patch; no blind application.
+- The exact four-host grant question is still pending and the validated script remains unapplied.
+  Registry/provider restrictions are unchanged. Main preview fingerprints are unchanged. Scorecard
+  remains **1/5 gates (G5), 1/30 objectives (O30=0/10k)**; historical O25/O26 misses retain #21/#22.
+  No new missed-objective issue or target change. At most three implementations and one heavy
+  gate window; #25 transitions to #33 after its narrow correction, while #70/#72 continue.
