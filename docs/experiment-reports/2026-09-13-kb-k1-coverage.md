@@ -95,6 +95,14 @@ conservative AMS imported-namespace correction at `8a8f58c`. Its 198 pinned
 tests and 11 independent probes pass, including both original namespace/load
 findings. Stored-load and imported argument-consumer regressions are included.
 
+Main `21ef86b` was merged normally at `8f8105a`. The two collector/test conflicts
+were resolved by keeping the immutable release replay and the separately
+versioned current detector/native/graphics validation introduced by #101.
+Focused checks passed nine verifier and 31 collector tests with warnings treated
+as errors. All 74 pinned source-support, immutable truth and blind packet files
+remained byte-identical. Scoring and graphics-validation functions are unchanged
+from main; no production measurement, native build or pilot parser run occurred.
+
 The clean before checks for the affected objects and bibliography suites passed
 using an explicitly rooted, source-equivalent borrowed CLI, with all 72
 Rust/Cargo/config inputs compared against `fd024fc`. The producer source and
@@ -150,6 +158,12 @@ contracts remain the publication boundary. This pilot will measure annotation
 throughput, complete per-kind coverage and demonstrated tooling gaps before
 committing to the remaining 14 papers. Selection and packet preparation alone
 admit no truth, and the page cap introduces an explicit short-paper bias.
+
+A read-only adapter assessment identified combined visual/math bundle
+composition, typed reference roles and blinded native-export provenance as
+potential first gaps. Per-kind completeness and a manual occurrence inventory
+also need evidence-based treatment if the reconciled pilot demonstrates those
+limits. No adapter relaxation was implemented ahead of the annotations.
 
 ## Retained evidence
 
