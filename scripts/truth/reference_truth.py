@@ -323,7 +323,7 @@ def build_k2(snapshots, seeds, built_at):
             case_id = "K2-" + fingerprint([identifier, index, reference])[:24]
             cases.append({"case_id": case_id, "citing_doi": identifier, "expected_doi": expected,
                           "input": {"text": input_text, "fields": fields, "kind": kind},
-                          "field_labels": {"title": text(reference.get("article-title")) or text(reference.get("volume-title")),
+                          "field_labels": {"title": text(reference.get("article-title")),
                                            "first_author": text(reference.get("author")), "year": year_label(reference.get("year"))},
                           "eligible_bibliography": unstructured is not None,
                           "expected_identifier_in_input": exposed, "eligible_resolution": input_text is not None,

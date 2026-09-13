@@ -38,6 +38,8 @@ records that easier stratum; resolution collectors must report its coverage sepa
 from deposited reference fields. Crossref defines its citation `author` field as the
 [first author](https://www.crossref.org/documentation/schema-library/markup-guide-metadata-segments/references/).
 Numeric deposited years become strings; valid suffixes such as `2020a` remain intact.
+The title label uses `article-title`; a `volume-title` alone may name the container of a chapter
+and therefore stays an input field without being promoted to a known cited-work title.
 Only cases with actual unstructured deposited text have `eligible_bibliography=true`; a rendered
 structured input cannot establish field accuracy by repeating its own labels. Unknown labels are
 excluded individually with counts, while missing predictions for known labels count wrong.

@@ -84,6 +84,13 @@ class ReferenceTruthTests(unittest.TestCase):
                                         [{"doi": "10.1234/citing"}], AT)
                 self.assertEqual(expected, result["cases"][0]["field_labels"]["year"])
 
+    def should_leave_the_cited_title_unknown_when_only_a_container_title_is_deposited(self):
+        result = truth.build_k2([crossref([{"DOI": "10.1234/one", "volume-title": "Proceedings Volume",
+                                         "unstructured": "Example. A chapter. Proceedings Volume (2020)."}])],
+                                [{"doi": "10.1234/citing"}], AT)
+        self.assertIsNone(result["cases"][0]["field_labels"]["title"])
+        self.assertEqual("Proceedings Volume", result["cases"][0]["input"]["fields"]["volume-title"])
+
     def should_reject_wrong_identity_or_mixed_refreshes_when_crossref_sources_are_frozen(self):
         source = crossref([])
         with self.assertRaisesRegex(truth.TruthError, "identity"):
