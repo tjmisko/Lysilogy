@@ -82,3 +82,17 @@ alphabets and script grouping require independently preserved semantics. Only th
 identical micro-sign/Greek-mu encoding alias is folded in otherwise strict math alignment;
 ordinary prose emphasis remains supported. Source payloads that are PDFs are reported as
 unavailable TeX, rather than corrupt source archives.
+
+For a separately reconciled complete equation/statement/proof/algorithm inventory:
+
+```sh
+python3 -B scripts/truth/latex/manual.py \
+  --candidate k1-full-alignment-0910c35/papers/2503.05828.json \
+  --object-bundle k1-manual-annotation/2503.05828
+```
+
+The object path uses exact direct membership plus separately owned footnote/child relationships.
+It verifies both annotations and accepted reconciliation, source slices, reference roles, proof
+attribution, actual serializer bytes, and all original/detail image paths. It preserves lossy
+native math fidelity and does not claim semantic quote truth. It remains an external exploratory
+candidate until final K1 publication passes its separate cohort requirements.

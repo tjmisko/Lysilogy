@@ -37,8 +37,61 @@ def verify_panel_images(cache, packet_raw):
     return verified
 
 
+def attach_objects(cache, corpus_root, data_root, candidate_raw, paper, mapped, bundle_relative):
+    from object_annotations import apply_object_overlay
+    candidate = document(candidate_raw)
+    if candidate['index'] != mapped['index'] or candidate['paper_id'] != mapped['paper_id']:
+        raise ValueError('manual object candidate differs from frozen mapped identities')
+    artifact_paths = {}
+    for kind in ('pdf', 'source'):
+        expected = paper[kind]
+        path = safe_file(corpus_root, expected['path'])
+        actual, count = fingerprint_file(path)
+        if actual != expected['sha256'] or count != expected['bytes'] or actual != candidate[kind + '_sha256']:
+            raise ValueError('manual object source/PDF differs from frozen receipts')
+        artifact_paths[kind] = path
+    bundle_root = safe_file(cache, bundle_relative + '/packet.json').parent
+    names = ('packet.json', 'root-v1.json', 'independent-v1.json', 'independent-v1-receipt.json', 'reconciliation-independent-v1.json')
+    raws = [bounded(bundle_root, name) for name in names]
+    packet, root, independent, receipt, _ = [document(raw) for raw in raws]
+    # Verify paths the annotators actually used, in addition to the expected
+    # frozen corpus names. No hash assertion permits a different unread path.
+    inputs = independent['inputs']
+    for kind in ('pdf', 'source'):
+        if inputs[kind]['path'] != str(artifact_paths[kind]) or packet[kind] != paper[kind]:
+            raise ValueError('annotated artifact path differs from the frozen corpus receipt')
+    index_path = safe_file(data_root, mapped['index']['path'])
+    if inputs['reading_index']['path'] != str(index_path) or inputs['packet']['path'] != str(bundle_root / 'packet.json'):
+        raise ValueError('annotator packet/index path differs from the verified input')
+    serializer = receipt['serializer']
+    serializer_relative = str(Path(serializer['path']).relative_to(cache))
+    actual, count = fingerprint_file(safe_file(cache, serializer_relative), cap=32 * 1024 * 1024)
+    if actual != serializer['sha256'] or count != serializer['bytes']:
+        raise ValueError('independent annotation serializer differs from its receipt')
+    if receipt['annotation']['path'] != str(bundle_root / 'independent-v1.json'):
+        raise ValueError('independent receipt names another annotation path')
+    images = inputs['original_images'] + packet['images'] + root['page_images'] + receipt['detail_crops']
+    if root.get('supplemental_image'):
+        images.append(root['supplemental_image'])
+    verified = {}
+    for image in images:
+        declared = image['path']
+        if not isinstance(declared, str):
+            raise ValueError('manual image path must be a string')
+        path = Path(declared)
+        image_root = cache if path.is_absolute() else bundle_root
+        relative = str(path.relative_to(cache)) if path.is_absolute() else declared
+        actual, _ = fingerprint_file(safe_file(image_root, relative), cap=32 * 1024 * 1024)
+        if actual != image['sha256']:
+            raise ValueError('manual original/detail image differs from the declared path hash')
+        verified[declared] = actual
+    if artifact_paths['source'].stat().st_size > 64 * 1024 * 1024:
+        raise ValueError('manual source archive exceeds its compressed byte bound')
+    return apply_object_overlay(candidate_raw, bounded(data_root, mapped['index']['path']), artifact_paths['source'].read_bytes(), *raws, verified)
+
+
 def assemble(cache, corpus_root, data_root, candidate_relative, region_relative, panel_relative=None,
-             inputs_relative='k1-full-eval-inputs.json', indexes_relative='k1-full-index.json'):
+             inputs_relative='k1-full-eval-inputs.json', indexes_relative='k1-full-index.json', object_relative=None):
     inputs_raw, indexes_raw = bounded(cache, inputs_relative), bounded(cache, indexes_relative)
     inputs, indexes = document(inputs_raw), document(indexes_raw)
     candidate_raw = bounded(cache, candidate_relative)
@@ -47,8 +100,15 @@ def assemble(cache, corpus_root, data_root, candidate_relative, region_relative,
     mappings = [paper for paper in indexes['papers'] if paper['paper_id'] == candidate['paper_id']]
     if len(papers) != 1 or len(mappings) != 1:
         raise ValueError('manual candidate lacks unique frozen paper and mapped identities')
-    region_root = safe_file(cache, region_relative + '/regions-root-v1.json').parent
-    output = attach_manual_regions(candidate_raw, papers[0], mappings[0], corpus_root, data_root, region_root)
+    if bool(region_relative) == bool(object_relative):
+        raise ValueError('exactly one manual region/object bundle is required')
+    if object_relative:
+        if panel_relative:
+            raise ValueError('figure-ranking panel requires a figure/table region bundle')
+        output = attach_objects(cache, corpus_root, data_root, candidate_raw, papers[0], mappings[0], object_relative)
+    else:
+        region_root = safe_file(cache, region_relative + '/regions-root-v1.json').parent
+        output = attach_manual_regions(candidate_raw, papers[0], mappings[0], corpus_root, data_root, region_root)
     if panel_relative:
         read_panel = lambda name: bounded(cache, panel_relative + '/' + name)
         packet_raw = read_panel('packet.json')
@@ -66,7 +126,9 @@ def assemble(cache, corpus_root, data_root, candidate_relative, region_relative,
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--candidate', required=True)
-    parser.add_argument('--region-bundle', required=True)
+    bundles = parser.add_mutually_exclusive_group(required=True)
+    bundles.add_argument('--region-bundle')
+    bundles.add_argument('--object-bundle')
     parser.add_argument('--panel-bundle')
     parser.add_argument('--inputs', default='k1-full-eval-inputs.json')
     parser.add_argument('--indexes', default='k1-full-index.json')
@@ -79,7 +141,7 @@ def main():
         raise ValueError('manual evidence must remain within the dedicated external corpus/cache roots')
     implementation = fingerprint_sources()
     started = time.monotonic()
-    result = assemble(cache, corpus_root, data_root, args.candidate, args.region_bundle, args.panel_bundle, args.inputs, args.indexes)
+    result = assemble(cache, corpus_root, data_root, args.candidate, args.region_bundle, args.panel_bundle, args.inputs, args.indexes, args.object_bundle)
     if implementation != fingerprint_sources():
         raise ValueError('manual implementation bytes changed during assembly')
     result['manual_assembly']['implementation'] = implementation

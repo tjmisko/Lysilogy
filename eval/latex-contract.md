@@ -92,3 +92,15 @@ proof links to the nearest preceding statement. Truth records whether the associ
 an explicit source label, source structure, or separately reviewed source/PDF evidence. An
 unresolved optional heading remains unlinked rather than being overridden by proximity. This
 corrects the earlier overly narrow named-only truth contract; targets and denominators are unchanged.
+
+The manual object overlay follows the same independent-review boundary for equations, statements,
+proofs and algorithms. Both original annotations remain immutable. A separately accepted comparison
+binds both hashes, complete source IDs, object-reference source occurrences, and any reviewed
+non-object reference roles. Assembly rehashes source/PDF/index bytes, the exact annotation serializer,
+and every original/detail image path. Direct UTF-16 members and their native-text hashes remain
+separate from semantic transcription: lossy mathematical text is explicitly not quote truth.
+Source-parent/child edges preserve floating algorithms; ancillary footnotes are separate members,
+with no overlapping direct ownership. Full expected reference roles remain auditable even when
+only equation/statement references contribute to O4. All proofs retain explicit or nearest-preceding
+source association provenance. The overlay grants only its completely reviewed kinds, does not
+change the automatic candidate, and cannot itself satisfy stratified K1 publication.
