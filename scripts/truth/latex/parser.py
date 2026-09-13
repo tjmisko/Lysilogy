@@ -1,0 +1,318 @@
+"""Derive evaluation objects and links from source structure, not PDF detectors."""
+from collections import Counter
+import re
+
+from archive import Limits, UnsupportedSource, sha256
+from tex import COMMAND, Renderer, comments, definition_regions, expand_project, group, mask_regions, skip_space
+
+STANDARD_STATEMENTS = {name: name for name in ("theorem", "lemma", "corollary", "proposition", "definition", "assumption", "remark", "claim", "conjecture", "example")}
+ENVIRONMENTS = {"figure": "figure", "table": "table", "equation": "equation", "align": "equation", "gather": "equation", "multline": "equation", "eqnarray": "equation", "proof": "proof", "algorithm": "algorithm", "algorithm2e": "algorithm", "listing": "algorithm", "lstlisting": "algorithm"}
+CITES = {"cite", "citep", "citet", "citealt", "citealp", "parencite", "textcite", "autocite"}
+REFS = {"ref", "eqref", "autoref", "cref", "Cref", "vref"}
+LAYOUT_ENVIRONMENTS = {"document", "abstract", "thebibliography", "itemize", "enumerate", "description", "center", "quote", "quotation", "minipage", "tabular", "tabularx", "tabular*", "array", "split", "aligned", "alignedat", "subequations", "subfigure", "subtable", "algorithmic", "algorithmicx", "algorithmic*", "flushleft", "flushright", "IEEEkeywords", "keywords", "tikzpicture", "picture", "adjustbox", "threeparttable", "tablenotes", "multicols", "spacing", "doublespace", "singlespace", "small", "footnotesize", "landscape"}
+
+
+def equation_rows(node, text):
+    """Only top-level row separators create separately numbered equations."""
+    if node["environment"].rstrip("*") not in ("align", "gather", "eqnarray"):
+        return [node]
+    start, depth, rows, at = node["content_start"], 0, [], node["content_start"]
+    for match in COMMAND.finditer(text, node["content_start"], node["content_end"]):
+        if match.start() < at:
+            continue
+        if match[1] in ("begin", "end"):
+            _, at = group(text, match.end())
+            depth += 1 if match[1] == "begin" else -1
+        elif match[1] == "\\" and depth == 0:
+            rows.append((start, match.start()))
+            _, at = group(text, match.end(), "[", "]", False)
+            start = at
+    rows.append((start, node["content_end"]))
+    output = []
+    for start, end in rows:
+        raw = text[start:end]
+        if not raw.strip():
+            continue
+        tagged = bool(re.search(r"\\tag\*?\s*\{", raw))
+        suppressed = bool(re.search(r"\\(?:nonumber|notag)\b", raw)) or node["environment"].endswith("*")
+        if suppressed and not tagged:
+            if list(argument_commands(raw, {"label"})):
+                raise UnsupportedSource("unnumbered equation row has an ambiguous label")
+            continue
+        output.append({**node, "start": start, "content_start": start, "content_end": end, "end": end,
+                       "equation_row": True, "explicit_tag": tagged})
+    return output
+
+
+def argument_commands(text, names):
+    at = 0
+    for match in COMMAND.finditer(text):
+        if match.start() < at or match[1].rstrip("*") not in names:
+            continue
+        options = []
+        at = match.end()
+        for _ in range(2):
+            option, at = group(text, at, "[", "]", False)
+            if option is None:
+                break
+            options.append(option)
+        value, at = group(text, at)
+        yield {"command": match[1], "value": value, "options": options, "start": match.start(), "end": at}
+
+
+def bibtex_fields(files, renderer):
+    output, issues = {}, Counter()
+    for path, raw in sorted(files.items()):
+        if not path.endswith(".bib"):
+            continue
+        text = comments(raw)
+        at = 0
+        for match in re.finditer(r"@([A-Za-z]+)\s*([({])", text):
+            if match.start() < at:
+                continue
+            opening = match[2]
+            body, at = group(text, match.end() - 1, opening, ")" if opening == "(" else "}")
+            if match[1].casefold() in ("comment", "preamble", "string"):
+                if match[1].casefold() == "string":
+                    issues["bibtex_string_macro"] += 1
+                continue
+            if "," not in body:
+                issues["bibtex_entry_without_fields"] += 1
+                continue
+            key, rest = body.split(",", 1)
+            key = key.strip()
+            fields, pos = {}, 0
+            while pos < len(rest):
+                field = re.match(r"\s*,?\s*([A-Za-z-]+)\s*=\s*", rest[pos:])
+                if not field:
+                    if rest[pos:].strip(" ,\r\n\t"):
+                        issues["bibtex_unsupported_field"] += 1
+                    break
+                name = field[1].lower()
+                pos += field.end()
+                if rest[pos:pos + 1] == "{":
+                    value, pos = group(rest, pos)
+                elif rest[pos:pos + 1] == '"':
+                    end = pos + 1
+                    while end < len(rest):
+                        if rest[end] == '"' and rest[end - 1] != "\\":
+                            break
+                        end += 1
+                    if end == len(rest):
+                        raise UnsupportedSource("unterminated quoted BibTeX field")
+                    value, pos = rest[pos + 1:end], end + 1
+                else:
+                    bare = re.match(r"\d+", rest[pos:])
+                    if not bare:
+                        issues["bibtex_unresolved_field_macro"] += 1
+                        next_field = rest.find(",", pos)
+                        pos = next_field if next_field >= 0 else len(rest)
+                        continue
+                    value, pos = bare[0], pos + bare.end()
+                if rest[skip_space(rest, pos):].startswith("#"):
+                    issues["bibtex_concatenated_field"] += 1
+                    next_field = rest.find(",", pos)
+                    pos = next_field if next_field >= 0 else len(rest)
+                    continue
+                fields[name] = value
+            labels, provenance = {}, {}
+            for target, source in (("title", "title"), ("first_author", "author"), ("year", "year")):
+                if source not in fields:
+                    continue
+                value = fields[source]
+                if source == "author":
+                    value = re.split(r"\s+and\s+", value, maxsplit=1)[0]
+                before = renderer.unsupported.copy()
+                rendered = renderer.plain(value)
+                if rendered and renderer.unsupported == before and (source != "year" or re.fullmatch(r"(?:18|19|20)\d{2}[a-z]?", rendered)):
+                    labels[target] = rendered
+                    provenance[target] = {"path": path, "key": key, "field": source}
+            if key in output:
+                issues["duplicate_bibtex_key"] += 1
+                output[key] = None
+            else:
+                output[key] = {"labels": labels, "provenance": provenance}
+    return output, issues
+
+
+def markup_fields(raw, renderer):
+    labels, provenance = {}, {}
+    for match in COMMAND.finditer(raw):
+        if match[1] not in ("bibinfo", "bibfield"):
+            continue
+        name, pos = group(raw, match.end())
+        value, _ = group(raw, pos)
+        field = {"title": "title", "year": "year", "author": "first_author"}.get(name)
+        if field and field not in labels:
+            before = renderer.unsupported.copy()
+            value = renderer.plain(value)
+            if value and renderer.unsupported == before and (field != "year" or re.fullmatch(r"(?:18|19|20)\d{2}[a-z]?", value)):
+                labels[field] = value
+                provenance[field] = {"command": match[1], "field": name, "offset": match.start()}
+    return labels, provenance
+
+
+def parse_project(files, limits=Limits(), selected_main=None):
+    expanded = expand_project(files, limits, selected_main)
+    text = expanded.text
+    renderer = Renderer(text, limits)
+    scan = mask_regions(text, definition_regions(text))
+    statements = dict(STANDARD_STATEMENTS)
+    definitions, ignored = [], Counter()
+    for match in COMMAND.finditer(scan):
+        if match[1].rstrip("*") != "newtheorem":
+            continue
+        name, pos = group(text, match.end())
+        shared, pos = group(text, pos, "[", "]", False)
+        title, pos = group(text, pos)
+        within, pos = group(text, pos, "[", "]", False)
+        statements[name] = renderer.plain(title)
+        definitions.append({"environment": name, "title": statements[name], "shared_counter": shared, "within": within, "numbered": not match[1].endswith("*")})
+    stack, nodes = [], []
+    for command in argument_commands(scan, {"begin", "end"}):
+        name = command["value"]
+        if command["command"] == "begin":
+            if len(stack) >= limits.group_depth:
+                raise UnsupportedSource("environment nesting exceeds its bound")
+            option, content_start = group(text, command["end"], "[", "]", False)
+            stack.append({"environment": name, "start": command["start"], "content_start": content_start,
+                          "option": option})
+        else:
+            if not stack or stack[-1]["environment"] != name:
+                raise UnsupportedSource("unbalanced or crossing TeX environments")
+            node = stack.pop()
+            node.update(content_end=command["start"], end=command["end"])
+            nodes.append(node)
+    if stack:
+        raise UnsupportedSource("unterminated TeX environment")
+    documents = [node for node in nodes if node["environment"] == "document"]
+    if len(documents) != 1:
+        raise UnsupportedSource("expected one document environment")
+    document = documents[0]
+    nodes = [row for node in nodes for row in equation_rows(node, text)]
+    objects, numbering = [], Counter()
+    semantic_nodes = [node for node in nodes if node["environment"].rstrip("*") in statements
+                      or node["environment"].rstrip("*") in ENVIRONMENTS
+                      or node["environment"].rstrip("*") in ("subfigure", "subtable")]
+
+    def owned_commands(node, names):
+        raw = text[node["content_start"]:node["content_end"]]
+        for row in argument_commands(raw, names):
+            at = node["content_start"] + row["start"]
+            if not any(child is not node and node["start"] < child["start"] <= at < child["end"] <= node["end"] for child in semantic_nodes):
+                yield row
+
+    for node in sorted(nodes, key=lambda item: item["start"]):
+        environment = node["environment"]
+        base = environment.rstrip("*")
+        kind = "statement" if environment in statements or base in statements else ENVIRONMENTS.get(base)
+        if not kind or not document["content_start"] <= node["start"] < document["content_end"]:
+            continue
+        if kind == "equation" and environment.endswith("*") and not node.get("explicit_tag"):
+            continue  # Unnumbered display math is outside numbered-equation truth.
+        raw = text[node["content_start"]:node["content_end"]]
+        label_rows = list(owned_commands(node, {"label"}))
+        label_keys = [row["value"].strip() for row in label_rows]
+        numbering[kind] += 1
+        identity = label_keys[0] if label_keys else f"{kind}:{numbering[kind]}"
+        caption_rows = list(owned_commands(node, {"caption"}))
+        selected = caption_rows[0]["value"] if caption_rows else raw
+        before = renderer.unsupported.copy()
+        rendered = renderer.plain(selected)
+        unknown = dict(renderer.unsupported - before)
+        row = {"id": "object:" + identity, "kind": kind, "environment": environment,
+               "source_span": {"start": node["start"], "end": node["end"]},
+               "source_members": expanded.origins(node["start"], node["end"]),
+               "labels": label_keys, "text": rendered, "text_sha256": sha256(rendered.encode()),
+               "caption": rendered if caption_rows else None, "unsupported_commands": unknown,
+               "statement_type": statements.get(environment, statements.get(base)), "proof_target_labels": [],
+               "number_hint": str(numbering[kind]) if kind in ("figure", "table", "algorithm") else None}
+        if kind == "proof" and node["option"]:
+            row["proof_heading"] = renderer.plain(node["option"])
+            row["proof_target_labels"] = [item["value"].strip() for item in argument_commands(node["option"], REFS)]
+        objects.append(row)
+    bibliographies = [node for node in nodes if node["environment"] == "thebibliography"]
+    entries, entry_keys, occupied = [], set(), []
+    database, bib_issues = bibtex_fields(files, renderer)
+    ignored.update(bib_issues)
+    for bibliography in bibliographies:
+        raw = text[bibliography["content_start"]:bibliography["content_end"]]
+        markers = list(argument_commands(mask_regions(raw, definition_regions(raw)), {"bibitem"}))
+        if not markers:
+            ignored["empty_bibliography"] += 1
+        for number, marker in enumerate(markers):
+            key = marker["value"].strip()
+            if not key or key in entry_keys:
+                raise UnsupportedSource("bibliography entry key is empty or duplicated")
+            entry_keys.add(key)
+            end = markers[number + 1]["start"] if number + 1 < len(markers) else len(raw)
+            body = raw[marker["end"]:end]
+            before = renderer.unsupported.copy()
+            rendered = renderer.plain(body)
+            unknown = dict(renderer.unsupported - before)
+            field_labels, field_provenance = markup_fields(body, renderer)
+            deposited = database.get(key)
+            if deposited:
+                for field, value in deposited["labels"].items():
+                    if field not in field_labels:
+                        field_labels[field] = value
+                        field_provenance[field] = deposited["provenance"][field]
+            start = bibliography["content_start"] + marker["start"]
+            source_end = bibliography["content_start"] + end
+            entries.append({"id": key, "text": rendered, "text_sha256": sha256(rendered.encode()),
+                            "printed_key": str(number + 1) if not marker["options"] else renderer.plain(marker["options"][0]),
+                            "numeric_key_hint": str(number + 1), "field_labels": field_labels,
+                            "field_provenance": field_provenance, "source_span": {"start": start, "end": source_end},
+                            "source_members": expanded.origins(start, source_end), "unsupported_commands": unknown})
+        occupied.append((bibliography["start"], bibliography["end"]))
+    links = []
+    unsupported_citations = Counter()
+    for command in COMMAND.finditer(scan, document["content_start"], document["content_end"]):
+        if any(start <= command.start() < end for start, end in occupied):
+            continue
+        name = command[1].rstrip("*")
+        if name not in CITES and name != "nocite" and ("cite" in name.casefold()
+                or (name in renderer.macros and re.search(r"\\(?:cite|textcite|parencite|autocite)", renderer.macros[name][1]))):
+            unsupported_citations[name] += 1
+    for row in argument_commands(scan, CITES | REFS):
+        if not document["content_start"] <= row["start"] < document["content_end"] or any(start <= row["start"] < end for start, end in occupied):
+            continue
+        keys = [key.strip() for key in row["value"].split(",")]
+        if not all(keys):
+            raise UnsupportedSource("citation/reference has an empty target")
+        left = text[max(document["content_start"], row["start"] - 500):row["start"]]
+        right = text[row["end"]:min(document["content_end"], row["end"] + 500)]
+        # Trim at TeX paragraph boundaries and commands so contexts do not invent
+        # words from labels, macro arguments, or another citation.
+        left = re.split(r"\n\s*\n", left)[-1]
+        right = re.split(r"\n\s*\n", right)[0]
+        boundaries = CITES | REFS | {"label", "begin", "end", "section", "subsection", "subsubsection", "caption"}
+        previous = list(argument_commands(left, boundaries))
+        following = next((command for command in COMMAND.finditer(right) if command[1].rstrip("*") in boundaries), None)
+        if previous:
+            left = left[previous[-1]["end"]:]
+        if following:
+            right = right[:following.start()]
+        links.append({"kind": "citation" if row["command"].rstrip("*") in CITES else "reference",
+                      "command": row["command"], "targets": keys, "options": row["options"],
+                      "source_span": {"start": row["start"], "end": row["end"]},
+                      "source_members": expanded.origins(row["start"], row["end"]),
+                      "context_before": renderer.plain(left)[-200:], "context_after": renderer.plain(right)[:200]})
+    label_targets = {}
+    for row in objects:
+        for label in row["labels"]:
+            if label in label_targets:
+                raise UnsupportedSource("object label is duplicated")
+            label_targets[label] = row["id"]
+    for row in objects:
+        row["proof_targets"] = [label_targets.get(label) for label in row["proof_target_labels"]]
+    unsupported_environments = Counter(node["environment"] for node in nodes if node["environment"] not in statements and node["environment"].rstrip("*") not in statements and node["environment"].rstrip("*") not in ENVIRONMENTS)
+    unknown_environments = {name: count for name, count in unsupported_environments.items() if name not in LAYOUT_ENVIRONMENTS}
+    return {"main": expanded.main, "source_map": expanded.pieces, "objects": objects, "entries": entries, "links": links,
+            "label_targets": label_targets, "statement_definitions": definitions,
+            "coverage": {**expanded.coverage, "unsupported_commands": dict(renderer.unsupported),
+                         "other_environments": dict(unsupported_environments), "issues": dict(ignored),
+                         "unsupported_object_environments": unknown_environments,
+                         "objects_by_kind": dict(Counter(row["kind"] for row in objects)),
+                         "bibliography_entries": len(entries), "citation_commands": sum(row["kind"] == "citation" for row in links),
+                         "unsupported_citation_commands": dict(unsupported_citations)}}
