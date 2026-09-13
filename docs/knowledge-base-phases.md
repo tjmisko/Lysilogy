@@ -572,3 +572,30 @@ date, last merged issue, in-flight branches and their state, next action, and op
   real 10k baseline when storage permits, then advance to A2. Preserve main's ten unrelated
   PDF-preview files; the last hash check found no changes. An attempted npm cache directory in
   main was safely removed by its creator; use existing dependencies via worktree symlinks.
+
+### 2026-09-12 — content identity merged, benchmark is the remaining A1 issue
+
+- Last merged issue: #20 / PR #80 (`94ddacc`). Both review reproductions were independently
+  rerun against the fixed code and cleared. Final gates passed 275 Rust tests, frontend checks
+  and targeted tests, G5, and O30. Branch/worktree removed; retained evidence remains in Git.
+  Current phase/wave A/A1. Planned issues #34, #24, #20, #63, #68, and #69 are merged; only #19
+  remains in A1. Follow-up #79 is also merged and closed. Scorecard unchanged: 1/5 hard gates,
+  1/30 objectives at target; other metrics unavailable, no measured objective misses.
+- In flight: #19, branch `feat/e0.1-scale-bench`, worktree at the corresponding `.worktrees/feat/`
+  path; no PR yet. It includes current content identity and the final G5 linker correction.
+  Runner code measures discovered and populated catalog rescans separately, real extractor
+  capacity, and actual Playwright home/search against an isolated running backend. O25 publishes
+  only the populated-artifact 10k case, O26 requires real 10k browser measurements, and O27 waits
+  for the production ingest worker implementation. Tiny verification must never publish scale
+  metrics. Source and run provenance are fingerprinted independently of O30's collector.
+- Early independent generator review found two concrete storage defects: an existing matching
+  file behind a symlinked parent bypasses validation, and swapping a checked parent during
+  temporary publication can redirect writes. Implementer is replacing path-based operations
+  with no-follow directory descriptors and adding both regressions; reuse the safe operations
+  for runner output and manifest reads. Final generator/runner review and gates are still needed.
+- Background downloads: none. The default 10k generation command was attempted again and
+  failed with EROFS at `~/.cache/lysilogy` before creating a PDF. Corpus/cache storage and arXiv
+  metadata network access remain blocked; the sandbox-update question is pending. No full
+  benchmark baseline or K0 exists. Next action: finish/review #19, run actual measurements when
+  the environment permits, and advance to A2 only after A1's benchmark acceptance is complete.
+  The latest fingerprint check again confirmed all ten unrelated main-checkout files unchanged.
