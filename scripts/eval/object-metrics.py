@@ -23,7 +23,8 @@ CONFIG = 'eval/truth/k1-limited-v1-build.json'
 TRACE = 'eval/inputs/evidence/object-metrics.json'
 INPUT = 'eval/inputs/objects/figure-table.json'
 KINDS = ('figure', 'table')
-VERSION = 'figure-table-metrics-v4'
+VERSION = 'figure-table-metrics-v5'
+TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2')
 NATIVE_BASIS_FORMAT = 'native-json-f32-v1'
 DETECTOR_VERSION = 2
 MAX_JSON = 32 * 1024 * 1024
@@ -357,19 +358,27 @@ def atomic_json(path, value):
         finally:pending.unlink(missing_ok=True)
 
 
-def implementation_files(repo):
-    files=[CONFIG,'eval/native-basis-vectors.json','Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
+def release_paths(version):
+    require(version in TRUTH_VERSIONS, 'unsupported collector truth version')
+    return {'truth': 'eval/truth/' + version + '/objects.json',
+            'config': 'eval/truth/' + version + '-build.json',
+            'trace': TRACE if version == TRUTH_VERSIONS[0] else 'eval/inputs/evidence/object-metrics-' + version + '.json',
+            'input': INPUT if version == TRUTH_VERSIONS[0] else 'eval/inputs/objects/figure-table-' + version + '.json'}
+
+
+def implementation_files(repo, truth_version=TRUTH_VERSIONS[0]):
+    files=[release_paths(truth_version)['config'],'eval/native-basis-vectors.json','Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
     for root in ('src','scripts/truth/latex'):
         if (repo/root).is_dir():
             files.extend(str(p.relative_to(repo)) for p in (repo/root).rglob('*') if p.is_file() and p.suffix in ('.rs','.py') and not p.name.startswith('test'))
-    retained=repo/'eval/implementations/k1-limited-v1'
+    retained=repo/'eval/implementations'/truth_version
     if retained.is_dir():
         files.extend(str(p.relative_to(repo)) for p in retained.iterdir() if p.is_file() and (p.suffix=='.py' or p.name=='manifest.json'))
     return sorted(set(files))
 
 
-def build_bridge(repo):
-    sources={p:digest(read(repo/p)) for p in implementation_files(repo)}
+def build_bridge(repo, truth_version=TRUTH_VERSIONS[0]):
+    sources={p:digest(read(repo/p)) for p in implementation_files(repo,truth_version)}
     environment=dict(os.environ,CARGO_BUILD_JOBS='1',CARGO_PROFILE_DEV_DEBUG='0',CARGO_PROFILE_TEST_DEBUG='0',CARGO_INCREMENTAL='0',CARGO_NET_OFFLINE='true',CARGO_TARGET_DIR=str(repo/'target'))
     environment.pop('CARGO_BUILD_TARGET',None)
     command=['cargo','build','--offline','--example','object_metrics','--message-format=json']
@@ -380,7 +389,7 @@ def build_bridge(repo):
     expected=repo/'target/debug/examples/object_metrics'
     require(len(artifacts)==1 and artifacts[0]['executable']==str(expected) and artifacts[0]['target'].get('src_path')==str(repo/'examples/object_metrics.rs') and artifacts[0]['target'].get('kind')==['example'],'Cargo selected another executable')
     require(sources=={p:digest(read(repo/p)) for p in sources},'source changed during bridge build')
-    receipt={'schema_version':1,'command':command,'implementation':sources,'executable_sha256':digest(read(expected,128*1024*1024)),'cargo_stdout_sha256':digest(result.stdout),'cargo_stderr_sha256':digest(result.stderr),'selected_artifact':artifacts[0],'wall_seconds':time.monotonic()-started}
+    receipt={'schema_version':1,'truth_version':truth_version,'command':command,'implementation':sources,'executable_sha256':digest(read(expected,128*1024*1024)),'cargo_stdout_sha256':digest(result.stdout),'cargo_stderr_sha256':digest(result.stderr),'selected_artifact':artifacts[0],'wall_seconds':time.monotonic()-started}
     cache=Path.home()/'.cache/lysilogy/object-metrics/builds'/digest(canonical(receipt))
     cache.mkdir(parents=True,exist_ok=True)
     for name,raw in [('cargo.jsonl',result.stdout),('stderr.log',result.stderr)]:
@@ -394,25 +403,28 @@ def build_bridge(repo):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--truth-version', choices=TRUTH_VERSIONS, default=TRUTH_VERSIONS[0], help='Explicit immutable cohort; each version writes separate observations and harness input')
     parser.add_argument('--build',action='store_true',help='Build the exact worktree bridge and freeze its Cargo receipt')
     parser.add_argument('--executable',type=Path,help='Cargo-built object_metrics executable in this worktree target/debug/examples')
     args=parser.parse_args();started=time.monotonic()
+    paths=release_paths(args.truth_version)
     if args.build:
-        build_bridge(ROOT);return
+        build_bridge(ROOT,args.truth_version);return
     require(args.executable is not None, '--executable is required for measurement')
     cache=Path.home()/'.cache/lysilogy';corpus=Path.home()/'Corpora/arxiv';data=cache/'arxiv-kb-data'
     expected=ROOT/'target/debug/examples/object_metrics'
     # A mutable receipt alone never establishes a current executable. Invoke
     # Cargo on every measurement and verify its exact selected artifact.
-    build_bridge(ROOT)
+    build_bridge(ROOT,args.truth_version)
     require(args.executable.absolute()==expected, 'executable must be the current worktree example')
     executable_raw=read(expected,128*1024*1024);executable_hash=digest(executable_raw)
     # Cargo JSON output binds the executable to its build, target, source and
     # dependency graph; inherited CARGO_TARGET_DIR/CARGO_BUILD_TARGET cannot select it.
     build= document(read(ROOT/'target/object-metrics-build.json'))
-    sources={path:digest(read(ROOT/path)) for path in implementation_files(ROOT)}
-    require(build['executable_sha256']==executable_hash and build['implementation']==sources, 'executable build receipt is stale')
-    truth_raw=read(ROOT/TRUTH);truth,config,truth_verification_before=validate_truth(ROOT,cache,corpus,data,truth_raw,True)
+    sources={path:digest(read(ROOT/path)) for path in implementation_files(ROOT,args.truth_version)}
+    require(build['truth_version']==args.truth_version and build['executable_sha256']==executable_hash and build['implementation']==sources, 'executable build receipt is stale')
+    truth_raw=read(ROOT/paths['truth']);truth,config,truth_verification_before=validate_truth(ROOT,cache,corpus,data,truth_raw,True)
+    require(truth['version']==args.truth_version and config['version']==args.truth_version, 'selected collector truth version differs')
     papers=[p for p in truth['papers'] if p['metric_eligibility']['O1']]
     require([p['paper_id'] for p in papers]==truth['coverage']['cohort_papers']['O1'] and papers,'incomplete frozen detection cohort')
     registry_path=data/'paper-identities.json';registry_raw=read(registry_path)
@@ -445,7 +457,7 @@ def main():
         tracked.update(derivation['graphics']['trace_hashes'])
         object_hashes[paper['paper_id']]={'rust_serialized_sha256':row['object_sha256'],'canonical_sha256':digest(canonical(artifact)),'derivation':derivation}
         metrics.append(evaluate_paper(paper,artifact,indexes[paper['paper_id']]))
-    require(sources=={p:digest(read(ROOT/p)) for p in sources} and read(ROOT/TRUTH)==truth_raw and digest(read(expected,128*1024*1024))==executable_hash,'measurement source or truth changed')
+    require(sources=={p:digest(read(ROOT/p)) for p in sources} and read(ROOT/paths['truth'])==truth_raw and digest(read(expected,128*1024*1024))==executable_hash,'measurement source or truth changed')
     for path,expected_hash in tracked.items():require(digest(read(Path(path),512*1024*1024))==expected_hash,'canonical input changed during measurement')
     _,_,truth_verification_after=validate_truth(ROOT,cache,corpus,data,truth_raw,True)
     require(sources=={p:digest(read(ROOT/p)) for p in sources},'measurement source changed during final truth replay')
@@ -457,10 +469,10 @@ def main():
     run_root=cache/'object-metrics'/digest(result.stdout)
     atomic_json(run_root/'predictions.json',response)
     observation['predictions_sha256']=digest(canonical(response)+b'\n')
-    atomic_json(ROOT/TRACE,observation)
+    atomic_json(ROOT/paths['trace'],observation)
     evidence=lambda p,v:{'path':p,'version':v,'sha256':digest(read(ROOT/p))}
-    payload={'schema_version':1,'suite':'objects','collector':VERSION,'implementation':[evidence(p,VERSION) for p in sources],'truth_sets':{'K1':evidence(TRUTH,truth['version'])},'metrics':{'O1':{'sample':{'method':'f1','true_positive':totals['tp'],'false_positive':totals['fp'],'false_negative':totals['fn']},'cases':totals['truth_objects'],'evidence':[evidence(TRACE,VERSION)]},'O2':{'sample':{'method':'median','values':values},'cases':len(values),'evidence':[evidence(TRACE,VERSION)]}},'cost_usd':0,'wall_seconds':observation['wall_seconds']}
-    atomic_json(ROOT/INPUT,payload)
+    payload={'schema_version':1,'suite':'objects','collector':VERSION,'implementation':[evidence(p,VERSION) for p in sources],'truth_sets':{'K1':evidence(paths['truth'],truth['version'])},'metrics':{'O1':{'sample':{'method':'f1','true_positive':totals['tp'],'false_positive':totals['fp'],'false_negative':totals['fn']},'cases':totals['truth_objects'],'evidence':[evidence(paths['trace'],VERSION)]},'O2':{'sample':{'method':'median','values':values},'cases':len(values),'evidence':[evidence(paths['trace'],VERSION)]}},'cost_usd':0,'wall_seconds':observation['wall_seconds']}
+    atomic_json(ROOT/paths['input'],payload)
     print(json.dumps({k:observation[k] for k in ('summary','O1','O2','matched_only_median','wall_seconds')},sort_keys=True))
 
 

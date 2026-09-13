@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replay the one retained K1 release with its exact reviewed implementation.
+"""Replay a fixed K1 release with its exact reviewed implementation.
 
 The fixed manifest selects application-owned code, never deposited TeX or a
 caller-supplied module. The worker has a separate module namespace and cannot
@@ -22,6 +22,11 @@ MANIFEST_SHA256 = '770ba066d41931f3fae8682ead5216214de780c2d3349ff12da1f35b685dd
 MODULES = {'align.py', 'annotations.py', 'archive.py', 'bibliography_annotations.py',
            'builder.py', 'corpus.py', 'manual.py', 'object_annotations.py', 'panel.py',
            'parser.py', 'release.py', 'tex.py'}
+CURRENT_VERSION = 'k1-limited-v2'
+CURRENT_MODULES = MODULES | {'native_exports.py', 'tranche.py'}
+# Filled only after the separately reviewed immutable release is constructed.
+# An unpublished version cannot be selected successfully.
+CURRENT_MANIFEST_SHA256 = None
 MAX_DOCUMENT = 1024 * 1024
 
 
@@ -56,31 +61,46 @@ def document(raw):
                       parse_constant=lambda _: require(False, 'nonfinite verifier JSON'))
 
 
+def release_spec(version):
+    require(version in (VERSION, CURRENT_VERSION), 'unsupported retained truth version')
+    if version == VERSION:
+        return MANIFEST_SHA256, MODULES
+    require(CURRENT_MANIFEST_SHA256 is not None, 'truth version is not published')
+    return CURRENT_MANIFEST_SHA256, CURRENT_MODULES
+
+
 def verified_bundle(repo, version):
-    require(version == VERSION, 'unsupported retained truth version')
-    bundle = Path(repo) / 'eval/implementations' / VERSION
+    manifest_hash, modules = release_spec(version)
+    bundle = Path(repo) / 'eval/implementations' / version
     raw = read(bundle / 'manifest.json')
-    require(digest(raw) == MANIFEST_SHA256, 'retained verifier manifest differs')
+    require(digest(raw) == manifest_hash, 'retained verifier manifest differs')
     manifest = document(raw)
-    require(manifest['schema_version'] == 1 and manifest['release'] == version
-            and set(manifest['files']) == MODULES, 'retained verifier inventory differs')
+    require(type(manifest['schema_version']) is int and manifest['schema_version'] == 1
+            and manifest['release'] == version and set(manifest['files']) == modules,
+            'retained verifier inventory differs')
     for name, row in manifest['files'].items():
+        expected = 'scripts/corpus/corpus.py' if name == 'corpus.py' else 'scripts/truth/latex/' + name
+        require(row['source_path'] == expected, 'verifier source path differs')
         raw = read(bundle / name)
-        require(digest(raw) == row['sha256'] and len(raw) == row['bytes'],
+        require(digest(raw) == row['sha256'] and type(row['bytes']) is int and len(raw) == row['bytes'],
                 'retained verifier module differs: ' + name)
     return bundle, manifest
 
 
 def pinned_release(repo, version):
     bundle, manifest = verified_bundle(repo, version)
-    raw = read(Path(repo) / 'eval/truth' / VERSION / 'objects.json')
-    bibliography_raw = read(Path(repo) / 'eval/truth' / VERSION / 'bibliography.json')
-    config_raw = read(Path(repo) / 'eval/truth/k1-limited-v1-build.json')
+    raw = read(Path(repo) / 'eval/truth' / version / 'objects.json')
+    bibliography_raw = read(Path(repo) / 'eval/truth' / version / 'bibliography.json')
+    config_raw = read(Path(repo) / 'eval/truth' / (version + '-build.json'))
     require(digest(raw) == manifest['outputs']['objects.json']
             and digest(bibliography_raw) == manifest['outputs']['bibliography.json']
             and digest(config_raw) == manifest['config_sha256'], 'immutable release bytes differ')
     truth, config = document(raw), document(config_raw)
-    require(truth['version'] == config['version'] == version, 'release selects another verifier')
+    bibliography = document(bibliography_raw)
+    require(truth['version'] == config['version'] == version
+            and bibliography['version'] == version + '-bibliography',
+            'release selects another verifier')
+    require(bibliography['provenance'] == truth['provenance'], 'release provenance differs by payload')
     require(truth['provenance']['build_config_sha256'] == manifest['config_sha256'],
             'release configuration provenance differs')
     for row in manifest['files'].values():
@@ -93,7 +113,7 @@ def load_modules(repo, version):
     """Compile verified bytes directly, without searching a bundle or bytecode cache."""
     require(sys.flags.isolated and sys.flags.dont_write_bytecode, 'verifier requires isolated Python')
     bundle, manifest = verified_bundle(repo, version)
-    require(not any(Path(name).stem in sys.modules for name in MODULES),
+    require(not any(Path(name).stem in sys.modules for name in CURRENT_MODULES),
             'verifier module namespace is contaminated')
     sources = {}
     for name, row in manifest['files'].items():
@@ -135,6 +155,7 @@ def replay(repo, cache, corpus, data, version=VERSION):
     """Validate in a fresh interpreter; return unchanged historical labels/config."""
     repo = Path(repo).absolute()
     _, manifest, truth_raw, _, config_raw = pinned_release(repo, version)
+    manifest_hash, _ = release_spec(version)
     worker = repo / 'scripts/truth/latex/versioned.py'
     worker_hash = digest(read(worker))
     request = {'repo': str(repo), 'cache': str(cache), 'corpus': str(corpus),
@@ -144,7 +165,7 @@ def replay(repo, cache, corpus, data, version=VERSION):
                             check=True, timeout=90, cwd=repo)
     require(len(result.stdout) <= MAX_DOCUMENT, 'retained verifier response exceeds its bound')
     receipt = document(result.stdout)
-    require(receipt['version'] == version and receipt['manifest_sha256'] == MANIFEST_SHA256
+    require(receipt['version'] == version and receipt['manifest_sha256'] == manifest_hash
             and receipt['outputs'] == manifest['outputs'] and receipt['reproduced'] is True,
             'retained verifier returned another release')
     require(digest(read(worker)) == worker_hash, 'verifier worker changed during replay')
@@ -175,10 +196,14 @@ def worker(request):
     require(before == config['evidence_sha256'] == truth['provenance']['evidence_sha256'],
             'original evidence provenance differs')
     inputs = document(manual.bounded(cache, config['inputs']))
-    assemblies = [manual.assemble(cache, corpus, data, p['candidate'], p.get('region_bundle'),
-                                  p.get('panel_bundle'), config['inputs'], config['indexes'],
-                                  p.get('object_bundle'), p.get('bibliography_bundle')) for p in config['papers']]
-    sources = {name: read(bundle / name) for name in ('archive.py', 'tex.py', 'parser.py', 'align.py', 'builder.py')}
+    assemblies = []
+    for p in config['papers']:
+        args = (cache, corpus, data, p['candidate'], p.get('region_bundle'), p.get('panel_bundle'),
+                config['inputs'], config['indexes'], p.get('object_bundle'), p.get('bibliography_bundle'))
+        assemblies.append(manual.assemble(*args) if request['version'] == VERSION
+                          else manual.assemble(*args, p.get('tranche_bundle')))
+    sources = {name: read(bundle / name)
+               for name in ('archive.py', 'tex.py', 'parser.py', 'align.py', 'builder.py')}
     history = release.validate_automatic_reports(cache, config, inputs, before, sources)
     objects, bibliography = release.build_release(assemblies, config, inputs, history)
     objects['provenance'] = truth['provenance']
@@ -188,7 +213,8 @@ def worker(request):
     require(outputs == manifest['outputs'], 'retained implementation cannot reproduce original labels')
     require(release.verify_evidence(cache, config) == before, 'review evidence changed during replay')
     pinned_release(repo, request['version'])
-    return {'schema_version': 1, 'version': VERSION, 'manifest_sha256': MANIFEST_SHA256,
+    return {'schema_version': 1, 'version': request['version'],
+            'manifest_sha256': release_spec(request['version'])[0],
             'outputs': outputs, 'reproduced': True, 'module_hashes': manifest['files'],
             'evidence_hashes': before, 'wall_seconds': time.monotonic() - started,
             'network_calls': 0, 'model_calls': 0, 'cost_usd': 0}

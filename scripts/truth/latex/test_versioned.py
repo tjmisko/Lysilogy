@@ -2,6 +2,7 @@
 import importlib.util
 import json
 import marshal
+import re
 from pathlib import Path
 import shutil
 import struct
@@ -29,22 +30,92 @@ def fixture(directory):
     return repo, bundle
 
 
-def imports_in_worker(repo, contaminate=False):
+def imports_in_worker(repo, contaminate=False, version=versioned.VERSION):
     code = '''import importlib.util,json,pathlib,sys,types
 repo=pathlib.Path(sys.argv[1])
 spec=importlib.util.spec_from_file_location('versioned',repo/'scripts/truth/latex/versioned.py')
 module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
 original_path=sys.path[:]
 if sys.argv[2]=='yes':sys.modules['parser']=types.ModuleType('parser')
-loaded=module.load_modules(repo,module.VERSION)
+loaded=module.load_modules(repo,sys.argv[3])
 assert sys.path==original_path
 print(json.dumps({name:str(value.__file__) for name,value in loaded.items()},sort_keys=True))
 '''
     return subprocess.run([sys.executable, '-I', '-B', '-c', code, str(repo),
-                           'yes' if contaminate else 'no'], capture_output=True, timeout=10)
+                           'yes' if contaminate else 'no', version], capture_output=True, timeout=10)
+
+
+def second_fixture(directory):
+    """Synthetic publication pins; no real new release or manual labels."""
+    repo, _ = fixture(directory)
+    version = versioned.CURRENT_VERSION
+    bundle = repo / 'eval/implementations' / version
+    bundle.mkdir()
+    files = {}
+    for name in versioned.CURRENT_MODULES:
+        relative = 'scripts/corpus/corpus.py' if name == 'corpus.py' else 'scripts/truth/latex/' + name
+        raw = (ROOT / relative).read_bytes()
+        (bundle / name).write_bytes(raw)
+        files[name] = {'source_path': relative, 'sha256': versioned.digest(raw), 'bytes': len(raw)}
+    canonical = lambda value: json.dumps(value, sort_keys=True, separators=(',', ':')).encode() + b'\n'
+    config = canonical({'version': version})
+    provenance = {'build_config_sha256': versioned.digest(config),
+                  'implementation': {row['source_path']: row['sha256'] for row in files.values()}}
+    payload = canonical({'version': version, 'provenance': provenance, 'papers': []})
+    truth = repo / 'eval/truth' / version
+    truth.mkdir()
+    bibliography = canonical({'version': version + '-bibliography', 'provenance': provenance, 'papers': []})
+    (truth / 'objects.json').write_bytes(payload)
+    (truth / 'bibliography.json').write_bytes(bibliography)
+    (truth.parent / (version + '-build.json')).write_bytes(config)
+    manifest = {'schema_version': 1, 'release': version, 'files': files,
+                'config_sha256': versioned.digest(config),
+                'outputs': {'objects.json': versioned.digest(payload),
+                            'bibliography.json': versioned.digest(bibliography)}}
+    raw = canonical(manifest)
+    (bundle / 'manifest.json').write_bytes(raw)
+    manifest_hash = versioned.digest(raw)
+    worker = repo / 'scripts/truth/latex/versioned.py'
+    worker.write_text(re.sub(r'^CURRENT_MANIFEST_SHA256 = .*$',
+                            'CURRENT_MANIFEST_SHA256 = ' + repr(manifest_hash),
+                            worker.read_text(), flags=re.M))
+    return repo, bundle, manifest_hash
 
 
 class VersionedTests(unittest.TestCase):
+    def test_should_reject_unpublished_truth_when_no_reviewed_release_pin_exists(self):
+        with patch.object(versioned, 'CURRENT_MANIFEST_SHA256', None):
+            with self.assertRaisesRegex(ValueError, 'not published'):
+                versioned.pinned_release(ROOT, versioned.CURRENT_VERSION)
+
+    def test_should_select_separate_retained_sources_when_a_second_release_is_requested(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, bundle, manifest_hash = second_fixture(directory)
+            with patch.object(versioned, 'CURRENT_MANIFEST_SHA256', manifest_hash):
+                _, manifest, _, _, _ = versioned.pinned_release(repo, versioned.CURRENT_VERSION)
+                self.assertEqual(set(manifest['files']), versioned.CURRENT_MODULES)
+                # The old release still selects its original 12 source files.
+                self.assertEqual(len(versioned.pinned_release(repo, versioned.VERSION)[1]['files']), 12)
+                (repo / 'scripts/truth/latex/parser.py').write_text('raise RuntimeError("mutable source")')
+                loaded = imports_in_worker(repo, version=versioned.CURRENT_VERSION)
+                self.assertEqual(loaded.returncode, 0, loaded.stderr.decode())
+                self.assertTrue(all(Path(path).parent == bundle for path in json.loads(loaded.stdout).values()))
+                (bundle / 'tranche.py').write_bytes(b'changed')
+                with self.assertRaisesRegex(ValueError, 'module differs'):
+                    versioned.pinned_release(repo, versioned.CURRENT_VERSION)
+
+    def test_should_reject_cross_version_payloads_when_new_release_files_are_replaced(self):
+        for relative in ('objects.json', 'bibliography.json', 'config'):
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as directory:
+                repo, _, manifest_hash = second_fixture(directory)
+                truth = repo / 'eval/truth'
+                source = truth / ('k1-limited-v1-build.json' if relative == 'config' else 'k1-limited-v1/' + relative)
+                target = truth / ('k1-limited-v2-build.json' if relative == 'config' else 'k1-limited-v2/' + relative)
+                target.write_bytes(source.read_bytes())
+                with patch.object(versioned, 'CURRENT_MANIFEST_SHA256', manifest_hash):
+                    with self.assertRaisesRegex(ValueError, 'immutable release bytes differ'):
+                        versioned.pinned_release(repo, versioned.CURRENT_VERSION)
+
     def test_should_pin_original_implementation_and_outputs_when_the_release_is_selected(self):
         _, manifest, objects, bibliography, config = versioned.pinned_release(ROOT, versioned.VERSION)
         self.assertEqual(len(manifest['files']), 12)

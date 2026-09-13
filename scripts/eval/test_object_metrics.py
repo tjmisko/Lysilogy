@@ -28,6 +28,23 @@ def fixture():
 
 
 class ObjectMetricTests(unittest.TestCase):
+    def should_preserve_prior_measurements_when_a_second_truth_version_is_selected(self):
+        original=m.release_paths('k1-limited-v1');expanded=m.release_paths('k1-limited-v2')
+        self.assertEqual(original,{'truth':m.TRUTH,'config':m.CONFIG,'trace':m.TRACE,'input':m.INPUT})
+        self.assertTrue(all(original[key]!=expanded[key] for key in original))
+        self.assertIn('eval/truth/k1-limited-v2-build.json',m.implementation_files(m.ROOT,'k1-limited-v2'))
+        for version in ('../k1-limited-v1','latest','',None):
+            with self.subTest(version=version),self.assertRaisesRegex(ValueError,'unsupported collector truth version'):
+                m.release_paths(version)
+
+    def should_dispatch_the_selected_cohort_when_new_truth_is_validated(self):
+        truth={'schema_version':1,'truth_set':'K1','origin':'arxiv-latex','version':'k1-limited-v2'}
+        adapter=SimpleNamespace(replay=lambda *args:(truth,{'version':args[-1]},{'version':args[-1]}))
+        with patch.object(m,'truth_verifier',return_value=adapter):
+            got=m.validate_truth(m.ROOT,Path('/cache'),Path('/corpus'),Path('/data'),m.canonical(truth)+b'\n',True)
+        self.assertEqual(got[1]['version'],'k1-limited-v2')
+        self.assertEqual(got[2]['version'],'k1-limited-v2')
+
     def should_select_the_original_version_when_current_parser_and_detector_sources_have_changed(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);source=root/'src/source_index/figures.rs'

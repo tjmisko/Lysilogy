@@ -281,3 +281,16 @@ operator, with the star selecting limits behavior and a preamble-only guard.
 The inspected file SHA-256 is
 `c50239a5acc1037ff4df482878e5546be3cd9b8ac725151bc14748a103d800a8`.
 The implementation reads no installed TeX files at runtime and executes no TeX.
+
+The fixed version adapter supports the historical `k1-limited-v1` and the bounded
+`k1-limited-v2` release. V1's twelve retained source files, manifest, configuration
+and payloads remain unchanged. V2 retains fourteen exact application modules,
+adding the native-export and manual-tranche validators, under its own manifest.
+Each version's manifest hash is pinned in the adapter and binds the original
+configuration, output hashes and module bytes. An unpublished version has no pin
+and cannot be selected. The isolated worker compiles only that selected retained
+inventory; mutable parser files and cached bytecode cannot supply its semantics.
+Replay checks the complete source/evidence history and reproduces both payloads,
+without publishing files or executing deposited TeX. This permits later parser
+changes while preserving both prior baselines. The three-paper release is the
+bounded work in issue #105; issue #97's approximately 500-paper target stays open.
