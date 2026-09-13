@@ -2774,3 +2774,109 @@ date, last merged issue, in-flight branches and their state, next action, and op
   remain#21/#22; title component#103; coverage#97. Follow-ups opened this continuation:
   #97,#98,#101,#103. All later phases, final running-app Playwright, all-gate/80%-objective
   evaluation, actual10k scenario and final system report remain outstanding.
+
+### 2026-09-13 — bibliography integration reviewed; broader truth work selected
+
+- **Phase A / Wave A2**, main `d51ff9533184bbdb1f570dc960540e503407f3d9`; last merged
+  issue **#101 / PR104** (`a54de426d6691c013e5ea4b3333e7027d7103335`). Its worktree and
+  branches are removed. Earlier continuation merges: #35, #36, #91, #88, #70, #98, #96.
+  Main's ten unrelated PDF-preview files still exactly match
+  `/tmp/lysilogy-preview-before.json`; mutate only docs in this checkout.
+- Main scorecard remains **1/5 hard gates (G5), 3/30 objectives (O1, O2, O30)**.
+  Actual limited-K1 O1=1.0 (15TP/0FP/0FN), O2=0.9107793204006069 over all15 bodies.
+  This two-paper release is not broad coverage. Preserve all original and failed exploratory
+  detector results. Historical O25/O26 misses remain #21/#22; title-field misses remain #103.
+- **#25 / draft PR94** is clean/pushed and independently clear at
+  **`201c53c7a7041f7740b68e7495e4b93358f8639b`**, tested source
+  `347de697a87c72ea1d6d3ff41ee0eff66f2e78cb`, worktree `feat/e1.2-bibliography`.
+  Ordinary main merges retain the shared async graphics factory, current cache generation,
+  compact native commitment and schema2 bibliography artifact. Final gates pass:
+  **388 Rust / 296 Python / 92 Node**, Clippy/fmt, frontend gates, production-artifact
+  Playwright smoke and affected suites. K1 O8=1.0 (35 entries), O10 precision/recall=1.0
+  (50 pairs); known title30/35, first-author/year35/35. All15 figure outcomes and O1/O2
+  match the merged implementation exactly. **Do not merge without genuine K2/full O9.**
+  The draft has 5/30 objectives at target; main has not acquired its O8/O10 measurements.
+- PR94 final independent review is
+  `~/.cache/lysilogy/review-bibliography-final-201c53c/final-review.json`, SHA
+  `07fc3ce54d79c33ac4ea1abd1377ba9ab45639e6e0e91ab8fb66743ff20f7d42`:193 source
+  fingerprints at tested/final heads,330 referenced files including71 portable artifacts,
+  raw gates, unchanged real outcomes and two viewed screenshots. Root source/compiled/
+  actual-measurement audits are in `review-bibliography-integration-347de69/`;
+  `measurement-review.json` SHA
+  `3a3a4f28a5735389fc693cff25290f47d5eca88ffe25e9107b8d9720d53e637d`.
+  Actual bibliography0.823258s and objects7.763569s, zero external calls/$0. All historical
+  measurements remain immutable. Owner `finish_benchmark` is now auditing whether paused
+  #33 has remaining useful offline work; no build/dependency change authorized by that task.
+- **#97**, owner `finish_corpus_proxy`, worktree `feat/e8.3-k1-coverage`, no PR. Safe source
+  **`8a8f58cd769a89fe5a44c9bf2b4d3dd376ff59e8`** independently passes198 tests and11
+  adversarial probes. Stored/deferred package tokens cannot prove an executed initial import
+  prefix; every unproved imported operator namespace stays excluded. Literal-definition and
+  original-span evidence remain available, with no admission flag. Review
+  `review-k1-operators-8a8f58c/final-review.json` SHA
+  `8a870c0134b3381786e252180a5b6380b620cca4e81d3f2771157595c1306b1f`. Prior38f27a0
+  pilot's18 flags in8 papers are an invalid partial namespace proof, not truth. Last known
+  clean docs checkpoint `d98a0b3998a92ebd907cd8d614af1e5b638f8a4c`; owner is binding this
+  final review into the report, now clean at `80376e2c5cab60d1b6756fa051f0e7b19760dd22`.
+  Full own-worktree gates remain due.
+- #97 last complete comparison stays **617 parsed / 383 failed / raw accepted1 / zero
+  defensible new papers**,997.138481s/499824KiB/no external calls/$0. Preserve
+  `k1-full-alignment-4ada537/` and its independently audited617 payloads/119,831,173 bytes.
+  Root audit SHA `53e41b07626f0f57916a433d62db0a270262c117455f56e0873c14e0b03e3ae4`.
+  Raw candidate2007.05954 has unparsed manual references/procedure; never publish its
+  negative-cohort claims. Original1000 inputs and999-success index map remain fixed;
+  separate#98 retry never retroactively enters them. Prepared9680f86 remains unlaunched.
+  Original limited-v1 objects/bibliography bytes remain unchanged.
+- The measured capability ceilings show that small command adapters cannot deliver500
+  papers. The101-paper DOI survey found94 exact fallback templates,71 with no known doi
+  use,41 additionally without other dynamic/low-level definitions,14 additionally without
+  local styles; these are diagnostics, not admissions. Receipt
+  `k1-coverage/doi-conditional-survey-4ada537.json` SHA
+  `05c393f1e3596ca25e93a0af9158bc085bcd7b4540e159dccb00170a49a42e74`.
+  Generated trusted namespace probing is design-only; a current installed namespace is not
+  evidence of historical arXiv compilation. No TeX probe or new full alignment run launched.
+- Next #97 work is a concrete independently annotated tranche: freeze21 candidates, three
+  per existing category in frozen corpus order, using only source/PDF/index availability
+  and an explicit page cap, never detector outcomes. Begin with7, one per category, to
+  measure annotation throughput and quality. Reuse existing blind source/PDF inventory and
+  reconciliation tooling, exact input bindings and versioned releases. This is a milestone,
+  not a replacement for approximately500; #97 remains open. Owner prepares selection and
+  assignments offline; `review_ready_prs` independently assesses the bounded next experiment.
+- **Scale batch11 RUNNING, retained TTY exec96102**, owns the sole heavy window:
+  `python3 -B -u ~/.cache/lysilogy/run-scale-index-batch.py --batch 11 --limit 250`.
+  Completed batches1–10 plus separate#98 retry now give **3,500 unique indexes: all1000
+  eval and2549 scale**,49overlap. Batch9 completed250/250,414.260813s/229168KiB;
+  batch10 completed250/250,402.820288s/213184KiB; zero network/models/$0.
+  Root rehashed706,810,945B(batch9) and709,997,258B(batch10). Latest audit
+  `native-index-after-batch10-review.json` SHA
+  `91fb8dbab6e899fbbba6b537b6a1d09838eb425425c76de3d94edd96cde3d6db`.
+  Poll session and inspect terminal receipt, then run
+  `python3 -B ~/.cache/lysilogy/audit-native-index-batch.py --batch 11`; next batch12.
+  No Rust/G5/native job while batch11 runs. Runner SHA
+  `9d8ae083a30808110d09cb94aadad1aeb7bdcc2c76203a8a6c7e07ca0347325b`, audit helper SHA
+  `c37667c8ef614c3df03996939a980c7a43e964925893b1f02fe3bdd48a7228e8`.
+- No downloads run. Complete corpus **10,951 PDFs / 1,000 sources**, exacteval1000 /
+  scale10000, lives at `~/Corpora/arxiv`; canonical data root
+  `~/.cache/lysilogy/arxiv-kb-data`. All10951 registry identities/bytes remain unchanged,
+  SHA `934d7fa7860d8a84639f52fbb7d77c0a721f3b7e4bc8f836b70b8063c4fa835d`.
+  Portable native helper `k1-native-page-isolation-0843453/k1_index`, SHA
+  `3f25b41305452eac7bdfde2b02f77f2dc664b89aa3f5530e26125ed3cda2e4f7`.
+  Preserve20GiB free-space floor; do not copy/reset corpus or data. Native index preparation
+  is not production10k app acceptance or O25/O27 performance.
+- Paused **#33 `905c341`**, `feat/e2.1-kb-store`, no PR; Rust uncompiled/missing rusqlite
+  dependencies. Preserve its unrelated dirty.gitignore and target resume notes. Paused
+  **#71/PR93 `d5e12aa`**, `feat/e8.4-reference-truth`; **#72/PR95 `c867ec6`**,
+  `feat/e8.5-person-labels`, stacked on93. ActualK2/K4/K5/K7 unavailable; combined40-DOI
+  plan under `reference-truth-plans/` remains unexecuted. Still no answer approving
+  **index.crates.io, static.crates.io, api.crossref.org, api.openalex.org**. Original corpus
+  grants work. Do not apply prepared four-host permission script or bypass the earlier
+  two-host automatic-review rejection without explicit approval. No rebase, sudo, rm-rf,
+  persistent systemctl or private/env/secrets access.
+- Follow-ups opened this continuation: **#97, #98, #101, #103** (#98/#101 now closed).
+  The #33 readiness audit found no useful remaining offline implementation gap:26 written
+  store tests await compilation, followed by Clippy/G5, fresh-root smoke, actual O28 and
+  genuine K2-backed G4. Receipt `kb-store-readiness-905c341/readiness.json`, SHA
+  `4c75e3419470353d422988377d9499642cacff6d6734624fe1d396cf41dcdd06`.
+  Next: audit batch11, finish safe K1 checkpoint and deterministic annotation selection,
+  continue scale preparation and unblocked A2 work. All later phases, final running-app
+  Playwright scenario, 5/5 gates and24/30 objectives, actual10k scenario and final system
+  report remain outstanding. The system is not complete.
