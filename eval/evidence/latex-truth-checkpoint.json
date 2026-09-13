@@ -1,0 +1,1625 @@
+{
+  "historical_full_alignment": {
+    "path": "/home/tjmisko/.cache/lysilogy/k1-full-alignment-0910c35/receipt.json",
+    "receipt": {
+      "counts": {
+        "accepted": 0,
+        "bibliography_eligible": 0,
+        "parsed": 626
+      },
+      "external_cost_usd": 0,
+      "external_model_calls": 0,
+      "external_network_calls": 0,
+      "files": {
+        "launch.json": "a2c425730df334ec71f08561368453090609c5308a7bbaf241a34114a7afc486",
+        "papers.jsonl": "57f7ad4b2dc47784cf92d317f6c61d81f97aa02b41636f8ed307d5b3fe541ecd",
+        "report.json": "8a21a70a94e132d6c42f96a487af45d5ad7deee3d4163675dac80ef3fcfb77e1",
+        "run.log": "52411c157183806383e9205cb8f7adc7373da2983970bccce57bd77296136a78",
+        "run.py": "185ad03d5f5673cd5d05819b77227e0fd4f7d16f48aadbd1636fd7e769086364"
+      },
+      "final_k1_publication": false,
+      "head": "0910c35",
+      "limitations": [
+        "Historical parser checkpoint; later numbering and mathematical alphabet fixes are independently reviewed but absent from this run.",
+        "All metric cohorts are excluded; no diagnostic alignment is admitted as K1.",
+        "Source parser and 30-second per-paper bounds are retained; two timeouts are exclusions."
+      ],
+      "peak_rss_kib": 512176,
+      "terminal_exit_code": 0,
+      "wall_seconds": 1017.6035633310021
+    },
+    "sha256": "69cba3ed9d0e9017d83aca774c885e960a64dc0a1b7d8fe6b591d397ee32420b"
+  },
+  "historical_quality_checkpoint": {
+    "path": "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/k1-checkpoint-60c0c35/receipt.json",
+    "receipt": {
+      "before": {
+        "bibliography": {
+          "baseline_before": {
+            "G5": 1.0,
+            "O25": 15.503405927,
+            "O26.render": 1757.10000000149,
+            "O26.search": 163.39999999850988,
+            "O30": 0.0
+          },
+          "collectors": {},
+          "commit": "cc329dd1a3db86ed3d11cdede2f9a7fbe21952e9",
+          "costs_usd": {},
+          "dirty": true,
+          "failures": [],
+          "metrics": {
+            "O10.precision": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O10.recall": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O8": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O9.first_author": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O9.title": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O9.year": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            }
+          },
+          "schema_version": 1,
+          "suite": "bibliography",
+          "timestamp": "2026-09-13T08:54:28.907325096Z",
+          "wall_seconds": {}
+        },
+        "commands": [
+          {
+            "command": [
+              "cargo",
+              "run",
+              "--offline",
+              "--",
+              "eval",
+              "objects",
+              "--check"
+            ],
+            "exit_code": 0,
+            "log": "target/k1-before/objects.log",
+            "name": "objects",
+            "sha256": "d5b6d92545e0e449c0bd105ddf0aa5aa2ed756a204a58d2513a69e84483e4eee",
+            "wall_seconds": 94.74464816100226
+          },
+          {
+            "command": [
+              "cargo",
+              "run",
+              "--offline",
+              "--",
+              "eval",
+              "bibliography",
+              "--check"
+            ],
+            "exit_code": 0,
+            "log": "target/k1-before/bibliography.log",
+            "name": "bibliography",
+            "sha256": "ff46ac77553f58a733c3577132a28b891a0af17b2ee665e86625b32736f8b69e",
+            "wall_seconds": 0.14101130799826933
+          },
+          {
+            "command": [
+              "cargo",
+              "run",
+              "--offline",
+              "--",
+              "eval",
+              "tests",
+              "--check"
+            ],
+            "exit_code": 1,
+            "log": "target/k1-before/tests.log",
+            "name": "tests",
+            "sha256": "b6f40c2678f9407f2e5f240dcc6d058ff52ed3bcaf939cdeb274552708a9ce83",
+            "wall_seconds": 20.27616162600316
+          }
+        ],
+        "commit": "cc329dd1a3db86ed3d11cdede2f9a7fbe21952e9",
+        "initial_g5_environment_failure": "Fresh worktree had no local TypeScript dependency; linked the already-installed main frontend node_modules without changing it, then G5 passed.",
+        "isolated_tests": {
+          "commands": [
+            {
+              "command": [
+                "cargo",
+                "test",
+                "--offline",
+                "--all-targets"
+              ],
+              "cwd": ".",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/00.log",
+              "wall_seconds": 1.0701319930012687
+            },
+            {
+              "command": [
+                "python3",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/src/eval/g5.py",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z",
+                "--tooling-tests",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/scripts/bench"
+              ],
+              "cwd": ".",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/01.log",
+              "wall_seconds": 0.11499052699946333
+            },
+            {
+              "command": [
+                "python3",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/src/eval/g5.py",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z",
+                "--tooling-tests",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/scripts/corpus"
+              ],
+              "cwd": ".",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/02.log",
+              "wall_seconds": 0.1654709560025367
+            },
+            {
+              "command": [
+                "python3",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/src/eval/g5.py",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z",
+                "--tooling-tests",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/scripts/eval"
+              ],
+              "cwd": ".",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/03.log",
+              "wall_seconds": 0.26548147600260563
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z/script-shell",
+                "run",
+                "test:api"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/04.log",
+              "wall_seconds": 0.7226362319997861
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z/script-shell",
+                "run",
+                "test:paper-links"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/05.log",
+              "wall_seconds": 0.41708255700359587
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z/script-shell",
+                "run",
+                "test:pdf-visual-bounds"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/06.log",
+              "wall_seconds": 0.36502999299409566
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z/script-shell",
+                "run",
+                "test:reading-index-cache"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/07.log",
+              "wall_seconds": 0.46784669600310735
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z/script-shell",
+                "run",
+                "test:section-figures"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/08.log",
+              "wall_seconds": 0.4152984629981802
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z/script-shell",
+                "run",
+                "test:section-scope"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/09.log",
+              "wall_seconds": 0.567938382999273
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z/script-shell",
+                "run",
+                "test:source-text"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/10.log",
+              "wall_seconds": 0.42003474100056337
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z/script-shell",
+                "run",
+                "test:spatial-navigation"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/11.log",
+              "wall_seconds": 0.41645584399520885
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z/script-shell",
+                "run",
+                "test:vimrc"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/12.log",
+              "wall_seconds": 0.41723297399585135
+            },
+            {
+              "command": [
+                "node",
+                "--experimental-strip-types",
+                "--test",
+                "scripts/cursor-document.test.mjs",
+                "scripts/scale-bench.test.mjs"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T090055.280516951Z/13.log",
+              "wall_seconds": 0.6165666759989108
+            }
+          ],
+          "interfaces": [
+            "lo"
+          ],
+          "model_clis_absent": {
+            "aider": true,
+            "claude": true,
+            "codex": true,
+            "gemini": true,
+            "ollama": true
+          },
+          "network_namespace": "net:[4026533707]",
+          "network_probe_errno": 101,
+          "parent_network_namespace": "net:[4026534216]",
+          "passed": true,
+          "path": "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T090055.280516951Z/bin",
+          "schema_version": 1,
+          "wall_seconds": 6.462414005000028
+        },
+        "objects": {
+          "baseline_before": {
+            "G5": 1.0,
+            "O25": 15.503405927,
+            "O26.render": 1757.10000000149,
+            "O26.search": 163.39999999850988,
+            "O30": 0.0
+          },
+          "collectors": {},
+          "commit": "cc329dd1a3db86ed3d11cdede2f9a7fbe21952e9",
+          "costs_usd": {},
+          "dirty": false,
+          "failures": [],
+          "metrics": {
+            "G3": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O1": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O11": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O2": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O3": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O4": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O5": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O6": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O7": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "R4.enrichment_cost": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "R4.enrichment_time": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            }
+          },
+          "schema_version": 1,
+          "suite": "objects",
+          "timestamp": "2026-09-13T08:54:28.763504062Z",
+          "wall_seconds": {}
+        },
+        "schema_version": 1,
+        "tests": {
+          "baseline_before": {
+            "G5": 1.0,
+            "O25": 15.503405927,
+            "O26.render": 1757.10000000149,
+            "O26.search": 163.39999999850988,
+            "O30": 0.0
+          },
+          "collectors": {},
+          "commit": "cc329dd1a3db86ed3d11cdede2f9a7fbe21952e9",
+          "costs_usd": {
+            "tests": 0.0
+          },
+          "dirty": false,
+          "failures": [],
+          "metrics": {
+            "G5": {
+              "cases": 1,
+              "evidence": [
+                {
+                  "path": "target/eval-g5/20260913T090055.280516951Z/evidence.json",
+                  "sha256": "84c19b446637fead051cc0e5845528257e837d65e0e137c44b5f6f8f402e3847",
+                  "version": "g5-network-namespace-v1"
+                }
+              ],
+              "reason": null,
+              "truth_sets": {},
+              "value": 1.0
+            }
+          },
+          "schema_version": 1,
+          "suite": "tests",
+          "timestamp": "2026-09-13T09:00:55.280498784Z",
+          "wall_seconds": {
+            "tests": 6.561314685
+          }
+        }
+      },
+      "bibliography": {
+        "path": "eval/results/bibliography/20260913T094928.384482654Z-60c0c355558ddc7cd43f20c44512ef6316e6f2ba.json",
+        "result": {
+          "baseline_before": {
+            "G5": 1.0,
+            "O25": 15.503405927,
+            "O26.render": 1757.10000000149,
+            "O26.search": 163.39999999850988,
+            "O30": 0.0
+          },
+          "collectors": {},
+          "commit": "60c0c355558ddc7cd43f20c44512ef6316e6f2ba",
+          "costs_usd": {},
+          "dirty": true,
+          "failures": [],
+          "metrics": {
+            "O10.precision": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O10.recall": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O8": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O9.first_author": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O9.title": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O9.year": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            }
+          },
+          "schema_version": 1,
+          "suite": "bibliography",
+          "timestamp": "2026-09-13T09:49:28.384411487Z",
+          "wall_seconds": {}
+        },
+        "sha256": "3c62c3f5f03c7a5c543a388dde913893ef6e3d1eb00d2db3ccb83cd6951dcc15"
+      },
+      "commands": [
+        {
+          "command": [
+            "cargo",
+            "fmt",
+            "--all",
+            "--",
+            "--check"
+          ],
+          "exit_code": 0,
+          "log": "target/k1-checkpoint-60c0c35/fmt.log",
+          "name": "fmt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "wall_seconds": 0.2928148030041484
+        },
+        {
+          "command": [
+            "cargo",
+            "clippy",
+            "--offline",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit_code": 0,
+          "log": "target/k1-checkpoint-60c0c35/clippy.log",
+          "name": "clippy",
+          "sha256": "bc7dd1f52d0578a889b4a507c2b22d861650ae52dceef1e6ab04a00df1702650",
+          "wall_seconds": 8.689786636998178
+        },
+        {
+          "command": [
+            "cargo",
+            "test",
+            "--offline",
+            "--all-targets"
+          ],
+          "exit_code": 0,
+          "log": "target/k1-checkpoint-60c0c35/rust-tests.log",
+          "name": "rust-tests",
+          "sha256": "9f1e54a1566fcaf9dee76f8040feb4ee4a2cbf97e774c839a134ea4f610a1308",
+          "wall_seconds": 1.1858622269937769
+        },
+        {
+          "command": [
+            "cargo",
+            "run",
+            "--offline",
+            "--",
+            "eval",
+            "objects",
+            "--check"
+          ],
+          "exit_code": 0,
+          "log": "target/k1-checkpoint-60c0c35/objects.log",
+          "name": "objects",
+          "sha256": "b96c9b00bfeed554847619a55cff82aa6ae6afc273c6bd26d0c3cdb6f42cf68f",
+          "wall_seconds": 0.09578566299751401
+        },
+        {
+          "command": [
+            "cargo",
+            "run",
+            "--offline",
+            "--",
+            "eval",
+            "bibliography",
+            "--check"
+          ],
+          "exit_code": 0,
+          "log": "target/k1-checkpoint-60c0c35/bibliography.log",
+          "name": "bibliography",
+          "sha256": "a3f1ea4e6362e48a2280655193e2534917c123ce790b51af56baf8c6889c81ff",
+          "wall_seconds": 0.09088160299870651
+        },
+        {
+          "command": [
+            "cargo",
+            "run",
+            "--offline",
+            "--",
+            "eval",
+            "tests",
+            "--check"
+          ],
+          "exit_code": 0,
+          "log": "target/k1-checkpoint-60c0c35/tests.log",
+          "name": "tests",
+          "sha256": "d3cc65edc956d74d895856e8b291382a6aceaddd2c8dc44ced836efbfbbdb97c",
+          "wall_seconds": 6.7809362709958805
+        }
+      ],
+      "head": "60c0c355558ddc7cd43f20c44512ef6316e6f2ba",
+      "isolated_tests": {
+        "counts": {
+          "node": 85,
+          "python": 166,
+          "rust": 306
+        },
+        "evidence": {
+          "commands": [
+            {
+              "command": [
+                "cargo",
+                "test",
+                "--offline",
+                "--all-targets"
+              ],
+              "cwd": ".",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/00.log",
+              "wall_seconds": 1.118931301003613
+            },
+            {
+              "command": [
+                "python3",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/src/eval/g5.py",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z",
+                "--tooling-tests",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/scripts/bench"
+              ],
+              "cwd": ".",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/01.log",
+              "wall_seconds": 0.16597231099876808
+            },
+            {
+              "command": [
+                "python3",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/src/eval/g5.py",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z",
+                "--tooling-tests",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/scripts/corpus"
+              ],
+              "cwd": ".",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/02.log",
+              "wall_seconds": 0.16837352799484506
+            },
+            {
+              "command": [
+                "python3",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/src/eval/g5.py",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z",
+                "--tooling-tests",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/scripts/eval"
+              ],
+              "cwd": ".",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/03.log",
+              "wall_seconds": 0.2688582929986296
+            },
+            {
+              "command": [
+                "python3",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/src/eval/g5.py",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z",
+                "--tooling-tests",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/scripts/truth/latex"
+              ],
+              "cwd": ".",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/04.log",
+              "wall_seconds": 0.11485782000090694
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+                "run",
+                "test:api"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/05.log",
+              "wall_seconds": 0.7704934900029912
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+                "run",
+                "test:paper-links"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/06.log",
+              "wall_seconds": 0.4690304859977914
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+                "run",
+                "test:pdf-visual-bounds"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/07.log",
+              "wall_seconds": 0.36953334999998333
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+                "run",
+                "test:reading-index-cache"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/08.log",
+              "wall_seconds": 0.4662693930004025
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+                "run",
+                "test:section-figures"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/09.log",
+              "wall_seconds": 0.3665990889930981
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+                "run",
+                "test:section-scope"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/10.log",
+              "wall_seconds": 0.41743753599439515
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+                "run",
+                "test:source-text"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/11.log",
+              "wall_seconds": 0.4709814949965221
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+                "run",
+                "test:spatial-navigation"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/12.log",
+              "wall_seconds": 0.3654312930011656
+            },
+            {
+              "command": [
+                "npm",
+                "--script-shell",
+                "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+                "run",
+                "test:vimrc"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/13.log",
+              "wall_seconds": 0.4161074479998206
+            },
+            {
+              "command": [
+                "node",
+                "--experimental-strip-types",
+                "--test",
+                "scripts/cursor-document.test.mjs",
+                "scripts/scale-bench.test.mjs"
+              ],
+              "cwd": "web",
+              "exit_code": 0,
+              "log": "target/eval-g5/20260913T094928.468549730Z/14.log",
+              "wall_seconds": 0.6164766010042513
+            }
+          ],
+          "interfaces": [
+            "lo"
+          ],
+          "model_clis_absent": {
+            "aider": true,
+            "claude": true,
+            "codex": true,
+            "gemini": true,
+            "ollama": true
+          },
+          "network_namespace": "net:[4026533707]",
+          "network_probe_errno": 101,
+          "parent_network_namespace": "net:[4026534216]",
+          "passed": true,
+          "path": "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/bin",
+          "schema_version": 1,
+          "wall_seconds": 6.585138677997747
+        },
+        "evidence_sha256": "d6a075c89da0630805f273044b289a17f0f1a5ef531536a08e9065bdcd8f2de0",
+        "retained_logs": [
+          {
+            "command": [
+              "cargo",
+              "test",
+              "--offline",
+              "--all-targets"
+            ],
+            "cwd": ".",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/00.log",
+            "sha256": "9e9c07b8d98f17abbb100f7b3a5c50322c62aaae1c3fc36e39f31ed450a09039",
+            "wall_seconds": 1.118931301003613
+          },
+          {
+            "command": [
+              "python3",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/src/eval/g5.py",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z",
+              "--tooling-tests",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/scripts/bench"
+            ],
+            "cwd": ".",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/01.log",
+            "sha256": "82e3abc29604e059b66337d91ce178e9d4b07bb2f7e572c34ed0bd7ffa2aa521",
+            "wall_seconds": 0.16597231099876808
+          },
+          {
+            "command": [
+              "python3",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/src/eval/g5.py",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z",
+              "--tooling-tests",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/scripts/corpus"
+            ],
+            "cwd": ".",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/02.log",
+            "sha256": "a0bbc32a52565758d4e2bd641aa708588b603ae50de25b6ec98454fe8c788b7c",
+            "wall_seconds": 0.16837352799484506
+          },
+          {
+            "command": [
+              "python3",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/src/eval/g5.py",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z",
+              "--tooling-tests",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/scripts/eval"
+            ],
+            "cwd": ".",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/03.log",
+            "sha256": "4063465e1ded42be467c18d30e6fdfcffcd0ef052cd49c52d969be56617b09c4",
+            "wall_seconds": 0.2688582929986296
+          },
+          {
+            "command": [
+              "python3",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/src/eval/g5.py",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z",
+              "--tooling-tests",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/scripts/truth/latex"
+            ],
+            "cwd": ".",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/04.log",
+            "sha256": "b4b83c7fc9abe529045896bdc3d434ff9b13cf16ea6d4a5f19439c491f5811b9",
+            "wall_seconds": 0.11485782000090694
+          },
+          {
+            "command": [
+              "npm",
+              "--script-shell",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+              "run",
+              "test:api"
+            ],
+            "cwd": "web",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/05.log",
+            "sha256": "a6dfc0b0243be0258084cd7490a98a8b0c407bd6ca20453e5e1088d4a99e5683",
+            "wall_seconds": 0.7704934900029912
+          },
+          {
+            "command": [
+              "npm",
+              "--script-shell",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+              "run",
+              "test:paper-links"
+            ],
+            "cwd": "web",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/06.log",
+            "sha256": "7c0be47df4ca2ef90d1592ed26caf15643609143af7f056c685083b84dd8ae97",
+            "wall_seconds": 0.4690304859977914
+          },
+          {
+            "command": [
+              "npm",
+              "--script-shell",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+              "run",
+              "test:pdf-visual-bounds"
+            ],
+            "cwd": "web",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/07.log",
+            "sha256": "5ab9683dbb2a308f94365692630ffb73b7a888e663e714fad85fe9f10594997e",
+            "wall_seconds": 0.36953334999998333
+          },
+          {
+            "command": [
+              "npm",
+              "--script-shell",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+              "run",
+              "test:reading-index-cache"
+            ],
+            "cwd": "web",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/08.log",
+            "sha256": "9e8c3fd118c8650498c29401d602477280ba0f32d1b0e19b4c5785f96eb57f1d",
+            "wall_seconds": 0.4662693930004025
+          },
+          {
+            "command": [
+              "npm",
+              "--script-shell",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+              "run",
+              "test:section-figures"
+            ],
+            "cwd": "web",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/09.log",
+            "sha256": "f25a52898ef6b315947b47df02b865b014f9c95c3fa7006197bad99ec7aed7af",
+            "wall_seconds": 0.3665990889930981
+          },
+          {
+            "command": [
+              "npm",
+              "--script-shell",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+              "run",
+              "test:section-scope"
+            ],
+            "cwd": "web",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/10.log",
+            "sha256": "db8dfecb7ad8b8f40ceb4f51f019711feff2aa60c09d4ca540f60c55c4ea3d85",
+            "wall_seconds": 0.41743753599439515
+          },
+          {
+            "command": [
+              "npm",
+              "--script-shell",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+              "run",
+              "test:source-text"
+            ],
+            "cwd": "web",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/11.log",
+            "sha256": "5b829787c00679a6825b03ea2a7fc34c27dfbf66b6e0632122b5c393f1c68857",
+            "wall_seconds": 0.4709814949965221
+          },
+          {
+            "command": [
+              "npm",
+              "--script-shell",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+              "run",
+              "test:spatial-navigation"
+            ],
+            "cwd": "web",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/12.log",
+            "sha256": "88f18114c5dc4e8cf4791a5f4831847c15c39217d613a75d8d6e7cce16cf7e3b",
+            "wall_seconds": 0.3654312930011656
+          },
+          {
+            "command": [
+              "npm",
+              "--script-shell",
+              "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/eval-g5/20260913T094928.468549730Z/script-shell",
+              "run",
+              "test:vimrc"
+            ],
+            "cwd": "web",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/13.log",
+            "sha256": "b6c5c77683d8a9b7263887323cc062432a68c8c871649ea8144edf6c6970383b",
+            "wall_seconds": 0.4161074479998206
+          },
+          {
+            "command": [
+              "node",
+              "--experimental-strip-types",
+              "--test",
+              "scripts/cursor-document.test.mjs",
+              "scripts/scale-bench.test.mjs"
+            ],
+            "cwd": "web",
+            "exit_code": 0,
+            "log": "target/eval-g5/20260913T094928.468549730Z/14.log",
+            "sha256": "ad9a489261d1904c06fa1254739f3573c96287d164d84741f673659a3bb21ec0",
+            "wall_seconds": 0.6164766010042513
+          }
+        ]
+      },
+      "native_index_pilot": {
+        "receipt": {
+          "commit": "350052261bd4daed9ac99abd0939a81a767aee99",
+          "executable_sha256": "9583e52411a0fc80466bfa4ad9f50d671d79ad8b218b9f4b5fccec506f7350c9",
+          "exit_code": 0,
+          "model_calls": 0,
+          "network_calls": 0,
+          "output_sha256": "7b8c1e7ca0126e38b717cb10b7b2787d0db67c18cb6a9aeb5b48fa8fe0fa2916",
+          "request_sha256": "6f85fb2e11b59429f56263c3e94c125f9eb87692e6a286730229470ad361122f",
+          "wall_seconds": 186.3203501149983
+        },
+        "receipt_sha256": "b0ee3bc98f0498d87eee31ad5e8684e842dcc5da3cb4a4e051091f9afc4ae26b"
+      },
+      "objects": {
+        "path": "eval/results/objects/20260913T094928.292763548Z-60c0c355558ddc7cd43f20c44512ef6316e6f2ba.json",
+        "result": {
+          "baseline_before": {
+            "G5": 1.0,
+            "O25": 15.503405927,
+            "O26.render": 1757.10000000149,
+            "O26.search": 163.39999999850988,
+            "O30": 0.0
+          },
+          "collectors": {},
+          "commit": "60c0c355558ddc7cd43f20c44512ef6316e6f2ba",
+          "costs_usd": {},
+          "dirty": false,
+          "failures": [],
+          "metrics": {
+            "G3": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O1": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O11": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O2": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O3": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O4": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O5": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O6": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "O7": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "R4.enrichment_cost": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            },
+            "R4.enrichment_time": {
+              "cases": 0,
+              "evidence": [],
+              "reason": "no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built",
+              "truth_sets": {},
+              "value": null
+            }
+          },
+          "schema_version": 1,
+          "suite": "objects",
+          "timestamp": "2026-09-13T09:49:28.292682506Z",
+          "wall_seconds": {}
+        },
+        "sha256": "186ed918d46d6b5484af4156f916427ce6ec9144a01b1904e88a6c0c83ab1dff"
+      },
+      "scope": "partial implementation checkpoint; no final K1 publication or O11 claim",
+      "source_sha256": {
+        "examples/k1_index.rs": "4cdce79da883df3fd656d5ba1f3dee3cbdc780532dab2f77587e20c664a4bf51",
+        "scripts/truth/latex/.gitignore": "32dae3052f331ee34d628ef535709b301259a45df7c7522c4d35dcf49873f00b",
+        "scripts/truth/latex/README.md": "4b26fe2f29dd82a72ed0df2029f54575feb5334f1de610bd294f6c1f90a660a3",
+        "scripts/truth/latex/align.py": "9e0cb44c64a119f563681f5dd5c1296d126f4a42fd79d4a5d0a30df03a171d4d",
+        "scripts/truth/latex/archive.py": "b03c840f819466bf74f969637adb625c51e78303e271968bdec8f0ce34633556",
+        "scripts/truth/latex/builder.py": "4815132e067326569575f0897a384ad9ce04465b0919e1108b9e836499f10ffb",
+        "scripts/truth/latex/parser.py": "61e8350549bdfb8d70129ae15823213cbe23d566e0aa961e7629d19930ca58f4",
+        "scripts/truth/latex/test_alignment.py": "392499d81d5bae1424e1a1fa4e63041ca73825fdf68b7dabebc28c3fa730ee2f",
+        "scripts/truth/latex/test_builder.py": "5a2a7c24d35d587e9f57e421ee281c42246528692fd79aeb37766f956ef5618d",
+        "scripts/truth/latex/test_latex.py": "c4870cdadd9f7f5e9bc6ecaf2bd841539e50a6df1b0831eaefed3a5d81ed9057",
+        "scripts/truth/latex/tex.py": "1bf78988ff2ece3bf4fddd0cf6c07b1797c822d80421314fc63f80655f2f9ca9"
+      },
+      "tests": {
+        "path": "eval/results/tests/20260913T094935.164855131Z-60c0c355558ddc7cd43f20c44512ef6316e6f2ba.json",
+        "result": {
+          "baseline_before": {
+            "G5": 1.0,
+            "O25": 15.503405927,
+            "O26.render": 1757.10000000149,
+            "O26.search": 163.39999999850988,
+            "O30": 0.0
+          },
+          "collectors": {},
+          "commit": "60c0c355558ddc7cd43f20c44512ef6316e6f2ba",
+          "costs_usd": {
+            "tests": 0.0
+          },
+          "dirty": true,
+          "failures": [],
+          "metrics": {
+            "G5": {
+              "cases": 1,
+              "evidence": [
+                {
+                  "path": "target/eval-g5/20260913T094928.468549730Z/evidence.json",
+                  "sha256": "d6a075c89da0630805f273044b289a17f0f1a5ef531536a08e9065bdcd8f2de0",
+                  "version": "g5-network-namespace-v1"
+                }
+              ],
+              "reason": null,
+              "truth_sets": {},
+              "value": 1.0
+            }
+          },
+          "schema_version": 1,
+          "suite": "tests",
+          "timestamp": "2026-09-13T09:49:28.468535188Z",
+          "wall_seconds": {
+            "tests": 6.69491277
+          }
+        },
+        "sha256": "4e3a9e4c2ecd93c48767bfbedd0ada0e7577dea23fffaadc539bb626451a2ad2"
+      }
+    },
+    "sha256": "9227ac4a5f3f5a22d90d6e2f4c0e49eea938946746780584cf664bb19e65a55f"
+  },
+  "latest_core_tests": {
+    "command": "python3 -B -m unittest discover -s scripts/truth/latex -v",
+    "count": 102,
+    "exit_code": 0,
+    "log_path": "/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e8.3-latex-truth/target/k1-checkpoint-b363638/core-tests.log",
+    "log_sha256": "f4056ec0f2c9842fe833311b3750423c6d0d255159dfdaf22443c02900283eef"
+  },
+  "latest_targeted_candidates": {
+    "path": "/home/tjmisko/.cache/lysilogy/k1-current-candidates-b363638/receipt.json",
+    "receipt": {
+      "external_cost_usd": 0,
+      "final_k1_publication": false,
+      "head": "b363638",
+      "implementation": {
+        "Cargo.lock": "61a9965ba95cbddc221171ca1554421db6a3767107544a64a48d46fc451b2c14",
+        "Cargo.toml": "8debf7d4d2aeb84c83e859436e186e6d91e6fe4abe4e83770c94ec6b45c56eba",
+        "examples/k1_index.rs": "4cdce79da883df3fd656d5ba1f3dee3cbdc780532dab2f77587e20c664a4bf51",
+        "scripts/corpus/corpus.py": "82991d0ad9e4c1beb277402836426a03dff6a4ed2a886bdc4524b80ef8812930",
+        "scripts/corpus/selection.json": "69da3dd69a0a2c11b1a0ff5e6aeb90607363ebd032701d6d3b5fe08c2b40b7d8",
+        "scripts/truth/latex/align.py": "25cf652f9bc5c5590b36e06fc0c7ec8cc87c5775a1756ae0bdb44f2abe110f9b",
+        "scripts/truth/latex/annotations.py": "680bacba0f5c5080a847e2e2613ab4cc8c3ea4e1af5e0bf63e15284c047c7009",
+        "scripts/truth/latex/archive.py": "6de426945151b9e57aeb96e5d179835b1efe06e5d876c82537aa607ecce579b8",
+        "scripts/truth/latex/builder.py": "27142f057ea1d92bc76a76697be55db25d52e0a9baaa8faae394b0ab0c6aabb5",
+        "scripts/truth/latex/manual.py": "7c1adf0f769822a41f9924ae56845b903448f540c7d0cd611625d412bac5d27d",
+        "scripts/truth/latex/panel.py": "808665234edd75c7924a3156b58bf25a91534799c7f3befa4dc0ace59fcd22bc",
+        "scripts/truth/latex/parser.py": "7fa77aff69f33005cf18d8c7115f8bc8fa979e832be2f97d5af6d56b78abff3f",
+        "scripts/truth/latex/tex.py": "4644b348ef3aa736cf152233c5be0daeb6e389457f6164d22bd59c639cf78dd3",
+        "src/domain.rs": "c72e30a73d35228dce450c0f9c888c4e1824d6d17bf6dde8968d95938bbd805f",
+        "src/library.rs": "698f0c63dabbee945b76f79bc7ee97be5e0ac2d0a16982c63ad2fdb153f7ed0b",
+        "src/source_index.rs": "36bbe0443ba975dcdc7fc9ee1a5bb7e5939714b04e430726c55f344a912333d6",
+        "src/source_index/cache.rs": "de4201cc471426736b4ae3cefd003e16308239852b86efed922e4409859fd0ec",
+        "src/source_index/figures.rs": "9b440755e7973dc66f369ce59f829cfb73d17f961d0d1c4cff0652236d0e0dd6",
+        "src/source_index/native.rs": "06dffce2ea63aaf5b3927c36f130cde2a88042a56c9a8942f38abaf68602e151",
+        "src/source_index/ocr.rs": "856d7972a9c9b4323afb1b2159df9bdecf2d57171bd4a7a92c4b576cceb58f18",
+        "src/source_index/paragraphs.rs": "8a18fb62906091abe267e26e74aee83de9ab5ab3d94ee48d8294226733062df6",
+        "src/store.rs": "c9f355f9b1494af21c1384d530b99411713dc00ace7a566b270ed61ee6afe0b4"
+      },
+      "model_calls": 0,
+      "network_calls": 0,
+      "papers": [
+        {
+          "accepted": false,
+          "arxiv_id": "2503.05828",
+          "candidate_sha256": "e00eb9359b5f8e6c8adc0358ac35fb54c49b1f8b0ec1e46fff9b0dbdb89abcdc",
+          "objects": {
+            "algorithm": 2,
+            "equation": 1,
+            "proof": 1,
+            "statement": 4
+          },
+          "source_inventory_sha256": "cbe3be6283a97af72daf2b02fc362aa67471628d42124fca27c023eec7f1fec0",
+          "source_semantics": {
+            "control_flow:fi": 9,
+            "control_flow:ifx": 9,
+            "uninterpreted_local_style:aamas.cls": 1,
+            "unknown_inventory_command:@": 1,
+            "unknown_inventory_command:Call": 1,
+            "unknown_inventory_command:Comment": 1,
+            "unknown_inventory_command:EndProcedure": 1,
+            "unknown_inventory_command:EndWhile": 1,
+            "unknown_inventory_command:Ints": 1,
+            "unknown_inventory_command:LeftComment": 1,
+            "unknown_inventory_command:Nats": 1,
+            "unknown_inventory_command:NewDocumentCommand": 1,
+            "unknown_inventory_command:Procedure": 1,
+            "unknown_inventory_command:Rats": 1,
+            "unknown_inventory_command:Reals": 1,
+            "unknown_inventory_command:Return": 1,
+            "unknown_inventory_command:State": 1,
+            "unknown_inventory_command:While": 1,
+            "unknown_inventory_command:acmConference": 1,
+            "unknown_inventory_command:acmDOI": 1,
+            "unknown_inventory_command:acmISBN": 1,
+            "unknown_inventory_command:acmPrice": 1,
+            "unknown_inventory_command:acmSubmissionID": 1,
+            "unknown_inventory_command:acmYear": 1,
+            "unknown_inventory_command:action": 1,
+            "unknown_inventory_command:actions": 1,
+            "unknown_inventory_command:affiliation": 1,
+            "unknown_inventory_command:agent": 1,
+            "unknown_inventory_command:agentact": 1,
+            "unknown_inventory_command:agentbid": 1,
+            "unknown_inventory_command:agents": 1,
+            "unknown_inventory_command:algnewcommand": 1,
+            "unknown_inventory_command:balance": 1,
+            "unknown_inventory_command:bids": 1,
+            "unknown_inventory_command:bigoplus": 1,
+            "unknown_inventory_command:bools": 1,
+            "unknown_inventory_command:ccsdesc": 1,
+            "unknown_inventory_command:citeauthoryear": 1,
+            "unknown_inventory_command:city": 1,
+            "unknown_inventory_command:consumer": 1,
+            "unknown_inventory_command:consumeract": 1,
+            "unknown_inventory_command:consumerbid": 1,
+            "unknown_inventory_command:consumers": 1,
+            "unknown_inventory_command:copyrightyear": 1,
+            "unknown_inventory_command:country": 1,
+            "unknown_inventory_command:ell": 1,
+            "unknown_inventory_command:email": 1,
+            "unknown_inventory_command:equilibrium": 1,
+            "unknown_inventory_command:fancyhead": 1,
+            "unknown_inventory_command:fi": 1,
+            "unknown_inventory_command:gets": 1,
+            "unknown_inventory_command:ifx": 1,
+            "unknown_inventory_command:institution": 1,
+            "unknown_inventory_command:keywords": 1,
+            "unknown_inventory_command:le": 1,
+            "unknown_inventory_command:ltt": 1,
+            "unknown_inventory_command:makeatletter": 1,
+            "unknown_inventory_command:makeatother": 1,
+            "unknown_inventory_command:messages": 1,
+            "unknown_inventory_command:mid": 1,
+            "unknown_inventory_command:newcommandx": 1,
+            "unknown_inventory_command:nnX": 1,
+            "unknown_inventory_command:nnY": 1,
+            "unknown_inventory_command:obs": 1,
+            "unknown_inventory_command:obsd": 1,
+            "unknown_inventory_command:obss": 1,
+            "unknown_inventory_command:oplus": 1,
+            "unknown_inventory_command:pdfoutput": 1,
+            "unknown_inventory_command:pgfplotsset": 1,
+            "unknown_inventory_command:price": 1,
+            "unknown_inventory_command:rephrase": 1,
+            "unknown_inventory_command:reward": 1,
+            "unknown_inventory_command:setcopyright": 1,
+            "unknown_inventory_command:settopmatter": 1,
+            "unknown_inventory_command:showCODEN": 1,
+            "unknown_inventory_command:showDOI": 1,
+            "unknown_inventory_command:showISBNx": 1,
+            "unknown_inventory_command:showISBNxiii": 1,
+            "unknown_inventory_command:showISSN": 1,
+            "unknown_inventory_command:showLCCN": 1,
+            "unknown_inventory_command:showURL": 1,
+            "unknown_inventory_command:showarticletitle": 1,
+            "unknown_inventory_command:showeprint": 1,
+            "unknown_inventory_command:shownote": 1,
+            "unknown_inventory_command:statevec": 1,
+            "unknown_inventory_command:statevecs": 1,
+            "unknown_inventory_command:subtitle": 1,
+            "unknown_inventory_command:tempurl": 1,
+            "unknown_inventory_command:theoremstyle": 1,
+            "unknown_inventory_command:to": 1,
+            "unknown_inventory_command:todo": 1,
+            "unknown_inventory_command:trans": 1,
+            "unknown_inventory_command:triangleright": 1,
+            "unknown_inventory_command:undefined": 1,
+            "unknown_inventory_command:urldef": 1,
+            "unknown_inventory_command:varepsilon": 1,
+            "unknown_inventory_command:wealth": 1,
+            "unknown_inventory_command:xi": 1,
+            "unsupported_definition:def:showCODEN": 1,
+            "unsupported_definition:def:showDOI": 1,
+            "unsupported_definition:def:showISBNx": 1,
+            "unsupported_definition:def:showISBNxiii": 1,
+            "unsupported_definition:def:showISSN": 1,
+            "unsupported_definition:def:showLCCN": 1,
+            "unsupported_definition:def:showURL": 1,
+            "unsupported_definition:def:showarticletitle": 1,
+            "unsupported_definition:def:shownote": 1
+          }
+        },
+        {
+          "accepted": false,
+          "arxiv_id": "2502.02788",
+          "candidate_sha256": "86977837689792a02277f348391bce385f551e751143015f4c0e6fb373f72864",
+          "objects": {
+            "equation": 1,
+            "figure": 2,
+            "proof": 1,
+            "statement": 1,
+            "table": 4
+          },
+          "source_inventory_sha256": "c415e916a06fa066bdac80c97d1e9839662aaafd53eb3fe91e75f7855bbc5e23",
+          "source_semantics": {
+            "control_flow:fi": 1,
+            "control_flow:iffalse": 1,
+            "uninterpreted_local_style:llncs.cls": 1,
+            "unknown_inventory_command:DeclareMathOperator": 1,
+            "unknown_inventory_command:Large": 1,
+            "unknown_inventory_command:ackname": 1,
+            "unknown_inventory_command:addlinespace": 1,
+            "unknown_inventory_command:and": 1,
+            "unknown_inventory_command:argmax": 1,
+            "unknown_inventory_command:argmin": 1,
+            "unknown_inventory_command:authorrunning": 1,
+            "unknown_inventory_command:captionsetup": 1,
+            "unknown_inventory_command:definecolor": 1,
+            "unknown_inventory_command:discintname": 1,
+            "unknown_inventory_command:email": 1,
+            "unknown_inventory_command:fi": 1,
+            "unknown_inventory_command:iffalse": 1,
+            "unknown_inventory_command:inst": 1,
+            "unknown_inventory_command:institute": 1,
+            "unknown_inventory_command:keywords": 1,
+            "unknown_inventory_command:large": 1,
+            "unknown_inventory_command:mathds": 1,
+            "unknown_inventory_command:newline": 1,
+            "unknown_inventory_command:orcidID": 1,
+            "unknown_inventory_command:rightarrow": 1,
+            "unknown_inventory_command:scalebox": 1,
+            "unknown_inventory_command:setminus": 1,
+            "unknown_inventory_command:textsuperscript": 1,
+            "unknown_inventory_command:thefootnote": 1
+          }
+        },
+        {
+          "accepted": false,
+          "arxiv_id": "2310.04162",
+          "candidate_sha256": "7885dabb482602756dbc2662331eae4c86caecb84e23f90e6c5d3a9ccb927ace",
+          "objects": {
+            "equation": 22,
+            "figure": 8,
+            "table": 5
+          },
+          "source_inventory_sha256": "bead868603bf24e84663447c3aac3333674b11433bebad52019cb9d100c339a9",
+          "source_semantics": {
+            "unknown_inventory_command:IEEEmembership": 1,
+            "unknown_inventory_command:IEEEpubid": 1,
+            "unknown_inventory_command:cdots": 1,
+            "unknown_inventory_command:copyright": 1,
+            "unknown_inventory_command:eta": 1,
+            "unknown_inventory_command:expandafter": 1,
+            "unknown_inventory_command:gets": 1,
+            "unknown_inventory_command:lfloor": 1,
+            "unknown_inventory_command:mid": 1,
+            "unknown_inventory_command:ne": 1,
+            "unknown_inventory_command:prime": 1,
+            "unknown_inventory_command:resizebox": 1,
+            "unknown_inventory_command:rfloor": 1,
+            "unknown_inventory_command:romannumeral": 1,
+            "unknown_inventory_command:underset": 1,
+            "unknown_inventory_command:uppercase": 1,
+            "unknown_inventory_command:varpi": 1,
+            "unknown_inventory_command:|": 1
+          }
+        },
+        {
+          "accepted": false,
+          "arxiv_id": "2104.01511",
+          "candidate_sha256": "fccba3ab3cacf7e97c113b4fbd0267786d4d8f55822f5330b0290058bf53a9de",
+          "objects": {
+            "figure": 10,
+            "table": 5
+          },
+          "source_inventory_sha256": "1f5ca203b433614db4f4004e6dc16de6fff85598ffaf8f27005b6aba767c875c",
+          "source_semantics": {
+            "unknown_inventory_command:IEEEPARstart": 1,
+            "unknown_inventory_command:IEEEmembership": 1,
+            "unknown_inventory_command:IEEEpeerreviewmaketitle": 1,
+            "unknown_inventory_command:abovetopsep": 1,
+            "unknown_inventory_command:hbadness": 1,
+            "unknown_inventory_command:heavyrulewidth": 1
+          }
+        }
+      ],
+      "wall_seconds": 4.154529827996157
+    },
+    "sha256": "50168eb7cf37c576ded4cb1dc6228069fc6f7625f8ccb1bb996e5ee76afb6bc5"
+  },
+  "main_integration": "4afb9b84aca5939ff53a27fa5c5e3f1c5bf29953",
+  "manual_candidate_assembly": {
+    "path": "/home/tjmisko/.cache/lysilogy/k1-manual-candidates/f6989274e1b96d46642bcc97ddc7afe7f9e1da78d6d646e973ca32eb0bbc6b13/assembly-receipt.json",
+    "receipt": {
+      "O11_measured": false,
+      "assembled_at": "2026-09-13T10:47:56.356540+00:00",
+      "candidate_path": "/home/tjmisko/.cache/lysilogy/k1-manual-candidates/f6989274e1b96d46642bcc97ddc7afe7f9e1da78d6d646e973ca32eb0bbc6b13/candidate.json",
+      "candidate_sha256": "f6989274e1b96d46642bcc97ddc7afe7f9e1da78d6d646e973ca32eb0bbc6b13",
+      "external_call_cost_usd": 0,
+      "final_k1_publication": false,
+      "implementation": {
+        "Cargo.lock": "61a9965ba95cbddc221171ca1554421db6a3767107544a64a48d46fc451b2c14",
+        "Cargo.toml": "8debf7d4d2aeb84c83e859436e186e6d91e6fe4abe4e83770c94ec6b45c56eba",
+        "examples/k1_index.rs": "4cdce79da883df3fd656d5ba1f3dee3cbdc780532dab2f77587e20c664a4bf51",
+        "scripts/corpus/corpus.py": "82991d0ad9e4c1beb277402836426a03dff6a4ed2a886bdc4524b80ef8812930",
+        "scripts/corpus/selection.json": "69da3dd69a0a2c11b1a0ff5e6aeb90607363ebd032701d6d3b5fe08c2b40b7d8",
+        "scripts/truth/latex/align.py": "25cf652f9bc5c5590b36e06fc0c7ec8cc87c5775a1756ae0bdb44f2abe110f9b",
+        "scripts/truth/latex/annotations.py": "680bacba0f5c5080a847e2e2613ab4cc8c3ea4e1af5e0bf63e15284c047c7009",
+        "scripts/truth/latex/archive.py": "6de426945151b9e57aeb96e5d179835b1efe06e5d876c82537aa607ecce579b8",
+        "scripts/truth/latex/builder.py": "27142f057ea1d92bc76a76697be55db25d52e0a9baaa8faae394b0ab0c6aabb5",
+        "scripts/truth/latex/manual.py": "7c1adf0f769822a41f9924ae56845b903448f540c7d0cd611625d412bac5d27d",
+        "scripts/truth/latex/panel.py": "808665234edd75c7924a3156b58bf25a91534799c7f3befa4dc0ace59fcd22bc",
+        "scripts/truth/latex/parser.py": "b1fede2a5976ee3cfb55ab402aca8fb75ad59c40e9c64a2bddf5fc03d22ac6ec",
+        "scripts/truth/latex/tex.py": "4644b348ef3aa736cf152233c5be0daeb6e389457f6164d22bd59c639cf78dd3",
+        "src/domain.rs": "c72e30a73d35228dce450c0f9c888c4e1824d6d17bf6dde8968d95938bbd805f",
+        "src/library.rs": "698f0c63dabbee945b76f79bc7ee97be5e0ac2d0a16982c63ad2fdb153f7ed0b",
+        "src/source_index.rs": "36bbe0443ba975dcdc7fc9ee1a5bb7e5939714b04e430726c55f344a912333d6",
+        "src/source_index/cache.rs": "de4201cc471426736b4ae3cefd003e16308239852b86efed922e4409859fd0ec",
+        "src/source_index/figures.rs": "9b440755e7973dc66f369ce59f829cfb73d17f961d0d1c4cff0652236d0e0dd6",
+        "src/source_index/native.rs": "06dffce2ea63aaf5b3927c36f130cde2a88042a56c9a8942f38abaf68602e151",
+        "src/source_index/ocr.rs": "856d7972a9c9b4323afb1b2159df9bdecf2d57171bd4a7a92c4b576cceb58f18",
+        "src/source_index/paragraphs.rs": "8a18fb62906091abe267e26e74aee83de9ab5ab3d94ee48d8294226733062df6",
+        "src/store.rs": "c9f355f9b1494af21c1384d530b99411713dc00ace7a566b270ed61ee6afe0b4"
+      },
+      "model_calls": 0,
+      "network_calls": 0,
+      "panel_agent_cost_note": "Independent prior agent judgment cost is not exposed by the harness.",
+      "panel_agent_judgment_cost_usd": null,
+      "schema_version": 1,
+      "wall_seconds": 0.1160093170037726
+    },
+    "sha256": "eec020b039adf80684671c69086bb0b73b731b6e9985a91c5c969f76a2769174"
+  },
+  "native_full_index": {
+    "path": "/home/tjmisko/.cache/lysilogy/k1-full-index-receipt.json",
+    "receipt": {
+      "executable_sha256": "9583e52411a0fc80466bfa4ad9f50d671d79ad8b218b9f4b5fccec506f7350c9",
+      "exit_code": 0,
+      "helper_source_sha256": "4cdce79da883df3fd656d5ba1f3dee3cbdc780532dab2f77587e20c664a4bf51",
+      "inputs_sha256": "2d4504df1208d27dc56ddae5549d1a49465d5db8fff06765215d0351a63cf8e0",
+      "model_calls": 0,
+      "model_cost_usd": 0,
+      "network_calls": 0,
+      "output_sha256": "40b0545ac4f34c4c1d389f3f7bbdb8b613a533cef6e566285b570ccd7ea0f785",
+      "request_sha256": "0e9e4e103811fdd8b1f94b69abd7c0d69b9f0031bf372b56d0179fdf4fd1ebb5",
+      "wall_seconds": 1374.7848599479985
+    },
+    "sha256": "00f9368675ee9b9b49684562cf3dee545c8b84fe7f3a7cc446302c8f61eeb618"
+  },
+  "native_independent_review": {
+    "path": "/home/tjmisko/.cache/lysilogy/k1-full-index-root-review.json",
+    "receipt": {
+      "external_model_calls": 0,
+      "failures": [
+        {
+          "error": "PDF coordinate extraction was invalid: word rectangle must contain ordered finite coordinates",
+          "paper_id": "e723f251047f05c0",
+          "pdf_sha256": "6470900fce80751fc31cc97401933fba56e5f2ad8848a353a7e34d6f16cc0647",
+          "relative_path": "2308.05883v2.pdf",
+          "wall_seconds": 0.429743898
+        }
+      ],
+      "indexes_rehashed": 999,
+      "input_output_hashes": {
+        "k1-full-eval-inputs.json": "2d4504df1208d27dc56ddae5549d1a49465d5db8fff06765215d0351a63cf8e0",
+        "k1-full-index-request.json": "0e9e4e103811fdd8b1f94b69abd7c0d69b9f0031bf372b56d0179fdf4fd1ebb5",
+        "k1-full-index.json": "40b0545ac4f34c4c1d389f3f7bbdb8b613a533cef6e566285b570ccd7ea0f785"
+      },
+      "network_calls": 0,
+      "pdfs_rehashed": 1000,
+      "purpose": "Independent verification of actual full eval map outputs/PDFs/indexes, not source truth or system acceptance",
+      "receipt_sha256": "00f9368675ee9b9b49684562cf3dee545c8b84fe7f3a7cc446302c8f61eeb618",
+      "schema_version": 1,
+      "total_file_bytes_rehashed": 6171809461,
+      "unique_paper_ids": 1000,
+      "wall_seconds": 9.301954249000119
+    },
+    "sha256": "d02efd8554e444bb9157a1a5649c17d13ec9dc213102c15015f0ee44bf98c4a7"
+  },
+  "open_acceptance": [
+    "Approximately 500 accepted papers not reached; historical 1000-paper run accepts zero automatic cohorts.",
+    "Every-kind manual truth and final publication not complete.",
+    "Manual/inventory capability software reviews pending.",
+    "Final integrated quality/eval gates pending.",
+    "O1/O2/O11 production objectives unmeasured; no target claim."
+  ],
+  "schema_version": 1,
+  "scope": "E8.3 partial implementation and coverage checkpoint; no final K1 publication",
+  "source_checkpoint": "b363638"
+}
