@@ -228,6 +228,27 @@ Record a SHA-256 content hash for each PDF alongside its path-derived `PaperId`.
 is renamed, re-associate its existing artifacts instead of orphaning them. The KB links local
 copies by content hash.
 
+Implementation decision: `paper-identities.json` is canonical state under the data root, bound to
+the canonical library root. A `PaperId` is initially path-derived and is retained on a unique
+hash-proven move; artifact directories never move or merge. Missing identities remain as
+tombstones. Replaced content and ambiguous duplicate/move groups receive separate identities;
+the scan API and CLI report duplicate paths and unresolved identity groups. Unresolved prior IDs
+are persisted by content hash, so provisional new IDs do not hide conflicts on subsequent scans
+or restarts. Reports follow current paths; absent sources do not resolve a conflict. Reusing an unrelated
+library with the same data root is rejected. Legacy artifacts at an unchanged path are adopted
+on the first identity scan; moves made before any content hash was recorded cannot be inferred.
+
+Notes keep the original relative PDF path as a canonical notes key. A rename changes only the
+PDF's current location, so notes continue to open and save through the original key. Replaced
+content or reuse of an already-reserved notes name gets a distinct ` [paper-<id>-<n>]` suffix.
+No note is read, moved, or rewritten during discovery; existing authored source links inside notes
+are preserved verbatim. Registry transactions use a cross-process lock and a synced atomic
+replacement, and refresh publication is serialized. Hashes are streamed and cached by size/mtime
+with inode/ctime safeguards so atomic replacement with preserved size/mtime is detected. Source
+stamps are checked around hashing and extraction. Extraction must finish with exactly its freshly
+verified initial stamp: even restored original bytes cannot validate output read during a temporary
+change. An unresolved content change requires a rescan.
+
 Acceptance: moving or renaming a mapped PDF preserves analysis, highlights, notes linkage, reader
 tools, and objects; duplicate PDFs at two paths are reported rather than silently merged; hashing
 is cached by size and modification time so rescans do not rehash unchanged files.

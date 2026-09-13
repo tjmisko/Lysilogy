@@ -51,6 +51,71 @@ impl ArtifactStore {
         self.recover_running_experiments().await
     }
 
+    /// Serialize identity transactions across scans, store handles, and processes.
+    pub(crate) async fn lock_identities(&self) -> Result<std::fs::File> {
+        fs::create_dir_all(&self.root)
+            .await
+            .map_err(|error| Error::io(&self.root, error))?;
+        let path = self.root.join("paper-identities.lock");
+        tokio::task::spawn_blocking(move || {
+            let file: std::fs::File = rustix::fs::open(
+                &path,
+                rustix::fs::OFlags::RDWR
+                    | rustix::fs::OFlags::CREATE
+                    | rustix::fs::OFlags::NOFOLLOW
+                    | rustix::fs::OFlags::CLOEXEC,
+                rustix::fs::Mode::RUSR | rustix::fs::Mode::WUSR,
+            )
+            .map_err(|error| Error::io(&path, error.into()))?
+            .into();
+            rustix::fs::flock(&file, rustix::fs::FlockOperation::LockExclusive)
+                .map_err(|error| Error::io(&path, error.into()))?;
+            Ok(file)
+        })
+        .await
+        .map_err(|error| Error::Task(error.to_string()))?
+    }
+
+    pub(crate) async fn load_identities(&self) -> Result<Option<crate::library::IdentityRegistry>> {
+        read_json_if_present(&self.root.join("paper-identities.json")).await
+    }
+
+    /// Canonical identity state is synced before publication. No paper artifact is
+    /// moved, rewritten, or removed as part of an identity transaction.
+    pub(crate) async fn save_identities(
+        &self,
+        registry: &crate::library::IdentityRegistry,
+    ) -> Result<()> {
+        use tokio::io::AsyncWriteExt;
+        let path = self.root.join("paper-identities.json");
+        let sequence = TEMP_FILE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let temporary = self.root.join(format!(
+            "paper-identities.tmp-{}-{sequence}",
+            std::process::id()
+        ));
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .await
+            .map_err(|error| Error::io(&temporary, error))?;
+        file.write_all(&serde_json::to_vec_pretty(registry)?)
+            .await
+            .map_err(|error| Error::io(&temporary, error))?;
+        file.sync_all()
+            .await
+            .map_err(|error| Error::io(&temporary, error))?;
+        fs::rename(&temporary, &path)
+            .await
+            .map_err(|error| Error::io(&path, error))?;
+        fs::File::open(&self.root)
+            .await
+            .map_err(|error| Error::io(&self.root, error))?
+            .sync_all()
+            .await
+            .map_err(|error| Error::io(&self.root, error))
+    }
+
     pub async fn load_reader_tools(
         &self,
         id: &PaperId,

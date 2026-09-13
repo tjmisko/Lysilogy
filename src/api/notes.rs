@@ -62,7 +62,7 @@ async fn paper_path(state: &AppState, id: &str) -> crate::Result<String> {
         .read()
         .await
         .get(&id)
-        .map(|entry| entry.overview.relative_path.clone())
+        .map(|entry| entry.notes_relative_path.clone())
         .ok_or_else(|| Error::PaperNotFound(id.to_string()))
 }
 
@@ -106,6 +106,85 @@ mod tests {
     };
     use http_body_util::BodyExt;
     use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn should_follow_canonical_notes_when_pdf_moves_and_old_path_is_reused() {
+        let library = tempfile::tempdir().unwrap();
+        let data = tempfile::tempdir().unwrap();
+        let notes = tempfile::tempdir().unwrap();
+        tokio::fs::write(library.path().join("old.pdf"), b"original PDF")
+            .await
+            .unwrap();
+        let state = AppState::new(library.path(), data.path())
+            .await
+            .unwrap()
+            .with_notes_root(notes.path());
+        let id = state.library().await.papers[0].id.clone();
+        tokio::fs::write(notes.path().join("old.md"), "Reader-owned notes.")
+            .await
+            .unwrap();
+        tokio::fs::rename(
+            library.path().join("old.pdf"),
+            library.path().join("new.pdf"),
+        )
+        .await
+        .unwrap();
+        state.refresh().await.unwrap();
+        let app = crate::build_router(state.clone(), None);
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/papers/{id}/notes"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let preserved: serde_json::Value =
+            serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes())
+                .unwrap();
+        assert_eq!(preserved["text"], "Reader-owned notes.");
+        assert_eq!(preserved["filename"], "old.md");
+        let saved = app.clone().oneshot(Request::builder()
+            .uri(format!("/api/papers/{id}/notes")).method("PUT")
+            .header("content-type", "application/json")
+            .body(Body::from(serde_json::json!({"text":"Updated through moved PDF.","revision":preserved["revision"]}).to_string())).unwrap()
+        ).await.unwrap();
+        assert_eq!(saved.status(), StatusCode::OK);
+        tokio::fs::write(library.path().join("old.pdf"), b"unrelated new PDF")
+            .await
+            .unwrap();
+        let library = state.refresh().await.unwrap();
+        let replacement = library
+            .papers
+            .iter()
+            .find(|paper| paper.relative_path == "old.pdf")
+            .unwrap();
+        assert_ne!(replacement.id, id);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/papers/{}/notes", replacement.id))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let isolated: serde_json::Value =
+            serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes())
+                .unwrap();
+        assert_eq!(isolated["text"], "");
+        assert_ne!(isolated["filename"], "old.md");
+        assert_eq!(
+            tokio::fs::read_to_string(notes.path().join("old.md"))
+                .await
+                .unwrap(),
+            "Updated through moved PDF."
+        );
+        assert!(!notes.path().join("new.md").exists());
+    }
 
     #[tokio::test]
     async fn notes_api_reads_writes_and_detects_external_changes() {
