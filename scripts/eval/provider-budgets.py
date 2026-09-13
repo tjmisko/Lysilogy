@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import os
 import subprocess
+import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,6 +15,20 @@ TRACE = "eval/inputs/provider-budget-observations.json"
 
 def evidence(path, version):
     return {"path": path, "version": version, "sha256": hashlib.sha256((ROOT / path).read_bytes()).hexdigest()}
+
+
+def atomic_json(path, value, indent=None):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, prefix=path.name + ".", delete=False) as stream:
+        temporary = Path(stream.name)
+        try:
+            json.dump(value, stream, sort_keys=True, indent=indent)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+            os.replace(temporary, path)
+        finally:
+            temporary.unlink(missing_ok=True)
 
 
 def validate_trace(events, fixture):
@@ -70,10 +85,8 @@ def main():
     run = subprocess.run(["cargo", "run", "--quiet", "--offline", "--example", "provider_budget_eval", "--", TRUTH], cwd=ROOT, env=environment, check=True, capture_output=True, text=True)
     events = json.loads(run.stdout)
     result = validate_trace(events, fixture)
-    (ROOT / TRACE).parent.mkdir(parents=True, exist_ok=True)
-    (ROOT / TRACE).write_text(json.dumps({"summary": result, "events": events}, sort_keys=True) + "\n")
+    atomic_json(ROOT / TRACE, {"summary": result, "events": events})
     path = ROOT / "eval/inputs/scale/provider-budgets.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
     value = {"schema_version": 1, "suite": "scale", "collector": "provider-budgets-v1",
              "implementation": [evidence(file, "e7.1-v1") for file in
                                 ("src/citation_graph/budget.rs", "src/citation_graph/cache.rs", "src/citation_graph/http.rs", "src/citation_graph/mod.rs",
@@ -81,7 +94,7 @@ def main():
              "truth_sets": {"recorded fixtures": evidence(TRUTH, "provider-budget-batch-v1")},
              "metrics": {"O30": {"sample": {"method": "value", "value": result["violations"]}, "cases": result["cases"], "evidence": [evidence(TRACE, "provider-budget-observations-v1")]}},
              "cost_usd": 0, "wall_seconds": time.monotonic() - started}
-    path.write_text(json.dumps(value, sort_keys=True, indent=2) + "\n")
+    atomic_json(path, value, indent=2)
     print(json.dumps(result, sort_keys=True))
 
 

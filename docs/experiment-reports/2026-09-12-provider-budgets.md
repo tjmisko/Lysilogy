@@ -20,7 +20,7 @@ auditor detects them. The simulation validates the configured admission algorith
 transport/storage tests verify its integration, concurrent exhaustion and restart persistence.
 It does not claim a live provider throughput or account-credit measurement.
 
-The measured collector wall time was 0.183 seconds with cached Cargo artifacts. The trace
+The final measured collector wall time was 0.448 seconds with cached Cargo artifacts. The trace
 SHA-256 was `652cce8669163944e95582aa51a81cb3781ed1388fe75a36842202230707d030`; the
 fixture SHA-256 was `3272d90d6aa27b2c8081ef5ff6e7c823d840bc645bf7c6a69859e83d8f6b5cd9`.
 
@@ -39,10 +39,18 @@ collector. The first measured value is 0, reaching the unchanged objective. No f
 miss is needed. The collector's measured wall time is stored in its generated input; it includes
 the offline Cargo invocation and audit, rather than an invented simulated-time cost.
 
-Validation before E8.1 integration: Rust formatting and strict clippy passed; 202 Rust unit and
-2 integration tests passed, including 16 new cache/budget/transport tests. Four independent
-Python audit tests passed. No frontend source changed. `eval scale --check` and `eval tests
---check` will be recorded after the harness merges and the per-collector input becomes available.
+After integrating E8.1 with a preserving-history merge, Rust formatting and strict clippy
+passed; 243 Rust unit and 12 integration tests passed, including 16 new cache/budget/transport
+tests. `eval scale --check` measured O30 = 0 and ratcheted its first baseline to zero. A fresh
+`eval tests --check` passed G5 in a new network namespace with no model CLIs: 255 Rust, 49
+Python (including four independent budget audit tests), and 84 Node tests. G5 took 6.181 seconds.
+The generated scorecard records 1/5 gates passing and 1/30 objectives at target; other metrics
+remain unavailable. Existing frontend dependencies were accessed through a worktree symlink.
+
+Retained evidence is `eval/evidence/provider-budgets-initial.json` (the full collector input,
+observed counts and hashes) and `eval/evidence/g5-provider-budgets.json` (isolation and command
+results). Raw generated traces and command logs remain ignored and reproducible. The collector
+atomically replaces only its own trace and input, allowing disjoint scale collectors to coexist.
 
 Default shared storage is `~/.cache/lysilogy/providers/`, independent of library/data roots. A
 service may pass an explicit shared root and per-provider policies; isolated tests use temporary
