@@ -13,8 +13,8 @@ System acceptance requires 5/5 gates and at least 24/30 objectives; use `eval al
 | G3 | Published enrichment quote source mismatches | objects | — | — | ≤ 0 | count | unavailable |
 | G4 | Rebuild determinism: entities, IDs, aliases | resolution | — | — | ≥ 1 | fraction | unavailable |
 | G5 | Tests pass with network disabled and no model CLIs | tests | 1 | 1 | ≥ 1 | pass | pass |
-| O1 | Figure and table detection F1 | objects | — | — | ≥ 0.9 | fraction | unavailable |
-| O2 | Figure and table region IoU, median | objects | — | — | ≥ 0.75 | fraction | unavailable |
+| O1 | Figure and table detection F1 | objects | 0.769231 | 0.769231 | ≥ 0.9 | fraction | below target |
+| O2 | Figure and table region IoU, median | objects | 0.244851 | 0.244851 | ≥ 0.75 | fraction | below target |
 | O3 | Numbered equation detection F1 | objects | — | — | ≥ 0.85 | fraction | unavailable |
 | O4 | Equation and statement mention link accuracy | objects | — | — | ≥ 0.9 | fraction | unavailable |
 | O5 | Theorem-like statement detection F1 | objects | — | — | ≥ 0.85 | fraction | unavailable |
@@ -65,19 +65,13 @@ System acceptance requires 5/5 gates and at least 24/30 objectives; use `eval al
 Measurements are calculated from `eval/inputs/<suite>/<collector>.json` or the legacy suite file with content-verified implementation, truth-set, and observation files. G5 executes isolated tests. Results retain truth versions, source hashes, commit, case counts, cost, wall time, and the pre-run baseline. Missing cost is unknown.
 
 - **G3:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
-- **O1:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
-- **O2:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O1:** 15 cases; K1 k1-limited-v1 (`0afccc35dc5eedb48b4df4e30ee33e06dac02a07f0b7cab6d6f5c53743202976`)
+- **O2:** 15 cases; K1 k1-limited-v1 (`0afccc35dc5eedb48b4df4e30ee33e06dac02a07f0b7cab6d6f5c53743202976`)
 - **O3:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 - **O4:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 - **O5:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 - **O6:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 - **O7:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
-- **O8:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
-- **O9.title:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
-- **O9.first_author:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
-- **O9.year:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
-- **O10.precision:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
-- **O10.recall:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
 - **O11:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 - **O25:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
 - **O26.render:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
