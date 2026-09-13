@@ -144,10 +144,29 @@ def history(docs, raws, candidate_raw):
     corrected = docs['independent_corrected']
     hash_ref(docs['correction_receipt']['inventory'], raws['independent_corrected'],
              'correction receipt binds another inventory')
-    # This declared correction codec permits bibliography-only changes. Objects,
-    # references, role inventories and blind inspection history must be identical.
-    exact({k: v for k, v in initial.items() if k != 'bibliography'},
-          {k: v for k, v in corrected.items() if k != 'bibliography'},
+    # A field correction may append its honest audit history, but cannot remove
+    # an earlier limitation or retroactively change the original inspection.
+    changed_fields = {'bibliography'}
+    if 'correction_provenance' in corrected:
+        require('correction_provenance' not in initial, 'original inventory already has an unsupported correction chain')
+        provenance = corrected['correction_provenance']
+        exact(provenance, docs['correction_receipt']['correction_scope'], 'field correction provenance differs from receipt')
+        hash_ref(provenance['original_inventory'], raws['independent'], 'field correction names another original inventory')
+        hash_ref(provenance['original_receipt'], raws['independent_receipt'], 'field correction names another original receipt')
+        require(all(isinstance(provenance.get(key), str) and 0 < len(provenance[key]) <= 10000
+                    for key in ('scope', 'reason', 'field_audit_path')), 'field correction lacks bounded scope and audit provenance')
+        require(all(type(provenance.get(key)) is int and 0 <= provenance[key] <= 100000
+                    for key in ('changed_fields', 'audited_fields', 'added_nonwhitespace_characters'))
+                and provenance['changed_fields'] <= provenance['audited_fields'], 'field correction audit counts are invalid')
+        previous, current = initial.get('limitations', []), corrected.get('limitations', [])
+        require(isinstance(previous, list) and isinstance(current, list) and len(current) <= 1000
+                and all(isinstance(item, str) and 0 < len(item) <= 10000 for item in current),
+                'field correction limitation history is invalid')
+        exact(current[:len(previous)], previous, 'field correction removed or replaced an original limitation')
+        changed_fields.update(('correction_provenance', 'limitations'))
+    # Objects, references, role inventories and blind inspection remain exact.
+    exact({k: v for k, v in initial.items() if k not in changed_fields},
+          {k: v for k, v in corrected.items() if k not in changed_fields},
           'field correction changed object/reference/inspection evidence')
     supplement, receipt = docs['math'], docs['math_receipt']
     require(supplement['original_inventory_sha256'] == sha256(raws['independent'])
@@ -360,7 +379,7 @@ def validate_roles(docs, files):
         field = next((key for key in ('source_environment', 'source_passage', 'source_heading') if key in other), None)
         require(field is not None, 'primary role lacks a source occurrence')
         p_member, _ = source_member(other[field], files, True)
-        require(p_member['path'] == member['path'] and p_member['start'] == member['start']
+        require(p_member['path'] == member['path'] and member['start'] <= p_member['start']
                 and p_member['end'] <= member['end'], 'primary/independent role occurrence differs')
     require({r['id'] for r in primary['manual_lists'] + primary['narrative_procedure_candidates']} <= used_primary,
             'primary procedure candidate was omitted')

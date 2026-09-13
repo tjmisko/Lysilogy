@@ -146,6 +146,11 @@ inputs, reproduces the native allowlist and deposited source-member export, and
 rechecks the evidence closure after validation. Aggregate JSON evidence is bounded
 at 64 MiB; individual documents, object counts and cumulative native membership
 are also bounded. Equality guards preserve JSON number/boolean types.
+Bibliography-only correction metadata must match its receipt and original hashes;
+appended limitations retain every prior limitation as an exact ordered prefix.
+Reviewed informal-role crosswalks may pair a contained primary body span with an
+independent full passage including its heading. They preserve the complete outer
+source excerpt and explicit reviewed IDs; disjoint or cross-member spans fail.
 
 This format's first codec supports complete direct figure, table and numbered
 equation inventories plus independently reviewed empty formal statement, proof

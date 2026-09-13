@@ -176,6 +176,37 @@ class TrancheTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'correction changed'):
             history(docs, seal(docs), canonical(candidate))
 
+    def test_should_retain_correction_metadata_when_original_limitations_and_receipt_chain_remain_exact(self):
+        candidate, _, _, docs, _ = fixture()
+        original = docs['independent']; corrected = docs['independent_corrected']
+        original['limitations'] = ['Native text omits an accent.']
+        docs['independent_receipt']['inventory'] = {'sha256': sha256(canonical(original))}
+        provenance = {'original_inventory': {'sha256': sha256(canonical(original))},
+                      'original_receipt': {'sha256': sha256(canonical(docs['independent_receipt']))},
+                      'scope': 'Bibliography native memberships only; original objects and links unchanged.',
+                      'reason': 'Retain a raw combining accent in the field membership.',
+                      'changed_fields': 1, 'audited_fields': 3, 'added_nonwhitespace_characters': 1,
+                      'field_audit_path': 'independent/field-audit.json'}
+        corrected['limitations'] = original['limitations'] + ['The field audit restores the accent; no truth acceptance.']
+        corrected['correction_provenance'] = provenance
+        docs['correction_receipt']['correction_scope'] = deepcopy(provenance)
+        docs['correction_receipt']['inventory'] = {'sha256': sha256(canonical(corrected))}
+        docs['math']['original_inventory_sha256'] = sha256(canonical(original))
+        docs['math']['field_corrected_inventory_v2_sha256'] = sha256(canonical(corrected))
+        docs['math_receipt']['supplement_sha256'] = sha256(canonical(docs['math']))
+        docs['math_receipt']['supplement_bytes'] = len(canonical(docs['math']))
+        docs['construction']['independent_annotation_v2'] = {'sha256': sha256(canonical(corrected))}
+        history(docs, seal(docs), canonical(candidate))
+        for mutation in [lambda d: d['independent_corrected']['limitations'].pop(0),
+                         lambda d: d['independent_corrected']['limitations'].__setitem__(0, 'No native loss.'),
+                         lambda d: d['independent_corrected']['correction_provenance'].update(reason='another reason'),
+                         lambda d: d['independent_corrected']['correction_provenance']['original_inventory'].update(sha256='0' * 64),
+                         lambda d: d['independent_corrected']['objects'].pop()]:
+            changed = deepcopy(docs); mutation(changed)
+            changed['correction_receipt']['inventory'] = {'sha256': sha256(canonical(changed['independent_corrected']))}
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                history(changed, seal(changed), canonical(candidate))
+
     def test_should_reject_math_geometry_changes_when_reviewed_boxes_or_native_members_differ(self):
         for mutation in [lambda d: d['math_review']['rows'][0].update(selected_body_boxes=[]),
                          lambda d: d['math']['objects'][0].update(unresolved_expression_ambiguities=['unclear script']),
@@ -258,6 +289,16 @@ class TrancheTests(unittest.TestCase):
                                                          'proposed_disposition': 'outside_E1.5_algorithm_listing_scope',
                                                          'source_member': 'main.tex', 'source_span': {'start': 0, 'end': 17}, 'source_excerpt_sha256': digest}]
         self.assertEqual(len(validate_roles(docs, files)), 1)
+        # The reviewed full passage can include a heading around the primary's
+        # narrower body occurrence. Retain the complete independent outer span.
+        docs['primary']['manual_lists'][0]['source_environment'].update(start=4, end=15)
+        self.assertEqual(validate_roles(docs, files)[0]['source_span'], {'start': 0, 'end': 17})
+        for member in [{'member': 'other.tex', 'start': 4, 'end': 15},
+                       {'member': 'main.tex', 'start': 4, 'end': 18},
+                       {'member': 'main.tex', 'start': 18, 'end': 19}]:
+            changed = deepcopy(docs); changed['primary']['manual_lists'][0]['source_environment'] = member
+            with self.subTest(member=member), self.assertRaises(ValueError):
+                validate_roles(changed, {**files, 'other.tex': files['main.tex']})
         docs['role_review']['retained_role_candidates'][0]['proposed_disposition'] = 'uncertain'
         with self.assertRaises(ValueError): validate_roles(docs, files)
 
