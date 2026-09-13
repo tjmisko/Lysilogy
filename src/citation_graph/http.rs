@@ -1,4 +1,7 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use reqwest::{
     Url,
@@ -6,12 +9,16 @@ use reqwest::{
     redirect::Policy,
 };
 use serde_json::Value;
-use tokio::{sync::Mutex, time::Instant};
 
-use super::{FailureKind, GraphFailure, GraphFuture, GraphResult, Provider};
+use super::{
+    FailureKind, GraphFailure, GraphFuture, GraphResult, Provider,
+    budget::{BudgetPolicy, ProviderBudgets, now_ms},
+    cache::{
+        CacheKey, MAX_RESPONSE_BYTES, ProviderCache, credential_variants, public_url, sanitize,
+    },
+};
 
-const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
-
+#[derive(Clone)]
 pub struct Request {
     pub provider: Provider,
     pub url: Url,
@@ -39,7 +46,8 @@ pub trait Transport: Send + Sync {
 #[derive(Clone)]
 pub struct GraphHttp {
     client: reqwest::Client,
-    next_request: [Arc<Mutex<Instant>>; 4],
+    cache: ProviderCache,
+    budgets: ProviderBudgets,
     openalex_key: Option<String>,
     semantic_key: Option<String>,
     opencitations_token: Option<String>,
@@ -52,8 +60,23 @@ impl std::fmt::Debug for GraphHttp {
 }
 impl GraphHttp {
     pub fn from_environment() -> crate::Result<Self> {
+        let home = std::env::var_os("HOME").ok_or_else(|| {
+            crate::Error::Task("HOME is required for shared provider storage".to_owned())
+        })?;
+        Self::from_environment_with_storage(
+            &PathBuf::from(home).join(".cache/lysilogy/providers"),
+            [BudgetPolicy::default(); 4],
+        )
+    }
+
+    /// Alternate storage supports isolated tests or an explicitly shared service cache.
+    pub fn from_environment_with_storage(
+        root: &Path,
+        policy: [BudgetPolicy; 4],
+    ) -> crate::Result<Self> {
         let client = reqwest::Client::builder()
             .redirect(Policy::none())
+            .no_proxy()
             .connect_timeout(Duration::from_secs(10))
             .timeout(Duration::from_secs(25))
             .user_agent(concat!("Lysilogy/", env!("CARGO_PKG_VERSION")))
@@ -61,7 +84,9 @@ impl GraphHttp {
             .map_err(|_| crate::Error::Task("Could not create citation HTTP client".to_owned()))?;
         Ok(Self {
             client,
-            next_request: std::array::from_fn(|_| Arc::new(Mutex::new(Instant::now()))),
+            cache: ProviderCache::new(root.join("responses"), Duration::from_secs(7 * 86_400)),
+            budgets: ProviderBudgets::new(root.join("budgets"), policy)
+                .map_err(|failure| crate::Error::Task(failure.message))?,
             openalex_key: std::env::var("LYSILOGY_OPENALEX_API_KEY").ok(),
             semantic_key: std::env::var("LYSILOGY_SEMANTIC_SCHOLAR_API_KEY").ok(),
             opencitations_token: std::env::var("LYSILOGY_OPENCITATIONS_TOKEN").ok(),
@@ -86,6 +111,7 @@ impl GraphHttp {
                 "Citation requests must use the fixed provider HTTPS endpoint",
             ));
         }
+        request.url = public_url(&request.url);
         if let Some(key) = &self.openalex_key
             && request.provider == Provider::Openalex
         {
@@ -123,27 +149,17 @@ impl GraphHttp {
 
     async fn request(&self, request: Request) -> GraphResult<Value> {
         let provider = request.provider;
+        let secrets = self.secrets();
+        let key = CacheKey::new(&request, &secrets)?;
         let builder = self.prepare(request)?;
-        // Per-provider throttles are shared by concurrent API requests. Long Retry-After
-        // cooldowns fail immediately; they never sleep or block another provider.
-        let provider_index = match provider {
-            Provider::Openalex => 0,
-            Provider::SemanticScholar => 1,
-            Provider::Opencitations => 2,
-            Provider::Crossref => 3,
-        };
-        let mut slot = self.next_request[provider_index].lock().await;
-        let remaining = slot.saturating_duration_since(Instant::now());
-        if remaining > Duration::from_millis(1_100) {
-            let mut failure = GraphFailure::new(
-                FailureKind::RateLimited,
-                "Citation provider is cooling down after Retry-After",
-            );
-            failure.retry_after_seconds = Some(remaining.as_secs() + 1);
-            return Err(failure);
+        if let Some(value) = self.cache.get(&key, now_ms(), &secrets).await? {
+            return Ok(value);
         }
-        tokio::time::sleep_until(*slot).await;
-        *slot = Instant::now() + Duration::from_millis(1_100);
+        let mut lease = self.budgets.acquire(provider).await?;
+        // Another caller may have filled this lookup while we waited for admission.
+        if let Some(value) = self.cache.get(&key, now_ms(), &secrets).await? {
+            return Ok(value);
+        }
         // Never format reqwest errors: they can contain the authenticated URL.
         let mut response = builder.send().await.map_err(|_| {
             GraphFailure::new(
@@ -169,11 +185,10 @@ impl GraphHttp {
                 .and_then(|v| v.to_str().ok())
                 .and_then(retry_after);
             if let Some(seconds) = failure.retry_after_seconds {
-                *slot = Instant::now() + Duration::from_secs(seconds.min(86_400));
+                lease.cooldown(seconds).await?;
             }
             return Err(failure);
         }
-        drop(slot);
         if response
             .content_length()
             .is_some_and(|length| length > MAX_RESPONSE_BYTES as u64)
@@ -195,7 +210,34 @@ impl GraphHttp {
             }
             bytes.extend_from_slice(&chunk);
         }
-        serde_json::from_slice(&bytes).map_err(|_| GraphFailure::malformed())
+        let value: Value = serde_json::from_slice(&bytes).map_err(|_| GraphFailure::malformed())?;
+        let value = sanitize(value, &secrets);
+        if !(value.is_object() || value.is_array()) {
+            return Err(GraphFailure::malformed());
+        }
+        if self
+            .cache
+            .put(&key, &value, now_ms(), &secrets)
+            .await
+            .is_err()
+        {
+            tracing::warn!("Provider response succeeded but its cache could not be persisted");
+        }
+        drop(lease);
+        Ok(value)
+    }
+
+    fn secrets(&self) -> Vec<String> {
+        credential_variants(
+            [
+                &self.openalex_key,
+                &self.semantic_key,
+                &self.opencitations_token,
+                &self.mailto,
+            ]
+            .into_iter()
+            .filter_map(Clone::clone),
+        )
     }
 }
 impl Transport for GraphHttp {
@@ -222,10 +264,12 @@ fn retry_after(value: &str) -> Option<u64> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn client() -> GraphHttp {
+    fn client(root: &std::path::Path) -> GraphHttp {
         GraphHttp {
             client: reqwest::Client::new(),
-            next_request: std::array::from_fn(|_| Arc::new(Mutex::new(Instant::now()))),
+            cache: ProviderCache::new(root.join("responses"), Duration::from_secs(60)),
+            budgets: ProviderBudgets::new(root.join("budgets"), [BudgetPolicy::default(); 4])
+                .unwrap(),
             openalex_key: Some("private-openalex-key".to_owned()),
             semantic_key: Some("private-semantic-key".to_owned()),
             opencitations_token: Some("private-oc-token".to_owned()),
@@ -233,9 +277,16 @@ mod tests {
         }
     }
     #[tokio::test]
-    async fn retry_after_cooldowns_are_shared_provider_local_and_fail_fast() {
-        let client = client();
-        *client.next_request[1].lock().await = Instant::now() + Duration::from_secs(3_600);
+    async fn should_fail_fast_for_one_provider_when_a_shared_retry_after_cooldown_exists() {
+        let root = tempfile::tempdir().unwrap();
+        let client = client(root.path());
+        let mut lease = client
+            .budgets
+            .acquire(Provider::SemanticScholar)
+            .await
+            .unwrap();
+        lease.cooldown(3_600).await.unwrap();
+        drop(lease);
         let shared = client.clone();
         let request = Request::new(
             Provider::SemanticScholar,
@@ -248,18 +299,13 @@ mod tests {
             .unwrap_err();
         assert_eq!(failure.kind, FailureKind::RateLimited);
         assert!(failure.retry_after_seconds.unwrap() >= 3_599);
-        assert!(
-            client.next_request[0]
-                .lock()
-                .await
-                .saturating_duration_since(Instant::now())
-                .is_zero()
-        );
+        assert!(client.budgets.acquire(Provider::Openalex).await.is_ok());
         assert!(!format!("{client:?}").contains("private-openalex-key"));
     }
     #[test]
-    fn credentials_are_provider_specific_and_urls_cannot_change_hosts() {
-        let client = client();
+    fn should_attach_provider_specific_credentials_when_a_fixed_host_request_is_prepared() {
+        let root = tempfile::tempdir().unwrap();
+        let client = client(root.path());
         let wrong = Request::new(
             Provider::Crossref,
             "https://example.com/",
@@ -288,8 +334,62 @@ mod tests {
         assert!(authenticated.url().query().is_none());
         assert!(authenticated.headers()["x-api-key"].is_sensitive());
     }
+    #[tokio::test]
+    async fn should_return_cached_data_without_network_when_provider_budget_is_cooling_down() {
+        let root = tempfile::tempdir().unwrap();
+        let client = client(root.path());
+        let request = Request::new(
+            Provider::Openalex,
+            "https://api.openalex.org/",
+            &["works", "W1"],
+        );
+        let key = CacheKey::new(&request, &client.secrets()).unwrap();
+        client
+            .cache
+            .put(
+                &key,
+                &serde_json::json!({"id": "W1"}),
+                now_ms(),
+                &client.secrets(),
+            )
+            .await
+            .unwrap();
+        let mut lease = client.budgets.acquire(Provider::Openalex).await.unwrap();
+        lease.cooldown(600).await.unwrap();
+        drop(lease);
+        assert_eq!(client.get(request).await.unwrap()["id"], "W1");
+    }
+
+    #[tokio::test]
+    async fn should_consult_real_budget_when_a_cached_entry_has_expired() {
+        let root = tempfile::tempdir().unwrap();
+        let client = client(root.path());
+        let request = Request::new(
+            Provider::Openalex,
+            "https://api.openalex.org/",
+            &["works", "W1"],
+        );
+        let key = CacheKey::new(&request, &client.secrets()).unwrap();
+        client
+            .cache
+            .put(
+                &key,
+                &serde_json::json!({"id": "W1"}),
+                now_ms() - 60_000,
+                &client.secrets(),
+            )
+            .await
+            .unwrap();
+        let mut lease = client.budgets.acquire(Provider::Openalex).await.unwrap();
+        lease.cooldown(600).await.unwrap();
+        drop(lease);
+        assert_eq!(
+            client.get(request).await.unwrap_err().kind,
+            FailureKind::RateLimited
+        );
+    }
     #[test]
-    fn retry_after_parses_seconds_and_http_dates() {
+    fn should_parse_retry_after_when_seconds_or_http_dates_are_supplied() {
         assert_eq!(retry_after("120"), Some(120));
         assert_eq!(retry_after("Wed, 21 Oct 2015 07:28:00 GMT"), Some(0));
         assert_eq!(retry_after("not a retry interval"), None);
