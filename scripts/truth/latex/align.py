@@ -220,7 +220,7 @@ def align_paper(parsed, index, threshold=0.95):
                         "spans": [{"start": span["start"], "end": span["end"]}], "quality": span["quality"],
                         "source_members": row["source_members"], "text_sha256": row["text_sha256"],
                         "caption": row["caption"], "statement_type": row["statement_type"],
-                        "proof_targets": row["proof_targets"], "text_geometry": aligner.geometry(span),
+                        "proof_targets": row["proof_targets"], "proof_linkage": row.get("proof_linkage"), "text_geometry": aligner.geometry(span),
                         "region": None, "region_status": "independent visual annotation required" if row["kind"] in ("figure", "table") else "not applicable"})
     for row in parsed["entries"]:
         if row.get("unsupported_commands"):

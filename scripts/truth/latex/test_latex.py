@@ -126,6 +126,18 @@ class SourceTests(unittest.TestCase):
         result = parse_project({"main.tex": raw})
         self.assertEqual(result["objects"][1]["proof_targets"], ["object:thm:one"])
 
+    def test_should_link_an_unnamed_proof_when_a_statement_precedes_it(self):
+        source = document(r'\begin{theorem}\label{earlier}First complete assertion.\end{theorem}\begin{lemma}\label{nearest}Second complete assertion.\end{lemma}\begin{proof}A complete derivation.\end{proof}')
+        proof = parse_project({'main.tex': source})['objects'][-1]
+        self.assertEqual(proof['proof_targets'], ['object:nearest'])
+        self.assertEqual(proof['proof_linkage'], 'unnamed proof: nearest preceding source statement')
+
+    def test_should_preserve_an_unlinked_proof_when_a_named_heading_cannot_be_resolved(self):
+        source = document(r'\begin{theorem}\label{nearest}A complete assertion.\end{theorem}\begin{proof}[Proof of Lemma 99]A complete derivation.\end{proof}')
+        proof = parse_project({'main.tex': source})['objects'][-1]
+        self.assertEqual(proof['proof_targets'], [])
+        self.assertEqual(proof['proof_linkage'], 'unresolved optional proof heading')
+
     def test_should_collect_each_e1_kind_when_environments_and_bibliography_are_present(self):
         raw = document(r"""
 \begin{figure}\caption{An independent caption.}\label{fig:a}\end{figure}

@@ -22,7 +22,7 @@ with an independently reviewed capability boundary.
 | O3 | Every numbered equation |
 | O4 | Every source reference to an equation/statement and every target kind; unresolved target roles exclude the cohort |
 | O5 | Every theorem-like statement |
-| O6 | Every proof, its independently named statement destination, and the statement inventory |
+| O6 | Every proof, its independently named or nearest-preceding source statement destination, and the statement inventory |
 | O7 | Every algorithm |
 | O8–O10 | Every bibliography entry and every source citation occurrence/target pair |
 | O11 | Separate three-agent panel evidence over an independently frozen figure/table sample |
@@ -86,3 +86,9 @@ counting. Matched-only IoU may be reported separately as a diagnostic, with its 
 A supported empty paper contributes O1 false-positive opportunities; it adds no annotated object
 to O2, whose empty overall cohort is unavailable rather than a passing measurement. Targets
 remain O1 F1 at least 0.90 and O2 median IoU at least 0.75.
+
+Proof targets follow the confirmed E1.4 design: explicit named targets take precedence; an unnamed
+proof links to the nearest preceding statement. Truth records whether the association comes from
+an explicit source label, source structure, or separately reviewed source/PDF evidence. An
+unresolved optional heading remains unlinked rather than being overridden by proximity. This
+corrects the earlier overly narrow named-only truth contract; targets and denominators are unchanged.

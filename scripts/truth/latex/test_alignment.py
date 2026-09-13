@@ -262,10 +262,16 @@ class AlignmentTests(unittest.TestCase):
         self.assertEqual(result['alignment']['overall_completeness'], 2 / 3)
 
     def test_should_withhold_proof_link_metrics_when_a_proof_has_no_independent_destination(self):
-        source = document(r'\begin{theorem}A completely aligned distinctive theorem.\end{theorem}\begin{proof}A completely aligned distinctive proof.\end{proof}')
-        result = align_paper(parse_project({'main.tex': source}), {'text': 'A completely aligned distinctive theorem. A completely aligned distinctive proof.'})
+        source = document(r'\begin{proof}A completely aligned distinctive proof.\end{proof}\begin{theorem}A completely aligned distinctive theorem.\end{theorem}')
+        result = align_paper(parse_project({'main.tex': source}), {'text': 'A completely aligned distinctive proof. A completely aligned distinctive theorem.'})
         self.assertTrue(result['metric_eligibility']['O5'])
         self.assertFalse(result['metric_eligibility']['O6'])
+
+    def test_should_admit_proof_link_metrics_when_an_unnamed_proof_follows_its_statement(self):
+        source = document(r'\begin{theorem}A completely aligned distinctive theorem.\end{theorem}\begin{proof}A completely aligned distinctive proof.\end{proof}')
+        result = align_paper(parse_project({'main.tex': source}), {'text': 'A completely aligned distinctive theorem. A completely aligned distinctive proof.'})
+        self.assertTrue(result['metric_eligibility']['O6'])
+        self.assertEqual(result['objects'][-1]['proof_linkage'], 'unnamed proof: nearest preceding source statement')
 
     def test_should_keep_citation_denominators_when_another_metric_cohort_is_complete(self):
         parsed, index = fixture()

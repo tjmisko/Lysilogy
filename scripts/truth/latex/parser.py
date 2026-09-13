@@ -363,6 +363,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
             row["proof_heading"] = render_text(renderer, node["option"])
             row["unsupported_commands"].update(renderer.unsupported - before)
             row["proof_target_labels"] = [item["value"].strip() for item in argument_commands(node["option"], REFS)]
+            row["proof_heading_source"] = node["option"]
         objects.append(row)
     bibliographies = [node for node in nodes if node["environment"] == "thebibliography"]
     entries, entry_keys, occupied = [], set(), []
@@ -471,8 +472,23 @@ def parse_project(files, limits=Limits(), selected_main=None):
             if label in label_targets:
                 raise UnsupportedSource("object label is duplicated")
             label_targets[label] = row["id"]
+    preceding_statement = None
     for row in objects:
         row["proof_targets"] = [label_targets.get(label) for label in row["proof_target_labels"]]
+        if row["kind"] == "proof":
+            if row["proof_target_labels"]:
+                row["proof_linkage"] = "explicit source label in proof heading"
+            elif row.get("proof_heading_source"):
+                # An unparsed optional heading might name another statement.
+                # Preserve that uncertainty rather than overriding it by order.
+                row["proof_linkage"] = "unresolved optional proof heading"
+            elif preceding_statement:
+                row["proof_targets"] = [preceding_statement]
+                row["proof_linkage"] = "unnamed proof: nearest preceding source statement"
+            else:
+                row["proof_linkage"] = "unlinked: no preceding source statement"
+        elif row["kind"] == "statement":
+            preceding_statement = row["id"]
     unsupported_environments = Counter(node["environment"] for node in nodes if node["environment"] not in statements and node["environment"].rstrip("*") not in statements and node["environment"].rstrip("*") not in ENVIRONMENTS)
     unknown_environments = {name: count for name, count in unsupported_environments.items() if name not in LAYOUT_ENVIRONMENTS}
     document_probe = None
