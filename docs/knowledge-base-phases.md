@@ -226,7 +226,7 @@ acceptance are unchanged.
   Preserve arbitrary/empty mask uncertainty, native anchors and both immutable cohorts. Never
   substitute a mask's bounding frame for its painted support. A bounded negative experiment
   is reportable; O1/O2 targets and complete region denominators remain unchanged.
-- [ ] **#107 Preserve source objects with ambiguous duplicate labels** (after #105; part of #97).
+- [x] **#107 Preserve source objects with ambiguous duplicate labels** (after #105; part of #97).
   Branch `fix/e8.3-duplicate-labels`. Owns current evaluation-only source parser/alignment,
   manual consumer guards and tests in `scripts/truth/latex/`, new-generation evidence/contract.
   Keep source-occurrence objects distinct, every ambiguous reference counted but unresolved,
@@ -4158,3 +4158,88 @@ date, last merged issue, in-flight branches and their state, next action, and op
   `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart Codex. Do not ask
   approval again. Continue offline work. Root/finish_benchmark/finish_corpus_proxy are three
   implementers; review_ready_prs is separate. Use followup_task to wake an idle reviewer.
+
+
+### 2026-09-13 23:49 UTC — #107 merged; confined ten-paper experiment is a measured no-go
+
+- Last merged issue: **#107/PR113**, merge ca1f2c9756f4aa25682ccbe0ca076fbe536a0052 at
+  23:46:42Z, reviewed head dfb878c072046b9107472fc8b2f02c2251654a41. Final independent
+  review `review-duplicate-labels-05d3335/final-pr-dfb878c/review.json` SHA
+  c0f354497e03d731941466090ce982bdc692b2e0bf94177e4da00a2666772ca9 is clear. Root verified
+  all196 portable evidence artifacts outside the completed worktree; reviewer verified320
+  total references and207 gate fingerprints. Completed worktree/target and local/remote
+  branch removed. Main fast-forwarded; all10 unrelated preview hashes remain exact.
+- #107 retains all90 recovered failures and612 earlier parses, with no current automatic
+  metric admission. Complete source occurrences/links/entries remain;27 literal-comma
+  reference corrections affect10 papers,88 papers retain raw ^^ evidence, and the prior sole
+  empty O5/O6 candidate is conservatively withheld. Frozen K1 v1/v2 replay pairs are exact.
+  Final gates pass362 Rust/421 Python/85 Node. Initial G5 missing-TypeScript failure remains;
+  the locked local package was restored offline and affected G5/replays passed. Inherited
+  O1/O2 first became unavailable because the collector fingerprints changed align.py. Actual
+  current-v2 refresh44027ba4162479e09c16c5771eb89f39957b4efb5fcf405aa49508aca023b1de
+  restores available O1=1/O2=.9076006899903768, all23 decisions/predictions unchanged from106.
+  Report `2026-09-13-kb-duplicate-labels.md`; machine `eval/evidence/k1-duplicate-labels.json`.
+- GitHub generated PR113's default merge message without the requested conventional subject
+  or co-author trailer. Do not rewrite published history. Future gh merges must pass explicit
+  conventional --subject and a --body-file ending Co-Authored-By: Codex <noreply@openai.com>.
+  Ordinary main merges continue instead of unapproved rebase; newer main changes at113 merge
+  were documentation only, with exact gated source closure retained.
+- Root #110 is pushed at8c153b342f47588f5f5c4aeaf156b6d3ce9da333 in
+  `feat/e8.3-source-layout-probe`. It includes main integration dbf2cd1 and the corrected
+  absolute deadline: setup and Popen consume the same budget; pre-spawn expiry prevents launch,
+  and post-spawn expiry triggers cleanup. Three independent mocked cases and the original
+  reviewer reproduction pass. Generated-only first run255e2c6 failed a test literal LaTeX vs
+  installed LaTeX2e; corrected08ff194 passed7/7 and remains historical. Current exact-source
+  synthetic `synthetic-8c153b3-v1/receipt.json` SHA
+  2a4cb03532d1d069cae457ef2cefacb24b7ad7a91a40ede56d0076695e1a99cf passes7/7 in8.952154s,
+  453 artifacts/45 confinement receipts/16 rasters. Source/layout tests total57 new cases.
+- #110 full `gates-8c153b3/receipt.json` aca2073e9eb9dcf25915666b08c0cb0fedde76120a51b144e1ec01fa358c0c28
+  passes fmt/strictClippy/own CLI/G5,362 Rust/440 Python/85 Node,89.286s. Logs and own binary
+  archived outside worktree. Objects --check exited0 but O1/O2 became unavailable because
+  src/eval/g5.py is in the broad collector fingerprint; do not call that a measured pass.
+  Next root: ordinary merge latest107/main, rerun applicable integrated gates, refresh actual
+  retained-v2 collector with own bridge, require all23 outcomes unchanged and explicitly
+  available O1/O2, finish report/machine evidence/draft PR and independent final review.
+- **#110 actual ten-paper experiment completed**, TTY61080 exit0,15.785762s. Frozen snapshot
+  `source-layout-probe/experiment-8c153b3-v1/launch.json` SHA
+  0b02e7bfc0faa9f4fdff157d8345c0c086c7f03c2b5c95ca9a14deb30429f725 was independently cleared
+  by `review-layout-launch-08ff194/correction-8c153b3/review.json` SHA
+  0d967578086257e9fece3172aa59a730da931788d4f8de72a81e15e9a86752f3 before execution. Bootstrap
+  compiled only verified copied source bytes. Execution receipt
+  fc4f6de170b1b87d630312ad7b903f7e9fd545e6e77ad04dce6b46b8aec1bea7; full batch
+  613e314ff3eaffa07f4beeb16591a82f2e6cf4bb772db79f73bf06ef69b48d60. All10 remain selected.
+  Only1911.08525v2 builds (8 original/8 rebuilt pages);0 exact page/resolution pairs of16,
+  hence1/10 builds and0/10 matching complete documents: exploratory NO-GO. Nine stop at missing
+  classes/packages in the frozen runtime. No installs/source fixes/engine fallback or rerun.
+  All45 process output/inode bounds pass, max controller-lifetime child RSS59840KiB,0 calls/$0.
+  Original30 source/PDF/index bindings and frozen inputs unchanged; no truth admission.
+- #110 actual root summary `source-layout-probe/actual-summary-8c153b3.json` SHA
+  f752298e989db796a28cd3ed9e7f4b7ad2688c51a614f364dbbd0bde283e2d97 binds669 final artifacts/
+  313741984bytes. Reviewer is now auditing actual results. First-pass output hashes record
+  earlier states of inodes deliberately reused on pass2; only final mutable bytes and separate
+  per-pass logs/receipts remain, not copied first-pass outputs. State that limitation. External
+  report draft `report-body-before-metric.md` has one METRIC_REFRESH_PENDING placeholder;
+  replace it only after current available metrics. #97 stays open; no experimental target lowered.
+- #111 current pushed d596880 in `fix/e1.1-mask-regions`, owner finish_benchmark. First actual
+  eb551e7 completed43.231s, receipt5a63565a431aa9338c65b90c5d7c1b1b890ed4e6578cdf9aafeb96a91cb8326e:
+  old v1 exact, v2 O1=1/O2=.9107793204006069, Figure6 recovered IoU .98928554; Figures4/5 zero.
+  Exact compiled probe ac7a9b8a3329b41b87107a3e0c176e2c7ae210f0ecc4a8ed8965ee349795c081
+  proved default serde_json f64 parsing shifted three values1ULP. Existing float_roundtrip=[]
+  feature adds no dependencies and fixes exact parsing without a tolerance. Source6568e73
+  independently clear; d596880 only clarifies test matrix type. Corrected all-target368 Rust,
+  Clippy and zero-difference probe pass, receipt a99da5a8e4531f8af11bb19d5df02cf77b752e9c397b1c4ee7a703fa5f6e21e6.
+  Compiled/second-runner review004a7ec057852b96c64f0ef1d0b1e793861bd24eea2c67bb39786ab417704fb6
+  clear. Owner is allocated the next ~45s second v1/v2 actual; check mailbox for terminal state.
+  Standalone resume `mask-regions/resume-d596880.json` edea3bcf28bedc978e9ab128f6e64c94193344a8a68e1e2873e36d558e1ffd82.
+- #109 is now ready after107. Assign finish_corpus_proxy `fix/e8.3-bibtex-fields` via required
+  gh worktree create from updated main, current parser/BibTeX scanner/tests/contract/report only.
+  Own CLI before, inert percent/brace/quote tests, reviewed eight-failure plus prior-success
+  comparison, immutable releases and full gates/PR review. No speculative recovery forecast.
+  Root110 + owner111 + owner109 are at most three implementations; review_ready_prs separate.
+- Still PhaseA/WaveA2. Main scorecard1/5 gates available/pass,3/30 objectives at target
+  (O1/O2/O30). Historical O25/O26 misses retain follow-ups21/22; broad K1 retains97. No new
+  follow-up issue or phase/system completion. Native queue paused before26,7250unique/6299scale
+  verified,3701scale remain; no downloads. #25/PR94, #33, #71/PR93, #72/PR95 still blocked on
+  actual provider truth/dependencies. Allfour host grants are already approved but managed
+  ~/.codex remains read-only and grants ineffective. User-terminal script remains
+  ~/.config/lysilogy/apply-codex-kb-network-permissions.py, then restart; do not ask again.
