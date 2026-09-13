@@ -172,3 +172,21 @@ Likewise, a procedural heading or a
 step-labeled list outside a parsed algorithm container prevents an algorithm
 absence claim. These source-role exclusions retain original spans and affect the
 relevant metric cohorts; a complete independent kind elsewhere remains usable.
+
+The AMS `DeclareMathOperator` capability accepts a single top-level preamble
+declaration following an explicit `amsmath` or `amsopn` package load. Its new
+control word must not replace an existing primitive or deposited definition;
+its complete body is bounded literal letters/digits/spaces and standard spacing
+tokens. Braced and one-token names and the standard starred variant preserve
+their original source spans. Scoped, conditional, repeated, deferred, dynamic,
+and structurally active declarations remain unsupported. The resulting operator
+is known only to have no object-inventory side effect; its mathematical font,
+limits and text rendering remain unverified. This does not certify any local
+package or style implementation.
+
+This finite contract was checked against installed `amsopn.sty`, whose
+`DeclareMathOperator`/`@declmathop` definitions create a new zero-argument
+operator, with the star selecting limits behavior and a preamble-only guard.
+The inspected file SHA-256 is
+`c50239a5acc1037ff4df482878e5546be3cd9b8ac725151bc14748a103d800a8`.
+The implementation reads no installed TeX files at runtime and executes no TeX.

@@ -21,6 +21,7 @@ STORED_ARGUMENT_ROLES = {
         "title", "TITLE", "author", "date", "thanks", "bibitem", "bibinfo", "bibfield", "nocite",
         "addbibresource", "vspace", "hspace", "vskip", "hskip"}},
     "setlength": (1, 2), "addcontentsline": (1, 2, 3), "markboth": (1, 2), "newtheorem": (1, 2),
+    "DeclareMathOperator": (1, 2),
     "printbibliography": (),
 }
 OPTIONAL_STORED_ARGUMENTS = CITES | REFS | {"bibitem", "documentclass", "documentstyle", "usepackage", "RequirePackage", "LoadClass", "includegraphics", "href", "printbibliography", "addbibresource", "newtheorem"}
@@ -180,6 +181,82 @@ def environment_commands(scan, aliases, limits):
             if len(extra) > limits.expansion_steps:
                 raise UnsupportedSource('equation alias invocation count exceeds its bound')
     return sorted(rows + extra, key=lambda row: row['start'])
+
+
+def math_operator_declarations(text, scan, reserved, limits):
+    """Prove the inventory effect of a finite AMS preamble declaration.
+
+    amsopn defines a new zero-argument math operator, retaining its literal
+    display body; the starred form changes limits placement. Neither form is a
+    source-object producer. We do not infer faithful PDF rendering from this
+    capability, or execute any deposited command in the display body.
+    """
+    commands = [match for match in COMMAND.finditer(scan) if match[1].rstrip('*') == 'DeclareMathOperator']
+    if len(commands) > limits.expansion_steps:
+        raise UnsupportedSource('math operator declaration count exceeds its bound')
+    documents = list(argument_commands(scan, {'begin'}))
+    document_start = next((row['start'] for row in documents if row['value'] == 'document'), 0)
+    ams_loads = [row for row in argument_commands(scan, {'usepackage', 'RequirePackage'})
+                 if {name.strip() for name in row['value'].split(',')} & {'amsmath', 'amsopn'}]
+    reserved = reserved | set('arccos arcsin arctan arg cos cosh cot coth csc deg det dim exp gcd hom inf injlim ker lg lim liminf limsup ln log max min Pr projlim sec sin sinh sup tan tanh'.split())
+    defined = set()
+    for start, _ in definition_regions(text):
+        match = COMMAND.match(text, start)
+        if match[1].rstrip('*') not in {'newcommand', 'renewcommand', 'providecommand', 'def', 'gdef', 'edef', 'xdef'}:
+            continue
+        pos = skip_space(text, match.end())
+        if text[pos:pos + 1] == '{':
+            name, _ = group(text, pos)
+        else:
+            value = COMMAND.match(text, pos)
+            name = value[0] if value else ''
+        if re.fullmatch(r'\\[A-Za-z@]+', name):
+            defined.add(name[1:])
+    # Scope is evaluated over the unchanged, definition-masked source once.
+    # The declaration's own brace groups are balanced and have zero net depth.
+    depth, environment_depth, previous, rows, prior_control = 0, 0, 0, [], False
+    for command in commands:
+        at = previous
+        for match in COMMAND.finditer(scan, previous, command.start()):
+            depth += scan[at:match.start()].count('{') - scan[at:match.start()].count('}')
+            depth += match[1] in {'bgroup', 'begingroup'}
+            depth -= match[1] in {'egroup', 'endgroup'}
+            environment_depth += match[1] == 'begin'
+            environment_depth -= match[1] == 'end'
+            prior_control |= ((match[1].startswith('if') and match[1] != 'iff')
+                              or match[1] in {'else', 'fi', 'unless', 'newif', 'csname', 'endcsname', 'let', 'futurelet'})
+            at = match.end()
+        depth += scan[at:command.start()].count('{') - scan[at:command.start()].count('}')
+        previous = command.start()
+        row = {'start': command.start(), 'end': command.end(), 'name': None, 'reason': None}
+        try:
+            name, pos = token_argument(scan, command.end())
+            body, end = group(scan, pos, limit=limits.group_depth)
+            row.update(end=end, body=body, starred=command[1].endswith('*'))
+            if re.fullmatch(r'\\[A-Za-z]+', name):
+                row['name'] = name[1:]
+            if row['name'] is None:
+                row['reason'] = 'operator name is not one ordinary control word'
+            elif end > document_start or depth != 0 or environment_depth != 0:
+                row['reason'] = 'operator declaration is not a top-level preamble declaration'
+            elif prior_control:
+                row['reason'] = 'operator declaration follows uninterpreted preamble control flow'
+            elif not any(load['end'] <= command.start() for load in ams_loads):
+                row['reason'] = 'operator declaration has no preceding explicit AMS package load'
+            elif 'DeclareMathOperator' in defined or row['name'] in reserved | defined:
+                row['reason'] = 'operator name or declaration primitive has another definition'
+            elif not body.strip() or len(body) > 256 or not re.fullmatch(r'(?:[A-Za-z0-9 \t\r\n]|\\[,;! ])+', body):
+                row['reason'] = 'operator body is not bounded literal text and standard spacing'
+        except UnsupportedSource as error:
+            if any(word in str(error) for word in ('bound', 'nesting', 'recursion')):
+                raise
+            row['reason'] = str(error)
+        rows.append(row)
+    repeated = Counter(row['name'] for row in rows if row['name'])
+    for row in rows:
+        if row['name'] and repeated[row['name']] != 1:
+            row['reason'] = 'operator name is declared more than once'
+    return rows
 
 
 def render_text(renderer, text):
@@ -424,7 +501,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
         if name not in STORED_ARGUMENT_ROLES:
             continue
         # Only explicit standard starred variants consume that character here.
-        pos = command.end() - int(command[1].endswith('*') and name not in {'tag', 'includegraphics', 'vspace', 'hspace', 'newtheorem'} | CITES | REFS)
+        pos = command.end() - int(command[1].endswith('*') and name not in {'tag', 'includegraphics', 'vspace', 'hspace', 'newtheorem', 'DeclareMathOperator'} | CITES | REFS)
         invocation = expanded.origins(command.start(), pos)
         arguments = []
         try:
@@ -504,6 +581,12 @@ def parse_project(files, limits=Limits(), selected_main=None):
     # arbitrary deposited commands and hooks remain unsupported.
     inventory_commands = (set(ACCENTS) | set(FORMATTING) | set(SILENT) | set(SYMBOLS) | set(DROP_ARGUMENT) | INVENTORY_ONLY_PRIMITIVES | CITES | REFS | structural | set(renderer.macros) | set(aliases)
                           | {"documentclass", "documentstyle", "usepackage", "RequirePackage", "LoadClass", "title", "TITLE", "author", "date", "maketitle", "thanks", "footnote", "footnotemark", "footnotetext", "section", "subsection", "subsubsection", "paragraph", "subparagraph", "chapter", "part", "appendix", "item", "newpage", "clearpage", "pagebreak", "linebreak", "includegraphics", "bibliographystyle", "bibinfo", "bibfield", "href", "nocite", "newtheorem", "setcounter", "addtocounter", "refstepcounter", "pagestyle", "thispagestyle", "markboth", "tableofcontents", "listoffigures", "listoftables", "frac", "dfrac", "tfrac", "sqrt", "sum", "prod", "int", "iint", "iiint", "oint", "partial", "nabla", "lim", "log", "ln", "exp", "sin", "cos", "tan", "min", "max", "arg", "det", "sup", "inf", "overline", "underline", "hat", "widehat", "bar", "vec", "dot", "ddot", "notag", "nonumber", "hline", "cline", "toprule", "midrule", "bottomrule", "multicolumn", "multirow", "centering", "caption", "(", ")", "[", "]", "crefrange", "Crefrange", "cpageref", "Cpageref", "labelcref", "labelcpageref", "namecref", "nameCref", "lcnamecref", "pageref", "eqrefrange", "autopageref", "vpageref", "vref", "autocites", "parencites", "textcites", "citeauthor", "citeyear", "citeyearpar", "citenum", "citetext", "citealp", "citealt", "printbibliography", "addbibresource"})
+    operator_declarations = math_operator_declarations(text, scan, inventory_commands, limits)
+    for declaration in operator_declarations:
+        if declaration['reason']:
+            source_semantics['unverified_math_operator_declaration:' + declaration['reason']] += 1
+        else:
+            inventory_commands.update({'DeclareMathOperator', declaration['name']})
     for name in sorted(reachable - inventory_commands):
         source_semantics["unknown_inventory_command:" + name] += 1
     unsupported_bibliography = {name: 1 for name in sorted(reachable) if "bib" in name.casefold() and name not in {"bibliography", "bibliographystyle", "bibitem", "bibinfo", "bibfield", "bibnamefont", "bibfnamefont"}}
@@ -813,6 +896,10 @@ def parse_project(files, limits=Limits(), selected_main=None):
                              "invocations": [expanded.origins(event["start"], event["end"]) for event in environment_events if event.get("alias") == name]}
                              for name, row in aliases.items()},
                          "other_environments": dict(unsupported_environments), "issues": dict(ignored),
+                         "math_operator_declarations": [{**{key: value for key, value in row.items() if key not in {'start', 'end'}},
+                                                        "source_members": expanded.origins(row['start'], row['end']),
+                                                        "inventory_verified": row['reason'] is None,
+                                                        "rendering_verified": False} for row in operator_declarations],
                          "unverified_macro_arguments": argument_evidence,
                          "unverified_stored_arguments": stored_evidence,
                          "unsupported_object_environments": unknown_environments,

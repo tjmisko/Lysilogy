@@ -25,6 +25,53 @@ def tar(members):
 
 
 class SourceTests(unittest.TestCase):
+    def test_should_retain_exact_declaration_origins_when_literal_math_operators_are_loaded_in_the_preamble(self):
+        for spelling in (r'\DeclareMathOperator{\argbest}{arg best}', r'\DeclareMathOperator*\argbest{arg\,best}'):
+            included = spelling + '\n'
+            source = document(r'\begin{equation}\argbest abcdefghij=12345\end{equation}',
+                              r'\usepackage{amsthm, amsmath}\input{operators}')
+            parsed = parse_project({'main.tex': source, 'operators.tex': included})
+            with self.subTest(spelling=spelling):
+                row = parsed['coverage']['math_operator_declarations'][0]
+                self.assertEqual(row['name'], 'argbest')
+                self.assertTrue(row['inventory_verified'])
+                self.assertFalse(row['rendering_verified'])
+                self.assertEqual(row['source_members'], [{'path': 'operators.tex', 'start': 0, 'end': len(spelling)}])
+                self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+
+    def test_should_withhold_operator_declarations_when_scope_lifetime_or_definition_identity_is_unproven(self):
+        declaration = r'\DeclareMathOperator{\argbest}{arg best}'
+        for before, after, in_body in (
+                ('{', '}', False), (r'\begingroup', r'\endgroup', False),
+                (r'\begin{center}', r'\end{center}', False), (r'\iffalse', r'\fi', False),
+                ('', '', True), ('', declaration, False),
+                (r'\newcommand{\argbest}{other}', '', False), ('', r'\def\argbest{other}', False),
+                (r'\newcommand{\DeclareMathOperator}[2]{}', '', False)):
+            value = before + declaration + after
+            parsed = parse_project({'main.tex': document(value if in_body else '', r'\usepackage{amsmath}' + ('' if in_body else value))})
+            with self.subTest(before=before, after=after, in_body=in_body):
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+                self.assertFalse(any(row['inventory_verified'] for row in parsed['coverage']['math_operator_declarations']))
+        for preamble in (declaration, declaration + r'\usepackage{amsmath}',
+                         r'\usepackage{amsmath}\DeclareMathOperator{\Pr}{Prob}',
+                         r'\usepackage{amsmath}\DeclareMathOperator{\alpha}{alpha}'):
+            parsed = parse_project({'main.tex': document('', preamble)})
+            self.assertFalse(any(row['inventory_verified'] for row in parsed['coverage']['math_operator_declarations']))
+
+    def test_should_withhold_operator_bodies_when_they_contain_dynamic_structural_or_unbounded_tokens(self):
+        for value in (r'\begin{theorem}Hidden theorem.\end{theorem}', r'\ref{hidden}', r'#1',
+                      r'\text{arg}', r'\operatorname{best}', r'arg_{best}', '', 'a' * 257):
+            parsed = parse_project({'main.tex': document('', r'\usepackage{amsmath}\DeclareMathOperator{\argbest}{' + value + '}')})
+            with self.subTest(value=value):
+                self.assertTrue(parsed['coverage']['unsupported_source_semantics'])
+                self.assertFalse(parsed['coverage']['math_operator_declarations'][0]['inventory_verified'])
+
+    def test_should_withhold_deferred_declaration_arguments_when_a_macro_reaches_the_standard_consumer(self):
+        source = document(r'\declarelater{\later}{\begin{theorem}Hidden theorem.\end{theorem}}',
+                          r'\usepackage{amsmath}\DeclareMathOperator{\argbest}{best}\newcommand{\declarelater}{\DeclareMathOperator}')
+        parsed = parse_project({'main.tex': source})
+        self.assertIn('unverified_macro_argument_forwarding:declarelater', parsed['coverage']['unsupported_source_semantics'])
+
     def test_should_bound_stored_argument_inspection_when_nested_metadata_repeats_source_spans(self):
         source = document(r'\title{\title{\title{' + 'a' * 200 + '}}}')
         self.assertLess(len(source), 400)
