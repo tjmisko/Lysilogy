@@ -583,7 +583,7 @@ mod tests {
             assert_eq!(decoded.to_bits(), exact.to_bits());
         }
         let mut case = fixtures()["cases"][1].clone();
-        let matrix = [
+        let matrix: [f64; 6] = [
             80.0,
             0.0,
             0.0,
