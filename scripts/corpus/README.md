@@ -70,18 +70,31 @@ estimates and free-space floor. Eval has 1,000 papers across CS, math, statistic
 economics; scale has 10,000 in computer vision, robotics, machine learning, probability and
 statistical learning. Both are balanced across category/year strata. Cross-listed papers are
 assigned to their first arXiv category included in that tier (preserving primary-category order), and SHA-256 of seed/tier/ID supplies stable
-ordering within a stratum. Sparse strata fail explicitly; counts and targets never shrink to
-fit an incomplete harvest.
+ordering within a stratum. Each ranked candidate must have a public PDF in a completed GCS
+inventory before it can fill its quota. Missing objects, invalid identity/version/generation,
+invalid MD5, and nonpositive or oversized files are excluded with recorded reasons; the next
+candidate in the same stratum is considered. The highest listed version must be valid; the
+tool does not silently substitute an older version for an invalid latest object. Sparse
+available strata fail explicitly; counts and targets never shrink. Eval/scale overlap remains
+a single paper with both tier assignments.
 
 The corpus root contains:
 
 - `metadata.sqlite`: OAI bibliographic records and transactional page checkpoints.
-- `selection.json`: frozen chosen records, tier assignments, config hash, metadata hash and
-  selection hash. Identical metadata/config inputs reproduce identical selection bytes. A
+- `selection.json`: schema-2 frozen records, tier assignments, config hash, metadata hash,
+  selection hash, pinned PDF versions/generations/size/MD5 and availability evidence. Identical
+  metadata/config/inventory inputs reproduce identical selection bytes. A
   remote metadata update cannot silently change an existing selection; a different config
   requires a new root. The OAI service is mutable, so retain this snapshot to reproduce a run.
 - `inventory/<YYMM>.json`: resumable public GCS listings; pin highest available version, object
   generation, byte size and server MD5. A newer remote paper version cannot change a resumed run.
+- `availability/inventories/<sha256>.json`: immutable copies of consulted complete inventories.
+  The selection records their hashes and listing URLs, plus every excluded candidate's ID,
+  reason, observed object (if any) and inventory hash. An input checkpoint preserves already
+  consulted snapshots across interrupted selection. Failed capacity attempts retain their
+  exclusion evidence. A changed metadata/config input fails instead of mixing snapshots.
+- `selection-recovery/<original-file-sha256>/`: immutable original selection, failure request
+  and staged replacement for the explicit zero-artifact repair below.
 - `manifest.jsonl`: one row per paper, with ID, version, categories, tiers, strata, metadata,
   arXiv abstract link, license, selection fingerprint, remote PDF identity, hashes and fetch
   timestamps. The projection checkpoints every 25 papers and on clean exit/error; per-artifact
@@ -96,7 +109,36 @@ harvest window's first response day, retained across pagination and process rest
 resumption tokens restart the original window with idempotent upserts. Harvests crossing
 midnight therefore include changes made after their first page. Legacy checkpoints lacking
 the first response day conservatively replay their original `from` bound. Metadata updates
-do not mutate the frozen selection.
+do not mutate the frozen selection. The observed `created` field is preserved even if its year
+differs from the year suggested by the arXiv ID; availability does not infer replacement dates.
+
+## Recovering a legacy selection with no artifacts
+
+The original metadata-only selection format remains frozen on ordinary `run`, `select` and
+`download`. For the known failed build, after reviewing the repair source, use this explicit
+operation and retain the same reason on a restart:
+
+```sh
+python3 scripts/corpus/corpus.py --proxy-env HTTPS_PROXY recover-selection \
+  --reason 'Selected PDF unavailable in public bucket: 1801.00600; original log: ~/.cache/lysilogy/arxiv-corpus-proxy.log'
+python3 scripts/corpus/corpus.py --proxy-env HTTPS_PROXY download --tier eval --limit 3
+```
+
+Recovery refuses any manifest rows, pending manifest, or any content in `pdf/` or `source/`,
+including receipts, empty partial files and subdirectories. It applies only to the legacy
+schema-1 format and only when an original member is unavailable. It preserves the exact
+original selection bytes and failure reason before qualification, requires the original
+metadata hash, and reuses completed inventories. It retains missing/invalid original members
+in the replacement's exclusion evidence, fills every original stratum quota, and stages the
+complete new selection durably before atomic publication. Insufficient capacity leaves the
+original selection intact. Archive files are never overwritten. Crashes before or after final
+publication resume the same staged replacement; a completed repair is idempotent while the root
+still has zero artifacts. Once downloads exist, continue with `download` or `run`.
+
+The bounded verification command downloads at most three eval papers and their version-matched
+sources. Then the ordinary `run` command resumes the full build. A later disappearance of a
+pinned remote object is an explicit download failure; it does not change a frozen selection.
+`verify` remains incomplete until all required tier artifacts exist.
 
 GCS PDFs are checked against inventory MD5 and size, their PDF header, and a computed SHA-256.
 Source responses have no upstream checksum; HTTPS, content length when present, recognizable
@@ -135,17 +177,22 @@ link readers to each paper's arXiv abstract/download page. Never commit PDFs or 
 
 ## Current verification boundary
 
-The 52 offline tests cover deterministic strata, OAI paging/refresh/deletion/token expiry and
+The 74 offline tests cover deterministic availability-qualified strata, OAI paging/refresh/deletion/token expiry and
 midnight boundaries, pinned GCS versions, file integrity/resume, truncated and HTML payload
 rejection, request pacing and cooldown persistence, free-space failures, unsafe roots,
-symlinks, explicit proxy selection and redaction, and a full fixture download/verify/resume cycle.
+symlinks, explicit proxy selection and redaction, recovery archive preservation and interruptions,
+refusal after artifact admission, and fixture download/verify/resume cycles.
 `verify` validates the frozen selection against the configured fingerprint, every manifest
 paper against that selection, artifact paths and URLs against the pinned paper version, and
 PDF bytes against the pinned GCS MD5/size as well as their local SHA-256 receipt. Extra manifest
 papers and modified provenance fail verification even when local artifact hashes still match.
+Schema-2 verification also checks exact stratum quotas, pinned objects against preserved
+inventory snapshots, exclusion reasons, and recovery archive provenance.
 
-Selection currently loads the harvested bibliographic records into memory. Selection's peak RSS
-remains unmeasured because no live harvest has reached that stage. If measurement warrants it,
+Selection currently loads the harvested bibliographic records into memory. The original full
+metadata/selection run peaked at 3,732,208 KiB over 45:13.98; this is a whole-run peak, not an
+isolated selection measurement. Canonical metadata hashing now streams records without a second
+full JSON allocation. The revised full-run peak still needs live measurement. If needed,
 the next optimization is to stream compact SQLite ID/category/year candidates through bounded per-stratum heaps
 and then load full metadata only for selected IDs.
 
@@ -159,6 +206,10 @@ before committing any metadata (93.08 seconds; peak RSS 30,096 KiB). A root-agen
 then hit the tool's active host allowlist, a separate environment boundary. After the user
 restarted the daemon, the root agent received a valid 1,890-byte OAI-PMH Identify response through
 the explicitly selected proxy and started the resumable corpus build. This proves transport
-access; complete K0 selection, downloads and verification remain outstanding. The measured
+access. The subsequent complete metadata harvest retained 514,249 records and froze the original
+1,000 eval / 10,000 scale selection (10,951 unique). The run then stopped at missing public PDF
+`1801.00600` before any artifact or manifest entry. The original selection, inventories and log
+remain preserved; availability recovery is explicit as described above. Complete K0 downloads
+and verification remain outstanding. The measured
 validation and its limits are retained in
 [the transport report](../../docs/experiment-reports/2026-09-12-corpus-proxy-transport.md).
