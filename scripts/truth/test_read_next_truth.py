@@ -75,6 +75,16 @@ class ReadNextTruthTests(unittest.TestCase):
         with self.assertRaisesRegex(TruthError, "Ambiguous graph alias"):
             holdout.normalize_graph(observed)
 
+    def should_withhold_legacy_arxiv_versions_when_local_papers_predate_modern_ids(self):
+        observed = fixture()
+        observed["nodes"][0]["aliases"].append("arxiv:math.GT/0309136v1")
+        observed["views"][1]["edges"].append({"source": "arxiv:math.GT/0309136v2", "target": "C", "source_record": "legacy/query"})
+        features = holdout.fold_features(holdout.normalize_graph(observed), "arxiv:math.GT/0309136")
+        self.assertEqual([], features["outgoing"]["A"])
+        for invalid in ["arxiv:math.GT/0309136v0", "arxiv:2001.00001v0", "opaque\x00name"]:
+            with self.subTest(invalid=invalid), self.assertRaises(TruthError):
+                holdout.alias_key(invalid)
+
     def should_refuse_changed_graphs_when_a_fold_uses_a_different_frozen_input(self):
         graph = holdout.normalize_graph(fixture())
         fold = holdout.fold_plan(graph)["folds"][0]

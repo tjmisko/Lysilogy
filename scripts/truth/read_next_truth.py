@@ -19,7 +19,7 @@ def alias_key(value):
         return "doi:" + normalized
     if value.startswith("arxiv:"):
         identifier = value[len("arxiv:"):]
-        if not re.fullmatch(r"[0-9]{4}\.[0-9]{4,5}(v[0-9]+)?", identifier):
+        if not re.fullmatch(r"(?:[0-9]{4}\.[0-9]{4,5}|[a-z-]+(?:\.[A-Z]{2})?/[0-9]{7})(?:v[1-9][0-9]*)?", identifier):
             raise TruthError("Invalid arXiv graph identity")
         # Withhold every version's duplicate outgoing edges for the held-out paper.
         return "arxiv:" + re.sub(r"v[0-9]+$", "", identifier)
