@@ -40,10 +40,10 @@ metadata JSON array; no revised live RSS improvement is claimed without measurem
 
 ## Validation and scorecard
 
-The fresh before measurements ran on `26b4adc`; final integrated measurements ran on `013911a`.
+The fresh before measurements ran on `26b4adc`; final integrated measurements ran on `9ba9fe5` after merging docs-only main `0030399`.
 Current main was integrated with an ordinary merge because the standing rebase approval
 restriction remains in effect. The independent reviewer cleared source `96b702d` and ran all
-75 corpus tests; the subsequent measured commit only updates the README's test count.
+75 corpus tests; subsequent commits contain only documentation, retained evidence and the docs-only main merge.
 
 | Check | Before | After |
 | --- | ---: | ---: |
