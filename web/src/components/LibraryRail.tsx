@@ -70,31 +70,37 @@ export function LibraryRail({
 
   const readyCount = papers.filter((paper) => paper.status.state === "ready").length;
   const [active, setActive] = useState(0);
+  const railRef = useRef<HTMLElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const lastIndex = Math.max(0, filtered.length - 1);
   const activeIndex = Math.min(active, lastIndex);
 
   useEffect(() => {
     if (!keyboardMode) return;
-    itemRefs.current[activeIndex]?.focus({ preventScroll: true });
-    itemRefs.current[activeIndex]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [activeIndex, keyboardMode]);
+    const item = itemRefs.current[activeIndex];
+    (item ?? searchRef.current)?.focus({ preventScroll: true });
+    item?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [activeIndex, keyboardMode, searchRef]);
 
   useEffect(() => {
-    if (!open) return;
+    const rail = railRef.current;
+    if (!keyboardMode || rail === null) return;
     const onFilterKey = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented) return;
       if (event.key === "f" && !isEditable(event.target) && !event.metaKey && !event.ctrlKey) {
         event.preventDefault();
+        event.stopPropagation();
         setActive(0);
         setMappedOnly((value) => !value);
       }
     };
-    window.addEventListener("keydown", onFilterKey);
-    return () => window.removeEventListener("keydown", onFilterKey);
-  }, [open]);
+    rail.addEventListener("keydown", onFilterKey);
+    return () => rail.removeEventListener("keydown", onFilterKey);
+  }, [keyboardMode]);
 
   useEffect(() => {
-    if (!keyboardMode) return;
+    const rail = railRef.current;
+    if (!keyboardMode || rail === null) return;
     let pendingG = false;
     let pendingTimer: number | null = null;
     const clearPending = (): void => {
@@ -104,6 +110,7 @@ export function LibraryRail({
     };
     const onKeyDown = (event: KeyboardEvent): void => {
       if (
+        event.defaultPrevented ||
         isEditable(event.target) ||
         event.metaKey ||
         event.ctrlKey ||
@@ -165,12 +172,15 @@ export function LibraryRail({
           clearPending();
           onClose();
           break;
+        default:
+          return;
       }
+      event.stopPropagation();
     };
-    window.addEventListener("keydown", onKeyDown);
+    rail.addEventListener("keydown", onKeyDown);
     return () => {
       clearPending();
-      window.removeEventListener("keydown", onKeyDown);
+      rail.removeEventListener("keydown", onKeyDown);
     };
   }, [activeIndex, filtered, keyboardMode, lastIndex, onClose, onScan, onSelect, searchRef]);
 
@@ -182,7 +192,7 @@ export function LibraryRail({
         onClick={onClose}
         tabIndex={open ? 0 : -1}
       />
-      <aside className={`library-rail ${open ? "is-open" : ""}`} aria-label="Paper library" inert={!open} aria-hidden={!open || undefined}>
+      <aside ref={railRef} className={`library-rail ${open ? "is-open" : ""}`} aria-label="Paper library" inert={!open} aria-hidden={!open || undefined}>
         <button className="brand rail-brand" type="button" onClick={onHome} aria-label="Go to library home"><img className="brand-mark" src="/lambda-mark.svg" alt="" /><strong>LYSILOGY</strong></button>
         <div className="rail-heading">
           <div>

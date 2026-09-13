@@ -999,7 +999,7 @@ export function App() {
       {readingPdf && <button className="reader-reveal" type="button" aria-label="Show reader controls (T)" onFocus={() => setToolbarPeek(true)} onClick={() => { setToolbarPinned((value) => !value); setToolbarPeek(false); }} />}
       <LibraryRail
         open={libraryOpen}
-        keyboardMode={(compactLayout || home) && libraryOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && panel === null && sourceQuestion === null}
+        keyboardMode={libraryOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && panel === null && sourceQuestion === null}
         name={library?.name ?? "Articles"}
         papers={library?.papers ?? []}
         selectedId={selectedId}
