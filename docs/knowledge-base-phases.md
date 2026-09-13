@@ -186,6 +186,17 @@ acceptance are unchanged.
 
 ### Phase A notes
 
+- Follow-up #85 (epic #67) merged in PR #86 (`e12adc3`) after independent review and all
+  quality gates. Corpus builds can explicitly select `--proxy-env HTTPS_PROXY` (or
+  `https_proxy`); this supports HTTP CONNECT transport with normal origin TLS verification.
+  Unsupported HTTPS-proxy URLs fail rather than silently downgrading. Credential redaction
+  covers connection failures, response reads/cleanup, and interrupted cooldown persistence.
+  Fixed destinations, redirect refusal, request spacing and durable Retry-After remain enforced.
+  Final gates: 277 Rust, 61 Python and 84 Node tests under G5; O30 remains 0/10k. The report and
+  `eval/evidence/corpus-proxy-transport.json` explicitly distinguish retained historical-before
+  evidence from the fresh after checks. After the user's daemon restart, approved proxy access
+  succeeded and the live harvest saved 53,300 metadata records by 2026-09-13 06:32:45 UTC.
+  K0 is still building; this is transport verification, not full corpus acceptance.
 - Follow-up #83 (epic #18) merged in PR #84 (`481e911`). A duplicated or inherited descriptor
   could retain a provider's flock after the request lease ended. A private guard now explicitly
   unlocks before releasing the local mutex and covers state read/parse errors too. The exact

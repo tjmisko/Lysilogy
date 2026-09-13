@@ -6,9 +6,11 @@ import copy
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import types
+import traceback
 import unittest
 from unittest.mock import patch
 
@@ -119,6 +121,169 @@ class CorpusTests(unittest.TestCase):
         client.bytes(corpus.EXPORT + "2001.00001v1")
         client.bytes(corpus.OAI)
         self.assertEqual([1000, 1010, 1013], starts)
+
+    def should_ignore_ambient_proxies_when_no_transport_option_is_selected(self):
+        with patch.dict(os.environ, {"HTTPS_PROXY": "http://unused:secret@proxy.invalid:8080"}), \
+                patch.object(corpus.urllib.request, "build_opener") as build:
+            corpus.Http(cache_root=self.root)
+        self.assertEqual({}, build.call_args.args[0].proxies)
+        self.assertIsInstance(build.call_args.args[1], corpus.NoRedirect)
+
+    def should_use_only_selected_https_proxy_when_transport_is_explicitly_enabled(self):
+        selected = "http://fixture-user:fixture-password@proxy.invalid:8080"
+        with patch.dict(os.environ, {"HTTPS_PROXY": "http://unselected.invalid", "https_proxy": selected,
+                                     "HTTP_PROXY": "http://also-unselected.invalid"}), \
+                patch.object(corpus.urllib.request, "build_opener") as build:
+            corpus.Http(cache_root=self.root, proxy_env="https_proxy")
+        self.assertEqual({"https": selected}, build.call_args.args[0].proxies)
+        self.assertIsInstance(build.call_args.args[1], corpus.NoRedirect)
+
+    def should_reject_proxy_configuration_without_secrets_when_selected_value_is_invalid(self):
+        values = ["", "proxy.invalid", "ftp://fixture-secret@proxy.invalid",
+                  "http://fixture-secret@proxy.invalid:invalid", "http://fixture-secret@proxy.invalid:70000",
+                  "http://fixture-secret@proxy.invalid:0", "http://fixture-secret@proxy.invalid/path",
+                  "http://proxy.invalid?fixture-secret", "http://proxy.invalid#fixture-secret",
+                  "http://proxy.invalid/\nfixture-secret", "http://[fixture-secret"]
+        for value in values:
+            with self.subTest(value=value), patch.dict(os.environ, {"HTTPS_PROXY": value}):
+                with self.assertRaises(corpus.CorpusError) as failure:
+                    corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY")
+                self.assertNotIn("fixture-secret", str(failure.exception))
+        with patch.dict(os.environ, {}, clear=True), self.assertRaises(corpus.CorpusError):
+            corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY")
+        with self.assertRaises(corpus.CorpusError):
+            corpus.Http(cache_root=self.root, proxy_env="UNRELATED_SECRET")
+
+    def should_reject_other_destinations_when_proxy_transport_is_enabled(self):
+        with patch.dict(os.environ, {"HTTPS_PROXY": "http://proxy.invalid:8080"}):
+            client = corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY")
+        with patch.object(client.opener, "open") as send:
+            for url in ("https://example.invalid/paper.pdf", "http://oaipmh.arxiv.org/oai",
+                        "https://user:password@oaipmh.arxiv.org/oai"):
+                with self.assertRaises(corpus.CorpusError):
+                    client.bytes(url)
+            send.assert_not_called()
+
+    def should_reject_tls_proxy_scheme_when_the_standard_transport_cannot_preserve_it(self):
+        with patch.dict(os.environ, {"HTTPS_PROXY": "https://fixture-user:fixture-secret@proxy.invalid:8443"}), \
+                patch.object(corpus.urllib.request, "build_opener") as build:
+            with self.assertRaisesRegex(corpus.CorpusError, "HTTPS-scheme proxies are unsupported") as failure:
+                corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY")
+        build.assert_not_called()
+        self.assertNotIn("fixture-secret", "".join(traceback.format_exception(failure.exception)))
+
+    def should_redact_transport_failures_when_configured_proxy_has_credentials(self):
+        secret = "fixture-user:fixture-password"
+        errors = [corpus.urllib.error.URLError(secret),
+                  corpus.urllib.error.HTTPError("http://" + secret + "@proxy.invalid", 407, secret, {}, None),
+                  corpus.http.client.InvalidURL(secret)]
+        for error in errors:
+            current = [1000.0]
+            def sleep(delay):
+                current[0] += delay
+            with patch.dict(os.environ, {"HTTPS_PROXY": "http://" + secret + "@proxy.invalid:8080"}):
+                client = corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY", sleep=sleep,
+                                     clock=lambda: current[0])
+            with patch.object(client.opener, "open", side_effect=error):
+                with self.assertRaises(corpus.CorpusError) as failure:
+                    client.bytes(corpus.OAI)
+            rendered = "".join(traceback.format_exception(failure.exception))
+            self.assertNotIn("fixture-user", rendered)
+            self.assertNotIn("fixture-password", rendered)
+            self.assertIn("Configured HTTPS proxy request failed", rendered)
+            if isinstance(error, corpus.urllib.error.HTTPError):
+                self.assertIn("HTTP 407", rendered)
+
+    def should_share_spacing_and_retry_cooldown_when_proxy_and_direct_clients_alternate(self):
+        current = [1000.0]
+        starts = []
+        def sleep(delay):
+            current[0] += delay
+        class Opener:
+            def open(self, request, timeout):
+                starts.append(current[0])
+                if len(starts) == 1:
+                    raise corpus.urllib.error.HTTPError(request.full_url, 429, "fixture", {"Retry-After": "10"}, None)
+                return Response(b"fixture")
+        with patch.dict(os.environ, {"HTTPS_PROXY": "http://proxy.invalid:8080"}):
+            proxied = corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY", sleep=sleep,
+                                  clock=lambda: current[0])
+        proxied.opener = Opener()
+        proxied.bytes(corpus.OAI)
+        direct = corpus.Http(cache_root=self.root, sleep=sleep, clock=lambda: current[0])
+        direct.opener = Opener()
+        direct.bytes(corpus.EXPORT + "2001.00001v1")
+        self.assertEqual([1000, 1010, 1013], starts)
+
+    def should_keep_credentials_out_of_tracebacks_when_proxy_retry_sleep_is_interrupted(self):
+        def interrupt(_delay):
+            raise KeyboardInterrupt()
+        with patch.dict(os.environ, {"HTTPS_PROXY": "http://fixture-secret@proxy.invalid:8080"}):
+            client = corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY", sleep=interrupt,
+                                 clock=lambda: 4000.0)
+        error = corpus.urllib.error.HTTPError(corpus.OAI, 429, "fixture-secret", {"Retry-After": "600"}, None)
+        with patch.object(client.opener, "open", side_effect=error):
+            with self.assertRaises(KeyboardInterrupt) as failure:
+                client.bytes(corpus.OAI)
+        self.assertNotIn("fixture-secret", "".join(traceback.format_exception(failure.exception)))
+        self.assertEqual(4600, float((self.root / "arxiv-http.lock").read_text()))
+
+    def should_forward_proxy_choice_when_a_live_command_is_dispatched(self):
+        with patch.object(corpus, "validate_root", return_value=self.root), \
+                patch.object(corpus, "Http") as factory, patch.object(corpus, "harvest") as harvest:
+            self.assertEqual(0, corpus.main(["--proxy-env", "HTTPS_PROXY", "harvest"]))
+        factory.assert_called_once_with(proxy_env="HTTPS_PROXY")
+        self.assertEqual(factory.return_value, harvest.call_args.args[2])
+
+    def should_suppress_transport_context_when_cooldown_persistence_is_interrupted(self):
+        with patch.dict(os.environ, {"HTTPS_PROXY": "http://fixture-secret@proxy.invalid:8080"}):
+            client = corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY", clock=lambda: 1000.0)
+        persist = corpus.persist_rate_deadline
+        calls = []
+        def interrupted_persist(stream, deadline):
+            calls.append(deadline)
+            persist(stream, deadline)
+            if len(calls) == 2:
+                raise KeyboardInterrupt()
+        error = corpus.urllib.error.HTTPError(corpus.OAI, 429, "fixture-secret", {"Retry-After": "600"}, None)
+        with patch.object(client.opener, "open", side_effect=error), \
+                patch.object(corpus, "persist_rate_deadline", side_effect=interrupted_persist):
+            with self.assertRaises(KeyboardInterrupt) as failure:
+                client.bytes(corpus.OAI)
+        self.assertEqual([1003, 1600], calls)
+        self.assertEqual(1600, float((self.root / "arxiv-http.lock").read_text()))
+        self.assertTrue(error.closed)
+        self.assertNotIn("fixture-secret", "".join(traceback.format_exception(failure.exception)))
+
+    def should_redact_response_lifetime_errors_when_proxy_read_or_cleanup_fails(self):
+        class BrokenResponse:
+            def __init__(self, fail_read):
+                self.fail_read = fail_read
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                if not self.fail_read:
+                    raise RuntimeError("fixture-secret")
+            def read(self, _count):
+                if self.fail_read:
+                    raise corpus.urllib.error.URLError("fixture-secret")
+                return b"fixture"
+        class BrokenClose(corpus.urllib.error.HTTPError):
+            def close(self):
+                super().close()
+                raise RuntimeError("fixture-secret")
+        with patch.dict(os.environ, {"HTTPS_PROXY": "http://fixture-secret@proxy.invalid:8080"}):
+            client = corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY")
+        for response in (BrokenResponse(True), BrokenResponse(False)):
+            with patch.object(client.opener, "open", return_value=response):
+                with self.assertRaises(corpus.CorpusError) as failure:
+                    client.bytes(corpus.GCS + "/fixture")
+            self.assertNotIn("fixture-secret", "".join(traceback.format_exception(failure.exception)))
+        error = BrokenClose(corpus.GCS, 429, "fixture-secret", {}, None)
+        with patch.object(client.opener, "open", side_effect=error):
+            with self.assertRaises(corpus.CorpusError) as failure:
+                client.bytes(corpus.GCS + "/fixture")
+        self.assertNotIn("fixture-secret", "".join(traceback.format_exception(failure.exception)))
 
     def should_reject_directory_symlink_when_pdf_storage_leaves_corpus_root(self):
         real_directory = self.root / "external"
