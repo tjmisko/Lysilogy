@@ -329,6 +329,14 @@ class Renderer:
                 self.math_seen += environment.rstrip("*") in {"equation", "align", "aligned", "gather", "multline", "eqnarray", "split"}
             elif name in DROP_ARGUMENT:
                 _, at = group(text, at, required=False)
+            elif name == "penalty":
+                # TeX's integer is a line-breaking parameter, not printed text.
+                # Literal decimal parameters are supported; register/macro and
+                # alternative-radix forms remain explicitly unrenderable.
+                number = re.match(r"\s*[+-]?\d+", text[at:])
+                if not number:
+                    raise UnsupportedSource("unsupported nonliteral TeX penalty parameter")
+                at += number.end()
             elif name in SILENT:
                 output.append(" " if name in ("newblock", "quad", "qquad", "\\") else "")
             elif name in ("newcommand", "renewcommand", "providecommand", "def", "write", "write18", "special", "input", "include"):

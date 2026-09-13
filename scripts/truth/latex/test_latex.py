@@ -25,6 +25,12 @@ def tar(members):
 
 
 class SourceTests(unittest.TestCase):
+    def test_should_omit_only_literal_penalty_parameters_when_bibliography_spacing_is_deposited(self):
+        self.assertEqual(Renderer().plain(r'12:\penalty0 2121--2159'), '12: 2121–2159')
+        self.assertEqual(Renderer().plain(r'12\penalty-100 (1)'), '12 (1)')
+        with self.assertRaisesRegex(UnsupportedSource, 'nonliteral TeX penalty'):
+            Renderer().plain(r'12:\penalty\custom 2121--2159')
+
     def test_should_report_unavailable_tex_when_the_deposited_source_is_a_pdf(self):
         for raw in (b'%PDF-1.4\n\x00binary', gzip.compress(b'%PDF-1.4\n\x00binary')):
             with self.subTest(compressed=raw.startswith(b'\x1f\x8b')), self.assertRaisesRegex(UnsupportedSource, 'source is a PDF; TeX source is unavailable'):

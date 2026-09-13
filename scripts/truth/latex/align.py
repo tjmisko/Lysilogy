@@ -14,6 +14,11 @@ def folded(char, math=False):
     if math:
         # Case, scripts, grouping and operators can change an equation. Lossy
         # plain PDF extraction withholds alignment rather than erasing them.
+        # PDF fonts encode the identical mu glyph as either Greek mu or the
+        # compatibility micro sign. Normalize this one encoding alias only;
+        # general compatibility folding would erase superscript semantics.
+        if char == "µ":
+            char = "μ"
         return "".join(item for item in unicodedata.normalize("NFC", char) if not item.isspace())
     value = unicodedata.normalize("NFKD", char).casefold()
     return "".join(item for item in value if item.isalnum())

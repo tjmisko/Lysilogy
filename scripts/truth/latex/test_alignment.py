@@ -17,6 +17,12 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_fold_the_mu_encoding_alias_when_math_case_and_script_semantics_stay_distinct(self):
+        aligner = TextAlignment({'text': 'longvariable+µ=constant'})
+        self.assertIsNotNone(aligner.unique('longvariable+μ=constant', math=True)[0])
+        for different in ('longvariable+Μ=constant', 'longvariable-μ=constant', 'longvariable+μ²=constant'):
+            self.assertIsNone(aligner.unique(different, math=True)[0])
+
     def test_should_align_independent_entries_when_citations_and_pdf_text_match(self):
         parsed, index = fixture()
         result = align_paper(parsed, index)
