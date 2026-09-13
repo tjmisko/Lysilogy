@@ -205,13 +205,26 @@ Entry source boundaries differ only by retained trailing parser whitespace.
 Sixteen references target objects: three equation references belong to O4 and
 13 visual references remain separately typed. The parse took 0.075 seconds and
 41,392 KiB RSS, with no alignment, detector reads or external calls. Automatic
-source and rendering exclusions remain recorded. Four independently supplied
-equation body boxes, reviewed source/PDF mathematical identity, and an explicit
-post-freeze construction-packet reconciliation are still required. The original
+source and rendering exclusions remain recorded. The independent supplement now
+supplies all four equation body and number boxes; root review verified all eight
+coordinate pairs, complete mathematical glyphs, source identity and retained
+native losses. An explicit post-freeze construction-packet reconciliation and
+actual validation remain required. The original
 blind packet never contained the later parsed inventory; the adapter does not
 claim that it did. Bibliography's independently read plain field roles also need
 their own validated path rather than fabricated structured commands. This
 checkpoint admits no new truth.
+
+The bounded first-paper candidate construction took 0.688 seconds and 52,448 KiB
+RSS. It reproduces the exact source-only inventory and keeps automatic acceptance
+false. A real mixed-bundle attempt with byte-identical frozen annotations fails
+at the legacy annotation-time `inputs` boundary; the traceback and diagnostic
+input copies are retained. Those annotations cannot honestly claim they read a
+candidate or parsed inventory before it existed. A proposed separate versioned
+manual-tranche path would bind their actual blind inputs and the later exact
+crosswalk, preserve the old validators and all automatic exclusions, and derive
+only independently complete visual/math metric cohorts. This proposal awaits
+review and implementation. Bibliography and O11 would remain explicitly omitted.
 
 ## Retained evidence
 
