@@ -1167,6 +1167,24 @@ Build K2 from Crossref deposited references, K5 as a stratified acquisition samp
 status recorded at build time, and K7 as a leave-one-out holdout over the K0 `scale` tier and local
 citation graphs. Provider responses come through the E7.1 cache so rebuilds are offline.
 
+Implementation decisions (2026-09-13): the cache exposes original fetch time alongside sanitized
+response bytes. Explicit truth freezes retain those bytes and content-addressed receipts externally,
+then ignore mutable TTLs. Requested/returned DOI identities and fixed endpoints must match; a
+completed request cannot silently refresh. K2 separates deposited input from its expected DOI,
+marks identifiers already visible in input, and retains DOI-only labels as unavailable resolver
+inputs. Bibliography field accuracy uses independently deposited structured labels only against
+actual unstructured inputs; rendered inputs cannot establish that objective. K2 has no local
+PaperId/WorkId or ingest dependency.
+
+K5 uses frozen OpenAlex metadata for the referenced work's field, decade and explicit OA status;
+unknown or conflicting OA evidence is counted, not guessed. Seeded field/decade allocation fills
+exactly 200 unique references or fails. K7 fixes the independently mapped candidate universe and
+withholds the held-out paper's canonical outgoing edges from every bibliography/provider view,
+including incoming-query duplicates, before recomputing features. Labels and raw evidence
+locations stay out of ranker features; coverage outside the candidate universe remains explicit.
+Actual K2/K5 publication awaits permitted provider access, and actual K7 publication awaits the
+mapped scale/local graph. Offline builder fixtures do not satisfy those truth-set requirements.
+
 Acceptance: each truth set is versioned with its build date; K5 open-access status is frozen so
 metric drift reflects code, not upstream changes.
 
