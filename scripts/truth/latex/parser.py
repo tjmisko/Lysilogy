@@ -393,11 +393,15 @@ def parse_project(files, limits=Limits(), selected_main=None):
             left = left[previous[-1]["end"]:]
         if following:
             right = right[:following.start()]
+        before = renderer.unsupported.copy()
+        context_before, context_after = renderer.plain(left)[-200:], renderer.plain(right)[:200]
+        unknown_context = dict(renderer.unsupported - before)
         links.append({"kind": "citation" if row["command"].rstrip("*") in CITES else "reference",
                       "command": row["command"], "targets": keys, "options": row["options"],
                       "source_span": {"start": row["start"], "end": row["end"]},
                       "source_members": expanded.origins(row["start"], row["end"]),
-                      "context_before": renderer.plain(left)[-200:], "context_after": renderer.plain(right)[:200]})
+                      "context_before": context_before, "context_after": context_after,
+                      "unsupported_context_commands": unknown_context})
     label_targets = {}
     for row in objects:
         for label in row["labels"]:

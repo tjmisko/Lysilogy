@@ -122,6 +122,9 @@ def align_links(parsed, aligner, entry_matches):
     for number, link in enumerate(parsed["links"]):
         if link["kind"] != "citation":
             continue
+        if link.get("unsupported_context_commands"):
+            excluded.append({"link": number, "reason": "unresolved source commands prevent complete citation context"})
+            continue
         targets = list(dict.fromkeys(link["targets"]))
         if not all(target in entry_matches for target in targets):
             excluded.append({"link": number, "reason": "citation target entry is not independently aligned"})
@@ -171,6 +174,9 @@ def align_references(parsed, aligner, aligned_objects):
     for number, link in enumerate(parsed["links"]):
         if link["kind"] != "reference":
             continue
+        if link.get("unsupported_context_commands"):
+            excluded.append({"link": number, "reason": "unresolved source commands prevent complete reference context"})
+            continue
         targets = [parsed["label_targets"].get(key) for key in dict.fromkeys(link["targets"])]
         if len(targets) != 1 or targets[0] not in present:
             excluded.append({"link": number, "reason": "reference target is absent, unaligned or grouped"})
@@ -196,8 +202,9 @@ def align_paper(parsed, index, threshold=0.95):
     objects, entries, excluded = [], [], []
     entry_matches = {}
     for row in parsed["objects"]:
-        if row["kind"] == "equation" and row.get("unsupported_commands"):
-            excluded.append({"kind": row["kind"], "id": row["id"], "reason": "unsupported math commands prevent complete equation alignment", "unsupported_commands": row["unsupported_commands"]})
+        if row.get("unsupported_commands"):
+            reason = "unsupported math commands prevent complete equation alignment" if row["kind"] == "equation" else "unsupported commands prevent complete object text alignment"
+            excluded.append({"kind": row["kind"], "id": row["id"], "reason": reason, "unsupported_commands": row["unsupported_commands"]})
             continue
         span, reason = aligner.unique(row["text"], row["kind"] == "equation")
         if span is None:
@@ -210,6 +217,9 @@ def align_paper(parsed, index, threshold=0.95):
                         "proof_targets": row["proof_targets"], "text_geometry": aligner.geometry(span),
                         "region": None, "region_status": "independent visual annotation required" if row["kind"] in ("figure", "table") else "not applicable"})
     for row in parsed["entries"]:
+        if row.get("unsupported_commands"):
+            excluded.append({"kind": "bib_entry", "id": row["id"], "reason": "unsupported commands prevent complete bibliography text alignment", "unsupported_commands": row["unsupported_commands"]})
+            continue
         span, reason = aligner.unique(row["text"])
         if span is None:
             excluded.append({"kind": "bib_entry", "id": row["id"], "reason": reason})

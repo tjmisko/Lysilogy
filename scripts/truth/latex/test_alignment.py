@@ -179,6 +179,22 @@ class AlignmentTests(unittest.TestCase):
         self.assertFalse(result['accepted'])
         self.assertIn('literal_environment:lstlisting', result['coverage']['unsupported_source_semantics'])
 
+    def test_should_withhold_incomplete_text_when_unknown_commands_can_add_meaningful_words(self):
+        for body in (r'\begin{theorem}\emphclaim{All elements have a unique bounded representation.}\end{theorem}',
+                     r'\begin{figure}\caption{\emphclaim{All elements have a unique bounded representation.}}\end{figure}',
+                     r'\begin{thebibliography}{9}\bibitem{one}\emphclaim{All elements have a unique bounded representation.}\end{thebibliography}'):
+            parsed = parse_project({'main.tex': document(body, r'\usepackage{local}'), 'local.sty': r'\newcommand{\emphclaim}[1]{Not #1}'})
+            result = align_paper(parsed, {'text': 'Not All elements have a unique bounded representation.'})
+            self.assertFalse(result['accepted'])
+            self.assertEqual(result['objects'] + result['entries'], [])
+
+    def test_should_withhold_link_context_when_unresolved_commands_can_change_its_meaning(self):
+        parsed, index = fixture()
+        parsed['links'][0]['unsupported_context_commands'] = {'unknown': 1}
+        result = align_paper(parsed, index)
+        self.assertEqual(result['mentions'], [])
+        self.assertFalse(result['bibliography_eligible'])
+
 
 if __name__ == "__main__":
     unittest.main()
