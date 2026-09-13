@@ -113,3 +113,14 @@ role/order cannot enter the cohort. This initial manual adapter requires all thr
 to be explicitly known; unsupported or unknown-field bundles are refused, not silently shortened.
 The resulting schema-1 bibliography projection keeps all entries and mentions for O8–O10, while
 provider identity and full mathematical transcription remain outside these labels.
+
+Staged publication may create `k1-limited-v1` once every E1 kind has positive, independently
+accepted truth, even while the original approximately 500-paper target remains unmet. Follow-up
+[#97](https://github.com/tjmisko/Lysilogy/issues/97) owns coverage expansion and remeasurement.
+The versioned release records historical and current full automatic coverage, exact metric
+cohorts/denominators, all excluded candidate evidence hashes, strata and manual selection bias.
+It makes no system-acceptance or broad-generalization claim. Complete reviewed absent kinds
+remain negative examples. A release writer reassembles every original bundle and rehashes all
+pinned evidence before publication; existing version bytes are immutable. Only derived object
+memberships/regions, field labels, source positions, votes and hashes are committed. Full native
+text, deposited source and review excerpts remain in the external cache.

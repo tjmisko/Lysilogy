@@ -103,3 +103,12 @@ citation inventory, exact printed memberships, explicit first-author/title/year 
 and both annotators' field anchors. Grouped citations retain printed order and source order
 separately. Actual source/PDF/index, images, annotation serializer and review script hashes are
 verified again. Only compact labels and provenance enter the overlay; full excerpts stay external.
+
+`release.py --config <repository eval configuration>` reassembles all pinned manual bundles and
+writes immutable `eval/truth/<k1-limited-version>/{objects,bibliography}.json`. A fixed configuration
+must pin every consumed external document, both historical and current automatic build reports,
+and the exact paper order. The limited release requires positive truth for every E1 kind and
+complete metric cohorts, preserves supported negatives, and reports the unchanged 500-paper
+coverage target with follow-up #97. The bibliography projection is accepted by the E1.2 collector
+using its explicit `--k1` path. Release version, exact cohort size and selection bias must accompany
+any detector measurement.

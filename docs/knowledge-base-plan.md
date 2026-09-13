@@ -1168,6 +1168,17 @@ missing choices and missing paper results keep their denominator and are not bac
 positions four/five. Malformed rankings fail validation. Panel votes require three distinct valid
 source IDs; display-only consensus ordering cannot change this score or its 0.70 target.
 
+Staged publication decision (2026-09-13): after the complete frozen 1,000-paper automatic
+run produced no accepted metric cohorts, independently reviewed source/PDF annotations may
+establish an explicitly versioned limited K1 release covering every E1 object kind. The original
+approximately 500-paper target stays unchanged and unmet; [follow-up #97](https://github.com/tjmisko/Lysilogy/issues/97)
+tracks finite source capability and independently stratified coverage expansion. Both historical
+and current automatic runs, every omitted cohort, per-paper/per-kind denominators, strata and
+manual selection bias remain visible. This is a staged publication deviation, not broad K1 or
+system acceptance. Detector collectors must report the limited release version and cohort sizes.
+Complete reviewed zero-kind papers remain negative examples. Original annotations and automatic
+exclusions remain immutable; only compact independently derived labels are committed.
+
 Acceptance: truth covers every E1 object kind; alignment quality is reported per paper; the suite
 runs offline from the corpus cache.
 
