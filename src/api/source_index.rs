@@ -33,7 +33,7 @@ impl AppState {
             .clone())
     }
 
-    async fn reading_index_document(
+    pub(super) async fn reading_index_document(
         &self,
         id: &PaperId,
         refresh: bool,

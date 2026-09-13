@@ -10,6 +10,7 @@ use std::{
 
 mod citation_graph;
 mod notes;
+mod objects;
 mod reader_tools;
 mod source_index;
 mod vimrc;
@@ -1856,6 +1857,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(reader_tools::routes())
         .merge(citation_graph::routes())
         .merge(source_index::routes())
+        .merge(objects::routes())
         .merge(notes::routes())
         .merge(vimrc::routes())
         .route("/api/health", get(health))
