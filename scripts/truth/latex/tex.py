@@ -105,7 +105,10 @@ def token_argument(text, at):
     if text[at] == "{":
         return group(text, at)
     match = COMMAND.match(text, at)
-    return (match[0], match.end()) if match else (text[at], at + 1)
+    # A star is a separate TeX character token, even when a higher-level
+    # LaTeX command happens to interpret it as an optional command variant.
+    end = match.end() - int(match[1].endswith('*') and len(match[1]) > 1) if match else at + 1
+    return text[at:end], end
 
 
 @dataclass

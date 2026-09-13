@@ -138,7 +138,13 @@ Coverage expansion distinguishes known inventory effects from faithful rendering
 Finite standard Greek/math atoms, font sizes and line breaks cannot introduce
 objects; an unsupported glyph, script, or font representation still withholds
 the enclosing text from alignment. Arbitrary hooks, local programs and structural
-redefinitions retain their exclusions. A direct equation boundary alias is supported
+redefinitions retain their exclusions. Structural tokens passed as custom-macro
+arguments do not establish a live inventory: the macro may discard, duplicate, or
+reorder them. The reader retains their original invocation/argument/object spans
+as unsupported evidence. Nested custom argument forwarding, including tail calls
+that may consume additional caller tokens, remains unverified rather than being
+expanded. Argument inspection has cumulative byte/step limits and treats a star
+following a control word as a separate TeX token. A direct equation boundary alias is supported
 only when one global preamble `newcommand` or plain `def` has no arguments and its
 entire body is one literal `begin` or `end` for a known equation environment.
 Events retain the original invocation and definition positions; source text is

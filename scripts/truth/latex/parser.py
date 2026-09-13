@@ -3,7 +3,7 @@ from collections import Counter
 import re
 
 from archive import Limits, UnsupportedSource, sha256
-from tex import ACCENTS, COMMAND, DROP_ARGUMENT, FORMATTING, SILENT, SYMBOLS, Renderer, comments, definition_regions, expand_project, group, local_style_dependencies, mask_regions, skip_space
+from tex import ACCENTS, COMMAND, DROP_ARGUMENT, FORMATTING, SILENT, SYMBOLS, Renderer, comments, definition_regions, expand_project, group, local_style_dependencies, mask_regions, skip_space, token_argument
 
 STANDARD_STATEMENTS = {name: name for name in ("theorem", "lemma", "corollary", "proposition", "definition", "assumption", "remark", "claim", "conjecture", "example")}
 ENVIRONMENTS = {"figure": "figure", "table": "table", "equation": "equation", "align": "equation", "gather": "equation", "multline": "equation", "eqnarray": "equation", "proof": "proof", "algorithm": "algorithm", "algorithm2e": "algorithm", "listing": "algorithm", "lstlisting": "algorithm"}
@@ -333,10 +333,71 @@ def parse_project(files, limits=Limits(), selected_main=None):
         macro_structure[name] = False
         return False
 
+    forwarding = {}
+
+    def unverified_forwarding(name):
+        if name not in forwarding:
+            pending = [name]
+            seen = set()
+            forwarding[name] = False
+            while pending:
+                current = pending.pop()
+                if current in seen or current not in renderer.macros:
+                    continue
+                seen.add(current)
+                if len(seen) > limits.expansion_steps:
+                    raise UnsupportedSource("macro argument dependency closure exceeds its bound")
+                dependencies = {item[1].rstrip("*") for item in COMMAND.finditer(renderer.macros[current][1])}
+                if any(renderer.macros.get(dependency, (0, ""))[0] for dependency in dependencies):
+                    forwarding[name] = True
+                    break
+                pending.extend(dependencies - seen)
+        return forwarding[name]
+
+    argument_evidence = []
+    argument_steps, argument_bytes = 0, 0
     for command in COMMAND.finditer(scan):
         name = command[1].rstrip("*")
         if structural_macro(name):
             source_semantics["structural_macro:" + name] += 1
+        if name not in renderer.macros:
+            continue
+        # Nested parameterized custom macros have no independently established
+        # forwarding contract. A body can discard/repeat/reorder #n, or end in
+        # another macro which consumes additional caller tokens. Do not infer
+        # visibility from the raw source inventory in any such invocation.
+        if unverified_forwarding(name):
+            source_semantics["unverified_macro_argument_forwarding:" + name] += 1
+            argument_evidence.append({"macro": name, "reason": "unverified nested argument forwarding",
+                                      "invocation": expanded.origins(command.start(), command.end() - int(command[1].endswith('*')))})
+        pos = command.end() - int(command[1].endswith('*'))
+        for number in range(renderer.macros[name][0]):
+            start = skip_space(scan, pos)
+            try:
+                value, pos = token_argument(scan, start)
+            except UnsupportedSource as error:
+                if any(word in str(error) for word in ("bound", "recursion", "nesting")):
+                    raise
+                source_semantics["unverified_macro_arguments:" + name] += 1
+                argument_evidence.append({"macro": name, "argument": number + 1, "reason": str(error),
+                                          "invocation": expanded.origins(command.start(), command.end()),
+                                          "source_members": expanded.origins(start, len(scan))})
+                break
+            argument_steps += 1
+            argument_bytes += pos - start
+            if argument_steps > limits.expansion_steps or argument_bytes > limits.text_bytes:
+                raise UnsupportedSource("macro argument inspection exceeds its cumulative bound")
+            commands = {item[1].rstrip("*") for item in COMMAND.finditer(value)}
+            affecting = sorted(item for item in commands if item in structural or item in aliases
+                               or "cite" in item.casefold() or "ref" in item.casefold() or structural_macro(item))
+            if affecting:
+                source_semantics["structural_macro_argument:" + name] += 1
+                argument_evidence.append({"macro": name, "argument": number + 1,
+                                          "reason": "unverified structural argument visibility and multiplicity",
+                                          "commands": affecting, "invocation": expanded.origins(command.start(), command.end() - int(command[1].endswith('*'))),
+                                          "source_members": expanded.origins(start, pos)})
+        if len(argument_evidence) > limits.expansion_steps:
+            raise UnsupportedSource("macro argument evidence exceeds its cumulative bound")
     # Unimplemented low-level definitions can hide structure through aliases.
     # Track all referenced macro names transitively, without executing a body.
     reachable = {command[1].rstrip("*") for command in COMMAND.finditer(scan)}
@@ -609,6 +670,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
                              "invocations": [expanded.origins(event["start"], event["end"]) for event in environment_events if event.get("alias") == name]}
                              for name, row in aliases.items()},
                          "other_environments": dict(unsupported_environments), "issues": dict(ignored),
+                         "unverified_macro_arguments": argument_evidence,
                          "unsupported_object_environments": unknown_environments,
                          "unsupported_source_semantics": dict(source_semantics),
                          "objects_by_kind": dict(Counter(row["kind"] for row in objects)),

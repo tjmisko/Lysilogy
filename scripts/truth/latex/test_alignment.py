@@ -17,6 +17,67 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_withhold_raw_object_inventory_when_macro_arguments_are_discarded_duplicated_or_reordered(self):
+        first = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        second = r'\begin{theorem}Every output has a distinct finite encoding.\end{theorem}'
+        cases = ((r'\newcommand{\wrap}[1]{}', r'\wrap{' + first + '}', [first]),
+                 (r'\newcommand{\wrap}[1]{#1#1}', r'\wrap{' + first + '}', [first]),
+                 (r'\newcommand{\wrap}[2]{#2#1}', r'\wrap{' + first + '}{' + second + '}', [first, second]))
+        for preamble, body, expected in cases:
+            source = document(body, preamble)
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(preamble=preamble):
+                self.assertIn('structural_macro_argument:wrap', parsed['coverage']['unsupported_source_semantics'])
+                self.assertEqual(len(parsed['objects']), len(expected))
+                for item, raw in zip(parsed['objects'], expected):
+                    self.assertEqual(item['source_members'], [{'path': 'main.tex', 'start': source.index(raw), 'end': source.index(raw) + len(raw)}])
+                evidence = parsed['coverage']['unverified_macro_arguments'][0]
+                member = evidence['source_members'][0]
+                self.assertEqual(source[member['start']:member['end']], '{' + first + '}')
+                self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output. Every output has a distinct finite encoding.'})['metric_eligibility']['O5'])
+
+    def test_should_withhold_nested_argument_forwarding_when_zero_argument_aliases_can_consume_caller_tokens(self):
+        statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        definitions = (r'\newcommand{\discard}[1]{}\newcommand{\outer}[1]{\discard{#1}}',
+                       r'\newcommand{\discard}[1]{}\newcommand{\middle}{\discard}\newcommand{\outer}{\middle}',
+                       r'\newcommand{\discard}[1]{}\newcommand{\outer}[1]{#1\discard}')
+        for preamble in definitions:
+            source = document(r'\outer{ordinary text}{' + statement + '}', preamble)
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(preamble=preamble):
+                self.assertIn('unverified_macro_argument_forwarding:outer', parsed['coverage']['unsupported_source_semantics'])
+                self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output.'})['metric_eligibility']['O5'])
+
+    def test_should_withhold_aliased_math_inventory_when_a_custom_macro_consumes_its_source_argument(self):
+        for use in ('', '#1', '#1#1'):
+            source = document(r'\wrap{\be abcdefghij=12345\ee}',
+                              r'\def\be{\begin{equation}}\def\ee{\end{equation}}\newcommand{\wrap}[1]{' + use + '}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(use=use):
+                self.assertEqual(parsed['coverage']['objects_by_kind']['equation'], 1)
+                self.assertIn('structural_macro_argument:wrap', parsed['coverage']['unsupported_source_semantics'])
+                self.assertEqual(parsed['coverage']['unverified_macro_arguments'][0]['commands'], ['be', 'ee'])
+                self.assertFalse(align_paper(parsed, {'text': 'abcdefghij=12345'})['metric_eligibility']['O3'])
+
+    def test_should_withhold_link_denominators_when_a_custom_argument_hides_a_reference(self):
+        source = document(r'\begin{theorem}\label{one}Every input has a unique bounded output.\end{theorem}'
+                          r'The independent statement \discard{\ref{one}} supports the complete argument.',
+                          r'\newcommand{\discard}[1]{}')
+        parsed = parse_project({'main.tex': source})
+        self.assertEqual(len(parsed['links']), 1)
+        self.assertIn('structural_macro_argument:discard', parsed['coverage']['unsupported_source_semantics'])
+        self.assertFalse(align_paper(parsed, {'text': 'Every input has a unique bounded output. The independent statement 1 supports the complete argument.'})['metric_eligibility']['O4'])
+
+    def test_should_preserve_literal_star_argument_boundaries_when_custom_macros_consume_plain_tokens(self):
+        statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
+        for body, preamble in ((r'\discard*{' + statement + '}', r'\newcommand{\discard}[1]{}'),
+                               (r'\discard\alpha*{' + statement + '}', r'\newcommand{\discard}[2]{}')):
+            parsed = parse_project({'main.tex': document(body, preamble)})
+            with self.subTest(body=body):
+                self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+                self.assertEqual(parsed['coverage']['unverified_macro_arguments'], [])
+                self.assertTrue(align_paper(parsed, {'text': 'Every input has a unique bounded output.'})['metric_eligibility']['O5'])
+
     def test_should_preserve_leading_math_brackets_when_literal_or_aliased_environments_have_no_options(self):
         for environment in ('equation','align','gather','multline','eqnarray'):
             for starred in (False,True):
