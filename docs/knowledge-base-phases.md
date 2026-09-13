@@ -2880,3 +2880,126 @@ date, last merged issue, in-flight branches and their state, next action, and op
   continue scale preparation and unblocked A2 work. All later phases, final running-app
   Playwright scenario, 5/5 gates and24/30 objectives, actual10k scenario and final system
   report remain outstanding. The system is not complete.
+
+### 2026-09-13 — seven-paper blind annotation pilot begins
+
+- **Phase A / Wave A2**, main before this docs checkpoint
+  `21ef86b3972520140f286cbd5e44ff9a1377fe18`. Last merged issue remains **#101 / PR104**,
+  merge `a54de426d6691c013e5ea4b3333e7027d7103335`; worktree/branches removed. Earlier
+  continuation merges #35/#36/#91/#88/#70/#98/#96. Main's ten unrelated PDF-preview files
+  still match `/tmp/lysilogy-preview-before.json`; main working-tree edits stay docs-only.
+  **1/5 gates (G5), 3/30 objectives (O1/O2/O30)** on main. Limited two-paper O1=1.0,
+  O2=0.9107793204006069 over all15 regions. No phase exit/system acceptance yet.
+- **#25 / draft PR94** remains independently clear, clean/pushed at `201c53c`, tested
+  source347de69; worktree `feat/e1.2-bibliography`. G5 **388Rust/296Python/92Node**, all
+  integrated gates and frontend smoke pass; O8/O10=1.0 on35entries/50pairs, known title30/35,
+  author/year35/35. Its actual figure outcomes equal merged#101. **Do not merge without
+  genuine K2/full O9.** Final review `review-bibliography-final-201c53c/final-review.json`
+  SHA `07fc3ce54d79c33ac4ea1abd1377ba9ab45639e6e0e91ab8fb66743ff20f7d42` under
+  `~/.cache/lysilogy/`. Draft has5/30 objectives; main has3/30. #103 retains title misses.
+- **#97**, worktree `feat/e8.3-k1-coverage`, no PR. Clean owner checkpoint
+  **`7c6296e363ebe47b5523fb043b46f93756442ddb`**, ordinary-main integration
+  **`8f8105a3ba8b29ec3fece1e08c6f81df4b7b22c6`**. Conflicts only in object-metrics.py and
+  its tests: preserve isolated v1 replay plus current#101 graphics/native derivation and
+  scoring. **9 versioned +31 collector tests pass**; all74 pinned parser/support/truth/
+  packet files unchanged. Full own-worktree Cargo/G5 and final measurements remain due.
+  Parser source remains independently clear8a8f58c,198 tests +11 independent probes;
+  unproved imported operator namespaces stay excluded. No TeX probe or new full run.
+- Root independently checked integration diff/AST, owner raw test logs, all74 protected
+  hashes and actual original-v1 replay through the current collector: both original truth
+  payloads reproduce byte-for-byte in4.597661s,zero external calls/$0. Review directory
+  `k1-coverage/manual-tranche-v1/root-merge-review-8f8105a/`; `review.json` SHA
+  `57b2ef82e08321d98c4e1e4569e3e8cecc74ca6de283f597818cb8edbb206d41`,
+  `protected-inputs-review.json` SHA
+  `adc7b47fd6d079a597f799155add5bd99a9add362fab4362adb8c85590c1e664`.
+  Actual replay receipt SHA `5d57ded4ed5eddb6e6f3f1b018c4d5f454278634daa72bd9b7640357c50f8586`.
+- #97's latest full comparison is still **617parsed /383failed /rawaccepted1 /zero
+  defensible new truth papers**,997.138481s/499824KiB/no external calls/$0, retained in
+  `k1-full-alignment-4ada537/`. Raw2007.05954 falsely claimed negative cohorts despite
+  manual references/procedure; never publish it. Root audit SHA
+  `53e41b07626f0f57916a433d62db0a270262c117455f56e0873c14e0b03e3ae4`. Historical runs,
+  unlaunched9680f86 setup, original1000 inputs/999-success index map and separate#98 retry
+  remain separate and immutable. Approximately500-paper coverage remains unmet.
+- **New frozen annotation pilot** lives at
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v1/`. Policy SHA
+  `d69801ad32c78bec8ef7cd2d8107a196980e0653ce98f715e7e40754103ad4d4`: original input
+  order, page cap8, three new papers/category planned, first one/category active; exclude
+  only existing two releases or unavailable/unsafe artifacts, abort on hash contradictions.
+  No parser/detector/alignment success selection or replacement after annotation failure.
+  All21 planned slots filled. Full1000 ledger:214 page-cap exclusions, one original-index
+  failure, two already released,21selected,762later quota-filled. Selection took9.436s,
+  187936KiB,zero calls/$0. `selection.json` SHA
+  `0ba9a356987f4f93787b4df41a0c32cd1ff061ea4b69270c63e883187ef6e6ca`.
+- Root independently reproduced every ledger row and all21 selected artifact/member
+  bindings. `root-selection-review.json` SHA
+  `689c325f45c37073bcb3d3fa7cf6bb8f4757649d439467d9c473ec66a884a28c`.
+  Active seven, in frozen order: **2210.11141v1 cs.CV/2022 5p;2310.04162v1 cs.RO/2023 8p;
+  2001.05217v1 hep-th/2020 7p;2409.03655v1 cs.LG/2024 6p;2002.03492v1 econ.TH/2020 5p;
+  2207.03024v1 stat.ML/2022 5p;2303.07834v2 math.PR/2023 7p**. Explicit short-paper
+  selection bias; seven/21 are milestones, not replacement targets or published truth.
+- All43 complete original pages rendered96dpi; root separately verified source exports
+  against every safe raw member and native exports against exact text/page/token allowlists.
+  Embedded historical figures and all parsed/aligned/detector outcomes are omitted.
+  `root-render-review.json` SHA
+  `1ec4db9eb44fca205e457ddb7d3282fdc189ec201616207f9bf5f80c4f61bfd2`,2.851385s/72464KiB,
+  zero calls/$0. Each `packets/<arxiv_id>/packet-rendered.json` binds actual PDFs/sources/
+  indexes,exports and all full images. Pre-render packets remain unchanged. The frozen
+  selector is named select.py and shadows Python's stdlib select: render launch used
+  `python3 -P -B`, preimported subprocess, then inserted the tranche path and ran root-render.py
+  through runpy. First import-only startup failed before reading/rendering anything; do not
+  mistake it for a PDF failure or rerun the completed exclusive output directories.
+- **First paper2210.11141 annotations RUNNING**. Primary **`finish_benchmark`** owns
+  `primary/2210.11141/`; independent **`review_ready_prs`** owns `independent/2210.11141/`.
+  Both read the frozen `blind-annotation-prompt.md`, inspect all original images before
+  source/native association, never read each other's labels or raw detector-bearing indexes,
+  and write immutable inventory.json/receipt.json. Both have independently reported6figures,
+  2tables,4numbered equations,25bibliography entries,49citation groups and20source refs;
+  manual procedure/list roles remain explicit. Entry14 crosses columns; preserve disjoint
+  memberships. **Neither final inventory/receipt was received at this checkpoint.** Wait
+  for both frozen artifacts, then root reconciles completeness/ambiguities/source spans.
+  Root also viewed all5pages independently; preparatory visual receipt is
+  `root-visual-preparation-2210.11141.json` SHA
+  `0f976eedcf2e21a6ddd0a60a4bc21317563759aff17f64f1a697992a44b5495a`; not truth admission.
+- #97 owner **`finish_corpus_proxy` is idle** at7c6296e; use `followup_task` after dual
+  annotation freeze/root reconciliation. Do not give one annotator the other's labels before
+  freeze. Demonstrated assembly issues: region/object bundle exclusivity, missing typed
+  figure/table reference roles outside O4, raw-index path requirement despite proper blinded
+  exports, all-math-kind eligibility coupling and cohort denominator coupling. Source-linked
+  assessment `assembly-gap-assessment.md` SHA
+  `91bb175ebc1acccb606fda2b386daa3c86f923529cf21416210c84a70b7c44eb`, receipt SHA
+  `bc5889bc06ef3a2c34df6a864cd7489a9bd3d63815ace764d42c42c4fed4bb83`. No adapter edits
+  yet. Start with demonstrated smallest change: independently validate each overlay against
+  original bytes, combine overlay fields, retain typed reference roles and actual blinded
+  export paths; keep per-kind omissions/ambiguities and v1 replay immutable. Broader manual
+  occurrence/per-kind support follows reconciled evidence, without new trust flags.
+- **Scale batch13 RUNNING, retained TTY exec64315**, sole heavy window:
+  `python3 -B -u ~/.cache/lysilogy/run-scale-index-batch.py --batch 13 --limit 250`.
+  Completed batches1–12 plus separate#98 retry give **4,000 unique indexes:1000eval and
+  3049scale**,49overlap. Batch11:250/250,403.129014s/334960KiB; batch12:250/250,
+  391.310517s/216320KiB,zero external calls/$0. Latest root audit
+  `native-index-after-batch12-review.json` SHA
+  `2970ec0df6e84de0bb28de4718c27ba8566ca6afb0594929570c798b40fef64d`, rehashed723,648,477B.
+  Poll terminal/receipt, then `python3 -B ~/.cache/lysilogy/audit-native-index-batch.py
+  --batch 13`; next14. One Rust/G5/native job at a time; lightweight source tests/review may
+  continue. Runner SHA `9d8ae083a30808110d09cb94aadad1aeb7bdcc2c76203a8a6c7e07ca0347325b`,
+  audit SHA `c37667c8ef614c3df03996939a980c7a43e964925893b1f02fe3bdd48a7228e8`.
+- No corpus downloader. Complete **10,951 PDFs/1,000sources**, exact1000eval/10000scale,
+  at `~/Corpora/arxiv`; canonical data `~/.cache/lysilogy/arxiv-kb-data`. Registry10951
+  rows/bytes unchanged, SHA
+  `934d7fa7860d8a84639f52fbb7d77c0a721f3b7e4bc8f836b70b8063c4fa835d`. Portable native
+  helper `k1-native-page-isolation-0843453/k1_index`, SHA
+  `3f25b41305452eac7bdfde2b02f77f2dc664b89aa3f5530e26125ed3cda2e4f7`. Preserve20GiB
+  floor; no corpus/data reset or copies. Index prep is not actual production10k acceptance.
+- Paused #33 `feat/e2.1-kb-store` **905c341**, no PR, Rust uncompiled/missing rusqlite
+  dependencies;26written tests, no further useful offline implementation gap. Preserve
+  dirty.gitignore/target resume notes. Paused #71/draftPR93 `feat/e8.4-reference-truth`
+  **d5e12aa**; #72/draftPR95 `feat/e8.5-person-labels` **c867ec6**, stacked on93.
+  Genuine K2/K4/K5/K7 missing; combined40-DOI plan remains unexecuted. No approval for
+  **index.crates.io, static.crates.io, api.crossref.org, api.openalex.org**. Do not apply
+  prepared four-host permission script or bypass prior two-host automatic-review rejection.
+  Original corpus grants work. No rebase/sudo/rm-rf/persistent systemctl/private/env access.
+- Next: reconcile the two immutable first-paper inventories, assign next frozen paper,
+  resume owner on demonstrated adapter gaps, audit batch13/continue14. Follow-ups opened
+  this continuation #97/#98/#101/#103; #98/#101 now closed. Coverage#97/title#103 and
+  historical O25/O26#21/#22 remain. All later phases, final Playwright app scenario,
+  5/5 gates and24/30 objectives, actual10k scenario and final system report remain pending.
