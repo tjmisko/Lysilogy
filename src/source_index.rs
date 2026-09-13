@@ -10,6 +10,9 @@ mod ocr;
 mod paragraphs;
 
 #[cfg(test)]
+mod page_failure_tests;
+
+#[cfg(test)]
 pub(crate) mod test_support;
 
 use std::{path::Path, time::Duration};
@@ -189,8 +192,10 @@ async fn build(
         .arg(source)
         .arg("-");
     let bytes = bounded_command(&mut command, "pdftotext", MAX_COMMAND_BYTES).await?;
-    let mut pages = native::parse(&String::from_utf8_lossy(&bytes))?;
-    let mut gaps = Vec::new();
+    let native = native::parse(&String::from_utf8_lossy(&bytes))?;
+    let mut pages = native.pages;
+    let native_failures = native.gaps.iter().map(|gap| gap.page).collect::<Vec<_>>();
+    let mut gaps = native.gaps;
     if pages.len() == MAX_PAGES {
         gaps.push(IndexGap {
             page: u32::try_from(MAX_PAGES + 1).unwrap_or(u32::MAX),
@@ -219,39 +224,44 @@ async fn build(
             ocr_count += 1;
             ocr::page(source, directory, page, stamp, priority).await
         };
-        match result {
-            Ok(ocr) if ocr.words.len() > page.words.len() => {
-                if ocr.confidence.is_some_and(|confidence| confidence < 0.75) {
-                    gaps.push(IndexGap {
-                        page: page.number,
-                        reason:
-                            "OCR text has low confidence; verify quotations against the page image."
-                                .into(),
-                    });
-                }
-                *page = ocr;
-            }
-            Ok(_) => {
-                gaps.push(IndexGap { page: page.number, reason: "No additional readable text was detected by OCR; page may be blank, graphical, or unreadable.".into() });
-                if page.words.is_empty() {
-                    page.provenance = Provenance::Unavailable;
-                }
-            }
-            Err(error) => {
-                gaps.push(IndexGap {
-                    page: page.number,
-                    reason: format!("Local OCR unavailable: {error}"),
-                });
-                if page.words.is_empty() {
-                    page.provenance = Provenance::Unavailable;
-                }
-            }
-        }
+        apply_ocr_result(page, result, &mut gaps);
     }
-    let mut index = assemble(&pages);
+    let mut index = assemble_with_native_failures(&pages, &native_failures);
     index.gaps.extend(gaps);
     index.figures = figures::find(&index);
     Ok(index)
+}
+
+// Retain native failure gaps even when locally recognized OCR replaces a page.
+fn apply_ocr_result(page: &mut SourcePage, result: Result<SourcePage>, gaps: &mut Vec<IndexGap>) {
+    match result {
+        Ok(ocr) if ocr.words.len() > page.words.len() => {
+            if ocr.confidence.is_some_and(|confidence| confidence < 0.75) {
+                gaps.push(IndexGap {
+                    page: page.number,
+                    reason:
+                        "OCR text has low confidence; verify quotations against the page image."
+                            .into(),
+                });
+            }
+            *page = ocr;
+        }
+        Ok(_) => {
+            gaps.push(IndexGap { page: page.number, reason: "No additional readable text was detected by OCR; page may be blank, graphical, or unreadable.".into() });
+            if page.words.is_empty() {
+                page.provenance = Provenance::Unavailable;
+            }
+        }
+        Err(error) => {
+            gaps.push(IndexGap {
+                page: page.number,
+                reason: format!("Local OCR unavailable: {error}"),
+            });
+            if page.words.is_empty() {
+                page.provenance = Provenance::Unavailable;
+            }
+        }
+    }
 }
 
 // Background work remains bounded even on platforms without `nice`; priority
@@ -338,7 +348,12 @@ async fn bounded_command(command: &mut Command, program: &str, limit: usize) -> 
     .map_err(|_| Error::Task(format!("{program} timed out after 35 seconds")))?
 }
 
+#[cfg(test)]
 fn assemble(pages: &[SourcePage]) -> ReadingIndex {
+    assemble_with_native_failures(pages, &[])
+}
+
+fn assemble_with_native_failures(pages: &[SourcePage], native_failures: &[u32]) -> ReadingIndex {
     let mut index = ReadingIndex {
         schema_version: SCHEMA_VERSION,
         text: String::new(),
@@ -370,7 +385,10 @@ fn assemble(pages: &[SourcePage]) -> ReadingIndex {
                     .last()
                     .is_some_and(|previous| previous.kind == "body")
                 && index.pages.last().is_some_and(|previous| {
-                    previous.number + 1 == page.number && previous.end == offset
+                    previous.number + 1 == page.number
+                        && previous.end == offset
+                        && !(native_failures.contains(&previous.number)
+                            && previous.provenance == Provenance::Unavailable)
                 })
                 && paragraph
                     .words
