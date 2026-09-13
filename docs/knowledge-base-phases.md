@@ -1448,3 +1448,66 @@ date, last merged issue, in-flight branches and their state, next action, and op
   indexing is separate, writes only the dedicated cache data root, and must preserve its canonical
   PaperId registry. Current active implementations are #33/#70; #72's agent is reviewing #70.
   Scorecard remains **1/5 gates (G5), 1/30 objectives (O30)**; O25/O26 misses retain #21/#22.
+
+
+### 2026-09-13 — eval corpus downloaded; store source review cleared
+
+- Last merged issue remains **#88 / PR90**; phase/wave **A/A2**, main prior checkpoint
+  `f751485`. This is a continuity checkpoint, not a phase exit. No further host approval has
+  arrived: the prepared four-host grant script remains unapplied. Preserve all earlier permission
+  and no-rebase instructions; no blocked host was accessed through another transport.
+- The eval stage of sole corpus mutator **exec97363** finished **exit 0**: all **1,000 eval PDFs
+  and 1,000 source archives** downloaded. Retained log
+  `~/.cache/lysilogy/arxiv-corpus-eval-priority.log` records **1:15:30 wall / 241,008 KiB RSS / $0**.
+  The queued main source hash guard passed and the same shell is now downloading the full scale
+  tier into the same corpus. Full-run log remains `arxiv-corpus-full-resume.log`. Read-only status
+  at this checkpoint: **2,292 PDFs / 1,000 sources / 10,000,961,400 bytes**, 1,341 scale PDFs,
+  no path problems; 117 GiB free. These counts precede final artifact rehash verification.
+  Do not start another corpus mutator or repeat selection recovery.
+- **#33** is pushed and paused at **`905c3410cf22cb74c26aa652b2bb544cdea07c1a`** in
+  `.worktrees/feat/e2.1-kb-store`. Storage checkpoint `6576c48`, ordinary main integration
+  `c3f5032`, G4 adapter `045d93f`. Root independently reviewed the aggregation, identifier index,
+  title-key refresh, journal-prefix checks, upgrade retry and G4 adapter. Final correction rejects
+  version-pinned arXiv IDs at Work level while retaining them on WorkVersion; candidate lookup
+  covers explicit Work identifiers and infers no versionless aliases. Nine new Rust scenarios
+  are written but **uncompiled/unrun**. Formatting and direct Python SQLite checks pass. Root ran
+  all seven rebuild-adapter tests with the reviewed #71 loader injected read-only: pass, no skips.
+  Receipt `~/.cache/lysilogy/review-kb-store-root.json` records source hashes and the source review
+  clearance, explicitly not Rust gate clearance. Rust/Clippy/G5/actual G4/O28 remain unavailable.
+  No PR opened. Preserve unrelated `.gitignore` and the retained target resume notes/old patch;
+  the old unfinished patch is superseded and must not be applied.
+- **#70** remains active in `.worktrees/feat/e8.3-latex-truth`. Independent reviewer
+  `review_ready_prs` cleared core source **`60c0c355558ddc7cd43f20c44512ef6316e6f2ba`** after
+  48 core tests, 12 original probes and nine late probes. Corrections preserve math case/operators
+  and script binding, reject hidden structural macros/conditionals/definitions and literal-body
+  false objects, share a paper expansion budget, forbid reused object spans and unknown-rendering
+  shortened truth, and admit bibliography field labels only from explicit deposited field roles.
+  First-author ambiguity never promotes a later coauthor. Unrelated/BibTeX substring matches
+  remain comparison evidence, not printed field labels. Core review receipts are under
+  `~/.cache/lysilogy/review-latex-60c0c35/`. The separate builder/archive-closure scope and new
+  per-kind contract are still under review; no final source/PR clearance or K1 publication.
+- Actual native indexing of the original 25-paper pilot completed **186.32 s / zero network or
+  model calls**, preserving the mapped PaperId registry and exact index/PDF hashes. Historical
+  alignment pilot `~/.cache/lysilogy/k1-alignment-pilot.json` records **0/25 accepted**, eight
+  parsed candidates at quality 0.16–0.69, wall 7.984 s; this predates later parser fixes and is not
+  a metric result. Owner now runs full frozen **1,000-paper eval indexing in exec84834**, using
+  the previously hashed Cargo-selected helper and absolute external cache paths. One heavy window
+  belongs to this run; parser/source work can continue. Preserve its data-root registry and poll
+  the owning agent/handle before any duplicate index job.
+- Root approved explicit **per-kind exhaustive eligibility** for K1 while retaining overall
+  paper completeness. A metric cohort requires that kind's entire independent source inventory
+  and every metric-relevant link, with omitted kinds/counts/reasons visible. Unsupported semantics
+  capable of hiding the kind exclude that paper/kind. Freeze cohort selection before detector
+  evaluation; no shortened denominator, lower target or caption-derived O2 region truth.
+  Owner is documenting the schema/design rationale and adding regression coverage before review.
+- Root's read-only 1,000-source diagnostic `~/.cache/lysilogy/k1-field-markup-survey.json` found
+  **79 papers with bibliography field-role syntax**, with 46 archive-bound/unsupported exclusions,
+  wall 18.623 s, zero calls/$0. It rehashed actual sources and records the archive module hash.
+  Syntax may occur in inactive files/definitions; these are fixture leads, never truth labels.
+- Paused drafts remain **#25/PR94 `46ff41b`**, **#71/PR93 `d5e12aa`**, and **#72/PR95 `c867ec6`**
+  (stacked on PR93). Their final source/evidence reviews are retained above. Real K1/K2 detector
+  metrics, K2/K5/K7 and K4 inputs remain outstanding. Next: finish/review #70 builder and cohorts,
+  retain full-index evidence, build actual truth/panel, then measure #25. Continue scale downloads.
+- Scorecard remains **1/5 gates (G5), 1/30 objectives (O30=0/10k)**; measured O25/O26 misses retain
+  #21/#22. No new measured objective miss or follow-up. Main's ten protected PDF-preview files
+  independently match their original hashes. Full phase/system acceptance remains incomplete.
