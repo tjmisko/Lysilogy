@@ -108,7 +108,7 @@ function linesFor(index: ReadingIndex): SourceLines {
     const previous = last?.words.at(-1);
     const previousRect = previous?.rect;
     const height = rect.y_max - rect.y_min;
-    const sameLine = last?.page === token.page && previous !== undefined && previousRect !== undefined
+    const sameLine = !token.atomic && !previous?.token.atomic && last?.page === token.page && previous !== undefined && previousRect !== undefined
       && Math.abs((rect.y_min + rect.y_max - previousRect.y_min - previousRect.y_max) / 2) <= .7 * Math.max(height, previousRect.y_max - previousRect.y_min)
       && rect.x_min >= previousRect.x_min - 2
       && rect.x_min - previousRect.x_max <= Math.max(height * 3, (result.widths.get(token.page) ?? 612) * .12)

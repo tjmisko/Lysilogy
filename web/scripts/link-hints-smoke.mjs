@@ -151,6 +151,21 @@ try {
   assert.equal(await page.locator('.pdf-link-hints').count(),0, 'Editable fields keep f');
   await page.keyboard.press('Escape');
 
+  // Link hints must own their keys without exiting the newer Cursor/Visual modes.
+  await page.keyboard.press('C');
+  await page.locator('.pdf-cursor-badge').waitFor();
+  await page.keyboard.press('v');
+  assert.equal(await page.locator('.pdf-reader').getAttribute('data-source-visual'), 'true');
+  await open(); await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.pdf-cursor-badge').count(), 1);
+  assert.equal(await page.locator('.pdf-reader').getAttribute('data-source-visual'), 'true');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('.pdf-reader').getAttribute('data-source-visual'), null);
+  await open(); await page.keyboard.press('q');
+  assert.equal(await page.locator('.pdf-cursor-badge').count(), 1);
+  await page.keyboard.press('C');
+  assert.equal(await page.locator('.pdf-cursor-badge').count(), 0);
+
   await page.keyboard.press('P'); await page.keyboard.press('W'); await ready(1);
   await open();
   assert.ok(await page.locator('.pdf-link-hint').count() > 0);

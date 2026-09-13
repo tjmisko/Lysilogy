@@ -1,5 +1,5 @@
 import { flushSync } from "react-dom";
-import { PdfSourceMarks } from "./PdfSourceMarks";
+import { PdfSourceLineNumbers, PdfSourceMarks } from "./PdfSourceMarks";
 import { usePdfLinkHints } from "./PdfLinkHints";
 import { usePdfSourceTools, type SourceMark } from "./PdfSourceTools";
 import { sectionPageCrop, type SectionCrop } from "../lib/sectionCrop";
@@ -295,7 +295,8 @@ function PdfPageCanvas({
         x: crop.bounds.x_min / layout.width, y: crop.bounds.y_min / layout.height,
         width: (crop.bounds.x_max - crop.bounds.x_min) / layout.width, height: (crop.bounds.y_max - crop.bounds.y_min) / layout.height,
       })}>
-      <div className="pdf-page-window" ref={windowRef} style={lazy ? {
+      {/* Placeholder dimensions must never overwrite a rendered canvas's crop. */}
+      <div className="pdf-page-window" ref={windowRef} style={lazy && !visible ? {
         width: (crop === undefined ? layout?.width ?? 612 : crop.bounds.x_max - crop.bounds.x_min) * placeholderScale,
         aspectRatio: crop === undefined ? `${layout?.width ?? 612} / ${layout?.height ?? 792}`
           : `${crop.bounds.x_max - crop.bounds.x_min} / ${crop.bounds.y_max - crop.bounds.y_min}`,
@@ -314,6 +315,7 @@ function PdfPageCanvas({
           />
         </div>
       </div>
+      <PdfSourceLineNumbers marks={sourceMarks} page={page} width={sourceDimensions?.width ?? layout?.width ?? 612} height={sourceDimensions?.height ?? layout?.height ?? 792} crop={crop} />
       <figcaption>{page}</figcaption>
     </figure>
   );
@@ -477,7 +479,7 @@ export function PdfReader({
       if (target instanceof Element && target.closest(".library-rail") !== null) { clearPendingG(); return; }
       if (event.isComposing || event.metaKey || event.altKey || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
         || target instanceof HTMLSelectElement || target instanceof HTMLElement && target.isContentEditable) { clearPendingG(); return; }
-      if (event.repeat && ["g", "H", "W", "w"].includes(event.key) && !event.ctrlKey) {
+      if (event.repeat && ["g", "H", "W", "w"].includes(event.key) && !event.ctrlKey && !sourceTools.cursorMode && !sourceTools.visualMode) {
         event.preventDefault(); event.stopImmediatePropagation(); return;
       }
       const prefixed = pendingG.current !== null;
@@ -510,11 +512,12 @@ export function PdfReader({
         const direction = ["k", "ArrowUp", "ArrowLeft", "PageUp", "u"].includes(event.key) ? -1 : 1;
         let distance = 0;
         if (!event.ctrlKey && ["j", "k", "ArrowDown", "ArrowUp"].includes(event.key)) distance = 100;
-        if (["PageDown", "PageUp"].includes(event.key) || event.ctrlKey && ["d", "u"].includes(event.key)) distance = (axis === "vertical" ? host.clientHeight : host.clientWidth) * (event.ctrlKey ? .5 : .9);
+        if (["PageDown", "PageUp"].includes(event.key) || event.ctrlKey && ["d", "u"].includes(event.key)) distance = (axis === "vertical" ? host.clientHeight : host.clientWidth) * .5;
         if (distance !== 0) action = () => host.scrollBy(flow === "paged" || axis === "vertical" ? { top: direction * distance } : { left: direction * distance });
       }
       const turnPage = !event.ctrlKey && ["h", "l", "ArrowLeft", "ArrowRight"].includes(event.key)
-        || flow === "paged" && (["PageUp", "PageDown"].includes(event.key) || event.ctrlKey && ["d", "u"].includes(event.key));
+        || flow === "paged" && (["PageUp", "PageDown"].includes(event.key) || event.ctrlKey && ["d", "u"].includes(event.key))
+          && host !== null && (["PageUp", "u"].includes(event.key) ? host.scrollTop <= 1 : host.scrollTop + host.clientHeight >= host.scrollHeight - 1);
       if (turnPage) action = () => {
         const current = flow === "continuous" && host !== null ? visiblePdfPage(host) ?? page : page;
         const direction = ["h", "ArrowLeft", "PageUp", "u"].includes(event.key) ? -1 : 1;
@@ -524,7 +527,7 @@ export function PdfReader({
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [availablePages, axis, changeAxis, changeFit, changeFlow, clearPendingG, flow, keyboardEnabled, linkActive, linkKey, onGloss, onPage, page, sourceKey, step]);
+  }, [availablePages, axis, changeAxis, changeFit, changeFlow, clearPendingG, flow, keyboardEnabled, linkActive, linkKey, onGloss, onPage, page, sourceKey, sourceTools.cursorMode, sourceTools.visualMode, step]);
 
   const handleTextLayer = useCallback(
     (pageNumber: number, viewport: PageViewport | null): void => {
@@ -652,6 +655,8 @@ export function PdfReader({
       data-source-local-mode={linkHints.active || sourceTools.localMode || selectionState !== null ? "true" : undefined}
       data-link-hints={linkHints.active ? "true" : undefined}
       data-source-visual={keyboardEnabled && sourceTools.visualMode ? "true" : undefined}
+      data-source-cursor={keyboardEnabled && sourceTools.cursorMode ? "true" : undefined}
+      data-line-numbers={sourceTools.cursorMode ? sourceTools.lineNumberMode : undefined}
       onPointerUp={(event) => {
         let surface = event.target instanceof Element ? event.target.closest<HTMLElement>(".pdf-page-surface") : null;
         const selection = window.getSelection();
@@ -727,7 +732,7 @@ export function PdfReader({
             key={visiblePage}
             document={pdfDocument}
             page={visiblePage}
-            slotWidth={slotWidth}
+            slotWidth={slotWidth - (sourceTools.cursorMode && sourceTools.lineNumberMode !== "off" ? 28 : 0)}
             slotHeight={containerHeight}
             fit={fit}
             visualFit={visualFit}

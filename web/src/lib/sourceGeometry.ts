@@ -4,7 +4,10 @@ import type { TextRect } from "../types";
 export type SourceMark = TextSpan & {
   page: number;
   rect: TextRect;
-  kind: "match" | "current" | "visual" | "cursor";
+  kind: "match" | "current" | "visual" | "cursor" | "block-cursor" | "block-visual" | "line-number";
+  label?: string;
+  active?: boolean;
+  gutterX?: number;
   token: ReadingToken;
   geometry?: "native" | "estimated";
   group: number;
@@ -72,6 +75,7 @@ export function resolveSourceMarks(marks: SourceMark[], host: HTMLElement | null
     y_min: (rect.top - (origin?.top ?? 0)) / scaleY, y_max: (rect.bottom - (origin?.top ?? 0)) / scaleY,
   });
   const resolved = marks.flatMap((mark): SourceMark[] => {
+    if (mark.kind.startsWith("block-") || mark.kind === "line-number") return [mark];
     const { token } = mark;
     if (!matches.has(token)) {
       let best: { run: Run; at: number } | null = null;
@@ -120,7 +124,7 @@ export function mergeSourceLines(marks: SourceMark[], text: string): SourceMark[
   for (const mark of marks) {
     const previous = result.at(-1);
     const a = previous?.rect, b = mark.rect;
-    if (previous !== undefined && a !== undefined && mark.kind !== "cursor"
+    if (previous !== undefined && a !== undefined && ["match", "current", "visual"].includes(mark.kind)
       && previous.kind === mark.kind && previous.page === mark.page && previous.group === mark.group
       && mark.start >= previous.end && /^[\t ]*$/u.test(text.slice(previous.end, mark.start))
       && Math.min(a.y_max, b.y_max) - Math.max(a.y_min, b.y_min) >= .65 * Math.min(a.y_max - a.y_min, b.y_max - b.y_min)

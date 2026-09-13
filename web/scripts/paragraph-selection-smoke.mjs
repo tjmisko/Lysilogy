@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { chromium } from 'playwright';
+import { checkCursorMode } from './cursor-mode-checks.mjs';
 
 // Real Poppler extraction + PDF.js; only the HTTP transport is intercepted.
 // The Rust integration test creates its own temporary, synthetic PDF/cache.
@@ -60,7 +61,7 @@ try {
     await input.fill(pattern);await input.press('Enter');
     await page.waitForFunction(pattern=>document.querySelector('.pdf-source-status')?.textContent.includes(`/${pattern} · 1 / 1`),pattern,{timeout:5000}).catch(async error=>{ throw Error(`${error.message}\n${await page.locator('.pdf-source-tools').innerText()}\n${JSON.stringify(errors)}`); });
     await page.keyboard.type('v'+object);
-    await page.waitForFunction(()=>document.querySelector('.pdf-source-status')?.textContent.includes('VISUAL'));
+    await page.waitForFunction(()=>document.querySelector('.pdf-source-status')?.textContent.includes('VISUAL'),null,{timeout:5000}).catch(async error=>{await page.screenshot({path:'/tmp/lysilogy-cursor-error.png'});throw Error(error.message+' '+await page.locator('.pdf-source-tools').innerText()+' '+JSON.stringify(errors));});
   };
   await select('compare');
   await page.keyboard.press('o');
@@ -86,6 +87,7 @@ try {
   await page.waitForFunction(()=>window.copiedSource==='Figure 6. Confusion matrices of verb classification.');
   await select('Additionally','ip');await page.keyboard.press('y');
   await page.waitForFunction(text=>window.copiedSource===text,following.join(' '));
+  await checkCursorMode(page,index);
   // The same logical object is allowed inside a section crop: the excluded
   // floats are not treated as required selection members by the bounds check.
   analyzed=true;await page.reload();
@@ -95,6 +97,14 @@ try {
   await select('compare','ip');await onlyProse();
   assert.equal(await page.getByRole('button',{name:'Open match in full paper'}).count(),0);
   await page.keyboard.press('y');await page.waitForFunction(text=>window.copiedSource===text,expected);
+  await page.keyboard.press('C');await page.keyboard.type('gg');
+  await page.locator('.pdf-source-line-number.is-active').waitFor();
+  await page.screenshot({path:'/tmp/lysilogy-cursor-crop.png'});
+  const start=Number(await page.locator('.pdf-source-mark.is-cursor').first().getAttribute('data-source-offset'));
+  assert.equal(start,paragraph.start,'gg stops at the section boundary');
+  await page.keyboard.press('k');
+  assert.equal(Number(await page.locator('.pdf-source-mark.is-cursor').first().getAttribute('data-source-offset')),paragraph.start);
+  await page.keyboard.press('C');
   assert.deepEqual(errors,[]);
   console.log('PASS real PDF indexing, cross-page vap/vip from either fragment, excluded table/figure geometry, endpoint motions, independent captions/next paragraph, and cropped section reader');
 } finally { await browser.close(); }

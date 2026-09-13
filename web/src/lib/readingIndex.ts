@@ -2,7 +2,7 @@ import type { TextRect } from "../types";
 
 export type TextSpan = { start: number; end: number };
 export type SourceSelection = TextSpan & { spans?: TextSpan[] };
-export type ReadingToken = TextSpan & { text: string; page: number; rects: TextRect[]; provenance: "native" | "ocr" };
+export type ReadingToken = TextSpan & { text: string; page: number; rects: TextRect[]; provenance: "native" | "ocr"; atomic?: boolean };
 export type ReadingPage = TextSpan & { number: number; width: number; height: number; provenance: "native" | "ocr" | "unavailable"; confidence: number | null };
 export type ReadingIndex = {
   schema_version: number;
@@ -10,7 +10,7 @@ export type ReadingIndex = {
   pages: ReadingPage[];
   tokens: ReadingToken[];
   objects: Record<"word" | "WORD" | "sentence", TextSpan[]> & { paragraph: (SourceSelection & { kind: string })[] };
-  figures: { id: string; label: string; page: number; caption: string; start: number; end: number; rect: TextRect | null; confidence: string; references: (TextSpan & { page: number; rects: TextRect[] })[] }[];
+  figures: { spans?: TextSpan[]; kind?: string; id: string; label: string; page: number; caption: string; start: number; end: number; rect: TextRect | null; confidence: string; references: (TextSpan & { page: number; rects: TextRect[] })[] }[];
   gaps: { page: number; reason: string }[];
 };
 
