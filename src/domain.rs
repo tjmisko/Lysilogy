@@ -3,7 +3,7 @@ use std::{fmt, path::Path};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-/// Stable, path-derived identifier that does not expose a source path to clients.
+/// Initially path-derived identity, retained when the same PDF moves.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct PaperId(String);
@@ -21,6 +21,19 @@ impl PaperId {
                 (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
             });
         Self(format!("{digest:016x}"))
+    }
+
+    /// Allocate a distinct identity when an old path or its artifact ID is reused.
+    #[must_use]
+    pub(crate) fn for_revision(path: &str, content_hash: &str, sequence: u64) -> Self {
+        use sha2::{Digest, Sha256};
+        let mut digest = Sha256::new();
+        digest.update(b"lysilogy-paper-identity-v1\0");
+        digest.update(path.as_bytes());
+        digest.update(b"\0");
+        digest.update(content_hash.as_bytes());
+        digest.update(sequence.to_le_bytes());
+        Self(format!("{:x}", digest.finalize())[..16].to_owned())
     }
 
     #[must_use]
@@ -64,9 +77,26 @@ pub struct PaperOverview {
     pub id: PaperId,
     pub metadata: PaperMetadata,
     pub relative_path: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_hash: Option<String>,
     pub status: ProcessingStatus,
     pub analyzed_at: Option<DateTime<Utc>>,
     pub one_line_summary: Option<String>,
+}
+
+/// Identical bytes at multiple current paths remain separate papers.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DuplicatePapers {
+    pub content_hash: String,
+    pub paths: Vec<String>,
+}
+
+/// Hash equality alone cannot select a previous identity for these new paths.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IdentityConflict {
+    pub content_hash: String,
+    pub current_paths: Vec<String>,
+    pub previous_paths: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

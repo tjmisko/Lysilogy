@@ -69,6 +69,7 @@ const MAX_REMOTE_URL_LENGTH: usize = 4_096;
 #[derive(Clone, Debug)]
 pub struct AppState {
     catalog: Arc<RwLock<LibraryCatalog>>,
+    catalog_refresh: Arc<Mutex<()>>,
     library_root: Arc<PathBuf>,
     store: ArtifactStore,
     extractor: PdfExtractor,
@@ -108,6 +109,8 @@ struct ImportPdfResponse {
 pub struct LibraryResponse {
     pub name: String,
     pub papers: Vec<PaperOverview>,
+    pub duplicates: Vec<crate::domain::DuplicatePapers>,
+    pub identity_conflicts: Vec<crate::domain::IdentityConflict>,
 }
 
 impl AppState {
@@ -132,11 +135,12 @@ impl AppState {
     ) -> Result<Self> {
         let library_root = library_root.into();
         let store = ArtifactStore::new(data_root);
-        store.initialize().await?;
         let catalog = LibraryCatalog::scan(&library_root, &store).await?;
+        store.initialize().await?;
         let jobs = JobTracker::load(store.clone()).await?;
         Ok(Self {
             catalog: Arc::new(RwLock::new(catalog)),
+            catalog_refresh: Arc::new(Mutex::new(())),
             library_root: Arc::new(library_root),
             store,
             extractor,
@@ -189,10 +193,13 @@ impl AppState {
                 .unwrap_or("Articles")
                 .to_owned(),
             papers: catalog.overviews(),
+            duplicates: catalog.duplicates().to_vec(),
+            identity_conflicts: catalog.identity_conflicts().to_vec(),
         }
     }
 
     pub async fn refresh(&self) -> Result<LibraryResponse> {
+        let _refresh_guard = self.catalog_refresh.lock().await;
         let replacement = LibraryCatalog::scan(self.library_root.as_ref(), &self.store).await?;
         self.catalog.write().await.replace_with(replacement);
         Ok(self.library().await)
@@ -245,23 +252,22 @@ impl AppState {
             return Err(Error::io(&final_path, error));
         }
 
-        let id = PaperId::from_relative_path(Path::new(&filename));
         let source = RemotePdfSource {
             original_url: original.to_string(),
             final_url: final_url.to_string(),
             imported_at: Utc::now(),
             byte_length,
         };
-        self.store.save_remote_source(&id, &source).await?;
         let library = self.refresh().await?;
         let paper = library
             .papers
             .iter()
-            .find(|paper| paper.id == id)
+            .find(|paper| paper.relative_path == filename)
             .cloned()
             .ok_or_else(|| {
                 Error::Task("imported PDF was not discovered after rescan".to_owned())
             })?;
+        self.store.save_remote_source(&paper.id, &source).await?;
         Ok(ImportPdfResponse {
             paper,
             library,
@@ -649,19 +655,16 @@ impl AppState {
         &self,
         id: &PaperId,
     ) -> std::result::Result<crate::domain::ExtractedPaper, (ProcessingStage, Error)> {
-        let (source_path, fallback_metadata) = {
-            let catalog = self.catalog.read().await;
-            let entry = catalog.get(id).ok_or_else(|| {
-                (
-                    ProcessingStage::Discovery,
-                    Error::PaperNotFound(id.to_string()),
-                )
-            })?;
-            let source_path = entry.source_path.clone();
-            let metadata = entry.overview.metadata.clone();
-            drop(catalog);
-            (source_path, metadata)
-        };
+        let entry = self.catalog.read().await.get(id).cloned().ok_or_else(|| {
+            (
+                ProcessingStage::Discovery,
+                Error::PaperNotFound(id.to_string()),
+            )
+        })?;
+        entry
+            .verify_source()
+            .await
+            .map_err(|error| (ProcessingStage::Discovery, error))?;
 
         match self.store.load_extraction(id).await {
             Ok(Some(paper)) => return Ok(paper),
@@ -672,7 +675,11 @@ impl AppState {
         self.set_status(id, ProcessingStatus::Extracting).await;
         let paper = self
             .extractor
-            .extract(&source_path, &fallback_metadata)
+            .extract(&entry.source_path, &entry.overview.metadata)
+            .await
+            .map_err(|error| (ProcessingStage::Extraction, error))?;
+        entry
+            .verify_source()
             .await
             .map_err(|error| (ProcessingStage::Extraction, error))?;
         self.store
@@ -706,12 +713,15 @@ impl AppState {
     }
 
     async fn source_path(&self, id: &PaperId) -> Result<PathBuf> {
-        self.catalog
+        let entry = self
+            .catalog
             .read()
             .await
             .get(id)
-            .map(|entry| entry.source_path.clone())
-            .ok_or_else(|| Error::PaperNotFound(id.to_string()))
+            .cloned()
+            .ok_or_else(|| Error::PaperNotFound(id.to_string()))?;
+        entry.verify_source().await?;
+        Ok(entry.source_path)
     }
 
     pub async fn markdown(&self, id: &PaperId) -> Result<String> {
@@ -2443,6 +2453,132 @@ mod tests {
         assert!(persisted.contains(original.as_str()));
         assert!(persisted.contains(final_url.as_str()));
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn should_save_import_provenance_to_new_identity_when_an_old_path_is_reused() {
+        let library = tempdir().unwrap();
+        let data = tempdir().unwrap();
+        tokio::fs::write(library.path().join("Paper.pdf"), b"old PDF bytes")
+            .await
+            .unwrap();
+        let state = AppState::new(library.path(), data.path()).await.unwrap();
+        let old = state.library().await.papers[0].id.clone();
+        let old_source = RemotePdfSource {
+            original_url: "https://example.com/old.pdf".into(),
+            final_url: "https://example.com/old.pdf".into(),
+            imported_at: Utc::now(),
+            byte_length: 13,
+        };
+        state
+            .store
+            .save_remote_source(&old, &old_source)
+            .await
+            .unwrap();
+        let old_origin = tokio::fs::read(state.store.paper_dir(&old).join("origin.json"))
+            .await
+            .unwrap();
+        tokio::fs::rename(
+            library.path().join("Paper.pdf"),
+            library.path().join("Moved.pdf"),
+        )
+        .await
+        .unwrap();
+        state.refresh().await.unwrap();
+        let temporary = library.path().join(".import.tmp");
+        let bytes = b"%PDF-1.7\nnew fixture\n%%EOF\n";
+        tokio::fs::write(&temporary, bytes).await.unwrap();
+        let url = Url::parse("https://example.com/Paper.pdf").unwrap();
+        let imported = state
+            .finish_remote_import(&url, &url, u64::try_from(bytes.len()).unwrap(), &temporary)
+            .await
+            .unwrap();
+        assert_ne!(imported.paper.id, old);
+        assert!(
+            state
+                .store
+                .paper_dir(&imported.paper.id)
+                .join("origin.json")
+                .is_file()
+        );
+        assert_eq!(
+            tokio::fs::read(state.store.paper_dir(&old).join("origin.json"))
+                .await
+                .unwrap(),
+            old_origin
+        );
+    }
+
+    #[tokio::test]
+    async fn should_retry_under_same_identity_when_pdf_moves_during_active_extraction() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let library = tempdir().unwrap();
+        let data = tempdir().unwrap();
+        let commands = tempdir().unwrap();
+        let executable = commands.path().join("extract-fixture");
+        tokio::fs::write(&executable, r#"#!/bin/sh
+directory=${0%/*}
+case "$1" in
+  -raw)
+    : > "$directory/started"
+    count=0
+    while [ ! -f "$directory/release" ] && [ "$count" -lt 300 ]; do
+      sleep 0.01
+      count=$((count + 1))
+    done
+    [ -f "$directory/release" ] || exit 1
+    printf '%s\n' 'Original extracted fixture.'
+    ;;
+  -bbox-layout)
+    printf '%s\n' '<doc><page width="612" height="792"><word xMin="50" yMin="50" xMax="100" yMax="65">Fixture</word></page></doc>'
+    ;;
+  *) printf '%s\n' 'Title: Fixture' ;;
+esac
+"#).await.unwrap();
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+        tokio::fs::write(library.path().join("old.pdf"), b"original fixture bytes")
+            .await
+            .unwrap();
+        let state = AppState::with_services(
+            library.path(),
+            data.path(),
+            PdfExtractor::with_programs(&executable, &executable),
+            AnalysisService::default(),
+        )
+        .await
+        .unwrap();
+        let id = state.library().await.papers[0].id.clone();
+        let worker_state = state.clone();
+        let worker_id = id.clone();
+        let worker = tokio::spawn(async move { worker_state.load_or_extract(&worker_id).await });
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while !commands.path().join("started").is_file() {
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+        })
+        .await
+        .unwrap();
+        tokio::fs::rename(
+            library.path().join("old.pdf"),
+            library.path().join("new.pdf"),
+        )
+        .await
+        .unwrap();
+        let refreshed = state.refresh().await.unwrap();
+        assert_eq!(refreshed.papers[0].id, id);
+        assert!(matches!(
+            refreshed.papers[0].status,
+            ProcessingStatus::Extracting
+        ));
+        tokio::fs::write(commands.path().join("release"), b"resume")
+            .await
+            .unwrap();
+        assert!(worker.await.unwrap().is_err());
+        assert!(state.store.load_extraction(&id).await.unwrap().is_none());
+        assert!(state.load_or_extract(&id).await.is_ok());
+        assert!(state.store.load_extraction(&id).await.unwrap().is_some());
+        assert_eq!(state.library().await.papers[0].id, id);
     }
 
     #[test]

@@ -224,6 +224,20 @@ async fn run(cli: Cli) -> Result<()> {
                 library.name,
                 ready
             );
+            for duplicate in &library.duplicates {
+                println!(
+                    "Duplicate PDF {}: {}",
+                    duplicate.content_hash,
+                    duplicate.paths.join("; ")
+                );
+            }
+            for conflict in &library.identity_conflicts {
+                println!(
+                    "Unresolved paper identity: {} (previous paths: {})",
+                    conflict.current_paths.join("; "),
+                    conflict.previous_paths.join("; ")
+                );
+            }
             Ok(())
         }
         Command::Analyze {
