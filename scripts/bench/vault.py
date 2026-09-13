@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Generate reproducible, small PDFs for the isolated library scale benchmark."""
 import argparse
+from contextlib import contextmanager
+import errno
 import hashlib
 import json
 import os
 from pathlib import Path
-import tempfile
+import stat
+import uuid
 
 SCHEMA_VERSION = 1
 DEFAULT_COUNT = 10_000
@@ -72,41 +75,99 @@ def payload(value):
     return (json.dumps(value, sort_keys=True, indent=2) + "\n").encode()
 
 
+@contextmanager
+def directory_fd(path, create=False):
+    """Pin each no-follow directory before opening its child; never resolve a raceable full path."""
+    path = Path(path).absolute()
+    if ".." in path.parts:
+        raise ValueError("benchmark storage cannot contain parent traversal")
+    descriptor = os.open("/", os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for name in path.parts[1:]:
+            try:
+                child = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=descriptor)
+            except FileNotFoundError:
+                if not create:
+                    raise
+                try:
+                    os.mkdir(name, mode=0o700, dir_fd=descriptor)
+                except FileExistsError:
+                    pass
+                child = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=descriptor)
+            os.close(descriptor)
+            descriptor = child
+        yield descriptor
+    except OSError as error:
+        if error.errno in (errno.ELOOP, errno.ENOTDIR):
+            raise ValueError("benchmark storage must not traverse symlinks or non-directories") from error
+        raise
+    finally:
+        os.close(descriptor)
+
+
 def ensure_directory(path):
-    # Reject symlinks at every component before creating anything below them.
-    for component in [*reversed(path.parents), path]:
-        if component.is_symlink():
-            raise ValueError("benchmark storage must not traverse symlinks")
-        if component.exists() and not component.is_dir():
-            raise ValueError("benchmark directory component is not a directory")
-    path.mkdir(parents=True, exist_ok=True)
+    with directory_fd(path, create=True):
+        pass
+
+
+def read_at(descriptor, name, limit):
+    try:
+        file = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=descriptor)
+    except OSError as error:
+        if error.errno == errno.ELOOP:
+            raise ValueError("benchmark file must not be a symlink") from error
+        raise
+    with os.fdopen(file, "rb") as stream:
+        if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+            raise ValueError("benchmark file must be regular")
+        content = stream.read(limit + 1)
+        if len(content) > limit:
+            raise ValueError("benchmark file exceeds expected bound")
+        return content
+
+
+def read_regular(path, limit=8 * 1024 * 1024):
+    with directory_fd(path.parent) as descriptor:
+        return read_at(descriptor, path.name, limit)
 
 
 def retain_file(path, data):
     """Resume exact generated files; never overwrite an existing different file."""
-    if path.is_symlink():
-        raise ValueError("benchmark output must not be a symlink")
-    if path.exists():
-        if not path.is_file() or path.read_bytes() != data:
-            raise ValueError(f"existing benchmark output differs: {path.name}")
-        return
-    ensure_directory(path.parent)
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile(prefix=".bench-", dir=path.parent, delete=False) as stream:
-            temporary = Path(stream.name)
-            stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
-        # Hard-link publication is atomic and fails if another writer won.
+    write_owned(path, data, replace=False)
+
+
+def write_owned(path, data, replace=False):
+    with directory_fd(path.parent, create=True) as descriptor:
         try:
-            os.link(temporary, path)
-        except FileExistsError:
-            if path.is_symlink() or not path.is_file() or path.read_bytes() != data:
-                raise ValueError("concurrent benchmark output differs") from None
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
+            current = read_at(descriptor, path.name, max(len(data), 8 * 1024 * 1024) if replace else len(data))
+        except FileNotFoundError:
+            current = None
+        if current is not None and not replace:
+            if current != data:
+                raise ValueError(f"existing benchmark output differs: {path.name}")
+            return
+        temporary = f".bench-{uuid.uuid4().hex}"
+        file = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                       0o600, dir_fd=descriptor)
+        try:
+            with os.fdopen(file, "wb") as stream:
+                stream.write(data)
+                stream.flush()
+                os.fsync(stream.fileno())
+            if replace:
+                os.replace(temporary, path.name, src_dir_fd=descriptor, dst_dir_fd=descriptor)
+            else:
+                try:
+                    os.link(temporary, path.name, src_dir_fd=descriptor, dst_dir_fd=descriptor, follow_symlinks=False)
+                except FileExistsError:
+                    if read_at(descriptor, path.name, len(data)) != data:
+                        raise ValueError("concurrent benchmark output differs") from None
+            os.fsync(descriptor)
+        finally:
+            try:
+                os.unlink(temporary, dir_fd=descriptor)
+            except FileNotFoundError:
+                pass
 
 
 def generate(vault, count=DEFAULT_COUNT, seed=DEFAULT_SEED):
@@ -116,8 +177,14 @@ def generate(vault, count=DEFAULT_COUNT, seed=DEFAULT_SEED):
     vault = Path(vault).absolute()
     marker = vault / "generation.json"
     config = dict(schema_version=SCHEMA_VERSION, count=count, seed=seed)
-    if vault.exists() and not marker.is_file():
-        raise ValueError("existing directory is not an owned benchmark vault")
+    try:
+        with directory_fd(vault):
+            try:
+                read_regular(marker)
+            except FileNotFoundError:
+                raise ValueError("existing directory is not an owned benchmark vault") from None
+    except FileNotFoundError:
+        pass
     ensure_directory(vault)
     retain_file(marker, payload(config))
     records = []

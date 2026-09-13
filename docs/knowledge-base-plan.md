@@ -220,6 +220,16 @@ repository and out of `/tmp`; results establish the baseline used by E0.3–E0.5
 Tests: should generate a deterministic vault when given the same seed; should report per-phase
 timings when the benchmark completes.
 
+Implementation contract: `python3 scripts/bench/run.py` uses release builds and the designated
+external synthetic vault. It separates discovered-only scans, experimental one/four-worker
+extractor capacity, full-vault extraction/persistence setup, and populated no-change scans. O25
+uses the populated 10k case; O26 uses real Playwright navigation/input-to-paint observations on
+the app serving those artifacts. The independent `synthetic-vault` scale collector publishes only
+verified full-size runs. O27 remains unavailable until E0.5 measures the production worker path;
+benchmark-only parallel scheduling is reported as capacity without changing production ingest.
+See [benchmark instructions](../scripts/bench/README.md). Tiny fixture runs prove orchestration,
+not scale performance. Required external storage being read-only leaves the full baseline pending.
+
 Blocked by: none
 
 ### E0.2 Content-hash paper identity

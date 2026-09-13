@@ -1,11 +1,13 @@
 import hashlib
+import os
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from vault import generate, specimen
+from vault import generate, retain_file, specimen
 
 
 class VaultTests(unittest.TestCase):
@@ -67,6 +69,32 @@ class VaultTests(unittest.TestCase):
             self.assertIn(metadata["title"], text)
             self.assertIn(metadata["authors"][0], info)
             self.assertIn("Pages:", info)
+
+    def should_refuse_matching_existing_papers_when_a_parent_was_replaced_by_a_symlink(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            generate(root / "vault", count=2)
+            (root / "vault/papers").rename(root / "outside-papers")
+            (root / "vault/papers").symlink_to(root / "outside-papers", target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "symlinks"):
+                generate(root / "vault", count=2)
+
+    def should_keep_publication_in_the_opened_directory_when_its_path_is_swapped(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            safe, parked, outside = (root / name for name in ("safe", "parked", "outside"))
+            safe.mkdir()
+            outside.mkdir()
+            link = os.link
+            def swap(*args, **kwargs):
+                safe.rename(parked)
+                safe.symlink_to(outside, target_is_directory=True)
+                return link(*args, **kwargs)
+            with patch("vault.os.link", side_effect=swap):
+                retain_file(safe / "fixture.pdf", b"tiny synthetic bytes")
+            self.assertFalse((outside / "fixture.pdf").exists())
+            self.assertEqual((parked / "fixture.pdf").read_bytes(), b"tiny synthetic bytes")
+            self.assertEqual(list(outside.iterdir()), [])
 
 
 if __name__ == "__main__":
