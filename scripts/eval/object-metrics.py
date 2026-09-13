@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import statistics
+import struct
 import subprocess
 import sys
 import tempfile
@@ -20,7 +21,8 @@ CONFIG = 'eval/truth/k1-limited-v1-build.json'
 TRACE = 'eval/inputs/evidence/object-metrics.json'
 INPUT = 'eval/inputs/objects/figure-table.json'
 KINDS = ('figure', 'table')
-VERSION = 'figure-table-metrics-v2'
+VERSION = 'figure-table-metrics-v3'
+NATIVE_BASIS_FORMAT = 'native-json-f32-v1'
 DETECTOR_VERSION = 2
 MAX_JSON = 32 * 1024 * 1024
 
@@ -236,16 +238,69 @@ def validate_truth(repo, cache, corpus, data, truth_raw):
     return truth,config
 
 
+def canonical_native_float(value):
+    require(math.isfinite(value),'nonfinite native float')
+    try:raw=struct.pack('>f',value)
+    except (OverflowError,struct.error) as error:raise ValueError('native float exceeds f32') from error
+    typed=struct.unpack('>f',raw)[0]
+    require(math.isfinite(typed),'native float exceeds f32')
+    if value!=typed:
+        # Native schema6 serializes f32 with the shortest round-tripping decimal.
+        # Accept that representation, but reject arbitrary extra f64 precision.
+        shortest=None
+        for precision in range(1,10):
+            candidate=float(format(typed,'.'+str(precision)+'g'))
+            if struct.pack('>f',candidate)==raw:
+                shortest=candidate;break
+        require(value==shortest,'unsupported noncanonical native float')
+    return typed
+
+
+def native_value_digest(value, normalize=False):
+    """Tagged/length-framed canonical native values; all floats are exact f32."""
+    result=hashlib.sha256(b'lysilogy-native-basis-v1\0')
+    def framed(tag,raw):result.update(tag+struct.pack('>Q',len(raw))+raw)
+    def visit(item,depth):
+        require(depth<=64,'native basis nesting exceeds64')
+        if item is None:result.update(b'n')
+        elif type(item) is bool:result.update(b't' if item else b'f')
+        elif type(item) is int:
+            require(-(1<<63)<=item<(1<<64),'native integer exceeds supported range')
+            framed(b'i',str(item).encode())
+        elif type(item) is float:
+            value=canonical_native_float(item) if normalize else item
+            require(math.isfinite(value),'nonfinite native float')
+            try:raw=struct.pack('>f',value)
+            except (OverflowError,struct.error) as error:raise ValueError('native float exceeds f32') from error
+            require(struct.unpack('>f',raw)[0]==value,'native value is not exact f32')
+            result.update(b'r'+raw)
+        elif type(item) is str:framed(b's',item.encode('utf-8'))
+        elif type(item) is list:
+            result.update(b'a'+struct.pack('>Q',len(item)))
+            for child in item:visit(child,depth+1)
+        elif type(item) is dict:
+            require(all(type(key) is str for key in item),'native object keys must be strings')
+            result.update(b'o'+struct.pack('>Q',len(item)))
+            for key in sorted(item,key=lambda k:k.encode('utf-8')):visit(key,depth+1);visit(item[key],depth+1)
+        else:raise ValueError('unsupported native value')
+    visit(value,0)
+    return result.hexdigest()
+
+
+def native_basis_digest(index):
+    require(type(index.get('schema_version')) is int and index['schema_version']==6,'unsupported native basis schema')
+    require(set(index)=={'schema_version','text','pages','tokens','objects','gaps','figures'},'unsupported native basis fields')
+    return native_value_digest({key:value for key,value in index.items() if key!='figures'},normalize=True)
+
+
 def validate_derivation(row, artifact, index):
     """Bind current production predictions to the exact frozen native basis."""
-    raw=row['native_basis_json'].encode()
-    require(digest(raw)==row['native_basis_sha256'],'native derivation basis hash differs')
-    expected={key:value for key,value in index.items() if key!='figures'}
-    require(document(raw)==expected,'detector native text, tokens, geometry or provenance differs')
+    require(row.get('native_basis_format')==NATIVE_BASIS_FORMAT and type(row.get('native_schema_version')) is int and row['native_schema_version']==6,'unsupported native commitment format/schema')
+    require(row['native_basis_sha256']==native_basis_digest(index),'detector native text, tokens, geometry or provenance differs')
     require(type(artifact.get('figure_detector_version')) is int and artifact['figure_detector_version']==DETECTOR_VERSION,'unsupported current detector version')
     generation=digest(('figures:'+str(DETECTOR_VERSION)+':'+artifact['reading_index_generation']).encode())
     require(artifact.get('figure_detector_generation')==generation,'derived detector generation differs')
-    return {'version':DETECTOR_VERSION,'generation':generation,'native_basis_sha256':row['native_basis_sha256'],'index_sha256':row['index_sha256']}
+    return {'version':DETECTOR_VERSION,'generation':generation,'native_basis_format':NATIVE_BASIS_FORMAT,'native_schema_version':6,'native_basis_sha256':row['native_basis_sha256'],'index_sha256':row['index_sha256']}
 
 
 def atomic_json(path, value):
@@ -261,7 +316,7 @@ def atomic_json(path, value):
 
 
 def implementation_files(repo):
-    files=[CONFIG,'Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
+    files=[CONFIG,'eval/native-basis-vectors.json','Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
     for root in ('src','scripts/truth/latex'):
         if (repo/root).is_dir():
             files.extend(str(p.relative_to(repo)) for p in (repo/root).rglob('*') if p.is_file() and p.suffix in ('.rs','.py') and not p.name.startswith('test'))

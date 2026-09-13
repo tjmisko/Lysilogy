@@ -63,6 +63,63 @@ async fn bounded_index(path: &Path) -> Result<Vec<u8>, Failure> {
     }
     Ok(bytes)
 }
+// The independent Python collector implements this small framed protocol too.
+// Floats here are the exact f32 values serialized from typed ReadingIndex fields.
+fn native_value_digest(value: &serde_json::Value) -> Result<String, Failure> {
+    fn frame(hash: &mut Sha256, tag: u8, bytes: &[u8]) -> Result<(), Failure> {
+        hash.update([tag]);
+        hash.update(u64::try_from(bytes.len())?.to_be_bytes());
+        hash.update(bytes);
+        Ok(())
+    }
+    #[allow(clippy::cast_possible_truncation)] // Conversion is checked exactly below.
+    fn visit(value: &serde_json::Value, hash: &mut Sha256, depth: usize) -> Result<(), Failure> {
+        use serde_json::Value;
+        if depth > 64 {
+            return Err("native basis nesting exceeds64".into());
+        }
+        match value {
+            Value::Null => hash.update(b"n"),
+            Value::Bool(value) => hash.update(if *value { b"t" } else { b"f" }),
+            Value::Number(number) if number.is_i64() || number.is_u64() => {
+                frame(hash, b'i', number.to_string().as_bytes())?
+            }
+            Value::Number(number) => {
+                let original = number.as_f64().ok_or("unsupported native number")?;
+                let value = original as f32;
+                if !value.is_finite() || f64::from(value) != original {
+                    return Err("native value is not exact finite f32".into());
+                }
+                hash.update(b"r");
+                hash.update(value.to_bits().to_be_bytes());
+            }
+            Value::String(value) => frame(hash, b's', value.as_bytes())?,
+            Value::Array(values) => {
+                hash.update(b"a");
+                hash.update(u64::try_from(values.len())?.to_be_bytes());
+                for value in values {
+                    visit(value, hash, depth + 1)?;
+                }
+            }
+            Value::Object(values) => {
+                hash.update(b"o");
+                hash.update(u64::try_from(values.len())?.to_be_bytes());
+                let mut keys = values.keys().collect::<Vec<_>>();
+                keys.sort();
+                for key in keys {
+                    frame(hash, b's', key.as_bytes())?;
+                    visit(&values[key], hash, depth + 1)?;
+                }
+            }
+        }
+        Ok(())
+    }
+    let mut hash = Sha256::new();
+    hash.update(b"lysilogy-native-basis-v1\0");
+    visit(value, &mut hash, 0)?;
+    Ok(format!("{:x}", hash.finalize()))
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Failure> {
     let mut raw = String::new();
@@ -103,22 +160,21 @@ async fn main() -> Result<(), Failure> {
         {
             return Err("index changed while loading".into());
         }
-        // Serialize the exact typed input passed to the production factory. The
-        // legacy embedded predictions are excluded from the derivation basis.
-        let mut native_basis: serde_json::Value =
-            serde_json::from_str(&serde_json::to_string(&document.index)?)?;
+        // Commit the exact typed input, retaining no full native text in the
+        // transport. The canonical whole-index hash remains independently bound.
+        let mut native_basis = serde_json::to_value(&document.index)?;
         native_basis
             .as_object_mut()
             .ok_or("native basis is not an object")?
             .remove("figures");
-        let native_basis_json = serde_json::to_string(&native_basis)?;
+        let native_basis_sha256 = native_value_digest(&native_basis)?;
         let artifact = ObjectsArtifact::from_reading_index(&paper.paper_id, &document);
         let artifact_json = serde_json::to_string(&artifact)?;
-        output_bytes += artifact_json.len() + native_basis_json.len();
+        output_bytes += artifact_json.len();
         if output_bytes > 16 * 1024 * 1024 {
             return Err("object response exceeds 16 MiB".into());
         }
-        rows.push(json!({"paper_id":paper.paper_id,"index_sha256":paper.index_sha256,"object_sha256":format!("{:x}",Sha256::digest(artifact_json.as_bytes())),"artifact_json":artifact_json,"native_basis_sha256":format!("{:x}",Sha256::digest(native_basis_json.as_bytes())),"native_basis_json":native_basis_json}));
+        rows.push(json!({"paper_id":paper.paper_id,"index_sha256":paper.index_sha256,"object_sha256":format!("{:x}",Sha256::digest(artifact_json.as_bytes())),"artifact_json":artifact_json,"native_basis_sha256":native_basis_sha256,"native_basis_format":"native-json-f32-v1","native_schema_version":document.index.schema_version}));
     }
     println!(
         "{}",
@@ -129,6 +185,40 @@ async fn main() -> Result<(), Failure> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn should_match_independent_protocol_vectors_when_values_have_exact_native_types() {
+        fn expand(value: &serde_json::Value) -> serde_json::Value {
+            if let Some(bits) = value
+                .as_object()
+                .filter(|v| v.len() == 1)
+                .and_then(|v| v.get("$f32_bits"))
+            {
+                let bits = u32::from_str_radix(bits.as_str().unwrap(), 16).unwrap();
+                return serde_json::to_value(f32::from_bits(bits)).unwrap();
+            }
+            match value {
+                serde_json::Value::Array(values) => values.iter().map(expand).collect(),
+                serde_json::Value::Object(values) => values
+                    .iter()
+                    .map(|(key, value)| (key.clone(), expand(value)))
+                    .collect(),
+                _ => value.clone(),
+            }
+        }
+        let vectors: serde_json::Value =
+            serde_json::from_str(include_str!("../eval/native-basis-vectors.json")).unwrap();
+        for row in vectors["vectors"].as_array().unwrap() {
+            assert_eq!(
+                native_value_digest(&expand(&row["value"])).unwrap(),
+                row["sha256"].as_str().unwrap(),
+                "{}",
+                row["name"]
+            );
+        }
+        assert!(native_value_digest(&json!(0.1234567890123_f64)).is_err());
+        assert!(native_value_digest(&json!(1e300_f64)).is_err());
+    }
+
     #[test]
     fn should_reject_unvalidated_ids_when_json_deserialization_bypasses_from_str() {
         for value in [

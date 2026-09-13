@@ -4,6 +4,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import struct
 import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
@@ -29,18 +30,41 @@ def fixture():
 class ObjectMetricTests(unittest.TestCase):
     def should_reject_changed_native_basis_when_a_new_detector_generation_is_measured(self):
         _,artifact,index=fixture()
-        index.update({'tokens':[{'text':'independent','rects':[rectangle()],'provenance':'native'}],'objects':{'paragraph':[]},'gaps':[],'figures':[{'legacy':'ignored'}]})
+        index.update({'schema_version':6,'tokens':[{'text':'independent','rects':[rectangle()],'provenance':'native'}],'objects':{'paragraph':[]},'gaps':[],'figures':[{'legacy':'ignored'}]})
         artifact['figure_detector_version']=m.DETECTOR_VERSION
         artifact['figure_detector_generation']=m.digest(('figures:'+str(m.DETECTOR_VERSION)+':'+artifact['reading_index_generation']).encode())
-        basis={k:v for k,v in index.items() if k!='figures'}
-        raw=m.canonical(basis).decode();row={'index_sha256':'b'*64,'native_basis_json':raw,'native_basis_sha256':m.digest(raw.encode())}
+        row={'index_sha256':'b'*64,'native_schema_version':6,'native_basis_format':m.NATIVE_BASIS_FORMAT,'native_basis_sha256':m.native_basis_digest(index)}
         self.assertEqual(m.validate_derivation(row,artifact,index)['version'],m.DETECTOR_VERSION)
         for key in ['text','pages','tokens','objects','gaps']:
-            altered=copy.deepcopy(basis);altered[key]=None;raw=m.canonical(altered).decode()
+            altered=copy.deepcopy(index);altered[key]=None
             with self.subTest(key=key),self.assertRaisesRegex(ValueError,'native text, tokens, geometry or provenance differs'):
-                m.validate_derivation({**row,'native_basis_json':raw,'native_basis_sha256':m.digest(raw.encode())},artifact,index)
+                m.validate_derivation(row,artifact,altered)
         for changes in [{'figure_detector_version':1},{'figure_detector_version':True},{'figure_detector_generation':'forged'}]:
             with self.subTest(changes=changes),self.assertRaises(ValueError):m.validate_derivation(row,{**artifact,**changes},index)
+        for changes in [{'native_basis_format':'unknown'},{'native_schema_version':7}]:
+            with self.subTest(changes=changes),self.assertRaises(ValueError):m.validate_derivation({**row,**changes},artifact,index)
+        for changes in [{'schema_version':7},{'new_field':None}]:
+            with self.subTest(changes=changes),self.assertRaises(ValueError):m.native_basis_digest({**index,**changes})
+        changed_legacy={**index,'figures':[{'changed':'old predictions are not inputs'}]}
+        self.assertEqual(m.native_basis_digest(index),m.native_basis_digest(changed_legacy))
+
+    def should_match_independent_protocol_vectors_when_native_values_use_typed_floats(self):
+        def expand(value):
+            if type(value)is dict:
+                if set(value)=={'$f32_bits'}:return struct.unpack('>f',bytes.fromhex(value['$f32_bits']))[0]
+                return {key:expand(child) for key,child in value.items()}
+            if type(value)is list:return [expand(child) for child in value]
+            return value
+        vectors=json.loads((m.ROOT/'eval/native-basis-vectors.json').read_bytes())['vectors']
+        for row in vectors:
+            with self.subTest(name=row['name']):self.assertEqual(m.native_value_digest(expand(row['value'])),row['sha256'])
+        self.assertNotEqual(m.native_value_digest(0.0),m.native_value_digest(-0.0))
+        for value in [float('nan'),float('inf'),1e300,0.1234567890123]:
+            with self.subTest(value=value),self.assertRaises(ValueError):m.native_value_digest(value,normalize=True)
+        for value in [1<<64,-(1<<63)-1]:
+            with self.assertRaises(ValueError):m.native_value_digest(value)
+        for value in [0.1,83.339,0.0000001]:
+            self.assertEqual(m.native_value_digest(value,normalize=True),m.native_value_digest(struct.unpack('>f',struct.pack('>f',value))[0]))
 
     def should_use_cargo_selected_artifact_when_inherited_targets_point_elsewhere(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -42,12 +42,24 @@ and the current detector version. Existing objects without these fields are rebu
 The source reading-index endpoint retains its historical embedded figure records; current KB/API
 objects use the refreshed factory. No canonical native cache is rewritten for measurement.
 
-The bridge retains a separately hashed JSON serialization of the exact typed native input passed
-to that factory, excluding only the unused embedded `figures`. The collector compares every native
-text/page/token/geometry/paragraph/gap value against the original frozen index and checks the
-derived version/generation. PDF/source/index hashes and reviewed truth anchors are unchanged.
-This replaces the v1 collector's historical-detector source-equality guard with explicit current
-production derivation evidence; the scoring and all denominators above remain v1 unchanged.
+The bridge retains a compact `native-json-f32-v1` commitment to every typed native field,
+excluding only the unused embedded `figures`. The full original index SHA256 and native schema6
+remain mandatory. The independently implemented protocol begins with UTF-8
+`lysilogy-native-basis-v1` plus NUL. Tags are `n` (null), `f`/`t` (booleans), `i` (integer),
+`r` (f32), `s` (string), `a` (array), `o` (object). Integers use canonical signed decimal ASCII;
+integers and exact UTF-8 strings carry an unsigned 64-bit big-endian byte length. Arrays and
+objects carry an unsigned 64-bit big-endian element/member count. Object keys sort by UTF-8
+bytes and are encoded as strings before their values. Floats use their four big-endian IEEE754
+bytes, retaining signed zero; nonfinite or inexact non-f32 typed values fail. Nesting is bounded
+at64; integers must fit signed64 or unsigned64. Python accepts the original schema6 serializer's
+shortest round-tripping f32 decimal, but rejects extra unsupported f64 precision/overflow.
+Shared independently specified vectors cover framing, Unicode, bool/int separation and float
+boundaries. All native field mutations are checked; original index/PDF/source hashes still bind
+exact stored bytes. The commitment avoids copying megabytes of native text into every response.
+
+The collector checks the derived detector version/generation and computes the same commitment
+from the frozen index. This replaces the v1 collector's historical-detector source-equality guard
+with explicit current production derivation evidence; scoring and denominators remain unchanged.
 
 Every measurement invokes Cargo and verifies its selected compiler artifact and current source
 hashes; editing a saved build receipt cannot substitute an executable. The original registry,
