@@ -847,12 +847,103 @@ class CorpusTests(unittest.TestCase):
         config, paper, client = self.complete_fixture()
         manifest = corpus.read_manifest(self.root)
         self.assertEqual(2, manifest[paper["id"]]["version"])
-        self.assertEqual("https://export.arxiv.org/e-print/2001.00001v2", client.calls[-1])
+        self.assertEqual("https://export.arxiv.org/src/2001.00001v2", client.calls[-1])
         self.assertIn("?generation=123", client.calls[-2])
         offline = FakeHttp([])
         with contextlib.redirect_stdout(io.StringIO()):
             corpus.download(self.root, config, offline)
         self.assertEqual([], offline.calls)
+
+    def should_use_canonical_source_location_when_a_pdf_version_is_pinned(self):
+        path, url = corpus.artifact_location({"id": "0812.5080", "version": 5}, "source")
+        self.assertEqual("source/0812.5080v5.src", path)
+        self.assertEqual("https://export.arxiv.org/src/0812.5080v5", url)
+
+    def should_reuse_legacy_source_receipts_when_an_admitted_corpus_is_upgraded(self):
+        config, paper, _ = self.complete_fixture()
+        entries = corpus.read_manifest(self.root)
+        source = entries[paper["id"]]["source"]
+        source["url"] = corpus.LEGACY_EXPORT + paper["id"] + "v2"
+        path = self.root / source["path"]
+        receipt = {key: value for key, value in source.items() if key != "path"}
+        receipt_path = path.with_name(path.name + ".verified.json")
+        corpus.atomic_json(receipt_path, receipt)
+        corpus.write_manifest(self.root, entries)
+        original_bytes, original_receipt = path.read_bytes(), receipt_path.read_bytes()
+        offline = FakeHttp([])
+        corpus.download(self.root, config, offline)
+        self.assertEqual([], offline.calls)
+        self.assertEqual(entries, corpus.read_manifest(self.root))
+        self.assertEqual(original_bytes, path.read_bytes())
+        self.assertEqual(original_receipt, receipt_path.read_bytes())
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(corpus.status(self.root, verify=True, config=config))
+
+    def should_resume_legacy_source_provenance_when_its_manifest_update_was_interrupted(self):
+        config, paper, _ = self.complete_fixture()
+        entries = corpus.read_manifest(self.root)
+        source = entries[paper["id"]]["source"]
+        path = self.root / source["path"]
+        receipt = {key: value for key, value in source.items() if key != "path"}
+        receipt["url"] = corpus.LEGACY_EXPORT + paper["id"] + "v2"
+        corpus.atomic_json(path.with_name(path.name + ".verified.json"), receipt)
+        entries[paper["id"]]["source"] = None
+        corpus.write_manifest(self.root, entries)
+        offline = FakeHttp([])
+        corpus.download(self.root, config, offline)
+        self.assertEqual([], offline.calls)
+        recovered = corpus.read_manifest(self.root)[paper["id"]]["source"]
+        self.assertEqual({**receipt, "path": source["path"]}, recovered)
+        self.assertEqual(receipt["fetched_at"], recovered["fetched_at"])
+
+    def should_reject_legacy_source_aliases_when_identity_or_route_is_different(self):
+        config, paper, _ = self.complete_fixture()
+        entry = corpus.read_manifest(self.root)[paper["id"]]
+        source = entry["source"]
+        expected = corpus.EXPORT + paper["id"] + "v2"
+        legacy = corpus.LEGACY_EXPORT + paper["id"] + "v2"
+        for url in [corpus.LEGACY_EXPORT + paper["id"] + "v1", corpus.LEGACY_EXPORT + "2001.00002v2",
+                    corpus.LEGACY_EXPORT + paper["id"], legacy + "?download=1", legacy + "#fragment",
+                    legacy.replace("https://", "http://"), legacy.replace("export.arxiv.org", "arxiv.org"),
+                    legacy.replace("export.arxiv.org", "oaipmh.arxiv.org"), legacy.replace("/e-print/", "/other/")]:
+            with self.subTest(url=url):
+                self.assertFalse(corpus.receipt_url_matches(url, expected, "source"))
+                with self.assertRaisesRegex(corpus.CorpusError, "pinned paper version"):
+                    corpus.validate_receipt(entry, "source", {**source, "url": url})
+        self.assertFalse(corpus.receipt_url_matches(legacy, expected, "pdf"))
+        with self.assertRaisesRegex(corpus.CorpusError, "pinned paper version"):
+            corpus.validate_receipt(entry, "source", {**source, "url": legacy, "path": "source/2001.00001v1.src"})
+
+    def should_preserve_existing_source_bytes_when_a_legacy_receipt_is_invalid(self):
+        config, paper, _ = self.complete_fixture()
+        source = corpus.read_manifest(self.root)[paper["id"]]["source"]
+        path = self.root / source["path"]
+        receipt = {key: value for key, value in source.items() if key != "path"}
+        receipt["url"] = corpus.LEGACY_EXPORT + paper["id"] + "v1"
+        receipt_path = path.with_name(path.name + ".verified.json")
+        corpus.atomic_json(receipt_path, receipt)
+        original = path.read_bytes(), receipt_path.read_bytes()
+        with self.assertRaisesRegex(corpus.CorpusError, "leaving it untouched"):
+            corpus.download(self.root, config, FakeHttp([]))
+        self.assertEqual(original, (path.read_bytes(), receipt_path.read_bytes()))
+
+    def should_keep_redirects_disabled_when_a_source_response_moves_again(self):
+        with self.assertRaisesRegex(corpus.CorpusError, "Unexpected HTTP redirect"):
+            corpus.NoRedirect().redirect_request(None, None, 301, "Moved", {}, corpus.EXPORT + "0812.5080v5")
+
+    def should_refuse_legacy_receipt_reuse_when_its_kind_or_bytes_do_not_match(self):
+        path = self.root / "source/2001.00001v2.src"
+        legacy = corpus.LEGACY_EXPORT + "2001.00001v2"
+        receipt, _ = corpus.fetch_file(path, legacy, "source", FakeHttp([b"\\documentclass{article}"]), 0, 1024)
+        receipt_path = path.with_name(path.name + ".verified.json")
+        original_bytes = path.read_bytes()
+        for changed in ({**receipt, "kind": "pdf"}, {**receipt, "sha256": "0" * 64}):
+            with self.subTest(changed=changed):
+                corpus.atomic_json(receipt_path, changed)
+                with self.assertRaisesRegex(corpus.CorpusError, "leaving it untouched"):
+                    corpus.fetch_file(path, corpus.EXPORT + "2001.00001v2", "source", FakeHttp([]), 0, 1024)
+                self.assertEqual(original_bytes, path.read_bytes())
+                self.assertEqual(changed, corpus.read_json(receipt_path))
 
     def should_reject_symlink_receipt_when_it_points_outside_corpus(self):
         path = self.root / "paper.pdf"
