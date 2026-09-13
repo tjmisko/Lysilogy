@@ -2,8 +2,8 @@
 
 Bibliography entries now come from the deterministic backend and are persisted as schema-2
 `bib_entry` objects. The reader consumes their reference links only when the paper ID and exact
-reading-index generation agree. The original implementation and collector passed independent review; the measured parser
-corrections below are undergoing their final independent review. **The PR remains draft: genuine
+reading-index generation agree. The original implementation, collector, measured parser corrections and final structured-DOI
+boundary fix have passed separate independent source reviews. **The PR remains draft: genuine
 K2 deposited-reference measurements are still required for O9 before this detector merges.**
 
 ## Real K1 measurements and corrections
@@ -86,6 +86,25 @@ sequence took **40.332 seconds**, with **0.537 seconds** for bibliography, **4.8
 figures, and **7.896 seconds** inside isolated G5. Both screenshots are byte-identical to the
 inspected prior run. Its 50 retained artifacts include 16 gate logs, 15 isolated G5 logs, exact
 results, source/executable bindings, and screenshots.
+
+The final provenance correction is `e3539d2`. Real field diagnostics showed that
+`10.48550/arXiv.2102. 04906` (or a newline at that point) could become the explicit but incomplete
+`10.48550/arXiv.2102`. The structured `10.48550/arxiv.` namespace now requires a complete arXiv
+suffix under the existing local grammar; incomplete suffixes stay missing while raw entry text
+and citation anchors remain intact. Complete modern, versioned and legacy suffixes and unrelated
+generic DOI prefixes have positive regressions. Seven fixture cases and nine independent
+production probes verify this boundary without provider calls. This guard withholds evidence;
+it does not join uncertain fragments or infer a provider identity.
+
+All required checks were refreshed at that exact source: **356 Rust / 292 Python / 92 Node**
+under G5, **35 bibliography tests**, 20 paper-link tests, full frontend gates and the same
+Playwright smoke. The two screenshots remain byte-identical to the inspected copies. The final
+sequence took **69.996 seconds**; bibliography **0.808 seconds**, figures **5.604 seconds**,
+and isolated G5 **7.888 seconds**, with zero network/model calls and $0 cost. O8/O10, all K1 field
+denominators/diagnostics, O1/O2 and O30 remain unchanged. The current evidence contains this final
+50-artifact receipt plus all earlier iterations and three separate independent review receipts.
+The measured iteration adds **12 Rust tests and one frontend test** overall. Genuine K2/O9 still
+blocks merging; the report does not claim system acceptance.
 
 ## Behavior and decisions
 
