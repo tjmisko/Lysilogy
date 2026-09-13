@@ -125,7 +125,7 @@ pass.
   Owns a generator and benchmark subcommand or script. The vault goes under
   `~/.cache/lysilogy/bench-vault/`. Commit the baseline report to
   `docs/experiment-reports/`.
-- [ ] **#20 E0.2 Content-hash paper identity**. Branch `feat/e0.2-content-hash`.
+- [x] **#20 E0.2 Content-hash paper identity**. Branch `feat/e0.2-content-hash`.
   Touches `src/library.rs`, `src/store.rs`, `src/domain.rs`. `sha2` is already a dependency.
   Renames currently orphan `papers/<id>/` because `PaperId` hashes the relative path; notes are
   keyed separately by relative path in `Notes/`, so decide and document how notes follow a move.
@@ -182,6 +182,19 @@ pass.
 
 ### Phase A notes
 
+- #20 merged in PR #80 (`94ddacc`) after both independent review findings were fixed and
+  independently reproduced again. A strict source stamp now spans fresh extraction, rejecting
+  changed-and-restored bytes before artifact publication. The canonical
+  `<data>/paper-identities.json` registry retains initial path-derived IDs across unique
+  content-hash moves, tombstones, original notes keys, and unresolved prior identity IDs.
+  Duplicate-move warnings persist across scans/restarts; replacements and ambiguous matches
+  receive separate identities without overwriting artifacts or notes. Registry transactions use
+  cross-process locking and durable atomic publication, bind to one canonical library root,
+  and fail closed on corrupt state. Hash caching uses size/mtime plus inode/ctime safeguards.
+  Later KB rebuilds must preserve these canonical identity records. Moves before the initial
+  registry scan cannot be inferred from unrecorded hashes. Final gates: 275 Rust tests,
+  frontend typecheck/lint/build and 17 targeted tests, G5 pass, unchanged O30 = 0/10k. Evidence
+  is retained under `eval/evidence/*content-identity*.json`. Branch/worktree removed.
 - Follow-up #79 (epic #67) merged in PR #81 (`1e9bc5e`). A cold benchmark build exposed G5's
   missing `mold`/`ld.mold` aliases; warm targets had hidden the gap. The production restricted
   PATH now includes installed linker aliases and a regression links a fresh executable through
