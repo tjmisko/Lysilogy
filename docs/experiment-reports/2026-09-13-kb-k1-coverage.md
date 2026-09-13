@@ -347,7 +347,14 @@ score remains the former. The failed receipt, all raw logs and exact before/afte
 bytes are retained. Two repeated own-CLI checks pass and leave the latter bytes
 unchanged. This stable serialization is committed without changing a target,
 measurement, justification or assertion; the same complete gate runner must pass
-again before final clearance.
+again before final clearance. The unchanged runner then passed at `4f3a289`
+in 20.159 seconds with 150,784 KiB peak child RSS: all twelve commands, G5
+(350 Rust / 383 Python / 85 Node), and both immutable replays pass. All 185
+recorded source inputs stayed byte-identical throughout the run; the G5 result
+records a clean worktree. The generated scorecard is unchanged at 1/5 hard gates
+and 3/30 objectives met on the explicitly limited cohort. Both successful and
+failed raw gate/result logs are SHA-verified in the external archive. Final PR
+review remains separate from these executed checks.
 
 ## Retained evidence
 
