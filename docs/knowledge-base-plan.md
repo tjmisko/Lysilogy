@@ -1100,6 +1100,23 @@ background resume. OAI modification dates are only incremental-harvest bounds; s
 strata use `created`. Sources explicitly request the pinned PDF version. Missing artifacts or
 sparse strata fail without silently reducing the tier count.
 
+Follow-up #88 qualifies each deterministically ranked candidate against a completed public PDF
+inventory before filling its original category/year quota. Schema-2 selections pin version,
+generation, size and MD5; immutable consulted inventory snapshots and excluded-ID reasons retain
+the availability boundary. Invalid or oversized latest objects are excluded, never silently
+replaced with an older version. The original OAI `created` value remains unchanged when an ID
+suggests an earlier year. Identical metadata, config and inventory snapshots reproduce selection;
+interrupted preparation checkpoints its consulted inputs.
+
+The first full harvest exposed missing PDF `1801.00600` after a metadata-only selection froze.
+An explicit `recover-selection --reason …` may repair only a legacy schema-1 selection with zero
+manifest rows and no artifacts, receipts or partials. It archives exact original bytes and the
+failure reason, verifies the original metadata snapshot, retains unavailable original members as
+exclusion evidence, and durably stages a full-quota replacement before atomic publication.
+Interrupted publication resumes the staged replacement; archives are immutable, and any admitted
+artifact prevents recovery. Ordinary resume never reselects a frozen corpus. No metric target,
+host, proxy/TLS policy, request pacing, source-version rule or disk floor changes.
+
 Follow-up #91 uses the canonical `/src/` endpoint after live verification showed `/e-print/`
 returns HTTP 301. The exact same pinned ID/version's previously verified `/e-print/` source
 receipt remains reusable and keeps its original URL, time and bytes, including after an
@@ -1180,6 +1197,23 @@ Blocked by: E8.1, E7.1
 
 Build K4 from OpenAlex authorships with ORCIDs for works in K2 and K0, clustering name mentions by
 ORCID, and flag ORCID conflicts as excluded rather than truth.
+
+Implementation decision: K4 requires the authorship's source-deposited `raw_orcid`, rather than
+the resolved profile's propagated `author.orcid` alone; OpenAlex documents the distinction in
+[its ORCID semantics](https://help.openalex.org/data/authors/orcid/). Valid raw/profile disagreement
+and a raw ORCID repeated at multiple coauthor positions exclude the affected mentions. Invalid
+identifiers and profile-only coverage remain separately reported. A provider profile spanning
+different raw labels across works is diagnostic, not a clustering feature or a reason to discard
+otherwise consistent source evidence. ORCID shape/checksum validation does not verify registration.
+
+Mention identity is work DOI plus the authorship array index, not first/middle/last role. Raw name
+inputs are separated from evaluator-only ORCIDs/profile IDs/provenance by an explicit allowlist
+projection. Membership combines K2 citing/reference DOIs and K0 selected DOI metadata with source
+hashes; selected metadata does not assert artifact download or mapping. Frozen provider receipts
+reuse E8.4's checked storage/transport rather than a new network path. Missing/invalid/conflicting
+slots, truncation uncertainty and singleton/multi-work coverage remain visible. See the
+[K4 contract and build workflow](../scripts/truth/PERSONS.md). Genuine truth publication and
+G1/O13 measurement remain pending actual frozen provider records.
 
 Acceptance: only mentions with ORCID-backed identity become labels; conflicts are reported.
 
