@@ -365,7 +365,9 @@ supplies a family key only when every retained name interpretation agrees. No en
 The reader requires both paper ID and exact reading-index ETag agreement before using reference
 links, refreshes a mismatched pair once, and preserves figure/table/native hints when references
 are unavailable. Browser fixtures invoke the production Rust object builder through the offline
-`objects_fixture` example, so no bibliography matcher remains duplicated in the frontend.
+`objects_fixture` example, so no entry splitter or citation matcher remains duplicated in the
+frontend. A narrow bibliography-section mask remains there solely to exclude figure/table mentions
+inside references when backend objects are unavailable; appendix mentions after references remain active.
 
 Acceptance: link-hint behavior matches or improves on the current frontend matcher across the
 existing smoke fixtures; DOIs and arXiv IDs are extracted exactly; ambiguous marker matches remain

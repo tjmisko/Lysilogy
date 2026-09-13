@@ -272,10 +272,10 @@ fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block
         let base = source.byte(block.span.start).unwrap_or_default();
         let labels: Vec<_> = label_regex().captures_iter(text).collect();
         if labels.is_empty() {
-            // A keyed bibliography often wraps one entry into several layout
-            // paragraphs. Preserve each disjoint member rather than absorbing
-            // a floating caption in the paragraph's bounding interval.
-            if let Some(previous) = entries.last_mut().filter(|entry| entry.key.is_some())
+            // Entries in either convention can wrap into layout paragraphs.
+            // A new author/date cue starts a new unnumbered entry; otherwise
+            // retain the continuation as another disjoint source member.
+            if let Some(previous) = entries.last_mut()
                 && author_year_prefix(text).is_none()
             {
                 previous.spans.push(block.span);
@@ -384,13 +384,20 @@ fn union(rects: impl Iterator<Item = TextRect>) -> Option<TextRect> {
         })
 }
 
-/// A parenthesized year before any title boundary is a strong author/date cue.
+/// An author/date prefix accepts both parenthesized and plain Harvard years.
 fn author_year_prefix(text: &str) -> Option<(usize, usize)> {
-    let year = pattern!(r"[(\[]((?:18|19|20)\d{2}[a-z]?)[)\]]").find(text)?;
-    (year.start() < 250
-        && !text[..year.start()].trim().is_empty()
-        && sentence_boundary(&text[..year.start()]).is_none())
-    .then_some((year.start(), year.end()))
+    let year = year_regex().find(text)?;
+    let prefix = text[..year.start()].trim_end();
+    let start = prefix
+        .strip_suffix(['(', '['])
+        .map_or_else(|| year.start(), str::len);
+    let authors = text[..start].trim();
+    let end = year.end() + usize::from(text[year.end()..].starts_with([')', ']']));
+    (start < 250
+        && authors.chars().next().is_some_and(char::is_alphabetic)
+        && !authors.contains(['/', ':'])
+        && sentence_boundary(authors).is_none())
+    .then_some((start, end))
 }
 
 fn sentence_boundary(text: &str) -> Option<usize> {
@@ -563,6 +570,18 @@ fn read_doi(raw: &str) -> Option<String> {
             if token.ends_with(['.', ',', ';']) {
                 break;
             }
+            // A slash/hyphen or numeric continuation supports joining a wrapped
+            // identifier. A following prose line is a boundary. An otherwise
+            // ambiguous bare-word continuation does not justify an explicit ID.
+            if !token.ends_with(['/', '-', '_']) && !chars.peek().is_some_and(char::is_ascii_digit)
+            {
+                let remainder = chars.clone().collect::<String>();
+                let next_line = remainder.lines().next().unwrap_or_default().trim();
+                if next_line.split_whitespace().count() > 1 || next_line.is_empty() {
+                    break;
+                }
+                return None;
+            }
             continue;
         }
         if ch.is_whitespace() || matches!(ch, '"' | '“' | '”') {
@@ -637,6 +656,7 @@ fn resolve_mentions(source: &Source<'_>, bibliography: TextRange, result: &mut B
         result,
     };
     let body = &source.index.text;
+    let mut printed_occurrences = Vec::new();
     for matched in
         pattern!(r"\[([^\]\n]{1,120})\]|\((\d{1,4}(?:\s*[,;–−-]\s*\d{1,4})*)\)").captures_iter(body)
     {
@@ -663,10 +683,36 @@ fn resolve_mentions(source: &Source<'_>, bibliography: TextRange, result: &mut B
             continue;
         }
         let span = source.range(whole.start(), whole.end());
-        for item in citation_keys(content) {
+        let cited = citation_keys(content);
+        if cited
+            .iter()
+            .any(|item| item.as_ref().is_ok_and(|key| printed.contains_key(key)))
+        {
+            printed_occurrences.push(span);
+        }
+        for item in cited {
             resolver.resolve(span, CitationStyle::Numeric, item, &printed);
         }
     }
+    resolve_superscripts(&mut resolver, &printed);
+    for matched in pattern!(r"((?:(?i:van|von|de|del|della|da|dos|das|la|der|den)\s+){0,3}[\p{L}][\p{L}\p{M}'’−-]+)(?:\s+(?:et\s+al\.?|(?:and|&)\s+[\p{L}][\p{L}\p{M}'’−-]+))?(?:\s*[,(\[]\s*|\s+)((?:18|19|20)\d{2}[a-z]?(?:\s*[,;]\s*(?:(?:18|19|20)\d{2}[a-z]?|[a-z]))*)\b").captures_iter(body) {
+        let whole = matched.get(0).expect("author-year citation");
+        let author = matched.get(1).expect("citation author").as_str();
+        let years = matched.get(2).expect("citation years").as_str();
+        let end = whole.end() + usize::from(whole.as_str().contains(['(', '[']) && body[whole.end()..].starts_with([')', ']']));
+        let occurrence = source.range(whole.start(), end);
+        let at = printed_occurrences.partition_point(|printed| printed.end <= occurrence.start);
+        if printed_occurrences.get(at).is_some_and(|printed| printed.start < occurrence.end) { continue; }
+        let mut inherited = None;
+        for part in years.split([',', ';']).map(str::trim) {
+            let year = if part.len() == 1 { format!("{}{part}", inherited.unwrap_or_default()) } else { inherited = part.get(..4); part.to_owned() };
+            resolver.resolve(occurrence, CitationStyle::AuthorYear, Ok(format!("{}:{year}", key(author))), &author_year);
+        }
+    }
+}
+
+fn resolve_superscripts(resolver: &mut Resolver<'_, '_>, printed: &BTreeMap<String, Vec<usize>>) {
+    let source = resolver.source;
     for pair in source.tokens.windows(2) {
         let before = pair[0];
         let token = pair[1];
@@ -694,19 +740,8 @@ fn resolve_mentions(source: &Source<'_>, bibliography: TextRange, result: &mut B
                 },
                 CitationStyle::Superscript,
                 item,
-                &printed,
+                printed,
             );
-        }
-    }
-    for matched in pattern!(r"((?:(?i:van|von|de|del|della|da|dos|das|la|der|den)\s+){0,3}[\p{L}][\p{L}\p{M}'’−-]+)(?:\s+(?:et\s+al\.?|(?:and|&)\s+[\p{L}][\p{L}\p{M}'’−-]+))?\s*[,(\[]?\s*((?:18|19|20)\d{2}[a-z]?(?:\s*[,;]\s*(?:(?:18|19|20)\d{2}[a-z]?|[a-z]))*)\b").captures_iter(body) {
-        let whole = matched.get(0).expect("author-year citation");
-        let author = matched.get(1).expect("citation author").as_str();
-        let years = matched.get(2).expect("citation years").as_str();
-        let end = whole.end() + usize::from(whole.as_str().contains(['(', '[']) && body[whole.end()..].starts_with([')', ']']));
-        let mut inherited = None;
-        for part in years.split([',', ';']).map(str::trim) {
-            let year = if part.len() == 1 { format!("{}{part}", inherited.unwrap_or_default()) } else { inherited = part.get(..4); part.to_owned() };
-            resolver.resolve(source.range(whole.start(), end), CitationStyle::AuthorYear, Ok(format!("{}:{year}", key(author))), &author_year);
         }
     }
 }
@@ -750,7 +785,7 @@ fn citation_keys(text: &str) -> Vec<Result<String, String>> {
             } else {
                 keys.push(Err(part.to_owned()));
             }
-        } else {
+        } else if !part.contains(char::is_whitespace) {
             keys.push(Ok(key(part)));
         }
     }
@@ -1351,5 +1386,69 @@ mod tests {
         assert_eq!(fields.doi.value, None);
         assert_eq!(fields.arxiv_id.value, None);
         assert_eq!(fields.doi.confidence, FieldConfidence::Missing);
+    }
+
+    #[test]
+    fn should_keep_the_doi_boundary_when_the_next_line_is_following_prose() {
+        let raw = "[1] Smith, A. (2020). A title. doi:10.1000/ABC\nAvailable online";
+        assert_eq!(
+            parse_fields(raw, Some("1".into())).doi.value.as_deref(),
+            Some("10.1000/ABC")
+        );
+        assert_eq!(parse_fields("doi:10.1000/ABC\nDEF", None).doi.value, None);
+        assert_eq!(
+            parse_fields("doi:10.1000/ABC\n123", None)
+                .doi
+                .value
+                .as_deref(),
+            Some("10.1000/ABC123")
+        );
+    }
+
+    #[test]
+    fn should_join_unnumbered_continuations_when_a_later_plain_year_starts_the_next_entry() {
+        let index = fixture(&[
+            ("Smith (2020) and Jones (2021) agree.", "body", 1),
+            ("References", "heading", 2),
+            ("Smith, A. (2020). A long", "body", 2),
+            ("title. Journal of Results. doi:10.1000/ABC.", "body", 3),
+            ("Jones, B. 2021. Next title.", "body", 3),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 2);
+        assert!(result.entries.iter().all(|entry| entry.mentions.len() == 1));
+        let first = &result.entries[0];
+        assert_eq!(
+            first
+                .member_anchors
+                .iter()
+                .map(|anchor| anchor.page)
+                .collect::<Vec<_>>(),
+            [2, 3]
+        );
+        assert_eq!(fields(first).title.value.as_deref(), Some("A long title"));
+        assert_eq!(fields(first).doi.value.as_deref(), Some("10.1000/ABC"));
+        assert_eq!(
+            fields(&result.entries[1]).title.value.as_deref(),
+            Some("Next title")
+        );
+        assert_eq!(
+            fields(&result.entries[1]).year.value.as_deref(),
+            Some("2021")
+        );
+    }
+
+    #[test]
+    fn should_resolve_each_printed_marker_once_when_keys_resemble_author_year_citations() {
+        let index = fixture(&[
+            ("See [Smith2020] and [Smith 2020].", "body", 1),
+            ("References", "heading", 2),
+            ("[Smith2020] Smith, A. (2020). A study.", "body", 2),
+        ]);
+        let result = extract(&index);
+        let mentions = &result.entries[0].mentions;
+        assert_eq!(mentions.len(), 2);
+        assert_eq!(slice(&index, &mentions[0].anchor), "[Smith2020]");
+        assert_eq!(slice(&index, &mentions[1].anchor), "Smith 2020");
     }
 }

@@ -68,6 +68,17 @@ test('should withhold reference links when backend output is absent or belongs t
   assert.deepEqual(projectPaperLinks(index, artifact, fixtureGeneration).map(link => link.kind), ['reference', 'figure']);
 });
 
+test('should mask bibliography figure mentions when objects are unavailable while retaining appendix links', () => {
+  const index = fixture([['See Fig. 1.'], ['Figure 1: Evidence.', 'caption', 2], ['References', 'heading', 3],
+    ['[1] Smith, A. Figure 1 is a title fragment. 2020.', 'body', 3], ['Appendix A', 'heading', 4], ['See Fig. 1 and [1].', 'body', 4]]);
+  const artifact = backendObjects(index);
+  for (const [objects, generation] of [[null,null],[artifact,'"stale"'],[artifact,fixtureGeneration]]) {
+    const links = projectPaperLinks(index, objects, generation);
+    assert.deepEqual(links.filter(link => link.kind === 'figure').map(link => link.page), [1,4]);
+    assert.ok(links.every(link => link.page !== 3));
+  }
+});
+
 test('should retain exact repeated occurrence offsets when astral text precedes references in one sentence', () => {
   const index = fixture([['😀 Evidence [1] agrees with [1].'], ['References', 'heading', 2], ['[1] Smith. Study.', 'body', 2]]);
   const artifact = backendObjects(index);

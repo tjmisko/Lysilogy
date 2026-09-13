@@ -35,6 +35,13 @@ export function discoverPaperLinks(index: ReadingIndex, artifact: ObjectsArtifac
   const entries = artifact !== null && objectsMatchGeneration(artifact, generation) ? artifact.objects.filter((object) => object.kind === "bib_entry") : [];
   const blocks = index.objects.paragraph.flatMap((paragraph) => selectionSpans(paragraph).map((span) => ({ ...span, kind: paragraph.kind })))
     .sort((a, b) => a.start - b.start);
+  // Keep the existing figure/table exclusion usable when objects fail or are
+  // stale. This masks one section; entry splitting and citation resolution are
+  // exclusively backend operations.
+  const heading = blocks.find((block) => /^(?:(?:\d+|[IVXLCDM]+)[.\s]+)?(?:references(?: and notes| cited)?|bibliography|literature cited|works cited)\s*[:.]?$/iu.test(index.text.slice(block.start, block.end).trim()));
+  const bibliographyStart = heading?.end ?? Infinity;
+  const bibliographyEnd = blocks.find((block) => block.start > bibliographyStart && block.kind === "heading"
+    && /^(?:(?:\d+|[IVXLCDM]+)[.\s]+)?(?:appendix|appendices|supplement|acknowledg)/iu.test(index.text.slice(block.start, block.end).trim()))?.start ?? index.text.length;
   const targets: Target[] = [];
   const addTarget = (span: TextSpan, kind: Target["kind"], key: string, label: string) => {
     if (targets.some((target) => target.start === span.start && target.key === key && target.kind === kind)) return;
@@ -59,7 +66,7 @@ export function discoverPaperLinks(index: ReadingIndex, artifact: ObjectsArtifac
 
   const links: PaperLink[] = [];
   const add = (span: TextSpan, target: Target) => {
-    if (span.start >= target.start && span.start < target.end || entries.some((entry) => span.start >= entry.anchor.start && span.start < entry.anchor.end)) return;
+    if (span.start >= target.start && span.start < target.end || span.start >= bibliographyStart && span.start < bibliographyEnd) return;
     const label = index.text.slice(span.start, span.end).trim();
     for (const page of new Set(tokensInSpan(index, span).map((token) => token.page))) {
       const id = `${span.start}:${span.end}:${target.start}:${page}`;
