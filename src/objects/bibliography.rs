@@ -778,6 +778,16 @@ fn read_doi(raw: &str) -> Option<String> {
         token.push(ch);
     }
     trim_identifier(&mut token);
+    if token.to_ascii_lowercase().starts_with("10.48550/arxiv.") {
+        let suffix = &token["10.48550/arxiv.".len()..];
+        // This DOI namespace encodes an arXiv identifier. A line break after
+        // the dot can leave a syntactically plausible generic DOI prefix that
+        // is not a complete arXiv identity. Withhold it instead of inventing
+        // an explicit truncated DOI; the original entry remains available.
+        if extract_arxiv(&format!("arxiv:{suffix}")).as_deref() != Some(suffix) {
+            return None;
+        }
+    }
     (token
         .split_once('/')
         .is_some_and(|(_, suffix)| !suffix.is_empty()))
@@ -2083,5 +2093,51 @@ mod tests {
         let result = extract(&index);
         assert_eq!(result.entries.len(), 1);
         assert_eq!(result.entries[0].member_anchors.len(), 3);
+    }
+    #[test]
+    fn should_withhold_truncated_arxiv_dois_when_a_line_break_leaves_an_incomplete_structured_suffix()
+     {
+        for (doi, expected) in [
+            ("10.48550/arXiv.2102. 04906", None),
+            ("10.48550/arXiv.2102.\n04906", None),
+            ("10.48550/arXiv.2102", None),
+            (
+                "10.48550/arXiv.2102.04906",
+                Some("10.48550/arXiv.2102.04906"),
+            ),
+            (
+                "10.48550/arXiv.2102.04906v2",
+                Some("10.48550/arXiv.2102.04906v2"),
+            ),
+            (
+                "10.48550/arXiv.hep-th/9901001",
+                Some("10.48550/arXiv.hep-th/9901001"),
+            ),
+            ("10.1000/example.2102", Some("10.1000/example.2102")),
+        ] {
+            let raw = format!("[1] Example, A. (2021). A study. doi:{doi}");
+            let index = fixture(&[
+                ("See [1].", "body", 1),
+                ("References", "heading", 2),
+                (&raw, "body", 2),
+            ]);
+            let result = extract(&index);
+            assert_eq!(result.entries.len(), 1);
+            assert_eq!(result.entries[0].text, raw);
+            assert_eq!(
+                fields(&result.entries[0]).doi.value.as_deref(),
+                expected,
+                "{doi}"
+            );
+            assert_eq!(
+                fields(&result.entries[0]).doi.confidence,
+                if expected.is_some() {
+                    FieldConfidence::Explicit
+                } else {
+                    FieldConfidence::Missing
+                }
+            );
+            assert_eq!(result.entries[0].mentions.len(), 1);
+        }
     }
 }
