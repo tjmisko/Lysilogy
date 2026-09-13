@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
 
 spec=importlib.util.spec_from_file_location('object_metrics',Path(__file__).with_name('object-metrics.py'))
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
@@ -25,6 +27,27 @@ def fixture():
 
 
 class ObjectMetricTests(unittest.TestCase):
+    def should_use_cargo_selected_artifact_when_inherited_targets_point_elsewhere(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);source=root/'examples/object_metrics.rs';source.parent.mkdir();source.write_text('source')
+            executable=root/'target/debug/examples/object_metrics';executable.parent.mkdir(parents=True);executable.write_bytes(b'executable')
+            record={'reason':'compiler-artifact','target':{'name':'object_metrics','kind':['example'],'src_path':str(source)},'executable':str(executable)}
+            observed=[]
+            def compile_call(command,**kwargs):
+                observed.append((command,kwargs));return SimpleNamespace(stdout=m.canonical(record)+b'\n',stderr=b'')
+            with patch.object(m,'implementation_files',return_value=['examples/object_metrics.rs']),patch.object(m.Path,'home',return_value=root),patch.object(m.subprocess,'run',side_effect=compile_call),patch.dict(m.os.environ,{'CARGO_TARGET_DIR':'/foreign','CARGO_BUILD_TARGET':'other'}):
+                m.build_bridge(root)
+            command,kwargs=observed[0];self.assertEqual(kwargs['env']['CARGO_TARGET_DIR'],str(root/'target'));self.assertNotIn('CARGO_BUILD_TARGET',kwargs['env']);self.assertIn('--offline',command)
+            receipt=m.document((root/'target/object-metrics-build.json').read_bytes());self.assertEqual(receipt['executable_sha256'],m.digest(b'executable'))
+            original=(root/'target/object-metrics-build.json').read_bytes();record['executable']='/foreign/object_metrics'
+            with patch.object(m,'implementation_files',return_value=['examples/object_metrics.rs']),patch.object(m.Path,'home',return_value=root),patch.object(m.subprocess,'run',side_effect=compile_call):
+                with self.assertRaisesRegex(ValueError,'another executable'):m.build_bridge(root)
+            self.assertEqual((root/'target/object-metrics-build.json').read_bytes(),original)
+
+    def should_measure_actual_scoring_path_when_independent_regions_overlap_by_one_third(self):
+        p,a,i=fixture();a['objects'][0]['region']=rectangle(x0=5,x1=15)
+        self.assertEqual(m.evaluate_paper(p,a,i)['region_values'],[1/3])
+
     def should_preserve_roman_identities_when_tables_use_printed_numerals(self):
         for roman in ['I','II','III','IV','V']:
             self.assertEqual(m.label('Table '+roman,'table'),roman.lower())

@@ -146,6 +146,7 @@ def evaluate_paper(paper, artifact, index):
         require(actual==paper['counts'].get(kind,0), 'truth kind inventory differs')
         require(actual>0 or kind in paper['reviewed_absent_kinds'], 'missing complete negative-kind review')
     encoded = index['text'].encode('utf-16-le')
+    require(sum(span['end']-span['start'] for o in truths for span in o['spans'])<=200000, 'truth caption membership exceeds paper bound')
     truth_info = []
     for o in truths:
         members, owned = utf16_members(index,o['spans'],encoded=encoded)
@@ -247,7 +248,7 @@ def atomic_json(path, value):
 
 
 def implementation_files(repo):
-    files=['Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
+    files=[CONFIG,'Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
     for root in ('src','scripts/truth/latex'):
         if (repo/root).is_dir():
             files.extend(str(p.relative_to(repo)) for p in (repo/root).rglob('*') if p.is_file() and p.suffix in ('.rs','.py') and not p.name.startswith('test'))
@@ -264,7 +265,7 @@ def build_bridge(repo):
     artifacts=[document(line) for line in result.stdout.splitlines() if line.startswith(b'{')]
     artifacts=[a for a in artifacts if a.get('reason')=='compiler-artifact' and a['target']['name']=='object_metrics' and a.get('executable')]
     expected=repo/'target/debug/examples/object_metrics'
-    require(len(artifacts)==1 and artifacts[0]['executable']==str(expected),'Cargo selected another executable')
+    require(len(artifacts)==1 and artifacts[0]['executable']==str(expected) and artifacts[0]['target'].get('src_path')==str(repo/'examples/object_metrics.rs') and artifacts[0]['target'].get('kind')==['example'],'Cargo selected another executable')
     require(sources=={p:digest(read(repo/p)) for p in sources},'source changed during bridge build')
     receipt={'schema_version':1,'command':command,'implementation':sources,'executable_sha256':digest(read(expected,128*1024*1024)),'cargo_stdout_sha256':digest(result.stdout),'cargo_stderr_sha256':digest(result.stderr),'selected_artifact':artifacts[0],'wall_seconds':time.monotonic()-started}
     cache=Path.home()/'.cache/lysilogy/object-metrics/builds'/digest(canonical(receipt))
