@@ -40,21 +40,24 @@ metadata JSON array; no revised live RSS improvement is claimed without measurem
 
 ## Validation and scorecard
 
-The fresh before measurements ran on `26b4adc`; final integrated measurements ran on `9ba9fe5` after merging docs-only main `0030399`.
+The fresh before measurements ran on `26b4adc`; availability-only measurements ran on `9ba9fe5`.
+Final combined measurements ran on `06dc693` after integrating the independently reviewed source-endpoint fix #91.
 Current main was integrated with an ordinary merge because the standing rebase approval
 restriction remains in effect. The independent reviewer cleared source `96b702d` and ran all
-75 corpus tests; subsequent commits contain only documentation, retained evidence and the docs-only main merge.
+75 availability tests. The endpoint reviewer cleared `ebead0c` and independently ran all 82
+combined corpus tests. The retained receipt also preserves the prior availability-only checkpoint.
 
 | Check | Before | After |
 | --- | ---: | ---: |
-| Offline corpus tests | 52 pass | 75 pass |
-| G5 isolated Rust / Python / Node tests | 295 / 80 / 85 pass | 305 / 103 / 85 pass |
+| Offline corpus tests | 52 pass | 82 pass |
+| G5 isolated Rust / Python / Node tests | 295 / 80 / 85 pass | 305 / 110 / 85 pass |
 | O30 budget violations | 0 / 10,000 | 0 / 10,000 |
 | `eval scale --check` | pass | pass |
 | `eval tests --check` | pass | pass |
 
 Formatting, strict Clippy with all targets/features, and all-target Rust tests pass. The Rust
-test increase includes the separately merged title normalizer. Both scale measurements used
+test increase includes the separately merged title normalizer. The final Python count includes
+seven endpoint compatibility tests from #91; the availability repair itself added 23 tests. Both scale measurements used
 clean trees; both G5 runs truthfully report `dirty=true` after scale generated the scorecard.
 Only that generated scorecard was restored afterward. Tests used fixtures, no network and no
 models; G5 verified the isolated network namespace and absent model CLIs.
@@ -63,7 +66,7 @@ The retained [receipt](../../eval/evidence/corpus-availability.json) includes ex
 full isolated test outputs, command results, scorecard observations and original live failure
 provenance. G5 and O30 remain the available passing gate/objective for this change; K0-dependent
 metrics remain unavailable until the corpus and their collectors are complete. No gate or
-objective target changed, and the source endpoint failure is tracked separately in follow-up #91.
+objective target changed. The source endpoint failure was fixed separately in follow-up #91.
 
 ## Live verification
 
@@ -82,9 +85,17 @@ then exited with code 1 because the source
 `e-print` endpoint returns HTTP 301. The existing redirect refusal remained effective. A separate
 parent-owned no-follow probe confirmed the same approved host's canonical `/src/0812.5080v5`
 endpoint returns a 21,993-byte gzip source (HTTP 200, 0.45 seconds); those probe bytes were not
-admitted as a corpus source. Source-endpoint follow-up [#91](https://github.com/tjmisko/Lysilogy/issues/91) is required before full
-resume. There is now one admitted PDF, so `recover-selection` must never be run again on this
-corpus. Continue with ordinary download resume after the endpoint fix.
+admitted as a corpus source.
 
-PR #90 remains draft pending the source-endpoint follow-up and successful bounded PDF/source
-verification. Complete K0 downloads and full-tier verification remain outstanding.
+After independently reviewed follow-up [#91](https://github.com/tjmisko/Lysilogy/issues/91) was
+integrated, the bounded check succeeded with exit 0 in 3.19 seconds, peak RSS 240,608 KiB, and $0
+model cost. It rehashed/reused the existing PDF and admitted its canonical 21,993-byte source,
+SHA-256 `8b95087c0ab3a43d4f021459374bc52a66a4baae9211174f83984cb12f250c1d`, at
+`2026-09-13T08:26:54.029223+00:00`. The parent independently verified both receipt identities and
+actual bytes. The first-fetch commit `a975703` and message-only amended integration `06dc693`
+have identical Git trees. Selection stayed unchanged; the receipt records exact combined source
+hashes and the full bounded log. All 82 combined offline corpus tests pass.
+
+The parent has resumed priority eval-tier PDF/source downloads from that reviewed source.
+Complete K0 downloads and full-tier verification remain outstanding. Ordinary download resume
+preserves the admitted corpus; `recover-selection` must never be run again after artifact admission.
