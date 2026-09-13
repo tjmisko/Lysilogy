@@ -35,7 +35,10 @@ Current metadata aggregates all canonically bound observation revisions in stabl
 order. Refreshes replace one contribution; merge/split rebuild the affected aggregates. Complete
 competing assertions and their provenance are available through `KbStore::assertions`. The scalar
 precedence is a storage default pending resolver policy. Identifier lookups return nonunique
-canonical candidates with explicit truncation and never decide identity merges.
+canonical candidates with explicit truncation and never decide identity merges. Work candidate
+lookup indexes explicit Work identifiers only, excluding WorkVersion-only identifiers. Work-level
+arXiv IDs must be versionless; version-specific IDs remain on WorkVersion. Lookup never strips a
+version or invents a missing Work identifier.
 
 ## O28 graph benchmark
 

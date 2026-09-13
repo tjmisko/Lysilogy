@@ -522,7 +522,9 @@ The nonunique identifier index returns every canonical candidate with an explici
 truncation flag; shared identifiers never merge entities. Person admission and lookup require
 bare checksum-valid ORCIDs, OpenAlex author tokens `A` plus positive decimal digits, and positive
 decimal Semantic Scholar author IDs. Raw forms remain in source observations. Work identifiers
-use the shared provider parser. Title keys are recomputed with E2.4's `title_key` on population
+use the shared provider parser, with version-pinned arXiv IDs rejected at Work level and retained
+only on WorkVersion. Candidate lookup covers explicit Work-level identifiers only; it does not
+index version-only identifiers or infer a versionless identifier from one. Title keys are recomputed with E2.4's `title_key` on population
 and query, ignoring supplied stale keys. Schema migration retains the canonical log, validates
 its cached hashes, and marks projection upgrade complete only after successful regeneration.
 

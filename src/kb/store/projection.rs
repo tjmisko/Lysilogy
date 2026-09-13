@@ -177,7 +177,7 @@ pub(super) fn upsert_work(connection: &Connection, work: &Work) -> Result<()> {
     )?;
     for version in &work.versions {
         for identifier in &version.identifiers {
-            super::identifiers::work_key(identifier)?;
+            super::identifiers::bibliographic_key(identifier)?;
         }
         journal::validate_token(&version.id, "version ID", 128)?;
         connection.execute(

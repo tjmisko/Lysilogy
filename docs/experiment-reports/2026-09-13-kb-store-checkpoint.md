@@ -20,9 +20,11 @@ The corrections address all five retained storage review findings:
 - Detect changed journal prefixes before incremental writes and validate cached hashes before
   clearing for rebuild. Schema 3 has a completion marker so a failed projection upgrade retries.
 
-Eight added Rust scenarios cover contributor refresh/removal/split, conflicting versions/copies,
+Nine added Rust scenarios cover contributor refresh/removal/split, conflicting versions/copies,
 nonunique indexed candidates, stale title keys, same-length journal tampering, invalid Person
-identifiers, coherent Person aggregation and interrupted projection upgrade. These tests are
+identifiers, coherent Person aggregation, interrupted projection upgrade and the arXiv Work/
+WorkVersion identifier boundary. The last test covers modern and legacy arXiv forms, rejected
+admission with unchanged journal, accepted version-specific metadata and explicit lookup scope. These tests are
 written and formatted but **unrun**. Existing migration expectations now use the schema count.
 
 `cargo fmt --all -- --check` and `git diff --check` pass. A direct Python sqlite3 audit executed

@@ -49,7 +49,9 @@ pub struct EntityAssertion {
 }
 
 impl KbStore {
-    /// Return all canonical candidates. An identifier is intentionally nonunique.
+    /// Return canonical candidates carrying this Work-level identifier. The index
+    /// excludes WorkVersion-only identifiers and never strips an arXiv version.
+    /// An identifier is intentionally nonunique.
     pub fn works_with_identifier(
         &self,
         identifier: &Identifier,

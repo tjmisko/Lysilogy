@@ -3,10 +3,29 @@ use super::{Result, StoreError};
 use crate::kb::{Identifier, PersonIdentifier};
 
 pub(super) fn work_key(identifier: &Identifier) -> Result<String> {
+    let key = bibliographic_key(identifier)?;
+    if identifier.scheme == "arxiv"
+        && identifier
+            .value
+            .rsplit_once('v')
+            .is_some_and(|(_, version)| {
+                !version.is_empty() && version.bytes().all(|byte| byte.is_ascii_digit())
+            })
+    {
+        return Err(StoreError::Invalid(
+            "Work arXiv identifiers must be versionless; retain version IDs on WorkVersion".into(),
+        ));
+    }
+    Ok(key)
+}
+
+pub(super) fn bibliographic_key(identifier: &Identifier) -> Result<String> {
     let key = identifier.key();
     let parsed = Identifier::parse(&key).map_err(|error| StoreError::Invalid(error.message))?;
     if parsed != *identifier {
-        return Err(StoreError::Invalid("noncanonical Work identifier".into()));
+        return Err(StoreError::Invalid(
+            "noncanonical bibliographic identifier".into(),
+        ));
     }
     Ok(key)
 }

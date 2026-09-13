@@ -919,3 +919,74 @@ fn should_resume_projection_upgrade_when_a_prior_rebuild_did_not_complete() {
     let reopened = KbStore::open(directory.path()).unwrap();
     assert_eq!(before, reopened.snapshot().unwrap());
 }
+
+#[test]
+fn should_reject_version_pinned_work_ids_when_arxiv_versions_belong_on_work_versions() {
+    for (base, pinned) in [
+        ("2608.00001", "2608.00001v2"),
+        ("gr-qc/9901001", "gr-qc/9901001v12"),
+    ] {
+        let directory = tempfile::tempdir().unwrap();
+        let store = KbStore::open(directory.path()).unwrap();
+        let id = store.allocate_work("version-boundary").unwrap();
+        let mut admission = fixture(&store, &id, "Version-specific source");
+        let version_identifier = crate::kb::Identifier::parse(&format!("arxiv:{pinned}")).unwrap();
+        let base_identifier = crate::kb::Identifier::parse(&format!("arxiv:{base}")).unwrap();
+        let before = store.snapshot().unwrap();
+        let journal_path = directory.path().join("kb/decisions.jsonl");
+        let journal = fs::read(&journal_path).unwrap();
+        let EntityProjection::Work(work) = &mut admission.entity else {
+            unreachable!()
+        };
+        work.identifiers.insert(version_identifier.clone());
+        assert!(store.admit(&admission, store.data_root()).is_err());
+        assert_eq!(journal, fs::read(&journal_path).unwrap());
+        assert_eq!(before, store.snapshot().unwrap());
+        let EntityProjection::Work(work) = &mut admission.entity else {
+            unreachable!()
+        };
+        work.identifiers.clear();
+        work.versions.push(crate::kb::WorkVersion {
+            id: "source-version".into(),
+            kind: crate::kb::VersionKind::Preprint,
+            label: None,
+            identifiers: [version_identifier.clone()].into(),
+            date: None,
+        });
+        store.admit(&admission, store.data_root()).unwrap();
+        let projected = store.work(&id).unwrap().unwrap();
+        assert!(projected.identifiers.is_empty());
+        assert!(
+            projected.versions[0]
+                .identifiers
+                .contains(&version_identifier)
+        );
+        assert!(
+            store
+                .works_with_identifier(&version_identifier, 10)
+                .is_err()
+        );
+        assert!(
+            store
+                .works_with_identifier(&base_identifier, 10)
+                .unwrap()
+                .ids
+                .is_empty()
+        );
+        let EntityProjection::Work(work) = &mut admission.entity else {
+            unreachable!()
+        };
+        work.identifiers.insert(base_identifier.clone());
+        store.admit(&admission, store.data_root()).unwrap();
+        assert_eq!(
+            store
+                .works_with_identifier(&base_identifier, 10)
+                .unwrap()
+                .ids,
+            [id.to_string()]
+        );
+        let before = store.snapshot().unwrap();
+        store.rebuild().unwrap();
+        assert_eq!(before, store.snapshot().unwrap());
+    }
+}
