@@ -824,6 +824,11 @@ mod tests {
             for token in index.tokens.iter_mut().filter(|t| t.start >= last.start) {
                 token.page = 2;
             }
+            let mut second_page = index.pages[0].clone();
+            second_page.number = 2;
+            second_page.start = last.start;
+            index.pages[0].end = last.start - 2;
+            index.pages.push(second_page);
             index.objects.paragraph[0].end = last.end;
             index.objects.paragraph[0].spans = vec![
                 TextRange {
@@ -857,6 +862,11 @@ mod tests {
                 for token in index.tokens.iter_mut().filter(|t| t.start >= last.start) {
                     token.page = 2;
                 }
+                let mut second_page = index.pages[0].clone();
+                second_page.number = 2;
+                second_page.start = last.start;
+                index.pages[0].end = last.start - 2;
+                index.pages.push(second_page);
             } else {
                 index.objects.paragraph[0].spans = vec![
                     TextRange {
