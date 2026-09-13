@@ -162,7 +162,7 @@ acceptance are unchanged.
   (`bundled`) to `Cargo.toml` and `kb rebuild` to `src/main.rs`. Database at
   `<data>/kb/kb.sqlite`, WAL mode, FTS5 trigram tokenizer (confirm the bundled SQLite enables
   FTS5). Include the 500k-Work synthetic neighborhood query benchmark from the design section.
-- [ ] **#35 E2.3 Person name parser** (after #34). Branch `feat/e2.3-names`. Owns
+- [x] **#35 E2.3 Person name parser** (after #34). Branch `feat/e2.3-names`. Owns
   `src/kb/names.rs`. Pure functions plus a large table-driven test.
 - [ ] **#36 E2.4 Title normalizer** (after #34). Branch `feat/e2.4-titles`. Owns
   `src/kb/titles.rs`. Pure functions; the FTS5 index population itself lands with #33 or #38,
@@ -186,6 +186,18 @@ acceptance are unchanged.
 
 ### Phase A notes
 
+- #35 merged in PR #87 (`e066946`) after independent review of final head `4de6251` and
+  all required gates. `kb::names` preserves raw input, unranked component alternatives, and
+  coarse family/first-initial candidate keys. Particles, suffixes, compact capitals, and bare
+  letters retain ambiguous interpretations; keys never establish identity. Review fixed literal
+  Le/Van families and Al given names, compatibility-case folding, and bare-letter family
+  alternatives. Final G5: 295 Rust, 80 Python, and 85 Node tests; 16 parser tests contain broad
+  fixture tables. Persons/resolution remain unavailable without K3/K4; O30 remains 0/10k.
+  No gate, objective target, or baseline changed. Report:
+  `docs/experiment-reports/2026-09-13-person-name-parser.md`; committed before/after evidence:
+  `eval/evidence/person-name-parser.json`. Root independently verified source/result/log hashes
+  and archived 22 raw receipts at `~/.cache/lysilogy/review-evidence/pr87/` before removing the
+  branch/worktree. The historical O25/O26 misses still belong to #21/#22.
 - #19 merged in PR #82 (`2683dce`), completing A1. The full default run generated and verified
   10,000 PDFs, persisted all 10,000 extraction artifacts, performed six full extraction trials,
   and drove the release app with Playwright for three navigations and 60 searches. O25's populated
@@ -809,3 +821,98 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Read-only #33 preparation identified the need for canonical mint/bind events independent of
   SQLite, retained admitted observations where mutable inputs cannot reproduce them, and deferred
   provider-specific admission to #40/#41. No A2 implementation has begun.
+
+### 2026-09-12 — A1 complete, A2 implementations and live corpus harvest
+
+- This resumed goal turn made progress: the full default synthetic 10k run completed, independent
+  reviews and integrated gates passed, #85/PR #86 merged as `e12adc3`, and #19/PR #82 merged as
+  `2683dce`. Progress notes are committed through `705b94b`. Both branches/worktrees were removed.
+  The full project goal is active and unchanged; Phase A has not exited.
+- **Current phase/wave: A/A2.** Three implementations have started from current main:
+  #33 `feat/e2.1-kb-store` in `.worktrees/feat/e2.1-kb-store` (agent `finish_corpus_proxy`),
+  #35 `feat/e2.3-names` in `.worktrees/feat/e2.3-names` (`finish_benchmark`), and
+  #36 `feat/e2.4-titles` in `.worktrees/feat/e2.4-titles` (`review_ready_prs`, now an implementer).
+  No PRs are open at this checkpoint. Assign a different agent to review each implementation.
+  Names/titles coordinate the same cached `unicode-normalization = "0.1.25"` dependency; #33 owns
+  FTS5 population and integrates #36's exact-key helper when available. SQLite's `rusqlite` and
+  iterator dependencies may require fetching. One Cargo job per worktree, dev/test debug off,
+  incremental off, worktree-local targets, at most three concurrent implementations.
+- **Live corpus build:** after the user restarted the daemon, approved proxy access succeeded.
+  Root exec session **9593** is running the reviewed corpus `run --proxy-env HTTPS_PROXY` under
+  `/usr/bin/time -v`; log `/home/tjmisko/.cache/lysilogy/arxiv-corpus-proxy.log`. Poll the handle
+  before concluding it stopped; do not start a duplicate build. At 2026-09-13 06:44:09 UTC it
+  had **208,880 distinct metadata records**, `cs:cs:CV` complete, and `cs:cs:LG` in progress.
+  No frozen selection/PDF/source existed yet; about 138 GiB remained free. Its code/config were
+  loaded before worktree removal; independent audit found no subsequent worktree dependency,
+  and a post-cleanup handle poll confirmed it remained live. No daemon restart or corpus process
+  restart is needed now. If it actually exits, inspect its final log and resume from main using
+  `python3 -u scripts/corpus/corpus.py --root /home/tjmisko/Corpora/arxiv --proxy-env HTTPS_PROXY run`.
+  Keep its shared three-second arXiv budget and 20 GiB floor. Watch whole-metadata selection RSS;
+  optimize only if measurement warrants it. Corpus files never enter the repo/library/`/tmp`.
+- **Scale evidence:** original clean source `7e84828`; full 10k run
+  `~/.cache/lysilogy/bench-vault/runs/d2019ea2409e42ceb373a98b03fb08ce` retains raw observations and
+  the screenshot. Total 1,260.601 s, $0. After #85 integration, independent review reconfirmed all
+  150 source hashes, all physical PDF/artifact counts, metrics, and gate logs at final head
+  `8083602`. Do not repeat expensive timings without a source/measurement reason. Committed
+  reports and evidence are listed in Phase A notes.
+- Scorecard: G5 passes (final integrated 279 Rust / 80 Python / 85 Node tests), **1/5 gates**;
+  O30 = 0 violations/10k, **1/30 objectives at target**. Measured misses are O25 = 15.503406 s and
+  O26 = 1,757.1 ms first render / 163.4 ms search p95, recorded with next ideas in existing open
+  follow-ups #21/#22. O27 remains unavailable despite exploratory extractor efficiency 0.855644;
+  production worker measurement belongs to #23. Other metrics await implementations/truth.
+  Follow-up #85 was opened and resolved during this work; no objective target or hard gate changed.
+- **Next actions:** finish/review/merge #33/#35/#36 in dependency-safe order; select ready #25,
+  #71 and #72 within A2 as implementation slots free. Preserve canonical minted-once identities
+  through SQLite rebuilds and avoid claiming real G4 before K2 exists. Continue monitoring the
+  corpus through metadata, selection, inventory and downloads while offline implementations run.
+  Do not advance to A3 before A2 finishes. The user's unrelated ten preview-file changes remain
+  byte-for-byte intact; original fingerprints are `/tmp/lysilogy-preview-before.json`, and the
+  earlier full checkpoint lists every protected path. Unrelated `/tmp` worktrees remain untouched.
+
+### 2026-09-13 — person parser merged; corpus selection frozen; registry permission pending
+
+- Last merged issue: **#35 / PR #87**, merge `e066946`; final independently cleared head
+  `4de6251`. All gates passed (295 Rust, 80 Python, 85 Node), and the names branch/worktree
+  was removed. The source fixes and retained evidence are summarized in Phase A notes.
+  Current phase/wave remains **A/A2**. This continuation made progress; the full goal remains
+  active and incomplete, with no phase exit or final system acceptance claimed.
+- In flight: #33 `feat/e2.1-kb-store` in `.worktrees/feat/e2.1-kb-store`, agent
+  `finish_corpus_proxy`; #36 `feat/e2.4-titles` in `.worktrees/feat/e2.4-titles`, agent
+  `review_ready_prs`. Neither has a PR yet. Both have uncommitted implementation work. The
+  #36 independent reviewer (`finish_benchmark`) found substantive math-group, Unicode script,
+  and escaped-brace key collisions; fixes and re-review remain required. Review probes are at
+  `~/.cache/lysilogy/review-titles/`. Next implementation slot goes to #25 bibliography on
+  `feat/e1.2-bibliography`; ready #71/#72 remain in A2. Do not begin A3 yet.
+- #33 includes canonical allocation/admission records, durable retained revisions, migrations,
+  transactional rebuild/query snapshots, and offline tests/benchmark tooling. Local system
+  SQLite migration smoke and four Python collector tests passed; Rust has **not** compiled or
+  passed because required crates are missing. The real O28 500k-Work/3M-edge benchmark has not
+  run. G4 must use genuine K2 deposited records through the store's allocate/admit APIs in an
+  isolated root, avoiding a dependency on Phase B's #40 ingest. Do not force WorkId/PaperId
+  bindings into the K2 truth schema or fabricate PDF copies. Real G4 remains unavailable.
+- **Registry permission pending:** normal and escalated Cargo fetching reached a runtime denial
+  for `index.crates.io`; offline resolution lacks `fallible-iterator`. A narrow validated script
+  is prepared at `~/.config/lysilogy/apply-codex-rust-registry-permissions.py` to add only
+  `index.crates.io` and `static.crates.io` to the selected Codex profile. Automatic approval
+  review rejected executing it because these persistent network grants need exact user
+  authorization. Root explained that rejection and asked asynchronously; no answer has arrived,
+  and the config has not changed. Do not bypass the rejected grants with mirrors or indirect
+  execution. Continue independent work while awaiting that approval. If granted, retry the
+  narrow script automatically; if the config mount remains read-only, provide its normal-terminal
+  command. Save a fresh checkpoint before any daemon restart, which will interrupt tool jobs.
+- **Corpus:** root exec session **9593** remains live. Full metadata harvest completed with
+  **514,249** distinct records. Frozen selection has **1,000 eval**, **10,000 scale**, and
+  **10,951 unique papers**; selection SHA-256
+  `196b6f49520e10f0e33ef306313ec0908f9cb23ad9cca680184c059484ad71e8`.
+  Disk preflight passed: 146,379,161,600 free bytes, 54,320,431,104 projected additional bytes,
+  21,474,836,480-byte floor. At 07:14:38 UTC there were no PDFs/sources yet; GCS inventory was
+  building. Metadata selection completed without an observed process failure; actual peak RSS
+  will be available from the retained `/usr/bin/time -v` receipt on exit. Log remains
+  `~/.cache/lysilogy/arxiv-corpus-proxy.log`. Poll session 9593 before concluding it stopped;
+  never duplicate a live build. Resume from main with the documented `--proxy-env HTTPS_PROXY`
+  run command only after a confirmed exit/restart. K0 is not yet downloaded/verified.
+- Scorecard remains **1/5 gates (G5)** and **1/30 objectives (O30 = 0/10k)**. The earlier
+  O25/O26 measurements remain historical baselines and measured misses with open follow-ups
+  #21/#22; no old source fingerprints were re-attested after adding the parser. No new follow-up
+  issues were opened in this checkpoint. All ten unrelated main-checkout preview changes were
+  rechecked byte-for-byte against `/tmp/lysilogy-preview-before.json` and remain untouched.
