@@ -226,6 +226,7 @@ class Renderer:
         self.unsupported = Counter()
         self.definitions = []
         self.definition_counts = Counter()
+        self.budget = [limits.expansion_steps, limits.text_bytes]
         for match in COMMAND.finditer(text):
             if match[1].rstrip("*") not in ("newcommand", "renewcommand", "providecommand"):
                 continue
@@ -257,7 +258,7 @@ class Renderer:
         if depth > 24:
             raise UnsupportedSource("macro expansion recursion exceeds its bound")
         if budget is None:
-            budget = [self.limits.expansion_steps, self.limits.text_bytes]
+            budget = self.budget
         output, at = [], 0
         text = comments(text)
         text = mask_regions(text, definition_regions(text))

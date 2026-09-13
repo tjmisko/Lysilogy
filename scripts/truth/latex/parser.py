@@ -191,11 +191,26 @@ def parse_project(files, limits=Limits(), selected_main=None):
 
     structural = CITES | REFS | {"begin", "end", "label", "caption", "bibitem", "input", "include", "bibliography", "newtheorem"}
 
-    def structural_macro(name, seen=frozenset()):
-        if name not in renderer.macros or name in seen:
-            return False
-        commands = {item[1].rstrip("*") for item in COMMAND.finditer(renderer.macros[name][1])}
-        return bool(commands & structural) or any(structural_macro(child, seen | {name}) for child in commands)
+    macro_structure = {}
+
+    def structural_macro(name):
+        if name in macro_structure:
+            return macro_structure[name]
+        pending, seen = [name], set()
+        while pending:
+            current = pending.pop()
+            if current not in renderer.macros or current in seen:
+                continue
+            seen.add(current)
+            if len(seen) > limits.expansion_steps:
+                raise UnsupportedSource("macro dependency closure exceeds its bound")
+            commands = {item[1].rstrip("*") for item in COMMAND.finditer(renderer.macros[current][1])}
+            if commands & structural:
+                macro_structure[name] = True
+                return True
+            pending.extend(commands - seen)
+        macro_structure[name] = False
+        return False
 
     for command in COMMAND.finditer(scan):
         name = command[1].rstrip("*")

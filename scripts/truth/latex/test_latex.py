@@ -163,6 +163,11 @@ See \ref{fig:a} and \eqref{eq:a}; evidence \cite{source}.
         self.assertEqual(rows[0]["labels"], ["thm:a"])
         self.assertEqual(rows[1]["labels"], ["eq:a"])
 
+    def test_should_bound_total_rendering_when_many_objects_repeat_one_macro(self):
+        source = document(r"\begin{theorem}\term\end{theorem}" * 6, r"\newcommand{\term}{" + "a" * 500 + "}")
+        with self.assertRaisesRegex(UnsupportedSource, "aggregate byte bound"):
+            parse_project({"main.tex": source}, Limits(text_bytes=1200))
+
 
 if __name__ == "__main__":
     unittest.main()
