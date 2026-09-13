@@ -30,6 +30,23 @@ rehashed and reused, including after a crash between artifact publication and ma
 The tool reports and preserves an existing file that fails verification; it does not replace
 local modifications. Use a fresh corpus root or inspect the reported file before continuing.
 
+In a managed environment that requires its configured HTTPS proxy, opt in explicitly:
+
+```sh
+python3 scripts/corpus/corpus.py --proxy-env HTTPS_PROXY run
+```
+
+`--proxy-env` accepts `HTTPS_PROXY` or `https_proxy` and reads only that selected variable from
+the process environment. It never reads an environment file. The value must be an HTTP(S) proxy
+URL; missing or malformed configuration fails instead of choosing another proxy. Ambient
+proxies remain disabled unless this option is present. Python's standard `NO_PROXY` exclusions
+still apply. Put credentials in the approved process environment, never the command line; proxy
+values are not logged or saved in corpus metadata, and transport errors redact them.
+
+The proxy only changes transport for the same three approved HTTPS destinations. TLS
+verification, redirect refusal, shared arXiv pacing and disk safeguards are unchanged. This
+option does not bypass the execution environment's host allowlist or grant network permission.
+
 The script refuses a root inside the repository, `local-articles`, `.lysilogy`, or `/tmp`. It does
 not copy content into the user's vault. Mapping always uses an independent library and data root:
 
@@ -106,7 +123,8 @@ this budget; running unrelated harvesters simultaneously would not be covered by
 sleeping or returning a final retry failure. A fresh process therefore preserves server
 cooldowns after an interrupted sleep or exhausted retries.
 Public GCS HTTPS listing and downloads are serial and require no requester-pays credentials.
-Environment proxies are disabled and redirects fail closed pending endpoint review.
+Environment proxies are disabled by default; the explicit `--proxy-env` option above supports
+approved managed transports. Redirects fail closed pending endpoint review.
 
 Most papers retain their authors' copyright and arXiv's default license does not grant
 redistribution. This corpus is for local research. Commit only IDs, derived labels and metrics;
@@ -114,17 +132,17 @@ link readers to each paper's arXiv abstract/download page. Never commit PDFs or 
 
 ## Current verification boundary
 
-The 41 offline tests cover deterministic strata, OAI paging/refresh/deletion/token expiry and
+The 49 offline tests cover deterministic strata, OAI paging/refresh/deletion/token expiry and
 midnight boundaries, pinned GCS versions, file integrity/resume, truncated and HTML payload
 rejection, request pacing and cooldown persistence, free-space failures, unsafe roots,
-symlinks and a full fixture download/verify/resume cycle.
+symlinks, explicit proxy selection and redaction, and a full fixture download/verify/resume cycle.
 `verify` validates the frozen selection against the configured fingerprint, every manifest
 paper against that selection, artifact paths and URLs against the pinned paper version, and
 PDF bytes against the pinned GCS MD5/size as well as their local SHA-256 receipt. Extra manifest
 papers and modified provenance fail verification even when local artifact hashes still match.
 
-Selection currently loads the harvested bibliographic records into memory. Peak RSS remains
-unmeasured because the live build is blocked. The next optimization, if measurement warrants
+Selection currently loads the harvested bibliographic records into memory. Selection's peak RSS
+remains unmeasured because no live harvest has reached that stage. The next optimization, if measurement warrants
 it, is to stream compact SQLite ID/category/year candidates through bounded per-stratum heaps
 and then load full metadata only for selected IDs.
 
@@ -132,3 +150,8 @@ Live K0 counts and corpus-dependent scorecard measurements remain unavailable un
 completes. In the 2026-09-12 implementation environment, `/home/tjmisko/Corpora` could not be
 created because its filesystem was read-only; an escalated read-only OAI probe was also blocked
 by the runtime domain allowlist. No download was started or moved into an alternate location.
+
+After storage permission was repaired, the first live attempt failed direct DNS resolution
+before committing any metadata (93.08 seconds; peak RSS 30,096 KiB). A root-agent proxy probe
+then hit the tool's active host allowlist, a separate environment boundary. The proxy option
+addresses transport compatibility; no live metadata or download success is claimed by that fix.
