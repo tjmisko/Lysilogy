@@ -43,9 +43,9 @@ System acceptance requires 5/5 gates and at least 24/30 objectives; use `eval al
 | O22.fabricated | AI list fabricated works | lists | — | — | ≤ 0.05 | fraction | unavailable |
 | O23 | AI list relevance panel mean | lists | — | — | ≥ 4 | rating / 5 | unavailable |
 | O24 | Read-next recall at 10 | read-next | — | — | ≥ 0.3 | fraction | unavailable |
-| O25 | No-change rescan at 10k papers | scale | — | — | ≤ 2 | s | unavailable |
-| O26.render | Home first render at 10k papers | scale | — | — | ≤ 500 | ms | unavailable |
-| O26.search | Search p95 at 10k papers | scale | — | — | ≤ 150 | ms | unavailable |
+| O25 | No-change rescan at 10k papers | scale | 15.503406 | 15.503406 | ≤ 2 | s | below target |
+| O26.render | Home first render at 10k papers | scale | 1757.1 | 1757.1 | ≤ 500 | ms | below target |
+| O26.search | Search p95 at 10k papers | scale | 163.4 | 163.4 | ≤ 150 | ms | below target |
 | O27 | Extraction parallel efficiency at four workers | scale | — | — | ≥ 0.7 | fraction | unavailable |
 | O28 | Two-hop query p95 at 500k Works and 3M edges | scale | — | — | ≤ 150 | ms | unavailable |
 | O29 | Graph frame rate at 500 nodes | scale | — | — | ≥ 30 | fps | unavailable |
@@ -64,9 +64,9 @@ System acceptance requires 5/5 gates and at least 24/30 objectives; use `eval al
 
 Measurements are calculated from `eval/inputs/<suite>/<collector>.json` or the legacy suite file with content-verified implementation, truth-set, and observation files. G5 executes isolated tests. Results retain truth versions, source hashes, commit, case counts, cost, wall time, and the pre-run baseline. Missing cost is unknown.
 
-- **O25:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
-- **O26.render:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
-- **O26.search:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
+- **O25:** 10000 cases; synthetic synthetic-benchmark-v1 (`3a7e0c882293ff7e6db97be4b96155b7a89fff21a5ed3fe57769d31c8dbea7b4`)
+- **O26.render:** 10000 cases; synthetic synthetic-benchmark-v1 (`3a7e0c882293ff7e6db97be4b96155b7a89fff21a5ed3fe57769d31c8dbea7b4`)
+- **O26.search:** 10000 cases; synthetic synthetic-benchmark-v1 (`3a7e0c882293ff7e6db97be4b96155b7a89fff21a5ed3fe57769d31c8dbea7b4`)
 - **O27:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
 - **O28:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
 - **O29:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
