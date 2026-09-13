@@ -167,20 +167,7 @@ fn decode_latex(title: &str) -> String {
     let mut semantic_group = false;
     let mut groups = Vec::new();
     while let Some(character) = characters.next() {
-        if let Some((kind, digit)) = script_digit(character) {
-            output.push(kind);
-            output.push('{');
-            output.push(digit);
-            while let Some((next_kind, next_digit)) =
-                characters.peek().copied().and_then(script_digit)
-            {
-                if next_kind != kind {
-                    break;
-                }
-                characters.next();
-                output.push(next_digit);
-            }
-            output.push('}');
+        if emit_script_characters(character, &mut characters, &mut output) {
             presentation_group = false;
             continue;
         }
@@ -315,8 +302,26 @@ fn skip_whitespace(characters: &mut Peekable<Chars<'_>>) -> bool {
 
 fn retain_group(characters: &mut Peekable<Chars<'_>>, output: &mut String) {
     let mut depth = 0;
-    for character in characters.by_ref() {
-        output.push(character);
+    let mut escaped = false;
+    while let Some(character) = characters.next() {
+        if escaped {
+            output.push(character);
+            escaped = false;
+            continue;
+        }
+        if character == '\\' {
+            output.push(character);
+            escaped = true;
+            continue;
+        }
+        if emit_script_characters(character, characters, output) {
+            continue;
+        }
+        if matches!(character, '^' | '_') {
+            retain_script_atom(character, characters, output);
+            continue;
+        }
+        output.push(if character == '-' { '−' } else { character });
         match character {
             '{' => depth += 1,
             '}' => {
@@ -328,6 +333,53 @@ fn retain_group(characters: &mut Peekable<Chars<'_>>, output: &mut String) {
             _ => {}
         }
     }
+}
+
+fn retain_script_atom(kind: char, characters: &mut Peekable<Chars<'_>>, output: &mut String) {
+    output.push(kind);
+    skip_whitespace(characters);
+    if characters.peek() == Some(&'{') {
+        return;
+    }
+    output.push('{');
+    if let Some(atom) = characters.next() {
+        output.push(if atom == '-' { '−' } else { atom });
+        if atom == '\\' {
+            if let Some(next) = characters.next() {
+                output.push(next);
+                if next.is_ascii_alphabetic() {
+                    while characters.peek().is_some_and(char::is_ascii_alphabetic) {
+                        if let Some(letter) = characters.next() {
+                            output.push(letter);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    output.push('}');
+}
+
+fn emit_script_characters(
+    character: char,
+    characters: &mut Peekable<Chars<'_>>,
+    output: &mut String,
+) -> bool {
+    let Some((kind, base)) = script_character(character) else {
+        return false;
+    };
+    output.push(kind);
+    output.push('{');
+    output.push(base);
+    while let Some((next_kind, next_base)) = characters.peek().copied().and_then(script_character) {
+        if next_kind != kind {
+            break;
+        }
+        characters.next();
+        output.push(next_base);
+    }
+    output.push('}');
+    true
 }
 
 fn command_text(command: &str) -> Option<&'static str> {
@@ -416,30 +468,51 @@ fn command_text(command: &str) -> Option<&'static str> {
     })
 }
 
-const fn script_digit(character: char) -> Option<(char, char)> {
-    Some(match character {
-        '⁰' => ('^', '0'),
-        '¹' => ('^', '1'),
-        '²' => ('^', '2'),
-        '³' => ('^', '3'),
-        '⁴' => ('^', '4'),
-        '⁵' => ('^', '5'),
-        '⁶' => ('^', '6'),
-        '⁷' => ('^', '7'),
-        '⁸' => ('^', '8'),
-        '⁹' => ('^', '9'),
-        '₀' => ('_', '0'),
-        '₁' => ('_', '1'),
-        '₂' => ('_', '2'),
-        '₃' => ('_', '3'),
-        '₄' => ('_', '4'),
-        '₅' => ('_', '5'),
-        '₆' => ('_', '6'),
-        '₇' => ('_', '7'),
-        '₈' => ('_', '8'),
-        '₉' => ('_', '9'),
+// Binding classes: Unicode 16.0 single-character <super>/<sub> records plus
+// Unicode 17.0 U+A7F1 (https://unicode.org/charts/nameslist/n_A720.html#A7F1).
+// An exhaustive NFKD comparison against the actual v17 crate found only this
+// one added mapping. Base characters come from UnicodeNormalization.
+// Keep the binding before NFKD, which otherwise flattens xⁿ into xn.
+fn script_character(character: char) -> Option<(char, char)> {
+    let kind = match character {
+        '\u{aa}'
+        | '\u{b2}'..='\u{b3}'
+        | '\u{b9}'..='\u{ba}'
+        | '\u{2b0}'..='\u{2b8}'
+        | '\u{2e0}'..='\u{2e4}'
+        | '\u{10fc}'
+        | '\u{1d2c}'..='\u{1d2e}'
+        | '\u{1d30}'..='\u{1d3a}'
+        | '\u{1d3c}'..='\u{1d4d}'
+        | '\u{1d4f}'..='\u{1d61}'
+        | '\u{1d78}'
+        | '\u{1d9b}'..='\u{1dbf}'
+        | '\u{2070}'..='\u{2071}'
+        | '\u{2074}'..='\u{207f}'
+        | '\u{2c7d}'
+        | '\u{2d6f}'
+        | '\u{3192}'..='\u{319f}'
+        | '\u{a69c}'..='\u{a69d}'
+        | '\u{a770}'
+        | '\u{a7f1}'..='\u{a7f4}'
+        | '\u{a7f8}'..='\u{a7f9}'
+        | '\u{ab5c}'..='\u{ab5f}'
+        | '\u{ab69}'
+        | '\u{10781}'..='\u{10785}'
+        | '\u{10787}'..='\u{107b0}'
+        | '\u{107b2}'..='\u{107ba}'
+        | '\u{1e030}'..='\u{1e050}'
+        | '\u{1e06b}'..='\u{1e06d}' => '^',
+        '\u{1d62}'..='\u{1d6a}'
+        | '\u{2080}'..='\u{208e}'
+        | '\u{2090}'..='\u{209c}'
+        | '\u{2c7c}'
+        | '\u{1e051}'..='\u{1e06a}' => '_',
         _ => return None,
-    })
+    };
+    let source = character.to_string();
+    let base = source.nfkd().next()?;
+    Some((kind, base))
 }
 
 #[cfg(test)]
@@ -481,6 +554,15 @@ mod tests {
             (r"$x_{23}$ methods", "x₂₃ methods"),
             (r"$x^2$ methods", "x² methods"),
             (r"$x_2$ methods", "x₂ methods"),
+            (r"$x^n$ methods", "xⁿ methods"),
+            (r"$x_i$ methods", "xᵢ methods"),
+            (r"$x^{n+1}$ methods", "xⁿ⁺¹ methods"),
+            (r"$x^{-1}$ methods", "x⁻¹ methods"),
+            (r"$x_{n-1}$ methods", "xₙ₋₁ methods"),
+            (r"$x^{ab}$ methods", "xᵃᵇ methods"),
+            (r"$x^S$ methods", "x꟱ methods"),
+            (r"$\frac{x^2}{y}$", r"$\frac{x²}{y}$"),
+            (r"$\frac{x^{n+1}}{y}$", r"$\frac{xⁿ⁺¹}{y}$"),
             (r"\alpha Learning", "α Learning"),
             (r"\v S Models", "Š Models"),
             (r"$\textbf{{Deep}}$ Learning", "Deep Learning"),
@@ -528,8 +610,19 @@ mod tests {
             (r"\unknown{Learning}", r"\Unknown{Learning}"),
             (r"\frac{a}{b}", "ab"),
             (r"$\frac{a}{bc}$", r"$\frac{ab}{c}$"),
+            (r"$\frac{x-y}{z}$", r"$\frac{x y}{z}$"),
+            (r"$\frac{x²}{y}$", r"$\frac{x2}{y}$"),
+            (r"$\frac{xⁿ}{y}$", r"$\frac{xn}{y}$"),
+            (r"$\frac{xᵢ}{y}$", r"$\frac{xi}{y}$"),
+            (r"\custom{x-y}", r"\custom{x y}"),
+            (r"\custom{a\}b}{c}", r"\custom{a\}bc}"),
+            (r"\custom{a\{b}{c}", r"\custom{a\{bc}"),
             (r"$x^{ab}$", r"$x^a b$"),
             (r"$x^{23}$", r"$x^23$"),
+            ("xⁿ", "xn"),
+            ("xᵢ", "xi"),
+            ("x⁻¹", "x¹"),
+            ("x꟱", "xS"),
         ];
         for (left, right) in pairs {
             assert_ne!(
@@ -621,6 +714,12 @@ mod tests {
         assert_eq!(title_similarity(&long, "α").to_bits(), 0.0_f64.to_bits());
         let boundary = "α".repeat(MAX_FUZZY_TITLE_CHARS);
         assert!(title_similarity(&boundary, &("α".repeat(MAX_FUZZY_TITLE_CHARS - 1) + "β")) > 0.99);
+    }
+
+    #[test]
+    fn should_require_binding_table_review_when_the_normalization_unicode_version_changes() {
+        assert_eq!(unicode_normalization::UNICODE_VERSION, (17, 0, 0));
+        assert_eq!(super::script_character('꟱'), Some(('^', 'S')));
     }
 
     #[test]
