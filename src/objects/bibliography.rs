@@ -371,11 +371,15 @@ fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block
             })
             .collect::<Vec<_>>();
         if labels.is_empty()
-            && let Some(previous) = entries.last_mut().filter(|entry| entry.key.is_some())
+            && let Some(previous) = entries.last_mut().filter(|entry| {
+                entry.key.is_some() && !starts_mixed_unnumbered_entry(source, entry, text)
+            })
         {
             // A printed key governs its complete entry until another printed
             // key begins. A wrapped author list followed by its year is not an
             // independent unnumbered entry inside a numbered bibliography.
+            // An explicit new surname/initial/year after an already complete
+            // keyed entry can establish a mixed-convention entry instead.
             previous.spans.push(block.span);
             continue;
         }
@@ -429,14 +433,31 @@ fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block
     entries
 }
 
-fn object(source: &Source<'_>, entry: Entry, at: usize) -> PaperObject {
-    let raw = entry
+fn entry_text(source: &Source<'_>, entry: &Entry) -> String {
+    entry
         .spans
         .iter()
         .filter_map(|span| source.text(*span))
         .map(str::trim)
         .collect::<Vec<_>>()
-        .join("\n");
+        .join("\n")
+}
+
+fn starts_mixed_unnumbered_entry(source: &Source<'_>, previous: &Entry, text: &str) -> bool {
+    let Some((author_end, _)) = author_year_prefix(text) else {
+        return false;
+    };
+    // Mixed conventions require an explicit surname/initial form. A venue
+    // followed by its year or a wrapped author list is insufficient evidence.
+    if !pattern!(r"^[\p{L}\p{M}'’\- ]+,\s+(?:\p{Lu}\.)").is_match(&text[..author_end]) {
+        return false;
+    }
+    let fields = parse_fields(&entry_text(source, previous), previous.key.clone());
+    fields.authors.value.is_some() && fields.year.value.is_some() && fields.title.value.is_some()
+}
+
+fn object(source: &Source<'_>, entry: Entry, at: usize) -> PaperObject {
+    let raw = entry_text(source, &entry);
     let anchor = source.anchor(TextRange {
         start: entry.spans[0].start,
         end: entry.spans.last().expect("entry member").end,
@@ -1944,5 +1965,26 @@ mod tests {
             assert_eq!(fields.title.value.as_deref(), Some(title), "{raw}");
             assert_eq!(fields.venue.value.as_deref(), venue, "{raw}");
         }
+    }
+    #[test]
+    fn should_retain_mixed_author_year_entries_when_an_explicit_author_follows_a_complete_numbered_entry()
+     {
+        let index = fixture(&[
+            ("See [1] and Other (2021).", "body", 1),
+            ("References", "heading", 2),
+            ("[1] Example, A. (2020). Complete title.", "body", 2),
+            ("Journal of Results, 2020, 12–18.", "body", 2),
+            ("Other, B. (2021). Independent author-year work.", "body", 2),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 2);
+        assert_eq!(result.entries[0].member_anchors.len(), 2);
+        assert!(result.entries[0].text.contains("Journal of Results"));
+        assert_eq!(fields(&result.entries[1]).printed_key.value, None);
+        assert_eq!(
+            fields(&result.entries[1]).authors.value,
+            Some(vec!["Other, B.".to_owned()])
+        );
+        assert!(result.entries.iter().all(|entry| entry.mentions.len() == 1));
     }
 }
