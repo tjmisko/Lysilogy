@@ -116,7 +116,7 @@ pass.
   Owns `src/kb/mod.rs`, `src/kb/types.rs`, and the `pub mod kb;` line in `src/lib.rs`.
   Reuse or extend `citation_graph::Identifier` rather than duplicating identifier parsing. Merge
   this first: it is small and it creates the `src/kb/` module that A2 branches extend.
-- [ ] **#24 E1.1 PaperObject types and objects artifact**. Branch `feat/e1.1-paper-objects`.
+- [x] **#24 E1.1 PaperObject types and objects artifact**. Branch `feat/e1.1-paper-objects`.
   Owns `src/objects/mod.rs`, `src/api/objects.rs`, `web/src/lib/objects.ts`.
   `Figure` currently lives in `src/source_index.rs` inside the cached `reading-index.json`
   (schema version 6). Wrap it; do not move figure detection or bump the reading-index schema
@@ -182,6 +182,14 @@ pass.
 
 ### Phase A notes
 
+- #24 merged in PR #77 (`86e7c75`). `objects::ObjectsDocument` wraps the existing schema-6
+  figures/tables and uses the reading-index document ETag as `reading_index_generation`.
+  `ObjectAnchor` holds half-open UTF-16 ranges; caption anchors and membership spans remain
+  separate, and mentions retain source rectangles. `GET /api/papers/{id}/objects` shares existing
+  index jobs; `objects-enrichment.json` is reserved separately. The existing `test:api` frontend
+  entry point includes object client tests. No detector or reading-index schema changed; O1/O2
+  remain unavailable until K1. Independent review cleared final head `742426b`; 200 Rust tests,
+  frontend checks/build, and targeted tests passed. Branch/worktree removed after merge.
 - #34 merged first in PR #74 (`4ff924b`). `WorkId`/`PersonId` are validated opaque W/P tokens;
   the store must allocate once and preserve allocations in canonical records. `AliasMap<I>` is a
   cycle-safe projection with `merge(absorbed, surviving)`, `resolve`, and `links`; persistence and
@@ -428,3 +436,20 @@ date, last merged issue, in-flight branches and their state, next action, and op
   repository, library, data root, or `/tmp`.
 - Next action: finish/fix/review #68/#69/#24, merge when their gates and reviews pass, then
   implement #20, #63, and #19 in A1. No follow-up issues or measured objective misses yet.
+
+### 2026-09-12 — paper-object foundation merged
+
+- Last merged issue: #24 / PR #77 (`86e7c75`); #34 is also merged. Current phase/wave A/A1.
+- In flight: #69 draft PR #75, head `780313e`, has fixes for all three review findings and
+  41 passing Python tests; independent re-review is running. Its worktree remains
+  `.worktrees/feat/e8.2-arxiv-corpus` until merge/cleanup. #68 draft PR #76 is fixing the ratchet
+  guard so committing a weakened baseline cannot bypass checks; root fixed G5 discovery in
+  `07f80fd` with three subprocess regressions, now being tested by the implementer.
+- #63 is implementing in `.worktrees/feat/e7.1-provider-cache`, branch of the same name;
+  it must measure O30 on a simulated 10k-reference batch and provide an eval collector. Next
+  implementation is #20 content-hash identity, followed by #19 scale benchmark tooling.
+- Scorecard remains provisional G5 pass, all other gates/objectives unavailable. No measured
+  objective misses or follow-up issues. Background downloads: none; designated writable roots
+  and arXiv network access remain blocked, with the sandbox-update question pending.
+- Main's ten unrelated changed files remain untouched. Continue normal merges from main in
+  place of the approval-review-rejected rebase; do not advance beyond A1 yet.
