@@ -103,3 +103,9 @@ of five hard gates passing and one of 30 objectives at target; unavailable metri
 [compact observations](../../eval/evidence/object-metrics-observations.json) retain every match,
 miss and IoU. #101 is the required measured detector follow-up. No score target, hard gate,
 source truth, or final system acceptance requirement changed.
+
+Final integration checkpoint `32b7341b0a6db16a36ec342d273e96492fa7033e` includes main `fd024fc` and the corrected
+region diagnosis. All 77 measurement implementation hashes are unchanged. Fresh formatting,
+strict Clippy, all Rust/Python gates, objects/scale checks and G5 pass; G5 again ran
+320 Rust / 278 Python / 85 Node tests. The original measurement was not repeated or replaced.
+See [the separate integration receipt](../../eval/evidence/object-metrics-integration.json).
