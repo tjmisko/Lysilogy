@@ -251,3 +251,25 @@ class ReferenceTruthTests(unittest.TestCase):
         for path in (Path.cwd() / "raw", Path("/tmp/truth-raw"), Path.home() / ".cache/lysilogy/../../../tmp/truth-raw"):
             with self.assertRaisesRegex(truth.TruthError, "dedicated directory"):
                 freeze.external_root(path)
+
+    def should_reject_swapped_valid_descriptors_when_a_frozen_request_reuses_another_lookup(self):
+        with tempfile.TemporaryDirectory(prefix="truth-swapped-request-fixture-") as directory:
+            root = Path(directory)
+            descriptors = []
+            for identifier in ("10.1234/a", "10.1234/b"):
+                source = snapshot("crossref", {"message": {"DOI": identifier, "reference": []}})
+                response = {**source["receipt"], "body": truth.canonical(source["payload"]), "cache_hit": False,
+                            "wall_seconds": 0.01, "model_calls": 0, "model_cost_usd": 0, "provider_cost_usd": None}
+                descriptors.append(freeze.freeze_request(root, {"provider": "crossref", "dois": [identifier]}, lambda _: response))
+            request = {"provider": "crossref", "dois": ["10.1234/a"]}
+            path = root / "requests" / (truth.fingerprint(request) + ".json")
+            manifest = truth.read_json(path)
+            manifest["snapshots"] = [descriptors[1]]
+            path.write_text(truth.canonical(manifest))
+            with self.assertRaisesRegex(truth.TruthError, "does not belong"):
+                freeze.freeze_request(root, request, lambda _: self.fail("must not fetch"))
+            for snapshots in ([], descriptors):
+                manifest["snapshots"] = snapshots
+                path.write_text(truth.canonical(manifest))
+                with self.assertRaisesRegex(truth.TruthError, "exactly one"):
+                    freeze.freeze_request(root, request, lambda _: self.fail("must not fetch"))

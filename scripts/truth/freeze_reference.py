@@ -31,7 +31,12 @@ def freeze_request(root, request, fetch):
         manifest = read_json(request_path)
         if manifest.get("request") != request:
             raise TruthError("Frozen request fingerprint mismatch")
-        load_snapshots(root, manifest)
+        if not isinstance(manifest.get("snapshots"), list) or len(manifest["snapshots"]) != 1:
+            raise TruthError("A frozen request must identify exactly one response snapshot")
+        loaded = load_snapshots(root, manifest)
+        receipt = loaded[0]["receipt"]
+        if receipt["provider"] != request["provider"] or receipt["requested_dois"] != request["dois"]:
+            raise TruthError("Frozen response does not belong to the requested DOI lookup")
         return manifest["snapshots"][0]
     response = fetch(request)
     raw, missing = validate_response(request, response)
