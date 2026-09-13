@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import { readFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { backendObjects, fixtureGeneration } from './backend-objects-fixture.mjs';
 
-// Synthetic PDFs and source indices only; no library or backend access.
+// Synthetic PDF/index with the production Rust object builder; no user library.
 const blocks = [
   ['Compare [1, 2] with Smith (2020).', 'body', 1],
   ['Figs. 1-3 and Table IV summarize the results.', 'body', 1],
@@ -41,16 +42,23 @@ for (let number = 1; number <= 4; number++) {
   const tokens = index.tokens.filter(token => token.page === number);
   index.pages.push({number,start:tokens[0].start,end:tokens.at(-1).end,width:612,height:792,provenance:'native',confidence:null});
 }
+const bibliography = backendObjects(index);
+assert.equal(bibliography.objects.filter(object => object.kind === 'bib_entry').length, 3);
 const escapePdf = text => text.replaceAll('\\', '\\\\').replaceAll('(', '\\(').replaceAll(')', '\\)');
 const objects = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R] /Count 4 >>', '<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>'];
 for (let number = 1; number <= 4; number++) {
   const content = runs.filter(run => run.page === number).map(run => `BT /F1 10 Tf 1 0 0 1 48 ${792-run.y} Tm (${escapePdf(run.text)}) Tj ET`).join('\n');
-  objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${objects.length+2} 0 R ${number === 1 ? '/Annots [12 0 R 13 0 R]' : ''} >>`);
+  objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${objects.length+2} 0 R ${number === 1 ? '/Annots [12 0 R 13 0 R 14 0 R 15 0 R]' : ''} >>`);
   objects.push(`<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`);
 }
 const nativeRun = runs.find(run => run.text === 'Publisher link'), externalRun = runs.find(run => run.text === 'Online appendix');
 objects.push(`<< /Type /Annot /Subtype /Link /Rect [48 ${792-nativeRun.y-2} 132 ${792-nativeRun.y+8}] /Dest [10 0 R /XYZ 48 600 null] /Border [0 0 0] >>`);
 objects.push(`<< /Type /Annot /Subtype /Link /Rect [48 ${792-externalRun.y-2} 138 ${792-externalRun.y+8}] /A << /S /URI /URI (https://example.org/appendix) >> /Border [0 0 0] >>`);
+const singleRun = runs.find(run => run.text.startsWith('More evidence'));
+const singleStart = 48 + singleRun.text.indexOf('[1]') * 6;
+objects.push(`<< /Type /Annot /Subtype /Link /Rect [${singleStart} ${792-singleRun.y-2} ${singleStart+18} ${792-singleRun.y+8}] /Dest [8 0 R /XYZ 48 600 null] /Border [0 0 0] >>`);
+const groupRun = runs[0], groupStart = 48 + groupRun.text.indexOf('[1, 2]') * 6;
+objects.push(`<< /Type /Annot /Subtype /Link /Rect [${groupStart} ${792-groupRun.y-2} ${groupStart+36} ${792-groupRun.y+8}] /Dest [6 0 R /XYZ 48 600 null] /Border [0 0 0] >>`);
 let pdf = '%PDF-1.4\n'; const offsets = [0];
 objects.forEach((object, at) => {offsets.push(Buffer.byteLength(pdf));pdf += `${at+1} 0 obj\n${object}\nendobj\n`;});
 const xref = Buffer.byteLength(pdf);
@@ -66,7 +74,8 @@ const section = {id:'mechanism',title:'Mechanism and supporting displays',kind:'
   source_span:{start:anchor(layout.pages[0].sentences[1]),end:anchor(layout.pages[0].sentences[2])},key_quotes:[],related_terms:[],tile_width:1,tile_height:1};
 const analysis = {schema_version:5,provider:'heuristic',generated_at:'2026-09-12T12:00:00Z',thesis:'A synthetic paper.',outsider_brief:'A synthetic fixture.',author_abstract:null,context_notes:[],context_sources:[],prerequisites:[],sections:[section],claims:[],glossary:[],caveats:[],reading_path:['mechanism']};
 const root = path.resolve('dist');
-let failIndex = false, gate = null, indexRequests = 0, analyzed = false;
+const artifactRoot = path.resolve('../target/smoke/link-hints');
+let failIndex = false, failObjects = false, staleObjects = false, gate = null, objectGate = null, indexRequests = 0, objectRequests = 0, analyzed = false;
 const errors = [];
 const browser = await chromium.launch({headless:true});
 try {
@@ -84,7 +93,13 @@ try {
       indexRequests++;
       if (gate !== null) await gate.promise;
       if (failIndex) return route.fulfill({status:503,json:{message:'Synthetic extraction unavailable'}});
-      return route.fulfill({json:index});
+      return route.fulfill({json:index, headers:{etag:fixtureGeneration}});
+    }
+    if (url.pathname.endsWith('/objects')) {
+      objectRequests++;
+      if (objectGate !== null) await objectGate.promise;
+      if (failObjects) return route.fulfill({status:503,json:{message:'Synthetic objects unavailable'}});
+      return route.fulfill({json:staleObjects?{...bibliography,reading_index_generation:'"other-generation"'}:bibliography});
     }
     if (url.pathname.endsWith('/reader-tools')) return route.fulfill({json:{references:[],supercuts:[],jobs:[]}});
     if (url.pathname.startsWith('/api/')) return route.fulfill({status:404,json:{message:'Unexpected fixture request'}});
@@ -103,8 +118,8 @@ try {
   assert.equal(await page.locator('.pdf-link-hint[data-link-kind="table"]').count(), 1);
   const boxes = await page.locator('.pdf-link-hint').evaluateAll(nodes => nodes.map(node => {const {left,top,right,bottom} = node.getBoundingClientRect();return {left,top,right,bottom};}));
   for (let i=0;i<boxes.length;i++) for(let j=i+1;j<boxes.length;j++) assert.ok(!(boxes[i].left<boxes[j].right&&boxes[j].left<boxes[i].right&&boxes[i].top<boxes[j].bottom&&boxes[j].top<boxes[i].bottom), 'Hint badges must not overlap');
-  await mkdir('/tmp/lysilogy-link-hints-artifacts', {recursive:true});
-  await page.screenshot({path:'/tmp/lysilogy-link-hints-artifacts/hints.png'});
+  await mkdir(artifactRoot, {recursive:true});
+  await page.screenshot({path:path.join(artifactRoot,'hints.png')});
 
   const first = page.locator('.pdf-link-hint[data-link-kind="reference"]').first();
   const code = await first.getAttribute('data-hint-code');
@@ -119,6 +134,14 @@ try {
   await follow(first); await ready(4);
   await page.locator('.pdf-link-destination').waitFor();
   assert.match(await page.locator('.pdf-link-destination').getAttribute('aria-label'), /Adams/);
+  await goBack();
+
+  // The group kept both bibliography destinations despite an overlapping native
+  // annotation. A single overlapping citation instead uses its native target.
+  await open();
+  await follow(page.locator('.pdf-link-hint[data-link-kind="reference"][title*="Page 3"]'));
+  await ready(3); await page.locator('.pdf-link-destination').waitFor();
+  assert.match(await page.locator('.pdf-link-destination').getAttribute('aria-label'), /Page 3/);
   await goBack();
 
   await open();
@@ -185,12 +208,33 @@ try {
   // A failed index still leaves embedded PDF links usable.
   failIndex = true;
   await page.reload(); await ready(1); await open();
-  assert.equal(await page.locator('.pdf-link-hint').count(),2);
+  assert.equal(await page.locator('.pdf-link-hint').count(),4);
   assert.match(await page.locator('.pdf-link-hint-status').textContent(), /Text links unavailable/);
   await page.keyboard.press('Escape');
   failIndex = false;
   await open(); assert.equal(await page.locator('.pdf-link-hint').count(),13);
   await page.keyboard.press('Escape');
+
+  for (const failure of ['unavailable', 'stale']) {
+    failObjects = failure === 'unavailable'; staleObjects = failure === 'stale';
+    await open();
+    assert.equal(await page.locator('.pdf-link-hint[data-link-kind="reference"]').count(),0, failure);
+    assert.equal(await page.locator('.pdf-link-hint[data-link-kind="figure"]').count(),4, failure);
+    assert.equal(await page.locator('.pdf-link-hint[data-link-kind="table"]').count(),1, failure);
+    assert.equal(await page.locator('.pdf-link-hint[data-link-kind="link"]').count(),4, failure);
+    assert.match(await page.locator('.pdf-link-hint-status').textContent(), /Reference links unavailable/);
+    await page.keyboard.press('Escape');
+    failObjects = false; staleObjects = false;
+    await open(); assert.equal(await page.locator('.pdf-link-hint').count(),13);
+    await page.keyboard.press('Escape');
+  }
+
+  objectGate = Promise.withResolvers();
+  await page.keyboard.press('f');
+  assert.match(await page.locator('.pdf-link-hint-status').textContent(), /Finding links/);
+  await page.keyboard.press('Escape'); objectGate.resolve(); objectGate = null;
+  await page.waitForTimeout(100);
+  assert.equal(await page.locator('.pdf-link-hints').count(),0, 'Cancelled object requests cannot reopen hints');
 
   gate = Promise.withResolvers();
   await page.reload(); await ready(1);
@@ -216,7 +260,7 @@ try {
   await open();
   assert.equal(await page.locator('.pdf-link-hint').count(),5);
   assert.equal(await page.locator('.pdf-link-hint[data-link-kind="reference"]').count(),0);
-  await page.screenshot({path:'/tmp/lysilogy-link-hints-artifacts/section-hints.png'});
+  await page.screenshot({path:path.join(artifactRoot,'section-hints.png')});
   await follow(page.locator('.pdf-link-hint[data-link-kind="table"]'));
   await ready(3); await page.locator('.pdf-link-destination').waitFor();
   assert.match(await page.locator('.pdf-link-destination').getAttribute('aria-label'), /Table IV/);
@@ -224,5 +268,5 @@ try {
   await goBack();
   await open(); assert.equal(await page.locator('.pdf-link-hint').count(),13);
   assert.deepEqual(errors,[]);
-  console.log(`Link hints smoke passed: paper conventions, all destination types, hint filtering, crops, history, keyboard isolation and extraction recovery (${indexRequests} index requests).`);
+  console.log(`Link hints smoke passed: actual backend bibliography, grouped and native precedence, generation checks, failure recovery, crops, history and keyboard isolation (${indexRequests} index and ${objectRequests} object requests).`);
 } finally {await browser.close();}

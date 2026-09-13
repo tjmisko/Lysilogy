@@ -54,6 +54,83 @@ mod tests {
     use crate::{objects::OBJECTS_FILE, source_index::test_support::cache_fixture};
 
     #[tokio::test]
+    async fn should_serve_backend_citation_evidence_when_a_cached_index_has_a_bibliography() {
+        let library = tempfile::tempdir().unwrap();
+        let data = tempfile::tempdir().unwrap();
+        let source = library.path().join("bibliography.pdf");
+        tokio::fs::write(&source, b"cached source fixture")
+            .await
+            .unwrap();
+        let id = PaperId::from_relative_path(std::path::Path::new("bibliography.pdf"));
+        let state = AppState::new(library.path(), data.path()).await.unwrap();
+        let directory = state.store.paper_dir(&id);
+        cache_fixture(&source, &directory).await;
+        let path = directory.join("reading-index.json");
+        let mut cache: Value =
+            serde_json::from_slice(&tokio::fs::read(&path).await.unwrap()).unwrap();
+        let body = "😀 See [1].";
+        let heading = "References";
+        let entry = "[1] Smith, A. (2020). A title. doi:10.1000/ABC.";
+        let body_end = body.encode_utf16().count();
+        let heading_start = body_end + 2;
+        let heading_end = heading_start + heading.len();
+        let entry_start = heading_end + 2;
+        let end = entry_start + entry.len();
+        cache["index"] = json!({
+            "schema_version": crate::source_index::SCHEMA_VERSION,
+            "text": format!("{body}\n\n{heading}\n\n{entry}"), "figures": [], "gaps": [],
+            "pages": [{"number":1,"width":612,"height":792,"start":0,"end":end,"provenance":"native","confidence":null}],
+            "tokens": [{"start":7,"end":10,"text":"[1]","page":1,"provenance":"native",
+                "rects":[{"x_min":60,"x_max":78,"y_min":20,"y_max":30}]}],
+            "objects": {"word":[], "WORD":[], "sentence":[{"start":0,"end":body_end}], "paragraph":[
+                {"start":0,"end":body_end,"kind":"body"},
+                {"start":heading_start,"end":heading_end,"kind":"heading"},
+                {"start":entry_start,"end":end,"kind":"body"}]}
+        });
+        tokio::fs::write(&path, serde_json::to_vec(&cache).unwrap())
+            .await
+            .unwrap();
+        let app = crate::build_router(state, None);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/papers/{id}/objects"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let artifact: ObjectsArtifact =
+            serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes())
+                .unwrap();
+        assert_eq!(artifact.schema_version, crate::objects::SCHEMA_VERSION);
+        assert_eq!(artifact.objects.len(), 1);
+        let bib = &artifact.objects[0];
+        let crate::objects::PaperObjectKind::BibEntry { bibliography } = &bib.kind else {
+            panic!("expected bibliography")
+        };
+        assert_eq!(bibliography.doi.value.as_deref(), Some("10.1000/ABC"));
+        assert_eq!(bib.text, entry);
+        assert_eq!(
+            (bib.mentions[0].anchor.start, bib.mentions[0].anchor.end),
+            (7, 10)
+        );
+        assert_eq!(
+            bib.mentions[0].sentence_anchor.as_ref().unwrap().end,
+            body_end
+        );
+        let persisted: Value =
+            serde_json::from_slice(&tokio::fs::read(directory.join(OBJECTS_FILE)).await.unwrap())
+                .unwrap();
+        assert_eq!(
+            persisted["reading_index_generation"],
+            artifact.reading_index_generation
+        );
+        assert_eq!(persisted["objects"][0]["mentions"][0]["anchor"]["start"], 7);
+    }
+
+    #[tokio::test]
     async fn should_serve_objects_when_reading_index_is_cached_without_analysis() {
         let library = tempfile::tempdir().unwrap();
         let data = tempfile::tempdir().unwrap();

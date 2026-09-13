@@ -1,6 +1,8 @@
 //! Deterministic, paper-local objects derived from a particular reading index.
 //! Enrichment belongs in a separate artifact and never changes these source facts.
 
+pub mod bibliography;
+
 use std::{collections::BTreeSet, path::Path};
 
 use serde::{Deserialize, Serialize};
@@ -14,7 +16,7 @@ use crate::{
 
 pub const OBJECTS_FILE: &str = "objects.json";
 pub const ENRICHMENT_FILE: &str = "objects-enrichment.json";
-pub const SCHEMA_VERSION: u16 = 1;
+pub const SCHEMA_VERSION: u16 = 2;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ObjectsArtifact {
@@ -24,6 +26,8 @@ pub struct ObjectsArtifact {
     /// A rebuilt index has a new generation even when the PDF is unchanged.
     pub reading_index_generation: String,
     pub objects: Vec<PaperObject>,
+    /// Recognized citation keys that could not be assigned to exactly one entry.
+    pub unresolved_citations: Vec<bibliography::UnresolvedCitation>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -54,10 +58,16 @@ pub enum PaperObjectKind {
     Figure,
     Table,
     Equation,
-    Statement { statement_kind: StatementKind },
-    Proof { statement_id: Option<String> },
+    Statement {
+        statement_kind: StatementKind,
+    },
+    Proof {
+        statement_id: Option<String>,
+    },
     Algorithm,
-    BibEntry,
+    BibEntry {
+        bibliography: bibliography::BibliographicFields,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -84,8 +94,11 @@ pub struct ReadingIndexAnchor {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ObjectMention {
+    /// Exact printed occurrence; multiple mentions may share one sentence.
     pub anchor: ReadingIndexAnchor,
     pub rects: Vec<TextRect>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sentence_anchor: Option<ReadingIndexAnchor>,
 }
 
 impl ObjectsArtifact {
@@ -94,7 +107,7 @@ impl ObjectsArtifact {
     #[must_use]
     pub fn from_reading_index(paper_id: &PaperId, document: &IndexDocument) -> Self {
         let mut ids = BTreeSet::new();
-        let objects = document
+        let mut objects: Vec<_> = document
             .index
             .figures
             .iter()
@@ -109,11 +122,14 @@ impl ObjectsArtifact {
                 object
             })
             .collect();
+        let extracted = bibliography::extract(&document.index);
+        objects.extend(extracted.entries);
         Self {
             schema_version: SCHEMA_VERSION,
             paper_id: paper_id.clone(),
             reading_index_generation: document.etag.clone(),
             objects,
+            unresolved_citations: extracted.unresolved,
         }
     }
 }
@@ -169,6 +185,7 @@ impl PaperObject {
                         end: reference.end,
                     },
                     rects: reference.rects.clone(),
+                    sentence_anchor: None,
                 })
                 .collect(),
         }
@@ -380,7 +397,7 @@ mod tests {
             json!({"kind": "proof", "statement_id": "thm-2.1"}),
             json!({"kind": "proof", "statement_id": null}),
             json!({"kind": "algorithm"}),
-            json!({"kind": "bib_entry"}),
+            json!({"kind": "bib_entry", "bibliography": bibliography::parse_fields("", None)}),
         ];
         for statement in [
             "theorem",

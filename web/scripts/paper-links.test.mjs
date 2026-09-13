@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { discoverPaperLinks, hintCodes } from '../src/lib/paperLinks.ts';
+import { discoverPaperLinks as projectPaperLinks, hintCodes } from '../src/lib/paperLinks.ts';
+import { backendObjects, fixtureGeneration } from './backend-objects-fixture.mjs';
 import { safeLinkUrl, nativePageLinks } from '../src/lib/pdfNativeLinks.ts';
 import { placeHintBadges, overlaps } from '../src/lib/linkHintGeometry.ts';
+
+const discoverPaperLinks = index => projectPaperLinks(index, backendObjects(index), fixtureGeneration);
 
 export function fixture(blocks) {
   const index = { schema_version: 4, text: '', tokens: [], pages: [], objects: { word: [], WORD: [], sentence: [], paragraph: [] }, figures: [], gaps: [] };
@@ -55,6 +58,26 @@ test('ambiguous citations and labels are withheld rather than choosing a paper a
   const index = fixture([['Smith (2020) and [3] are ambiguous.'], ['References', 'heading', 2],
     ['[3] Smith, A. (2020). First study.', 'body', 2], ['[3] Smith, B. (2020). Different study.', 'body', 2]]);
   assert.deepEqual(discoverPaperLinks(index), []);
+});
+
+test('should withhold reference links when backend output is absent or belongs to a different generation', () => {
+  const index = fixture([['See [1] and Fig. 1.'], ['Figure 1: Evidence.', 'caption', 2], ['References', 'heading', 2], ['[1] Smith. Study.', 'body', 2]]);
+  const artifact = backendObjects(index);
+  assert.deepEqual(projectPaperLinks(index).map(link => link.kind), ['figure']);
+  assert.deepEqual(projectPaperLinks(index, artifact, '"stale"').map(link => link.kind), ['figure']);
+  assert.deepEqual(projectPaperLinks(index, artifact, fixtureGeneration).map(link => link.kind), ['reference', 'figure']);
+});
+
+test('should retain exact repeated occurrence offsets when astral text precedes references in one sentence', () => {
+  const index = fixture([['😀 Evidence [1] agrees with [1].'], ['References', 'heading', 2], ['[1] Smith. Study.', 'body', 2]]);
+  const artifact = backendObjects(index);
+  const links = projectPaperLinks(index, artifact, fixtureGeneration);
+  assert.equal(links.length, 2);
+  assert.deepEqual(links.map(link => index.text.slice(link.span.start, link.span.end)), ['[1]', '[1]']);
+  assert.notDeepEqual(links[0].rects, links[1].rects);
+  const mentions = artifact.objects.find(object => object.kind === 'bib_entry').mentions;
+  assert.equal(mentions[0].sentence_anchor.start, mentions[1].sentence_anchor.start);
+  assert.equal(mentions[0].sentence_anchor.end, mentions[1].sentence_anchor.end);
 });
 
 test('captions resolve figures, abbreviated tables, Roman and supplementary identifiers', () => {

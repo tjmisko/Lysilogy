@@ -1,5 +1,6 @@
 import { selectionSpans, tokensInSpan, type ReadingIndex, type TextSpan } from "./readingIndex.ts";
 import type { TextRect } from "../types";
+import { objectsMatchGeneration, type ObjectsArtifact } from "./objects.ts";
 
 export type PaperDestination = { page: number; rect: TextRect; label: string };
 export type PaperLink = {
@@ -17,7 +18,6 @@ const identifier = String.raw`(?:[A-Z]\.?\d+(?:\.\d+)*(?:[a-z]|\([a-z]\))?|\d+(?
 const captionPattern = String.raw`\b((?:Supplementary\s+)?(?:Figures?|Figs?\.?|Tables?|Tabs?\.?))\s*(${identifier})(?![\p{L}\d])`;
 const normalize = (text: string) => text.normalize("NFKC").toLocaleLowerCase().replace(/[\s()]/gu, "").replace(/^([a-z])\.(?=\d)/u, "$1");
 const displayKey = (prefix: string, label: string) => normalize(`${/supplementary/iu.test(prefix) && !/^s/iu.test(label) ? "S" : ""}${label}`);
-const years = (text: string) => Array.from(text.matchAll(/\b(?:18|19|20)\d{2}[a-z]?\b/gu), (match) => match[0]);
 
 function destination(index: ReadingIndex, span: TextSpan, label: string): PaperDestination | null {
   const tokens = tokensInSpan(index, span);
@@ -31,7 +31,8 @@ function destination(index: ReadingIndex, span: TextSpan, label: string): PaperD
 }
 
 /** Only resolve identifiers to destinations actually present in this paper. */
-export function discoverPaperLinks(index: ReadingIndex): PaperLink[] {
+export function discoverPaperLinks(index: ReadingIndex, artifact: ObjectsArtifact | null = null, generation: string | null = null): PaperLink[] {
+  const entries = artifact !== null && objectsMatchGeneration(artifact, generation) ? artifact.objects.filter((object) => object.kind === "bib_entry") : [];
   const blocks = index.objects.paragraph.flatMap((paragraph) => selectionSpans(paragraph).map((span) => ({ ...span, kind: paragraph.kind })))
     .sort((a, b) => a.start - b.start);
   const targets: Target[] = [];
@@ -56,29 +57,9 @@ export function discoverPaperLinks(index: ReadingIndex): PaperLink[] {
     if (match !== null) addTarget(figure, /tab/iu.test(match[1] ?? "") ? "table" : "figure", displayKey(match[1] ?? "", match[2] ?? ""), figure.caption);
   }
 
-  // Bibliography boundaries and printed entry labels establish the citation convention.
-  const bibliography = blocks.find((block) => /^(?:(?:\d+|[IVXLCDM]+)[.\s]+)?(?:references(?: and notes| cited)?|bibliography|literature cited|works cited)\s*[:.]?$/iu.test(index.text.slice(block.start, block.end).trim()));
-  const bibliographyStart = bibliography?.end ?? Infinity;
-  const bibliographyEnd = blocks.find((block) => block.start > bibliographyStart && block.kind === "heading"
-    && /^(?:appendix|supplement|acknowledg)/iu.test(index.text.slice(block.start, block.end).trim()))?.start ?? index.text.length;
-  const entries = blocks.filter((block) => block.start >= bibliographyStart && block.start < bibliographyEnd && block.kind !== "heading");
-  const entryPattern = /(?:^|\n)\s*(\[([\p{L}\d][\p{L}\d+,:.\-–]{0,30})\]|\((\d{1,4})\)|(\d{1,4})[.)])\s+/gu;
-  for (const block of entries) {
-    const text = index.text.slice(block.start, block.end);
-    const labels = Array.from(text.matchAll(entryPattern));
-    if (labels.length === 0) {
-      addTarget(block, "reference", "", text.trim());
-    } else for (let at = 0; at < labels.length; at++) {
-      const match = labels[at];
-      if (match === undefined) continue;
-      const span = { start: block.start + match.index + match[0].length - match[0].trimStart().length,
-        end: block.start + (labels[at + 1]?.index ?? text.length) };
-      addTarget(span, "reference", normalize(match[2] ?? match[3] ?? match[4] ?? ""), index.text.slice(span.start, span.end).trim());
-    }
-  }
   const links: PaperLink[] = [];
   const add = (span: TextSpan, target: Target) => {
-    if (span.start >= target.start && span.start < target.end || span.start >= bibliographyStart && span.start < bibliographyEnd) return;
+    if (span.start >= target.start && span.start < target.end || entries.some((entry) => span.start >= entry.anchor.start && span.start < entry.anchor.end)) return;
     const label = index.text.slice(span.start, span.end).trim();
     for (const page of new Set(tokensInSpan(index, span).map((token) => token.page))) {
       const id = `${span.start}:${span.end}:${target.start}:${page}`;
@@ -113,49 +94,17 @@ export function discoverPaperLinks(index: ReadingIndex): PaperLink[] {
       previous = nextKey; consumed += next[0].length;
     }
   }
-  for (const match of body.matchAll(/\[([^\]\n]{1,120})\]|\((\d{1,4}(?:\s*[,;–−-]\s*\d{1,4})*)\)/gu)) {
-    if (/(?:\b(?:eq(?:uation)?s?|sec(?:tion)?s?|fig(?:ure)?s?|tables?|theorems?|lemmas?|propositions?)\.?)\s*$/iu.test(body.slice(Math.max(0, match.index - 30), match.index))) continue;
-    const span = { start: match.index, end: match.index + match[0].length };
-    for (const key of (match[1] ?? match[2] ?? "").split(/\s*[,;]\s*/u)) {
-      const range = /^(\d+)\s*[-–−]\s*(\d+)$/u.exec(key.trim());
-      for (const item of range === null ? [key] : [range[1] ?? "", ...expandRange(range[1] ?? "", range[2] ?? "")]) resolve("reference", item, span);
-    }
-  }
-  // Superscript citations require raised geometry; plain prose numbers are never citations.
-  for (let at = 1; at < index.tokens.length; at++) {
-    const token = index.tokens[at], before = index.tokens[at - 1];
-    if (token === undefined || before === undefined) continue;
-    if (token.start >= bibliographyStart && token.start < bibliographyEnd) continue;
-    if (!/^\d{1,4}(?:[,–-]\d{1,4})*$/u.test(token.text) || token.page !== before.page) continue;
-    const a = before.rects.at(-1), b = token.rects[0];
-    if (a === undefined || b === undefined || b.y_max >= a.y_max - (a.y_max - a.y_min) * .2
-      || b.y_min > a.y_min || b.y_max < a.y_min || b.x_min < a.x_max - 2 || b.x_min - a.x_max > 6) continue;
-    for (const part of token.text.split(",")) {
-      const range = /^(\d+)[–-](\d+)$/u.exec(part);
-      for (const key of range === null ? [part] : [range[1] ?? "", ...expandRange(range[1] ?? "", range[2] ?? "")]) resolve("reference", key, token);
-    }
-  }
-  // Author–year variants are learned from bibliography surnames and actual years.
-  const authorTargets = new Map<string, Target[]>();
-  for (const target of targets.filter((item) => item.kind === "reference")) {
-    const entry = target.label.replace(/^(?:\[[^\]]+\]|\(\d+\)|\d+[.)])\s*/u, "");
-    const author = /^(?:[A-Z]\.\s*)*([\p{L}][\p{L}\p{M}'’−-]+)/u.exec(entry)?.[1];
-    if (author === undefined) continue;
-    // Publication year is near the author block; later years may be in the title or URL.
-    const year = years(entry.slice(0, 250))[0];
-    if (year === undefined) continue;
-    const key = `${author.toLocaleLowerCase()}:${year}`;
-    authorTargets.set(key, [...authorTargets.get(key) ?? [], target]);
-  }
-  for (const match of body.matchAll(/([\p{L}][\p{L}\p{M}'’−-]+)(?:\s+(?:et\s+al\.?|(?:and|&)\s+[\p{L}][\p{L}\p{M}'’−-]+))?\s*[,([]?\s*((?:18|19|20)\d{2}[a-z]?(?:\s*[,;]\s*(?:(?:18|19|20)\d{2})?[a-z]?)*)\b/gu)) {
-    const citedYears = years(match[2] ?? "");
-    // APA's "2020a,b" inherits the year for the second suffix.
-    const firstYear = citedYears[0]?.slice(0, 4);
-    if (firstYear !== undefined) for (const suffix of (match[2] ?? "").matchAll(/[,;]\s*([a-z])\b/gu)) citedYears.push(firstYear + (suffix[1] ?? ""));
-    for (const year of citedYears) {
-      const matches = authorTargets.get(`${(match[1] ?? "").toLocaleLowerCase()}:${year}`) ?? [];
-      const end = match.index + match[0].length;
-      if (matches.length === 1 && matches[0] !== undefined) add({ start: match.index, end: end + (/[[(]/u.test(match[0]) && /[\])]/u.test(body[end] ?? "") ? 1 : 0) }, matches[0]);
+  // Bibliography detection and marker resolution are backend source facts.
+  // The frontend only projects verified occurrence geometry and destinations.
+  for (const entry of entries) {
+    const dest = destination(index, entry.member_anchors[0] ?? entry.anchor, entry.label);
+    if (dest === null) continue;
+    for (const mention of entry.mentions) {
+      const span = mention.anchor;
+      if (!Number.isInteger(span.start) || !Number.isInteger(span.end) || span.start < 0 || span.end <= span.start || span.end > index.text.length || mention.rects.length === 0) continue;
+      links.push({ id: `reference:${entry.id}:${span.start}:${span.end}:${span.page}`,
+        kind: "reference", label: index.text.slice(span.start, span.end), page: span.page,
+        rects: mention.rects, span, destination: dest });
     }
   }
   return links.sort((a, b) => a.page - b.page || (a.span?.start ?? 0) - (b.span?.start ?? 0));

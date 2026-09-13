@@ -349,6 +349,24 @@ venue, DOI, and arXiv ID, with per-field confidence. Resolve citation markers (n
 superscript, author–year) to entries in the backend and store each mention with its sentence
 anchor. The frontend consumes the backend result for link hints.
 
+Implementation contract: objects schema 2 stores parsed fields under `bib_entry.bibliography`;
+each field has a nullable `value` and categorical `explicit`, `heuristic`, or `missing` confidence.
+These labels are evidence categories, not calibrated probabilities. Authors retain printed name
+strings, publication years retain citation suffixes, and arXiv IDs retain printed versions.
+Conflicting identifiers leave the corresponding structured field missing; the raw entry remains.
+Wrapped entries retain disjoint member anchors, excluding classified floating captions. Object
+IDs use deterministic bibliography order within the paper and remain stable for an unchanged index.
+
+Resolved mentions keep the exact UTF-16 occurrence anchor and its source token rectangles separately
+from `sentence_anchor`. If a citation crosses the sentence segmenter's abbreviation boundary, its
+context covers all intersected sentence segments. `unresolved_citations` retains missing, ambiguous,
+and unsupported-range keys with candidate IDs; ranges expand at most 30 steps. Person-name parsing
+supplies a family key only when every retained name interpretation agrees. No entity merge occurs.
+The reader requires both paper ID and exact reading-index ETag agreement before using reference
+links, refreshes a mismatched pair once, and preserves figure/table/native hints when references
+are unavailable. Browser fixtures invoke the production Rust object builder through the offline
+`objects_fixture` example, so no bibliography matcher remains duplicated in the frontend.
+
 Acceptance: link-hint behavior matches or improves on the current frontend matcher across the
 existing smoke fixtures; DOIs and arXiv IDs are extracted exactly; ambiguous marker matches remain
 unresolved rather than guessed.
