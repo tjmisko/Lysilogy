@@ -7,7 +7,7 @@ import re
 import sys
 import unicodedata
 
-from reference_truth import (TruthError, canonical, doi, fingerprint, finish, load_snapshots,
+from reference_truth import (MAX_AGGREGATE_BYTES, TruthError, canonical, doi, fingerprint, finish, load_snapshots,
                              openalex_records, read_json, timestamp, write_immutable)
 
 MAX_WORKS = 200_000
@@ -332,7 +332,10 @@ def main(argv=None):
             labels = read_json(args.k4)
             checked_truth(labels, "K4")
             result = features(labels)
-        write_immutable(args.output, (canonical(result) + "\n").encode())
+        encoded = (canonical(result) + "\n").encode()
+        if len(encoded) > MAX_AGGREGATE_BYTES:
+            raise TruthError("Person truth output exceeds the aggregate input bound; split the source universe")
+        write_immutable(args.output, encoded)
         print(canonical({key: result[key] for key in ("kind", "truth_set", "version", "coverage", "total_requests") if key in result}))
         return 0
     except (OSError, KeyError, TypeError, ValueError) as error:

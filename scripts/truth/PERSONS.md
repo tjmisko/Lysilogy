@@ -108,3 +108,6 @@ source provenance and resolver feature separation, then run the actual G1/O13 co
 The shared reader bounds individual provider bodies to 8 MiB and aggregates to 128 MiB. K4 also
 bounds unique work membership to 200,000, observed slots to 1,000,000, and names to 1,024 characters.
 Work/slot overflow fails rather than silently truncating; oversize names are excluded with a hash.
+CLI outputs exceeding the same 128 MiB aggregate read bound are refused before publication, so
+the builder cannot publish a version that its feature command cannot consume. Split a larger
+source universe explicitly; do not silently drop mentions or claim whole-universe coverage.

@@ -286,6 +286,9 @@ class PersonTruthTests(unittest.TestCase):
                 self.assertEqual(0, person.main(command))
                 self.assertEqual(0, person.main(command))
                 original = output.read_bytes()
+                with patch.object(person, "MAX_AGGREGATE_BYTES", 1):
+                    self.assertEqual(1, person.main(command))
+                self.assertEqual(original, output.read_bytes())
                 self.assertEqual(0, person.main(["features", "--k4", str(output), "--output", str(projected)]))
                 self.assertNotIn(ALPHA, projected.read_text())
                 original_features = projected.read_bytes()
