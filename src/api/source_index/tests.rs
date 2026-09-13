@@ -84,7 +84,7 @@ async fn refresh_and_changed_sources_return_new_http_validators() {
     .unwrap();
     let id = PaperId::from_relative_path(std::path::Path::new(filename));
     let state = AppState::new(library.path(), data.path()).await.unwrap();
-    let app = crate::build_router(state, None);
+    let app = crate::build_router(state.clone(), None);
     let uri = format!("/api/papers/{id}/reading-index");
     let response = app
         .clone()
@@ -113,6 +113,9 @@ async fn refresh_and_changed_sources_return_new_http_validators() {
     let refreshed = response.headers()[header::ETAG].clone();
     assert_ne!(original, refreshed);
     tokio::fs::write(&source, native_pdf("The changed paper now contains different text and still enough native words for extraction.")).await.unwrap();
+    let changed = state.refresh().await.unwrap().papers[0].id.clone();
+    assert_ne!(id, changed);
+    let uri = format!("/api/papers/{changed}/reading-index");
     let response = app
         .oneshot(
             Request::builder()

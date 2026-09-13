@@ -26,6 +26,7 @@ export type PaperOverview = {
   id: string;
   metadata: PaperMetadata;
   relative_path: string;
+  content_hash?: string;
   status: ProcessingStatus;
   analyzed_at: string | null;
   one_line_summary: string | null;
@@ -34,6 +35,8 @@ export type PaperOverview = {
 export type LibraryResponse = {
   name: string;
   papers: PaperOverview[];
+  duplicates?: { content_hash: string; paths: string[] }[];
+  identity_conflicts?: { content_hash: string; current_paths: string[]; previous_paths: string[] }[];
 };
 
 export type RemotePdfSource = {

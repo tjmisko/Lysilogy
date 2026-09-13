@@ -125,7 +125,7 @@ pass.
   Owns a generator and benchmark subcommand or script. The vault goes under
   `~/.cache/lysilogy/bench-vault/`. Commit the baseline report to
   `docs/experiment-reports/`.
-- [ ] **#20 E0.2 Content-hash paper identity**. Branch `feat/e0.2-content-hash`.
+- [x] **#20 E0.2 Content-hash paper identity**. Branch `feat/e0.2-content-hash`.
   Touches `src/library.rs`, `src/store.rs`, `src/domain.rs`. `sha2` is already a dependency.
   Renames currently orphan `papers/<id>/` because `PaperId` hashes the relative path; notes are
   keyed separately by relative path in `Notes/`, so decide and document how notes follow a move.
@@ -182,6 +182,27 @@ pass.
 
 ### Phase A notes
 
+- #20 merged in PR #80 (`94ddacc`) after both independent review findings were fixed and
+  independently reproduced again. A strict source stamp now spans fresh extraction, rejecting
+  changed-and-restored bytes before artifact publication. The canonical
+  `<data>/paper-identities.json` registry retains initial path-derived IDs across unique
+  content-hash moves, tombstones, original notes keys, and unresolved prior identity IDs.
+  Duplicate-move warnings persist across scans/restarts; replacements and ambiguous matches
+  receive separate identities without overwriting artifacts or notes. Registry transactions use
+  cross-process locking and durable atomic publication, bind to one canonical library root,
+  and fail closed on corrupt state. Hash caching uses size/mtime plus inode/ctime safeguards.
+  Later KB rebuilds must preserve these canonical identity records. Moves before the initial
+  registry scan cannot be inferred from unrecorded hashes. Final gates: 275 Rust tests,
+  frontend typecheck/lint/build and 17 targeted tests, G5 pass, unchanged O30 = 0/10k. Evidence
+  is retained under `eval/evidence/*content-identity*.json`. Branch/worktree removed.
+- Follow-up #79 (epic #67) merged in PR #81 (`1e9bc5e`). A cold benchmark build exposed G5's
+  missing `mold`/`ld.mold` aliases; warm targets had hidden the gap. The production restricted
+  PATH now includes installed linker aliases and a regression links a fresh executable through
+  that same construction. Independent review cleared the fix. After removing only the isolated
+  worktree's package outputs, G5 rebuilt Rust test binaries and passed 255 Rust, 50 Python, and
+  84 Node tests in 17.816 seconds. Before/after evidence, including the failed run's dirty-state
+  flag, is retained in `eval/evidence/g5-cold-linker.json`. No gate or target was changed; G5 and
+  O30 still pass. The follow-up issue is closed and its branch/worktree removed.
 - #63 merged in PR #78 (`2c21e77`) after independent review of the transport, credential
   redaction, durable shared budgets, independent O30 observer, and atomic collector publication.
   O30 meets target: 0 violations across 10,000 admissions, with 216 deferrals, 72 cooldowns, and
@@ -521,3 +542,33 @@ date, last merged issue, in-flight branches and their state, next action, and op
   has been relocated. Next action: finish/review/measure #63/#20/#19, merge eligible A1 work,
   then begin A2 only once the wave is complete. No measured objective misses or follow-up
   issues yet. Main's unrelated PDF-preview changes remain untouched.
+
+### 2026-09-12 — provider budgets merged and cold-build correction verified
+
+- Last merged issue: follow-up #79 / PR #81 (`1e9bc5e`), correcting G5's omitted mold aliases;
+  last planned issue #63 / PR #78 (`2c21e77`). Planned issues #34, #24, #68, #69, and #63 are
+  merged. Current phase/wave A/A1; #19 and #20 remain. Scorecard: G5 passes, O30 = 0 violations
+  across 10,000 simulated references; 1/5 gates, 1/30 objectives at target. No objective misses.
+  Follow-up #79 was opened under epic #67 and is now closed with independent review and cold
+  G5 evidence. All merged branches/worktrees have been removed.
+- In flight: #20 draft PR #80, branch `feat/e0.2-content-hash`, head `7e7b14f` before review
+  fixes. Independent review reproduced two issues: a source changed and restored during
+  extraction can publish wrong text; duplicate-move conflicts disappear on an unchanged rescan.
+  Implementer is fixing both with strict before/after source stamps and persisted unresolved
+  identity associations. Reviewer scratch reproductions are under that worktree's
+  `target/identity-independent-review/`. Re-review and final gates are required before merge.
+  Its earlier integrated gates passed 273 Rust tests, frontend gates, G5, and unchanged O30.
+- #19 branch `feat/e0.1-scale-bench` is implementing the real catalog/extraction benchmark and
+  Playwright home/search runner; generator commit `4563749` has seven passing tests. The branch
+  contains the initial linker correction `8f626ac`; merge current main to include its final
+  helper/test refinement. No PR yet. Benchmark-only four-worker extractor capacity will be
+  reported separately; O27 remains unavailable until E0.5 measures the production worker path.
+  O25/O26 require an actual verified 10k run, never tiny-fixture extrapolation.
+- Background downloads: none. Corpus/cache roots remain read-only after approved escalation,
+  and OAI-PMH remains blocked by the runtime domain allowlist. The sandbox-update question is
+  pending. No corpus or full synthetic vault exists, and none has been relocated. A1 cannot
+  complete its benchmark acceptance until the designated cache location is writable.
+- Next action: finish and independently re-review #20, finish/review #19 tooling and run its
+  real 10k baseline when storage permits, then advance to A2. Preserve main's ten unrelated
+  PDF-preview files; the last hash check found no changes. An attempted npm cache directory in
+  main was safely removed by its creator; use existing dependencies via worktree symlinks.
