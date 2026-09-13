@@ -1151,6 +1151,34 @@ align them to the PDF by caption and text matching, drop papers whose alignment 
 quality threshold, and record alignment confidence. Include a three-agent panel judging the top
 figures and tables for O11.
 
+K1 records overall per-paper alignment completeness separately from explicit exhaustive metric
+cohorts. A paper can supply complete figure/table truth while its separate bibliography or math
+inventory remains unsupported. Each metric requires its entire independently parsed inventory
+and all relevant links; missing members exclude the paper from that metric, never shorten its
+denominator. Source semantics that might hide an inventory exclude affected cohorts. Cohorts and
+all exclusions are frozen before detector evaluation. This clarifies the truth schema after an
+initial 25-paper pilot found useful complete figure/table inventories alongside unsupported math
+and bibliography forms; it does not lower any gate, objective or the approximately 500-paper
+target. See [the K1 cohort contract](../eval/latex-contract.md). Figure/caption alignment supplies
+no full-region O2 labels; O2 region evidence and the three-agent O11 panel remain independent.
+Before any panel votes or detector ranks are inspected, O11 arithmetic is fixed as mean top-three
+set overlap divided by three against each of three panelists over every frozen paper (denominator
+nine per paper). Only the first three model ranking positions count; duplicates, invalid IDs,
+missing choices and missing paper results keep their denominator and are not backfilled from
+positions four/five. Malformed rankings fail validation. Panel votes require three distinct valid
+source IDs; display-only consensus ordering cannot change this score or its 0.70 target.
+
+Staged publication decision (2026-09-13): after the complete frozen 1,000-paper automatic
+run produced no accepted metric cohorts, independently reviewed source/PDF annotations may
+establish an explicitly versioned limited K1 release covering every E1 object kind. The original
+approximately 500-paper target stays unchanged and unmet; [follow-up #97](https://github.com/tjmisko/Lysilogy/issues/97)
+tracks finite source capability and independently stratified coverage expansion. Both historical
+and current automatic runs, every omitted cohort, per-paper/per-kind denominators, strata and
+manual selection bias remain visible. This is a staged publication deviation, not broad K1 or
+system acceptance. Detector collectors must report the limited release version and cohort sizes.
+Complete reviewed zero-kind papers remain negative examples. Original annotations and automatic
+exclusions remain immutable; only compact independently derived labels are committed.
+
 Acceptance: truth covers every E1 object kind; alignment quality is reported per paper; the suite
 runs offline from the corpus cache.
 
