@@ -318,9 +318,12 @@ try {
   await page.keyboard.press('/');await search.waitFor();
 
   // A separate real PDF provides character mappings and predictable line geometry.
+  // Finish the preceding reader's navigation before injecting a warmup failure.
+  // Otherwise its pending request can consume the failure intended for the new reader.
+  await page.goto('about:blank');
   usePreciseSelection=true;analyzed=false;failIndexRequests=1;
   const failedWarmup=page.waitForResponse(response=>new URL(response.url()).pathname.endsWith('/reading-index')&&response.status()===503);
-  await page.reload();await failedWarmup;
+  await page.goto(`http://lysilogy.test/#paper=${id}`);await failedWarmup;
   assert.equal(await page.locator('.pdf-source-tools').count(),0,'background indexing errors stay out of the reader');
   const beforeRetry=indexRequests.length;
   await page.waitForFunction(()=>document.querySelector('[data-pdf-page="1"] [data-text-ready="true"]'));
