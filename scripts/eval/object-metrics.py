@@ -8,6 +8,7 @@ import math
 import os
 from pathlib import Path
 import re
+import shutil
 import statistics
 import struct
 import subprocess
@@ -21,7 +22,7 @@ CONFIG = 'eval/truth/k1-limited-v1-build.json'
 TRACE = 'eval/inputs/evidence/object-metrics.json'
 INPUT = 'eval/inputs/objects/figure-table.json'
 KINDS = ('figure', 'table')
-VERSION = 'figure-table-metrics-v3'
+VERSION = 'figure-table-metrics-v4'
 NATIVE_BASIS_FORMAT = 'native-json-f32-v1'
 DETECTOR_VERSION = 2
 MAX_JSON = 32 * 1024 * 1024
@@ -298,9 +299,54 @@ def validate_derivation(row, artifact, index):
     require(row.get('native_basis_format')==NATIVE_BASIS_FORMAT and type(row.get('native_schema_version')) is int and row['native_schema_version']==6,'unsupported native commitment format/schema')
     require(row['native_basis_sha256']==native_basis_digest(index),'detector native text, tokens, geometry or provenance differs')
     require(type(artifact.get('figure_detector_version')) is int and artifact['figure_detector_version']==DETECTOR_VERSION,'unsupported current detector version')
-    generation=digest(('figures:'+str(DETECTOR_VERSION)+':'+artifact['reading_index_generation']).encode())
+    generation_input='figures:'+str(DETECTOR_VERSION)+':'+artifact['reading_index_generation']
+    if artifact.get('graphics') is not None: generation_input+=':graphics:'+artifact['graphics']['generation']
+    generation=digest(generation_input.encode())
     require(artifact.get('figure_detector_generation')==generation,'derived detector generation differs')
     return {'version':DETECTOR_VERSION,'generation':generation,'native_basis_format':NATIVE_BASIS_FORMAT,'native_schema_version':6,'native_basis_sha256':row['native_basis_sha256'],'index_sha256':row['index_sha256']}
+
+
+def validate_graphics(row, artifact, paper, index, cache):
+    evidence=artifact.get('graphics')
+    require(isinstance(evidence,dict) and evidence.get('version')==1,'current source factory omitted graphics evidence')
+    basis_raw=row['graphics_basis_json'].encode();basis=document(basis_raw)
+    require(basis==dict(evidence,generation='') and digest(basis_raw)==evidence['generation'],'graphics generation differs')
+    require(evidence['native_generation']==artifact['reading_index_generation'] and evidence['pdf_sha256']==paper['pdf_sha256'],'graphics native/PDF identity differs')
+    expected_tool=shutil.which('mutool')
+    expected_tool=str(Path(expected_tool).resolve()) if expected_tool else None
+    require(evidence.get('tool_path')==expected_tool,'graphics tool path differs')
+    require(evidence.get('tool_sha256')==(digest(read(Path(expected_tool),128*1024*1024)) if expected_tool else None),'graphics executable changed')
+    require(evidence['cache_key']==digest(canonical([1,evidence['native_generation'],evidence['pdf_sha256'],evidence['tool_sha256']])),'graphics cache identity differs')
+    pages=evidence['pages'];require(isinstance(pages,list) and len(pages)<=400,'invalid graphics page inventory')
+    page_ids=[page['page'] for page in pages]
+    require(all(type(number) is int and 1<=number<=400 for number in page_ids),'invalid graphics page number')
+    require(page_ids==sorted(set(page_ids)) and set(page_ids)=={obj['page'] for obj in artifact['objects'] if obj['kind'] in KINDS},'graphics page denominator differs')
+    traces=row['graphics_traces'];require(isinstance(traces,list) and len(traces)<=64,'invalid graphics trace inventory')
+    require(len({trace['page'] for trace in traces})==len(traces),'duplicate graphics trace')
+    by_page={trace['page']:trace for trace in traces};total=0;retained={}
+    require(set(by_page)=={page['page'] for page in pages if page['trace_sha256'] is not None},'graphics trace coverage differs')
+    allowed={'complete','partial','unsupported_trace','resource_limit','tool_failed','tool_unavailable'}
+    for page in pages:
+        require(expected_tool is not None or page['status'] in {'tool_unavailable','resource_limit'},'trace recorded without a graphics tool')
+        require(page['status'] in allowed and type(page['unsupported_images']) is int and 0<=page['unsupported_images']<=256,'invalid graphics status')
+        require(page['status']!='complete' or page['unsupported_images']==0,'complete graphics page has unsupported images')
+        require(page['status']!='partial' or page['unsupported_images']>0,'partial graphics page lacks exclusions')
+        native=[native for native in index['pages'] if native['number']==page['page']]
+        require(len(native)==1,'graphics page lacks unique native owner')
+        require(isinstance(page['images'],list) and len(page['images'])+page['unsupported_images']<=256,'graphics image inventory exceeds bound')
+        require(all(rectangle(rect,native[0]) is not None for rect in page['images']),'graphics placement is invalid')
+        require(page['status'] in {'complete','partial'} or not page['images'],'unsupported graphics state admitted placements')
+        if page['trace_sha256'] is None:
+            require(page['status'] not in {'complete','partial','unsupported_trace'},'graphics trace receipt missing')
+            continue
+        trace=by_page[page['page']];sha=page['trace_sha256']
+        require(isinstance(sha,str) and re.fullmatch('[0-9a-f]{64}',sha) and trace['sha256']==sha,'graphics trace hash differs')
+        expected=cache/'object-graphics-traces'/(sha+'.xml')
+        require(trace['path']==str(expected),'graphics trace path differs')
+        raw=read(expected,16*1024*1024);total+=len(raw)
+        require(digest(raw)==sha and total<=64*1024*1024,'graphics trace bytes differ or exceed bound')
+        retained[str(expected)]=sha
+    return {'generation':evidence['generation'],'cache_key':evidence['cache_key'],'tool_sha256':evidence['tool_sha256'],'page_statuses':dict(Counter(page['status'] for page in pages)),'trace_hashes':retained}
 
 
 def atomic_json(path, value):
@@ -383,7 +429,7 @@ def main():
         require(actual==paper['index']['sha256'],'index generation changed');tracked[str(path)]=actual
         indexes[ident]=document(raw)['index']
         request.append({'paper_id':ident,'relative_path':paper['arxiv_id']+'v'+str(paper['arxiv_version'])+'.pdf','index_sha256':actual})
-    result=subprocess.run([str(expected)],input=canonical({'corpus_root':str(corpus/'pdf'),'data_root':str(data),'papers':request}),cwd=ROOT,capture_output=True,check=True,timeout=60)
+    result=subprocess.run([str(expected)],input=canonical({'corpus_root':str(corpus/'pdf'),'data_root':str(data),'papers':request}),cwd=ROOT,capture_output=True,check=True,timeout=max(60,40*len(papers)))
     require(len(result.stdout)<=MAX_JSON,'bridge response too large')
     response=document(result.stdout);rows=response['papers']
     require(response['schema_version']==1 and response['model_calls']==response['network_calls']==0,'invalid bridge receipt')
@@ -396,6 +442,8 @@ def main():
         artifact_raw=row['artifact_json'].encode();require(digest(artifact_raw)==row['object_sha256'],'object artifact hash differs')
         artifact=document(artifact_raw)
         derivation=validate_derivation(row,artifact,indexes[paper['paper_id']])
+        derivation['graphics']=validate_graphics(row,artifact,paper,indexes[paper['paper_id']],cache)
+        tracked.update(derivation['graphics']['trace_hashes'])
         object_hashes[paper['paper_id']]={'rust_serialized_sha256':row['object_sha256'],'canonical_sha256':digest(canonical(artifact)),'derivation':derivation}
         metrics.append(evaluate_paper(paper,artifact,indexes[paper['paper_id']]))
     require(sources=={p:digest(read(ROOT/p)) for p in sources} and read(ROOT/TRUTH)==truth_raw and digest(read(expected,128*1024*1024))==executable_hash,'measurement source or truth changed')

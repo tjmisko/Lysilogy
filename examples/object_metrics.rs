@@ -1,5 +1,5 @@
 //! Read-only bridge through production cached-index and deterministic objects APIs.
-use lysilogy::{domain::PaperId, objects::ObjectsArtifact, source_index::load_cached};
+use lysilogy::{domain::PaperId, objects::from_source, source_index::load_cached};
 use serde::Deserialize;
 use serde_json::json;
 use sha2::{Digest, Sha256};
@@ -8,7 +8,7 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
-use tokio::io::AsyncReadExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 type Failure = Box<dyn std::error::Error>;
 #[derive(Deserialize)]
@@ -63,6 +63,58 @@ async fn bounded_index(path: &Path) -> Result<Vec<u8>, Failure> {
     }
     Ok(bytes)
 }
+async fn retain_trace(root: &Path, raw: &[u8]) -> Result<PathBuf, Failure> {
+    // A fixed external cache holds source-derived trace bytes. No canonical
+    // native index or user-selected output path is ever writable here.
+    for ancestor in root.ancestors() {
+        match ancestor.symlink_metadata() {
+            Ok(metadata) if metadata.file_type().is_symlink() => {
+                return Err("symlinked trace output".into());
+            }
+            Ok(_) => {}
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+    }
+    tokio::fs::create_dir_all(root).await?;
+    let path = root.join(format!("{:x}.xml", Sha256::digest(raw)));
+    if path.exists() {
+        regular_file(&path)?;
+        if tokio::fs::metadata(&path).await?.len() != u64::try_from(raw.len())?
+            || tokio::fs::read(&path).await? != raw
+        {
+            return Err("immutable trace differs".into());
+        }
+        return Ok(path);
+    }
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)?
+        .as_nanos();
+    let pending = root.join(format!("pending-{}-{stamp}", std::process::id()));
+    let mut file = tokio::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&pending)
+        .await?;
+    file.write_all(raw).await?;
+    file.sync_all().await?;
+    drop(file);
+    let linked = tokio::fs::hard_link(&pending, &path).await;
+    tokio::fs::remove_file(&pending).await?;
+    if let Err(error) = linked
+        && error.kind() != io::ErrorKind::AlreadyExists
+    {
+        return Err(error.into());
+    }
+    regular_file(&path)?;
+    if tokio::fs::metadata(&path).await?.len() != u64::try_from(raw.len())?
+        || tokio::fs::read(&path).await? != raw
+    {
+        return Err("immutable trace publication differs".into());
+    }
+    Ok(path)
+}
+
 // The independent Python collector implements this small framed protocol too.
 // Floats here are the exact f32 values serialized from typed ReadingIndex fields.
 fn native_value_digest(value: &serde_json::Value) -> Result<String, Failure> {
@@ -168,13 +220,36 @@ async fn main() -> Result<(), Failure> {
             .ok_or("native basis is not an object")?
             .remove("figures");
         let native_basis_sha256 = native_value_digest(&native_basis)?;
-        let artifact = ObjectsArtifact::from_reading_index(&paper.paper_id, &document);
-        let artifact_json = serde_json::to_string(&artifact)?;
-        output_bytes += artifact_json.len();
-        if output_bytes > 16 * 1024 * 1024 {
-            return Err("object response exceeds 16 MiB".into());
+        let derived = from_source(
+            &request.corpus_root.join(&paper.relative_path),
+            &paper.paper_id,
+            &document,
+        )
+        .await?;
+        let artifact = derived.artifact;
+        let graphics = artifact
+            .graphics
+            .as_ref()
+            .ok_or("source factory omitted graphics status")?;
+        let graphics_basis_json = String::from_utf8(graphics.basis_json()?)?;
+        let mut graphics_traces = Vec::new();
+        for (page, raw) in derived.traces {
+            let path =
+                retain_trace(&home.join(".cache/lysilogy/object-graphics-traces"), &raw).await?;
+            graphics_traces.push(
+                json!({"page":page,"sha256":format!("{:x}",Sha256::digest(&raw)),"path":path}),
+            );
         }
-        rows.push(json!({"paper_id":paper.paper_id,"index_sha256":paper.index_sha256,"object_sha256":format!("{:x}",Sha256::digest(artifact_json.as_bytes())),"artifact_json":artifact_json,"native_basis_sha256":native_basis_sha256,"native_basis_format":"native-json-f32-v1","native_schema_version":document.index.schema_version}));
+        if bounded_index(&path).await? != before {
+            return Err("canonical index changed during graphics derivation".into());
+        }
+        let artifact_json = serde_json::to_string(&artifact)?;
+        let row = json!({"paper_id":paper.paper_id,"index_sha256":paper.index_sha256,"object_sha256":format!("{:x}",Sha256::digest(artifact_json.as_bytes())),"artifact_json":artifact_json,"native_basis_sha256":native_basis_sha256,"native_basis_format":"native-json-f32-v1","native_schema_version":document.index.schema_version,"graphics_basis_json":graphics_basis_json,"graphics_traces":graphics_traces});
+        output_bytes += serde_json::to_vec(&row)?.len() + 1;
+        if output_bytes > 16 * 1024 * 1024 - 1024 {
+            return Err("object response exceeds16MiB".into());
+        }
+        rows.push(row);
     }
     println!(
         "{}",

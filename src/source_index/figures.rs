@@ -13,6 +13,13 @@ struct Caption<'a> {
 }
 
 pub fn find(index: &ReadingIndex) -> Vec<Figure> {
+    find_with_images(index, &[])
+}
+
+pub fn find_with_images(
+    index: &ReadingIndex,
+    pages: &[super::graphics::PageGraphics],
+) -> Vec<Figure> {
     let mut figures = Vec::<Figure>::new();
     let captions = captions(index);
     for candidate in &captions {
@@ -20,7 +27,11 @@ pub fn find(index: &ReadingIndex) -> Vec<Figure> {
         let kind = candidate.kind;
         let label = &candidate.label;
         let caption = utf16_slice(&index.text, paragraph.start, paragraph.end);
-        let rect = figure_region(index, candidate, &captions);
+        let images = pages
+            .iter()
+            .find(|page| page.page == candidate.page)
+            .map_or(&[][..], |page| page.images.as_slice());
+        let rect = figure_region(index, candidate, &captions, images);
         figures.push(Figure {
             id: format!(
                 "{}-{}",
@@ -330,6 +341,7 @@ fn figure_region(
     index: &ReadingIndex,
     candidate: &Caption<'_>,
     captions: &[Caption<'_>],
+    images: &[TextRect],
 ) -> Option<TextRect> {
     let page = candidate.page;
     let caption_start = candidate.paragraph.start;
@@ -348,7 +360,7 @@ fn figure_region(
     fonts.sort_by(f32::total_cmp);
     let body_font = fonts.get(fonts.len() / 2).copied().unwrap_or(10.0);
     if candidate.kind == "Table"
-        && let Some(below) = table_below(index, candidate, captions, body_font)
+        && let Some(below) = table_below(index, candidate, captions, body_font, images)
     {
         return Some(below);
     }
@@ -378,7 +390,30 @@ fn figure_region(
     if height < 35.0 || height > dimensions.height * 0.70 {
         return None;
     }
-    let mut regions = Vec::new();
+    let image_regions = images
+        .iter()
+        .copied()
+        .filter(|rect| {
+            rect.y_min >= top
+                && rect.y_max <= caption.y_min
+                && horizontal_gap(*rect, caption) == 0.0
+                && captions
+                    .iter()
+                    .filter(|other| {
+                        other.page == page
+                            && other.kind == "Figure"
+                            && other.rect.y_min >= rect.y_max
+                            && horizontal_gap(*rect, other.rect) == 0.0
+                    })
+                    .min_by(|a, b| {
+                        (a.rect.y_min - rect.y_max).total_cmp(&(b.rect.y_min - rect.y_max))
+                    })
+                    .is_some_and(|owner| owner.paragraph.start == caption_start)
+        })
+        .collect::<Vec<_>>();
+    // Opaque image tiles carry an observed visual extent even when no plot
+    // labels exist in native text. Do not add caption whitespace as geometry.
+    let mut regions = image_regions.clone();
     // Printed diagram labels/ticks establish an observed extent. Do not fill
     // whitespace back to a page margin or include the separate caption body.
     for paragraph in index
@@ -409,21 +444,45 @@ fn figure_region(
             regions.push(rect);
         }
     }
-    let mut bounds = regions
+    if regions.len() > 1024 {
+        return None;
+    }
+    let seeds = if image_regions.is_empty() {
+        &regions
+    } else {
+        &image_regions
+    };
+    let mut bounds = seeds
         .iter()
         .copied()
         .filter(|r| horizontal_gap(*r, caption) == 0.0)
         .reduce(|a, b| union([a, b].into_iter()))?;
-    // A diagram may be wider than its caption. Extend the seeded neighborhood
-    // through nearby observed labels, without jumping into another column.
-    regions.sort_by(|a, b| horizontal_gap(*a, caption).total_cmp(&horizontal_gap(*b, caption)));
-    for rect in regions {
-        if horizontal_gap(rect, bounds) <= body_font * 3.0
-            && rect.y_max >= bounds.y_min
-            && rect.y_min <= bounds.y_max
-        {
-            bounds = union([bounds, rect].into_iter());
+    // A diagram may be wider than its caption. A bounded fixed point revisits
+    // labels that become connected only after another label expands the bounds.
+    // Each successful step consumes a candidate, so work is at most n².
+    let mut pending = regions;
+    for _ in 0..pending.len() {
+        let mut changed = false;
+        pending.retain(|rect| {
+            if horizontal_gap(*rect, bounds) <= body_font * 3.0
+                && rect.y_max >= bounds.y_min
+                && rect.y_min <= bounds.y_max
+            {
+                bounds = union([bounds, *rect].into_iter());
+                changed = true;
+                false
+            } else {
+                true
+            }
+        });
+        if !changed {
+            break;
         }
+    }
+    if !image_regions.is_empty() {
+        // Placement rectangles include embedded axes/legends already. Padding is
+        // useful only for text-label estimates, not an observed image boundary.
+        return Some(bounds);
     }
     Some(padded(
         bounds,
@@ -522,6 +581,7 @@ fn table_below(
     candidate: &Caption<'_>,
     captions: &[Caption<'_>],
     font: f32,
+    images: &[TextRect],
 ) -> Option<TextRect> {
     let page = candidate.page;
     let caption = candidate.rect;
@@ -543,6 +603,12 @@ fn table_below(
         })
         .collect::<Vec<_>>();
     candidates.sort_by(|a, b| a.2.y_min.total_cmp(&b.2.y_min));
+    let image_barrier = images
+        .iter()
+        .filter(|rect| rect.y_min >= caption.y_max && horizontal_gap(**rect, caption) == 0.0)
+        .map(|rect| rect.y_min)
+        .reduce(f32::min)
+        .unwrap_or(dimensions.height);
     let mut bounds = None;
     let mut numeric = false;
     for (paragraph, text, rect) in candidates {
@@ -551,7 +617,8 @@ fn table_below(
         } else {
             font * 5.0
         };
-        if rect.y_min - bounds.map_or(caption.y_max, |r: TextRect| r.y_max) > gap_limit
+        if rect.y_max > image_barrier
+            || rect.y_min - bounds.map_or(caption.y_max, |r: TextRect| r.y_max) > gap_limit
             || captions
                 .iter()
                 .any(|c| c.paragraph.start == paragraph.start)
@@ -599,7 +666,7 @@ fn table_below(
         font * 0.4,
         dimensions.width,
         caption.y_max,
-        dimensions.height,
+        image_barrier,
     ))
 }
 
@@ -1012,6 +1079,119 @@ mod tests {
                 .iter()
                 .any(|span| utf16_slice(&index.text, span.start, span.end).contains("54.70"))
         );
+    }
+
+    #[test]
+    fn should_revisit_neighbor_labels_when_a_later_label_connects_their_vertical_band() {
+        let mut index = fixture(&[
+            ("Seed", "float", 50.0, 100.0),
+            ("A", "float", 110.0, 120.0),
+            ("B", "float", 125.0, 105.0),
+            ("Figure 1: Diagram.", "caption", 50.0, 160.0),
+        ]);
+        let rects = [
+            TextRect {
+                x_min: 50.0,
+                x_max: 100.0,
+                y_min: 100.0,
+                y_max: 110.0,
+            },
+            TextRect {
+                x_min: 110.0,
+                x_max: 120.0,
+                y_min: 120.0,
+                y_max: 140.0,
+            },
+            TextRect {
+                x_min: 125.0,
+                x_max: 130.0,
+                y_min: 105.0,
+                y_max: 130.0,
+            },
+        ];
+        for (token, rect) in index.tokens.iter_mut().take(3).zip(rects) {
+            token.rects = vec![rect];
+        }
+        for token in index.tokens.iter_mut().skip(3) {
+            token.rects = vec![TextRect {
+                x_min: 50.0,
+                x_max: 100.0,
+                y_min: 160.0,
+                y_max: 170.0,
+            }];
+        }
+        assert!(find(&index)[0].rect.unwrap().y_max >= 140.0);
+    }
+
+    #[test]
+    fn should_union_only_owned_image_tiles_when_neighboring_columns_contain_other_floats() {
+        let index = fixture(&[
+            ("Figure 1: Left result.", "caption", 40.0, 250.0),
+            ("Table I: Right table.", "body", 340.0, 105.0),
+        ]);
+        let images = super::super::graphics::PageGraphics {
+            page: 1,
+            status: "complete".into(),
+            trace_sha256: None,
+            unsupported_images: 0,
+            images: vec![
+                TextRect {
+                    x_min: 40.0,
+                    x_max: 130.0,
+                    y_min: 130.0,
+                    y_max: 230.0,
+                },
+                TextRect {
+                    x_min: 130.0,
+                    x_max: 220.0,
+                    y_min: 130.0,
+                    y_max: 230.0,
+                },
+                TextRect {
+                    x_min: 340.0,
+                    x_max: 490.0,
+                    y_min: 130.0,
+                    y_max: 240.0,
+                },
+            ],
+        };
+        let objects = find_with_images(&index, &[images]);
+        let figure = &objects[0];
+        assert_eq!(
+            figure.rect,
+            Some(TextRect {
+                x_min: 40.0,
+                x_max: 220.0,
+                y_min: 130.0,
+                y_max: 230.0
+            })
+        );
+    }
+
+    #[test]
+    fn should_separate_table_and_image_when_a_plot_follows_the_last_grid_row() {
+        let index = fixture(&[
+            ("Table V: Scores.", "body", 50.0, 100.0),
+            ("First 12.5", "float", 60.0, 130.0),
+            ("Second 25.0", "float", 60.0, 146.0),
+            ("Figure 8: Plot.", "caption", 50.0, 280.0),
+        ]);
+        let rect = TextRect {
+            x_min: 50.0,
+            x_max: 200.0,
+            y_min: 175.0,
+            y_max: 265.0,
+        };
+        let images = super::super::graphics::PageGraphics {
+            page: 1,
+            status: "complete".into(),
+            trace_sha256: None,
+            unsupported_images: 0,
+            images: vec![rect],
+        };
+        let objects = find_with_images(&index, &[images]);
+        assert!(objects[0].rect.unwrap().y_max < 175.0);
+        assert_eq!(objects[1].rect, Some(rect));
     }
 
     #[test]

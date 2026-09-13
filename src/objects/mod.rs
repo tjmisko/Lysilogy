@@ -9,7 +9,10 @@ use sha2::{Digest, Sha256};
 use crate::{
     Error, Result,
     domain::{PaperId, TextRect},
-    source_index::{FIGURE_DETECTOR_VERSION, Figure, IndexDocument, detect_figures},
+    source_index::{
+        FIGURE_DETECTOR_VERSION, Figure, IndexDocument, detect_figures, detect_figures_with_images,
+        graphics,
+    },
     store::write_atomic,
 };
 
@@ -30,6 +33,9 @@ pub struct ObjectsArtifact {
     /// Fingerprint of the exact native generation and the derived detector version.
     #[serde(default)]
     pub figure_detector_generation: String,
+    /// Optional PDF placements, independently versioned from immutable native text.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub graphics: Option<graphics::GraphicsEvidence>,
     pub objects: Vec<PaperObject>,
 }
 
@@ -124,6 +130,7 @@ impl ObjectsArtifact {
             reading_index_generation: document.etag.clone(),
             figure_detector_version: FIGURE_DETECTOR_VERSION,
             figure_detector_generation: figure_detector_generation(&document.etag),
+            graphics: None,
             objects,
         }
     }
@@ -137,6 +144,93 @@ pub fn figure_detector_generation(native_generation: &str) -> String {
             "figures:{FIGURE_DETECTOR_VERSION}:{native_generation}"
         ))
     )
+}
+
+#[must_use]
+pub fn source_detector_generation(native_generation: &str, graphics_generation: &str) -> String {
+    format!(
+        "{:x}",
+        Sha256::digest(format!(
+            "figures:{FIGURE_DETECTOR_VERSION}:{native_generation}:graphics:{graphics_generation}"
+        ))
+    )
+}
+
+pub struct SourceObjects {
+    pub artifact: ObjectsArtifact,
+    /// Raw trace bytes are available to explicit experiments, never persisted by
+    /// the product in its object cache or native reading index.
+    pub traces: Vec<(u32, Vec<u8>)>,
+}
+
+async fn derive_source(
+    source: &Path,
+    paper_id: &PaperId,
+    document: &IndexDocument,
+    prepared: graphics::PreparedGraphics,
+) -> Result<SourceObjects> {
+    let pages = detect_figures(&document.index)
+        .iter()
+        .map(|figure| figure.page)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let graphics = graphics::collect(source, document, &pages, prepared).await?;
+    let mut artifact = ObjectsArtifact::from_figures(
+        paper_id,
+        document,
+        &detect_figures_with_images(&document.index, &graphics.evidence.pages),
+    );
+    artifact.figure_detector_generation =
+        source_detector_generation(&document.etag, &graphics.evidence.generation);
+    artifact.graphics = Some(graphics.evidence);
+    Ok(SourceObjects {
+        artifact,
+        traces: graphics.traces,
+    })
+}
+
+/// The shared current production path. Derive into separate artifacts; never
+/// rewrite the native index, its old figures, registry, or source PDF.
+pub async fn from_source(
+    source: &Path,
+    paper_id: &PaperId,
+    document: &IndexDocument,
+) -> Result<SourceObjects> {
+    let prepared = graphics::prepare(source, document).await?;
+    derive_source(source, paper_id, document, prepared).await
+}
+
+/// The source-aware cache invalidates native-only and previous tool generations.
+pub async fn load_or_build_from_source(
+    source: &Path,
+    directory: &Path,
+    paper_id: &PaperId,
+    document: &IndexDocument,
+) -> Result<ObjectsArtifact> {
+    let prepared = graphics::prepare(source, document).await?;
+    let path = directory.join(OBJECTS_FILE);
+    if let Ok(bytes) = tokio::fs::read(&path).await
+        && let Ok(cached) = serde_json::from_slice::<ObjectsArtifact>(&bytes)
+        && cached.schema_version == SCHEMA_VERSION
+        && cached.paper_id == *paper_id
+        && cached.reading_index_generation == document.etag
+        && cached.figure_detector_version == FIGURE_DETECTOR_VERSION
+        && let Some(evidence) = &cached.graphics
+        && evidence.reusable_for(&prepared)
+        && cached.figure_detector_generation
+            == source_detector_generation(&document.etag, &evidence.generation)
+    {
+        return Ok(cached);
+    }
+    let artifact = derive_source(source, paper_id, document, prepared)
+        .await?
+        .artifact;
+    tokio::fs::create_dir_all(directory)
+        .await
+        .map_err(|error| Error::io(directory, error))?;
+    write_atomic(&path, &serde_json::to_vec(&artifact)?).await?;
+    Ok(artifact)
 }
 
 impl PaperObject {
@@ -271,6 +365,56 @@ mod tests {
             index,
             etag: "\"generation-1\"".into(),
         }
+    }
+
+    #[tokio::test]
+    async fn should_replace_native_only_objects_when_the_source_factory_supplies_a_new_generation()
+    {
+        let directory = tempfile::tempdir().unwrap();
+        let source = directory.path().join("synthetic.pdf");
+        // No caption pages means no native command; this test exercises source
+        // identity and cache invalidation independently of installed tools.
+        tokio::fs::write(&source, b"independently specified source")
+            .await
+            .unwrap();
+        let mut document = document();
+        document.index.objects.paragraph.clear();
+        let id = paper_id();
+        let original = load_or_build(directory.path(), &id, &document)
+            .await
+            .unwrap();
+        let native_before = serde_json::to_vec(&document.index).unwrap();
+        let current = load_or_build_from_source(&source, directory.path(), &id, &document)
+            .await
+            .unwrap();
+        assert!(current.graphics.is_some());
+        assert!(current.objects.is_empty());
+        assert_ne!(
+            current.figure_detector_generation,
+            original.figure_detector_generation
+        );
+        assert_eq!(serde_json::to_vec(&document.index).unwrap(), native_before);
+        let reused = load_or_build_from_source(&source, directory.path(), &id, &document)
+            .await
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(&current).unwrap(),
+            serde_json::to_value(reused).unwrap()
+        );
+        tokio::fs::write(&source, b"independently changed source")
+            .await
+            .unwrap();
+        let changed = load_or_build_from_source(&source, directory.path(), &id, &document)
+            .await
+            .unwrap();
+        assert_ne!(
+            current.figure_detector_generation,
+            changed.figure_detector_generation
+        );
+        assert_eq!(
+            changed.reading_index_generation,
+            current.reading_index_generation
+        );
     }
 
     #[test]

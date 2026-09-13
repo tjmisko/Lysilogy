@@ -30,17 +30,49 @@ is 0.90; the O2 target is 0.75. Empty populations cannot create a passing metric
 The collector revalidates the immutable K1 configuration, original automatic reports and all
 review bundles, reproducing the published projections in memory. It checks full per-kind
 inventories/negatives, independent evidence hashes, source/PDF/index identity and mapped PaperIds.
-An evaluation-only Rust bridge calls the production `load_cached` and
-`ObjectsArtifact::from_reading_index` functions. It never scans a library, builds an index,
-writes objects into the canonical data root, or invokes an extractor/model/network. These are
-actual current production predictions derived from the exact frozen native indexes. Detector
-version 2 recomputes captions and regions in `ObjectsArtifact::from_reading_index`; it never reads
-legacy embedded `ReadingIndex.figures` as its predictions. The independent native generation
-remains the SHA256/ETag of the original unchanged index. `figure_detector_generation` is SHA256
-of UTF-8 `figures:<version>:<native-etag>`, and object cache reuse requires both that fingerprint
-and the current detector version. Existing objects without these fields are rebuilt atomically.
-The source reading-index endpoint retains its historical embedded figure records; current KB/API
-objects use the refreshed factory. No canonical native cache is rewritten for measurement.
+An evaluation-only Rust bridge calls production `load_cached` and the shared asynchronous
+`objects::from_source` factory. It never scans a library, builds/rewrites a native index, writes
+objects into the canonical data root, or invokes models/network calls. The current production
+objects API uses the same source-backed factory via `load_or_build_from_source`; the explicit
+`ObjectsArtifact::from_reading_index` factory remains a native-only fallback for callers without
+source access. Neither factory reads legacy embedded `ReadingIndex.figures` as predictions.
+The source reading-index endpoint retains those historical embedded records unchanged.
+
+Native generation remains the original full index SHA256/ETag. Native-only detector generation
+is SHA256 of UTF-8 `figures:<version>:<native-etag>`. The source-backed generation hashes UTF-8
+`figures:<version>:<native-etag>:graphics:<graphics-generation>`. Graphics version1 binds the
+native ETag, exact PDF SHA256, canonical tool path/SHA256, page statuses, raw trace hashes,
+accepted image placements and excluded-image counts. Its generation hashes the exact Rust JSON
+serialization with the `generation` field empty; the collector retains those exact bytes and
+checks their structural equality to the artifact. A separate cache key hashes JSON
+`[1,native-etag,pdf-sha256,tool-sha256]`. Existing native-only objects, changed source/tool bytes,
+old detector versions and invalid graphics generations are rebuilt in the product cache.
+Transient tool/resource failures remain explicit and are retried; unavailable tools retain
+native-only geometry, with a new generation when the tool becomes available.
+
+Optional graphics extraction uses `mutool draw -F trace -r 72 -N -L -m 134217728 -q -o -`
+on caption-bearing pages only. It does not rasterize. A single worker permits at most64 page
+traces,16MiB per page/64MiB per paper,5s per command/30s before starting another page; the
+underlying command is killed on cancellation. Source/tool hashes are checked again afterward.
+Unsupported or failed pages preserve explicit status plus the untouched native fallback.
+The parser requires one requested page with finite, zero-origin dimensions matching its native
+page within0.01 PDF point. It admits only opaque self-closing image operations with positive
+intrinsic dimensions and finite axis-aligned/reflected/quarter-turn page-space unit-square
+matrices wholly inside the page. Pixel dimensions never scale the placed rectangle. Active
+clips exclude images until `pop_clip`; masks/groups/tiles or unknown drawing state withhold
+all page images. Text/glyph/path records provide no inferred graphic bounds. DTDs, malformed
+framing, duplicate attributes, oversized tags/depth/inventories are rejected. Independently
+specified synthetic traces cover these boundaries without consulting truth regions/predictions.
+
+Image tiles seed the nearest compatible caption neighborhood; separately owned columns and
+captions cannot be joined. Native labels extend a bounded connected neighborhood; table bands
+stop before following image placements. These are detector heuristics, never truth matching.
+The bridge retains raw traces immutably only under the dedicated external
+`~/.cache/lysilogy/object-graphics-traces/<sha256>.xml` root, rejecting symlinked ancestors and
+conflicting existing bytes. The collector checks every retained trace path/hash, source/tool
+identity, native page inventory, finite placement geometry and evidence generation before
+scoring. Raw traces/PDF text never enter the repo or native cache. Full response size remains
+bounded at16MiB; per-paper compact native commitments preserve larger cohort capacity.
 
 The bridge retains a compact `native-json-f32-v1` commitment to every typed native field,
 excluding only the unused embedded `figures`. The full original index SHA256 and native schema6

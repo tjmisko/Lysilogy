@@ -9,7 +9,7 @@ use super::{AppState, parse_id};
 use crate::{
     Result,
     domain::PaperId,
-    objects::{ObjectsArtifact, load_or_build},
+    objects::{ObjectsArtifact, load_or_build_from_source},
     source_index::BuildPriority,
 };
 
@@ -22,7 +22,8 @@ impl AppState {
         let document = self
             .reading_index_document(id, false, BuildPriority::Interactive)
             .await?;
-        load_or_build(&self.store.paper_dir(id), id, &document).await
+        let source = self.source_path(id).await?;
+        load_or_build_from_source(&source, &self.store.paper_dir(id), id, &document).await
     }
 }
 
