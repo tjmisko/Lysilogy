@@ -42,8 +42,10 @@ The detector follow-up will distinguish that prose reference from the actual cap
 
 O2's **15-value** median is **0.2448506858**. The five missed tables contribute zero. The
 separate **10-match** median is **0.2906506211**, with figure IoUs approximately 0.110–0.555.
-The follow-up will improve complete body bounds using page/image/vector/cell evidence, retaining
-axes, legends and subpanels while excluding separately printed captions. No matching threshold,
+Independent rectangle arithmetic confirms that all ten matched predictions contain 100% of
+the annotated truth body, but their areas are approximately 1.80–9.13 times too large. The
+follow-up will remove excess surrounding coverage using page/image/vector/cell evidence,
+retaining axes, legends and subpanels while excluding separately printed captions. No matching threshold,
 truth label or metric target was adjusted after looking at these results.
 
 ## Production and provenance boundary
