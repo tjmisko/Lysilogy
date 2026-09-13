@@ -576,6 +576,40 @@ mod tests {
     }
 
     #[test]
+    fn should_preserve_exact_native_decimals_when_json_round_trips_mask_transforms() {
+        for text in ["208.27352905273438", "261.53204345703125"] {
+            let exact = text.parse::<f64>().unwrap();
+            let decoded: f64 = serde_json::from_str(text).unwrap();
+            assert_eq!(decoded.to_bits(), exact.to_bits());
+        }
+        let mut case = fixtures()["cases"][1].clone();
+        let matrix = [
+            80.0,
+            0.0,
+            0.0,
+            208.273_529_052_734_38,
+            261.532_043_457_031_25,
+            20.0,
+        ];
+        case["trace"] = json!(case["trace"].as_str().unwrap().replace(
+            "80 0 0 60 10 20",
+            "80 0 0 208.27352905273438 261.53204345703125 20"
+        ));
+        for position in [0, 1] {
+            case["receipt"]["operations"][position]["matrix"] = json!(matrix);
+        }
+        let parsed = evaluate(&case).unwrap();
+        assert_eq!(parsed.mask_supported, 1);
+        assert_eq!(parsed.images.len(), 1);
+        // Even a neighboring f64 value that narrows to the same f32 must fail.
+        for position in [0, 1] {
+            case["receipt"]["operations"][position]["matrix"][4] =
+                json!(f64::from_bits(matrix[4].to_bits() + 1));
+        }
+        assert!(evaluate(&case).is_err());
+    }
+
+    #[test]
     fn should_use_complete_pixel_support_when_independent_mask_fixtures_define_the_evidence() {
         let data = fixtures();
         assert_eq!(

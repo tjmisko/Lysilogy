@@ -382,6 +382,11 @@ When only raster inserts are supported within an independently enclosing native 
 multiple small nonnumeric labels above and below the inserts retain that native extent.
 This evidence does not infer the contents or bounds of unsupported masks.
 
+The mask follow-up enables the existing `serde_json/float_roundtrip` feature after a
+retained reproduction showed its default binary64 decoder shift valid native transform
+decimals by one ULP. This adds no dependency and retains exact coordinate comparisons;
+full gates and native commitments cover the feature's global JSON-decoding scope.
+
 Mask follow-up (#111) adds optional, separately fingerprinted decoded opacity to graphics
 version3. The XML trace still owns page/state/event framing. A mask may supply a candidate
 envelope only from all its nonzero pixel cells, with an identical attached mask and independently

@@ -81,6 +81,13 @@ wrapper hashes are rechecked after derivation. The optional Linux wrapper restri
 to768MiB address space,8 CPU seconds, no core file and16MiB regular-file output. Pipe output
 is separately bounded, cancellation kills the child, and each mask command has a10s wall
 limit shortened to the remaining30s paper budget. Missing wrapper/tool support remains explicit.
+The existing `serde_json` dependency enables `float_roundtrip` (no new dependency) so
+Device decimal coordinates decode exactly before strict native-f32 equality checks.
+Its default binary64 parser shifted three valid page-3 values by one ULP in the first
+experiment; the original failed support result is retained. This feature affects JSON
+decoding globally, so full artifact/native-basis checks accompany the change. No epsilon,
+coordinate narrowing or baseline target adjustment substitutes for exact equality.
+
 No arbitrary PDF-supplied JavaScript executes. The trusted script arrives through seekable stdin from an unnamed, private regular file under
 `~/.cache/lysilogy`. Existing `rustix` APIs open every cache ancestor without following symlinks;
 `O_TMPFILE` creates no replaceable directory entry. The owner stays open through completion and
