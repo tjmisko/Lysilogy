@@ -1702,7 +1702,10 @@ mod tests {
         };
         let with_image = find_with_images(&index, &[page]);
         assert_eq!(with_image[0].rect, native[0].rect);
-        assert_eq!(with_image[0].spans, native[0].spans);
+        assert_eq!(
+            serde_json::to_value(&with_image[0].spans).unwrap(),
+            serde_json::to_value(&native[0].spans).unwrap()
+        );
         assert!(with_image[0].rect.unwrap().x_max > 240.0);
         assert!(with_image[0].rect.unwrap().y_min < 80.0);
         assert!(with_image[0].rect.unwrap().y_max > 206.0);
