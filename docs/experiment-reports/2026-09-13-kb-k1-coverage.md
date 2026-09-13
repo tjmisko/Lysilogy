@@ -66,26 +66,33 @@ failures as well as improving faithful alignment. The most common whole-paper
 failure was duplicated object labels (92 papers); unsafe ambiguity must remain
 explicit if a later implementation localizes that failure.
 
-A finite AMS math-operator declaration adapter addresses one reusable source
+A finite AMS math-operator declaration prototype investigates a source
 capability affecting 184 frozen candidates. It checks the entire literal body,
-preamble scope, load order, name identity and environment namespaces; it does
-not certify mathematical rendering. In a deterministic source-only pilot of
-the first two affected candidates per category, checkpoint `38f27a0` parsed all
-14 papers and verified 18 declarations in eight papers. Every original object
+preamble scope, load order and known name collisions. In a deterministic
+source-only pilot of the first two affected candidates per category, checkpoint
+`38f27a0` parsed all 14 papers and marked 18 declarations in eight papers as
+verified under its partial proof. Every original object
 ID, kind and source span remained identical. This took 2.034 seconds and
 158,496 KiB peak RSS, with no PDF alignment, network or model calls. The sample
-is targeted, not a representative coverage estimate. The prior `f389393` pilot
+is targeted, not a representative coverage estimate. Independent review then
+showed that this partial proof could miss imported argument consumers or
+misread stored package tokens as executed loads. Checkpoint `8a8f58c` therefore
+retains literal-definition evidence but withholds every unproved imported
+namespace. The 18 historical flags are not defensible admissions. A short
+reserved-name list or an incomplete regex catalog cannot supply the missing
+proof. No generated toolchain probe has run. The prior `f389393` pilot
 and its one heading-scan failure are retained; the correction restricts heading
 roles to the document body while preserving unknown preamble semantics.
 
 ## Validation and remaining work
 
-Current lightweight validation passes 196 offline tests with Python warnings
+Current lightweight validation passes 198 offline tests with Python warnings
 treated as errors. Tests cover macro argument visibility/multiplicity, literal
 and stored roles, original include spans, math fidelity, section hierarchy,
 declaration scope/redefinitions, reserved environment names and valid controls.
-Independent review has cleared the role and math-layout guards; the latest AMS
-namespace correction is awaiting review at this checkpoint.
+Independent review has cleared the role and math-layout guards; the conservative
+AMS imported-namespace correction is awaiting review at this checkpoint.
+Stored-load and imported argument-consumer regressions are included.
 
 The clean before checks for the affected objects and bibliography suites passed
 using an explicitly rooted, source-equivalent borrowed CLI, with all 72
