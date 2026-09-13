@@ -6,6 +6,41 @@ reading-index generation agree. The original implementation, collector, measured
 boundary fix have passed separate independent source reviews. **The PR remains draft: genuine
 K2 deposited-reference measurements are still required for O9 before this detector merges.**
 
+## Current integration with figure and graphics derivation
+
+Source `347de697a87c72ea1d6d3ff41ee0eff66f2e78cb` normally merges main through `d51ff95`,
+including #101/PR104. Schema 2 retains bibliography fields, unresolved citations and sentence
+anchors inside the common object assembly. The asynchronous source-backed API/cache and the
+native-only fixture factory share that assembly; current figure geometry, graphics generation,
+source/tool fingerprints and the compact native commitment remain intact. Two new offline tests
+cover bibliography stability under changed figure regions and source-aware cache reuse/schema-1
+upgrade, without invoking native commands or changing an index. Separate root source and compiled
+reviews cleared the integration before real remeasurement.
+
+The same frozen K1 bibliography still gives **O8=1.0 (35/0/0)** and **O10 precision/recall=1.0
+(50/0/0)**. Known K1 fields remain **title 30/35, first author 35/35, year 35/35**; genuine K2
+is absent, so complete O9 remains unavailable. The merged graphics results are preserved exactly:
+**O1=1.0 (15/0/0), O2=0.9107793204006069** over all 15 original regions. No truth, scoring rule,
+canonical PDF/source/index or registry changed. The original bibliography observations and all
+historical parser/figure baselines below remain immutable.
+
+All integration gates pass at that source: formatting, strict all-target/all-feature Clippy,
+**388 Rust tests**, 14 bibliography-collector tests, 28 figure-collector tests, frontend
+typecheck/lint/build, 20 paper-link tests and the production-artifact Playwright smoke. Both new
+screenshots were inspected. Isolated G5 passes **388 Rust / 296 Python / 92 Node**, with loopback
+only, external networking rejected and model CLIs absent. Bibliography, objects, scale and tests
+`--check` pass; O30 remains 0/10,000 simulated admissions. The local scorecard is **1/5 hard gates
+and 5/30 objectives at target** (O1, O2, O8, O10, O30), not phase/system acceptance.
+
+Targeted tests/Clippy took 29.928 s, actual bibliography 0.823 s, actual source-backed objects
+7.764 s, and the final Rust/frontend/eval sequence 37.451 s (isolated G5 7.747 s). These are
+separate scopes, with zero network/model calls and $0. Historical scale timings were not repeated.
+[Integration evidence](../../eval/evidence/bibliography-graphics-integration.json) binds 193 source
+fingerprints, exact new observations/results, 71 retained artifacts, executable bytes and review
+receipts under `~/.cache/lysilogy/bibliography-development/integration-release-347de69/`.
+The draft still waits for genuine K2/O9. #103 retains the five title misses; #97 retains broader
+independent coverage. The earlier #101 aggregate objective misses are resolved by its merged fix.
+
 ## Real K1 measurements and corrections
 
 The unchanged limited K1 release now supplies one independently annotated, complete bibliography
@@ -71,9 +106,10 @@ collector **5.288 seconds**, and isolated G5 **7.994 seconds**. Network/model ca
 
 The figure collector was refreshed against unchanged K1 after integrating #96: O1 remains
 0.769231 (10 TP / 1 FP / 5 FN), O2 remains 0.244851 over all 15 independently annotated objects.
-Those misses remain with #101. O30 remains zero violations over 10,000 simulated admissions.
+Those historical misses were tracked by #101 and are resolved in the current integration above.
+O30 remained zero violations over 10,000 simulated admissions.
 Bibliography, objects, scale and tests `--check` pass with honest unavailable metrics; the local
-scorecard is **1/5 hard gates passing and 3/30 objectives at target** (O8, O10, O30).
+scorecard at that checkpoint was **1/5 hard gates passing and 3/30 objectives at target** (O8, O10, O30).
 Historical O25/O26 misses remain with #21/#22. No native extraction or expensive scale timing was
 repeated for this parser.
 
