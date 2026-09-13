@@ -532,7 +532,11 @@ fn table_below(
         }
         let rect = union(text.iter().flat_map(|t| t.rects.iter().copied()));
         let cell_band = caption.y_max..=bounds.y_max;
-        if cell_band.contains(&rect.y_min) && cell_band.contains(&rect.y_max) {
+        if cell_band.contains(&rect.y_min)
+            && cell_band.contains(&rect.y_max)
+            && rect.x_max >= caption.x_min - font * 2.0
+            && rect.x_min <= caption.x_max + font * 2.0
+        {
             bounds = union([bounds, rect].into_iter());
         }
     }
@@ -718,6 +722,25 @@ mod tests {
         let rect = result[0].rect.unwrap();
         assert!(
             rect.x_min > 90.0 && rect.x_max < 200.0 && rect.y_min > 120.0 && rect.y_max < 180.0
+        );
+    }
+
+    #[test]
+    fn should_exclude_neighboring_column_labels_when_extending_a_table_grid() {
+        let index = fixture(&[
+            ("Table VI: Model scores.", "body", 50.0, 100.0),
+            ("Method Score", "float", 70.0, 130.0),
+            ("First 12.5", "float", 70.0, 146.0),
+            ("Second 25.0", "float", 70.0, 162.0),
+            ("Neighboring plot label", "float", 350.0, 150.0),
+        ]);
+        let result = find(&index);
+        assert!(result[0].rect.unwrap().x_max < 200.0);
+        assert!(
+            result[0]
+                .spans
+                .iter()
+                .all(|span| span.end <= index.objects.paragraph[3].end)
         );
     }
 
