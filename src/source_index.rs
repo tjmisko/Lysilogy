@@ -5,6 +5,7 @@
 
 mod cache;
 mod figures;
+pub mod graphics;
 mod native;
 mod ocr;
 mod paragraphs;
@@ -22,6 +23,11 @@ use tokio::{io::AsyncReadExt, process::Command};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{Error, Result, domain::TextRect};
+
+pub use figures::{
+    DETECTOR_VERSION as FIGURE_DETECTOR_VERSION, find as detect_figures,
+    find_with_images as detect_figures_with_images,
+};
 
 pub use cache::{IndexDocument, load_cached, load_or_build, load_or_build_priority};
 
