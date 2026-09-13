@@ -17,6 +17,29 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_preserve_leading_math_brackets_when_literal_or_aliased_environments_have_no_options(self):
+        for environment in ('equation','align','gather','multline','eqnarray'):
+            for starred in (False,True):
+                for aliased in (False,True):
+                    env=environment+('*' if starred else '')
+                    begin,end=(r'\be',r'\ee') if aliased else (r'\begin{'+env+'}',r'\end{'+env+'}')
+                    preamble=r'\def\be{\begin{'+env+r'}}\def\ee{\end{'+env+'}}' if aliased else ''
+                    body=begin+r'[x,y]+abcdefghij=12345'+(r'\tag{A}' if starred else '')+end
+                    parsed=parse_project({'main.tex':document(body,preamble)})
+                    with self.subTest(environment=env,aliased=aliased):
+                        self.assertEqual(parsed['objects'][0]['text'],'[x,y]+abcdefghij=12345')
+                        result=align_paper(parsed,{'text':'+abcdefghij=12345'})
+                        self.assertFalse(result['metric_eligibility']['O3'])
+
+    def test_should_keep_supported_proof_and_float_options_when_math_brackets_are_preserved(self):
+        source=document(r'\begin{theorem}\label{one}Every input has a unique bounded output.\end{theorem}'
+                        +r'\begin{proof}[Proof of Theorem~\ref{one}]A constructive proof of the stated result.\end{proof}'
+                        +r'\begin{figure}[ht]\caption{An independent complete visual caption.}\end{figure}')
+        parsed=parse_project({'main.tex':source})
+        self.assertEqual(parsed['objects'][1]['proof_targets'],['object:one'])
+        self.assertEqual(parsed['objects'][1]['text'],'A constructive proof of the stated result.')
+        self.assertEqual(parsed['objects'][2]['text'],'An independent complete visual caption.')
+
     def test_should_not_certify_an_empty_equation_cohort_when_aliases_have_literal_star_tokens(self):
         source=document(r'\be* abcdefghij=12345\ee*\begin{figure}\caption{A complete independent visual caption.}\end{figure}',
                         r'\def\be{\begin{equation}}\def\ee{\end{equation}}')

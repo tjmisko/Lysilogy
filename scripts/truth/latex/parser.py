@@ -392,7 +392,12 @@ def parse_project(files, limits=Limits(), selected_main=None):
         if command["command"] == "begin":
             if len(stack) >= limits.group_depth:
                 raise UnsupportedSource("environment nesting exceeds its bound")
-            option, content_start = group(text, command["end"], "[", "]", False)
+            if name.rstrip('*') in {"equation", "align", "gather", "multline", "eqnarray"}:
+                # These math environments have no optional bracket argument.
+                # A leading interval/vector is authored mathematical content.
+                option, content_start = None, command["end"]
+            else:
+                option, content_start = group(text, command["end"], "[", "]", False)
             stack.append({"environment": name, "start": command["start"], "content_start": content_start,
                           "option": option})
         else:
