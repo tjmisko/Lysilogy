@@ -517,6 +517,24 @@ Tests: should parse "van der Waals, J. D." with particle and family name; should
 with a hyphenated initial; should match "Müller" and "Mueller" blocking keys; should return
 alternatives when order is ambiguous.
 
+Implementation contract: `kb::names::parse_name` retains the exact raw string and returns an
+unranked set of component interpretations. Commas delimit family-first forms; unmarked full
+names retain both orders and compound-family boundaries. Period-marked initial groups constrain
+candidate splits; bare letters retain the literal family-name interpretation too. Neither surname
+dictionaries nor inferred ethnicity choose an order. Compact capital groups and
+unmarked Roman suffixes keep their alternative word/initial interpretations. A single undivided
+name receives no given-name initial or wildcard blocking key.
+
+Components preserve case and accents with NFC/whitespace normalization; blocking keys separately
+fold accents, punctuation, case, and common ligatures. Umlaut spellings also supply ae/oe/ue
+variants so Müller/Mueller retrieve one another. Particle prefixes retain a literal compound-family interpretation too; the particle vocabulary
+never excludes a whole family or given name such as Le, Van, or Al. Particle-bearing and
+particle-free keys are candidate retrieval aids. Key collisions (including different given names or suffixes) never
+establish person equality; raw evidence and all alternatives survive for the later resolver.
+Inputs over 1024 bytes, 16 words, or 256 alternatives, and unsupported syntax, remain explicitly
+unresolved without truncation. K3/K4 resolver metrics stay unavailable until their truth and
+resolution collectors exist; these parser fixtures do not claim precision or clustering scores.
+
 Blocked by: E2.2
 
 ### E2.4 Title normalizer and fuzzy index
