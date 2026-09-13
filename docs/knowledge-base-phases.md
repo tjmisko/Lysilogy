@@ -1403,3 +1403,48 @@ date, last merged issue, in-flight branches and their state, next action, and op
 - Scorecard unchanged: **1/5 gates (G5), 1/30 objectives (O30=0/10k)**. Historical O25/O26 misses
   retain #21/#22; no new measured miss or follow-up. Current implementations #33/#70/#72;
   #25/#71 are paused drafts. Full phase/system acceptance remains outstanding.
+
+
+### 2026-09-13 — person-truth draft reviewed; store and LaTeX remain active
+
+- Last merged issue remains **#88 / PR90**, current phase/wave **A/A2**. Main prior checkpoint
+  `c269dd1`. No phase exit or new objective measurement. All grant/blocker conditions below
+  remain unchanged; no user approval of the additional four hosts has arrived.
+- **#72 / draft PR #95** is safely paused at clean/pushed **`c867ec6`**, explicitly based on
+  `feat/e8.4-reference-truth` / PR93. Tested source **`b33e924`** is independently cleared.
+  Final checks pass: **309 Rust / 165 Python / 85 Node**, 55 truth tests (22 new), O30=0/10k;
+  G1.persons/O13 remain unavailable. Exec65963 is terminal. Root verified 13 current source hashes,
+  eight gate logs, 15 G5 logs and both actual metadata-plan files; review receipt
+  `~/.cache/lysilogy/review-person-truth-root.json`. Report/evidence are
+  `docs/experiment-reports/2026-09-13-person-silver-labels.md` and
+  `eval/evidence/person-silver-labels.json`. No actual K4, complete K2/K0 input set or provider call.
+  Do not merge until actual label acceptance exists and PR93 has merged.
+- Agent `review_ready_prs` now independently reviews **#70** committed checkpoint **`3500522`**
+  while implementer `finish_corpus_proxy` continues builder/coverage receipts and a small native
+  index/alignment pilot. Checkpoint3500522 has 28 Python tests and the native helper's focused
+  Rust/Clippy checks passing; it does not yet contain final K1 publication/CLI/O11 panel.
+  Root reproduced a math-alignment collision: case-folding matched distinct uppercase/lowercase
+  equation variables with quality1.0. Owner is fixing case-sensitive equation matching and auditing
+  omitted unsupported operators; independent reviewer is checking the same semantic boundary.
+  Keep every rejected/partial alignment and unknown geometry explicit. No fabricated O2 labels.
+- **#33** normally integrated main at **`f2da82e`**; only kb/mod.rs conflicted and both store/titles
+  modules were retained. Agent `finish_benchmark` is implementing aggregation from every current
+  canonical-bound observation revision, using stable observation-ID ordering instead of refresh
+  time. Union identifiers/versions/copies/name variants, select known scalars and coherent parsed
+  name tuples deterministically, and retain every full asserted entity/revision in derived
+  provenance tables. Refresh replaces only that observation's contribution; merge/split use the
+  same aggregation path. Exact same-key version/copy contradictions reject before journal append.
+  Planned migration3 adds assertion/identifier projection tables plus journal validation stamp;
+  rebuild existing projections on migration. Root agreed to this storage default and requested
+  explicit documentation that later resolver policy may select among all retained claims.
+  Existing `.gitignore` change and target notes/patch remain preserved. No Rust compile/registry
+  probe or G4/O28 claim; dependency hosts remain blocked.
+- **#25 / draft PR94** stays paused at `46ff41b`, final helper source `6291b7e`, held for real
+  K1/K2 measurement. Root's final receipt verification uses the supplemental
+  `bibliography-fixture-target.json`; the original bibliography-parser.json remains intentionally
+  historical. **#71 / draft PR93** stays paused at `d5e12aa`; actual K2/K5/K7 remain unavailable.
+- Only live corpus mutator remains retained **exec97363**, with eval and subsequent guarded full
+  run logs/paths as recorded above. Poll that handle before any new corpus mutation. Native
+  indexing is separate, writes only the dedicated cache data root, and must preserve its canonical
+  PaperId registry. Current active implementations are #33/#70; #72's agent is reviewing #70.
+  Scorecard remains **1/5 gates (G5), 1/30 objectives (O30)**; O25/O26 misses retain #21/#22.
