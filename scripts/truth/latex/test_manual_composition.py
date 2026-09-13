@@ -65,6 +65,18 @@ class ManualCompositionTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'changed the original candidate'):
                 compose_overlays(canonical(base), [supplied])
 
+    def test_should_dispatch_only_an_explicit_tranche_when_no_legacy_bundle_is_supplied(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory)
+            (cache/'candidate.json').write_bytes(canonical({'arxiv_id': 'synthetic', 'paper_id': 'paper'}))
+            (cache/'inputs.json').write_bytes(canonical({'papers': [{'arxiv_id': 'synthetic'}]}))
+            (cache/'indexes.json').write_bytes(canonical({'papers': [{'paper_id': 'paper'}]}))
+            with patch('tranche.attach_tranche', return_value={'retained': True}) as tranche, patch('manual.attach_objects') as legacy:
+                output = assemble(cache, cache, cache, 'candidate.json', None, inputs_relative='inputs.json', indexes_relative='indexes.json', tranche_relative='new-format')
+                self.assertEqual(output, {'retained': True}); tranche.assert_called_once(); legacy.assert_not_called()
+                with self.assertRaisesRegex(ValueError, 'legacy bundle arguments'):
+                    assemble(cache, cache, cache, 'candidate.json', 'legacy', inputs_relative='inputs.json', indexes_relative='indexes.json', tranche_relative='new-format')
+
     def test_should_exclude_predictions_and_preserve_utf16_text_when_native_export_is_verified(self):
         raw, exported, declaration = native_fixture()
         self.assertNotIn(b'prediction', exported)

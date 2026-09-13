@@ -262,7 +262,7 @@ def main():
     before=verify_evidence(cache,config);require(before==config['evidence_sha256'],'release external evidence differs from frozen hashes')
     assemblies=[]
     for paper in config['papers']:
-        assemblies.append(assemble(cache,corpus,data,paper['candidate'],paper.get('region_bundle'),paper.get('panel_bundle'),config['inputs'],config['indexes'],paper.get('object_bundle'),paper.get('bibliography_bundle')))
+        assemblies.append(assemble(cache,corpus,data,paper['candidate'],paper.get('region_bundle'),paper.get('panel_bundle'),config['inputs'],config['indexes'],paper.get('object_bundle'),paper.get('bibliography_bundle'),paper.get('tranche_bundle')))
     inputs=document(bounded(cache,config['inputs']))
     current_sources={name:(repo/'scripts/truth/latex'/name).read_bytes() for name in ('archive.py','tex.py','parser.py','align.py','builder.py')}
     history=validate_automatic_reports(cache,config,inputs,before,current_sources)

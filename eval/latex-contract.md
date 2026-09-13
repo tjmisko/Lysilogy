@@ -126,6 +126,53 @@ separate input/receipt histories; a projected native export alone does not
 satisfy source-inventory, full-region or mathematical visual-review requirements.
 The pinned `k1-limited-v1` implementation and published bytes remain unchanged.
 
+The explicit `k1-manual-tranche-v1` evidence format handles inventories first
+enumerated independently from every original PDF page, before either annotator
+reads source/native exports. Its later candidate and source crosswalk are separate
+inputs, never attributed to the initial blind inspection. `--tranche-bundle`
+selects this validator directly and cannot be mixed with legacy bundle arguments;
+a legacy validation failure never selects it automatically. Automatic candidate
+bytes, unsupported source programs and alignment failures remain unchanged.
+Complete independent visual inventories provide a separate source of evidence;
+they do not turn a local style program into supported automatic source semantics.
+
+The manifest declares schema version 1 and exactly 22 cache-relative artifacts:
+policy, selection, original packet, source/native exports, both original inventories
+and receipts, corrected independent inventory and receipt, mathematical supplement
+and receipt, initial/role/visual/math reviews, later construction, object/link
+crosswalks, and final review. Each declaration has a path, SHA-256 and byte count.
+The reader rejects symlink/traversal paths, rehashes actual corpus/index/image
+inputs, reproduces the native allowlist and deposited source-member export, and
+rechecks the evidence closure after validation. Aggregate JSON evidence is bounded
+at 64 MiB; individual documents, object counts and cumulative native membership
+are also bounded. Equality guards preserve JSON number/boolean types.
+
+This format's first codec supports complete direct figure, table and numbered
+equation inventories plus independently reviewed empty formal statement, proof
+and captioned algorithm/listing inventories. Positive formal objects, nested
+ownership and multipart visual bodies require another explicit codec and fail
+here. Each admitted kind keeps its whole independent inventory, including every
+source occurrence, full caption/body membership and reviewed visual geometry.
+Both original inventories must agree on non-whitespace native character positions;
+source arguments and UTF-16/page boundaries are checked against actual bytes.
+Mathematical body and printed-number boxes require the original independent
+supplement and a separate visual review. Lossy native text never becomes semantic
+quotation truth. Every retained informal role needs a reviewed original-scope
+disposition; unresolved roles prevent a complete negative cohort.
+
+The `k1-manual-tranche-review-v1` final review binds every other artifact hash,
+the canonical source inventory hash, two distinct original annotator identities,
+a distinct reviewer, all inspected pages, all six kind counts, and complete
+reference counts (`all`, `O4`, `visual`, `non_object`). It requires the explicit
+`clear_complete_visual_math_inventory` verdict, no findings, and separately stated
+initial-enumeration and post-freeze-crosswalk histories. Every reference retains
+both annotation IDs and its source/native occurrence; deposited labels prevent
+visual or equation references from becoming section references. All citation
+occurrences remain in the crosswalk, but bibliography field-role validation and
+O8–O11 are explicitly omitted by this codec. No tranche assembly itself publishes
+truth, changes the approximately 500-paper target, or alters the immutable v1
+release or its verifier.
+
 Manual bibliography evidence uses a separately accepted complete comparison. Every independently
 parsed entry and citation command must survive, with one target pair per printed destination.
 Both annotations and comparison agree on complete UTF-16 members, printed numbering, all known

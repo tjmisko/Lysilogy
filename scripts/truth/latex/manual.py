@@ -191,7 +191,7 @@ def attach_bibliography(cache, corpus_root, data_root, candidate_raw, paper, map
 
 
 def assemble(cache, corpus_root, data_root, candidate_relative, region_relative, panel_relative=None,
-             inputs_relative='k1-full-eval-inputs.json', indexes_relative='k1-full-index.json', object_relative=None, bibliography_relative=None):
+             inputs_relative='k1-full-eval-inputs.json', indexes_relative='k1-full-index.json', object_relative=None, bibliography_relative=None, tranche_relative=None):
     inputs_raw, indexes_raw = bounded(cache, inputs_relative), bounded(cache, indexes_relative)
     inputs, indexes = document(inputs_raw), document(indexes_raw)
     candidate_raw = bounded(cache, candidate_relative)
@@ -200,6 +200,11 @@ def assemble(cache, corpus_root, data_root, candidate_relative, region_relative,
     mappings = [paper for paper in indexes['papers'] if paper['paper_id'] == candidate['paper_id']]
     if len(papers) != 1 or len(mappings) != 1:
         raise ValueError('manual candidate lacks unique frozen paper and mapped identities')
+    if tranche_relative:
+        if any((region_relative, object_relative, panel_relative, bibliography_relative)):
+            raise ValueError('explicit tranche format cannot be combined with legacy bundle arguments')
+        from tranche import attach_tranche
+        return attach_tranche(cache, corpus_root, data_root, candidate_raw, papers[0], mappings[0], tranche_relative)
     if not region_relative and not object_relative:
         raise ValueError('at least one manual region/object bundle is required')
     if panel_relative and not region_relative:
@@ -243,6 +248,7 @@ def main():
     parser.add_argument('--object-bundle')
     parser.add_argument('--panel-bundle')
     parser.add_argument('--bibliography-bundle')
+    parser.add_argument('--tranche-bundle', help='Explicit reviewed manual-tranche format; never a legacy failure fallback')
     parser.add_argument('--inputs', default='k1-full-eval-inputs.json')
     parser.add_argument('--indexes', default='k1-full-index.json')
     parser.add_argument('--corpus-root', type=Path, default=Path.home() / 'Corpora/arxiv')
@@ -254,7 +260,7 @@ def main():
         raise ValueError('manual evidence must remain within the dedicated external corpus/cache roots')
     implementation = fingerprint_sources()
     started = time.monotonic()
-    result = assemble(cache, corpus_root, data_root, args.candidate, args.region_bundle, args.panel_bundle, args.inputs, args.indexes, args.object_bundle, args.bibliography_bundle)
+    result = assemble(cache, corpus_root, data_root, args.candidate, args.region_bundle, args.panel_bundle, args.inputs, args.indexes, args.object_bundle, args.bibliography_bundle, args.tranche_bundle)
     if implementation != fingerprint_sources():
         raise ValueError('manual implementation bytes changed during assembly')
     result['manual_assembly']['implementation'] = implementation
