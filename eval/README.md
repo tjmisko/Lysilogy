@@ -29,6 +29,11 @@ live end-to-end scenario are recorded in the system report, outside this numeric
 
 ## Collector contract
 
+The [bibliography collector contract](bibliography-contract.md) defines independent K1/K2
+labels, UTF-16 entry/mention spans, and matching/coverage rules for O8–O10. Its offline collector
+runs the production Rust parser against external reading-index caches; synthetic regression
+fixtures cannot establish those objectives.
+
 E8.1 supplies the harness, metric definitions, aggregators, and G5 runner. Each subsequent
 feature/truth issue adds its evaluator to produce `eval/inputs/<suite>/<collector-id>.json`.
 The original `eval/inputs/<suite>.json` format remains supported alongside these files. A collector must

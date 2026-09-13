@@ -15,6 +15,14 @@ struct Fixture {
     paper_id: PaperId,
 }
 
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum Input {
+    Objects(Box<Fixture>),
+    Fields { parse_entries: Vec<String> },
+    Titles { normalize_titles: Vec<String> },
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut input = String::new();
     io::stdin()
@@ -23,17 +31,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if input.len() > 8 * 1024 * 1024 {
         return Err("fixture exceeds 8 MiB".into());
     }
-    let fixture: Fixture = serde_json::from_str(&input)?;
-    let document = IndexDocument {
-        index: fixture.index,
-        etag: fixture.generation,
-    };
-    println!(
-        "{}",
-        serde_json::to_string(&ObjectsArtifact::from_reading_index(
+    let output = match serde_json::from_str::<Input>(&input)? {
+        Input::Objects(fixture) => serde_json::to_value(ObjectsArtifact::from_reading_index(
             &fixture.paper_id,
-            &document
-        ))?
-    );
+            &IndexDocument {
+                index: fixture.index,
+                etag: fixture.generation,
+            },
+        ))?,
+        Input::Fields { parse_entries } => serde_json::to_value(
+            parse_entries
+                .iter()
+                .map(|raw| lysilogy::objects::bibliography::parse_fields(raw, None))
+                .collect::<Vec<_>>(),
+        )?,
+        Input::Titles { normalize_titles } => serde_json::to_value(
+            normalize_titles
+                .iter()
+                .map(|title| lysilogy::kb::titles::title_key(title))
+                .collect::<Vec<_>>(),
+        )?,
+    };
+    println!("{output}");
     Ok(())
 }

@@ -369,6 +369,14 @@ are unavailable. Browser fixtures invoke the production Rust object builder thro
 frontend. A narrow bibliography-section mask remains there solely to exclude figure/table mentions
 inside references when backend objects are unavailable; appendix mentions after references remain active.
 
+The offline [bibliography collector](../eval/bibliography-contract.md) measures O8–O10 against
+independently aligned K1 entries/occurrences and deposited K2 reference field labels. Segmentation
+matches one-to-one by exact non-whitespace UTF-16 membership; an unmatched truth entry still
+contributes every known field to O9's denominator. Unknown field labels are excluded and counted.
+Occurrence/target pairs retain misses, wrong destinations, and duplicate predictions. O9 components
+stay unavailable until both genuine truth populations have known labels. Synthetic fixtures only
+verify arithmetic and production integration; they never become truth evidence.
+
 Acceptance: link-hint behavior matches or improves on the current frontend matcher across the
 existing smoke fixtures; DOIs and arXiv IDs are extracted exactly; ambiguous marker matches remain
 unresolved rather than guessed.
