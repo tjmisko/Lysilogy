@@ -602,11 +602,18 @@ def parse_project(files, limits=Limits(), selected_main=None):
     bibliographies = [node for node in nodes if node["environment"] == "thebibliography"]
     source_role_evidence = []
     unsupported_kind_inventory = Counter()
-    heading_names = {'section', 'subsection', 'subsubsection', 'paragraph', 'subparagraph', 'chapter', 'part'}
+    heading_ranks = {name: rank for rank, name in enumerate(('part', 'chapter', 'section', 'subsection', 'subsubsection', 'paragraph', 'subparagraph'))}
+    heading_names = set(heading_ranks)
     headings = list(argument_commands(scan, heading_names | {'textbf', 'textit', 'emph'}))
     formal_headings = [row for row in headings if row['command'].rstrip('*') in heading_names]
     formal_starts = [row['start'] for row in formal_headings]
-    bibliography_masked = mask_regions(scan, [(row['start'], row['end']) for row in bibliographies])
+    # Descendant headings belong to their enclosing section. Precompute the
+    # seven bounded rank lists instead of scanning the remaining headings for
+    # each role, which would make a heading-heavy source quadratic.
+    boundary_starts = {rank: [row['start'] for row in formal_headings
+                              if heading_ranks[row['command'].rstrip('*')] <= rank]
+                       for rank in heading_ranks.values()}
+    bibliography_masked = mask_regions(scan, [(row['start'], row['end']) for row in bibliographies + formal_headings])
     for heading in headings:
         if not document['content_start'] <= heading['start'] < document['content_end']:
             continue
@@ -628,8 +635,9 @@ def parse_project(files, limits=Limits(), selected_main=None):
         title = render_text(renderer, heading['value']).casefold().strip(' :.')
         if renderer.unsupported != before:
             continue  # Uninterpreted text cannot establish a particular role.
-        following = bisect_right(formal_starts, heading['start'])
-        end = formal_starts[following] if following < len(formal_starts) else document['content_end']
+        boundaries = boundary_starts[heading_ranks[heading['command'].rstrip('*')]] if formal else formal_starts
+        following = bisect_right(boundaries, heading['start'])
+        end = min(boundaries[following], document['content_end']) if following < len(boundaries) else document['content_end']
         if title in {'references', 'bibliography', 'literature cited', 'works cited', 'references and notes'}:
             if bibliography_masked[heading['end']:end].strip(' {}\t\n\r'):
                 unsupported_bibliography['unparsed_reference_section'] = unsupported_bibliography.get('unparsed_reference_section', 0) + 1

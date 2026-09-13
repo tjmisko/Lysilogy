@@ -165,7 +165,10 @@ geometry is available. This does not exclude another completely aligned kind.
 
 An explicit References/Bibliography heading with content outside parsed entry
 containers, or unmarked content inside a bibliography container, prevents a
-negative bibliography/citation claim. Likewise, a procedural heading or a
+negative bibliography/citation claim. A formal section includes all descendant
+headings until the next sibling or ancestor; heading syntax itself is separate
+from entry content, so a nested, completely parsed bibliography remains usable.
+Likewise, a procedural heading or a
 step-labeled list outside a parsed algorithm container prevents an algorithm
 absence claim. These source-role exclusions retain original spans and affect the
 relevant metric cohorts; a complete independent kind elsewhere remains usable.

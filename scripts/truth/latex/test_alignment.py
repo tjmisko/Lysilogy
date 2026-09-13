@@ -17,6 +17,26 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_include_descendant_reference_sections_when_only_a_sibling_or_ancestor_ends_the_role(self):
+        for heading, descendant, boundary in (
+                ('section', 'subsection', 'section'),
+                ('chapter', 'subsubsection', 'part'),
+                ('subsection', 'paragraph', 'section')):
+            entry = r'\begin{thebibliography}{9}\bibitem{one}A complete independently identifiable source entry.\end{thebibliography}'
+            for contents in ('Smith, A. A manually formatted book reference. 2020.', entry, entry + ' Another manually written reference. 2021.'):
+                source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
+                                  + '\\' + heading + '{References}\\' + descendant + '{Books}' + contents
+                                  + '\\' + boundary + '{Appendix}Ordinary appendix text.')
+                parsed = parse_project({'main.tex': source})
+                result = align_paper(parsed, {'text': 'An independently complete visual caption. [1] A complete independently identifiable source entry. Smith, A. A manually formatted book reference. 2020. Another manually written reference. 2021. Ordinary appendix text.'})
+                with self.subTest(heading=heading, descendant=descendant, contents=contents):
+                    self.assertTrue(result['metric_eligibility']['O1'])
+                    self.assertEqual(result['bibliography_eligible'], contents == entry)
+                    if contents != entry:
+                        evidence = parsed['coverage']['unparsed_source_roles'][0]
+                        self.assertEqual(evidence['source_members'], [{'path': 'main.tex', 'start': source.index('\\' + heading + '{References}'), 'end': source.index('\\' + boundary + '{Appendix}')}])
+                        self.assertFalse(any(result['metric_eligibility'][key] for key in ('O8', 'O9', 'O10')))
+
     def test_should_withhold_bibliography_negatives_when_explicit_reference_headings_have_unparsed_content(self):
         for heading in (r'\section*{References}', r'\subsection{Bibliography}', '\n'+r'\textbf{References}'+'\n'):
             source = document(r'\begin{figure}\caption{An independently complete visual caption.}\end{figure}'
