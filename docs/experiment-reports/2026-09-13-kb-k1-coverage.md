@@ -90,9 +90,10 @@ Current lightweight validation passes 198 offline tests with Python warnings
 treated as errors. Tests cover macro argument visibility/multiplicity, literal
 and stored roles, original include spans, math fidelity, section hierarchy,
 declaration scope/redefinitions, reserved environment names and valid controls.
-Independent review has cleared the role and math-layout guards; the conservative
-AMS imported-namespace correction is awaiting review at this checkpoint.
-Stored-load and imported argument-consumer regressions are included.
+Independent review has cleared the role and math-layout guards and the
+conservative AMS imported-namespace correction at `8a8f58c`. Its 198 pinned
+tests and 11 independent probes pass, including both original namespace/load
+findings. Stored-load and imported argument-consumer regressions are included.
 
 The clean before checks for the affected objects and bibliography suites passed
 using an explicitly rooted, source-equivalent borrowed CLI, with all 72
