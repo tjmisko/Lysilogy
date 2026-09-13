@@ -67,10 +67,23 @@ objective target changed, and no additional follow-up was opened for this repair
 
 ## Live verification
 
-Independent source review and all offline gates passed before the parent agent launched the
-explicit real-corpus recovery at unchanged source `013911a`, timed with `/usr/bin/time -v`.
-The reason is `Selected PDF 1801.00600 is absent from the public GCS bucket (verified 2026-09-13).`
-Its log is `~/.cache/lysilogy/arxiv-corpus-recovery.log`. Recovery is in progress; no completed
-recovery or download success is claimed yet. The parent will next download one eval paper to
-exercise its PDF and source, and the completed receipt will be recorded before merge. Complete
-K0 verification remains outstanding.
+Independent source review and all offline gates passed before the parent agent ran the explicit
+real-corpus recovery using unchanged reviewed source `013911a`. Recovery exited successfully in
+20:25.86, peak RSS 3,330,592 KiB, with 136 preserved monthly inventories and 15 excluded candidates.
+It replaced 14 original IDs while preserving the metadata snapshot and exact 1,000 eval / 10,000
+scale / 10,951 unique counts. The parent verified the original archive and staged replacement
+bytes. The new selection hash is
+`172d18c2eeb8a640ead81f55261619800e2728553c7b25f87a191393d25b3e5f`.
+The timing/RSS describe recovery, which reuses metadata and cached inventories; they are not a
+controlled performance comparison with the original harvest. Model cost remained $0.
+
+The bounded eval download admitted PDF `0812.5080v5`, then exited with code 1 because the source
+`e-print` endpoint returns HTTP 301. The existing redirect refusal remained effective. A separate
+parent-owned no-follow probe confirmed the same approved host's canonical `/src/0812.5080v5`
+endpoint returns a 21,993-byte gzip source (HTTP 200, 0.45 seconds); those probe bytes were not
+admitted as a corpus source. A narrowly scoped source-endpoint follow-up is required before full
+resume. There is now one admitted PDF, so `recover-selection` must never be run again on this
+corpus. Continue with ordinary download resume after the endpoint fix.
+
+PR #90 remains draft pending the source-endpoint follow-up and successful bounded PDF/source
+verification. Complete K0 downloads and full-tier verification remain outstanding.

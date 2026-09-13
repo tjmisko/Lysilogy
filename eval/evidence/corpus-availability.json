@@ -223,12 +223,49 @@
       "wall_seconds": 6.207225377998839
     },
     "live_verification": {
+      "bounded_download": {
+        "exit_code": 1,
+        "paper": "0812.5080v5",
+        "pdfs_admitted": 1,
+        "source_failure": "e-print endpoint returns301 to same approved host /src/0812.5080v5; automatic redirects remain refused",
+        "sources_admitted": 0
+      },
+      "canonical_source_probe": {
+        "bytes": 21993,
+        "format": "gzip",
+        "host": "export.arxiv.org",
+        "path": "/src/0812.5080v5",
+        "persisted_as_corpus_source": false,
+        "sha256": "8b95087c0ab3a43d4f021459374bc52a66a4baae9211174f83984cb12f250c1d",
+        "status": 200,
+        "wall_seconds": 0.45
+      },
       "model_cost_usd": 0,
-      "observer": "parent agent owns real corpus mutation and timing",
+      "observer": "parent agent process completions and bounded no-follow source probes",
       "reason": "Selected PDF 1801.00600 is absent from the public GCS bucket (verified 2026-09-13).",
-      "recovery_log": "/home/tjmisko/.cache/lysilogy/arxiv-corpus-recovery.log",
+      "recovery": {
+        "consulted_inventory_months": 136,
+        "excluded_candidates": 15,
+        "exit_code": 0,
+        "log": {
+          "path": "/home/tjmisko/.cache/lysilogy/arxiv-corpus-recovery.log",
+          "sha256": "c7211489ab3a31ee10f206d25906a15bdd08476abc35f1dff8c478e27837c5ce"
+        },
+        "metadata_unchanged": true,
+        "original_archive_and_staged_bytes_verified": true,
+        "original_ids_replaced": 14,
+        "peak_rss_kib": 3330592,
+        "selection_file_sha256": "5c2a5f7c556fadf947ac129040e00c9c4d68399ec067fddff5649179a0d1a686",
+        "selection_sha256": "172d18c2eeb8a640ead81f55261619800e2728553c7b25f87a191393d25b3e5f",
+        "tiers": {
+          "eval": 1000,
+          "scale": 10000
+        },
+        "unique_selected": 10951,
+        "wall_seconds": 1225.86
+      },
       "source_commit": "013911a9fa96f93d5612a0ed59e5829fe95a738c",
-      "status": "recovery_in_progress"
+      "status": "recovery_passed_pdf_admitted_source_redirect_blocked"
     },
     "logs": [
       {
