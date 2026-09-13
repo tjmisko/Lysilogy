@@ -24,6 +24,7 @@ assert.equal(paragraph?.spans?.length,2,JSON.stringify(index.objects.paragraph.m
 const expected=[...opening,...continuation].join(' ');
 assert.equal(paragraph.spans.map(span=>index.text.slice(span.start,span.end)).join(' '),expected);
 let analyzed=false;
+let sourceGate=null;
 const layout={schema_version:1,pages:index.pages.map(page=>({number:page.number,width:page.width,height:page.height,
   tokens:index.tokens.filter(token=>token.page===page.number).map((token,i)=>({...token,index:i,line:Math.round(token.rects[0].y_min)})),sentences:[]}))};
 const anchor=(offset)=>{
@@ -47,7 +48,10 @@ try {
     if(url.pathname==='/api/queue')return route.fulfill({json:{jobs:[]}});
     if(url.pathname===`/api/papers/${id}`)return route.fulfill({json:{paper,analysis:analyzed?analysis:null}});
     if(url.pathname.endsWith('/map'))return route.fulfill({json:{layout,highlights:[]}});
-    if(url.pathname.endsWith('/source'))return route.fulfill({body:pdf,contentType:'application/pdf'});
+    if(url.pathname.endsWith('/source')){
+      if(sourceGate!==null)await sourceGate.promise;
+      return route.fulfill({body:pdf,contentType:'application/pdf'});
+    }
     if(url.pathname.endsWith('/reading-index'))return route.fulfill({json:index});
     if(url.pathname.endsWith('/reader-tools'))return route.fulfill({json:{jobs:[],references:[],supercuts:[]}});
     if(url.pathname.startsWith('/api/'))return route.fulfill({status:404,json:{message:'Unexpected fixture request'}});
@@ -92,10 +96,14 @@ try {
   // floats are not treated as required selection members by the bounds check.
   analyzed=true;await page.reload();
   await page.getByRole('button',{name:'Overview',exact:true}).click();
+  sourceGate=Promise.withResolvers();
   await page.locator('.section-boxes button[data-section-id="comparison"]').first().click();
   await page.locator('.section-focus').waitFor();
-  await select('compare','ip');await onlyProse();
+  // The retained text index can answer before PDF.js knows the page count.
+  await select('compare','ip');
   assert.equal(await page.getByRole('button',{name:'Open match in full paper'}).count(),0);
+  sourceGate.resolve();sourceGate=null;
+  await onlyProse();
   await page.keyboard.press('y');await page.waitForFunction(text=>window.copiedSource===text,expected);
   await page.keyboard.press('C');await page.keyboard.type('gg');
   await page.locator('.pdf-source-line-number.is-active').waitFor();

@@ -381,7 +381,9 @@ export function PdfReader({
     if (pdfDocument !== null) onPageCount(pdfDocument.numPages);
   }, [onPageCount, pdfDocument]);
 
-  const pageCount = pdfDocument?.numPages ?? 1;
+  // Cached search can finish before PDF.js loads. Keep section boundaries valid
+  // using the already available page layouts during that interval.
+  const pageCount = pdfDocument?.numPages ?? pageLayouts?.reduce((count, layout) => Math.max(count, layout.number), 1) ?? 1;
   const crops = useMemo(() => new Map(pageLayouts?.map((layout) => [layout.number,
     section === undefined ? null : sectionPageCrop(section, layout, pageCount)])), [pageCount, pageLayouts, section]);
   const readingWidth = Math.max(1, ...Array.from(crops.values()).flatMap((crop) => crop === null ? [] : [crop.bounds.x_max - crop.bounds.x_min]));
