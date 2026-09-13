@@ -120,7 +120,7 @@ operation and retain the same reason on a restart:
 
 ```sh
 python3 scripts/corpus/corpus.py --proxy-env HTTPS_PROXY recover-selection \
-  --reason 'Selected PDF unavailable in public bucket: 1801.00600; original log: ~/.cache/lysilogy/arxiv-corpus-proxy.log'
+  --reason 'Selected PDF 1801.00600 is absent from the public GCS bucket (verified 2026-09-13).'
 python3 scripts/corpus/corpus.py --proxy-env HTTPS_PROXY download --tier eval --limit 3
 ```
 
