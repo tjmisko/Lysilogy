@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub use crossref::Crossref;
-pub use http::{GraphHttp, Request, Transport};
+pub use http::{GraphHttp, ProviderResponse, Request, Transport};
 pub use openalex::OpenAlex;
 pub use opencitations::OpenCitations;
 pub use semantic_scholar::SemanticScholar;

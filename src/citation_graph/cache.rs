@@ -46,6 +46,12 @@ pub struct ProviderCache {
     root: Arc<PathBuf>,
     ttl: Duration,
 }
+/// A verified public payload with the original provider-fetch timestamp.
+#[derive(Clone, Debug)]
+pub struct CachedResponse {
+    pub value: Value,
+    pub fetched_at_ms: u64,
+}
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct Entry {
@@ -76,6 +82,19 @@ impl ProviderCache {
         now_ms: u64,
         secrets: &[String],
     ) -> GraphResult<Option<Value>> {
+        Ok(self
+            .get_with_provenance(key, now_ms, secrets)
+            .await?
+            .map(|response| response.value))
+    }
+
+    /// Preserve fetch time when a truth builder freezes a still-valid cache hit.
+    pub async fn get_with_provenance(
+        &self,
+        key: &CacheKey,
+        now_ms: u64,
+        secrets: &[String],
+    ) -> GraphResult<Option<CachedResponse>> {
         let Some(bytes) = read_bounded(&self.path(key), MAX_ENTRY_BYTES).await? else {
             return Ok(None);
         };
@@ -98,7 +117,10 @@ impl ProviderCache {
         {
             return Ok(None);
         }
-        Ok(Some(sanitize(entry.value, secrets)))
+        Ok(Some(CachedResponse {
+            value: sanitize(entry.value, secrets),
+            fetched_at_ms: entry.created_ms,
+        }))
     }
 
     pub async fn put(
@@ -345,6 +367,31 @@ mod tests {
         );
         assert!(cache.get(&key, 61_000, &[]).await.unwrap().is_none());
         assert!(cache.get(&key, 999, &[]).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn should_preserve_original_fetch_time_when_a_truth_builder_reads_a_cached_response() {
+        let root = tempfile::tempdir().unwrap();
+        let cache = ProviderCache::new(root.path().to_owned(), Duration::from_secs(60));
+        let key = CacheKey::new(&request(), &[]).unwrap();
+        cache
+            .put(&key, &json!({"id": "W1"}), 1_000, &[])
+            .await
+            .unwrap();
+        let response = cache
+            .get_with_provenance(&key, 8_000, &[])
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(response.fetched_at_ms, 1_000);
+        assert_eq!(response.value, json!({"id": "W1"}));
+        assert!(
+            cache
+                .get_with_provenance(&key, 61_000, &[])
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[tokio::test]

@@ -42,6 +42,14 @@ pub trait Transport: Send + Sync {
     fn get(&self, request: Request) -> GraphFuture<'_, GraphResult<Value>>;
 }
 
+/// Public response provenance for explicit, immutable truth snapshots.
+#[derive(Clone, Debug)]
+pub struct ProviderResponse {
+    pub value: Value,
+    pub fetched_at_ms: u64,
+    pub cache_hit: bool,
+}
+
 /// Credentials are read from process configuration, never from files or serialized/debugged.
 #[derive(Clone)]
 pub struct GraphHttp {
@@ -147,18 +155,35 @@ impl GraphHttp {
         Ok(builder)
     }
 
-    async fn request(&self, request: Request) -> GraphResult<Value> {
+    /// Uses exactly the ordinary cache, credential handling and shared admission budget.
+    pub async fn get_with_provenance(&self, request: Request) -> GraphResult<ProviderResponse> {
         let provider = request.provider;
         let secrets = self.secrets();
         let key = CacheKey::new(&request, &secrets)?;
         let builder = self.prepare(request)?;
-        if let Some(value) = self.cache.get(&key, now_ms(), &secrets).await? {
-            return Ok(value);
+        if let Some(response) = self
+            .cache
+            .get_with_provenance(&key, now_ms(), &secrets)
+            .await?
+        {
+            return Ok(ProviderResponse {
+                value: response.value,
+                fetched_at_ms: response.fetched_at_ms,
+                cache_hit: true,
+            });
         }
         let mut lease = self.budgets.acquire(provider).await?;
         // Another caller may have filled this lookup while we waited for admission.
-        if let Some(value) = self.cache.get(&key, now_ms(), &secrets).await? {
-            return Ok(value);
+        if let Some(response) = self
+            .cache
+            .get_with_provenance(&key, now_ms(), &secrets)
+            .await?
+        {
+            return Ok(ProviderResponse {
+                value: response.value,
+                fetched_at_ms: response.fetched_at_ms,
+                cache_hit: true,
+            });
         }
         // Never format reqwest errors: they can contain the authenticated URL.
         let mut response = builder.send().await.map_err(|_| {
@@ -215,16 +240,21 @@ impl GraphHttp {
         if !(value.is_object() || value.is_array()) {
             return Err(GraphFailure::malformed());
         }
+        let fetched_at_ms = now_ms();
         if self
             .cache
-            .put(&key, &value, now_ms(), &secrets)
+            .put(&key, &value, fetched_at_ms, &secrets)
             .await
             .is_err()
         {
             tracing::warn!("Provider response succeeded but its cache could not be persisted");
         }
         drop(lease);
-        Ok(value)
+        Ok(ProviderResponse {
+            value,
+            fetched_at_ms,
+            cache_hit: false,
+        })
     }
 
     fn secrets(&self) -> Vec<String> {
@@ -242,7 +272,11 @@ impl GraphHttp {
 }
 impl Transport for GraphHttp {
     fn get(&self, request: Request) -> GraphFuture<'_, GraphResult<Value>> {
-        Box::pin(self.request(request))
+        Box::pin(async move {
+            self.get_with_provenance(request)
+                .await
+                .map(|response| response.value)
+        })
     }
 }
 
@@ -358,6 +392,37 @@ mod tests {
         lease.cooldown(600).await.unwrap();
         drop(lease);
         assert_eq!(client.get(request).await.unwrap()["id"], "W1");
+    }
+
+    #[tokio::test]
+    async fn should_return_verified_fetch_provenance_when_a_truth_snapshot_reuses_cached_metadata()
+    {
+        let root = tempfile::tempdir().unwrap();
+        let client = client(root.path());
+        let request = Request::new(
+            Provider::Crossref,
+            "https://api.crossref.org/",
+            &["works", "10.1234/fixture"],
+        );
+        let key = CacheKey::new(&request, &client.secrets()).unwrap();
+        let fetched_at_ms = now_ms() - 1_000;
+        client
+            .cache
+            .put(
+                &key,
+                &serde_json::json!({"message": {"DOI": "10.1234/fixture"}}),
+                fetched_at_ms,
+                &client.secrets(),
+            )
+            .await
+            .unwrap();
+        let mut lease = client.budgets.acquire(Provider::Crossref).await.unwrap();
+        lease.cooldown(600).await.unwrap();
+        drop(lease);
+        let response = client.get_with_provenance(request).await.unwrap();
+        assert!(response.cache_hit);
+        assert_eq!(response.fetched_at_ms, fetched_at_ms);
+        assert_eq!(response.value["message"]["DOI"], "10.1234/fixture");
     }
 
     #[tokio::test]
