@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { discoverPaperLinks, hintCodes } from '../src/lib/paperLinks.ts';
+import { discoverPaperLinks as projectPaperLinks, hintCodes } from '../src/lib/paperLinks.ts';
+import { backendObjects, fixtureGeneration } from './backend-objects-fixture.mjs';
 import { safeLinkUrl, nativePageLinks } from '../src/lib/pdfNativeLinks.ts';
 import { placeHintBadges, overlaps } from '../src/lib/linkHintGeometry.ts';
+
+const discoverPaperLinks = index => projectPaperLinks(index, backendObjects(index), fixtureGeneration);
 
 export function fixture(blocks) {
   const index = { schema_version: 4, text: '', tokens: [], pages: [], objects: { word: [], WORD: [], sentence: [], paragraph: [] }, figures: [], gaps: [] };
@@ -24,7 +27,7 @@ export function fixture(blocks) {
 
 test('numbered bibliography citations support brackets, parentheses, lists and ranges', () => {
   const index = fixture([
-    ['Evidence [1, 3–4] confirms (2). Equation (99) is unrelated.'],
+    ['Evidence [1, 3–4] and (2) confirms this. Equation (99) is unrelated.'],
     ['References', 'heading', 2],
     ['[1] Adams. First work. 2020.', 'body', 2], ['[2] Baker. Second work. 2021.', 'body', 2],
     ['[3] Chen. Third work. 2022.', 'body', 3], ['[4] Diaz. Fourth work. 2023.', 'body', 3],
@@ -33,6 +36,19 @@ test('numbered bibliography citations support brackets, parentheses, lists and r
   assert.deepEqual(links.map(link => link.destination.label.match(/^\[\d\]/)[0]).sort(), ['[1]', '[2]', '[3]', '[4]']);
   assert.ok(links.every(link => link.kind === 'reference' && link.page === 1 && link.rects.length));
   assert.equal(links.find(link => link.label === '(2)').destination.page, 2);
+});
+
+test('should withhold ambiguous numeric hints when bracket citations establish a competing convention', () => {
+  const index = fixture([
+    ['See [1] and (2). See (2). Evidence [1] confirms (2). The two cases are (1) and (2). Equation (1).'],
+    ['References', 'heading', 2],
+    ['[1] Adams. First work. 2020.', 'body', 2], ['[2] Baker. Second work. 2021.', 'body', 2],
+  ]);
+  const artifact = backendObjects(index);
+  assert.deepEqual(projectPaperLinks(index, artifact, fixtureGeneration).map(link => link.label), ['[1]', '(2)', '[1]']);
+  const ambiguous = artifact.unresolved_citations.filter(item => item.reason === 'ambiguous_marker');
+  assert.equal(ambiguous.length, 4);
+  assert.ok(ambiguous.every(item => item.candidate_ids.length === 1 && index.text.slice(item.anchor.start, item.anchor.end) === item.text));
 });
 
 test('numbered dot entries and alphanumeric citation keys retain the printed convention', () => {
@@ -55,6 +71,37 @@ test('ambiguous citations and labels are withheld rather than choosing a paper a
   const index = fixture([['Smith (2020) and [3] are ambiguous.'], ['References', 'heading', 2],
     ['[3] Smith, A. (2020). First study.', 'body', 2], ['[3] Smith, B. (2020). Different study.', 'body', 2]]);
   assert.deepEqual(discoverPaperLinks(index), []);
+});
+
+test('should withhold reference links when backend output is absent or belongs to a different generation', () => {
+  const index = fixture([['See [1] and Fig. 1.'], ['Figure 1: Evidence.', 'caption', 2], ['References', 'heading', 2], ['[1] Smith. Study.', 'body', 2]]);
+  const artifact = backendObjects(index);
+  assert.deepEqual(projectPaperLinks(index).map(link => link.kind), ['figure']);
+  assert.deepEqual(projectPaperLinks(index, artifact, '"stale"').map(link => link.kind), ['figure']);
+  assert.deepEqual(projectPaperLinks(index, artifact, fixtureGeneration).map(link => link.kind), ['reference', 'figure']);
+});
+
+test('should mask bibliography figure mentions when objects are unavailable while retaining appendix links', () => {
+  const index = fixture([['See Fig. 1.'], ['Figure 1: Evidence.', 'caption', 2], ['References', 'heading', 3],
+    ['[1] Smith, A. Figure 1 is a title fragment. 2020.', 'body', 3], ['Appendix A', 'heading', 4], ['See Fig. 1 and [1].', 'body', 4]]);
+  const artifact = backendObjects(index);
+  for (const [objects, generation] of [[null,null],[artifact,'"stale"'],[artifact,fixtureGeneration]]) {
+    const links = projectPaperLinks(index, objects, generation);
+    assert.deepEqual(links.filter(link => link.kind === 'figure').map(link => link.page), [1,4]);
+    assert.ok(links.every(link => link.page !== 3));
+  }
+});
+
+test('should retain exact repeated occurrence offsets when astral text precedes references in one sentence', () => {
+  const index = fixture([['😀 Evidence [1] agrees with [1].'], ['References', 'heading', 2], ['[1] Smith. Study.', 'body', 2]]);
+  const artifact = backendObjects(index);
+  const links = projectPaperLinks(index, artifact, fixtureGeneration);
+  assert.equal(links.length, 2);
+  assert.deepEqual(links.map(link => index.text.slice(link.span.start, link.span.end)), ['[1]', '[1]']);
+  assert.notDeepEqual(links[0].rects, links[1].rects);
+  const mentions = artifact.objects.find(object => object.kind === 'bib_entry').mentions;
+  assert.equal(mentions[0].sentence_anchor.start, mentions[1].sentence_anchor.start);
+  assert.equal(mentions[0].sentence_anchor.end, mentions[1].sentence_anchor.end);
 });
 
 test('captions resolve figures, abbreviated tables, Roman and supplementary identifiers', () => {

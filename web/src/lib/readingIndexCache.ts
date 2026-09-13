@@ -7,6 +7,10 @@ export type ReadingIndexLoadOptions = {
 };
 type Entry = { index: ReadingIndex; etag: string | null; bytes: number; validated: boolean };
 type CacheOptions = { maxEntries?: number; maxBytes?: number; fetcher?: typeof fetch; timeoutMs?: number };
+// A returned object retains its validator even after LRU eviction, including
+// oversized responses that never enter the cache. Weak keys retain no indexes.
+const generations = new WeakMap<ReadingIndex, string | null>();
+export const readingIndexGeneration = (index: ReadingIndex): string | null => generations.get(index) ?? null;
 
 function canonicalUrl(url: string): string {
   const resolved = new URL(url, typeof location === "undefined" ? "http://localhost/" : location.href);
@@ -62,6 +66,7 @@ export function createReadingIndexCache({ maxEntries = 16, maxBytes = 64 * 1024 
     if (entry !== undefined) { retainedBytes -= entry.bytes; entries.delete(key); }
   };
   const remember = (key: string, index: ReadingIndex, etag: string | null): ReadingIndex => {
+    generations.set(index, etag);
     const bytes = estimatedBytes(index);
     remove(key);
     // An oversized result remains available to its caller, but cannot displace

@@ -1,11 +1,29 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createReadingIndexCache } from '../src/lib/readingIndexCache.ts';
+import { createReadingIndexCache, readingIndexGeneration } from '../src/lib/readingIndexCache.ts';
 
 const index = (text='Source text') => ({schema_version:3,text,pages:[],tokens:[],objects:{word:[],WORD:[],sentence:[],paragraph:[]},figures:[],gaps:[]});
 const reply = (value=index(),tag='"source-1"') => new Response(JSON.stringify(value),{status:200,headers:{'content-type':'application/json',etag:tag}});
 const url = (id='a') => `https://lysilogy.test/api/papers/${id}/reading-index`;
 function deferred() { let resolve,reject; const promise=new Promise((yes,no)=>{resolve=yes;reject=no;}); return {promise,resolve,reject}; }
+
+test('should retain exact validators when indexes are oversized or replaced after a 304', async()=>{
+  const uncached=createReadingIndexCache({maxBytes:0,fetcher:async()=>reply(index('Oversized'),'"large"')});
+  const large=await uncached.load(url());
+  assert.equal(uncached.peek(url()),null);
+  assert.equal(readingIndexGeneration(large),'"large"');
+  assert.equal(readingIndexGeneration(index()),null);
+  let calls=0;
+  const cache=createReadingIndexCache({fetcher:async()=>{
+    calls++;
+    return calls===2?new Response(null,{status:304}):reply(index(),calls===1?'"first"':'"changed"');
+  }});
+  const first=await cache.load(url());
+  assert.equal(readingIndexGeneration(await cache.load(url(),{revalidate:true})),'"first"');
+  const changed=await cache.load(url(),{revalidate:true});
+  assert.equal(readingIndexGeneration(first),'"first"');
+  assert.equal(readingIndexGeneration(changed),'"changed"');
+});
 
 test('one background request survives consumer release and is joined by interactive demand', async()=>{
   const gate=deferred();const calls=[];

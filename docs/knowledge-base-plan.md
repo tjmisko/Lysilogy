@@ -372,6 +372,38 @@ venue, DOI, and arXiv ID, with per-field confidence. Resolve citation markers (n
 superscript, author–year) to entries in the backend and store each mention with its sentence
 anchor. The frontend consumes the backend result for link hints.
 
+Implementation contract: objects schema 2 stores parsed fields under `bib_entry.bibliography`;
+each field has a nullable `value` and categorical `explicit`, `heuristic`, or `missing` confidence.
+These labels are evidence categories, not calibrated probabilities. Authors retain printed name
+strings, publication years retain citation suffixes, and arXiv IDs retain printed versions.
+Conflicting identifiers leave the corresponding structured field missing; the raw entry remains.
+Wrapped entries retain disjoint member anchors, excluding classified floating captions. Object
+IDs use deterministic bibliography order within the paper and remain stable for an unchanged index.
+Bibliography assembly is shared by the native-only fixture factory and the asynchronous
+source-backed objects factory. Current figure/table derivation and graphics cache generations
+remain independent of bibliography parsing; schema 1 graphics caches rebuild to schema 2 rather
+than suppressing entries. Geometry changes preserve bibliography fields and citation anchors.
+
+Resolved mentions keep the exact UTF-16 occurrence anchor and its source token rectangles separately
+from `sentence_anchor`. If a citation crosses the sentence segmenter's abbreviation boundary, its
+context covers all intersected sentence segments. `unresolved_citations` retains missing, ambiguous,
+and unsupported-range keys with candidate IDs; ranges expand at most 30 steps. Person-name parsing
+supplies a family key only when every retained name interpretation agrees. No entity merge occurs.
+The reader requires both paper ID and exact reading-index ETag agreement before using reference
+links, refreshes a mismatched pair once, and preserves figure/table/native hints when references
+are unavailable. Browser fixtures invoke the production Rust object builder through the offline
+`objects_fixture` example, so no entry splitter or citation matcher remains duplicated in the
+frontend. A narrow bibliography-section mask remains there solely to exclude figure/table mentions
+inside references when backend objects are unavailable; appendix mentions after references remain active.
+
+The offline [bibliography collector](../eval/bibliography-contract.md) measures O8–O10 against
+independently aligned K1 entries/occurrences and deposited K2 reference field labels. Segmentation
+matches one-to-one by exact non-whitespace UTF-16 membership; an unmatched truth entry still
+contributes every known field to O9's denominator. Unknown field labels are excluded and counted.
+Occurrence/target pairs retain misses, wrong destinations, and duplicate predictions. O9 components
+stay unavailable until both genuine truth populations have known labels. Synthetic fixtures only
+verify arithmetic and production integration; they never become truth evidence.
+
 Acceptance: link-hint behavior matches or improves on the current frontend matcher across the
 existing smoke fixtures; DOIs and arXiv IDs are extracted exactly; ambiguous marker matches remain
 unresolved rather than guessed.

@@ -6,6 +6,8 @@ import { nativePageLinks } from "../lib/pdfNativeLinks";
 import { overlaps, placeHintBadges, positionLinks, projectRect, type PositionedLink } from "../lib/linkHintGeometry";
 import { visiblePdfPage } from "../lib/pdfViewport";
 import type { ReadingIndex } from "../lib/readingIndex";
+import { loadReadingIndex, readingIndexGeneration } from "../lib/readingIndexCache";
+import { objectsApi, objectsMatchGeneration, sourcePaperId, type ObjectsArtifact } from "../lib/objects";
 import type { SectionCrop } from "../lib/sectionCrop";
 import "./PdfLinkHints.css";
 
@@ -18,7 +20,6 @@ type Session = { items: (PositionedLink & { code: string })[]; prefix: string; l
 type Jump = { destination: PaperDestination; history: PaperDestination[] };
 // A section reader is replaced by the full-paper reader when following outside its crop.
 const pendingJumps = new Map<string, Jump>();
-const discovered = new WeakMap<ReadingIndex, PaperLink[]>();
 
 export function usePdfLinkHints({ url, page, document: pdf, root, enabled, context, crops, pageSubset, loadIndex, onPage, onOpenFullPaper }: Options) {
   const [initial] = useState(() => pendingJumps.get(url));
@@ -80,6 +81,7 @@ export function usePdfLinkHints({ url, page, document: pdf, root, enabled, conte
     const host = root.current;
     if (!enabled || pdf === null || host === null) return;
     const next = ++generation.current;
+    const cancelled = () => generation.current !== next || !active.current;
     active.current = true;
     setLanding(null); setDestinationBox(null);
     setSession({ items: [], prefix: "", loading: true, message: "Finding links…", focused: -1 });
@@ -87,15 +89,28 @@ export function usePdfLinkHints({ url, page, document: pdf, root, enabled, conte
     const pages = Array.from(host.querySelectorAll<HTMLElement>("[data-pdf-page]")).filter((frame) => viewport !== undefined && overlaps(frame.getBoundingClientRect(), viewport)).map((frame) => Number(frame.dataset.pdfPage));
     // Native annotations remain usable if extraction fails or a scan has no text index.
     void (async () => {
-      const [indexed, embedded] = await Promise.allSettled([
-        loadIndex(), Promise.allSettled(pages.map((number) => nativePageLinks(pdf, number, null))),
+      const paperId = sourcePaperId(url);
+      const [indexed, extracted, embedded] = await Promise.allSettled([
+        loadIndex(), paperId === null ? Promise.resolve(null) : objectsApi.get(paperId, AbortSignal.timeout(30_000)),
+        Promise.allSettled(pages.map((number) => nativePageLinks(pdf, number, null))),
       ]);
-      if (generation.current !== next || !active.current) return;
-      const index = indexed.status === "fulfilled" ? indexed.value : null;
+      if (cancelled()) return;
+      let index = indexed.status === "fulfilled" ? indexed.value : null;
+      let artifact: ObjectsArtifact | null = extracted.status === "fulfilled" ? extracted.value : null;
+      // A cache generation can change while objects are being derived. Refresh
+      // once, then withhold reference links if the two requests still disagree.
+      if (index !== null && artifact !== null && paperId !== null && !objectsMatchGeneration(artifact, readingIndexGeneration(index), paperId)) {
+        const [freshIndex, freshObjects] = await Promise.allSettled([
+          loadReadingIndex(url, { revalidate: true }), objectsApi.get(paperId, AbortSignal.timeout(30_000)),
+        ]);
+        if (cancelled()) return;
+        if (freshIndex.status === "fulfilled") index = freshIndex.value;
+        artifact = freshObjects.status === "fulfilled" ? freshObjects.value : null;
+      }
+      const referencesAvailable = index !== null && paperId !== null && objectsMatchGeneration(artifact, readingIndexGeneration(index), paperId);
       let links: PaperLink[] = [];
       if (index !== null) {
-        links = discovered.get(index) ?? discoverPaperLinks(index);
-        discovered.set(index, links);
+        links = discoverPaperLinks(index, referencesAvailable ? artifact : null, readingIndexGeneration(index));
       }
       const source = positionLinks(host, links.filter((link) => pages.includes(link.page)), index, crops);
       const native = embedded.status === "fulfilled" ? embedded.value.flatMap((result) => result.status === "fulfilled" ? result.value : []) : [];
@@ -114,7 +129,7 @@ export function usePdfLinkHints({ url, page, document: pdf, root, enabled, conte
       merged.sort((a, b) => a.link.page - b.link.page || a.box.top - b.box.top || a.box.left - b.box.left);
       const codes = hintCodes(merged.length);
       setSession({ items: merged.map((item, at) => ({ ...item, code: codes[at] ?? "" })), prefix: "", loading: false, focused: -1,
-        message: index === null ? "Text links unavailable; showing embedded PDF links." : index.gaps.length ? "Some pages have no searchable text; embedded links are still included." : "" });
+        message: index === null ? "Text links unavailable; showing embedded PDF links." : !referencesAvailable ? "Reference links unavailable; figure, table and embedded links are still included. Press Escape, then f to retry." : index.gaps.length ? "Some pages have no searchable text; embedded links are still included." : "" });
     })().catch(() => {
       if (generation.current === next && active.current) setSession({ items: [], prefix: "", loading: false, focused: -1, message: "Could not load links. Press Escape, then f to retry." });
     });
