@@ -1596,3 +1596,76 @@ date, last merged issue, in-flight branches and their state, next action, and op
   and #25/#96 collectors. Keep all omitted kinds and source limitations visible.
 - Scorecard unchanged: **1/5 gates (G5), 1/30 objectives (O30)**. O25/O26 misses retain #21/#22;
   new follow-up #96 covers unavailable measurement only. Full phase/system acceptance incomplete.
+
+### 2026-09-13 — full eval index verified; broad truth alignment running
+
+- Last merged issue remains **#88 / PR90**, phase/wave **A/A2**, previous main checkpoint
+  `7803160`. No phase exit. Protected ten PDF-preview files still match their original hashes.
+  No additional host approval has arrived. The four-host script
+  `~/.config/lysilogy/apply-codex-kb-network-permissions.py` remains unapplied; it requests only
+  `index.crates.io`, `static.crates.io`, `api.crossref.org`, and `api.openalex.org`. Earlier
+  automatic review rejected persistent registry grants as not specifically authorized. Continue
+  offline work; do not bypass that rejection. The originally approved corpus hosts/storage work.
+- Native eval indexing **exec84834 completed** in **1,374.785 s**, no network/model calls/$0.
+  All 1,000 PDFs have unique mapped PaperIds; **999 indexes succeeded**. Dedicated data root
+  `~/.cache/lysilogy/arxiv-kb-data` and its `paper-identities.json` must be preserved. Frozen
+  `k1-full-index-receipt.json` binds helper source, executable, inputs/request and output hashes;
+  output SHA `40b0545ac4f34c4c1d389f3f7bbdb8b613a533cef6e566285b570ccd7ea0f785`.
+  Root independently rehashed all 1,000 PDFs and 999 index files: **6,171,809,461 bytes**, all
+  matched in 9.302 s. Receipt `~/.cache/lysilogy/k1-full-index-root-review.json`. Native peak RSS
+  was not instrumented. The heavy build window is now free; do not repeat the full index run.
+- The retained failure is **2308.05883v2**, PaperId `e723f251047f05c0`, PDF SHA
+  `6470900fce80751fc31cc97401933fba56e5f2ad8848a353a7e34d6f16cc0647`. Independent investigation
+  found three negative-width Poppler combining-circumflex word boxes on pages 30/34; MuPDF traces
+  and a rendered crop show that swapping endpoints would invent incorrect geometry. Preserve the
+  finite/ordered gate and failed-paper record. A separately tested extraction correction is
+  needed before re-indexing only this paper. No PDF or source edits. Diagnostic
+  `~/.cache/lysilogy/layout-diagnostics/2308.05883v2/diagnostic.json`, SHA
+  `c110edb04dc9807d123679c3aebe8ad03e58b9650bda79a8bc09b87dea08d56a`, retains source/tool/glyph
+  evidence; 47 pages, 19,570 words, no nonfinite boxes, qpdf check passed. This is an open coverage
+  problem, not a measured scorecard miss; no follow-up issue yet.
+- **#70** in `.worktrees/feat/e8.3-latex-truth` is committed through **`0910c35`**. Independent
+  review cleared `b79563c` O11 arithmetic, `91a20ec` supported empty-kind negative cohorts and
+  `3b40dfb` clipped citation contexts. Later `016eb31` retains uncertain labeled equation rows
+  and supports single-token macro arguments; `0910c35` localizes unsupported rendering while
+  preserving inventories and classifies deposited PDF sources. Reviewer `review_ready_prs` is
+  examining those two latest commits. Owner `finish_corpus_proxy` is adding a separately bound
+  manual region/source overlay and distinct panel identity validator; those edits are uncommitted
+  and not yet cleared. No final K1 publication or PR. Historical full gates remain at `60c0c35`;
+  final integrated gates are still required.
+- A pinned source-only census of all 1,000 archives at historical `d75ddba` parsed 195 papers in
+  82.061 s / 357,600 KiB RSS. It was diagnostic, not truth coverage. Clipped TeX contexts caused
+  many whole-paper failures; four actual cases were fixed and independently reproduced. Other
+  actual failures included unbraced macro arguments and bibliography href boilerplate. Some
+  canonical arXiv sources decompress directly to `%PDF`; they are legitimately unsupported
+  source format, not corruption to redownload. Receipts under
+  `~/.cache/lysilogy/k1-source-census-d75ddba/` retain exact source hashes and exclusions.
+- Owner now runs broad alignment in retained **TTY exec65518**, pinned at `0910c35`, using
+  frozen 1,000 inputs and 999 successful indexes. External directory
+  `~/.cache/lysilogy/k1-full-alignment-0910c35/` retains all candidates, full inventories and
+  exclusions. One process, 1.5 GiB address-space bound and 30-second per-paper diagnostic timeout;
+  actual PDF/source/index hashes rechecked, no network/model calls or corpus mutation. At the
+  first 150 papers, 82 sources parsed and no metric cohort was accepted; this partial count is
+  not final coverage. Next use the complete exclusion census to improve supported semantics and
+  alignment without silently shortening any kind's independent inventory.
+- After all manual truth and panel judgments were frozen and independently checked, root inspected
+  the existing native detector output for 2104.01511v1: 11 figure candidates and zero tables,
+  versus independent 10 figures/five Roman-numbered tables. One extra Figure 2 is a prose mention;
+  detector regions also extend beyond visual bodies. Diagnostic
+  `~/.cache/lysilogy/k1-detector-inventory-diagnostic.json` is not an O1/O2 measurement. Preserve
+  the frozen truth unchanged; #96 must run its actual collector after #70. O11 remains unmeasured
+  because no production enrichment has run.
+- Paused branches/drafts remain **#25/PR94 `46ff41b`**, **#33 `905c341` (no PR)**,
+  **#71/PR93 `d5e12aa`**, and **#72/PR95 `c867ec6` (stacked on PR93)**. Source reviews and
+  relevant offline gates are retained in prior entries. #33 Rust dependencies and live provider
+  truth remain blocked by the pending hosts. The combined 40-DOI local/K0 request plan is ready,
+  unexecuted; no fake provider evidence or fixture-derived metrics may substitute for it.
+- Sole corpus mutator **exec97363** is still running the permanent-main scale download. Latest
+  read-only status: **6,429 PDFs / 1,000 sources / 25,580,298,883 bytes**, 5,478 scale PDFs, no
+  path problems; 103 GiB free, enforced floor 20 GiB. Log
+  `~/.cache/lysilogy/arxiv-corpus-full-resume.log`. Poll the retained handle; do not start a
+  second mutator or repeat selection recovery. Final whole-corpus verification remains pending.
+- Next: finish broad alignment and independently reviewed manual/publication integration for #70,
+  publish actual K1 only with visible coverage, then measure #25/#96. Continue scale download.
+  Scorecard unchanged: **1/5 gates (G5), 1/30 objectives (O30)**. Misses retain #21/#22; #96 is
+  the only newly opened follow-up this continuation. Full system acceptance remains incomplete.
