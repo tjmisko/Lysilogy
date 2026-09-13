@@ -22,9 +22,11 @@ def fixture():
 
 
 def automatic_fixture(cache):
-    inputs={'papers':[{'arxiv_id':'2001.00001','stratum':['cs.AI',2020]}]}
+    inputs={'papers':[{'arxiv_id':'2001.00001','stratum':['cs.AI',2020],'version':1,'pdf':{'path':'pdf/paper.pdf','sha256':'c'*64},'source':{'sha256':'d'*64}}]}
     config={'inputs':'inputs.json','indexes':'indexes.json','automatic_builds':[]}
-    evidence={'inputs.json':'a'*64,'indexes.json':'b'*64}
+    indexes={'papers':[{'relative_path':'paper.pdf','paper_id':'0123456789abcdef','pdf_sha256':'c'*64,'index':{'path':'papers/actual/index.json','sha256':'e'*64}}]}
+    (cache/'indexes.json').write_bytes(canonical(indexes));(cache/'inputs.json').write_bytes(canonical(inputs))
+    evidence={'inputs.json':sha256(canonical(inputs)),'indexes.json':sha256(canonical(indexes))}
     sources={'archive.py':b'def read(): return 1\n','tex.py':b'def render(): return 1\n','parser.py':b'def parse(): return 1\n','align.py':b'def align(): return 1\n','builder.py':b'IMPLEMENTATION = ["new"]\ndef derive(): return 1\n'}
     for label,head in [('historical','1234567'),('current','abcdef0')]:
         directory=cache/label;(directory/'modules').mkdir(parents=True);(directory/'papers').mkdir()
@@ -34,7 +36,7 @@ def automatic_fixture(cache):
             if label=='historical' and name=='align.py':raw=raw.replace(b'1',b'0')
             (directory/'modules'/name).write_bytes(raw);modules[name]=sha256(raw)
         inventory={'objects':[]};metrics={f'O{i}':False for i in range(1,12)}
-        candidate={'arxiv_id':'2001.00001','stratum':['cs.AI',2020],'accepted':False,'bibliography_eligible':False,'metric_eligibility':metrics,'source_inventory':inventory,'source_inventory_sha256':sha256(canonical(inventory))}
+        candidate={'arxiv_id':'2001.00001','paper_id':'0123456789abcdef','pdf_sha256':'c'*64,'source_sha256':'d'*64,'index':indexes['papers'][0]['index'],'stratum':['cs.AI',2020],'accepted':False,'bibliography_eligible':False,'metric_eligibility':metrics,'source_inventory':inventory,'source_inventory_sha256':sha256(canonical(inventory))}
         candidate_raw=canonical(candidate);(directory/'papers/paper.json').write_bytes(candidate_raw)
         summary={'arxiv_id':'2001.00001','stratum':['cs.AI',2020],'accepted':False,'candidate_path':'papers/paper.json','candidate_sha256':sha256(candidate_raw),'source_inventory_sha256':candidate['source_inventory_sha256'],'metrics':metrics}
         report={'head':head,'input_sha256':evidence['inputs.json'],'index_map_sha256':evidence['indexes.json'],'papers':1,'counts':{'parsed':1,'accepted':0,'bibliography_eligible':0},'eligible_metrics':{key:0 for key in metrics},'network_calls':0,'model_calls':0,'external_cost_usd':0,'final_k1_publication':False,'wall_seconds':1,'peak_rss_kib':1}
@@ -108,6 +110,16 @@ class ReleaseTests(unittest.TestCase):
                 if target=='source':arguments[4]['align.py']=b'def align(): return 99\n'
                 else:(Path(directory)/'current/papers/paper.json').write_bytes(b'changed candidate')
                 with self.assertRaises(ValueError):validate_automatic_reports(*arguments)
+
+    def test_should_reject_foreign_automatic_artifacts_when_resealed_summaries_keep_the_same_metrics(self):
+        for field,value in [('paper_id','foreign-id'),('pdf_sha256','f'*64),('source_sha256','f'*64),('index',{'path':'foreign/index.json','sha256':'e'*64}),('arxiv_version',2)]:
+            with self.subTest(field=field),tempfile.TemporaryDirectory() as directory:
+                import json
+                arguments=automatic_fixture(Path(directory));candidate_path=Path(directory)/'current/papers/paper.json'
+                candidate=json.loads(candidate_path.read_bytes());candidate[field]=value;candidate_path.write_bytes(canonical(candidate))
+                summary_path=Path(directory)/'current/papers.jsonl';summary=json.loads(summary_path.read_bytes());summary['candidate_sha256']=sha256(candidate_path.read_bytes());summary_path.write_bytes(canonical(summary)+b'\n')
+                arguments[3]['current/papers.jsonl']=sha256(summary_path.read_bytes())
+                with self.assertRaisesRegex(ValueError,'automatic candidate.*differs'):validate_automatic_reports(*arguments)
 
     def test_should_preserve_published_bytes_when_repeated_or_conflicting_releases_are_requested(self):
         with tempfile.TemporaryDirectory() as directory:

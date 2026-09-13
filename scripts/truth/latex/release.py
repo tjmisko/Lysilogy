@@ -160,6 +160,13 @@ def validate_automatic_reports(cache, config, inputs, evidence, current_sources)
     require(len(builds) == 2 and {row['label'] for row in builds} == {'historical','current'}, 'release needs distinct historical/current automatic runs')
     require(len({row['path'] for row in builds}) == len({evidence[row['path']] for row in builds}) == len({row['tested_head'] for row in builds}) == 2, 'historical/current automatic report identities must differ')
     frozen = {row['arxiv_id']: row for row in inputs['papers']}
+    index_map = document(bounded(cache,config['indexes']))['papers']
+    mapped = {row['relative_path']:row for row in index_map}
+    require(len(mapped) == len(index_map) == len(frozen) and len({row['paper_id'] for row in index_map}) == len(frozen), 'automatic index map is incomplete or duplicates identities')
+    require(set(mapped) == {Path(row['pdf']['path']).name for row in frozen.values()}, 'automatic index map differs from frozen PDF population')
+    for paper in frozen.values():
+        mapping = mapped[Path(paper['pdf']['path']).name]
+        require(mapping['pdf_sha256'] == paper['pdf']['sha256'] and re.fullmatch(r'[0-9a-f]{16}',mapping['paper_id']) and type(paper['version']) is int and paper['version'] > 0, 'automatic map differs from frozen PDF identity/version')
     history = []
     for specification in builds:
         report = document(bounded(cache,specification['path']))
@@ -192,6 +199,9 @@ def validate_automatic_reports(cache, config, inputs, evidence, current_sources)
             candidate_raw = bounded(cache,candidate_path)
             require(sha256(candidate_raw) == summary['candidate_sha256'], 'automatic candidate differs from its frozen summary hash')
             candidate = document(candidate_raw)
+            paper = frozen[summary['arxiv_id']]; mapping = mapped[Path(paper['pdf']['path']).name]
+            require(not mapping.get('error') and candidate['pdf_sha256'] == paper['pdf']['sha256'] and candidate['source_sha256'] == paper['source']['sha256'] and candidate['paper_id'] == mapping['paper_id'] and candidate['index'] == mapping['index'], 'automatic candidate artifact identity differs from frozen source/index records')
+            require(all(candidate[key] == paper['version'] for key in ('version','arxiv_version') if key in candidate), 'automatic candidate arXiv version differs from frozen source')
             require(candidate['arxiv_id'] == summary['arxiv_id'] and candidate['stratum'] == summary['stratum'] and candidate['accepted'] == summary['accepted'], 'automatic candidate differs from paper summary identity/result')
             require(set(candidate['metric_eligibility']) == set(METRICS) and candidate['metric_eligibility'] == summary['metrics'] and all(type(value) is bool for value in candidate['metric_eligibility'].values()), 'automatic per-paper metric inventory differs')
             require(type(candidate['accepted']) is bool and type(candidate['bibliography_eligible']) is bool, 'automatic per-paper acceptance is malformed')
