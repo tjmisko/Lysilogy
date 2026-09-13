@@ -344,14 +344,14 @@ fn retain_script_atom(kind: char, characters: &mut Peekable<Chars<'_>>, output: 
     output.push('{');
     if let Some(atom) = characters.next() {
         output.push(if atom == '-' { '−' } else { atom });
-        if atom == '\\' {
-            if let Some(next) = characters.next() {
-                output.push(next);
-                if next.is_ascii_alphabetic() {
-                    while characters.peek().is_some_and(char::is_ascii_alphabetic) {
-                        if let Some(letter) = characters.next() {
-                            output.push(letter);
-                        }
+        if atom == '\\'
+            && let Some(next) = characters.next()
+        {
+            output.push(next);
+            if next.is_ascii_alphabetic() {
+                while characters.peek().is_some_and(char::is_ascii_alphabetic) {
+                    if let Some(letter) = characters.next() {
+                        output.push(letter);
                     }
                 }
             }
