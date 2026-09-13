@@ -90,8 +90,53 @@ def attach_objects(cache, corpus_root, data_root, candidate_raw, paper, mapped, 
     return apply_object_overlay(candidate_raw, bounded(data_root, mapped['index']['path']), artifact_paths['source'].read_bytes(), *raws, verified)
 
 
+def attach_bibliography(cache, corpus_root, data_root, candidate_raw, paper, mapped, bundle_relative):
+    from bibliography_annotations import apply_bibliography_overlay
+    candidate = document(candidate_raw)
+    if candidate['index'] != mapped['index'] or candidate['paper_id'] != mapped['paper_id']:
+        raise ValueError('bibliography candidate differs from frozen mapped identities')
+    bundle_root = safe_file(cache, bundle_relative + '/bibliography-packet.json').parent
+    names = ('packet.json', 'bibliography-packet.json', 'bibliography-root-v1.json', 'bibliography-independent-v1.json', 'bibliography-independent-v1-receipt.json', 'bibliography-reconciliation-independent-v1.json')
+    raws = [bounded(bundle_root, name) for name in names]
+    _, packet, root, independent, receipt, review = [document(raw) for raw in raws]
+    inputs = independent['inputs']
+    for kind in ('pdf', 'source'):
+        expected = paper[kind]; path = safe_file(corpus_root, expected['path'])
+        actual, count = fingerprint_file(path)
+        if actual != expected['sha256'] or count != expected['bytes'] or actual != candidate[kind + '_sha256'] or inputs[kind]['path'] != str(path) or packet[kind] != expected:
+            raise ValueError('bibliography artifact differs from actual frozen source/PDF')
+    index_path = safe_file(data_root, mapped['index']['path'])
+    if inputs['reading_index']['path'] != str(index_path) or inputs['packet']['path'] != str(bundle_root / 'bibliography-packet.json') or receipt['annotation']['path'] != str(bundle_root / 'bibliography-independent-v1.json'):
+        raise ValueError('bibliography evidence paths differ from verified inputs')
+    for declared in [receipt['serializer'], review['review_script'], inputs['bounded_archive_module']]:
+        relative = str(Path(declared['path']).relative_to(cache))
+        actual, count = fingerprint_file(safe_file(cache, relative), cap=32 * 1024 * 1024)
+        if actual != declared['sha256'] or count != declared['bytes']:
+            raise ValueError('bibliography review implementation differs from its receipt')
+    for declared in review['input_revalidation']:
+        path = Path(declared['path'])
+        owner = corpus_root if path.is_relative_to(corpus_root) else cache
+        actual, count = fingerprint_file(safe_file(owner, str(path.relative_to(owner))))
+        if actual != declared['sha256'] or count != declared['bytes']:
+            raise ValueError('bibliography reviewed input changed')
+    images = packet['images'] + inputs['images'] + [root['bibliography_detail_image']] + receipt['detail_images']
+    verified = {}
+    for image in images:
+        declared = image['path']; path = Path(declared)
+        owner = cache if path.is_absolute() else bundle_root
+        relative = str(path.relative_to(cache)) if path.is_absolute() else declared
+        actual, count = fingerprint_file(safe_file(owner, relative), cap=32 * 1024 * 1024)
+        if actual != image['sha256'] or ('bytes' in image and count != image['bytes']):
+            raise ValueError('bibliography image differs from its actual declared path')
+        verified[declared] = actual
+    source_path = safe_file(corpus_root, paper['source']['path'])
+    if source_path.stat().st_size > 64 * 1024 * 1024:
+        raise ValueError('bibliography source exceeds compressed byte bound')
+    return apply_bibliography_overlay(candidate_raw, bounded(data_root, mapped['index']['path']), source_path.read_bytes(), *raws, verified)
+
+
 def assemble(cache, corpus_root, data_root, candidate_relative, region_relative, panel_relative=None,
-             inputs_relative='k1-full-eval-inputs.json', indexes_relative='k1-full-index.json', object_relative=None):
+             inputs_relative='k1-full-eval-inputs.json', indexes_relative='k1-full-index.json', object_relative=None, bibliography_relative=None):
     inputs_raw, indexes_raw = bounded(cache, inputs_relative), bounded(cache, indexes_relative)
     inputs, indexes = document(inputs_raw), document(indexes_raw)
     candidate_raw = bounded(cache, candidate_relative)
@@ -117,6 +162,9 @@ def assemble(cache, corpus_root, data_root, candidate_relative, region_relative,
                             [read_panel(f'vote-evaluator-{number}.json') for number in range(1, 4)],
                             read_panel('panel-root-review-v1.json'), read_panel('scoring-policy-v1.json'),
                             bounded(data_root, candidate['index']['path']), bounded(region_root, 'regions-root-v1.json'), verified_images)
+    if bibliography_relative:
+        bibliography = attach_bibliography(cache, corpus_root, data_root, candidate_raw, papers[0], mappings[0], bibliography_relative)
+        output['manual_bibliography_overlay'] = bibliography['manual_bibliography_overlay']
     output['manual_assembly'] = {'inputs_sha256': sha256(inputs_raw), 'index_map_sha256': sha256(indexes_raw),
                                  'candidate_sha256': sha256(candidate_raw), 'final_k1_publication': False,
                                  'source_inventory_policy': 'exact historical candidate retained; no automatic-confidence change'}
@@ -130,6 +178,7 @@ def main():
     bundles.add_argument('--region-bundle')
     bundles.add_argument('--object-bundle')
     parser.add_argument('--panel-bundle')
+    parser.add_argument('--bibliography-bundle')
     parser.add_argument('--inputs', default='k1-full-eval-inputs.json')
     parser.add_argument('--indexes', default='k1-full-index.json')
     parser.add_argument('--corpus-root', type=Path, default=Path.home() / 'Corpora/arxiv')
@@ -141,7 +190,7 @@ def main():
         raise ValueError('manual evidence must remain within the dedicated external corpus/cache roots')
     implementation = fingerprint_sources()
     started = time.monotonic()
-    result = assemble(cache, corpus_root, data_root, args.candidate, args.region_bundle, args.panel_bundle, args.inputs, args.indexes, args.object_bundle)
+    result = assemble(cache, corpus_root, data_root, args.candidate, args.region_bundle, args.panel_bundle, args.inputs, args.indexes, args.object_bundle, args.bibliography_bundle)
     if implementation != fingerprint_sources():
         raise ValueError('manual implementation bytes changed during assembly')
     result['manual_assembly']['implementation'] = implementation

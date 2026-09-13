@@ -104,3 +104,12 @@ with no overlapping direct ownership. Full expected reference roles remain audit
 only equation/statement references contribute to O4. All proofs retain explicit or nearest-preceding
 source association provenance. The overlay grants only its completely reviewed kinds, does not
 change the automatic candidate, and cannot itself satisfy stratified K1 publication.
+
+Manual bibliography evidence uses a separately accepted complete comparison. Every independently
+parsed entry and citation command must survive, with one target pair per printed destination.
+Both annotations and comparison agree on complete UTF-16 members, printed numbering, all known
+field values and their source-role/native anchors. A field outside its entry or a changed citation
+role/order cannot enter the cohort. This initial manual adapter requires all three requested fields
+to be explicitly known; unsupported or unknown-field bundles are refused, not silently shortened.
+The resulting schema-1 bibliography projection keeps all entries and mentions for O8–O10, while
+provider identity and full mathematical transcription remain outside these labels.

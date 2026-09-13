@@ -96,3 +96,10 @@ It verifies both annotations and accepted reconciliation, source slices, referen
 attribution, actual serializer bytes, and all original/detail image paths. It preserves lossy
 native math fidelity and does not claim semantic quote truth. It remains an external exploratory
 candidate until final K1 publication passes its separate cohort requirements.
+
+Add `--bibliography-bundle k1-manual-annotation/2503.05828` to the object command to
+attach the separately reconciled bibliography. This validates the complete source bibitem and
+citation inventory, exact printed memberships, explicit first-author/title/year source roles,
+and both annotators' field anchors. Grouped citations retain printed order and source order
+separately. Actual source/PDF/index, images, annotation serializer and review script hashes are
+verified again. Only compact labels and provenance enter the overlay; full excerpts stay external.
