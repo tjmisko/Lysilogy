@@ -397,6 +397,14 @@ class CorpusTests(unittest.TestCase):
             self.assertEqual(0, corpus.main(["--proxy-env", "HTTPS_PROXY", "recover-selection", "--reason", "missing PDF"]))
         recovery.assert_called_once_with(self.root, config, client, "missing PDF")
 
+    def should_refuse_recovery_when_rehashed_legacy_rows_do_not_match_metadata(self):
+        config, legacy = self.legacy_selection()
+        legacy["papers"][0]["created"] = "2020-09-13"
+        legacy["selection_sha256"] = corpus.fingerprint(legacy["papers"])
+        corpus.atomic_json(self.root / "selection.json", legacy)
+        with self.assertRaisesRegex(corpus.CorpusError, "recorded metadata and config"):
+            corpus.recover_selection(self.root, config, FakeHttp([]), "missing PDF")
+
     def should_select_identical_papers_when_seed_config_and_metadata_match(self):
         config = small_config()
         first = corpus.select_papers(papers(), config)

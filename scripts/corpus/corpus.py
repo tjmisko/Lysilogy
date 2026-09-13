@@ -566,6 +566,8 @@ def prepare_selection(root, config, http, checkpoint, original=None):
     metadata_hash = fingerprint_records(papers)
     if original and metadata_hash != original["metadata_sha256"]:
         raise CorpusError("Metadata changed since the failed selection; recovery needs its original snapshot")
+    if original and fingerprint(select_papers(papers, config)) != original["selection_sha256"]:
+        raise CorpusError("Legacy selection differs from its recorded metadata and config")
     estimate = sum(spec["count"] for spec in config["tiers"].values()) * config["estimated_pdf_mib"] * MIB
     estimate += config["tiers"]["eval"]["count"] * config["estimated_source_mib"] * MIB
     print(canonical({"action": "selection_preflight", **check_space(root, estimate, int(config["free_space_floor_gib"] * GIB))}), flush=True)
