@@ -17,6 +17,34 @@ def fixture():
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_should_withhold_flat_math_layout_collisions_when_rows_and_columns_are_unverified(self):
+        for environment, parameter in (('array', '{c}'), ('aligned', ''), ('alignedat', '{2}'), ('split', '')):
+            source = document(r'\begin{equation}\begin{' + environment + '}' + parameter
+                              + r'abcdefghij\\klmnopqrst\end{' + environment + r'}\end{equation}')
+            parsed = parse_project({'main.tex': source})
+            with self.subTest(environment=environment):
+                self.assertEqual(len(parsed['objects']), 1)
+                self.assertIn('unverified_math_layout:' + environment, parsed['objects'][0]['unsupported_commands'])
+                self.assertFalse(align_paper(parsed, {'text': parsed['objects'][0]['text']})['metric_eligibility']['O3'])
+
+    def test_should_keep_other_inventory_kinds_when_only_mathematical_layout_fidelity_is_unknown(self):
+        parsed = parse_project({'main.tex': document(r'\begin{equation}\begin{array}{c}abcdefghij\\klmnopqrst\end{array}\end{equation}'
+                               r'\begin{figure}\caption{A complete independently authored visual caption.}\end{figure}')})
+        result = align_paper(parsed, {'text': 'cabcdefghij klmnopqrst A complete independently authored visual caption.'})
+        self.assertFalse(parsed['coverage']['unsupported_source_semantics'])
+        self.assertFalse(result['metric_eligibility']['O3'])
+        self.assertTrue(result['metric_eligibility']['O1'])
+
+    def test_should_withhold_inline_layout_fidelity_when_a_statement_or_entry_has_a_flat_text_collision(self):
+        expression = r'\begin{array}{c}abcdefghij\\klmnopqrst\end{array}'
+        for body, collection, metric in ((r'\begin{theorem}The condition $' + expression + r'$ determines the result.\end{theorem}', 'objects', 'O5'),
+                                          (r'\begin{thebibliography}{9}\bibitem{one}The condition $' + expression + r'$ determines the result.\end{thebibliography}', 'entries', 'O8')):
+            parsed = parse_project({'main.tex': document(body)})
+            with self.subTest(metric=metric):
+                row = parsed[collection][0]
+                self.assertIn('unverified_math_layout:array', row['unsupported_commands'])
+                self.assertFalse(align_paper(parsed, {'text': row['text']})['metric_eligibility'][metric])
+
     def test_should_withhold_a_stored_argument_tail_alias_when_its_definition_hides_the_consumer(self):
         statement = r'\begin{theorem}Every input has a unique bounded output.\end{theorem}'
         for definitions, body in ((r'\newcommand{\literal}{\url}', r'\literal{' + statement + '}'),

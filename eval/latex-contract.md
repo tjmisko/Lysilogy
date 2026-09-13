@@ -156,3 +156,9 @@ entire body is one literal `begin` or `end` for a known equation environment.
 Events retain the original invocation and definition positions; source text is
 never rewritten. Scoped, repeated, indirect, parameterized and executable variants
 remain unsupported, and equation row/numbering guards still apply.
+
+Known mathematical array/alignment layout can preserve a source object inventory
+without proving its rendered text. Array column declarations, row grouping and
+matrix binding are not ordinary prose; objects, entries or contexts containing
+these layouts retain an explicit fidelity exclusion until independently verified
+geometry is available. This does not exclude another completely aligned kind.
