@@ -41,7 +41,9 @@ metadata JSON array; no revised live RSS improvement is claimed without measurem
 ## Validation and scorecard
 
 The fresh before measurements ran on `26b4adc`; availability-only measurements ran on `9ba9fe5`.
-Final combined measurements ran on `06dc693` after integrating the independently reviewed source-endpoint fix #91.
+Combined measurements first passed at `06dc693`; final measurements ran on `f82f362` after
+normally integrating merged source-endpoint #91 and the current main progress checkpoint `e221bb6`.
+Both commits have the exact corpus implementation bytes used by the bounded live verification.
 Current main was integrated with an ordinary merge because the standing rebase approval
 restriction remains in effect. The independent reviewer cleared source `96b702d` and ran all
 75 availability tests. The endpoint reviewer cleared `ebead0c` and independently ran all 82
