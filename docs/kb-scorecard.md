@@ -62,59 +62,59 @@ System acceptance requires 5/5 gates and at least 24/30 objectives; use `eval al
 
 ## Evidence and availability
 
-Measurements are calculated from `eval/inputs/<suite>.json` with content-verified implementation, truth-set, and observation files. G5 executes isolated tests. Results retain truth versions, source hashes, commit, case counts, cost, wall time, and the pre-run baseline. Missing cost is unknown.
+Measurements are calculated from `eval/inputs/<suite>/<collector>.json` or the legacy suite file with content-verified implementation, truth-set, and observation files. G5 executes isolated tests. Results retain truth versions, source hashes, commit, case counts, cost, wall time, and the pre-run baseline. Missing cost is unknown.
 
-- **G1.works:** missing eval/inputs/resolution.json; truth/collector not built
-- **G1.persons:** missing eval/inputs/persons.json; truth/collector not built
-- **G2:** missing eval/inputs/acquisition.json; truth/collector not built
-- **G3:** missing eval/inputs/objects.json; truth/collector not built
-- **G4:** missing eval/inputs/resolution.json; truth/collector not built
-- **O1:** missing eval/inputs/objects.json; truth/collector not built
-- **O2:** missing eval/inputs/objects.json; truth/collector not built
-- **O3:** missing eval/inputs/objects.json; truth/collector not built
-- **O4:** missing eval/inputs/objects.json; truth/collector not built
-- **O5:** missing eval/inputs/objects.json; truth/collector not built
-- **O6:** missing eval/inputs/objects.json; truth/collector not built
-- **O7:** missing eval/inputs/objects.json; truth/collector not built
-- **O8:** missing eval/inputs/bibliography.json; truth/collector not built
-- **O9.title:** missing eval/inputs/bibliography.json; truth/collector not built
-- **O9.first_author:** missing eval/inputs/bibliography.json; truth/collector not built
-- **O9.year:** missing eval/inputs/bibliography.json; truth/collector not built
-- **O10.precision:** missing eval/inputs/bibliography.json; truth/collector not built
-- **O10.recall:** missing eval/inputs/bibliography.json; truth/collector not built
-- **O11:** missing eval/inputs/objects.json; truth/collector not built
-- **O12.precision:** missing eval/inputs/resolution.json; truth/collector not built
-- **O12.recall:** missing eval/inputs/resolution.json; truth/collector not built
-- **O13:** missing eval/inputs/persons.json; truth/collector not built
-- **O14:** missing eval/inputs/resolution.json; truth/collector not built
-- **O15:** missing eval/inputs/resolution.json; truth/collector not built
-- **O16:** missing eval/inputs/acquisition.json; truth/collector not built
-- **O17:** missing eval/inputs/acquisition.json; truth/collector not built
-- **O18:** missing eval/inputs/acquisition.json; truth/collector not built
-- **O19:** missing eval/inputs/acquisition.json; truth/collector not built
-- **O20:** missing eval/inputs/citations.json; truth/collector not built
-- **O21.bibtex:** missing eval/inputs/citations.json; truth/collector not built
-- **O21.ris:** missing eval/inputs/citations.json; truth/collector not built
-- **O22.resolved:** missing eval/inputs/lists.json; truth/collector not built
-- **O22.fabricated:** missing eval/inputs/lists.json; truth/collector not built
-- **O23:** missing eval/inputs/lists.json; truth/collector not built
-- **O24:** missing eval/inputs/read-next.json; truth/collector not built
-- **O25:** missing eval/inputs/scale.json; truth/collector not built
-- **O26.render:** missing eval/inputs/scale.json; truth/collector not built
-- **O26.search:** missing eval/inputs/scale.json; truth/collector not built
-- **O27:** missing eval/inputs/scale.json; truth/collector not built
-- **O28:** missing eval/inputs/scale.json; truth/collector not built
-- **O29:** missing eval/inputs/scale.json; truth/collector not built
-- **O30:** missing eval/inputs/scale.json; truth/collector not built
-- **R1:** missing eval/inputs/acquisition.json; truth/collector not built
-- **R2:** missing eval/inputs/lists.json; truth/collector not built
-- **R3:** missing eval/inputs/resolution.json; truth/collector not built
-- **R4.enrichment_cost:** missing eval/inputs/objects.json; truth/collector not built
-- **R4.enrichment_time:** missing eval/inputs/objects.json; truth/collector not built
-- **R4.acquisition_cost:** missing eval/inputs/acquisition.json; truth/collector not built
-- **R4.acquisition_time:** missing eval/inputs/acquisition.json; truth/collector not built
-- **R4.list_cost:** missing eval/inputs/lists.json; truth/collector not built
-- **R4.list_time:** missing eval/inputs/lists.json; truth/collector not built
+- **G1.works:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
+- **G1.persons:** no owning collector in eval/inputs/persons.json or eval/inputs/persons/; truth/collector not built
+- **G2:** no owning collector in eval/inputs/acquisition.json or eval/inputs/acquisition/; truth/collector not built
+- **G3:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **G4:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
+- **O1:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O2:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O3:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O4:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O5:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O6:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O7:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O8:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O9.title:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O9.first_author:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O9.year:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O10.precision:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O10.recall:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
+- **O11:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **O12.precision:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
+- **O12.recall:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
+- **O13:** no owning collector in eval/inputs/persons.json or eval/inputs/persons/; truth/collector not built
+- **O14:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
+- **O15:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
+- **O16:** no owning collector in eval/inputs/acquisition.json or eval/inputs/acquisition/; truth/collector not built
+- **O17:** no owning collector in eval/inputs/acquisition.json or eval/inputs/acquisition/; truth/collector not built
+- **O18:** no owning collector in eval/inputs/acquisition.json or eval/inputs/acquisition/; truth/collector not built
+- **O19:** no owning collector in eval/inputs/acquisition.json or eval/inputs/acquisition/; truth/collector not built
+- **O20:** no owning collector in eval/inputs/citations.json or eval/inputs/citations/; truth/collector not built
+- **O21.bibtex:** no owning collector in eval/inputs/citations.json or eval/inputs/citations/; truth/collector not built
+- **O21.ris:** no owning collector in eval/inputs/citations.json or eval/inputs/citations/; truth/collector not built
+- **O22.resolved:** no owning collector in eval/inputs/lists.json or eval/inputs/lists/; truth/collector not built
+- **O22.fabricated:** no owning collector in eval/inputs/lists.json or eval/inputs/lists/; truth/collector not built
+- **O23:** no owning collector in eval/inputs/lists.json or eval/inputs/lists/; truth/collector not built
+- **O24:** no owning collector in eval/inputs/read-next.json or eval/inputs/read-next/; truth/collector not built
+- **O25:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
+- **O26.render:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
+- **O26.search:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
+- **O27:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
+- **O28:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
+- **O29:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
+- **O30:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
+- **R1:** no owning collector in eval/inputs/acquisition.json or eval/inputs/acquisition/; truth/collector not built
+- **R2:** no owning collector in eval/inputs/lists.json or eval/inputs/lists/; truth/collector not built
+- **R3:** no owning collector in eval/inputs/resolution.json or eval/inputs/resolution/; truth/collector not built
+- **R4.enrichment_cost:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **R4.enrichment_time:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
+- **R4.acquisition_cost:** no owning collector in eval/inputs/acquisition.json or eval/inputs/acquisition/; truth/collector not built
+- **R4.acquisition_time:** no owning collector in eval/inputs/acquisition.json or eval/inputs/acquisition/; truth/collector not built
+- **R4.list_cost:** no owning collector in eval/inputs/lists.json or eval/inputs/lists/; truth/collector not built
+- **R4.list_time:** no owning collector in eval/inputs/lists.json or eval/inputs/lists/; truth/collector not built
 
 ## Ratchet policy
 
