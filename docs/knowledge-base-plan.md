@@ -1004,8 +1004,10 @@ and `/tmp`, at a configurable root (default `~/Corpora/arxiv/`, `LYSILOGY_CORPUS
   (`https://storage.googleapis.com/arxiv-dataset/arxiv/arxiv/pdf/<YYMM>/<id>v<n>.pdf`; listing via
   the JSON API). No `gsutil` is required.
 - **Sources:** fetch LaTeX sources for the `eval` tier per paper from
-  `https://export.arxiv.org/e-print/<id>`, within arXiv's published harvesting rate (bursts of at
-  most 4 requests per second with a 1 second sleep per burst). The requester-pays S3 bucket
+  `https://export.arxiv.org/e-print/<id>`, with a shared single-connection budget of at most one request every
+  three seconds, including retries. This follows the stricter
+  [API terms](https://info.arxiv.org/help/api/tou.html), checked 2026-09-12; the bulk
+  harvesting page separately permits four-request bursts. The requester-pays S3 bucket
   `s3://arxiv/src/` is not used by default because its monthly tar chunks mix all categories.
 - **Manifest:** `manifest.jsonl` records ID, version, categories, tier, file hashes, and fetch
   times. Downloads are resumable and verified; partial files never enter the corpus.
@@ -1014,6 +1016,13 @@ and `/tmp`, at a configurable root (default `~/Corpora/arxiv/`, `LYSILOGY_CORPUS
 
 Terms: most arXiv papers carry arXiv's default license, which does not grant redistribution. Only
 IDs, derived labels, and metrics are committed; tools link back to arXiv for downloads.
+
+Implementation: standard-library Python tooling at `scripts/corpus/corpus.py` and checked-in
+`scripts/corpus/selection.json`. See [corpus operations](../scripts/corpus/README.md) for commands,
+selection/version freezing, format and hash verification limits, isolated scale mapping, and
+background resume. OAI modification dates are only incremental-harvest bounds; submitted-year
+strata use `created`. Sources explicitly request the pinned PDF version. Missing artifacts or
+sparse strata fail without silently reducing the tier count.
 
 Acceptance: a fresh run reproduces the same selection; an interrupted run resumes without
 re-downloading verified files; the harvester stays within the documented rate; disk usage is
