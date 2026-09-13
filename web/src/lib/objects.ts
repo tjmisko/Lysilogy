@@ -19,7 +19,7 @@ export type BibliographicFields = {
 };
 export type UnresolvedCitation = ObjectMention & {
   text: string; key: string; style: "numeric" | "superscript" | "author_year";
-  reason: "missing_target" | "ambiguous_target" | "unsupported_range"; candidate_ids: string[];
+  reason: "missing_target" | "ambiguous_target" | "unsupported_range" | "ambiguous_marker"; candidate_ids: string[];
 };
 
 export type PaperObject = PaperObjectKind & {

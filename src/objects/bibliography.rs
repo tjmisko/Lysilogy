@@ -82,6 +82,7 @@ pub enum UnresolvedReason {
     MissingTarget,
     AmbiguousTarget,
     UnsupportedRange,
+    AmbiguousMarker,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -266,6 +267,8 @@ pub fn extract(index: &ReadingIndex) -> Bibliography {
 struct EntryLabel {
     start: usize,
     key: String,
+    dotted: bool,
+    publication_year: bool,
 }
 
 fn entry_labels(source: &Source<'_>, span: TextRange) -> Vec<EntryLabel> {
@@ -276,6 +279,12 @@ fn entry_labels(source: &Source<'_>, span: TextRange) -> Vec<EntryLabel> {
         let whole = captures.get(0)?;
         (whole.start() == 0).then(|| EntryLabel {
             start: offset,
+            dotted: captures.get(3).is_some(),
+            publication_year: captures.get(3).is_some_and(|key| {
+                year_regex()
+                    .find(key.as_str())
+                    .is_some_and(|year| year.as_str() == key.as_str())
+            }),
             key: (1..=3)
                 .find_map(|group| captures.get(group))
                 .expect("printed key capture")
@@ -340,7 +349,27 @@ fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block
     for block in blocks {
         let text = source.text(block.span).unwrap_or_default();
         let base = source.byte(block.span.start).unwrap_or_default();
-        let labels = entry_labels(source, block.span);
+        let mut previous_dot_number = entries.last().and_then(|entry| {
+            let raw = source.text(*entry.spans.first()?)?;
+            let label = label_regex().captures(raw)?.get(3)?;
+            label.as_str().parse::<u32>().ok()
+        });
+        let labels = entry_labels(source, block.span)
+            .into_iter()
+            .filter(|label| {
+                let number = label.key.parse::<u32>().ok();
+                // A plain year ending in a period is common on a continuation
+                // line. Only an established adjacent dotted-number sequence
+                // justifies interpreting it as a four-digit entry key.
+                if label.publication_year
+                    && !previous_dot_number.is_some_and(|previous| Some(previous + 1) == number)
+                {
+                    return false;
+                }
+                previous_dot_number = label.dotted.then_some(number).flatten();
+                true
+            })
+            .collect::<Vec<_>>();
         if labels.is_empty()
             && let Some(previous) = entries.last_mut().filter(|entry| entry.key.is_some())
         {
@@ -730,6 +759,17 @@ fn resolve_mentions(source: &Source<'_>, bibliography: TextRange, result: &mut B
         result,
     };
     let body = &source.index.text;
+    let bracket_convention = pattern!(r"\[([^\]\n]{1,120})\]")
+        .captures_iter(body)
+        .any(|matched| {
+            let whole = matched.get(0).expect("bracketed citation");
+            let span = source.range(whole.start(), whole.end());
+            (span.start < bibliography.start || span.start >= bibliography.end)
+                && citation_keys(&matched[1]).iter().any(|item| {
+                    item.as_ref()
+                        .is_ok_and(|key| printed.get(key).is_some_and(|targets| targets.len() == 1))
+                })
+        });
     let mut printed_occurrences = Vec::new();
     for matched in
         pattern!(r"\[([^\]\n]{1,120})\]|\((\d{1,4}(?:\s*[,;–−-]\s*\d{1,4})*)\)").captures_iter(body)
@@ -765,10 +805,13 @@ fn resolve_mentions(source: &Source<'_>, bibliography: TextRange, result: &mut B
             printed_occurrences.push(span);
         }
         for item in cited {
-            resolver.resolve(span, CitationStyle::Numeric, item, &printed);
+            let ambiguous = matched.get(2).is_some()
+                && bracket_convention
+                && !citation_cue(source, span.start, &printed);
+            resolver.resolve_marker(span, CitationStyle::Numeric, item, &printed, ambiguous);
         }
     }
-    resolve_superscripts(&mut resolver, &printed);
+    resolve_superscripts(&mut resolver, &printed, bracket_convention);
     for matched in pattern!(r"((?:(?i:van|von|de|del|della|da|dos|das|la|der|den)\s+){0,3}[\p{L}][\p{L}\p{M}'’−-]+)(?:\s+(?:et\s+al\.?|(?:and|&)\s+[\p{L}][\p{L}\p{M}'’−-]+))?(?:\s*[,(\[]\s*|\s+)((?:18|19|20)\d{2}[a-z]?(?:\s*[,;]\s*(?:(?:18|19|20)\d{2}[a-z]?|[a-z]))*)\b").captures_iter(body) {
         let whole = matched.get(0).expect("author-year citation");
         let author = matched.get(1).expect("citation author").as_str();
@@ -785,7 +828,38 @@ fn resolve_mentions(source: &Source<'_>, bibliography: TextRange, result: &mut B
     }
 }
 
-fn resolve_superscripts(resolver: &mut Resolver<'_, '_>, printed: &BTreeMap<String, Vec<usize>>) {
+fn citation_cue(source: &Source<'_>, start: usize, printed: &BTreeMap<String, Vec<usize>>) -> bool {
+    let Some(byte) = source.byte(start) else {
+        return false;
+    };
+    // A bounded clause prefix allows explicit mixed conventions, e.g.
+    // "See [2] and (3)". "See (3)" alone can refer to an equation or list.
+    let prefix = &source.index.text[..byte];
+    let clause = prefix
+        .rsplit(['.', ';', ':', '!', '?', '\n'])
+        .next()
+        .unwrap_or_default();
+    if clause.chars().count() > 100 {
+        return false;
+    }
+    if pattern!(r"(?i)\b(?:citations?|references?|cited\s+in)\s*$").is_match(clause) {
+        return true;
+    }
+    pattern!(r"\[([^\]\n]{1,120})\]\s*,?\s*(?:(?:and|or|also)\s*)?$")
+        .captures(clause)
+        .is_some_and(|matched| {
+            citation_keys(&matched[1]).iter().any(|item| {
+                item.as_ref()
+                    .is_ok_and(|key| printed.get(key).is_some_and(|targets| targets.len() == 1))
+            })
+        })
+}
+
+fn resolve_superscripts(
+    resolver: &mut Resolver<'_, '_>,
+    printed: &BTreeMap<String, Vec<usize>>,
+    bracket_convention: bool,
+) {
     let source = resolver.source;
     for pair in source.tokens.windows(2) {
         let before = pair[0];
@@ -807,7 +881,7 @@ fn resolve_superscripts(resolver: &mut Resolver<'_, '_>, printed: &BTreeMap<Stri
             continue;
         }
         for item in citation_keys(&token.text) {
-            resolver.resolve(
+            resolver.resolve_marker(
                 TextRange {
                     start: token.start,
                     end: token.end,
@@ -815,6 +889,7 @@ fn resolve_superscripts(resolver: &mut Resolver<'_, '_>, printed: &BTreeMap<Stri
                 CitationStyle::Superscript,
                 item,
                 printed,
+                bracket_convention && !citation_cue(source, token.start, printed),
             );
         }
     }
@@ -906,6 +981,17 @@ impl Resolver<'_, '_> {
         cited: Result<String, String>,
         targets: &BTreeMap<String, Vec<usize>>,
     ) {
+        self.resolve_marker(span, style, cited, targets, false);
+    }
+
+    fn resolve_marker(
+        &mut self,
+        span: TextRange,
+        style: CitationStyle,
+        cited: Result<String, String>,
+        targets: &BTreeMap<String, Vec<usize>>,
+        ambiguous_marker: bool,
+    ) {
         if span.start >= self.bibliography.start && span.start < self.bibliography.end {
             return;
         }
@@ -949,14 +1035,16 @@ impl Resolver<'_, '_> {
                 rects,
                 sentence_anchor: Some(self.source.anchor(sentence)),
             };
-            if matches.len() == 1 && !unsupported {
+            if matches.len() == 1 && !unsupported && !ambiguous_marker {
                 self.result.entries[matches[0]].mentions.push(mention);
             } else {
                 self.result.unresolved.push(UnresolvedCitation {
                     text: self.source.text(span).unwrap_or_default().to_owned(),
                     key: key.clone(),
                     style,
-                    reason: if unsupported {
+                    reason: if ambiguous_marker {
+                        UnresolvedReason::AmbiguousMarker
+                    } else if unsupported {
                         UnresolvedReason::UnsupportedRange
                     } else if matches.is_empty() {
                         UnresolvedReason::MissingTarget
@@ -1056,7 +1144,7 @@ mod tests {
     fn should_split_numbered_entries_when_keys_are_bracketed() {
         let index = fixture(&[
             (
-                "😀 Evidence [1, 3–4] confirms (2). Equation (99) is unrelated.",
+                "😀 Evidence [1, 3–4] and (2) confirms this. Equation (99) is unrelated.",
                 "body",
                 1,
             ),
@@ -1698,5 +1786,129 @@ mod tests {
         assert_eq!(result.entries[1].anchor.start, boundary);
         assert!(result.entries[1].region.is_none());
         assert!(result.entries.iter().all(|entry| entry.mentions.len() == 1));
+    }
+    #[test]
+    fn should_retain_wrapped_publication_years_when_bracketed_entries_continue_on_new_lines() {
+        let index = fixture(&[
+            ("See [4] and [5].", "body", 1),
+            ("References", "heading", 2),
+            ("[4] Ada Example and Bea Sample.", "body", 2),
+            ("2021. A complete title. Journal of Results.", "list", 2),
+            ("[5] Carl Other.\n2022. A second title.", "body", 2),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 2);
+        assert_eq!(
+            fields(&result.entries[0]).title.value.as_deref(),
+            Some("A complete title")
+        );
+        assert_eq!(
+            fields(&result.entries[0]).year.value.as_deref(),
+            Some("2021")
+        );
+        assert_eq!(
+            fields(&result.entries[1]).year.value.as_deref(),
+            Some("2022")
+        );
+        assert!(result.entries.iter().all(|entry| entry.mentions.len() == 1));
+    }
+
+    #[test]
+    fn should_preserve_four_digit_keys_when_explicit_brackets_or_an_adjacent_sequence_support_them()
+    {
+        let index = fixture(&[
+            ("See [1799], [1800], and [2021].", "body", 1),
+            ("References", "heading", 2),
+            ("1799. Example, A. (2020). Earlier work.", "body", 2),
+            (
+                "1800. Sample, B. (2021). Next work.\n[2021] Other, C. (2022). A keyed work.",
+                "body",
+                2,
+            ),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 3);
+        assert_eq!(
+            fields(&result.entries[1]).printed_key.value.as_deref(),
+            Some("1800")
+        );
+        assert_eq!(
+            fields(&result.entries[2]).printed_key.value.as_deref(),
+            Some("2021")
+        );
+        assert!(result.entries.iter().all(|entry| entry.mentions.len() == 1));
+    }
+
+    #[test]
+    fn should_withhold_incompatible_number_markers_when_brackets_establish_the_citation_convention()
+    {
+        let mut index = fixture(&[
+            (
+                "Evidence [7]. See [7] and (8). See (8). Evidence [7] confirms (8). The cases are (7) first and (8) second. Equation (7).",
+                "body",
+                1,
+            ),
+            ("A footnote 7 and an index 8 are printed here.", "body", 1),
+            ("References", "heading", 2),
+            ("[7] Example, A. (2020). Earlier work.", "body", 2),
+            ("[8] Sample, B. (2021). Next work.", "body", 2),
+        ]);
+        for at in 1..index.tokens.len() {
+            if matches!(index.tokens[at].text.as_str(), "7" | "8") {
+                let before = index.tokens[at - 1].rects[0];
+                index.tokens[at].rects[0] = TextRect {
+                    x_min: before.x_max + 1.0,
+                    x_max: before.x_max + 5.0,
+                    y_min: before.y_min - 3.0,
+                    y_max: before.y_max - 5.0,
+                };
+            }
+        }
+        let result = extract(&index);
+        assert_eq!(result.entries[0].mentions.len(), 3);
+        assert_eq!(result.entries[1].mentions.len(), 1);
+        assert_eq!(slice(&index, &result.entries[1].mentions[0].anchor), "(8)");
+        assert_eq!(result.unresolved.len(), 6);
+        assert!(
+            result
+                .unresolved
+                .iter()
+                .all(|item| item.reason == UnresolvedReason::AmbiguousMarker
+                    && item.candidate_ids.len() == 1)
+        );
+        assert_eq!(
+            result
+                .unresolved
+                .iter()
+                .filter(|item| item.style == CitationStyle::Superscript)
+                .count(),
+            2
+        );
+        assert!(
+            result
+                .unresolved
+                .iter()
+                .all(|item| slice(&index, &item.mention.anchor) == item.text)
+        );
+    }
+
+    #[test]
+    fn should_resolve_a_pure_superscript_citation_when_no_competing_delimited_convention_exists() {
+        let mut index = fixture(&[
+            ("Evidence 7 supports the result.", "body", 1),
+            ("References", "heading", 2),
+            ("[7] Example, A. (2020). Earlier work.", "body", 2),
+        ]);
+        let before = index.tokens[0].rects[0];
+        index.tokens[1].rects[0] = TextRect {
+            x_min: before.x_max + 1.0,
+            x_max: before.x_max + 5.0,
+            y_min: before.y_min - 3.0,
+            y_max: before.y_max - 5.0,
+        };
+        let result = extract(&index);
+        assert_eq!(result.entries[0].mentions.len(), 1);
+        assert_eq!(slice(&index, &result.entries[0].mentions[0].anchor), "7");
+        assert!(result.unresolved.is_empty());
     }
 }
