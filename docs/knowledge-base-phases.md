@@ -178,6 +178,12 @@ acceptance are unchanged.
   `feat/e8.3-latex-truth`. Owns the LaTeX parser and PDF aligner used only for evaluation.
   Brought forward from A3 so #25 can be measured against independent K1 before merging;
   this resolves a sequencing cycle under the user's detector-before-truth merge restriction.
+- [ ] **#96 Figure/table metric collector** (follow-up to #24; after #70).
+  Branch `feat/e1.1-object-metrics`. Owns `scripts/eval/object-metrics.py`, its tests, optional
+  `examples/object_metrics.rs`, the matching contract and evidence/report. Run the actual objects
+  path against frozen K1 inventories; measure O1 and independently annotated full-region O2.
+  Keep caption geometry separate, count duplicates/misses, preserve PaperIds and exact generations.
+  This missing measurement follow-up is required for the existing Phase A O1/O2 baselines.
 - [ ] **#71 E8.4 Reference, acquisition, and read-next truth** (after #68, #63). Branch
   `feat/e8.4-reference-truth`. K7 needs parsed bibliographies of the scale tier; build the K2 and
   K5 parts first and finish K7 once #25 and the corpus mapping are available.
@@ -1511,3 +1517,82 @@ date, last merged issue, in-flight branches and their state, next action, and op
 - Scorecard remains **1/5 gates (G5), 1/30 objectives (O30=0/10k)**; measured O25/O26 misses retain
   #21/#22. No new measured objective miss or follow-up. Main's ten protected PDF-preview files
   independently match their original hashes. Full phase/system acceptance remains incomplete.
+
+
+### 2026-09-13 — independent visual truth and three-agent panel retained
+
+- Last merged issue **#88 / PR90**; phase/wave **A/A2**; main prior checkpoint `b93fa30`.
+  No phase exit or objective-target change. Additional host approval remains pending and the
+  grant script is still unapplied. #33/#25/#71/#72 remain paused at their prior reviewed heads.
+- **#70** source core, builder closure and per-kind eligibility are independently cleared at
+  **`d75ddbac4a7e0a478c94866f76af521b7323809b`**, pushed. The earlier `60c0c35` clearance was
+  superseded after new probes found inline-math operator/script loss in prose, unsupported range
+  reference omissions, local-style closure gaps, unsafe substring main-title selection and lost
+  excluded inventories. All are fixed; 68 pinned tests and six independent late probes pass.
+  Full original parsed object/link inventory now persists with source spans/targets and a canonical
+  hash. Receipts: `~/.cache/lysilogy/review-latex-d75ddba/`. New O11 scoring commit **`b79563c`**
+  has 73 offline tests passing and is being independently reviewed; final manual annotation and
+  publication integration remain unimplemented/unreviewed. No PR or final K1 publication yet.
+- Warm full gates at historical `60c0c35` passed **306 Rust / 166 Python / 85 Node**, retained in
+  #70's `target/k1-checkpoint-60c0c35/receipt.json`. Later changes are Python-only and still require
+  final full gates. Full eval native indexing **exec84834** remains live in the owner agent,
+  using the unchanged hashed helper; last owner count 639 index caches, no stderr. Do not duplicate
+  the run or reset its persistent mapped identity registry. Its one heavy window remains reserved.
+- Root inspected all eight original pages of **2104.01511v1** and manually enclosed all **10
+  figure / 5 table visual bodies**, including axes, legends and subpanels, excluding separate
+  captions/prose. This is independent of detector predictions. External annotation directory:
+  `~/.cache/lysilogy/k1-region-annotation/2104.01511v1/`. `regions-root-v1.json` SHA
+  `85acfbfab6e3959434294d6e10d42cac62d78f34081766fd8ae1d5998196b8ef` is independently cleared;
+  `review-independent-v1.json` SHA `0831bbb6bbb113acf9a10a3c44e13093c897729898b9a256a6da5dacec358bf2`.
+  Reviewer viewed all pages, checked original PDF/all PNG hashes and coordinates, and independently
+  rerendered byte-identical 96-dpi pages. PDF-point coordinates use top-left origin, 612×792 pages.
+- Root then checked every source-caption/ID/printed-label/page association against the visuals.
+  `source-associations-root-v1.json` SHA
+  `6b92bc02cc2b130d7d9b58ef9a55256d73e66435aa81efb26767e1e70d1b84c0` is separately cleared in
+  `source-associations-independent-review-v1.json` SHA
+  `a5fef0a167bca26b5c53cb01f860640d18c62db6f4ca0a4eae758f75f58a235e`. Fresh archive parsing
+  reproduces the exact frozen inventory. In particular, deposited `main.tex[31529:31841]`
+  `object:boxPlot` and page 7 Figure 10 agree on the mean/comp subscripts and four violin panels.
+  Automatic `unverified_script_binding` remains unchanged. The planned manual overlay must bind
+  all source/index/PDF/annotation/review hashes and preserve this separate admission provenance.
+  O2 is not yet measured, and these external candidates are not yet published K1 labels.
+- Three fresh independent panel agents (`k1_panel_1`, `_2`, `_3`, forked without conversation
+  history) read all eight original images and page text, with no detector outputs, region boxes,
+  other votes, network or extra model calls. Frozen packet directory:
+  `~/.cache/lysilogy/k1-panel-pilot/2104.01511v1-d75ddba/`. Packet SHA
+  `9641d29f4a391de9ed9557bbe14160ac22c309d8d2a3df67a213020dc7346536`; prompt SHA
+  `2606e25cd7865a12aeefb2b6d46e95e43ec6356899ef99f60e02bd49b57e2f04`. All three independently
+  ranked `object:tab:lateFusionResults`, `object:timeToEvent`, `object:shapPlot` in that order.
+  Raw votes `vote-evaluator-{1,2,3}.json` retain distinct identities, rationale, page hashes,
+  uncertainties and timing. Root verified all receipts in `panel-root-review-v1.json`, SHA
+  `59f6bff3ce21d386f86ccaec62cd14057a9b407e6e8d9d360bce7196efe0dcec`. Total agent wall time
+  313.431 s; harness dollar costs unavailable, not reported as zero. No production enrichment
+  was run: **O11 remains unmeasured**. This is an exploratory one-paper sample, not broad coverage.
+- O11 scoring was frozen before root/owner inspected vote contents: mean top-3 set overlap divided
+  by three across each independent panelist and paper, fixed nine opportunities per paper.
+  Only the first three model positions count; missing/duplicate/invalid IDs are not backfilled
+  from ranks 4–5. Missing model papers score zero; malformed ranks/panels fail validation.
+  Target remains 0.70. External `scoring-policy-v1.json` SHA
+  `18f285c9a7083946545d7094a21218289f7be5612d5f202459aadf30663c99ed`; #70 records the same design.
+- **Follow-up #96** is open, linked as an E1/#12 sub-issue and added to project 12. Main has no
+  O1/O2 collector beyond harness examples; #24 shipped before K1. #96 adds the missing actual
+  detector/region measurement after #70, in Wave A2. It is not a measured objective miss.
+- Prepared **10 local-library citing DOI seeds** under `~/.cache/lysilogy/reference-truth-plans/`.
+  Agent inspected 44/124 regular PDF first pages; 32 lacked DOI evidence, one empty PDF and one
+  concatenated DOI ambiguity were excluded. No vault/notes/derivative writes. Root independently
+  rehashed all ten selected originals and reproduced exact first-page text hashes and title/DOI
+  occurrences. `local-library-k2-root-review.json` retains this check. Local seed SHA
+  `11bc709de4f5cf5882e1204d249c6fe9c8117d0fe7bd5fea29e489c617a9df3b`; audit SHA
+  `a48b22e1c8b4b5de6d9c8a6f0b36a2f8747c4ab607c6e93765553b51bbfdd2d0`. The Bagley file's
+  filename year conflicts with its cover; printed 2019 was retained. Provider identity and deposited
+  references remain pending. Combined `combined-local-k0-k2-plan-v1.json` SHA
+  `50f582ea11a0b746bcbd760a4697c7f42c91e62b33f12756cc3e62739ecdd06d` has 30 K0 plus 10 local
+  origins and 40 unique Crossref requests, unexecuted. Use this combined plan after approval,
+  validate returned DOI/title evidence, build K2, then freeze combined K2+K0 OpenAlex once for K4/K5.
+- Sole live corpus mutator remains **exec97363**, now the permanent-main full run. Latest read-only
+  status: **4,387 PDFs / 1,000 sources / 16,897,921,355 bytes**, 3,436 scale PDFs, no path problems;
+  final full verification still pending. Next: finish/review manual annotation and publication,
+  retain full 1,000-index evidence, measure deterministic source/cohort coverage, then actual K1
+  and #25/#96 collectors. Keep all omitted kinds and source limitations visible.
+- Scorecard unchanged: **1/5 gates (G5), 1/30 objectives (O30)**. O25/O26 misses retain #21/#22;
+  new follow-up #96 covers unavailable measurement only. Full phase/system acceptance incomplete.
