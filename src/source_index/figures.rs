@@ -396,24 +396,17 @@ fn figure_region(
         .filter(|rect| {
             rect.y_min >= top
                 && rect.y_max <= caption.y_min
-                && horizontal_gap(*rect, caption) == 0.0
-                && captions
-                    .iter()
-                    .filter(|other| {
-                        other.page == page
-                            && other.kind == "Figure"
-                            && other.rect.y_min >= rect.y_max
-                            && horizontal_gap(*rect, other.rect) == 0.0
-                    })
-                    .min_by(|a, b| {
-                        (a.rect.y_min - rect.y_max).total_cmp(&(b.rect.y_min - rect.y_max))
-                    })
+                && image_owner(captions, page, *rect)
                     .is_some_and(|owner| owner.paragraph.start == caption_start)
         })
         .collect::<Vec<_>>();
-    // Opaque image tiles carry an observed visual extent even when no plot
-    // labels exist in native text. Do not add caption whitespace as geometry.
-    let mut regions = image_regions.clone();
+    let image_bounds = image_regions
+        .iter()
+        .copied()
+        .filter(|rect| horizontal_gap(*rect, caption) == 0.0)
+        .reduce(|a, b| union([a, b].into_iter()))
+        .map(|seed| connected_bounds(seed, &image_regions, body_font * 3.0, body_font * 3.0));
+    let mut regions = Vec::new();
     // Printed diagram labels/ticks establish an observed extent. Do not fill
     // whitespace back to a page margin or include the separate caption body.
     for paragraph in index
@@ -447,26 +440,55 @@ fn figure_region(
     if regions.len() > 1024 {
         return None;
     }
-    let seeds = if image_regions.is_empty() {
-        &regions
-    } else {
-        &image_regions
-    };
-    let mut bounds = seeds
+    let native_seed = regions
         .iter()
         .copied()
         .filter(|r| horizontal_gap(*r, caption) == 0.0)
-        .reduce(|a, b| union([a, b].into_iter()))?;
-    // A diagram may be wider than its caption. A bounded fixed point revisits
-    // labels that become connected only after another label expands the bounds.
-    // Each successful step consumes a candidate, so work is at most n².
-    let mut pending = regions;
+        .reduce(|a, b| union([a, b].into_iter()));
+    let seed = image_bounds.or(native_seed)?;
+    // Native diagrams can connect labels in both directions. Image-backed
+    // figures extend only through vertically overlapping native labels, so a
+    // preceding table's text cannot expand an observed image body upward.
+    let bounds = connected_bounds(
+        seed,
+        &regions,
+        body_font * 3.0,
+        if image_bounds.is_some() {
+            0.0
+        } else {
+            body_font * 3.0
+        },
+    );
+    if image_bounds.is_some() {
+        return Some(bounds);
+    }
+
+    Some(padded(
+        bounds,
+        body_font * 0.4,
+        dimensions.width,
+        top,
+        caption.y_min,
+    ))
+}
+
+fn vertical_gap(a: TextRect, b: TextRect) -> f32 {
+    (a.y_min - b.y_max).max(b.y_min - a.y_max).max(0.0)
+}
+
+fn connected_bounds(
+    mut bounds: TextRect,
+    regions: &[TextRect],
+    horizontal: f32,
+    vertical: f32,
+) -> TextRect {
+    // Each successful step consumes one candidate; at most n² bounded checks.
+    let mut pending = regions.to_vec();
     for _ in 0..pending.len() {
         let mut changed = false;
         pending.retain(|rect| {
-            if horizontal_gap(*rect, bounds) <= body_font * 3.0
-                && rect.y_max >= bounds.y_min
-                && rect.y_min <= bounds.y_max
+            if horizontal_gap(*rect, bounds) <= horizontal
+                && vertical_gap(*rect, bounds) <= vertical
             {
                 bounds = union([bounds, *rect].into_iter());
                 changed = true;
@@ -479,18 +501,34 @@ fn figure_region(
             break;
         }
     }
-    if !image_regions.is_empty() {
-        // Placement rectangles include embedded axes/legends already. Padding is
-        // useful only for text-label estimates, not an observed image boundary.
-        return Some(bounds);
+    bounds
+}
+
+fn image_owner<'a>(
+    captions: &'a [Caption<'a>],
+    page: u32,
+    rect: TextRect,
+) -> Option<&'a Caption<'a>> {
+    let distance = |caption: &Caption<'_>| {
+        horizontal_gap(caption.rect, rect).powi(2) + 4.0 * vertical_gap(caption.rect, rect).powi(2)
+    };
+    let mut owners = captions
+        .iter()
+        .filter(|caption| {
+            caption.page == page
+                && ((caption.kind == "Figure" && caption.rect.y_min >= rect.y_max)
+                    || (caption.kind == "Table" && caption.rect.y_max <= rect.y_min))
+        })
+        .collect::<Vec<_>>();
+    owners.sort_by(|a, b| distance(a).total_cmp(&distance(b)));
+    let first = owners.first()?;
+    if owners
+        .get(1)
+        .is_some_and(|second| distance(first) == distance(second))
+    {
+        return None;
     }
-    Some(padded(
-        bounds,
-        body_font * 0.4,
-        dimensions.width,
-        top,
-        caption.y_min,
-    ))
+    Some(*first)
 }
 
 fn horizontal_gap(a: TextRect, b: TextRect) -> f32 {
@@ -635,7 +673,7 @@ fn table_below(
         bounds = Some(bounds.map_or(rect, |r| union([r, rect].into_iter())));
     }
     let mut bounds = bounds?;
-    if !numeric || bounds.y_max - bounds.y_min <= font {
+    if bounds.y_max - bounds.y_min <= font {
         return None;
     }
     // The caption may end before the last column. Extend across the established
@@ -658,8 +696,17 @@ fn table_below(
             && (horizontal_gap(rect, caption) <= font * 2.0
                 || repeated_grid_column(index, candidate, captions, rect, bounds, font))
         {
+            numeric |= text
+                .iter()
+                .flat_map(|token| token.text.chars())
+                .filter(char::is_ascii_digit)
+                .count()
+                >= 2;
             bounds = union([bounds, rect].into_iter());
         }
+    }
+    if !numeric {
+        return None;
     }
     Some(padded(
         bounds,
