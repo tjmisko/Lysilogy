@@ -15,14 +15,19 @@ resolved-closure evidence from the builder; filenames alone never break an ambig
 proof targets, algorithms, bibliography items, citation keys and object references from source
 structure. Top-level align/gather/eqnarray rows remain distinct, suppressed rows are excluded, and
 nested aligned/split environments stay inside their numbered equation. Unknown citation commands
-or unknown object environments withhold exhaustive truth. Fields are taken only from explicit
-BibTeX or bibliography-field markup; unknown labels remain absent.
+or unknown object environments withhold exhaustive truth. Used macro aliases that transitively
+contain structural/link commands, conditionals, and repeated definitions also withhold admission;
+the reader does not execute their visibility or scope semantics. Fields come only from explicit
+active BibTeX databases or bibliography-field markup. BibTeX values must agree with the deposited
+rendered entry; stale, unrelated, and unverified fields remain unknown with conflict evidence.
 
 `align.py` reads only actual PDF-index text and token geometry. It never reads production figure,
 object, paragraph or citation predictions. Unique source-text matches retain half-open UTF-16
 spans. Source contexts identify printed citation/reference occurrences; source keys supply their
 destinations. Missing or ambiguous matches count against per-paper alignment quality (default
 threshold 0.95). Bibliography entry and citation inventories must be exhaustive to enter O8–O10.
+Equation matching preserves case, operators, scripts and grouping; unsupported rendered math
+withholds that equation. Multiple source objects cannot certify the same PDF span.
 Caption token bounds are explicitly not full figure-region labels; full-region and O11 panel
 annotations require separate independent evidence.
 

@@ -118,6 +118,38 @@ class AlignmentTests(unittest.TestCase):
         self.assertFalse(result["accepted"])
         self.assertFalse(result["bibliography_eligible"])
 
+    def test_should_withhold_inventory_when_used_macros_hide_objects_or_transitive_links(self):
+        visible = r"\begin{theorem}A visible distinctive theorem.\end{theorem}"
+        for definitions, invocation in ((r"\newcommand{\hidden}{\begin{theorem}A hidden distinctive theorem.\end{theorem}}", r"\hidden"),
+                                        (r"\newcommand{\inner}[1]{\cite{#1}}\newcommand{\outer}[1]{\inner{#1}}", r"\outer{one}"),
+                                        (r"\newcommand{\inner}[1]{\ref{#1}}\newcommand{\outer}[1]{\inner{#1}}", r"\outer{one}")):
+            with self.subTest(definitions=definitions):
+                parsed = parse_project({"main.tex": document(visible + invocation, definitions)})
+                aligned = align_paper(parsed, {"text": "A visible distinctive theorem. A hidden distinctive theorem. [1]"})
+                self.assertFalse(aligned["accepted"])
+                self.assertTrue(parsed["coverage"]["unsupported_source_semantics"])
+
+    def test_should_withhold_conditional_truth_when_false_branch_text_appears_as_ordinary_prose(self):
+        source = document(r"\iffalse\begin{theorem}A distinctive hidden theorem.\end{theorem}\fi A distinctive hidden theorem.")
+        result = align_paper(parse_project({"main.tex": source}), {"text": "A distinctive hidden theorem."})
+        self.assertFalse(result["accepted"])
+        self.assertIn("control_flow:iffalse", result["coverage"]["unsupported_source_semantics"])
+
+    def test_should_withhold_redefined_macros_when_scoping_can_change_object_text(self):
+        source = document(r"\begin{theorem}\term\end{theorem}\renewcommand{\term}{A second distinctive statement.}\begin{theorem}\term\end{theorem}",
+                          r"\newcommand{\term}{A first distinctive statement.}")
+        result = align_paper(parse_project({"main.tex": source}), {"text": "A first distinctive statement. A second distinctive statement."})
+        self.assertFalse(result["accepted"])
+        self.assertEqual(result["coverage"]["unsupported_source_semantics"]["redefined_macro:term"], 2)
+        self.assertTrue(result["duplicate_span_claims"])
+
+    def test_should_keep_tagged_single_equations_when_a_starred_environment_has_an_explicit_tag(self):
+        source = document(r"\begin{equation*}abcdefghi=12345\tag{A}\label{eq:a}\end{equation*}")
+        parsed = parse_project({"main.tex": source})
+        self.assertEqual(len(parsed["objects"]), 1)
+        self.assertEqual(parsed["objects"][0]["labels"], ["eq:a"])
+        self.assertTrue(align_paper(parsed, {"text": "abcdefghi=12345 (A)"})["accepted"])
+
 
 if __name__ == "__main__":
     unittest.main()

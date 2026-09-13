@@ -1,6 +1,7 @@
 """Derive evaluation objects and links from source structure, not PDF detectors."""
 from collections import Counter
 import re
+import unicodedata
 
 from archive import Limits, UnsupportedSource, sha256
 from tex import COMMAND, Renderer, comments, definition_regions, expand_project, group, mask_regions, skip_space
@@ -15,7 +16,7 @@ LAYOUT_ENVIRONMENTS = {"document", "abstract", "thebibliography", "itemize", "en
 def equation_rows(node, text):
     """Only top-level row separators create separately numbered equations."""
     if node["environment"].rstrip("*") not in ("align", "gather", "eqnarray"):
-        return [node]
+        return [{**node, "explicit_tag": bool(list(argument_commands(text[node["content_start"]:node["content_end"]], {"tag"})))}]
     start, depth, rows, at = node["content_start"], 0, [], node["content_start"]
     for match in COMMAND.finditer(text, node["content_start"], node["content_end"]):
         if match.start() < at:
@@ -152,11 +153,54 @@ def markup_fields(raw, renderer):
     return labels, provenance
 
 
+def field_is_printed(field, value, rendered, known_title=None):
+    """Validate an explicit source label against deposited rendered evidence.
+
+    This never infers a field from prose. Missing/contradictory source metadata
+    remains unknown even when another paper shares its bibliography key.
+    """
+    def words(text):
+        return re.findall(r"[^\W_]+", unicodedata.normalize("NFKD", text).casefold())
+    if field == "first_author":
+        prefix = rendered
+        if known_title and known_title in rendered:
+            prefix = rendered[:rendered.index(known_title)]
+        # Only the beginning can verify first-author membership. Reordered
+        # family/given names are allowed, but absent initials remain unknown.
+        authored = words(value)
+        return bool(authored) and Counter(authored) <= Counter(words(prefix)[:len(authored)])
+    expected, actual = words(value), words(rendered)
+    return bool(expected) and any(actual[start:start + len(expected)] == expected for start in range(len(actual) - len(expected) + 1))
+
+
 def parse_project(files, limits=Limits(), selected_main=None):
     expanded = expand_project(files, limits, selected_main)
     text = expanded.text
     renderer = Renderer(text, limits)
     scan = mask_regions(text, definition_regions(text))
+    # TeX conditionals and scoped/repeated definitions affect what exists, not
+    # just its presentation. We do not execute them or certify their inventory.
+    source_semantics = Counter()
+    for command in COMMAND.finditer(scan):
+        name = command[1].rstrip("*")
+        if name.startswith("if") or name in {"else", "fi", "unless", "newif", "csname", "endcsname", "let", "futurelet"}:
+            source_semantics["control_flow:" + name] += 1
+    for name, count in renderer.definition_counts.items():
+        if count > 1:
+            source_semantics["redefined_macro:" + name] = count
+
+    structural = CITES | REFS | {"begin", "end", "label", "caption", "bibitem", "input", "include", "bibliography", "newtheorem"}
+
+    def structural_macro(name, seen=frozenset()):
+        if name not in renderer.macros or name in seen:
+            return False
+        commands = {item[1].rstrip("*") for item in COMMAND.finditer(renderer.macros[name][1])}
+        return bool(commands & structural) or any(structural_macro(child, seen | {name}) for child in commands)
+
+    for command in COMMAND.finditer(scan):
+        name = command[1].rstrip("*")
+        if structural_macro(name):
+            source_semantics["structural_macro:" + name] += 1
     statements = dict(STANDARD_STATEMENTS)
     definitions, ignored = [], Counter()
     for match in COMMAND.finditer(scan):
@@ -189,14 +233,14 @@ def parse_project(files, limits=Limits(), selected_main=None):
     if len(documents) != 1:
         raise UnsupportedSource("expected one document environment")
     document = documents[0]
-    nodes = [row for node in nodes for row in equation_rows(node, text)]
+    nodes = [row for node in nodes for row in equation_rows(node, scan)]
     objects, numbering = [], Counter()
     semantic_nodes = [node for node in nodes if node["environment"].rstrip("*") in statements
                       or node["environment"].rstrip("*") in ENVIRONMENTS
                       or node["environment"].rstrip("*") in ("subfigure", "subtable")]
 
     def owned_commands(node, names):
-        raw = text[node["content_start"]:node["content_end"]]
+        raw = scan[node["content_start"]:node["content_end"]]
         for row in argument_commands(raw, names):
             at = node["content_start"] + row["start"]
             if not any(child is not node and node["start"] < child["start"] <= at < child["end"] <= node["end"] for child in semantic_nodes):
@@ -233,7 +277,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
         objects.append(row)
     bibliographies = [node for node in nodes if node["environment"] == "thebibliography"]
     entries, entry_keys, occupied = [], set(), []
-    database, bib_issues = bibtex_fields(files, renderer)
+    database, bib_issues = bibtex_fields({path: files[path] for path in expanded.coverage["bibliography_files"]}, renderer)
     ignored.update(bib_issues)
     for bibliography in bibliographies:
         raw = text[bibliography["content_start"]:bibliography["content_end"]]
@@ -252,17 +296,24 @@ def parse_project(files, limits=Limits(), selected_main=None):
             unknown = dict(renderer.unsupported - before)
             field_labels, field_provenance = markup_fields(body, renderer)
             deposited = database.get(key)
+            field_conflicts = []
             if deposited:
                 for field, value in deposited["labels"].items():
-                    if field not in field_labels:
+                    if field in field_labels and field_labels[field] != value:
+                        field_conflicts.append({"field": field, "reason": "BibTeX disagrees with explicit deposited bibliography markup", "provenance": deposited["provenance"][field]})
+                    elif field not in field_labels and field_is_printed(field, value, rendered, deposited["labels"].get("title")):
                         field_labels[field] = value
                         field_provenance[field] = deposited["provenance"][field]
+                    elif field not in field_labels:
+                        field_conflicts.append({"field": field, "reason": "BibTeX label is not verified by deposited rendered bibliography", "provenance": deposited["provenance"][field]})
+            ignored["unverified_bibtex_fields"] += len(field_conflicts)
             start = bibliography["content_start"] + marker["start"]
             source_end = bibliography["content_start"] + end
             entries.append({"id": key, "text": rendered, "text_sha256": sha256(rendered.encode()),
                             "printed_key": str(number + 1) if not marker["options"] else renderer.plain(marker["options"][0]),
                             "numeric_key_hint": str(number + 1), "field_labels": field_labels,
                             "field_provenance": field_provenance, "source_span": {"start": start, "end": source_end},
+                            "field_conflicts": field_conflicts,
                             "source_members": expanded.origins(start, source_end), "unsupported_commands": unknown})
         occupied.append((bibliography["start"], bibliography["end"]))
     links = []
@@ -313,6 +364,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
             "coverage": {**expanded.coverage, "unsupported_commands": dict(renderer.unsupported),
                          "other_environments": dict(unsupported_environments), "issues": dict(ignored),
                          "unsupported_object_environments": unknown_environments,
+                         "unsupported_source_semantics": dict(source_semantics),
                          "objects_by_kind": dict(Counter(row["kind"] for row in objects)),
                          "bibliography_entries": len(entries), "citation_commands": sum(row["kind"] == "citation" for row in links),
                          "unsupported_citation_commands": dict(unsupported_citations)}}

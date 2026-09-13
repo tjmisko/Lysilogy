@@ -118,12 +118,32 @@ See \ref{fig:a} and \eqref{eq:a}; evidence \cite{source}.
         self.assertEqual(len(result["links"]), 3)
         self.assertEqual(result["entries"][0]["field_labels"], {})
 
-    def test_should_use_only_explicit_fields_when_bibtex_labels_are_independent_of_rendered_entries(self):
-        files = {"main.tex": document(r"\bibliography{sources}"), "main.bbl": r"\begin{thebibliography}{9}\bibitem{one}A. Author. A rendered title. 2021.\end{thebibliography}",
+    def test_should_use_only_explicit_fields_when_active_bibtex_labels_match_rendered_entries(self):
+        files = {"main.tex": document(r"\bibliography{sources}"), "main.bbl": r"\begin{thebibliography}{9}\bibitem{one}A. Author. A deposited title. 2020.\end{thebibliography}",
                  "sources.bib": '@article{one, author={Author, A. and Second, B.},title={A deposited title},year={2020}}'}
         result = parse_project(files)
         self.assertEqual(result["entries"][0]["field_labels"], {"title": "A deposited title", "first_author": "Author, A.", "year": "2020"})
         self.assertEqual(result["entries"][0]["field_provenance"]["title"]["path"], "sources.bib")
+
+    def test_should_withhold_stale_fields_when_active_bibtex_disagrees_with_rendered_evidence(self):
+        files = {"main.tex": document(r"\bibliography{used}"), "main.bbl": r"\begin{thebibliography}{9}\bibitem{one}Smith. Correct unique published title. 2021.\end{thebibliography}",
+                 "used.bib": '@article{one, author={Wrong Author},title={An unrelated manuscript},year={1999}}'}
+        row = parse_project(files)["entries"][0]
+        self.assertEqual(row["field_labels"], {})
+        self.assertEqual(len(row["field_conflicts"]), 3)
+
+    def test_should_ignore_unrelated_databases_when_an_unused_bibtex_key_matches(self):
+        files = {"main.tex": document(r"\bibliography{used}"), "main.bbl": r"\begin{thebibliography}{9}\bibitem{one}Smith. Correct unique published title. 2021.\end{thebibliography}",
+                 "used.bib": '', "unrelated.bib": '@article{one, author={Wrong Author},title={An unrelated manuscript},year={1999}}'}
+        row = parse_project(files)["entries"][0]
+        self.assertEqual(row["field_labels"], {})
+        self.assertEqual(row["field_conflicts"], [])
+
+    def test_should_ignore_an_inert_label_when_an_unused_macro_is_defined_inside_a_theorem(self):
+        source = document(r"\begin{theorem}\newcommand{\unused}{\label{ghost}}\label{real}A visible distinctive statement.\end{theorem}")
+        parsed = parse_project({"main.tex": source})
+        self.assertEqual(parsed["objects"][0]["labels"], ["real"])
+        self.assertNotIn("ghost", parsed["label_targets"])
 
     def test_should_record_unknown_commands_when_rendering_an_unsupported_presentation_macro(self):
         renderer = Renderer()

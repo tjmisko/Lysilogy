@@ -230,10 +230,14 @@ def align_paper(parsed, index, threshold=0.95):
     # Bibliography evaluation requires exhaustive source inventories: partial
     # entry or citation alignment must never reduce a detector's denominator.
     bibliography_complete = bool(parsed["entries"]) and len(entries) == len(parsed["entries"]) and len(mentions) == expected_links and not missing_links and not parsed["coverage"].get("unsupported_citation_commands")
-    accepted = bool(total) and quality >= threshold and not parsed["coverage"].get("unsupported_object_environments")
+    spans = Counter((row["spans"][0]["start"], row["spans"][-1]["end"]) for row in objects + entries)
+    duplicate_spans = [{"start": start, "end": end, "claims": count} for (start, end), count in sorted(spans.items()) if count > 1]
+    accepted = (bool(total) and quality >= threshold and not parsed["coverage"].get("unsupported_object_environments")
+                and not parsed["coverage"].get("unsupported_source_semantics") and not duplicate_spans)
     return {"accepted": accepted, "bibliography_eligible": accepted and bibliography_complete,
             "alignment": {"quality": quality, "method": "unique independent LaTeX text and source-context alignment", "threshold": threshold,
                           "aligned_items": aligned, "total_items": total, "bibliography_exhaustive": bibliography_complete},
+            "duplicate_span_claims": duplicate_spans,
             "objects": objects, "entries": entries, "mentions": mentions, "excluded_objects": excluded,
             "references": references, "excluded_references": missing_references,
             "excluded_citations": missing_links, "coverage": parsed["coverage"],

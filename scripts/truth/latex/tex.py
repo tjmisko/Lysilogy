@@ -136,7 +136,7 @@ def expand_project(files, limits=Limits(), selected_main=None):
         raise UnsupportedSource("main file is ambiguous or absent: " + ", ".join(candidates[:20]))
     main = selected_main or candidates[0]
     output, pieces, length, byte_length, steps = [], [], 0, 0, 0
-    visited, ignored = set(), Counter()
+    visited, bibliography_files, ignored = set(), set(), Counter()
 
     def append(name, start, end):
         nonlocal length, byte_length
@@ -190,7 +190,12 @@ def expand_project(files, limits=Limits(), selected_main=None):
                     value, end = bare[0], pos + bare.end()
                 child = resolve(name, value, ".tex")
             else:
-                _, end = group(text, command.end())
+                databases, end = group(text, command.end())
+                for database in databases.split(","):
+                    try:
+                        bibliography_files.add(resolve(name, database, ".bib"))
+                    except UnsupportedSource:
+                        ignored["bibliography_database_missing_or_ambiguous"] += 1
                 local = str(PurePosixPath(main).with_suffix(".bbl"))
                 available = [local] if local in files else sorted(path for path in files if path.endswith(".bbl"))
                 if len(available) != 1:
@@ -204,7 +209,7 @@ def expand_project(files, limits=Limits(), selected_main=None):
     visit(main, [])
     return Expanded("".join(output), main, pieces, files,
                     {"main_selection": "explicit root requiring independent PDF evidence" if selected_main else "unique document root", "main_candidates": candidates,
-                     "expanded_files": sorted(visited), "ignored": dict(ignored)})
+                     "expanded_files": sorted(visited), "bibliography_files": sorted(bibliography_files), "ignored": dict(ignored)})
 
 
 ACCENTS = {"'": "\u0301", '`': "\u0300", '^': "\u0302", '"': "\u0308", '~': "\u0303", '=': "\u0304", '.': "\u0307", 'c': "\u0327", 'v': "\u030c", 'u': "\u0306", 'H': "\u030b"}
@@ -220,6 +225,7 @@ class Renderer:
         self.macros = {}
         self.unsupported = Counter()
         self.definitions = []
+        self.definition_counts = Counter()
         for match in COMMAND.finditer(text):
             if match[1].rstrip("*") not in ("newcommand", "renewcommand", "providecommand"):
                 continue
@@ -234,6 +240,7 @@ class Renderer:
                     name, pos = command[0], command.end()
                 if not re.fullmatch(r"\\[A-Za-z@]+", name):
                     continue
+                self.definition_counts[name[1:]] += 1
                 count, pos = group(text, pos, "[", "]", False)
                 default, pos = group(text, pos, "[", "]", False)
                 body, end = group(text, pos)
