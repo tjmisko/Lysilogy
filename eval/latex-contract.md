@@ -146,6 +146,9 @@ inputs, reproduces the native allowlist and deposited source-member export, and
 rechecks the evidence closure after validation. Aggregate JSON evidence is bounded
 at 64 MiB; individual documents, object counts and cumulative native membership
 are also bounded. Equality guards preserve JSON number/boolean types.
+Release configuration pins the explicit tranche manifest before and after
+assembly; that manifest pins the complete nested artifact closure rehashed by
+the validator. Selecting another bundle without its matching manifest hash fails.
 Bibliography-only correction metadata must match its receipt and original hashes;
 appended limitations retain every prior limitation as an exact ordered prefix.
 Reviewed informal-role crosswalks may pair a contained primary body span with an

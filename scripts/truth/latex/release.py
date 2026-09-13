@@ -134,6 +134,11 @@ def evidence_paths(config):
     required.update(item[key] for item in config['automatic_builds'] for key in ('path','paper_summaries','launch','runner'))
     for paper in config['papers']:
         required.add(paper['candidate'])
+        if paper.get('tranche_bundle'):
+            # This manifest pins every nested document's path/hash/size. The
+            # explicit tranche reader validates that entire closure and rehashes
+            # it after assembly; the release also pins this root before/after.
+            required.add(paper['tranche_bundle'] + '/manifest.json')
         for field, names in [('region_bundle', ('regions-root-v1.json','review-independent-v1.json','source-associations-root-v1.json','source-associations-independent-review-v1.json')),
                              ('object_bundle', ('packet.json','root-v1.json','independent-v1.json','independent-v1-receipt.json','reconciliation-independent-v1.json')),
                              ('bibliography_bundle', ('packet.json','bibliography-packet.json','bibliography-root-v1.json','bibliography-independent-v1.json','bibliography-independent-v1-receipt.json','bibliography-reconciliation-independent-v1.json')),
