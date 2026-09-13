@@ -113,6 +113,33 @@ def hash_ref(row, raw, message):
         require(type(row['bytes']) is int and row['bytes'] == len(raw), message)
 
 
+def verify_original_file(cache, annotation_root, row, expected_raw=None):
+    from builder import fingerprint_file, safe_file
+    path = Path(row['path'])
+    absolute = path if path.is_absolute() else annotation_root / path
+    path = safe_file(cache, str(absolute.relative_to(cache)))
+    digest, size = fingerprint_file(path, cap=32 * 1024 * 1024)
+    require(digest == row['sha256'] and ('bytes' not in row or type(row['bytes']) is int and size == row['bytes']),
+            'original annotation path bytes differ')
+    if expected_raw is not None:
+        require(digest == sha256(expected_raw), 'original annotation path names another input')
+    return digest
+
+
+def verify_correction_files(cache, annotation_root, receipt, corrected):
+    rows = receipt.get('inputs_rehashed', [])
+    require(isinstance(rows, list) and len(rows) <= 1000, 'correction input count exceeds its bound')
+    rows = list(rows)
+    if 'audit' in receipt:
+        exact(corrected['correction_provenance']['field_audit_path'], receipt['audit']['path'],
+              'correction provenance names another actual audit path')
+        rows.append(receipt['audit'])
+    require(all(type(row.get('bytes')) is int and 0 <= row['bytes'] <= 32 * 1024 * 1024 for row in rows)
+            and sum(row['bytes'] for row in rows) <= MAX_BUNDLE_BYTES, 'correction input bytes exceed their bound')
+    for row in rows:
+        verify_original_file(cache, annotation_root, row)
+
+
 def history(docs, raws, candidate_raw):
     """Validate original blind inputs independently from later construction."""
     packet, primary, initial = (docs[name] for name in ('packet', 'primary', 'independent'))
@@ -581,22 +608,14 @@ def attach_tranche(cache, corpus_root, data_root, candidate_raw, paper, mapped, 
     # original annotation root, never the later construction bundle directory.
     annotation_root = safe_file(cache, manifest['artifacts']['policy']['path']).parent
     def checked_original(row, expected_raw=None):
-        path = Path(row['path'])
-        absolute = path if path.is_absolute() else annotation_root / path
-        relative_path = str(absolute.relative_to(cache))
-        path = safe_file(cache, relative_path)
-        digest, size = fingerprint_file(path, cap=32 * 1024 * 1024)
-        require(digest == row['sha256'] and ('bytes' not in row or type(row['bytes']) is int and size == row['bytes']),
-                'original annotation path bytes differ')
-        if expected_raw is not None:
-            require(digest == sha256(expected_raw), 'original annotation path names another input')
-        return digest
+        return verify_original_file(cache, annotation_root, row, expected_raw)
     for row in records['primary']['inputs']:
         checked_original(row)
     for key in ('packet', 'source_export', 'native_export'):
         checked_original(records['independent_receipt'][key], raws[key])
     for row in records['correction_receipt']['original_files_preserved']:
         checked_original(row)
+    verify_correction_files(cache, annotation_root, records['correction_receipt'], records['independent_corrected'])
     preserved = {row['sha256'] for row in records['correction_receipt']['original_files_preserved']}
     require({sha256(raws['independent']), sha256(raws['independent_receipt'])} <= preserved,
             'correction history omits the original annotation/receipt')
@@ -616,6 +635,7 @@ def attach_tranche(cache, corpus_root, data_root, candidate_raw, paper, mapped, 
     # Verify evidence remains fixed through the entire bounded read/validation.
     for key, row in manifest['artifacts'].items():
         require(bounded(cache, row['path']) == raws[key], 'tranche evidence changed during validation')
+    verify_correction_files(cache, annotation_root, records['correction_receipt'], records['independent_corrected'])
     require(bounded(cache, relative + '/manifest.json') == manifest_raw, 'tranche manifest changed during validation')
     result['manual_assembly'] = {'format': FORMAT, 'manifest_sha256': sha256(manifest_raw),
                                  'candidate_sha256': sha256(candidate_raw), 'final_k1_publication': False,

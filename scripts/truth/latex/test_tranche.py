@@ -10,7 +10,8 @@ from archive import read_archive, sha256
 from native_exports import native_projection
 from parser import parse_project
 from tranche import (ARTIFACTS, FORMAT, REVIEW_FORMAT, attach_tranche, covered, history, native_members,
-                     rectangle, validate_crosswalk, validate_objects, validate_references, validate_roles, validate_tranche)
+                     rectangle, validate_crosswalk, validate_objects, validate_references, validate_roles, validate_tranche,
+                     verify_correction_files)
 
 
 def fixture():
@@ -312,6 +313,33 @@ class TrancheTests(unittest.TestCase):
                 (bundle/'manifest.json').write_bytes(canonical(manifest))
                 with self.subTest(path=path), self.assertRaises(ValueError):
                     attach_tranche(root, root, root, b'{}', {}, {}, 'bundle')
+
+    def test_should_rehash_correction_audit_and_inputs_when_declared_paths_are_part_of_the_history(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name); annotation = root/'annotation'; annotation.mkdir()
+            def reference(name, raw):
+                (annotation/name).write_bytes(raw)
+                return {'path': name, 'sha256': sha256(raw), 'bytes': len(raw)}
+            receipt = {'audit': reference('audit.json', b'{"checked":true}'),
+                       'inputs_rehashed': [reference('source.json', b'{"source":"original"}')]}
+            corrected = {'correction_provenance': {'field_audit_path': 'audit.json'}}
+            verify_correction_files(root, annotation, receipt, corrected)
+            for field in ('audit', 'input'):
+                row = receipt['audit'] if field == 'audit' else receipt['inputs_rehashed'][0]
+                path = annotation/row['path']; original = path.read_bytes(); path.write_bytes(b'{}')
+                with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'bytes differ'):
+                    verify_correction_files(root, annotation, receipt, corrected)
+                path.write_bytes(original)
+            for path in ('../audit.json', 'alias.json'):
+                if path == 'alias.json': (annotation/path).symlink_to(annotation/'audit.json')
+                changed = deepcopy(receipt); changed['audit']['path'] = path
+                with self.subTest(path=path), self.assertRaises(ValueError):
+                    verify_correction_files(root, annotation, changed, {'correction_provenance': {'field_audit_path': path}})
+            with self.assertRaisesRegex(ValueError, 'another actual audit path'):
+                verify_correction_files(root, annotation, receipt, {'correction_provenance': {'field_audit_path': 'another.json'}})
+            changed = deepcopy(receipt); changed['audit']['bytes'] = True
+            with self.assertRaisesRegex(ValueError, 'bytes exceed'):
+                verify_correction_files(root, annotation, changed, corrected)
 
     def test_should_reject_malformed_format_when_a_manifest_attempts_implicit_version_selection(self):
         with tempfile.TemporaryDirectory() as name:
