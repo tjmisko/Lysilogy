@@ -237,10 +237,13 @@ def align_paper(parsed, index, threshold=0.95):
     expected_references = sum(len(set(row["targets"])) for row in parsed["links"] if row["kind"] == "reference")
     total = len(parsed["objects"]) + len(parsed["entries"]) + expected_links + expected_references
     aligned = len(objects) + len(entries) + len(mentions) + len(references)
-    overall_completeness = aligned / total if total else 0.0
+    overall_completeness = aligned / total if total else 1.0
+    probe = parsed.get("empty_inventory_document_probe")
+    empty_source_verified = bool(probe and not probe["unsupported_commands"] and aligner.unique(probe["text"], probe["contains_math"])[0] is not None)
+    negative_evidence = aligned > 0 or (total == 0 and empty_source_verified)
     # Bibliography evaluation requires exhaustive source inventories: partial
     # entry or citation alignment must never reduce a detector's denominator.
-    bibliography_complete = bool(parsed["entries"]) and len(entries) == len(parsed["entries"]) and len(mentions) == expected_links and not missing_links and not parsed["coverage"].get("unsupported_citation_commands")
+    bibliography_complete = len(entries) == len(parsed["entries"]) and len(mentions) == expected_links and not missing_links and not parsed["coverage"].get("unsupported_citation_commands") and not parsed["coverage"].get("unsupported_bibliography_commands")
     spans = Counter((row["spans"][0]["start"], row["spans"][-1]["end"]) for row in objects + entries)
     duplicate_spans = [{"start": start, "end": end, "claims": count} for (start, end), count in sorted(spans.items()) if count > 1]
     inventory_known = (not parsed["coverage"].get("unsupported_object_environments")
@@ -250,13 +253,13 @@ def align_paper(parsed, index, threshold=0.95):
     eligible_kinds, kind_coverage = [], {}
     for kind in ("figure", "table", "equation", "statement", "proof", "algorithm"):
         expected, count = expected_kinds[kind], aligned_kinds[kind]
-        eligible = inventory_known and expected > 0 and count == expected
+        eligible = inventory_known and count == expected and (expected > 0 or negative_evidence)
         if eligible:
             eligible_kinds.append(kind)
         kind_coverage[kind] = {"expected": expected, "aligned": count, "eligible": eligible,
                                "reason": "complete independent inventory" if eligible else "source inventory semantics are unsupported" if not inventory_known else "no source objects of this kind" if not expected else "not every source object aligns"}
-    figure_tables = inventory_known and sum(expected_kinds[kind] for kind in ("figure", "table")) > 0 and all(expected_kinds[kind] == aligned_kinds[kind] for kind in ("figure", "table"))
-    bibliography_eligible = inventory_known and bibliography_complete
+    figure_tables = all(kind in eligible_kinds for kind in ("figure", "table"))
+    bibliography_eligible = inventory_known and bibliography_complete and (bool(parsed["entries"]) or expected_links > 0 or negative_evidence)
     object_kinds = {row["id"]: row["kind"] for row in parsed["objects"]}
     relevant_reference_links = []
     unknown_reference_targets = False
@@ -267,7 +270,7 @@ def align_paper(parsed, index, threshold=0.95):
         unknown_reference_targets |= any(target is None for target in targets)
         relevant_reference_links.extend((number, target) for target in targets if object_kinds.get(target) in ("equation", "statement"))
     reference_pairs = {(row["source_link"], row["target"]) for row in references}
-    object_links_complete = (inventory_known and not unknown_reference_targets and not parsed["coverage"].get("unsupported_reference_commands") and bool(relevant_reference_links)
+    object_links_complete = (inventory_known and (bool(relevant_reference_links) or negative_evidence) and not unknown_reference_targets and not parsed["coverage"].get("unsupported_reference_commands")
                              and all(pair in reference_pairs for pair in relevant_reference_links)
                              and all(kind in eligible_kinds for kind in {object_kinds[target] for _, target in relevant_reference_links}))
     proof_links_complete = ("proof" in eligible_kinds and "statement" in eligible_kinds
@@ -287,6 +290,7 @@ def align_paper(parsed, index, threshold=0.95):
             "kind_coverage": kind_coverage,
             "alignment": {"quality": quality, "method": "unique independent LaTeX text and source-context alignment", "threshold": threshold,
                           "aligned_items": aligned, "total_items": total, "overall_completeness": overall_completeness,
+                          "empty_inventory_document_verified": empty_source_verified,
                           "bibliography_exhaustive": bibliography_complete},
             "duplicate_span_claims": duplicate_spans,
             "objects": objects, "entries": entries, "mentions": mentions, "excluded_objects": excluded,

@@ -256,8 +256,8 @@ def publication_problems(snapshot, results):
         problems.append('full eval source/PDF tier is not yet available')
     if len(accepted) < POLICY['target_papers']:
         problems.append('fewer than 500 papers satisfy the independent alignment policy')
-    kinds = {kind for row in accepted for kind in row['eligible_kinds']}
-    if not {'figure', 'table', 'equation', 'statement', 'proof', 'algorithm'} <= kinds or not any(row.get('bibliography_eligible') for row in accepted):
+    kinds = {kind for row in accepted for kind in row['eligible_kinds'] if row['kind_coverage'][kind]['expected'] > 0}
+    if not {'figure', 'table', 'equation', 'statement', 'proof', 'algorithm'} <= kinds or not any(row.get('bibliography_eligible') and row['entries'] for row in accepted):
         problems.append('accepted truth does not cover every E1 object kind')
     strata = {tuple(row['stratum']) for row in accepted}
     if not {tuple(row['stratum']) for row in snapshot['papers']} <= strata:

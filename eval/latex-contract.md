@@ -17,7 +17,7 @@ with an independently reviewed capability boundary.
 
 | Metric | Complete inventory required from a paper |
 | --- | --- |
-| O1 | All figures and all tables; at least one exists |
+| O1 | All figures and all tables, including independently supported empty inventories |
 | O2 | Separate independent full-region annotation evidence; captions do not establish regions |
 | O3 | Every numbered equation |
 | O4 | Every source reference to an equation/statement and every target kind; unresolved target roles exclude the cohort |
@@ -33,6 +33,12 @@ criterion. This is a deterministic criterion, not a calibrated probability. The 
 An accepted paper contributes only to its explicitly eligible metrics. O2 and O11 remain false
 until their separate evidence exists. Field labels remain unknown unless deposited field-role
 markup independently establishes them; unknown labels and comparisons are counted explicitly.
+
+Supported zero-object papers remain negative detection/precision cohorts, so their false positives
+are counted. Empty source inventories require independent document-text alignment. An unrecognized
+command or source semantic that could inject objects prevents an empty-inventory claim; an
+unsupported bibliography printer is not an empty bibliography. At least one real positive example
+of each required kind remains necessary for final K1 coverage; negative cohorts cannot satisfy it.
 
 The bibliography projection preserves the schema-1 contract in `bibliography-contract.md` from
 E1.2: only papers with `bibliography_eligible=true`, all independently identified entries, exact

@@ -3,7 +3,7 @@ from collections import Counter
 import re
 
 from archive import Limits, UnsupportedSource, sha256
-from tex import COMMAND, Renderer, comments, definition_regions, expand_project, group, local_style_dependencies, mask_regions, skip_space
+from tex import COMMAND, DROP_ARGUMENT, FORMATTING, SILENT, SYMBOLS, Renderer, comments, definition_regions, expand_project, group, local_style_dependencies, mask_regions, skip_space
 
 STANDARD_STATEMENTS = {name: name for name in ("theorem", "lemma", "corollary", "proposition", "definition", "assumption", "remark", "claim", "conjecture", "example")}
 ENVIRONMENTS = {"figure": "figure", "table": "table", "equation": "equation", "align": "equation", "gather": "equation", "multline": "equation", "eqnarray": "equation", "proof": "proof", "algorithm": "algorithm", "algorithm2e": "algorithm", "listing": "algorithm", "lstlisting": "algorithm"}
@@ -239,6 +239,14 @@ def parse_project(files, limits=Limits(), selected_main=None):
     for name in reachable & {"verb", "Verb", "lstinline", "mintinline"}:
         source_semantics["literal_command:" + name] += 1
     unsupported_references = {name: 1 for name in sorted(reachable) if "ref" in name.casefold() and name not in REFS}
+    # Unhandled commands cannot certify an empty inventory. Standard math and
+    # presentation may be unrenderable while their inventory effect is known;
+    # arbitrary deposited commands and hooks remain unsupported.
+    inventory_commands = (set(FORMATTING) | set(SILENT) | set(SYMBOLS) | set(DROP_ARGUMENT) | CITES | REFS | structural | set(renderer.macros)
+                          | {"documentclass", "documentstyle", "usepackage", "RequirePackage", "LoadClass", "title", "TITLE", "author", "date", "maketitle", "thanks", "footnote", "footnotemark", "footnotetext", "section", "subsection", "subsubsection", "paragraph", "subparagraph", "chapter", "part", "appendix", "item", "newpage", "clearpage", "pagebreak", "linebreak", "includegraphics", "bibliographystyle", "bibinfo", "bibfield", "href", "nocite", "newtheorem", "setcounter", "addtocounter", "refstepcounter", "pagestyle", "thispagestyle", "markboth", "tableofcontents", "listoffigures", "listoftables", "frac", "dfrac", "tfrac", "sqrt", "sum", "prod", "int", "iint", "iiint", "oint", "partial", "nabla", "lim", "log", "ln", "exp", "sin", "cos", "tan", "min", "max", "arg", "det", "sup", "inf", "overline", "underline", "hat", "widehat", "bar", "vec", "dot", "ddot", "notag", "nonumber", "hline", "cline", "toprule", "midrule", "bottomrule", "multicolumn", "multirow", "centering", "caption", "(", ")", "[", "]", "crefrange", "Crefrange", "cpageref", "Cpageref", "labelcref", "labelcpageref", "namecref", "nameCref", "lcnamecref", "pageref", "eqrefrange", "autopageref", "vpageref", "vref", "autocites", "parencites", "textcites", "citeauthor", "citeyear", "citeyearpar", "citenum", "citetext", "citealp", "citealt", "printbibliography", "addbibresource"})
+    for name in sorted(reachable - inventory_commands):
+        source_semantics["unknown_inventory_command:" + name] += 1
+    unsupported_bibliography = {name: 1 for name in sorted(reachable) if "bib" in name.casefold() and name not in {"bibliography", "bibliographystyle", "bibitem", "bibinfo", "bibfield", "bibnamefont", "bibfnamefont"}}
     statements = dict(STANDARD_STATEMENTS)
     definitions, ignored = [], Counter()
     for match in COMMAND.finditer(scan):
@@ -416,7 +424,15 @@ def parse_project(files, limits=Limits(), selected_main=None):
         row["proof_targets"] = [label_targets.get(label) for label in row["proof_target_labels"]]
     unsupported_environments = Counter(node["environment"] for node in nodes if node["environment"] not in statements and node["environment"].rstrip("*") not in statements and node["environment"].rstrip("*") not in ENVIRONMENTS)
     unknown_environments = {name: count for name, count in unsupported_environments.items() if name not in LAYOUT_ENVIRONMENTS}
+    document_probe = None
+    if not objects and not entries and not links:
+        before, before_math = renderer.unsupported.copy(), renderer.math_seen
+        probe = renderer.plain(scan[document["content_start"]:document["content_end"]])
+        document_probe = {"text": probe, "unsupported_commands": dict(renderer.unsupported - before), "contains_math": renderer.math_seen > before_math}
+        if document_probe["contains_math"] and any(char in probe for char in "^_"):
+            document_probe["unsupported_commands"]["unverified_script_binding"] = 1
     return {"main": expanded.main, "source_map": expanded.pieces, "objects": objects, "entries": entries, "links": links,
+            "empty_inventory_document_probe": document_probe,
             "label_targets": label_targets, "statement_definitions": definitions,
             "coverage": {**expanded.coverage, "unsupported_commands": dict(renderer.unsupported),
                          "other_environments": dict(unsupported_environments), "issues": dict(ignored),
@@ -425,4 +441,5 @@ def parse_project(files, limits=Limits(), selected_main=None):
                          "objects_by_kind": dict(Counter(row["kind"] for row in objects)),
                          "bibliography_entries": len(entries), "citation_commands": sum(row["kind"] == "citation" for row in links),
                          "unsupported_citation_commands": dict(unsupported_citations),
-                         "unsupported_reference_commands": unsupported_references}}
+                         "unsupported_reference_commands": unsupported_references,
+                         "unsupported_bibliography_commands": unsupported_bibliography}}

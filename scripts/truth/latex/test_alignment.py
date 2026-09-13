@@ -196,7 +196,7 @@ class AlignmentTests(unittest.TestCase):
         self.assertFalse(result['bibliography_eligible'])
 
     def test_should_admit_complete_figure_truth_when_a_separate_equation_kind_cannot_align(self):
-        source = document(r'\begin{figure}\caption{A complete independently aligned caption.}\end{figure}\begin{equation}\unknownop abcdefghi=12345\end{equation}')
+        source = document(r'\begin{figure}\caption{A complete independently aligned caption.}\end{figure}\begin{equation}\frac{abcdefghi}{12345}\end{equation}')
         result = align_paper(parse_project({'main.tex': source}), {'text': 'A complete independently aligned caption. abcdefghi=12345'})
         self.assertTrue(result['accepted'])
         self.assertTrue(result['metric_eligibility']['O1'])
@@ -291,6 +291,33 @@ class AlignmentTests(unittest.TestCase):
         result = align_paper(parsed, index)
         self.assertEqual(result['mentions'], [])
         self.assertFalse(result['bibliography_eligible'])
+
+    def test_should_keep_supported_empty_kinds_when_negative_papers_can_reveal_false_positives(self):
+        body = 'This independently aligned plain document contains ordinary prose only.'
+        result = align_paper(parse_project({'main.tex': document(body)}), {'text': body})
+        for metric in ('O1', 'O3', 'O5', 'O7', 'O8', 'O10'):
+            self.assertTrue(result['metric_eligibility'][metric], metric)
+        self.assertTrue(result['alignment']['empty_inventory_document_verified'])
+        self.assertEqual(result['objects'] + result['entries'] + result['mentions'], [])
+        self.assertEqual(result['kind_coverage']['figure']['expected'], 0)
+
+    def test_should_withhold_false_empty_inventories_when_unknown_commands_can_create_objects(self):
+        source = document(r'This distinctive plain paragraph is followed by \mysteryobjects.')
+        result = align_paper(parse_project({'main.tex': source}), {'text': 'This distinctive plain paragraph is followed by an injected figure.'})
+        self.assertFalse(any(result['metric_eligibility'].values()))
+        self.assertIn('unknown_inventory_command:mysteryobjects', result['coverage']['unsupported_source_semantics'])
+
+    def test_should_withhold_empty_bibliography_truth_when_an_unsupported_builder_prints_references(self):
+        source = document(r'A distinctive introductory paragraph. \printbibliography')
+        result = align_paper(parse_project({'main.tex': source}), {'text': 'A distinctive introductory paragraph. References A. Author. A title.'})
+        self.assertFalse(result['metric_eligibility']['O8'])
+        self.assertFalse(result['metric_eligibility']['O10'])
+
+    def test_should_reject_unverified_negative_papers_when_even_document_prose_does_not_match(self):
+        source = document('The independently supplied source document has a distinctive sentence.')
+        result = align_paper(parse_project({'main.tex': source}), {'text': 'An entirely different document and unknown content.'})
+        self.assertFalse(result['accepted'])
+        self.assertFalse(result['alignment']['empty_inventory_document_verified'])
 
 
 if __name__ == "__main__":
