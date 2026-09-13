@@ -7,7 +7,7 @@ from manual import attach_bibliography
 
 from annotations import canonical
 from archive import read_archive, sha256
-from bibliography_annotations import apply_bibliography_overlay
+from bibliography_annotations import apply_bibliography_overlay, verified_field_argument, printed_field_agrees
 from parser import parse_project
 
 
@@ -123,6 +123,35 @@ class BibliographyAnnotationTests(unittest.TestCase):
         for mutate in mutations:
             rows=fixture();mutate(rows[8]);reseal(rows)
             with self.subTest(mutate=mutate),self.assertRaises(ValueError):apply(rows)
+
+    def test_should_reject_agreed_fabricated_values_when_source_and_printed_fields_disagree(self):
+        for name,value in (('year','1999'),('title','a complete title'),('first_author','Different Author')):
+            rows=fixture()
+            rows[6]['entries'][0]['fields'][name]['value']=value
+            rows[6]['entries'][0]['field_labels'][name]=value
+            rows[5]['entries'][0]['fields'][name]['value']=value
+            rows[8]['field_values_and_anchors_verified'][0]['fields'][name]['value']=value
+            reseal(rows)
+            with self.subTest(name=name),self.assertRaisesRegex(ValueError,'complete source field'):apply(rows)
+
+    def test_should_reject_cross_command_payloads_when_reviewed_offsets_extend_past_the_real_argument(self):
+        rows=fixture();item=rows[6]['entries'][0]
+        item['fields']['year']['source_member']=deepcopy(item['fields']['title']['source_member'])
+        rows[5]['entries'][0]['fields']['year']['source_role']['source_command_end']=rows[5]['entries'][0]['fields']['title']['source_role']['source_command_end']
+        reseal(rows)
+        with self.assertRaisesRegex(ValueError,'exact balanced source argument'):apply(rows)
+
+    def test_should_reject_a_later_person_when_the_first_author_slot_is_already_defined(self):
+        text=r'\bibfield{author}{\bibinfo{person}{One} and \bibinfo{person}{Two}}'
+        member={'start':text.index('Two'),'end':text.index('Two')+3}
+        role={'command':'bibfield{author}/bibinfo{person}','source_command_start':0,'source_command_end':len(text)}
+        with self.assertRaisesRegex(ValueError,'exact balanced source argument'):
+            verified_field_argument(text,role,member,[{'start':0,'end':len(text)}],'first_author')
+
+    def test_should_only_fold_presentation_when_printed_fields_are_line_wrapped(self):
+        self.assertTrue(printed_field_agrees('Complete Feedback','Complete Feed-\n\nback'))
+        for printed in ('Incomplete Feedback','complete Feedback','Complete Feed-back','CompleteFeedback'):
+            with self.subTest(printed=printed):self.assertFalse(printed_field_agrees('Complete Feedback',printed))
 
     def test_should_reject_image_substitution_when_annotations_only_claim_old_render_hashes(self):
         rows=fixture();rows[9]['page-1.png']='f'*64

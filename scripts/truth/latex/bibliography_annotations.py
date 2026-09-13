@@ -2,6 +2,9 @@
 from copy import deepcopy
 from collections import Counter
 import re
+import unicodedata
+
+from tex import COMMAND, Renderer, group, skip_space
 
 from annotations import canonical, document, require
 from archive import read_archive, sha256
@@ -14,6 +17,58 @@ def unique(rows, key, expected, message):
     mapped = {row[key]: row for row in rows}
     require(len(rows) == len(mapped) and set(mapped) == set(expected), message)
     return mapped
+
+
+def field_argument(text, start, command):
+    """Parse exact inert role boundaries; never accept a claimed closing offset."""
+    match = COMMAND.match(text, start)
+    require(match is not None, 'bibliography source role is not a command')
+    at = match.end()
+    if command == 'showarticletitle':
+        require(match[1] == command, 'bibliography title source command differs')
+    else:
+        head, expected_role = command.split('{', 1)
+        expected_role = expected_role[:-1]
+        require(match[1] == head, 'bibliography field source command differs')
+        role, at = group(text, at)
+        require(role == expected_role, 'bibliography source argument has another field role')
+    opening = skip_space(text, at)
+    payload, end = group(text, opening)
+    return payload, opening + 1, end - 1, end
+
+
+def verified_field_argument(text, role, member, entry_members, name):
+    command = role['command']
+    if command == 'bibfield{author}/bibinfo{person}':
+        wrapper, start, _, end = field_argument(text, role['source_command_start'], 'bibfield{author}')
+        # The first actual person must occupy the first author position. A later
+        # person cannot replace an unrecognized first author representation.
+        payload, begin, finish, _ = field_argument(text, skip_space(text, start), 'bibinfo{person}')
+        require(wrapper.strip().startswith('\\bibinfo{person}'), 'first author source position is unsupported')
+    else:
+        payload, begin, finish, end = field_argument(text, role['source_command_start'], command)
+    require(end == role['source_command_end'] and (begin, finish) == (member['start'], member['end']), 'bibliography field escapes its exact balanced source argument')
+    if name == 'first_author':
+        starts = []
+        for owner in entry_members:
+            segment = text[owner['start']:owner['end']]
+            pattern = r"\\bibfield\s*\{author\}" if command.startswith('bibfield') else r"\\bibinfo\s*\{person\}"
+            starts.extend(owner['start'] + match.start() for match in re.finditer(pattern, segment))
+        require(starts and role['source_command_start'] == min(starts), 'bibliography author is not the first explicit author position')
+    return payload
+
+
+def presentation_text(value):
+    return ' '.join(unicodedata.normalize('NFC', value).split())
+
+
+def printed_field_agrees(value, printed):
+    if presentation_text(value) == presentation_text(printed):
+        return True
+    # Only an actual line-end hyphen may be absent from the source-agreed label;
+    # case, punctuation, authored hyphens and every word remain significant.
+    unwrapped = re.sub(r'(?<=\w)-[ \t]*\r?\n\s*(?=\w)', '', printed)
+    return presentation_text(value) == presentation_text(unwrapped)
 
 
 def apply_bibliography_overlay(candidate_raw, index_raw, source_raw, original_packet_raw,
@@ -80,16 +135,15 @@ def apply_bibliography_overlay(candidate_raw, index_raw, source_raw, original_pa
             source_field = checked_members([field['source_member']], files)[0]
             require(any(member['path'] == source_field['path'] and member['start'] <= source_field['start'] < source_field['end'] <= member['end'] for member in provenance), 'bibliography field source lies outside its owning entry')
             payload = files[source_field['path']][source_field['start']:source_field['end']]
-            # Source member bounds may include balanced presentation braces; the
-            # independently read payload is a role-delimited substring, never a
-            # field inferred from arbitrary bibliography prose.
-            require(field['source_payload'] in payload and field['source_payload'] == previous['source_role']['value'] and reviewed['source_payload_sha256'] == sha256(payload.encode()), 'bibliography source-role payload contradicts reviewed bytes')
-            role = previous['source_role']; require(role['source_command_start'] <= source_field['start'] < source_field['end'] <= role['source_command_end'], 'bibliography field is outside its reviewed source command')
-            require(any(member['start'] <= role['source_command_start'] < role['source_command_end'] <= member['end'] for member in provenance if member['path'] == source_field['path']), 'bibliography source command is outside its entry')
+            role = previous['source_role']
             allowed = {'first_author': {'bibfield{author}/bibinfo{person}', 'bibinfo{person}'}, 'title': {'showarticletitle', 'bibinfo{title}', 'bibinfo{booktitle}'}, 'year': {'bibinfo{year}'}}
             require(role['command'] in allowed[name] and field['source_role'] == '\\' + role['command'].split('/')[-1], 'bibliography field uses an incompatible source role')
-            command_text = files[source_field['path']][role['source_command_start']:role['source_command_end']]
-            require(command_text.startswith('\\' + role['command'].split('/')[0]) and '\\' + role['command'].split('/')[-1] in command_text, 'bibliography declared role differs from actual source command')
+            require(any(member['start'] <= role['source_command_start'] < role['source_command_end'] <= member['end'] for member in provenance if member['path'] == source_field['path']), 'bibliography source command is outside its entry')
+            exact = verified_field_argument(files[source_field['path']], role, source_field, provenance, name)
+            require(exact == payload == field['source_payload'] == role['value'] and reviewed['source_payload_sha256'] == sha256(payload.encode()), 'bibliography source-role payload contradicts reviewed bytes')
+            renderer = Renderer(); rendered = renderer.plain(payload)
+            require(not renderer.unsupported and not renderer.math_seen and presentation_text(rendered) == presentation_text(value), 'bibliography label differs from the complete source field')
+            require(printed_field_agrees(value, field['index_span']['text']), 'bibliography label differs from the complete printed field')
             require(reviewed['disposition'].startswith('accepted;'), 'bibliography field review is not accepted')
             labels[name] = value; known[name] += 1
             fields[name] = {'value': value, 'native_span': native, 'source_member': source_field, 'source_role': field['source_role'], 'root_source_role': role}
