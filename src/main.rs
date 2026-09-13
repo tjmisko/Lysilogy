@@ -53,6 +53,8 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Evaluate cached knowledge-base evidence and the scorecard.
+    Eval(lysilogy::eval::EvalArgs),
     /// Serve the API and built frontend.
     Serve {
         #[arg(long, default_value = "127.0.0.1:7319")]
@@ -192,6 +194,9 @@ async fn main() -> ExitCode {
 
 #[allow(clippy::too_many_lines)] // Keep the CLI command dispatch in one match.
 async fn run(cli: Cli) -> Result<()> {
+    if let Some(Command::Eval(args)) = &cli.command {
+        return lysilogy::eval::run(args);
+    }
     let config = lysilogy::config::AppConfig::load(
         cli.config
             .as_deref()
@@ -210,6 +215,7 @@ async fn run(cli: Cli) -> Result<()> {
             .map_err(|error| Error::InvalidRequest(format!("invalid default address: {error}")))?,
         web: PathBuf::from("web/dist"),
     }) {
+        Command::Eval(_) => unreachable!("evaluation dispatch precedes library initialization"),
         Command::Serve { bind, web } => serve(state, bind, &web).await,
         Command::Scan => {
             let library = state.refresh().await?;

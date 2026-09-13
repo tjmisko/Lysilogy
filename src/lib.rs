@@ -7,6 +7,7 @@ pub mod citation_graph;
 pub mod config;
 pub mod domain;
 pub mod error;
+pub mod eval;
 pub mod extract;
 mod frontmatter;
 pub mod jobs;
