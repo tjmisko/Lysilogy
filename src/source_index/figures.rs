@@ -588,8 +588,8 @@ fn table_below(
         let cell_band = caption.y_max..=bounds.y_max;
         if cell_band.contains(&rect.y_min)
             && cell_band.contains(&rect.y_max)
-            && rect.x_max >= font.mul_add(-2.0, caption.x_min)
-            && rect.x_min <= font.mul_add(2.0, caption.x_max)
+            && (horizontal_gap(rect, caption) <= font * 2.0
+                || repeated_grid_column(index, candidate, captions, rect, bounds, font))
         {
             bounds = union([bounds, rect].into_iter());
         }
@@ -601,6 +601,55 @@ fn table_below(
         caption.y_max,
         dimensions.height,
     ))
+}
+
+fn repeated_grid_column(
+    index: &ReadingIndex,
+    candidate: &Caption<'_>,
+    captions: &[Caption<'_>],
+    column: TextRect,
+    grid: TextRect,
+    font: f32,
+) -> bool {
+    let distance = |caption: &Caption<'_>| {
+        let dy = (caption.rect.y_min - column.y_max)
+            .max(column.y_min - caption.rect.y_max)
+            .max(0.0);
+        horizontal_gap(caption.rect, column).powi(2) + dy.powi(2)
+    };
+    if captions.iter().any(|other| {
+        other.page == candidate.page
+            && other.paragraph.start != candidate.paragraph.start
+            && distance(other) < distance(candidate)
+    }) {
+        return false;
+    }
+    let owned = index
+        .objects
+        .paragraph
+        .iter()
+        .filter(|paragraph| {
+            !captions
+                .iter()
+                .any(|caption| caption.paragraph.start == paragraph.start)
+        })
+        .flat_map(|paragraph| paragraph_tokens(index, paragraph, candidate.page))
+        .flat_map(|token| token.rects.iter().copied())
+        .filter(|rect| rect.y_min >= grid.y_min && rect.y_max <= grid.y_max)
+        .collect::<Vec<_>>();
+    let mut rows = Vec::<f32>::new();
+    for remote in owned
+        .iter()
+        .filter(|rect| horizontal_gap(**rect, column) == 0.0)
+    {
+        if owned.iter().any(|cell| {
+            horizontal_gap(*cell, grid) == 0.0 && (cell.y_min - remote.y_min).abs() < font * 0.35
+        }) && rows.iter().all(|y| (*y - remote.y_min).abs() > font * 0.5)
+        {
+            rows.push(remote.y_min);
+        }
+    }
+    rows.len() >= 2
 }
 
 #[cfg(test)]
@@ -939,6 +988,30 @@ mod tests {
             ("B. Further results", "body", 50.0, 201.0),
         ]);
         assert!(find(&index)[0].rect.unwrap().y_max < 180.0);
+    }
+
+    #[test]
+    fn should_recover_a_distant_table_column_when_multiple_cell_rows_align() {
+        let index = fixture(&[
+            ("Table III: Scores.", "body", 50.0, 100.0),
+            ("Method", "float", 50.0, 130.0),
+            ("Score", "float", 180.0, 130.0),
+            ("Result", "float", 330.0, 130.0),
+            ("First", "float", 50.0, 146.0),
+            ("12.5", "float", 180.0, 146.0),
+            ("22.5", "float", 330.0, 146.0),
+            ("Second", "float", 50.0, 162.0),
+            ("25.0", "float", 180.0, 162.0),
+            ("54.70", "float", 330.0, 162.0),
+        ]);
+        let table = &find(&index)[0];
+        assert!(table.rect.unwrap().x_max > 350.0);
+        assert!(
+            table
+                .spans
+                .iter()
+                .any(|span| utf16_slice(&index.text, span.start, span.end).contains("54.70"))
+        );
     }
 
     #[test]
