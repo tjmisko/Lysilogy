@@ -150,6 +150,14 @@ class AlignmentTests(unittest.TestCase):
         self.assertEqual(parsed["objects"][0]["labels"], ["eq:a"])
         self.assertTrue(align_paper(parsed, {"text": "abcdefghi=12345 (A)"})["accepted"])
 
+    def test_should_withhold_script_binding_when_flat_pdf_text_cannot_verify_tex_groups(self):
+        for formula in (r"x^{ab}+constant=0", r"x^a b+constant=0", r"x_{ab}+constant=0"):
+            parsed = parse_project({"main.tex": document(r"\begin{equation}" + formula + r"\end{equation}")})
+            result = align_paper(parsed, {"text": "x^ab+constant=0 x_ab+constant=0"})
+            self.assertFalse(result["accepted"])
+            self.assertEqual(result["objects"], [])
+            self.assertEqual(parsed["objects"][0]["unsupported_commands"], {"unverified_script_binding": 1})
+
 
 if __name__ == "__main__":
     unittest.main()

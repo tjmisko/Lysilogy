@@ -183,7 +183,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
     source_semantics = Counter()
     for command in COMMAND.finditer(scan):
         name = command[1].rstrip("*")
-        if name.startswith("if") or name in {"else", "fi", "unless", "newif", "csname", "endcsname", "let", "futurelet"}:
+        if (name.startswith("if") and name != "iff") or name in {"else", "fi", "unless", "newif", "csname", "endcsname", "let", "futurelet"}:
             source_semantics["control_flow:" + name] += 1
     for name, count in renderer.definition_counts.items():
         if count > 1:
@@ -279,6 +279,11 @@ def parse_project(files, limits=Limits(), selected_main=None):
         before = renderer.unsupported.copy()
         rendered = renderer.plain(selected)
         unknown = dict(renderer.unsupported - before)
+        if kind == "equation" and any(char in rendered for char in "^_"):
+            # Flattened PDF text does not establish which tokens belong to a
+            # superscript/subscript group. Until independent geometry proves
+            # binding, neither braced nor one-token TeX scripts are certifiable.
+            unknown["unverified_script_binding"] = 1
         row = {"id": "object:" + identity, "kind": kind, "environment": environment,
                "source_span": {"start": node["start"], "end": node["end"]},
                "source_members": expanded.origins(node["start"], node["end"]),
