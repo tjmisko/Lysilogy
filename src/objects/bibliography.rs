@@ -187,9 +187,7 @@ struct Entry {
 }
 
 fn label_regex() -> &'static Regex {
-    pattern!(
-        r"(?m)^[\t ]*(?:\[([\p{L}\d][\p{L}\d+,:.\-–]{0,30})\]|\((\d{1,4})\)|(\d{1,4})[.)])[\t ]+"
-    )
+    pattern!(r"\A[\t ]*(?:\[([\p{L}\d][\p{L}\d+,:.\-–]{0,30})\]|\((\d{1,4})\)|(\d{1,4})[.)])[\t ]+")
 }
 
 fn year_regex() -> &'static Regex {
@@ -251,7 +249,7 @@ pub fn extract(index: &ReadingIndex) -> Bibliography {
         &source,
         blocks[heading + 1..]
             .iter()
-            .filter(|block| block.span.start < end && !block.heading && !block.caption),
+            .filter(|block| block.span.start < end && !block.caption),
     );
     let mut result = Bibliography {
         entries: entries
@@ -265,12 +263,93 @@ pub fn extract(index: &ReadingIndex) -> Bibliography {
     result
 }
 
+struct EntryLabel {
+    start: usize,
+    key: String,
+}
+
+fn entry_labels(source: &Source<'_>, span: TextRange) -> Vec<EntryLabel> {
+    let text = source.text(span).unwrap_or_default();
+    let base = source.byte(span.start).unwrap_or_default();
+    let label = |text: &str, offset: usize| {
+        let captures = label_regex().captures(text)?;
+        let whole = captures.get(0)?;
+        (whole.start() == 0).then(|| EntryLabel {
+            start: offset,
+            key: (1..=3)
+                .find_map(|group| captures.get(group))
+                .expect("printed key capture")
+                .as_str()
+                .to_owned(),
+        })
+    };
+    let mut labels = std::iter::once(0)
+        .chain(text.match_indices('\n').map(|(offset, _)| offset + 1))
+        .filter_map(|offset| label(&text[offset..], offset))
+        .collect::<Vec<_>>();
+    // Reading-index prose joins physical PDF lines with spaces. Only a verified
+    // page/line transition can add a boundary that is absent from the text;
+    // inline bracket expressions and raised markers must not split entries.
+    let tokens = source.tokens(span).collect::<Vec<_>>();
+    for pair in tokens.windows(2) {
+        if starts_new_line(pair[0], pair[1])
+            && let Some(byte) = source.byte(pair[1].start)
+            && let Some(offset) = byte.checked_sub(base).filter(|offset| *offset < text.len())
+            && let Some(found) = label(&text[offset..], offset)
+        {
+            labels.push(found);
+        }
+    }
+    labels.sort_by_key(|label| label.start);
+    labels.dedup_by_key(|label| label.start);
+    labels
+}
+
+fn starts_new_line(previous: &ReadingToken, current: &ReadingToken) -> bool {
+    if previous.page != current.page {
+        return true;
+    }
+    let (Some(left), Some(right)) = (previous.rects.last(), current.rects.first()) else {
+        return false;
+    };
+    if [left, right].into_iter().any(|rect| {
+        ![rect.x_min, rect.x_max, rect.y_min, rect.y_max]
+            .into_iter()
+            .all(f32::is_finite)
+            || rect.x_max <= rect.x_min
+            || rect.y_max <= rect.y_min
+    }) {
+        return false;
+    }
+    // Raised inline citation-like text is smaller than its surrounding line;
+    // vertical displacement alone must not turn that marker into a new entry.
+    if right.y_max - right.y_min < (left.y_max - left.y_min) * 0.65 {
+        return false;
+    }
+    let short = (left.y_max - left.y_min).min(right.y_max - right.y_min);
+    let tall = (left.y_max - left.y_min).max(right.y_max - right.y_min);
+    let overlap = (left.y_max.min(right.y_max) - left.y_min.max(right.y_min)).max(0.0);
+    let displacement = ((left.y_min + left.y_max) - (right.y_min + right.y_max)).abs() * 0.5;
+    overlap <= short * 0.2
+        && displacement > tall * 0.65
+        && (right.x_min + short * 0.5 < left.x_min || displacement > tall * 1.5)
+}
+
 fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block>) -> Vec<Entry> {
     let mut entries: Vec<Entry> = Vec::new();
     for block in blocks {
         let text = source.text(block.span).unwrap_or_default();
         let base = source.byte(block.span.start).unwrap_or_default();
-        let labels: Vec<_> = label_regex().captures_iter(text).collect();
+        let labels = entry_labels(source, block.span);
+        if labels.is_empty()
+            && let Some(previous) = entries.last_mut().filter(|entry| entry.key.is_some())
+        {
+            // A printed key governs its complete entry until another printed
+            // key begins. A wrapped author list followed by its year is not an
+            // independent unnumbered entry inside a numbered bibliography.
+            previous.spans.push(block.span);
+            continue;
+        }
         if labels.is_empty() {
             // A block can finish a preceding entry and start the next one.
             // Find all author/date boundaries before attaching its leading
@@ -305,25 +384,16 @@ fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block
             continue;
         }
         for (at, label) in labels.iter().enumerate() {
-            let whole = label.get(0).expect("matched label");
             if at == 0
-                && whole.start() > 0
+                && label.start > 0
                 && let Some(previous) = entries.last_mut()
             {
-                previous
-                    .spans
-                    .push(source.range(base, base + whole.start()));
+                previous.spans.push(source.range(base, base + label.start));
             }
-            let end = labels
-                .get(at + 1)
-                .and_then(|next| next.get(0))
-                .map_or(text.len(), |next| next.start());
-            let printed = (1..=3)
-                .find_map(|group| label.get(group))
-                .map(|matched| matched.as_str().to_owned());
+            let end = labels.get(at + 1).map_or(text.len(), |next| next.start);
             entries.push(Entry {
-                spans: vec![source.range(base + whole.start(), base + end)],
-                key: printed,
+                spans: vec![source.range(base + label.start, base + end)],
+                key: Some(label.key.clone()),
             });
         }
     }
@@ -1480,5 +1550,153 @@ mod tests {
         assert!(first.anchor.end <= second.anchor.start);
         assert_eq!(slice(&index, &first.mentions[0].anchor), "Smith (2020)");
         assert_eq!(slice(&index, &second.mentions[0].anchor), "Jones (2021)");
+    }
+
+    #[test]
+    fn should_retain_heading_classified_members_when_a_numbered_entry_wraps_before_its_year() {
+        let index = fixture(&[
+            ("Compare [1] and [2].", "body", 1),
+            ("References", "heading", 2),
+            ("[1] Example, A. and", "body", 2),
+            ("Sample, B. (2020). A long", "heading", 2),
+            ("comparative title. Journal of Results.", "heading", 2),
+            ("[2] Other, C. (2021). Independent work.", "heading", 2),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 2);
+        let first = &result.entries[0];
+        assert_eq!(first.member_anchors.len(), 3);
+        assert_eq!(
+            fields(first).authors.value.as_deref(),
+            Some(["Example, A.".to_owned(), "Sample, B.".to_owned()].as_slice())
+        );
+        assert_eq!(
+            fields(first).title.value.as_deref(),
+            Some("A long comparative title")
+        );
+        assert_eq!(
+            fields(first).venue.value.as_deref(),
+            Some("Journal of Results")
+        );
+        assert_eq!(fields(first).year.value.as_deref(), Some("2020"));
+        assert!(result.entries.iter().all(|entry| entry.mentions.len() == 1));
+        assert!(result.unresolved.is_empty());
+    }
+
+    #[test]
+    fn should_split_merged_paragraph_entries_when_printed_keys_begin_distinct_physical_lines() {
+        let raw = "[1] Example, A. (2020). First 😀 title citing [9]. [2] Sample, B. (2021). Second title.";
+        let mut index = fixture(&[
+            ("Compare [1] and [2].", "body", 1),
+            ("References", "heading", 2),
+            (raw, "body", 2),
+        ]);
+        let byte = index.text.find("[2] Sample").unwrap();
+        let boundary = index.text[..byte].encode_utf16().count();
+        let first = index
+            .tokens
+            .iter()
+            .find(|token| token.start == boundary)
+            .unwrap()
+            .rects[0];
+        for token in index
+            .tokens
+            .iter_mut()
+            .filter(|token| token.start >= boundary)
+        {
+            token.rects[0].x_min -= first.x_min - 40.0;
+            token.rects[0].x_max -= first.x_min - 40.0;
+            token.rects[0].y_min += 20.0;
+            token.rects[0].y_max += 20.0;
+        }
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 2);
+        assert_eq!(
+            fields(&result.entries[0]).printed_key.value.as_deref(),
+            Some("1")
+        );
+        assert_eq!(
+            fields(&result.entries[1]).printed_key.value.as_deref(),
+            Some("2")
+        );
+        assert_eq!(result.entries[1].anchor.start, boundary);
+        assert_eq!(
+            slice(&index, &result.entries[0].member_anchors[0]).trim(),
+            raw[..raw.find("[2] Sample").unwrap()].trim()
+        );
+        assert!(result.entries[0].text.contains("citing [9]"));
+        assert!(result.entries.iter().all(|entry| entry.mentions.len() == 1));
+        assert!(result.unresolved.is_empty());
+    }
+
+    #[test]
+    fn should_keep_inline_keys_inside_the_entry_when_line_geometry_is_missing_or_raised() {
+        for variant in 0..4 {
+            let mut index = fixture(&[
+                ("See [1].", "body", 1),
+                ("References", "heading", 2),
+                (
+                    "[1] Example, A. (2020). A title mentioning [2] as inline notation.",
+                    "body",
+                    2,
+                ),
+            ]);
+            let token = index
+                .tokens
+                .iter_mut()
+                .find(|token| token.text == "[2]")
+                .unwrap();
+            match variant {
+                0 => {}
+                1 => token.rects.clear(),
+                2 => {
+                    token.rects[0].y_min -= 24.0;
+                    token.rects[0].y_max = token.rects[0].y_min + 4.0;
+                }
+                _ => token.rects[0].x_min = f32::NAN,
+            }
+            let result = extract(&index);
+            assert_eq!(result.entries.len(), 1, "variant {variant}");
+            assert_eq!(
+                fields(&result.entries[0]).printed_key.value.as_deref(),
+                Some("1")
+            );
+            assert!(result.entries[0].text.contains("[2] as inline notation"));
+            assert_eq!(result.entries[0].mentions.len(), 1);
+        }
+    }
+
+    #[test]
+    fn should_split_printed_entries_when_a_page_transition_has_no_word_rectangles() {
+        let mut index = fixture(&[
+            ("See [1] and [2].", "body", 1),
+            ("References", "heading", 2),
+            (
+                "[1] First, A. (2020). Earlier work. [2] Later, B. (2021). Next work.",
+                "body",
+                2,
+            ),
+        ]);
+        let byte = index.text.find("[2] Later").unwrap();
+        let boundary = index.text[..byte].encode_utf16().count();
+        for token in index
+            .tokens
+            .iter_mut()
+            .filter(|token| token.start >= boundary)
+        {
+            token.page = 3;
+            token.rects.clear();
+        }
+        let mut third = index.pages[1].clone();
+        third.number = 3;
+        third.start = boundary;
+        index.pages[1].end = boundary;
+        index.pages.push(third);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 2);
+        assert_eq!(result.entries[1].page, 3);
+        assert_eq!(result.entries[1].anchor.start, boundary);
+        assert!(result.entries[1].region.is_none());
+        assert!(result.entries.iter().all(|entry| entry.mentions.len() == 1));
     }
 }
