@@ -1058,8 +1058,9 @@ strata use `created`. Sources explicitly request the pinned PDF version. Missing
 sparse strata fail without silently reducing the tier count.
 
 Direct transport is the default. Managed environments may explicitly select their approved
-HTTPS proxy with `--proxy-env HTTPS_PROXY` (or `https_proxy`). This reads only the selected
-process variable, redacts proxy credentials from errors, and leaves destination hosts, TLS,
+HTTP CONNECT proxy for HTTPS destinations with `--proxy-env HTTPS_PROXY` (or `https_proxy`).
+Unsupported HTTPS-scheme proxy URLs are rejected. This reads only the selected process
+variable, redacts proxy credentials from errors, and leaves destination hosts, TLS,
 redirect refusal and the shared rate budget unchanged. Environment host permissions remain
 independent of this transport choice.
 

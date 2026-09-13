@@ -168,14 +168,16 @@ def configured_proxy(variable):
         raise CorpusError("The selected HTTPS proxy environment variable is missing or empty")
     try:
         parsed = urllib.parse.urlsplit(value)
-        valid = (parsed.scheme in {"http", "https"} and parsed.hostname
+        if parsed.scheme == "https":
+            raise CorpusError("HTTPS-scheme proxies are unsupported by this transport; configure an approved HTTP CONNECT proxy")
+        valid = (parsed.scheme == "http" and parsed.hostname
                  and parsed.port != 0 and parsed.path in {"", "/"}
                  and not parsed.query and not parsed.fragment
                  and not any(ord(char) <= 32 or ord(char) == 127 for char in value))
     except ValueError:
         valid = False
     if not valid:
-        raise CorpusError("The selected HTTPS proxy must be a valid HTTP(S) URL without a path, query or fragment")
+        raise CorpusError("The selected HTTPS proxy must be a valid http:// proxy URL without a path, query or fragment")
     return {"https": value}
 
 

@@ -164,6 +164,14 @@ class CorpusTests(unittest.TestCase):
                     client.bytes(url)
             send.assert_not_called()
 
+    def should_reject_tls_proxy_scheme_when_the_standard_transport_cannot_preserve_it(self):
+        with patch.dict(os.environ, {"HTTPS_PROXY": "https://fixture-user:fixture-secret@proxy.invalid:8443"}), \
+                patch.object(corpus.urllib.request, "build_opener") as build:
+            with self.assertRaisesRegex(corpus.CorpusError, "HTTPS-scheme proxies are unsupported") as failure:
+                corpus.Http(cache_root=self.root, proxy_env="HTTPS_PROXY")
+        build.assert_not_called()
+        self.assertNotIn("fixture-secret", "".join(traceback.format_exception(failure.exception)))
+
     def should_redact_transport_failures_when_configured_proxy_has_credentials(self):
         secret = "fixture-user:fixture-password"
         errors = [corpus.urllib.error.URLError(secret),

@@ -37,8 +37,11 @@ python3 scripts/corpus/corpus.py --proxy-env HTTPS_PROXY run
 ```
 
 `--proxy-env` accepts `HTTPS_PROXY` or `https_proxy` and reads only that selected variable from
-the process environment. It never reads an environment file. The value must be an HTTP(S) proxy
-URL; missing or malformed configuration fails instead of choosing another proxy. Ambient
+the process environment. It never reads an environment file. The value must be an `http://`
+CONNECT proxy URL; Python's standard transport does not implement TLS to an `https://` proxy,
+so that scheme is rejected rather than silently changing its security properties. Destination
+HTTPS certificate and hostname verification remain enabled. Missing or malformed configuration fails instead
+of choosing another proxy. Ambient
 proxies remain disabled unless this option is present. Python's standard `NO_PROXY` exclusions
 still apply. Put credentials in the approved process environment, never the command line; proxy
 values are not logged or saved in corpus metadata, and transport errors redact them.
@@ -132,7 +135,7 @@ link readers to each paper's arXiv abstract/download page. Never commit PDFs or 
 
 ## Current verification boundary
 
-The 49 offline tests cover deterministic strata, OAI paging/refresh/deletion/token expiry and
+The 50 offline tests cover deterministic strata, OAI paging/refresh/deletion/token expiry and
 midnight boundaries, pinned GCS versions, file integrity/resume, truncated and HTML payload
 rejection, request pacing and cooldown persistence, free-space failures, unsafe roots,
 symlinks, explicit proxy selection and redaction, and a full fixture download/verify/resume cycle.
