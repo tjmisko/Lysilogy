@@ -3113,3 +3113,174 @@ date, last merged issue, in-flight branches and their state, next action, and op
   finish remaining four blind papers; await owner after gates, audit/continue scale15. No
   new issue merges or follow-ups at this checkpoint. This continuation opened#97/#98/#101/
   #103; #98/#101 now closed. Coverage#97,title#103 and historical#21/#22 remain open.
+
+
+### 2026-09-13 — resume after usage interruption; four host grants approved
+
+- **User explicitly approved all four persistent hosts** after resuming at18:28UTC:
+  index.crates.io,static.crates.io,api.crossref.org,api.openalex.org. This supersedes the
+  earlier pending permission request. Do not ask again. Applying the reviewed four-host
+  script with require_escalated was approved, but failed before config mutation because
+  ~/.codex is mounted read-only: backup creation returnedErrno30. This was an execution
+  mount restriction, NOT a new automatic-review rejection. User was given:
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart Codex.
+  Script is unchanged, backs up config and validates only those four grants. No sudo needed.
+- Effective access remains blocked in this session. A normal four-host HEAD probe was
+  stopped on api.openalex.org before writing its proposed receipt; an approved escalated
+  HEAD to index.crates.io was also stopped by the current domain allowlist. Do not claim
+  the grants are installed/effective. **After user runs the script/restarts, verify actual
+  storage/host access, then resume#33 and#71/#72.** Do not bypass transport/profile rules.
+  Original corpus storage/OAI/export/GCS grants remain available.
+- Main before this docs commit is7cceb76. PhaseA/WaveA2; last merged#101/PR104 remains
+  mergea54de426d6691c013e5ea4b3333e7027d7103335. No new merges/follow-ups in this segment.
+  Main measured scorecard remains **1/5gates,3/30objectives(O1,O2,O30)** on the limited
+  two-paper release, O1=1/O2=.9107793204006069. No phase exit,500coverage,production10k
+  or system acceptance. All10 unrelated preview hashes still match the saved baseline.
+- A usage-limit interruption stopped all three agents around16:37UTC. User saidcontinue;
+  at18:28UTC root resumed them with followup_task. No fifth-paper inventory/receipt files
+  existed then. Their earlier in-memory work may survive; receipts must distinguish
+  interrupted elapsed time from unknown active work. Agents now: **finish_corpus_proxy**
+  implementing#97, **finish_benchmark** primary fifth-paper blind annotation,
+  **review_ready_prs** independent fifth-paper blind annotation. Four total slots including
+  root. Both fifth annotators pause after freezing; remaining sixth2207.03024v1 and
+  seventh2303.07834v2 are not started. Use existing agents, preserve blinding and originals.
+- #97 branch `feat/e8.3-k1-coverage`, tree `.worktrees/feat/e8.3-k1-coverage`, last clean
+  committed head **8552b88**; reviewed source **31548158b69a893aefa12d2f635f6fc2e538184f**.
+  New importer implementation is in progress after resume, not yet reviewed/admitted.
+  e64b9d8 added mixed-bundle composition, typed visual refs and actual blind-native export
+  verification. Root caught bool/int type equality bypasses;3154815 fixed them with canonical
+  typed JSON comparison and2new tests. Owner212Python tests-Werror pass; root27targeted
+  tests,7type probes and all7actual frozen native exports independently verify. Root review:
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v1/root-adapter-review-e64b9d8/review-3154815.json`
+  SHA7524f1644bc728ebaaa60ac6a86afc8774a57df5f1a0f75c9d3a01b9888eb56f.
+- Own before/after CLI remains SHA31d3f1257fc8b1da24c94425d02f6e16f1954b60f2f2557507d2cefa47457753.
+  Actual after gates at3154815: fmt,strictClippy,alltargets,212LaTeX,objects/bibliography/
+  scale --check passed. Initial G5 failure was missing TypeScript in the fresh tree, retained
+  with failed npm setup attempts. Exact lockfile-verified cached TypeScript was installed
+  locally with bounded paths and no scripts/network. G5 retry passes **350Rust/353Python/
+  85Node**, and actual immutable-v1 replay reproduces original object/bib hashes in4.550161s.
+  Directory `~/.cache/lysilogy/k1-coverage/manual-adapter-after-3154815/`; initialreceipt
+  SHA5029360b246744593f6e00622916af31f46a4ee8f1f615bc6cea199c968751e9, retryreceipt
+  SHA6ef105f47aef4315a2cd7ffac7c19060843089f4405e0b45812de0b419d5f5b0.
+  Root `root-gates-review.json` SHA6593fcf7dc7b8283463adfd73e57e0dd9cc940343ecdbf2730f6bd18e700235c
+  independently checks158source files at compiledcommit,24command logs,15G5logs and132TSfiles.
+  **Branch current scorecard1/5gates,1/30O30; O1/O2/bibliography unavailable, no fresh collector.**
+  Main historical measured3/30 is separate. No detector delta or new truth claimed.
+- Frozen manual pilot root is `~/.cache/lysilogy/k1-coverage/manual-tranche-v1/`.
+  Packet paths use bare IDs: `packets/2210.11141/packet-rendered.json`, not a v1 suffix.
+  Four dual papers frozen:2210.11141,2310.04162,2001.05217,2409.03655. Fifth2002.03492
+  running in separateprimary/independent dirs, no sixth/seventh. Original7paper selection,
+  all43original rendered pages, allowlisted exports and21plannedslots remain immutable.
+  No detector/parsed inventory/other annotator labels shown to blind annotators.
+- First2210.11141 source/PDF truth still NOT admitted. Existing root field/visual/role
+  reconciliations remain clear. Independent four-math-body/equation-number supplement is
+  `independent/2210.11141/math-regions-v1.json`, SHA
+  5fa75824e1cf5a2c1eb933b286b00c8579d9a2eef34c58d6e4d2184666f3534f;
+  receiptSHAc936fcce5e4fd893f8e5b425d4e626558aed8c1a31876d747f24cc1543ea1568,
+ 192.239099s,0externalcalls,agentcostunknown. Root reinspected originalpages1/2 and verified
+  all4unchanged source/native IDs,8body/number coordinate pairs and every inputhash. Root
+  `reconciliation/2210.11141/root-math-region-review-v1.json` SHA
+  93f76204c3e7033bec239d36a1a0e338ff34b8759793dc54e8b114a3a7dde70b. Native math losses
+  remain explicit; supplemental text/hash excerpts augment unchanged original member spans.
+- First source-only post-freeze parse/crosswalk is at
+  `reconciliation/2210.11141/post-freeze-3154815/`: parse receiptSHA
+  98b4202399221965e908cbb50c352a61699c01bacad3b2091eb9913bf715f782;
+  source-inventory.jsonSHAf1a90c9b83f6a186baceb3e7debea5fac772327bbbf83a72fa62edb9fc65a65a,
+  canonicalSHA25e9baa014e1208e9c2f47c284b3822034fd55bd42f15c404c10b70a4c11f772.
+  Exactly12objects(6fig2table4eq),25entries and69links(49cite/75pairs+20refs).
+  `link-entry-crosswalk.json` SHAca6e97690e3f16f009ae277fc57cf7dff1871cea50581adafa8b3ae04d79bbcb:
+  16objectrefs=13visual+3O4eq;4sectionrefs. Owner's crosswalk still needs ROOT independent
+  verification against both frozen annotations/source/native before admission.
+- First later construction is `reconciliation/2210.11141/construction-b2dfc51/`.
+  candidateSHA c232f8446ebfcfe1e7f877b6feac338bb1a8821f987898d5bf93827a2f8fb7e8;
+  construction-packetSHA03b3b2376d1f56605ccce7c5c525b713e08d81f29a7ae561ecd5953d142a580a.
+  Keeps automaticaccepted=false/all exclusions; source inventory equals post-freeze parse.
+  Actual legacy attempt fails KeyErrorinputs, failureSHA
+  170a2766c3845c1984a9d22777e10d5d06996ddf99e2431d384e22a1d2883c7d. Do not fabricate
+  assertions that original blind annotators saw a later candidate/inventory. Legacy region
+  checks also reject retained cvpr.sty/unknown-source semantics. No labels altered to pass.
+- Root reviewed explicit versioned manual-path proposal before implementation:
+  construction-b2dfc51/manual-evidence-proposal-v1.mdSHA
+  ac2d0383b8116e0be465027b5c518424b241d7a24d963a95b151d7393860336a;
+  root-proposal-review-v1.jsonSHA b057a8949f49703bcdf2fda0ebbf201edf8eaa89f790166d89aa52e475ba37d1.
+  Owner implementing reusable `k1-manual-tranche-v1` explicit entry point, no legacy-error
+  fallback/paper-ID-specific success exceptions. Validate actual complete independent
+  original-PDF/source inventories, exact later crosswalk, all page/role/link/member/geometry
+  evidence and honest initial/later histories. Derive complete8visual/4eq/3O4refs and scoped
+  zeroformal kinds; keep all7informal role candidates. Unknown/missing roles withhold affected
+  kinds; no shortened denominators/blanket style exception. Automatic diagnostics and pinned
+  v1 remain unchanged. Bibliography/O11 explicitly omitted pending separate evidence paths.
+  Root crosswalk/manifest review, independent source review, actualvalidator and gates/real
+  measurements remain required. No new admission/publication yet.
+- Second2310.04162 root initial comparisonSHAf9d2327be831cc8e18af02da8eac12c2ebbffa69842c89be873230781b405e01
+  verifies283primary/202independent source spans,318/280native spans,5389primary token
+  bindings.35object sources/nativebodies/captions,20completebibentries,32cite/40pairs,
+  26objectrefs and5sectionrefs agree;3author-numbering errors unresolved. Only20title
+  terminal periods differed. Raw same-key cit.bib shows4authored periods;16style separators,
+  with authored hdl-slam colon preserved. Root proposalSHA
+  f7e8807fc221f4c4060b63a275b4e57effe72addfd61f605d46d0d0620382143.
+  Both independent corrections now frozen: primaryinventory-v2SHA
+  2e6d0af6b0ae78eb883496ba926ac3168cf72ece5013c37eb99ca16a5965ad5d,receipt-v2SHA
+  d343bb4114415b2a25ce1331f7f206445555d8564c375a2c41f0eab22f460dfd;
+  independentinventory-v2SHAe54a379731dd6990d0e14f1f3b478a202162c19c33e7f231e093c287383ae5c4,
+  receipt-v2SHA968283eb946ad305b7c255ee97e449836ddcadd4254a845f90b8643ca6723e57.
+  Root final correction-chain/60field audit still pending; original artifacts unchanged.
+  Root role supplementSHA0912573c7fcd46e4bf70baa4010937625ee9a8d552d2ae1c8489018f5814157b
+  supports zeroformal kinds with all11primary/7independent informal candidates retained.
+- Third2001.05217 root initial comparisonSHAe975ea3435dcd231e5fcdbc7933b5db321b767bcb607c64718deb6b02ea7f11c:
+ 18objects/nativebodies/captions,15bibentries,10cite/17pairs,13objectrefs agree. Source-year
+  forBrandt:2016daq incorrectly selected hidden DOI text inprimary; additive correction-v2
+  SHA f9d36c70cb02a9512eb040f9e8ed89970d75ca465e2aeb610ccffd07b2b69a0b andreceipt
+  SHA0b522ffc1f589a392b801fb9afc41274c6e0703661a3e72ece20da4133ae60f7 select visible
+  href payload[1830:1834] instead ofURL[1790:1794]. Root correction-chain audit pending.
+  Two collective-author first-author eligibility cases, one math title spacing convention,
+  and five source/native math-title fidelity gaps remain explicit. Independent additionally
+  found correct next-section pointer toSection2; primary omitted it. Root role supplementSHA
+  c87da5733fde1b0e022cc02e6b8db353a9a571771efa1c6256740767e715643b retains13/9informal
+  candidates; zeroformal kinds supported visually, no automatic guard change/admission.
+- Fourth2409.03655 dual frozen: primaryinventorySHA
+  7398cdfa4e640ed42e4b11df231dd0d79b5a81d5342d1adc3a05fe799ecdb3e7,receiptSHA
+  a81a99932136882865789906cbfe35860892fde225608219136a3e3a44441f9b,791.683s;
+  independentinventorySHA934d8109e0cc397d4528422ff41ea0514c8566c9fb7bc86441a00a475bd29a63,
+  receiptSHA76d2c6544c9089ca2b6b8c78484893b8705bc633ced36a469c03a2d76523655e,783.898754s.
+  Both4figures/2tables/30bib90fields/33cite35pairs/9object3sectionrefs. Independent retains
+  additional external evaluation-plan section ambiguity. FiveURLfootnotes and Table1notes
+  separate; full vs coretablebounds need reconciliation. Root viewed all6original pages,
+  but full structural comparator/role/region review remains pending. No truth admission.
+- Scale batches1–16 plus#98 retry: **5,000unique indexes,1000eval/4049scale**,49overlap.
+  Batch15:250/250,387.063146s/230368KiB; outputacba4495d704163180a375e9a41b7083f83bb788b03d10e629312d8acbceb558;
+  auditSHAbdbd426b35068b666898a7e70ed58c8745274f457b0e7ae0b9231e93912efdf6.
+  Batch16:250/250,413.273234s/229600KiB; output365b75977048d468c6cdfff8f919a28ef6bed27cc0456a9b485f916054261674;
+  audit `~/.cache/lysilogy/native-index-after-batch16-review.json` SHA
+  baef7020819e47a1284a201a77a3806455c081195493cd1cf4753ce37ba4b65e rehashed712,300,692B.
+  Both0externalcalls/$0; registry10951unchanged. Prior TTY49256 completeexit0.
+- **Batch17 RUNNING, retained TTYexec32430**, sole heavy window:
+  `python3 -B -u ~/.cache/lysilogy/run-scale-index-batch.py --batch 17 --limit 250`.
+  Poll then audit with`python3 -B ~/.cache/lysilogy/audit-native-index-batch.py --batch 17`;
+  next18 after any required Rust/store window. Corpuscomplete10951PDFs/1000sources at
+  ~/Corpora/arxiv, canonicaldata~/.cache/lysilogy/arxiv-kb-data. No downloader. Registry
+  SHA934d7fa7860d8a84639f52fbb7d77c0a721f3b7e4bc8f836b70b8063c4fa835d unchanged.
+  Index prep is not production10k/O25/O27 acceptance. Preserve20GiBfloor, one heavy job.
+- Paused ready source: #33 `feat/e2.1-kb-store`905c341 noPR/uncompiledmissingrusqlite;
+  #71 draftPR93 `feat/e8.4-reference-truth`d5e12aa;#72 draftPR95
+  `feat/e8.5-person-labels`c867ec6;genuineK2/K4/K5/K7 missing. Approved hosts still need
+  terminal config/restart. After access works, prioritize storedependencies/actualtests and
+  bounded combined40DOItruthbuild, then#25 draftPR94 `feat/e1.2-bibliography`201c53c
+  can finish realK2/O9. PR94 independently clear388Rust/296Python/92Node andlimitedO8/O10=1;
+  #103 retains5titlemisses. Do not merge withoutK2/fullO9. #97latestautomatedfullrun4ada537
+  remains617parsed/383failed/rawaccepted1/zero defensible newtruth; all historical runs stay.
+- Next: verify effective approved hosts after terminal/restart; resume#33/#71 within3
+  implementerlimit; root audit first-paper post-freeze crosswalk/manifest whileowner implements
+  versioned importer, audit second/third correction chains andfourthannotations, finish5–7,
+  auditbatch17. No new phase/report/merge yet. Followups this continuation#97/#98/#101/#103;
+ 98/101closed,97coverage/103titles open plus21/22historicalmisses. No rebase without asking;
+  ordinary merges documented. No sudo/rm-rf/private/env access; preserve unrelated worktrees.
+
+- Checkpoint addendum: primary fifth2002.03492 just froze, inventorySHA
+  ea366aceb8cd6793aaed9b2c8c1d752393707c91a3a304ccfe80aff1f90b1704,receiptSHA
+  24f6409b2850138d8b5f7902f1280a48b6d5445bb1eb0b952e096a50d0c11746.15numbered+
+  11unnumbered displays/5statements/2proofs/20bib/18cite32pairs/33referencegroups;
+  Lemma3/Lemma6 unresolved. Elapsed7603.049s includes usage interruption; active work/cost
+  unknown. Independent fifth still running. Root assigned primary sixth2207.03024v1 now,
+  pause before seventh. Owner has new untracked scripts/truth/latex/tranche.py in progress;
+  do not overwrite it. No new source checkpoint/admission yet.
