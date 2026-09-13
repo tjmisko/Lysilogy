@@ -680,3 +680,20 @@ date, last merged issue, in-flight branches and their state, next action, and op
   changes only in isolated worktrees. Use one Cargo job, debug information off, incremental
   compilation off, and worktree-local targets; reuse cached frontend dependencies without npm
   network installs or main-checkout cache writes.
+
+### 2026-09-12 — goal continuation: storage blocker revalidated
+
+- Previous goal turn classified as progress: foundation/fix merges and reviewed benchmark work
+  changed authoritative state. This continuation revalidated the remaining external blocker;
+  it did not complete another implementation or measurement.
+- Current state remains A/A1, only #19 unfinished. GitHub still shows draft PR #82 at
+  `65d2c418bd63f5f07138169b09b5f2d2833b6a91`; its retained worktree is clean. The preceding
+  checkpoint contains the complete resume instructions, merged issues, and validation evidence.
+- Fresh filesystem inspection confirms both required roots are absent. The existing ancestors
+  `/home/tjmisko/.cache` and `/home/tjmisko` report `ST_RDONLY` and no write access. No benchmark
+  or corpus process is running to wait on, and the required 10k acceptance remains impossible
+  at the designated location. No data was relocated and no completed gates were rerun needlessly.
+- Scorecard unchanged: G5 passes, O30 = 0/10k, 1/5 gates and 1/30 objectives at target; remaining
+  metrics unavailable. No new merges, objective misses, or follow-up issues this continuation.
+  This is the second consecutive goal-turn observation of the same environment blocker. The
+  full project goal remains active; it is neither complete nor narrowed to the completed work.
