@@ -41,6 +41,16 @@ Paper catalog ──► Poppler raw + bbox extraction ──► source.txt + sou
 
 The Rust backend owns discovery, extraction, subprocess isolation, validation, persistence, and state transitions. React owns interaction and presentation. Neither frontend code nor a model process receives an arbitrary filesystem path from the browser.
 
+The cross-paper knowledge base is a separate rebuildable SQLite projection at
+`<data>/kb/kb.sqlite`. Bundled SQLite enables WAL, foreign keys, versioned startup migrations,
+bidirectional citation indexes and FTS5 trigram title/name search. Canonical ID allocations,
+observation bindings and typed decisions live in a durable `kb/decisions.jsonl` envelope journal;
+exact admitted versions of mutable source artifacts/cache records live in `kb/admitted/`.
+Canonical reading-list JSON is mirrored without being rewritten. `kb rebuild` replays these
+sources in one database transaction without discovering PDFs, opening notes, or changing the
+independent paper identity registry. Details and validation commands are in
+[the store operations guide](../scripts/kb/README.md).
+
 Remote imports cross a separate application-owned trust boundary. The backend accepts a public
 HTTP(S) URL, disables environment proxies, resolves and pins its destination, repeats that check
 for every redirect, and rejects credentials, nonstandard ports, and any DNS answer containing a

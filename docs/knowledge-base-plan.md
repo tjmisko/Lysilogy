@@ -483,6 +483,43 @@ Acceptance: deleting the database and rebuilding yields identical entities, IDs,
 migrations run on startup; two-hop neighborhood queries meet a target measured on a 500k-Work
 synthetic graph.
 
+Implementation decisions (E2.1): `src/kb/store/` owns the bundled SQLite projection and versioned
+migrations. `kb rebuild` dispatches before library/config initialization, does not discover PDFs
+or read notes, and replaces projection rows in a transaction in the existing WAL database.
+It never renames a live database or modifies `paper-identities.json`. Startup migrates the store
+after validating the library/data roots.
+
+`kb/decisions.jsonl` is a version-1 envelope journal with sequential records and a SHA-256 chain.
+Its events are allocation (`origin → W…/P…`), admission of a retained observation revision, and
+the existing typed `Decision`. The store allocates opaque random IDs once and fsyncs the journal
+before exposing them or committing SQLite. Stable observation origin/binding is independent of
+payload revision; a split changes the binding, and subsequent source refreshes retain it.
+The database mirrors these records; neither rowids nor mutable titles recreate IDs.
+
+Admission requires a typed projection from the owning adapter and a source payload whose hash
+and content match a regular relative source file. It retains that admitted revision under
+`kb/admitted/<sha256>.json` before journaling its binding. Per-paper artifacts and provider caches
+are mutable or expiring, so this retained version is needed to reproduce prior admissions.
+Rebuild reads these exact admitted per-paper/provider versions and canonical lists/decisions;
+it does not automatically accept every JSON file in an ambient provider cache. Local/provider
+admission policy remains E2.8/E2.9. New decisions use the envelope writer, not raw appended
+`Decision` JSON lines. Invalid chains, missing revisions, invalid relationships or lists fail
+without replacing the preceding database projection.
+
+The FTS5 trigram tables index Work title keys and Person display names. Two-hop queries traverse
+both citation directions and return all directed edges induced by the returned nodes, with
+explicit node/edge truncation flags. Production defaults are 500 nodes/5,000 edges; the O28
+benchmark requests the full 500,000/3,000,000 limits and rejects any truncation. Its 200 queries
+interleave 40 hub roots with 160 deterministic uniform roots, and an independent adjacency BFS
+checks every result outside the timing boundary.
+
+G4 remains unavailable until real K2 Crossref records exist. Its collector creates an isolated
+canonical state through the real allocation/admission APIs from deposited DOI pairs and author
+metadata, exercises a deliberate duplicate of an exact-DOI source to cover aliases, and compares
+transactional and deleted-database rebuilds. No fabricated PDFs or local-copy claims are needed;
+this allows Phase A validation before E2.8's production local ingestion. See
+[`scripts/kb/README.md`](../scripts/kb/README.md) for commands and the K2 adapter contract.
+
 Tests: should produce identical entities when rebuilding from scratch; should apply pending
 migrations when opening an older database; should return a two-hop neighborhood when edges exist in
 both directions.

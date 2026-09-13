@@ -72,6 +72,7 @@ pub struct AppState {
     catalog_refresh: Arc<Mutex<()>>,
     library_root: Arc<PathBuf>,
     store: ArtifactStore,
+    kb: crate::kb::store::KbStore,
     extractor: PdfExtractor,
     analysis: AnalysisService,
     citation_http: crate::citation_graph::GraphHttp,
@@ -137,12 +138,17 @@ impl AppState {
         let store = ArtifactStore::new(data_root);
         let catalog = LibraryCatalog::scan(&library_root, &store).await?;
         store.initialize().await?;
+        let kb_root = store.root().to_path_buf();
+        let kb = tokio::task::spawn_blocking(move || crate::kb::store::KbStore::open(kb_root))
+            .await
+            .map_err(|error| Error::Task(error.to_string()))??;
         let jobs = JobTracker::load(store.clone()).await?;
         Ok(Self {
             catalog: Arc::new(RwLock::new(catalog)),
             catalog_refresh: Arc::new(Mutex::new(())),
             library_root: Arc::new(library_root),
             store,
+            kb,
             extractor,
             analysis,
             citation_http: crate::citation_graph::GraphHttp::from_environment()?,
@@ -157,6 +163,11 @@ impl AppState {
             reading_indexes: source_index::IndexJobs::default(),
             frontend_root: None,
         })
+    }
+
+    #[must_use]
+    pub const fn kb(&self) -> &crate::kb::store::KbStore {
+        &self.kb
     }
 
     #[must_use]
