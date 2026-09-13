@@ -49,9 +49,21 @@ fn captions(index: &ReadingIndex) -> Vec<Caption<'_>> {
         .paragraph
         .iter()
         .filter_map(|paragraph| {
+            let pieces = super::paragraphs::pieces(paragraph);
+            if pieces.len() != 1
+                || pieces[0].start != paragraph.start
+                || pieces[0].end != paragraph.end
+            {
+                // Figure caption anchors are contiguous and page-local. Do not
+                // turn a logical paragraph's bounding span into authored text.
+                return None;
+            }
             let text = tokens(index, paragraph.start, paragraph.end);
             let (kind, label, _, label_end) = label_at(&text, 0)?;
             let first = text.first()?;
+            if text.iter().any(|token| token.page != first.page) {
+                return None;
+            }
             let printed_label = utf16_slice(&index.text, paragraph.start, label_end);
             // Recover body/footnote-classified captions only with an explicit printed
             // label separator. A sentence merely starting "Figure 2 shows" is prose.
@@ -91,7 +103,10 @@ fn continues_prose(
     if paragraph.start.saturating_sub(previous.end) > 4 {
         return false;
     }
-    let preceding = tokens(index, previous.start, previous.end);
+    let Some(first) = text.first() else {
+        return false;
+    };
+    let preceding = paragraph_tokens(index, previous, first.page);
     let (Some(last), Some(first)) = (preceding.last(), text.first()) else {
         return false;
     };
@@ -215,6 +230,23 @@ fn tokens(index: &ReadingIndex, start: usize, end: usize) -> Vec<&ReadingToken> 
         .collect()
 }
 
+fn paragraph_tokens<'a>(
+    index: &'a ReadingIndex,
+    paragraph: &super::Paragraph,
+    page: u32,
+) -> Vec<&'a ReadingToken> {
+    super::paragraphs::pieces(paragraph)
+        .iter()
+        .flat_map(|span| {
+            tokens(index, span.start, span.end)
+                .into_iter()
+                .filter(move |token| {
+                    token.page == page && token.start >= span.start && token.end <= span.end
+                })
+        })
+        .collect()
+}
+
 fn label_at(
     tokens: &[&ReadingToken],
     number: usize,
@@ -325,11 +357,7 @@ fn figure_region(
         if paragraph.start == caption_start {
             continue;
         }
-        let text = super::paragraphs::pieces(paragraph)
-            .iter()
-            .flat_map(|span| tokens(index, span.start, span.end))
-            .filter(|token| token.page == page)
-            .collect::<Vec<_>>();
+        let text = paragraph_tokens(index, paragraph, page);
         if text.is_empty() {
             continue;
         }
@@ -359,8 +387,8 @@ fn figure_region(
         .iter()
         .filter(|p| !captions.iter().any(|c| c.paragraph.start == p.start))
     {
-        let text = tokens(index, paragraph.start, paragraph.end);
-        if text.first().is_none_or(|t| t.page != page) || prose_barrier(&text, body_font) {
+        let text = paragraph_tokens(index, paragraph, page);
+        if text.is_empty() || prose_barrier(&text, body_font) {
             continue;
         }
         let rect = union(text.iter().flat_map(|t| t.rects.iter().copied()));
@@ -482,8 +510,8 @@ fn table_below(
         .paragraph
         .iter()
         .filter_map(|p| {
-            let text = tokens(index, p.start, p.end);
-            if text.first()?.page != page {
+            let text = paragraph_tokens(index, p, page);
+            if text.is_empty() {
                 return None;
             }
             let rect = union(text.iter().flat_map(|t| t.rects.iter().copied()));
@@ -526,8 +554,8 @@ fn table_below(
         {
             continue;
         }
-        let text = tokens(index, paragraph.start, paragraph.end);
-        if text.first().is_none_or(|t| t.page != page) || prose_barrier(&text, font) {
+        let text = paragraph_tokens(index, paragraph, page);
+        if text.is_empty() || prose_barrier(&text, font) {
             continue;
         }
         let rect = union(text.iter().flat_map(|t| t.rects.iter().copied()));
@@ -742,6 +770,108 @@ mod tests {
                 .iter()
                 .all(|span| span.end <= index.objects.paragraph[3].end)
         );
+    }
+
+    #[test]
+    fn should_use_only_retained_members_when_a_logical_paragraph_surrounds_another_caption() {
+        let mut index = fixture(&[
+            ("Upper label", "float", 100.0, 120.0),
+            ("Figure 2: Neighbor.", "caption", 400.0, 140.0),
+            ("Lower label", "float", 100.0, 160.0),
+            ("Figure 1: Main plot.", "caption", 50.0, 220.0),
+        ]);
+        let first = index.objects.paragraph[0].clone();
+        let last = index.objects.paragraph[2].clone();
+        index.objects.paragraph[0].end = last.end;
+        index.objects.paragraph[0].spans = vec![
+            TextRange {
+                start: first.start,
+                end: first.end,
+            },
+            TextRange {
+                start: last.start,
+                end: last.end,
+            },
+        ];
+        index.objects.paragraph.remove(2);
+        let result = find(&index);
+        let region = result
+            .iter()
+            .find(|figure| figure.label == "Figure 1")
+            .unwrap()
+            .rect
+            .unwrap();
+        assert!(region.x_max < 200.0);
+    }
+
+    #[test]
+    fn should_exclude_later_page_coordinates_when_logical_members_continue_across_pages() {
+        for table in [false, true] {
+            let caption = if table {
+                "Table II: Measurements."
+            } else {
+                "Figure 1: Main plot."
+            };
+            let caption_y = if table { 100.0 } else { 220.0 };
+            let mut index = fixture(&[
+                ("First 12.5", "float", 100.0, 140.0),
+                ("Second 25.0", "float", 100.0, 160.0),
+                (caption, "caption", 50.0, caption_y),
+                ("Foreign 99.0", "float", 450.0, 150.0),
+            ]);
+            let first = index.objects.paragraph[0].clone();
+            let last = index.objects.paragraph[3].clone();
+            for token in index.tokens.iter_mut().filter(|t| t.start >= last.start) {
+                token.page = 2;
+            }
+            index.objects.paragraph[0].end = last.end;
+            index.objects.paragraph[0].spans = vec![
+                TextRange {
+                    start: first.start,
+                    end: first.end,
+                },
+                TextRange {
+                    start: last.start,
+                    end: last.end,
+                },
+            ];
+            index.objects.paragraph.pop();
+            let result = find(&index);
+            assert_eq!(result.len(), 1);
+            assert!(result[0].rect.unwrap().x_max < 200.0, "table={table}");
+        }
+    }
+
+    #[test]
+    fn should_withhold_a_caption_when_its_single_anchor_cannot_preserve_piece_or_page_identity() {
+        for cross_page in [false, true] {
+            let mut index = fixture(&[
+                ("Figure 1: Start.", "caption", 50.0, 150.0),
+                ("Intervening text", "float", 350.0, 160.0),
+                ("Caption continuation.", "caption", 50.0, 174.0),
+            ]);
+            let first = index.objects.paragraph[0].clone();
+            let last = index.objects.paragraph[2].clone();
+            index.objects.paragraph[0].end = last.end;
+            if cross_page {
+                for token in index.tokens.iter_mut().filter(|t| t.start >= last.start) {
+                    token.page = 2;
+                }
+            } else {
+                index.objects.paragraph[0].spans = vec![
+                    TextRange {
+                        start: first.start,
+                        end: first.end,
+                    },
+                    TextRange {
+                        start: last.start,
+                        end: last.end,
+                    },
+                ];
+            }
+            index.objects.paragraph.truncate(1);
+            assert!(find(&index).is_empty());
+        }
     }
 
     #[test]
