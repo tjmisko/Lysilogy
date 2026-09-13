@@ -9,6 +9,7 @@ from pathlib import Path
 import resource
 import shutil
 import signal
+import stat
 import subprocess
 import time
 
@@ -51,10 +52,37 @@ def readonly_tree(path):
             safe_relative(name)
             item = Path(base) / name
             mode = item.lstat().st_mode
-            import stat
             if not (stat.S_ISDIR(mode) or stat.S_ISREG(mode)):
                 raise Refused("only regular source members and directories can be mounted")
     return path
+
+
+def reject_readwrite_aliases(readonly, run_dir, output, output_ids):
+    """Check before creating any controller file, including filter/receipts.
+
+    Path ancestry catches ordinary aliases. Device/inode checks additionally
+    catch hard links and host bind aliases with different apparent paths.
+    """
+    writable_ids = set(output_ids.values())
+    for path in (run_dir, output, *run_dir.iterdir()):
+        metadata = path.lstat()
+        writable_ids.add((metadata.st_dev, metadata.st_ino))
+    for source, _ in readonly:
+        source = Path(source).absolute()
+        source = regular_path(source, directory=source.is_dir())
+        for writable_root in (run_dir, output):
+            if source.is_relative_to(writable_root) or writable_root.is_relative_to(source):
+                raise Refused("read-only and writable roots overlap")
+        candidates = [source]
+        if source.is_dir():
+            for base, dirs, files in os.walk(source, followlinks=False):
+                for name in dirs + files:
+                    safe_relative(name)
+                    candidates.append(Path(base) / name)
+        for path in candidates:
+            metadata = path.lstat()
+            if (metadata.st_dev, metadata.st_ino) in writable_ids:
+                raise Refused("read-only path aliases a writable inode")
 
 
 def sandbox_command(tools, readonly, output, names, command, environment, filter_fd):
@@ -120,6 +148,7 @@ def run_sandbox(*, run_dir, readonly, output, names, command, environment, limit
         output_ids[name] = (metadata.st_dev, metadata.st_ino)
     if len(set(output_ids.values())) != len(names):
         raise Refused("output inventory aliases an inode")
+    reject_readwrite_aliases(readonly, run_dir, output, output_ids)
     filter_path = run_dir / "filter.bpf"
     if not filter_path.exists():
         with filter_path.open("xb") as stream:

@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from confinement import check_tools, prepare_outputs, readonly_tree, sandbox_command
+from confinement import check_tools, prepare_outputs, readonly_tree, reject_readwrite_aliases, sandbox_command
 from policy import Limits, Refused, engine_command, fixed_environment, regular_path, safe_relative, seccomp_filter
 
 
@@ -106,6 +106,24 @@ class PolicyTests(unittest.TestCase):
             for destination in ("/proc/1", "/dev/other", "/output/a", "/home", "/runtime/../proc"):
                 with self.subTest(destination=destination), self.assertRaises(Refused):
                     sandbox_command(tools, [(path, destination)], root, [], ["/runtime/bin/probe"], {}, 3)
+
+    def should_reject_readwrite_aliases_when_a_source_or_runtime_mount_contains_outputs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            run = root / "run"
+            run.mkdir()
+            output = prepare_outputs(run / "output", ("a", "b"))
+            ids = {p.name: (p.stat().st_dev, p.stat().st_ino) for p in output.iterdir()}
+            for source in (output, output / "a", run, root):
+                with self.subTest(source=source), self.assertRaises(Refused):
+                    reject_readwrite_aliases([(source, "/input")], run, output, ids)
+            outside = root / "readonly-runtime"
+            outside.mkdir()
+            (outside / "alias").hardlink_to(output / "a")
+            with self.assertRaises(Refused):
+                reject_readwrite_aliases([(outside, "/runtime/files")], run, output, ids)
+            self.assertEqual((output / "a").read_bytes(), b"")
+            self.assertFalse((run / "before.json").exists())
 
 
 if __name__ == "__main__":
