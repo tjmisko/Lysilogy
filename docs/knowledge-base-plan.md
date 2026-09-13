@@ -25,7 +25,10 @@ to be *read into a literature*. That requires two layers of modeling.
 | Glossary | The Figures tab takes the Glossary's ladder slot and the `g` key. Glossary remains available through `:glossary` and digest links. |
 | After a reference PDF downloads | Configurable: `download_only`, `extract_heuristic` (default), or `full_model`. Batches over five papers with `full_model` require an explicit confirmation that states the credit/API/usage cost. |
 | Citation manager integration | Export only: CSL-JSON, BibTeX, RIS, and styled text. No Zotero sync. |
-| Resolution ground truth | A hand-labeled gold set mined from local bibliographies. Auto-merge precision must be at least 0.99; recall is reported, not gated. |
+| Resolution ground truth | An agent-labeled gold set mined from local bibliographies: two independent model labelers plus an adjudicator for disagreements, with no human labeling gate. Auto-merge precision against it must be at least 0.99; recall is reported, not gated. Humans may audit labels later. |
+| Human gates | None during implementation. Agents build, review, and merge; human review happens on the finished system. |
+| Evaluation | Metric-driven buildout: hard gates, objectives with ratcheted baselines, and agent-built truth sets. See [Metrics and objectives](#metrics-and-objectives). |
+| Research corpus | A separately stored arXiv corpus (PDFs from the public GCS bucket, LaTeX sources from `export.arxiv.org` within its rate policy) feeds truth sets and realistic scale runs. Never committed; never mixed with the user's library. |
 | Unresolvable AI reading-list items | Kept, visibly marked unresolved, and excluded from graph edges until resolved. |
 
 Defaults assumed unless revised: the Figures tab enriches the top 3–5 figures/tables; the graph
@@ -120,6 +123,83 @@ resolve. A split mints a new ID and records which observations moved.
 - **Bibliography entries** resolve through DOI/arXiv extraction, then Crossref
   `query.bibliographic`, Semantic Scholar `/paper/search/match`, and OpenAlex search, with a model
   parse only as a last resort.
+
+## Metrics and objectives
+
+The buildout is metric-driven. Every measurable behavior has a named metric, a ground-truth
+source that agents can construct without human labeling, and a target. `lysilogy eval <suite>`
+(E8.1) computes metrics, writes a results record per commit, and regenerates
+[`kb-scorecard.md`](kb-scorecard.md).
+
+- **Hard gates (`G`)** protect correctness and provenance. They must pass for a PR to merge and are
+  never lowered.
+- **Objectives (`O`)** are targets to climb toward, set at roughly the "80% of the way there"
+  level. Initial values below are provisional. The first measurement of each metric records a
+  baseline; after that a PR touching the metric's area must not regress it by more than one
+  percentage point (or 10% relative for latencies) without a recorded justification. An agent may
+  revise an objective's target only with evidence, such as a measured truth-set ceiling, recorded
+  in this section.
+- **Reported (`R`)** metrics are tracked without a target.
+
+Full evaluation suites run from local caches. Network access is used only by explicit corpus-fetch
+steps, never by `cargo test`; unit tests use small committed fixtures derived from the suites.
+
+### Ground-truth sources
+
+| ID | Truth set | Construction | Built by |
+| --- | --- | --- | --- |
+| K0 | arXiv research corpus | A separately stored corpus of arXiv PDFs and LaTeX sources (E8.2): an `eval` tier with sources and a `scale` tier of 10,000 PDFs concentrated in a few dense subfields. It is the raw material for K1, K7, and realistic scale runs. | E8.2 |
+| K1 | arXiv object truth | ~500 papers from the K0 `eval` tier, stratified across math, CS, physics, statistics, and economics. Parse `figure`/`table` environments and captions, numbered equation environments and `\label`/`\eqref`, `\newtheorem` environments, `proof` environments and their targets, `algorithm` environments, `\bibitem`/`.bbl` entries, and `\cite` keys. Align to the compiled PDF by caption and text matching. Commit only derived labels and arXiv IDs. | E8.3 |
+| K2 | Reference resolution truth | Papers with DOIs whose Crossref records include deposited references with DOIs; each deposited reference is a labeled (entry → identifier) pair. Includes local library papers and K0 papers with published versions. | E8.4 |
+| K3 | Entity-pair gold set | ~200 agent-labeled name and title pairs with hard negatives, mined from local and K0 bibliographies. | E2.5 |
+| K4 | Person silver labels | OpenAlex authorships carrying ORCIDs for works in K2 and K0; clusters by ORCID. | E8.5 |
+| K5 | Acquisition set | 200 references sampled from local and K0 bibliographies with known identifiers from K2, stratified by field and age, with Unpaywall/OpenAlex open-access status recorded at build time. | E8.4 |
+| K6 | Reading-list prompts | 10 topic prompts, each paired with a recent survey whose bibliography serves as a soft reference set, plus a three-agent relevance panel rubric. | E8.6 |
+| K7 | Read-next holdout | Leave-one-out over the citation graph of the K0 `scale` tier and the local library: hide one paper's references and predict them from the rest. | E8.4 |
+
+### Scorecard
+
+| ID | Metric | Truth | Target | Issues |
+| --- | --- | --- | --- | --- |
+| G1 | Auto-merge precision for Works and Persons | K3, K4 | ≥ 0.99 | E2.6, E7.3 |
+| G2 | Wrong paper linked after download | K5 | 0 | E3.5 |
+| G3 | Published enrichment quotes that fail exact source match | All E1.7 outputs | 0 | E1.7 |
+| G4 | Rebuild determinism: identical entities, IDs, and aliases across two rebuilds | K2 library | 100% | E2.1, E2.7 |
+| G5 | Test suite passes with network access disabled and no model CLIs on `PATH` | `cargo test`, web tests | Pass | E8.1 |
+| O1 | Figure and table detection F1 | K1 | ≥ 0.90 | E1.1 |
+| O2 | Figure and table region IoU, median | K1 | ≥ 0.75 | E1.1 |
+| O3 | Numbered equation detection F1 | K1 | ≥ 0.85 | E1.3 |
+| O4 | Equation and statement mention → object link accuracy | K1 | ≥ 0.90 | E1.3, E1.4, E1.6 |
+| O5 | Theorem-like statement detection F1 | K1 | ≥ 0.85 | E1.4 |
+| O6 | Proof → statement link accuracy | K1 | ≥ 0.85 | E1.4 |
+| O7 | Algorithm detection F1 | K1 | ≥ 0.80 | E1.5 |
+| O8 | Bibliography entry segmentation F1 | K1 | ≥ 0.95 | E1.2 |
+| O9 | Bibliography field accuracy: title / first author / year | K1, K2 | ≥ 0.90 / 0.90 / 0.95 | E1.2 |
+| O10 | Citation marker → entry precision / recall | K1 | ≥ 0.97 / 0.85 | E1.2 |
+| O11 | Key-figure top-3 agreement with a three-agent panel | K1 | ≥ 0.70 | E1.7 |
+| O12 | Reference → identifier precision / recall | K2 | ≥ 0.98 / 0.80 | E2.6, E2.8, E3.2 |
+| O13 | Person clustering B-cubed F1 | K4 | ≥ 0.90 | E2.6, E7.3 |
+| O14 | Auto-merge recall | K3 | ≥ 0.80 | E2.6 |
+| O15 | Duplicate Works remaining after ingest (agent-audited sample) | K2 | ≤ 2% | E2.8, E2.9 |
+| O16 | References reaching `identifier_found` | K5 | ≥ 0.85 | E3.2, E3.4 |
+| O17 | Open-access references reaching `downloaded` | K5 (OA subset) | ≥ 0.80 | E3.3, E3.5 |
+| O18 | Downloaded references reaching `mapped` under `extract_heuristic` | K5 | ≥ 0.95 | E3.6 |
+| O19 | Model calls per reference in an acquisition batch | K5 | ≤ 0.30 | E3.4 |
+| O20 | Styled citation match with doi.org CSL output after normalization | K2 | ≥ 0.90 | E4.2 |
+| O21 | BibTeX and RIS exports that parse without errors | K2 | 100% | E4.1 |
+| O22 | AI list proposals resolved / fabricated works | K6 | ≥ 0.90 / ≤ 0.05 | E5.3 |
+| O23 | AI list relevance, panel mean on a 5-point rubric | K6 | ≥ 4.0 | E5.3 |
+| O24 | Read-next recall@10 | K7 | ≥ 0.30 | E6.4 |
+| O25 | No-change rescan of the 10k vault | Synthetic, K0 scale | ≤ 2 s | E0.3 |
+| O26 | Home first render / search p95 at 10k papers | Synthetic, K0 scale | ≤ 500 ms / ≤ 150 ms | E0.4 |
+| O27 | Batch extraction parallel efficiency at 4 workers | Synthetic, K0 scale | ≥ 0.70 | E0.5 |
+| O28 | Two-hop neighborhood query p95 at 500k Works and 3M edges | Synthetic | ≤ 150 ms | E2.1, E6.1 |
+| O29 | Graph view frame rate while panning at the 500-node cap | Synthetic | ≥ 30 fps | E6.2 |
+| O30 | Provider budget violations in a simulated 10k-reference batch | Recorded fixtures | 0 | E7.1 |
+| R1 | Agent-fallback lift over deterministic acquisition | K5 | Reported | E3.4 |
+| R2 | Overlap of AI lists with survey bibliographies | K6 | Reported | E5.3 |
+| R3 | Inter-labeler agreement in the gold set | K3 | Reported | E2.5 |
+| R4 | Cost and wall time per paper for enrichment, per reference for acquisition, per AI list | All | Reported | E1.7, E3.4, E5.3 |
 
 ---
 
@@ -262,7 +342,7 @@ Tests: should detect an equation when its number is right-aligned on the same li
 detect a numeric citation as an equation; should attach a mention to each equation when a range is
 cited.
 
-Blocked by: E1.1
+Blocked by: E1.1, E8.3
 
 ### E1.4 Theorem-like statements and proofs
 
@@ -279,7 +359,7 @@ Tests: should link a proof to the preceding theorem when the proof is unnamed; s
 appendix proof to the named lemma; should end a proof at the next heading when no end marker
 exists; should record a deferral when the text says the proof appears in an appendix.
 
-Blocked by: E1.1
+Blocked by: E1.1, E8.3
 
 ### E1.5 Algorithm and listing detection
 
@@ -291,7 +371,7 @@ Acceptance: algorithm captions are not misclassified as figures; mentions attach
 Tests: should detect an algorithm when its caption precedes numbered steps; should not classify an
 algorithm as a figure.
 
-Blocked by: E1.1
+Blocked by: E1.1, E8.3
 
 ### E1.6 Link hints for new object kinds
 
@@ -322,7 +402,7 @@ generated prose; refresh does not touch analysis, highlights, or deterministic o
 Tests: should withhold a quote when it does not match the source exactly; should rank by mention
 count when using the heuristic provider; should reuse the cached stage when inputs are unchanged.
 
-Blocked by: E1.1
+Blocked by: E1.1, E8.3
 
 ### E1.8 Figures tab replaces the Glossary slot
 
@@ -425,18 +505,22 @@ Blocked by: E2.2
 ### E2.5 Resolution gold set and evaluation
 
 Mine roughly 200 candidate pairs (names and titles) from parsed local bibliographies, including
-hard negatives such as same-surname different people and near-identical titles. Provide a small
-labeling tool that records labels in plain text, and an evaluation command that reports precision
-and recall by matcher version. Only pairs where matcher output and initial labels disagree need
-manual review.
+hard negatives such as same-surname different people and near-identical titles. Label them with
+agents, not humans: two independent model labelers see each pair with its bibliographic context
+(and may use web lookup for identifiers), and a third adjudicator resolves disagreements, recording
+its rationale. Labels, labeler agreement, and adjudication notes are stored in plain text so a
+human can audit them later. Add an evaluation command that reports precision and recall by matcher
+version.
 
-Acceptance: gold set checked into the repository without copyrighted full text; CI fails when
-auto-merge precision falls below 0.99; recall is reported.
+Acceptance: gold set checked into the repository without copyrighted full text; labeling is
+reproducible from a checked-in script; `cargo test` fails when auto-merge precision falls below
+0.99; recall and inter-labeler agreement are reported.
 
 Tests: should fail evaluation when auto-merge precision drops below 0.99; should report recall
-when the gold set is evaluated.
+when the gold set is evaluated; should route a pair to adjudication when the two labelers
+disagree.
 
-Blocked by: E1.2
+Blocked by: E1.2, E8.2
 
 ### E2.6 Resolution engine
 
@@ -451,7 +535,7 @@ Tests: should merge works when they share a DOI; should queue a candidate when t
 but years differ by three; should respect a `distinct` decision when scores exceed the threshold;
 should keep a manual merge when the matcher version changes.
 
-Blocked by: E2.1, E2.3, E2.4, E2.5
+Blocked by: E2.1, E2.3, E2.4, E2.5, E8.5
 
 ### E2.7 Decision log and stable identities
 
@@ -570,7 +654,7 @@ threshold; rejected candidates are recorded with scores.
 Tests: should accept a Crossref match when title and first author agree; should reject a
 high-ranked search result when its year and authors disagree.
 
-Blocked by: E3.1, E7.1
+Blocked by: E3.1, E7.1, E8.4
 
 ### E3.3 Open-access locators
 
@@ -662,7 +746,8 @@ Blocked by: E2.2
 ### E4.2 Styled citations
 
 Render formatted citations (APA, Chicago, IEEE, and others) with a CSL processor. Spike hayagriva in
-Rust against citation-js in the frontend and record the choice. For DOIs, doi.org content
+Rust against citation-js in the frontend, choose on output correctness for the target styles,
+and record the choice and evidence in this section. For DOIs, doi.org content
 negotiation can supply publisher-formatted text as a cross-check.
 
 Acceptance: at least APA, Chicago author-date, and IEEE render correctly for journal articles,
@@ -732,7 +817,7 @@ in list provenance; nothing is downloaded unless requested.
 Tests: should mark a proposal unresolved when no identifier matches; should record the prompt in
 provenance when generation completes.
 
-Blocked by: E3.1, E3.2, E5.1
+Blocked by: E3.1, E3.2, E5.1, E8.6
 
 ### E5.4 List relationship graph
 
@@ -802,7 +887,7 @@ Acceptance: suggestions cite the specific local papers that justify them.
 Tests: should suggest the most co-cited unread work when several read papers cite it; should list
 the citing local papers as evidence.
 
-Blocked by: E6.1, E6.2
+Blocked by: E6.1, E6.2, E8.4
 
 ---
 
@@ -849,11 +934,134 @@ Blocked by: E2.6, E7.1
 
 ---
 
+## E8 Evaluation
+
+Goal: every scorecard metric is computed automatically from agent-built truth sets, results are
+tracked per commit, and regressions block merges.
+
+### E8.1 Evaluation harness, scorecard, and ratchet
+
+Add `lysilogy eval <suite>` (suites: `objects`, `bibliography`, `resolution`, `persons`,
+`acquisition`, `citations`, `lists`, `read-next`, `scale`, `all`). Each run writes
+`eval/results/<suite>/<timestamp>-<commit>.json` with metric values, truth-set versions, and
+cost/time, and regenerates `docs/kb-scorecard.md` showing current value, baseline, target, and
+status per metric. `eval/baselines.json` holds ratcheted baselines; `lysilogy eval --check`
+exits nonzero on a failed hard gate or a regression beyond tolerance. Add a G5 check that runs the
+test suites with network disabled and no model CLIs on `PATH`.
+
+Acceptance: suites without truth sets report "unavailable" rather than failing; baselines ratchet
+only upward (downward for latency and cost) unless a justification file accompanies the change;
+the scorecard is deterministic for identical results.
+
+Tests: should exit nonzero when a hard gate fails; should exit nonzero when an objective regresses
+beyond tolerance; should report a suite as unavailable when its truth set is missing; should
+ratchet the baseline when a metric improves.
+
+Blocked by: none
+
+### E8.2 arXiv research corpus
+
+Build a separately stored arXiv corpus (K0) outside the library, the data root, the repository,
+and `/tmp`, at a configurable root (default `~/Corpora/arxiv/`, `LYSILOGY_CORPUS`).
+
+- **Metadata:** harvest arXiv OAI-PMH (`https://oaipmh.arxiv.org/oai`, `metadataPrefix=arXiv`) for
+  the selected category sets, incrementally, into a local metadata store.
+- **Selection:** an `eval` tier of about 1,000 papers stratified by category and year for LaTeX
+  truth, and a `scale` tier of 10,000 papers concentrated in a few dense subfields so that
+  intra-corpus citations are common (for example robotics, computer vision, and machine learning
+  papers on VLMs/VLAs; probability and statistical learning theory for theorem-heavy papers).
+  Selection is deterministic from a seed and a checked-in selection config.
+- **PDFs:** download from the public Google Cloud Storage bucket over HTTPS
+  (`https://storage.googleapis.com/arxiv-dataset/arxiv/arxiv/pdf/<YYMM>/<id>v<n>.pdf`; listing via
+  the JSON API). No `gsutil` is required.
+- **Sources:** fetch LaTeX sources for the `eval` tier per paper from
+  `https://export.arxiv.org/e-print/<id>`, within arXiv's published harvesting rate (bursts of at
+  most 4 requests per second with a 1 second sleep per burst). The requester-pays S3 bucket
+  `s3://arxiv/src/` is not used by default because its monthly tar chunks mix all categories.
+- **Manifest:** `manifest.jsonl` records ID, version, categories, tier, file hashes, and fetch
+  times. Downloads are resumable and verified; partial files never enter the corpus.
+- **Mapping:** the corpus is ingested with its own data root (`--library <corpus>/pdf --data
+  <corpus>/.lysilogy`) so it never mixes with the user's library.
+
+Terms: most arXiv papers carry arXiv's default license, which does not grant redistribution. Only
+IDs, derived labels, and metrics are committed; tools link back to arXiv for downloads.
+
+Acceptance: a fresh run reproduces the same selection; an interrupted run resumes without
+re-downloading verified files; the harvester stays within the documented rate; disk usage is
+reported before download starts and the run refuses to proceed when free space would drop below a
+configured floor.
+
+Tests: should select identical papers when given the same seed and config; should resume without
+re-downloading when a verified file exists; should discard a partial download when its hash
+mismatches; should pace e-print requests within the published limit; should refuse to start when
+projected usage exceeds the free-space floor.
+
+Blocked by: none
+
+### E8.3 arXiv LaTeX object truth
+
+Build K1 from the K0 `eval` tier: parse LaTeX sources (resolving `\input`/`\include`, custom
+`\newtheorem` names, `\label`/`\ref`/`\eqref`, `\cite`, `.bbl`/`\bibitem`) into truth objects,
+align them to the PDF by caption and text matching, drop papers whose alignment falls below a
+quality threshold, and record alignment confidence. Include a three-agent panel judging the top
+figures and tables for O11.
+
+Acceptance: truth covers every E1 object kind; alignment quality is reported per paper; the suite
+runs offline from the corpus cache.
+
+Tests: should expand `\input` files when parsing a multi-file source; should map a custom
+`\newtheorem{thm}{Theorem}` environment to a theorem truth object; should link a `proof` to the
+statement named in its optional argument; should exclude a paper when alignment confidence is
+below the threshold.
+
+Blocked by: E8.1, E8.2, E1.1
+
+### E8.4 Reference, acquisition, and read-next truth
+
+Build K2 from Crossref deposited references, K5 as a stratified acquisition sample with open-access
+status recorded at build time, and K7 as a leave-one-out holdout over the K0 `scale` tier and local
+citation graphs. Provider responses come through the E7.1 cache so rebuilds are offline.
+
+Acceptance: each truth set is versioned with its build date; K5 open-access status is frozen so
+metric drift reflects code, not upstream changes.
+
+Tests: should skip deposited references without DOIs when building K2; should stratify K5 by field
+and decade; should exclude the held-out paper's own edges when building a K7 fold.
+
+Blocked by: E8.1, E7.1
+
+### E8.5 Person silver labels
+
+Build K4 from OpenAlex authorships with ORCIDs for works in K2 and K0, clustering name mentions by
+ORCID, and flag ORCID conflicts as excluded rather than truth.
+
+Acceptance: only mentions with ORCID-backed identity become labels; conflicts are reported.
+
+Tests: should cluster mentions when they share an ORCID; should exclude a mention when its work
+lists conflicting ORCIDs for one position.
+
+Blocked by: E8.1, E7.1
+
+### E8.6 Reading-list evaluation
+
+Build K6: ten topic prompts across fields, each paired with a recent survey and its bibliography,
+and a three-agent relevance panel with a fixed rubric. Compute O22, O23, and R2 for generated lists.
+
+Acceptance: panel judgments are stored with rationale; survey overlap uses resolved identifiers,
+not titles.
+
+Tests: should count a proposal as fabricated when no provider or web evidence finds the work;
+should compute survey overlap from resolved identifiers.
+
+Blocked by: E8.1
+
+---
+
 ## Suggested implementation order
 
 | Phase | Issues |
 | --- | --- |
-| A | E0.1, E0.2, E1.1, E1.2, E2.1, E2.2, E2.3, E2.4, E2.5, E7.1 |
+| A | E0.1, E0.2, E1.1, E1.2, E2.1, E2.2, E2.3, E2.4, E2.5, E7.1, E8.1–E8.5 |
 | B | E1.3–E1.8, E2.6–E2.10, E0.3–E0.5 |
-| C | E3.1–E3.7, E4.1, E5.1, E5.2, E6.1, E2.12 |
+| C | E3.1–E3.7, E4.1, E5.1, E5.2, E6.1, E2.12, E8.6 |
 | D | E5.3, E5.4, E6.2–E6.4, E4.2, E4.3, E2.11, E1.9, E7.2, E7.3 |

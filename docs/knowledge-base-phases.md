@@ -5,7 +5,8 @@ doc explains *what* each issue builds and why; this file explains *in what order
 branch*, *touching which files*, and *how to know a phase is done*. Keep it current: tick an issue
 when its PR merges and record anything a later agent must know under that phase's notes.
 
-Tracking: [GitHub project 12](https://github.com/users/tjmisko/projects/12). Epics are #11–#18.
+Tracking: [GitHub project 12](https://github.com/users/tjmisko/projects/12). Epics are #11–#18
+and #67.
 Issue numbers below link sub-issues to their design sections.
 
 ## Working rules for every issue
@@ -29,14 +30,36 @@ Issue numbers below link sub-issues to their design sections.
    Also run the targeted `npm run test:*` / `smoke:*` scripts for any frontend area touched.
    `npm run smoke` needs a corpus fixture that is absent locally; use the fixture-backed smokes or a
    scratch Playwright harness instead.
-5. **Commits and PRs.** Conventional, atomic commits. Open a **draft** PR titled
+5. **Metrics.** Each issue body lists the scorecard metrics it owns (see
+   [Metrics and objectives](knowledge-base-plan.md#metrics-and-objectives)). Once E8.1 has merged,
+   run `lysilogy eval <suite> --check` for every suite an issue touches, before and after the
+   change, and put the scorecard delta in the PR body. A failing hard gate or an unjustified
+   regression blocks the merge. Work toward an objective by measuring, changing, and re-measuring;
+   when an issue merges below its objective, record the measured value and the next idea under the
+   phase notes and open a follow-up issue linked to the epic. Issues that merge before their
+   truth set exists record their metric the first time the suite becomes available.
+6. **Commits and PRs.** Conventional, atomic commits. Open a **draft** PR titled
    `<type>: <summary> (E<x.y>)` whose body says `Closes #<n>`, lists tests added, and records any
    deviation from the design section. Update the design doc in the same PR when behavior deviates.
-   Do not merge without the user's approval.
-6. **Scratch space.** `/tmp` is a RAM-backed tmpfs. Benchmark vaults, build caches, and large
-   fixtures go under `~/.cache/lysilogy/` or the session scratchpad, never `/tmp`.
-7. **Stop and ask** when a design decision is not settled by the design doc, when a blocker turns
-   out to be incomplete, or when an issue needs human labeling or judgment (E2.5, E4.2).
+   **Merge policy:** within a phase, the implementing agent may mark a PR ready and merge it
+   (merge commit, then delete the branch and remove the worktree) once the quality gates pass on
+   the rebased branch and an independent review pass reports no unresolved correctness or
+   security findings. After the last merge of a phase, run the phase exit checks, write a phase
+   report to `docs/experiment-reports/<date>-kb-phase-<X>.md` (what shipped, exit-check results,
+   deviations, known gaps), update this file, and continue to the next phase. There are no human
+   gates during implementation; the user reviews the finished system.
+7. **Scratch space.** `/tmp` is a RAM-backed tmpfs. Benchmark vaults, build caches, and large
+   fixtures go under `~/.cache/lysilogy/` or the session scratchpad, never `/tmp`. The arXiv corpus
+   lives at `~/Corpora/arxiv/` (expect roughly 25–40 GB for the scale tier plus eval sources; about
+   139 GB was free on `/home` when this plan was written). Never copy corpus PDFs or sources into
+   the repository, `local-articles`, or `.lysilogy`.
+8. **Decide, record, continue.** When the design doc does not settle a decision, choose the option
+   most consistent with the confirmed decisions and existing code, record it under the phase notes
+   and in the PR body, and keep going. When a merged blocker turns out to be incomplete, open a
+   follow-up issue linked to the epic, fix it first, then resume. Judgment tasks (gold-set
+   labeling, library choices) are done by agents with their evidence recorded. Stop only for
+   something no agent can resolve: missing credentials, a required `sudo` command, or a destructive
+   operation on the user's vault or data root.
 
 ## Shared files and conflict hotspots
 
@@ -47,7 +70,7 @@ route line, a subcommand variant) and rebase onto `main` before requesting revie
 | --- | --- |
 | `Cargo.toml`, `Cargo.lock` | New crates (`rusqlite` with `bundled`, graph/metrics crates) |
 | `src/lib.rs` | New top-level modules (`objects`, `kb`, `acquisition`, `citations`) |
-| `src/main.rs` | New CLI subcommands (`kb rebuild`, `kb eval`, `bench`, `fetch`) in `enum Command` |
+| `src/main.rs` | New CLI subcommands (`kb rebuild`, `eval`, `corpus`, `bench`, `fetch`) in `enum Command` |
 | `src/api.rs` | Router composition and `AppState` fields (KB store handle, global jobs) |
 | `src/domain.rs` | `PaperOverview`/`PaperMetadata` changes (content hash, links to Works) |
 | `web/src/App.tsx` | View modes, routing, command dispatch, key gating |
@@ -64,6 +87,9 @@ src/kb/             mod.rs, types.rs, store/ (connection, migrations/*.sql, rebu
 src/acquisition/    mod.rs (state machine), resolve.rs, locate.rs, agent.rs, verify.rs
 src/citations/      csl.rs, bibtex.rs, ris.rs, style.rs
 src/citation_graph/ cache.rs, budget.rs (E7.1), recommendations.rs (E7.2)
+src/eval/           mod.rs (suites, results, scorecard, ratchet), corpus/ (arXiv harvest),
+                    truth/ (latex.rs, crossref.rs, orcid.rs, lists.rs)
+eval/               baselines.json, results/, truth/ (derived labels only, no PDFs or sources)
 src/api/            objects.rs, kb.rs, acquisition.rs, lists.rs, graph.rs
 web/src/components/ FiguresView.tsx, WorkPage.tsx, PersonPage.tsx, ReviewQueue.tsx,
                     ReadingListView.tsx, GraphView.tsx
@@ -74,12 +100,15 @@ web/src/lib/        route.ts, kbApi.ts, objects.ts
 
 ## Phase A: foundations
 
-Goal: the types, stores, parsers, and measurement harnesses that everything else stands on.
+Goal: the types, stores, parsers, corpus, truth sets, and measurement harness that everything else
+stands on.
 
 Exit criteria: all Phase A issues merged; `kb rebuild` produces an empty but migrated database;
 `objects.json` exposes figures, tables, and parsed bibliography entries for a mapped paper; the
-gold set exists with labels and the evaluation command reports precision/recall for the naive
-exact-key matcher; the 10k benchmark baseline is recorded.
+arXiv corpus `eval` and `scale` tiers are downloaded and verified; K1, K2, K3, K4, K5, and K7 exist;
+`lysilogy eval all` runs and `docs/kb-scorecard.md` records baselines for every metric measurable
+so far (at least O1, O2, O8–O10, O25–O27, and the naive exact-key matcher on G1/O14); G4 and G5
+pass.
 
 ### Wave A1 (parallel, no blockers)
 
@@ -104,6 +133,17 @@ exact-key matcher; the 10k benchmark baseline is recorded.
   Owns `src/citation_graph/cache.rs`, `budget.rs`; touches `http.rs`. Preserve the existing
   1.1-second spacing, `Retry-After` cooldown, and credential redaction behavior in
   `docs/citation-graph-sources.md`; the cache must never store credentials.
+- [ ] **#68 E8.1 Evaluation harness, scorecard, and ratchet**. Branch `feat/e8.1-eval-harness`.
+  Owns `src/eval/` (or `eval/` tooling), `eval/baselines.json`, `docs/kb-scorecard.md`, and an
+  `eval` subcommand. Merge early: every later PR reports metrics through it.
+- [ ] **#69 E8.2 arXiv research corpus**. Branch `feat/e8.2-arxiv-corpus`. Owns the corpus
+  tooling (`corpus` subcommand or `scripts/corpus/`) and a checked-in selection config. Verified
+  on 2026-09-12: the public bucket lists and serves over plain HTTPS
+  (`https://storage.googleapis.com/storage/v1/b/arxiv-dataset/o?prefix=arxiv/arxiv/pdf/2608/`)
+  and includes August 2026 papers; no `gsutil`/`gcloud`/`aws` CLI is installed or needed. The
+  Kaggle metadata snapshot requires a login, so harvest metadata through OAI-PMH. Start the
+  downloads as soon as the tool works; they take hours and should run in the background while
+  other issues proceed.
 
 ### Wave A2 (after the listed blockers merge)
 
@@ -123,14 +163,21 @@ exact-key matcher; the 10k benchmark baseline is recorded.
 - [ ] **#36 E2.4 Title normalizer** (after #34). Branch `feat/e2.4-titles`. Owns
   `src/kb/titles.rs`. Pure functions; the FTS5 index population itself lands with #33 or #38,
   whichever merges later.
+- [ ] **#71 E8.4 Reference, acquisition, and read-next truth** (after #68, #63). Branch
+  `feat/e8.4-reference-truth`. K7 needs parsed bibliographies of the scale tier; build the K2 and
+  K5 parts first and finish K7 once #25 and the corpus mapping are available.
+- [ ] **#72 E8.5 Person silver labels** (after #68, #63). Branch `feat/e8.5-person-labels`.
 
-### Wave A3 (human in the loop)
+### Wave A3
 
-- [ ] **#37 E2.5 Resolution gold set and evaluation** (after #25). Branch `feat/e2.5-gold-set`.
-  Owns `src/kb/gold/` and a `kb eval` subcommand. Mine ~200 name and title pairs from parsed
-  bibliographies in `local-articles`, including hard negatives. Store only bibliographic
-  metadata, never full text. **Stop and hand the unlabeled/disagreeing pairs to the user** in a
-  plain-text file they can edit in nvim; resume once labeled. The 0.99 precision gate becomes a
+- [ ] **#70 E8.3 arXiv LaTeX object truth** (after #68, #69, #24). Branch
+  `feat/e8.3-latex-truth`. Owns the LaTeX parser and PDF aligner used only for evaluation.
+- [ ] **#37 E2.5 Resolution gold set and evaluation** (after #25, #69). Branch `feat/e2.5-gold-set`.
+  Owns `src/kb/gold/`; reports through the E8.1 `resolution` suite. Mine ~200 name and title pairs
+  from parsed bibliographies in `local-articles` and the arXiv corpus, including hard negatives. Store only bibliographic
+  metadata, never full text. Label with agents: two independent labeler subagents, then an
+  adjudicator subagent for disagreements, each writing rationale to the plain-text gold file.
+  Commit the labeling script or prompt so it is reproducible. The 0.99 precision gate becomes a
   `cargo test` that loads the gold set.
 
 ### Phase A notes
@@ -148,22 +195,22 @@ exact-key matcher; the 10k benchmark baseline is recorded.
 Goal: local papers populate a resolved KB with citation evidence, and the reader shows a Figures
 tab with equations, statements, and proofs.
 
-Exit criteria: ingesting the local library produces Works, Persons, and local citation edges that
-pass the gold-set gate; the KB API serves Works, Persons, and neighborhoods; the Figures tab
-replaces Glossary; new link hints work; the 10k vault meets the E0.1 targets for scan, home, and
-batch extraction.
+Exit criteria: ingesting the local library and the arXiv scale tier produces Works, Persons, and
+citation edges; the KB API serves Works, Persons, and neighborhoods; the Figures tab replaces
+Glossary; new link hints work. Scorecard: G1, G3, G4, G5 pass; O1–O15 and O25–O28 are at target, or
+each miss has a measured gap, a recorded next idea, and a follow-up issue.
 
 ### Wave B1
 
-- [ ] **#26 E1.3 Numbered equations** (after #24). Branch `feat/e1.3-equations`.
-- [ ] **#27 E1.4 Statements and proofs** (after #24). Branch `feat/e1.4-statements-proofs`.
-- [ ] **#28 E1.5 Algorithms and listings** (after #24). Branch `feat/e1.5-algorithms`.
-- [ ] **#30 E1.7 Object enrichment** (after #24). Branch `feat/e1.7-object-enrichment`. Follow the
+- [ ] **#26 E1.3 Numbered equations** (after #24, #70). Branch `feat/e1.3-equations`.
+- [ ] **#27 E1.4 Statements and proofs** (after #24, #70). Branch `feat/e1.4-statements-proofs`.
+- [ ] **#28 E1.5 Algorithms and listings** (after #24, #70). Branch `feat/e1.5-algorithms`.
+- [ ] **#30 E1.7 Object enrichment** (after #24, #70). Branch `feat/e1.7-object-enrichment`. Follow the
   stage-cache keying and exact-quote verification used by key quotes in `src/analysis/`.
 - [ ] **#31 E1.8 Figures tab** (after #24). Branch `feat/e1.8-figures-tab`. The Glossary wiring to
   replace is in `App.tsx` (`ViewMode`, `VIEW_ORDER`, `openGlossary`, command allowlist, `onGloss`
   props, tab button, render branch) and `useGlobalKeys.ts`.
-- [ ] **#38 E2.6 Resolution engine** (after #33, #35, #36, #37). Branch `feat/e2.6-resolution`.
+- [ ] **#38 E2.6 Resolution engine** (after #33, #35, #36, #37, #72). Branch `feat/e2.6-resolution`.
 - [ ] **#39 E2.7 Decision log** (after #33, #34). Branch `feat/e2.7-decisions`.
 - [ ] **#21 E0.3 Incremental catalog scan** (after #19). Branch `feat/e0.3-incremental-scan`.
 - [ ] **#22 E0.4 Home virtualization** (after #19). Branch `feat/e0.4-home-virtualization`.
@@ -195,7 +242,8 @@ pages, and reading lists exist with a keyboard view.
 
 Exit criteria: "fetch all references" on a mapped paper advances each reference through recorded
 stages with verified downloads; `#work=`, `#person=`, `#list=` routes work; lists can be built and
-reordered by keyboard; citations export as CSL-JSON, BibTeX, and RIS.
+reordered by keyboard; citations export as CSL-JSON, BibTeX, and RIS. Scorecard: G2 passes; O16–O19
+and O21 are at target or have recorded gaps and follow-up issues.
 
 ### Wave C1
 
@@ -208,10 +256,11 @@ reordered by keyboard; citations export as CSL-JSON, BibTeX, and RIS.
 - [ ] **#52 E4.1 CSL-JSON, BibTeX, RIS** (after #34). Branch `feat/e4.1-citation-export`.
 - [ ] **#55 E5.1 Reading list model** (after #33, #34). Branch `feat/e5.1-reading-lists`.
 - [ ] **#59 E6.1 Neighborhood and metrics** (after #42). Branch `feat/e6.1-graph-metrics`.
+- [ ] **#73 E8.6 Reading-list evaluation** (after #68). Branch `feat/e8.6-list-eval`.
 
 ### Wave C2
 
-- [ ] **#46 E3.2 Deterministic identifier resolution** (after #45, #63). Branch
+- [ ] **#46 E3.2 Deterministic identifier resolution** (after #45, #63, #71). Branch
   `feat/e3.2-identifier-resolution`.
 - [ ] **#48 E3.4 Agent fallback** (after #45). Branch `feat/e3.4-agent-fallback`. Reuse
   `AnalysisService::reader_tool` with `live_web`; treat reference text as untrusted input.
@@ -243,16 +292,18 @@ relationships, review queue, styled citations, and read-next suggestions.
 
 Exit criteria: the graph view navigates a neighborhood entirely by keyboard; an AI-generated list
 resolves proposals, marks unresolved ones, and shows its relationship graph; the review queue
-writes decisions; styled citations render for the target styles.
+writes decisions; styled citations render for the target styles. Scorecard: all hard gates pass;
+O20, O22–O24, and O29 are at target or have recorded gaps and follow-up issues.
 
 ### Wave D1
 
 - [ ] **#32 E1.9 Clickable proofs** (after #27, #31). Branch `feat/e1.9-clickable-proofs`.
 - [ ] **#43 E2.11 Review queue** (after #42, #44). Branch `feat/e2.11-review-queue`.
 - [ ] **#53 E4.2 Styled citations** (after #52). Branch `feat/e4.2-styled-citations`. Spike
-  hayagriva vs citation-js first and **ask the user** before committing to one.
+  hayagriva vs citation-js first; choose on rendered correctness for APA, Chicago author-date, and
+  IEEE across article, conference, preprint, and book fixtures, and record the evidence.
 - [ ] **#54 E4.3 Copy and export commands** (after #52, #55). Branch `feat/e4.3-citation-commands`.
-- [ ] **#57 E5.3 AI-generated reading lists** (after #45, #46, #55). Branch `feat/e5.3-ai-lists`.
+- [ ] **#57 E5.3 AI-generated reading lists** (after #45, #46, #55, #73). Branch `feat/e5.3-ai-lists`.
 - [ ] **#60 E6.2 Graph view** (after #44, #59). Branch `feat/e6.2-graph-view`.
 - [ ] **#64 E7.2 Semantic Scholar recommendations** (after #42, #63). Branch
   `feat/e7.2-s2-recommendations`.
@@ -261,9 +312,47 @@ writes decisions; styled citations render for the target styles.
 ### Wave D2
 
 - [ ] **#61 E6.3 Keyboard graph navigation** (after #60). Branch `feat/e6.3-graph-keys`.
-- [ ] **#62 E6.4 Communities and read-next** (after #59, #60). Branch `feat/e6.4-read-next`.
+- [ ] **#62 E6.4 Communities and read-next** (after #59, #60, #71). Branch `feat/e6.4-read-next`.
 - [ ] **#58 E5.4 List relationship graph** (after #56, #59, #60). Branch `feat/e5.4-list-graph`.
 
 ### Phase D notes
 
 _Record here as work lands._
+
+---
+
+## System acceptance
+
+The project is done when every issue is closed and this scenario works end to end on a real mapped
+paper from `local-articles`, verified by an agent driving the running app (Playwright against the
+built frontend and a live backend) and recorded in a final report
+`docs/experiment-reports/<date>-kb-system.md` with screenshots:
+
+1. Open a mapped paper; `g` opens Figures with ranked figures/tables, quoted context, equations,
+   and a theorem whose proof expands and jumps.
+2. `f` follows an equation mention and a citation; `Ctrl-o` returns.
+3. Fetch all references: each reference shows its stage; at least one open-access reference
+   reaches `mapped` through a verified download, and unavailable ones state why.
+4. Open a cited Work page and its first author's Person page; name variants from different papers
+   are resolved to one Person.
+5. Generate an AI reading list from a prompt; unresolved proposals are badged; reorder, mark read,
+   and export the list as BibTeX by keyboard.
+6. Open the graph focused on the list or paper; navigate nodes by keyboard; read-next suggestions
+   cite the local papers that justify them.
+7. `kb rebuild` from scratch reproduces the same entity IDs and aliases.
+8. `lysilogy eval all --check` passes: every hard gate (G1–G5) holds, at least 80% of objectives
+   (O1–O30) meet their targets, and every missed objective has its measured value, the best
+   attempted approach, and an open follow-up issue.
+9. The same scenario (steps 1, 2, 4, and 6) works inside a data root that maps the 10k arXiv scale
+   tier, with scale objectives O25–O29 met.
+
+Live model and provider calls are allowed for this verification but kept small: at most three
+papers for enrichment, one AI list, and never a `full_model` batch.
+
+## Session log
+
+Long runs span sessions and context compactions. This file is the source of truth for progress.
+At the end of every session, or before a context compaction is likely, append one entry:
+date, last merged issue, in-flight branches and their state, next action, and open problems.
+
+_No entries yet._
