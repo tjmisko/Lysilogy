@@ -405,3 +405,26 @@ date, last merged issue, in-flight branches and their state, next action, and op
 - Next action: independently review #68/#69 when ready, and implement the remaining A1 issues.
   Use the documented normal-merge alternative to the rejected rebase. Preserve all unrelated
   main-checkout changes; their SHA-256 fingerprints are in `/tmp/lysilogy-preview-before.json`.
+
+### 2026-09-12 — A1 implementation and review checkpoint
+
+- Last merged issue remains #34 / PR #74 (`4ff924b`); current phase/wave A/A1.
+- In flight: #24 (`feat/e1.1-paper-objects`) is implementing in its corresponding
+  `.worktrees/feat/` directory; #68 (`feat/e8.1-eval-harness`) is completing final quality and G5
+  gates, with no PR yet. #69 is draft PR #75 (`feat/e8.2-arxiv-corpus`, initial head `4af7da6`).
+- PR #75 independent review found three required fixes, now assigned to its implementer:
+  retain the earliest harvest response day across midnight; verify selection/manifest/pinned
+  upstream identity and hashes together; persist Retry-After cooldown before any sleep or final
+  error. All are reproducible with offline fixtures. Initial 33 Python tests and Rust gates passed.
+  Re-review the fixes before merge. The unmeasured whole-harvest selection memory cost is an
+  optional improvement; streaming selection is the next idea.
+- #68 has demonstrated G5 in an actual isolated network namespace with no model CLIs on PATH.
+  It is adding corpus Python tests and an npm PATH guard to that run, and recording dirty source
+  state and content-verified measurement evidence. Provisional scorecard: G5 passes, remaining
+  gates and every objective unavailable. This is an implementation checkpoint, not acceptance.
+- Background downloads: none. Designated corpus/cache roots and OAI network access remain
+  blocked as recorded above; the sandbox-update question is pending. Prepared launch and resume
+  commands are in PR #75's `scripts/corpus/README.md`. Corpus data has never been copied into the
+  repository, library, data root, or `/tmp`.
+- Next action: finish/fix/review #68/#69/#24, merge when their gates and reviews pass, then
+  implement #20, #63, and #19 in A1. No follow-up issues or measured objective misses yet.
