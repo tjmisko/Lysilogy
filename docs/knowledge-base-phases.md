@@ -620,3 +620,127 @@ date, last merged issue, in-flight branches and their state, next action, and op
   benchmark baseline or K0 exists. Next action: finish/review #19, run actual measurements when
   the environment permits, and advance to A2 only after A1's benchmark acceptance is complete.
   The latest fingerprint check again confirmed all ten unrelated main-checkout files unchanged.
+
+### 2026-09-12 — session checkpoint: reviewed A1 benchmark awaits external storage
+
+- Current phase/wave: **A/A1**. Last merged issue: follow-up **#83**, PR **#84**, merge
+  `481e911`; last planned issue **#20**, PR **#80**, merge `94ddacc`. Planned A1 issues
+  **#34, #24, #20, #63, #68, and #69** are merged. Follow-ups **#79 and #83** were opened,
+  independently reviewed, fixed, and closed. Only **#19** remains in A1. No Phase A exit or
+  final-system acceptance has passed; Phases B–D have not begun.
+- In flight: **draft PR #82** (`https://github.com/tjmisko/Lysilogy/pull/82`), issue #19,
+  branch **`feat/e0.1-scale-bench`**, final pushed head
+  **`65d2c418bd63f5f07138169b09b5f2d2833b6a91`**. Retained clean worktree:
+  **`/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e0.1-scale-bench`**. It includes both
+  foundation corrections and main's O27 sequencing clarification. All other task branches and
+  worktrees were removed after merge. Leave unrelated `/tmp/lysilogy-*` worktrees untouched.
+- PR #82 has **no unresolved code-review findings**. Independent review cleared deterministic
+  generation, descriptor-relative storage, both controlled symlink races, exact truth/inventory
+  checks, actual populated catalog timing, browser timing boundaries, and collector provenance.
+  The independent eight-paper live Playwright smoke passed with eight real extraction artifacts,
+  three fresh browser contexts, and sixty checked searches. This is functional evidence only.
+  Final integrated checks passed formatting, strict Clippy, `eval scale --check`, and G5:
+  **279 Rust, 69 Python, and 85 Node tests**. Frontend checks/build passed; no frontend source
+  changed in the subsequent lock correction. Reports/evidence are committed in PR #82, including
+  `docs/experiment-reports/2026-09-12-e0.1-synthetic-benchmark.md` and
+  `eval/evidence/synthetic-benchmark-fixture.json`; the original browser observations retain
+  their original measured source, and integration results have a separate receipt.
+- Scorecard: **1/5 hard gates passing (G5), 1/30 objectives at target (O30 = 0 violations over
+  10,000 simulated references)**. Other metrics are unavailable, not failed measurements or
+  passes. No measured objective misses or objective follow-up issues yet. No hard gate or target
+  was lowered. O25/O26 require the actual populated 10k run. O27 first measures the production
+  four-worker path in E0.5/B1; its ≥0.70 target and final-system requirement are unchanged.
+- **Blocking environment conditions:** creating `/home/tjmisko/.cache/lysilogy` and
+  `/home/tjmisko/Corpora/arxiv` returned `Read-only file system` even after approved escalation.
+  The default 10k benchmark command was attempted and failed before creating any PDF.
+  HTTP access to `oaipmh.arxiv.org` was blocked by the runtime domain allowlist after escalation.
+  The pending user question requests writable `/home/tjmisko/.cache/lysilogy` and
+  `/home/tjmisko/Corpora`, plus corpus host access to `oaipmh.arxiv.org`, `export.arxiv.org`,
+  and `storage.googleapis.com`. No credential is missing for the completed foundations.
+  Do not relocate corpus/scale data into the repository, library, data root, or `/tmp`.
+- **Background downloads: none. K0 and the full synthetic 10k vault do not exist.** All temporary
+  tiny app processes have exited. No implementation or reviewer agent remains running at this
+  checkpoint; completed agents remain available for follow-up. Do not mark #19 complete or
+  merge PR #82 merely because its code and small fixtures pass.
+- **Next action after the environment changes:** inspect PR #82/worktree state and synchronize
+  main with a normal merge (automatic approval review rejected rebase earlier). From the retained
+  benchmark worktree run `python3 scripts/bench/run.py` with its default 10,000 count, then refresh
+  the provider collector and run `cargo run --offline -- eval scale --check` and
+  `cargo run --offline -- eval tests --check`. Retain the full-size report, review measured
+  O25/O26 baselines and any misses, rerun applicable gates, then merge with a merge commit,
+  remove its branch/worktree, and tick #19. Launch the arXiv harvest/downloads in the background
+  immediately when storage/host access permit, following `scripts/corpus/README.md`; preserve its
+  rate policy and free-space floor. Once A1 is complete, select ready issues in A2 from the plan.
+- Main's unrelated PDF-preview work remains byte-for-byte unchanged. Its changed paths are
+  `.gitignore`, `web/package.json`, `web/src/App.tsx`, `web/src/components/HomePage.tsx`,
+  `web/src/components/PaperPreview.tsx`, `web/src/lib/pdfPreview.ts`, plus untracked
+  `web/scripts/pdf-preview-cache.test.mjs`, `web/scripts/pdf-preview-smoke.mjs`,
+  `web/src/lib/pdfPreviewCache.ts`, and `web/src/lib/pdfPreviewStorage.ts`. Original fingerprints
+  are in `/tmp/lysilogy-preview-before.json`; continue to preserve them and make implementation
+  changes only in isolated worktrees. Use one Cargo job, debug information off, incremental
+  compilation off, and worktree-local targets; reuse cached frontend dependencies without npm
+  network installs or main-checkout cache writes.
+
+### 2026-09-12 — goal continuation: storage blocker revalidated
+
+- Previous goal turn classified as progress: foundation/fix merges and reviewed benchmark work
+  changed authoritative state. This continuation revalidated the remaining external blocker;
+  it did not complete another implementation or measurement.
+- Current state remains A/A1, only #19 unfinished. GitHub still shows draft PR #82 at
+  `65d2c418bd63f5f07138169b09b5f2d2833b6a91`; its retained worktree is clean. The preceding
+  checkpoint contains the complete resume instructions, merged issues, and validation evidence.
+- Fresh filesystem inspection confirms both required roots are absent. The existing ancestors
+  `/home/tjmisko/.cache` and `/home/tjmisko` report `ST_RDONLY` and no write access. No benchmark
+  or corpus process is running to wait on, and the required 10k acceptance remains impossible
+  at the designated location. No data was relocated and no completed gates were rerun needlessly.
+- Scorecard unchanged: G5 passes, O30 = 0/10k, 1/5 gates and 1/30 objectives at target; remaining
+  metrics unavailable. No new merges, objective misses, or follow-up issues this continuation.
+  This is the second consecutive goal-turn observation of the same environment blocker. The
+  full project goal remains active; it is neither complete nor narrowed to the completed work.
+
+### 2026-09-12 — third blocker audit: goal blocked pending environment change
+
+- Previous goal turn classified as no progress toward feature completion: it revalidated the
+  same external blocker and saved continuity, without changing the next executable action.
+  This third consecutive goal turn again confirms both required storage roots are absent and
+  their existing parents report `ST_RDONLY` and no write access. The blocked audit threshold is
+  satisfied; mark the full project goal blocked, not complete. No objective or scope is reduced.
+- Current phase/wave A/A1; last merged issue #83 / PR #84 (`481e911`), last planned issue #20 /
+  PR #80 (`94ddacc`). No new merges or follow-ups in this continuation. Scorecard remains G5
+  passing and O30 = 0/10k: 1/5 gates and 1/30 objectives at target; other metrics unavailable.
+- Draft PR #82 remains open and reviewed at `65d2c418bd63f5f07138169b09b5f2d2833b6a91`;
+  branch `feat/e0.1-scale-bench` has a clean retained worktree at
+  `/home/tjmisko/Projects/Lysilogy/.worktrees/feat/e0.1-scale-bench`. It has no unresolved code
+  findings but cannot complete #19 without its real 10k baseline. No background downloads,
+  benchmark processes, or corpus files exist. Main's unrelated preview changes remain intact.
+- Resume requires writable `/home/tjmisko/.cache/lysilogy` and `/home/tjmisko/Corpora`, plus
+  corpus host access (OAI-PMH was previously allowlist-blocked). After that external change,
+  synchronize the retained branch with main using a normal merge, run
+  `python3 scripts/bench/run.py` at its default 10,000 count, refresh the provider collector,
+  and run scale/tests eval checks. Review the real baseline and any misses before merging
+  PR #82 and completing A1. Start the corpus background harvest/download using
+  `scripts/corpus/README.md` as soon as its storage/network requirements permit. Never relocate
+  large data into the repository or `/tmp`. The preceding full session checkpoint records
+  validation artifacts, all prior merges, and the exact protected main-checkout file list.
+
+### 2026-09-12 — approved environment repair prepared for external execution
+
+- The user explicitly approved writable `/home/tjmisko/Corpora` and
+  `/home/tjmisko/.cache/lysilogy`, and access to `oaipmh.arxiv.org`, `export.arxiv.org`, and
+  `storage.googleapis.com`; they authorized automatic setup or a script. An approved escalated
+  mkdir still returned `Read-only file system`. Approval alone did not change the active mounts.
+- Inspected the relevant settings in `/home/tjmisko/.codex/config.toml`: the selected
+  `claude-like` profile lacks those five grants. Prepared
+  `/home/tjmisko/.config/lysilogy/apply-codex-corpus-permissions.py` for execution in a normal
+  terminal. It validates the exact semantic delta, preserves other config values and comments,
+  checks storage writes, backs up the config, and atomically adds the approved entries. Dry-run,
+  idempotence, and conflicting-entry refusal were verified without changing the active config.
+- Next action: user runs
+  `python3 ~/.config/lysilogy/apply-codex-corpus-permissions.py`, restarts Codex, and resumes this
+  conversation. Verify the fresh session's actual writes and corpus host access before using the
+  preceding benchmark/corpus resume instructions. No storage or host repair is claimed yet.
+- No new merges or follow-up issues. Last merged issue remains #83 / PR #84; draft PR #82 at
+  `65d2c418bd63f5f07138169b09b5f2d2833b6a91` and its retained benchmark worktree remain in flight.
+  Phase A / wave A1; G5 passes and O30 = 0/10k (1/5 gates, 1/30 objectives); other measurements
+  remain unavailable. No background downloads or full 10k data exist. The external environment
+  repair remains the next prerequisite; the full system goal is not complete.
