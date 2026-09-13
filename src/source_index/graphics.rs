@@ -107,6 +107,28 @@ impl PreparedGraphics {
     pub fn cache_key(&self) -> &str {
         &self.evidence.cache_key
     }
+    async fn verify_unchanged(&self, source: &Path) -> Result<()> {
+        if file_hash(source, 512 * 1024 * 1024).await? != self.evidence.pdf_sha256 {
+            return Err(Error::InvalidRequest(
+                "PDF changed while deriving graphics".into(),
+            ));
+        }
+        if let Some(program) = &self.program
+            && Some(file_hash(program, 128 * 1024 * 1024).await?) != self.evidence.tool_sha256
+        {
+            return Err(Error::InvalidRequest(
+                "Graphics tool changed during derivation".into(),
+            ));
+        }
+        if let Some(runtime) = &self.evidence.mask_runtime
+            && !runtime.unchanged().await
+        {
+            return Err(Error::InvalidRequest(
+                "Mask resource wrapper changed during derivation".into(),
+            ));
+        }
+        Ok(())
+    }
 }
 
 pub async fn prepare(source: &Path, document: &IndexDocument) -> Result<PreparedGraphics> {
@@ -236,25 +258,7 @@ pub async fn collect(
         }
         prepared.evidence.pages.push(result);
     }
-    if file_hash(source, 512 * 1024 * 1024).await? != prepared.evidence.pdf_sha256 {
-        return Err(Error::InvalidRequest(
-            "PDF changed while deriving graphics".into(),
-        ));
-    }
-    if let Some(program) = &prepared.program
-        && Some(file_hash(program, 128 * 1024 * 1024).await?) != prepared.evidence.tool_sha256
-    {
-        return Err(Error::InvalidRequest(
-            "Graphics tool changed during derivation".into(),
-        ));
-    }
-    if let Some(runtime) = &prepared.evidence.mask_runtime
-        && !runtime.unchanged().await
-    {
-        return Err(Error::InvalidRequest(
-            "Mask resource wrapper changed during derivation".into(),
-        ));
-    }
+    prepared.verify_unchanged(source).await?;
     prepared.evidence.generation = digest(&prepared.evidence.basis_json()?);
     Ok(GraphicsDocument {
         evidence: prepared.evidence,
