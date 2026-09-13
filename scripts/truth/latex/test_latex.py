@@ -25,6 +25,25 @@ def tar(members):
 
 
 class SourceTests(unittest.TestCase):
+    def test_should_report_unavailable_tex_when_the_deposited_source_is_a_pdf(self):
+        for raw in (b'%PDF-1.4\n\x00binary', gzip.compress(b'%PDF-1.4\n\x00binary')):
+            with self.subTest(compressed=raw.startswith(b'\x1f\x8b')), self.assertRaisesRegex(UnsupportedSource, 'source is a PDF; TeX source is unavailable'):
+                read_archive(raw)
+
+    def test_should_retain_unrenderable_entries_when_a_macro_consumes_undeclared_caller_tokens(self):
+        source = document(r'\begin{figure}\caption{A complete independent visual caption.}\end{figure}\begin{thebibliography}{9}\bibitem{one}\wrapper{A source title.}\end{thebibliography}', r'\newcommand{\wrapper}{\textbf}')
+        parsed = parse_project({'main.tex': source})
+        self.assertEqual(len(parsed['entries']), 1)
+        self.assertTrue(parsed['entries'][0]['unsupported_commands'])
+        self.assertEqual(parsed['entries'][0]['text'], '')
+        self.assertEqual(parsed['objects'][0]['text'], 'A complete independent visual caption.')
+        self.assertTrue(parsed['entries'][0]['source_members'])
+
+    def test_should_propagate_resource_limits_when_an_unrenderable_row_exhausts_the_paper_budget(self):
+        source = document(r'\begin{theorem}\loop\end{theorem}', r'\newcommand{\loop}{\loop}')
+        with self.assertRaisesRegex(UnsupportedSource, 'recursion'):
+            parse_project({'main.tex': source})
+
     def test_should_read_a_standalone_document_when_a_gzip_source_contains_no_tar(self):
         source = document("A single paper.").encode()
         files, evidence = read_archive(gzip.compress(source))

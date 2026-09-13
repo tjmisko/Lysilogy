@@ -60,6 +60,8 @@ def read_archive(raw, limits=Limits()):
             raise UnsupportedSource("invalid gzip source") from error
     if len(raw) > limits.expanded_bytes:
         raise UnsupportedSource("expanded source exceeds its byte bound")
+    if raw.lstrip().startswith(b"%PDF-"):
+        raise UnsupportedSource("deposited source is a PDF; TeX source is unavailable")
     try:
         archive = tarfile.open(fileobj=io.BytesIO(raw), mode="r:")
     except tarfile.ReadError:

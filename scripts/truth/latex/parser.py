@@ -61,6 +61,23 @@ def argument_commands(text, names):
         yield {"command": match[1], "value": value, "options": options, "start": match.start(), "end": at}
 
 
+def render_text(renderer, text):
+    """Retain an unrenderable source item without inventing its printed text.
+
+    TeX macros may consume caller tokens beyond their declared arguments. That
+    syntax is unsupported by this inert renderer; it does not invalidate the
+    structural source span or another independently parsed object. Resource
+    limits still abort the paper, including all cumulative expansion limits.
+    """
+    try:
+        return renderer.plain(text)
+    except UnsupportedSource as error:
+        if any(word in str(error) for word in ("bound", "recursion", "nesting")):
+            raise
+        renderer.unsupported["unrenderable_text:" + str(error)] += 1
+        return ""
+
+
 def bibtex_fields(files, renderer):
     output, issues = {}, Counter()
     for path, raw in sorted(files.items()):
@@ -124,7 +141,7 @@ def bibtex_fields(files, renderer):
                 if source == "author":
                     value = re.split(r"\s+and\s+", value, maxsplit=1)[0]
                 before = renderer.unsupported.copy()
-                rendered = renderer.plain(value)
+                rendered = render_text(renderer, value)
                 if rendered and renderer.unsupported == before and (source != "year" or re.fullmatch(r"(?:18|19|20)\d{2}[a-z]?", rendered)):
                     labels[target] = rendered
                     provenance[target] = {"path": path, "key": key, "field": source}
@@ -156,7 +173,7 @@ def markup_fields(raw, renderer):
         field = {"title": "title", "year": "year", "author": "first_author"}.get(name)
         if field and field not in labels:
             before = renderer.unsupported.copy()
-            value = renderer.plain(value)
+            value = render_text(renderer, value)
             if field == "first_author" and re.search(r"\band\b|\bet\s+al\b|;", value, flags=re.IGNORECASE):
                 continue
             if value and renderer.unsupported == before and (field != "year" or re.fullmatch(r"(?:18|19|20)\d{2}[a-z]?", value)):
@@ -310,7 +327,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
         selected = caption_rows[0]["value"] if caption_rows else raw
         before = renderer.unsupported.copy()
         before_math = renderer.math_seen
-        rendered = renderer.plain(selected)
+        rendered = render_text(renderer, selected)
         unknown = dict(renderer.unsupported - before)
         if node.get("numbering_uncertain"):
             unknown["ambiguous_equation_numbering"] = 1
@@ -330,7 +347,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
                "statement_type": statements.get(environment, statements.get(base)), "proof_target_labels": [],
                "number_hint": str(numbering[kind]) if kind in ("figure", "table", "algorithm") else None}
         if kind == "proof" and node["option"]:
-            row["proof_heading"] = renderer.plain(node["option"])
+            row["proof_heading"] = render_text(renderer, node["option"])
+            row["unsupported_commands"].update(renderer.unsupported - before)
             row["proof_target_labels"] = [item["value"].strip() for item in argument_commands(node["option"], REFS)]
         objects.append(row)
     bibliographies = [node for node in nodes if node["environment"] == "thebibliography"]
@@ -351,7 +369,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
             body = raw[marker["end"]:end]
             before = renderer.unsupported.copy()
             before_math = renderer.math_seen
-            rendered = renderer.plain(body)
+            rendered = render_text(renderer, body)
             unknown = dict(renderer.unsupported - before)
             has_math = renderer.math_seen > before_math
             if has_math and any(char in rendered for char in "^_"):
@@ -368,8 +386,10 @@ def parse_project(files, limits=Limits(), selected_main=None):
             ignored["unverified_bibtex_fields"] += len(field_conflicts)
             start = bibliography["content_start"] + marker["start"]
             source_end = bibliography["content_start"] + end
+            printed_key = str(number + 1) if not marker["options"] else render_text(renderer, marker["options"][0])
+            unknown.update(renderer.unsupported - before)
             entries.append({"id": key, "text": rendered, "text_sha256": sha256(rendered.encode()),
-                            "printed_key": str(number + 1) if not marker["options"] else renderer.plain(marker["options"][0]),
+                            "printed_key": printed_key,
                             "numeric_key_hint": str(number + 1), "field_labels": field_labels,
                             "field_provenance": field_provenance, "source_span": {"start": start, "end": source_end},
                             "field_conflicts": field_conflicts,
@@ -445,7 +465,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
     document_probe = None
     if not objects and not entries and not links:
         before, before_math = renderer.unsupported.copy(), renderer.math_seen
-        probe = renderer.plain(scan[document["content_start"]:document["content_end"]])
+        probe = render_text(renderer, scan[document["content_start"]:document["content_end"]])
         document_probe = {"text": probe, "unsupported_commands": dict(renderer.unsupported - before), "contains_math": renderer.math_seen > before_math}
         if document_probe["contains_math"] and any(char in probe for char in "^_"):
             document_probe["unsupported_commands"]["unverified_script_binding"] = 1
