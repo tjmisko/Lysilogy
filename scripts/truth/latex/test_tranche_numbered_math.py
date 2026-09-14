@@ -191,6 +191,25 @@ def admit(data, mutate=None):
 
 
 class NumberedMathTests(unittest.TestCase):
+    def test_should_reject_empty_mathematical_support_when_both_originals_select_only_whitespace(self):
+        data = fixture(); claim = data['paper']['rows'][0]
+        p = data['evidence']['synthetic:primary']['objects'][0]
+        i = data['evidence']['synthetic:independent']['equations'][0]
+        whitespace = [{'start': 2, 'end': 3, 'text': ' ', 'pages': [1]}]
+        p['body_native_members'] = deepcopy(whitespace)
+        i['native_expression_members'] = deepcopy(whitespace)
+        claim['proposed_body_native_members'] = deepcopy(whitespace)
+        for role, row in [('primary', p), ('independent', i)]:
+            claim[role]['record_sha256'] = sha256(canonical(row))
+        membership = data['evidence']['membership']['rows'][0]
+        membership['raw_record_hashes'] = {role: claim[role]['record_sha256'] for role in ('primary', 'independent')}
+        claim['membership']['record_sha256'] = sha256(canonical(membership))
+        claim['source_printed']['record_sha256'] = sha256(canonical(data['evidence']['printed']['rows'][0]))
+        data['construction']['retained_inventory'] = retention(data['evidence']['synthetic:primary'],
+            data['evidence']['synthetic:independent'], data['candidate']['source_inventory'], data['paper']['rows'])
+        with self.assertRaisesRegex(ValueError, 'bodies disagree or are empty'):
+            admit(data)
+
     def test_should_preserve_complete_display_when_automatic_source_is_a_reviewed_contained_occurrence(self):
         data = fixture(); claim = data['paper']['rows'][0]
         old = data['candidate']['source_inventory']['objects'][1]['source_members'][0]
