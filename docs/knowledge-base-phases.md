@@ -5283,8 +5283,8 @@ date, last merged issue, in-flight branches and their state, next action, and op
   `scale-index-batches/batch-0033/receipt.json`, SHA
   `b8d498a7167ac7c7cb375d3d023af4c29c1c99e737e9c2e74c7b4beb940d465f`;
   queue-v3 audit6500707d7f0c11e705a0b3f46dbc731f58216a066e7313e857b340ea296587ae.
-  Root launched **batch34**, sole heavy slot; same reviewed launch3b584d0e and20GiB floor.
-  Poll retained TTY from launch tool output; continue35 only after34's terminal audit passes.
+  Root launched **batch34**, retained **TTY75263**, sole heavy slot; same reviewed
+  launch3b584d0e and20GiB floor. Poll TTY75263; continue35 only after34's terminal audit passes.
   Queue paths, original paused queues, corpus10951PDF/1000source and registry unchanged.
   No downloads or production10k acceptance claim.
 - **#117 ongoing**, ownerfinish_benchmark, WT `feat/e8.3-visual-only-pilot`, committed082f502
