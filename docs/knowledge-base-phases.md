@@ -7550,3 +7550,94 @@ date, last merged issue, in-flight branches and their state, next action, and op
   files and all unrelated/tmp worktrees stay untouched. Continue all independent offline work.
 
 - At15:13 all ten protected preview hashes remain exact; free43,984,396,288bytes.
+
+
+### 2026-09-14 15:29 UTC — formal construction clear; integrated gates pass
+
+- Last merged remains #131 / PR133 at6059dcfc; main2900ae7 before this docs checkpoint.
+  Phase A / A2. V5 still active; no132PR or V6 activation. Global1/5gates,3/30objectives
+  O1/O2/O30 unchanged; no new issue after134. All phase/system exits and #97 approximately500
+  all-kind truth remain open. Continue the work; this is a compaction checkpoint, not completion.
+- #132 original source review found exactlyF1/F2, retained at
+  `review-formal-source-fac2684/receipt.json`, SHA256
+  `2461c27cd7970a7aa53d1854770ed18b44d185024d71d5ca425b1f39d626033b`.
+  Both fixed in7e43d295e9d44a3b7dc56fda7342b6edbded4c97. Separate correction review CLEAR:
+  `review-formal-source-7e43d29/receipt.json`, SHA256
+  `14949b1067fae127bb09903e0169295a51135dd8bb0b2ee282477c9897e3c61b`.
+  Twenty-two focused tests/eight independent rejection probes and actual original-input seam
+  pass;108legacy files exact. The reviewer's original2310 primary role is explicit; source review
+  does not replace root construction review. Reviewer cache-mirror omissions were retained/fixed.
+- Owner finish_corpus_proxy ordinarily merged main2900ae7: clean integrated source
+  **3d7f12eea54aef73562ec0865b0229c19a7d4e95**, branch `feat/e8.3-formal-tranche` in its existing
+  worktree. Only phases docs differ from source-clear7e43d29. Current construction-v2 receipt
+  `formal-tranche-132/construction-v2/receipt.json`, SHA256
+  `83799eb4f1f27e97189d0eb61f0957e9ae425146c979db1488fead44b952429a`.
+  V1 retained unchanged. Proposal, projected ownership and14dispositions are byte-identical;
+  construction changes only exact tranche_formal/release_replay producer module hashes.
+- **Root concrete construction-v2 CLEAR**, official attachment review
+  `review-formal-construction-132-root-v1/construction-review.json`, SHA256
+  `c831240c8bb6a7955717f1c33d7ef0a4026bd7f79349a63958fbd62cf4e3f9f0`,19386bytes.
+  Independent audit `review.json` in the same directory, SHA256
+  `e64c1501bcc91d773110d0c9ba80ec7ea969b5fe35df6c363647543fcb3b4567`,36810bytes,
+  146bindings/20,324,933bytes,21actual producer modules,17fixed artifacts/87proposal inputs,
+ 14dispositions,7statements/4proofs/3associated parts. Actual corpus PDF/archive/index and exact
+  original packet/selection/policy are bound. Construction is ready for real attachment and
+  bounded unpublished publication, not yet actual release/pin/replay/collector/merge clearance.
+- Root ownership preflight `review-formal-construction-132-root-v1/ownership-preflight.json`,
+  SHA256 `5e94fa6f29c027fe4b639d4cc855943604151c1ea60b37277ea5f2becc54a66a`,27186bytes,
+ 106bindings/18,338,832bytes,2250native checks54original refs301retained original list entries.
+  Whole/direct/heading/child/QED partitions exhaust exact non-whitespace memberships; four
+  proof edges end at whole source statements, all three associated parts preserve5/5/4trailing
+  whitespace differences. Preflight is reused only after exact V2 raw artifact equality.
+  Proof2 direct partition coalesces adjacent same-page con/tradiction spans5313:5316:5327 with
+  no gap/byte change; root's initial segmentation assumption was corrected, not product source.
+  Canonical objects+associated_parts projection145602bytes is distinct from145681-byte wrapped
+  projected-ownership.json artifact (same SHA90553964). Preserve this distinction in final report.
+- Root final-audit checker corrections are retained separately: corpus.py lives at exact
+  scripts/corpus/corpus.py; concurrent G5 generated only layout/__pycache__; a comment apostrophe
+  prevented one checker parsing; prompt is raw Markdown; candidate index hash is nested. Final
+  audit-v6 verifies all actual reviewed/integrated module bytes. No producer evidence changed and
+  no product finding was hidden. All generated G5 pyc are now archived/removed by owner.
+- **Integrated gates passed** at3d7f12e, terminal compiled TTY2689 and remaining TTY96685.
+  `formal-tranche-132/compiled-3d7f12e-v1/receipt.json`, SHA256
+  `0255692be1e388af474662be19210a3a9fc5080e60a1a052007c2ba252be12f4`,51.709485s.
+  `formal-tranche-132/remaining-gates-3d7f12e-v1/receipt.json`, SHA256
+  `0c65f7cf43863b27b563d37de82c4f273763b5b5b0bcd64cded63021298945f5`,30.188116s.
+  Formatting/strict all-feature all-target Clippy/all Rust/own CLI/bibliography/scale/isolatedG5
+  pass;428Rust/645Python/85Node. Exact TypeScript5.9.3 fixture reused without network; generated
+  provider inputs/scorecard and all16G5 child logs retained. Eighteen generated layout pyc files
+  copied then exactly removed; owner reports WT clean. Heavy slot released, next reserved for
+  owner actual132publication/replays/collector. No other heavy job or download running.
+- Runtime next: owner supplies real attachment and unpublishedV6 artifacts. Config proposal
+  `formal-tranche-132/build-config-proposal-v1.json`9f3ad039 prepares11exact pinnedV5 inherited
+  mappings plus one2310formal paper. Direct-parent verification must rebuild all inherited rows,
+  preserve full provenance, raw worker transport, complete transitive source/evidence closure,
+ 60O3/50visualtruth and all117historical outcomes; newtruth only+7O5/+4O6 (totals11statements/
+ 5proofs). Fresh activeV6 predictions are distinguished from replayed/historical observations.
+  review_k1_reconciliation is now assigned independent runtime/config/actualrelease/replay/
+  collector checks. No activation before actual release review. Finish with before/after owning
+  CLI checks, complete integrated gates, draftPR/separate finaldiff review/mergecommit/cleanup.
+- #134 remains E8/project12/PhaseA/Todo, blocked132; no worktree. Additional2011 O5-only
+  proposal frozen by review_k1_reconciliation under
+  `formal-2011-readiness/construction-proposal-v1/receipt.json`, SHA256
+  `7da2795f858b876da31ed6c696abb6c5cd2ddfcd6eb23f071bb518c0cf36646c`,9203bytes;
+  proposal ed9d14e5,16068bytes. 103bindings/16,387,228bytes,46source/772native slices, all22archive
+  members/12decodedtexts/eightoriginalpages,577original list entries/27objects90links29bib.
+  FourcompleteO5wholes; original Equation1 keeps existing parser ID and mm-objective keeps no
+  automatic/generatedID. Eightfalseblocks/sevenautoobjects/fiveambiguities/all14dispositions
+  retained, no O6negative. Nine required adapter seams include release.py's current11-object/
+  O5+O6 gate. Source inspected atfac2684 remains cached, not current source approval. One failed
+  field-name preparation retained. No2011issue/version/code/admission yet; waits132and134.
+- finish_benchmark independently reviews this exact2011 proposal now, including code seams,
+  original crosswalk/retention and scope. No separate draft issue artifact exists; the frozen
+  proposal's implementation/blocker/test text is the scope, root writes finalissue after review.
+  Earlier2011source-preparation role is explicit; reviewer did not produce this proposal. Root
+  finite source scope78f9df13/history91d0bcff/printed010c9454 remain separate judgments; exact
+  old phase snapshot mappinge6b3e7bf must remain portable after this docs update.
+- Approved-host restriction unchanged from fresh14:48 denial. Config mounted read-only; normal
+  terminal script `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, restart,
+  resume/effectiveverify still needed. Do not re-request approval or bypass. #33/noPR and
+  drafts93/94/95 remain at the heads in15:13entry; no credential/sudo issue. Corpus10951PDFs/
+ 1000sources and native indexes unchanged in Corpora/cache, no background queue. Preserve all
+ 10main PDF-preview files/unrelated worktrees,20GiBfloor and one heavy process. Current main
+  docs checkpoint must be ordinarily merged before final132PR integration; do not rebase.
