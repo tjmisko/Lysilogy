@@ -4839,3 +4839,89 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Already-approved four hosts remain ineffective; existing script/restart instructions stand,
   no repeated permission request or bypass. Preserve all unrelated/vault/corpus files and
   blocked worktrees; no rebase/sudo/rm-rf/private/env access or model batch. Goal/system incomplete.
+
+
+### 2026-09-14 03:30 UTC — full1000 audited; native recovery succeeded
+
+- Phase A / Wave A2, last merged #109 / PR119 at722b6b24aa57fc454cd9f4fb54b14071dfcc235e.
+  Main before this checkpoint1e68596; all10 protected preview files rehashed unchanged.
+  No new merge, download, model call or v3 activation. Scorecard remains1/5 hard gates,
+  3/30 objectives(O1/O2/O30); O1=1/O2=.9169720168893188 over23 visuals/3 papers.
+- #115 ownerfinish_benchmark, clean6f49e5501abc50efa13aecbe7fec8b30176c1de3.
+  Full1000 TTY79197 is terminal exit0:940.162525s/498032KiB,724 parsed/276 failed,
+  zero raw acceptance/bibliography eligibility/O1–O11 automatic eligibility. Exact receipt
+  k1-full-alignment-6f49e55-visual-v3/receipt.json SHA
+  3ec5b1a18091edc0b84357fb19ecb74d31ee50d5df49e7e183547ca7a1f89202; report
+  dd6306429bf08f42f2871eca9313cb67ebc41f67b57095ae7922385998364912.
+  Independent actual review review-full-current-actual-6f49e55/review.json SHA
+  843177d3615bb33efb9013629bfd881a50be8af0d680229787ac6407170aac0e checked4456
+  hashes/10.023GB, all1000 originalPDF/source identities/order,999 original native indexes,
+  all724 payloads/no partials/orphans, exact counters and6 actually loaded source modules
+  (9 unused retained). Prior109 all689 candidates byte-identical/21 errors exact;
+  35 newly executed parsed papers come from290 outside the prior710 run.
+- Owner audit ee27f7330c93ac41b251a63982dfb09bbe5bde83e18630c54d4b9ccb79a33a5a
+  also passes. Its initial equality failure concerned only tied semantic Counter ordering
+  lost by canonical candidate JSON; all5309 key/counts exact. Initial audit and diagnosis
+  retained, corrected audit-v2 does not mutate sealed run/report. The sealed raw report's
+  pending-audit wording remains historical; actual independent clearance is separate.
+- #115 external release preview under k1-coverage/visual-tranche-115/ is in separate review.
+  First release-v3-review-6f49e55 preview retained after reviewer found inherited
+  bounded_issue105 metadata. Corrected v2 preview has receipt prefixe6c38e9b/configa8e27406/
+  manifestd02b71b0. All34 old v1/v2 files, old3 rows/specs/bibliography and original source
+  bindings remain exact; proposed29 visuals/4 papers, newO8–O11 omitted. Historical542
+  plus actual6f full reports validate. No config/pin/publication writes yet. Next: clear
+  preview, publish/replay, ordinarily integrate118/main, explicit v1/v2/v3 measurements,
+  final gates and draft PR/separate final review/merge. Do not rerun1000 just for118's
+  Rust/docs-only changes if actual Python derivation closure remains identical.
+- #118 ownerfinish_corpus_proxy, source033f0a50b4e382acf86be056fcc8060a322eef05.
+  Cargo helper build TTY91875 terminal exit0:10.288763s/1038816KiB. Portable helper
+  native-diagnostics-118/build-033f0a5/k1_index SHA
+  074e60e764ca64090f92a0c32baa1e04224f8ebe55aea9bc47ed7a42e05f7e3e; build receipt
+  e9980be6755bee969b2e5ae1a6c54ecac5c200c45e50e0a415e88743d1c91ba3 binds actual Cargo
+  JSON target/executable/all78 selected source copies. Wrapper v3 fixes terminal-leader
+  descendant cleanup and inherited PATH findings;8 generated controls +5 tool/env probes
+  clear38258a7fa7f797927b8eb51c6a4d565a16973e14b6634b6dc255cbb223cde574.
+  Exact build/launch review review-native-recovery-launch-033f0a5/review.json SHA
+  39691b903e893e3ff979cc6faf43d886a86422f11398c10d792dcf6b3f2d60f9 verifies185 bindings.
+- #118 recovery TTY2232 is terminal exit0; native helper PID27 belonged to that retained
+  invocation and is terminal. Launch native-diagnostics-118/recovery-033f0a5/launch.json
+  f9bf4c676318b55511c36b24004a25c34e5fedcec0c34524f1bd7ba342529a82; actual receipt
+  47da60e4293d53d5f49e2983c25eb3e52ad8ffe062976cc579b30a141ed90dee, output
+  c3bfe01183aa2b623bcd9430860d65c1769db5ac99dd10d944dbeeb66cbc1b60. Only original
+  2106.09069v1/PaperId5ad6cdda040648c1 recovered. Actual persisted schema6 index
+  b035196b4fd5d3156145c56243ea741911fca0d66ad344093dbc3f9a638fcaca:18native pages,
+  9493tokens/62185UTF16units,0OCR/unavailable/gaps, finite page-owned token rectangles.
+  Processing1.092720s/helper3.758814s/full wrapper87.185776s/32800KiB. All7999 prior
+  indexes (23325711591B) rehashed before and after unchanged; registry/PDF/original
+  receipts unchanged.169653 diagnostic bytes observed,65536 prefix retained/hash953a3128,
+  complete=true/truncated=true; no full-stream retained hash claim. Independent actual
+  review is requested but PENDING. No native process or queue continuation now.
+- Root successor queue PREPARED ONLY at ~/.cache/lysilogy/scale-index-queue-v2/;
+  no launch.json/baseline audit or native batch executed. Immutable old scripts/corpus
+  copy retained. run-batch.py ccd10a8ae85a6198f88f95fd38a6ac298c6c43a8e1d931732e193c0848dd6320,
+  audit.py1724101b49105848320a78526caa9e78888be9ae3358f41be7bf74aeba6d4ee0,
+  queue.py b63ee1b7f7485a2e2ec8a6f60ab38d61e1e92aeceec95d7488b5d317eb4f029c.
+  Explicit two historical recoveries, new118 helper/minimal native environment/tool pins,
+  old28 failure retained, one batch/invocation default, failure status and cancellation
+  forwarding. Helper batch caps4MiB stdout/128MiB stderr/1.5GiB AS/4h wall+CPU, group
+  cleanup even after terminal leader.6 generated boundary tests pass.334s (receipt
+  a4dd9194fa68b0a2a5a79a4fb28ac76aa3f7b06c2d286a60c4df5fca2de0a30e) and2 actual
+  stage cancellation/status function tests pass.035s; no native/corpus calls. freeze.py
+  requires exact independent recovery-review path/hash before creating launch. Review
+  these new scripts/bindings and derive fresh aggregate baseline after actual118 clearance.
+  Old queue remains failed_at_batch_boundary/PAUSE with original28 failure; never resume
+  it directly. Expected recovered baseline8000 indexes/7049scale;2951 unattempted remain.
+  Prefer118 final gates/merge, then115 metrics/gates; only launch scale batches in idle
+  allocated windows. About62GiB free remains above20GiB floor.
+- #117 still blocked by115; no WT/codec/publication. New read-only readiness
+  k1-coverage/visual-only-current-source-readiness-6f49e55.json SHA
+  933f90d84fd6f5f059de7cf468877da91b50ecb9a6c949aaa9d72ea2ddf38ce9 binds all5 fixed
+  current candidates.2207 now parses3 source figures/2 aligned; historical failure stays
+  retained.2303 retains2 source figure roles (framedEq/ignored non-rendered figure) plus
+  real table; preserve explicit role reconciliation. All metric eligibility still false;
+  O1/O2-only scope and original body/selection decisions from prior entries unchanged.
+- No follow-up issue opened this checkpoint. #97/#103/#117/#118 remain open; #33 WT and
+  draft PR93/94/95 remain blocked on effective previously approved Rust/provider hosts.
+  Managed~/.codex remains read-only; existing four-host script/restart instructions still
+  apply, no repeated write/approval/bypass. No rebase/sudo/rm-rf/private/env access, user
+  vault/data destruction or model batch. Phase/system/goal incomplete; continue from above.
