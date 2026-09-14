@@ -218,3 +218,25 @@ manifest pin. It preserves the complete v1/v2/v3 bundles and prior four compact
 paper rows. Explicit collector selection preserves both supported historical
 region shapes and still requires every frozen O2 value, including zeros. Matching
 rules and IoU arithmetic remain unchanged; the 500-paper target remains open.
+
+`tranche_numbered_math.py` adds the separate
+`k1-manual-numbered-math-tranche-v1` format for complete O3-only construction.
+The fixed proposal contains all seven numbered equations in 2404.17771v2 and all
+48 in 1911.08525v2. Exact original/source/native identity, finite source-scope
+review, full body/number geometry, complete denominators, original producer
+history and a distinct final construction review are required. Whitespace-only
+body support is rejected. Native corruption remains explicit nonquote evidence.
+
+Every other original/source role, unknown field, ownership endpoint and all
+fourteen pending/source-failure dispositions remain unscored. The whole archive,
+original encoding and complete source metadata are retained; a source/printed
+identity review does not waive automatic source guards. No TeX executes. This
+format cannot mix with another manual overlay, and it does not change the legacy
+O3–O7 contract. See the [numbered-only contract](../../../eval/latex-contract.md#complete-numbered-only-construction).
+
+V5 publishes the explicitly reviewed twenty-module inventory through the existing
+per-paper producer, after separate source/module, concrete construction and actual
+release clearance. Its eleven children retain the nine prior paper records exactly
+and add these two complete O3 inventories. V1–V4 bundles remain immutable. The
+release enumerates current source provenance while preserving prior paper
+semantics, metric flags and outcomes. The 500-paper target remains open.

@@ -397,3 +397,56 @@ Issue #129 adds the mechanically checked, inactive v5 path described in
 [k1-per-paper-contract.md](k1-per-paper-contract.md). It preserves v1–v4 replay,
 truth bytes, metric definitions and targets. Activation and new truth admission
 remain separate reviewed work; synthetic scale records are not K1 coverage.
+
+## Complete numbered-only construction
+
+Issue #131 adds `k1-manual-numbered-math-tranche-v1` in a separate codec. Its
+`manual_numbered_math_overlay` grants only O3, after the complete numbered
+inventory passes independent construction review. The legacy O3–O7 object
+overlay contract is unchanged. Mixing these or other manual formats is rejected.
+
+The first construction is fixed before measurement: 2404.17771v2 has seven
+numbered displays and 1911.08525v2 has 48. Every paired numbered record and every
+current numbered source object must appear exactly once. A missing body, printed
+number, source occurrence, independent record or complete reviewed region rejects
+the whole paper. Body support must include non-whitespace native content; a
+nonempty list of whitespace spans is insufficient.
+
+The manifest binds exactly sixteen artifacts: `proposal`, `construction`,
+`review`, `packet`, `policy`, `selection`, `prompt`, `assignment`, `checkpoint`,
+`producer_history`, `dispositions`, `matrix`, `source_scope`,
+`source_scope_review`, `endpoint_addendum`, and `proposal_review`. The proposal
+also pins its complete original/reconciliation artifact inventory. The bundle
+has a 64 MiB cumulative bound, at most 128 proposal artifacts, and retains the
+existing 32 MiB individual evidence bound. Actual corpus PDF/archive paths,
+native index, source/native exports, original receipts and images are verified.
+The exact twenty current or retained producer modules are bound separately from
+the original annotations. Changed producer bytes require a new construction.
+
+Source positions are Unicode code points; native positions are UTF16 code units.
+Primary source hashes bind UTF8 snippets, while independent hashes bind the
+original encoded member, including Latin-1 `paper2.tex`. Whitespace membership
+differences preserve the selected original raw spans and their distinct history.
+The 50 exact and five contained automatic occurrences bind complete manual
+displays. Independently reviewed source/printed identity and full body/number
+regions do not certify semantic linear quotation, glyph/style reconstruction or
+mathematical validity: `semantic_quote_truth` stays false.
+
+The finite source-scope review binds whole archives, all member bytes/encodings,
+complete current and historical source metadata, each literal guard, definitions,
+invocations, actual arguments, visibility and multiplicity reasons. Current
+metadata must exactly equal the historical inventory for this first format.
+Local style, guard or hidden-structure changes cannot inherit that review; all
+automatic warnings and false eligibility flags remain unchanged. No deposited
+TeX, BibTeX or style code executes.
+
+Only numbered equations enter projected `objects`. Every other original
+top-level value/list member and every source object/link/entry remains in an
+unscored pointer/hash ledger. Full source metadata includes labels, source maps,
+definitions, guards, coverage and unknown fields. Original and source endpoints
+are checked without joining annotator namespaces. The reviewed 1911 primary
+`section-3` endpoint remains explicitly unresolved because its original owner is
+absent; the independent same-named section does not resolve it automatically.
+All fourteen original candidate/failure dispositions and per-metric deficits are
+retained. The other twelve papers are not admitted by this codec, and 2109's
+BibTeX parse failure is preserved. The approximately 500-paper target is unchanged.

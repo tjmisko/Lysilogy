@@ -35,9 +35,10 @@ VISUAL_ONLY_VERSION = 'k1-limited-v4'
 VISUAL_ONLY_MODULES = VISUAL_MODULES | {'tranche_visual_only.py'}
 VISUAL_ONLY_MANIFEST_SHA256 = 'a491c9976befff0fadb0e7fe8220422360636dbb456b1ded2ebf5baa7520929a'  # Remains disabled until separately reviewed immutable publication.
 BOUNDED_VERSION = 'k1-limited-v5'
-BOUNDED_MODULES = VISUAL_ONLY_MODULES | {'release_layout.py', 'release_process.py', 'release_replay.py'}
+BOUNDED_MODULES = VISUAL_ONLY_MODULES | {'release_layout.py', 'release_process.py', 'release_replay.py',
+                                      'tranche_numbered_math.py'}
 # Mechanism only. Activation requires a separately reviewed actual construction.
-BOUNDED_MANIFEST_SHA256 = None
+BOUNDED_MANIFEST_SHA256 = '2c96e2c435bb3b6ea5ee33c3cfbe347bf48795b8e155862fc3b732d3db33889c'
 MAX_DOCUMENT = 1024 * 1024
 
 

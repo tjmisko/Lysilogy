@@ -133,9 +133,9 @@ class ReplayTests(unittest.TestCase):
             self.assertFalse((output/'paper.json').exists())
 
     def test_should_refuse_real_activation_when_the_new_version_has_no_publication_pin(self):
-        self.assertIsNone(versioned.BOUNDED_MANIFEST_SHA256)
-        with self.assertRaisesRegex(ValueError, 'not published'):
-            versioned.release_spec(layout.VERSION)
+        with patch.object(versioned, 'BOUNDED_MANIFEST_SHA256', None):
+            with self.assertRaisesRegex(ValueError, 'not published'):
+                versioned.release_spec(layout.VERSION)
 
 
 if __name__ == '__main__':
