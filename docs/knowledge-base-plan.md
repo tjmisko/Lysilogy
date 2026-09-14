@@ -1242,6 +1242,20 @@ V1–V4 bytes and replay remain immutable; this mechanism leaves the future V5 p
 disabled and admits no papers. Synthetic 500-record resource evidence does not
 establish the approximately 500 defensible corpus papers required by #97.
 
+Complete numbered-only construction (#131, 2026-09-14): use a separate explicit
+O3-only format for the frozen seven-equation 2404.17771v2 and 48-equation
+1911.08525v2 inventories. Both complete originals, source/native identity,
+independent full body/number geometry, finite whole-source visibility review and
+distinct final construction review are required. No partial paper denominator is
+published. Native corruption remains nonquote evidence; semantic linear fidelity
+is not inferred from identity. Preserve all other original/source records,
+unknowns and all fourteen candidate/failure dispositions unscored, including the
+explicit unresolved original section endpoint. The legacy O3–O7 overlay remains
+unchanged. Review the unpublished V5 twenty-module inventory before publication,
+preserve V1–V4 bytes/replay and existing paper semantics, and enumerate any new
+source/assembly provenance. This bounded addition does not relax #97's target or
+create an O3 detector score. Positive formal construction follows separately.
+
 Build K1 from the K0 `eval` tier: parse LaTeX sources (resolving `\input`/`\include`, custom
 `\newtheorem` names, `\label`/`\ref`/`\eqref`, `\cite`, `.bbl`/`\bibitem`) into truth objects,
 align them to the PDF by caption and text matching, drop papers whose alignment falls below a

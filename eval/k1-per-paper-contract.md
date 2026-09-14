@@ -68,7 +68,10 @@ The explicit producer is `python3 -I -B scripts/truth/latex/versioned.py --publi
 source-loaded. Isolated workers compile verified bytes directly: stale `.pyc`,
 search paths, preloaded namespaces and arbitrary module paths cannot replace the
 selected implementation. Future replay also requires the fixed v5 pin and its
-exact retained 19-module bundle.
+exact retained 20-module bundle. Issue #131 adds the separate numbered-only
+codec to the previously unpublished nineteen-module inventory; that changed
+inventory requires explicit source review before first publication. V1–V4 module
+inventories and pins remain unchanged.
 
 One history worker checks both automatic runs and original input order/index map
 once per replay. Each following worker assembles one paper through the existing
