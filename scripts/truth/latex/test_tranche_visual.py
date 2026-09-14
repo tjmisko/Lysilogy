@@ -249,6 +249,17 @@ class VisualTrancheTests(unittest.TestCase):
             'start': start, 'end': len(source), 'text': source[start:]}
         with self.assertRaisesRegex(ValueError, 'source owner'): self.validate(data)
 
+    def test_should_reject_remote_core_when_attached_notes_stay_on_the_declared_table_page(self):
+        candidate, wrapped, raw, docs, _ = fixture(); index = wrapped['index']; start = len(index['text'])
+        index['text'] += 'Cell'; index['pages'].append({'number': 2, 'start': start, 'end': start + 4, 'width': 150, 'height': 150})
+        remote = {'start': start, 'end': start + 4, 'text': 'Cell', 'pages': [2], 'unit': 'UTF-16'}
+        docs['independent']['objects'][0]['full_visual_body']['native_members'] = [remote]
+        docs['primary']['objects'][0]['native_core_members'] = [deepcopy(remote)]
+        docs['primary']['objects'][0]['native_body_members'] = docs['primary']['objects'][0]['native_body_members'][1:] + [deepcopy(remote)]
+        files, _ = read_archive(raw)
+        with self.assertRaisesRegex(ValueError, 'core crosses'):
+            validate_objects(docs, candidate, files, index)
+
     def test_should_retain_context_excerpt_when_its_exact_native_text_crosses_pages(self):
         index = {'text': 'First\nSecond', 'pages': [{'number': 1, 'start': 0, 'end': 6}, {'number': 2, 'start': 6, 'end': 12}]}
         audit_excerpts({'context': {'start': 0, 'end': 12, 'text': 'First\nSecond', 'pages': [1, 2], 'unit': 'UTF-16'}}, {}, index)

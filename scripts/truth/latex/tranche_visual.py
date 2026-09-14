@@ -224,11 +224,11 @@ def table_components(p, i, docs, files, index, page, claim=None):
     """Compose exactly recorded core/notes/markers, never a surrounding text envelope."""
     core = members(i['full_visual_body']['native_members'], index)
     full = members(p['native_body_members'], index)
+    require(member_pages(core, index) == {page}, 'table core crosses its visual page')
     notes = [row for row in docs['primary']['attached_table_notes'] if row['parent'] == p['id']]
     if not notes:
         require(claim is None, 'table-note crosswalk invents attached notes')
         exact(covered(core, index), covered(full, index), 'complete table body memberships disagree')
-        require(member_pages(core, index) == {page}, 'table body crosses its visual page')
         return []
     require(claim is not None and claim['primary_id'] == p['id'] and claim['independent_id'] == i['id'],
             'table-note crosswalk changes the original owner')
