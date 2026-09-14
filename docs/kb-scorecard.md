@@ -65,8 +65,8 @@ System acceptance requires 5/5 gates and at least 24/30 objectives; use `eval al
 Measurements are calculated from `eval/inputs/<suite>/<collector>.json` or the legacy suite file with content-verified implementation, truth-set, and observation files. G5 executes isolated tests. Results retain truth versions, source hashes, commit, case counts, cost, wall time, and the pre-run baseline. Missing cost is unknown.
 
 - **G3:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
-- **O1:** 23 cases; K1 k1-limited-v2 (`56e4b1f6fa7002169c82aba26fb69a40a948197a21b3331e0a2d0d9e1f8a3202`)
-- **O2:** 23 cases; K1 k1-limited-v2 (`56e4b1f6fa7002169c82aba26fb69a40a948197a21b3331e0a2d0d9e1f8a3202`)
+- **O1:** 29 cases; K1 k1-limited-v3 (`20154448df7ded96d3706fc0b3afc9c4bcce9e3efea025f7dcc07262110530c5`)
+- **O2:** 29 cases; K1 k1-limited-v3 (`20154448df7ded96d3706fc0b3afc9c4bcce9e3efea025f7dcc07262110530c5`)
 - **O3:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 - **O4:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 - **O5:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
