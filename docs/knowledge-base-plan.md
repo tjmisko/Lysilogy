@@ -408,6 +408,25 @@ other-column prose remain unresolved; body-member anchors are not caption member
 Actual complete v1/v2/v3/v4 measurements are required before merge, with unchanged truth,
 matching and .90/.75 targets. This does not broaden vector/image support.
 
+Vector support follow-up (#123) supplements native figure bodies with complete components
+from bounded final-page renderer pixels, rather than treating path/group/clip bounds as paint.
+Detector6/graphics5 retain native anchors and the existing image/table paths. A separate
+conservative trace gate permits proved rectangular clips, finite Normal groups and exactly
+one first-page-command identity device-colorspace declaration. Images, masks, unknown state
+and resource failures withhold the supplement. The first graphics4 measurement rejected that
+identity preamble and remains retained as a failed integration with unchanged outcomes.
+
+The fixed synthetic policy uses 144-dpi full-page components before any ownership filtering.
+Whole glyphs, complete captions, prose and table grids are barriers; compact component clusters
+must belong to exactly one caption window and cannot bridge barriers. Known native geometry
+gaps withhold this path. Missing native text can still produce a semantic false candidate, so
+the output remains a measured heuristic. Raster bytes, component records and source/tool/native
+bindings are retained within explicit time, memory, output and page-work limits. The complete
+15/23/29/50 cohorts retain every zero and regression; only the motivating t-SNE region improves.
+The detailed protocol and limits are in `eval/object-metrics-contract.md`, with actual evidence
+in [the report](experiment-reports/2026-09-14-kb-vector-regions.md). Truth, matching, targets and
+native indexes remain unchanged; the approximately 500-paper requirement in #97 remains open.
+
 ### E1.2 Backend bibliography extraction and parsing
 
 Move bibliography detection and entry splitting from `paperLinks.ts` to the backend, and persist
