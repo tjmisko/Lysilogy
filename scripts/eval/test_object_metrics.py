@@ -28,6 +28,57 @@ def fixture():
 
 
 class ObjectMetricTests(unittest.TestCase):
+    def should_score_singleton_regions_when_the_explicit_visual_release_is_selected(self):
+        paper,artifact,index=fixture()
+        expected=m.evaluate_paper(paper,artifact,index)
+        paper['objects'][0]['region']=paper['objects'][0]['region'][0]
+        original=copy.deepcopy(paper)
+        self.assertEqual(m.evaluate_paper(paper,artifact,index,'k1-limited-v3'),expected)
+        self.assertEqual(paper,original)
+        for version in ('k1-limited-v1','k1-limited-v2'):
+            result=m.evaluate_paper(paper,artifact,index,version)
+            self.assertEqual(result['unknown_truth_regions'],1)
+            self.assertEqual(result['region_values'],[])
+
+    def should_keep_zero_values_in_the_full_denominator_when_singleton_predictions_are_missing(self):
+        paper,artifact,index=fixture()
+        list_result=m.evaluate_paper(paper,artifact,index,'k1-limited-v3')
+        paper['objects'][0]['region']=paper['objects'][0]['region'][0]
+        for objects in ([],[{**artifact['objects'][0],'region':None}]):
+            changed={**artifact,'objects':objects}
+            singleton_result=m.evaluate_paper(paper,changed,index,'k1-limited-v3')
+            truth={'coverage':{'denominators':{'O2':{'all_annotated_truth_objects':2}}}}
+            totals,values,matched=m.aggregate_metrics(truth,[list_result,singleton_result])
+            self.assertEqual(values,[1.0,0.0])
+            self.assertEqual(totals['truth_objects'],2)
+            self.assertEqual(totals['unknown_truth_regions'],0)
+            self.assertEqual(len(matched),1 if not objects else 2)
+
+    def should_reject_malformed_singletons_when_visual_geometry_is_declared(self):
+        paper,artifact,index=fixture()
+        malformed=[{}, {'page':1}, {'page':1,'rect':rectangle(),'extra':True},
+                   *({'page':page,'rect':rectangle()} for page in (True,1.0,0,2)),
+                   *({'page':1,'rect':rect} for rect in (None,rectangle(x1=0),rectangle(x0=11),
+                     rectangle(x1=101),rectangle(y1=float('nan')),rectangle(x0=True)))]
+        for region in malformed:
+            with self.subTest(region=region),self.assertRaises(ValueError):
+                paper['objects'][0]['region']=region
+                m.evaluate_paper(paper,artifact,index,'k1-limited-v3')
+
+    def should_reject_incomplete_values_when_the_frozen_O2_denominator_declares_more_regions(self):
+        paper,artifact,index=fixture()
+        result=m.evaluate_paper(paper,artifact,index)
+        for expected in (2,29,True):
+            truth={'coverage':{'denominators':{'O2':{'all_annotated_truth_objects':expected}}}}
+            with self.subTest(expected=expected),self.assertRaisesRegex(ValueError,'incomplete frozen O2'):
+                m.aggregate_metrics(truth,[result])
+        paper['objects'][0]['region']=None
+        unknown=m.evaluate_paper(paper,artifact,index,'k1-limited-v3')
+        self.assertEqual(unknown['unknown_truth_regions'],1)
+        truth={'coverage':{'denominators':{'O2':{'all_annotated_truth_objects':1}}}}
+        with self.assertRaisesRegex(ValueError,'incomplete frozen O2'):
+            m.aggregate_metrics(truth,[unknown])
+
     def should_preserve_prior_measurements_when_a_second_truth_version_is_selected(self):
         original=m.release_paths('k1-limited-v1');expanded=m.release_paths('k1-limited-v2')
         self.assertEqual(original,{'truth':m.TRUTH,'config':m.CONFIG,'trace':m.TRACE,'input':m.INPUT})
