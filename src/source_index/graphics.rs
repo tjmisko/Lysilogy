@@ -888,9 +888,16 @@ fn renderer_command(value: &Tag<'_>, stack: &[&str]) -> bool {
 /// Trace commands already carry page-space matrices. Unsupported drawing state
 /// never becomes a claimed image rectangle; native text geometry is untouched.
 #[derive(Default)]
+enum RendererPreamble {
+    #[default]
+    Available,
+    Closed,
+}
+
+#[derive(Default)]
 struct TraceState<'a> {
     renderer: bool,
-    renderer_page_command_seen: bool,
+    renderer_preamble: RendererPreamble,
     curved_paint: bool,
     receipt: Option<&'a masks::Receipt>,
     operations: usize,
@@ -928,11 +935,14 @@ impl<'a> TraceState<'a> {
     fn observe(&mut self, value: &Tag<'a>, page: &ReadingPage) -> Result<()> {
         if self.renderer {
             if !renderer_command(value, &self.stack)
-                || (value.name == "set_default_colorspaces" && self.renderer_page_command_seen)
+                || (value.name == "set_default_colorspaces"
+                    && matches!(self.renderer_preamble, RendererPreamble::Closed))
             {
                 return Err(invalid());
             }
-            self.renderer_page_command_seen |= !matches!(value.name, "document" | "page");
+            if !matches!(value.name, "document" | "page") {
+                self.renderer_preamble = RendererPreamble::Closed;
+            }
         }
         if value.name == "curveto"
             && matches!(self.stack.last(), Some(&"fill_path" | &"stroke_path"))
