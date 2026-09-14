@@ -6284,3 +6284,239 @@ date, last merged issue, in-flight branches and their state, next action, and op
   `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart/resume
   effective-access verification. No approval renewal, fresh network call or provider result
   claimed. Storage probes passed. Continue129 implementation/source review and97 reconciliation.
+
+
+### 2026-09-14 10:25 UTC — bounded replay underway; first-four math and role decisions
+
+- Last merged issue remains123/PR128 (ebe976339a5c93771375400bae5935cbf9ae1b3a).
+  Main76dff5e before this docs checkpoint. Phase A/A2;1/5 gates,3/30 objectives at target
+  (O1/O2/O30), no new truth admission, score change, objective miss or new follow-up beyond129.
+- **#129** implementation running under finish_corpus_proxy in
+  `.worktrees/feat/e8.3-bounded-k1-replay` from76dff5e; no PR yet. Owning baseline
+  TTY92871 terminal0,97.778s, fresh50cases O1=.98989898989899/O2=.8910021250829322.
+  `~/.cache/lysilogy/bounded-k1-replay-129/before-76dff5e/receipt.json`, SHA
+  72d56a4941abf90ed813a54db15eb87ce0484982c87e17baa623f656ba5be690, binds206sources,
+  exact inputs, portable Cargo-selected CLI and raw logs. Heavy slot released.
+  Initial manifest/per-paper projection layer and9 focused tests, including500 inert mixed-
+  eligibility records, pass along with prior release tests. Source still evolving; bounded
+  worker transport/replay and serial collector remain. One fixture-state failure is retained.
+  No legacy or annotation codec/activation change. Root identified an early per-metric
+  denominator concern in evolving Summary.coverage: totals must derive from each metric's
+  exact eligibility cohort, with wholly ineligible retained records handled explicitly.
+  Owner notified; resolve/test before source checkpoint, then independent review and actual
+  unchanged-cohort plus separately allocated synthetic resource measurements.
+- New21-file preparation/review checkpoint:
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation-checkpoint-root-20260914T1025.json`,
+  SHA9a0c436c8d25a2dd4349eb487a605ffd4f6ea316a04376b7e10831d6e1d7af35.
+  Base below means its `reconciliation/references-root-v1/` directory. Every original
+  annotation, earlier root artifact, failure and review remains unchanged.
+- Root personally re-viewed13 original pages covering all77 first-four numbered equations.
+  `math-all-geometry-diagnostic-root-v1.json`39831cda retains154 raw proposal-union ink
+  diagnostics; no automatic threshold adjudication. `math-all-geometry-decisions-root-v1.json`
+  a0df89a7 records77 body+77 printed-number regions with exact previous5body/2condition
+  decisions. Six explicit overrides remove neighboring prose for2109 equations3/6/7/10
+  and1911 equation17's number;2109 equation8 adds one original blank pixel at its tall
+  parenthesis top (819 to818). Existing2011 equation7 extension is retained separately.
+  Actual number ink stays outside body regions; blank margins may overlap explicitly.
+- Independent **finish_benchmark** reviewed all13 original pages/154regions,154source slices,
+ 2095native slices and70bindings; review `~/.cache/lysilogy/review-k1-all-math-geometry-v1/review.json`,
+  SHAe59c9daeb2c7973d44a67935235d6891174607c34122ef95e7329aa229302219.
+  Geometry clear; F1 identified only prose off-by-one:2109 equation6 ink starts655, not654.
+  Originalfinding5b161624 and reviewer list/mapping preparation failure retained. Root's
+  `math-all-geometry-decisions-root-v2.json`, SHA
+  6e096a47b7b68ccbb1a160422d8c95e7b8a112cd773feaf856051f57f60dab6c,335420bytes,
+  changes that one phrase plus correction provenance only, asserts all other content exact.
+  Reviewer is checking the separate clearance; do not assume it until its receipt arrives.
+- `prose-role-decisions-1911-root-v1.json`, SHA
+  4f725f1b9d0f6493c2c0b4770cf4cef46be06bfbdda13738327e3e76bb876a22, retains two unheaded
+  derivations inside the broader primary exposition,27nested equations and the explicit
+  conjectural-results notice. Existing E1.4 scopes headed proofs; root retains these arguments
+  outside that object scope without assessing mathematical validity or inventing targets.
+  Independent review `review-k1-prose-role-1911-v1/review.json`, SHA
+  725253497461f570571c1937e729b2392fe7757207fb63f37a01d5e7ce6f6602, is clear:33source,
+ 26candidate+4notice native slices, actualp3–7 views and exact design text. Complete source/
+  codec closure, fine prose/glyph roles and any negative-cohort admission remain separate.
+- Root also re-viewed2011p4/p5 and prepared nine full formal/unnumbered/algorithm regions:
+  four formal statements, three unnumbered displays, two Algorithm1 bodies. Original
+  `formal-algorithm-geometry-root-v1.json`f4440964 retains7decisions/2margin failures.
+  V2 `formal-algorithm-geometry-root-v2.json`, SHA
+  8fcb80d7df34d7f8ce185a36621a51f0e9ba02c62ddb646ec595a46be5a73b2f, explicitly extends
+  Problem2/Theorem1's left scope417 to416originalpixels into independently measured blank
+  columns413–416, before italic ink417. Same ink/counts, other7decisions exact. Caption,
+  header/body/number and nested function/source partitions stay separate. Independent review
+  assigned to finish_benchmark after the current wording clearance/prose review. Pending.
+- **review_k1_reconciliation** is now distinct reconciler for nextfour fixed papers
+  2207.03047,2211.01333,2511.11956,2005.13732; writes only
+  `k1-coverage/manual-tranche-v2-preparation/reconciliation/next-four-v1/`.
+  All26 originalpages viewed before exports; input-freeze0afd865c. Mechanicalv2
+  8420f6d146b0c621c939a76f03376a7dc37cf561ae9aadc48daa523e32bb6cb1 is7690188bytes:
+ 104objects,106bibliography entries/318fields,157citations,79references;3175source and
+ 20847native slice occurrences verify, no unmatched rows. Original classifier failure kept.
+  It is resolving2207 citation/field/visual-label gaps,2511 equation9 omitted dx,2211 title
+  hyphen and five2005 year spans choosing URL digits. All proposals/uncertainty remain.
+  Root has not independently reviewed this new reconciliation; no admissions follow.
+- No corpus downloads/native queue or heavy job runs.44GiB free;20GiBfloor and one heavy
+  job remain. All10 protected previewfiles hash-identical. Preserve existing blocked33/25/71/72
+  worktrees/drafts and unrelated worktrees. Four registry/provider host grants remain approved
+  but last config check read-only; normal-terminal command is still
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart/resume
+  verification. No new provider/model/network result claimed. Next: finish129 source/runner
+  review and implementation, receive bounded geometry clearances, continue97 source/role
+  closure and independent next-four review. Production10k/Playwright/Phase A exit/all later
+  phases and final report remain pending.
+
+
+### 2026-09-14 10:45 UTC — first-four bounded reviews clear; replay implementation continues
+
+- Last merged issue123/PR128, main0212690 before this docs checkpoint. Phase A/A2;
+  1/5 gates and3/30 objectives at target (O1/O2/O30). No new truth admission or score change.
+  Seventeen-file continuation receipt under
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation-checkpoint-root-20260914T1045.json`,
+  SHAfd6a0c733348d544882223f777a21552d9f75d22841480c0867f132eef648a77,
+  binds the preceding checkpoint, new clearances and source preparation. All10 protected
+  main-checkout PDF-preview files remain hash-identical.
+- **#129** owner finish_corpus_proxy, `.worktrees/feat/e8.3-bounded-k1-replay`, branch
+  `feat/e8.3-bounded-k1-replay` from76dff5e, no PR yet. Per-metric denominators and ordered
+  all-false child retention implemented; source-only serial replay/publication workers and
+  serial collector now present. Focused worker/collector tests and finite process controls
+  continue before a source checkpoint. No heavy job running, V5 remains unpinned and all73
+  legacy files unchanged. Next: integrate main, separate source/runner review, full gates,
+  unchanged V1–V4 outcomes and bounded500-record synthetic resource measurement, results review,
+  draft PR and merge. Before measurement receipt72d56a49 remains the published50-case baseline.
+- **First-four bounded reviews are CLEAR.** Math v2 wording supplement
+  `~/.cache/lysilogy/review-k1-all-math-geometry-v1/review-v2-supplement.json`,
+  SHA3dd43156e689ac0ccd9bf4588ffe9d346ebd4769a03840aef206729901420643,
+  verifies the sole equation6 starts654-to655 correction; all geometry and other content exact.
+  Formal/algorithm geometry review `review-k1-formal-algorithm-geometry-v2/review.json`,
+  SHA58f81e2414343db277410d4d8b848ed467afca3fe1e239a9c9ad68742e93fee0,
+  verifies25bindings,18source slices,9regions and the two explicit blank-column extensions.
+  The prior prose-role review is also clear. Original failures and artifacts remain immutable;
+  glyph/style/role/codec closure and complete per-kind admission remain separate.
+- **Next-four reconciliation frozen**, under the base checkpoint directory's
+  `reconciliation/next-four-v1/`. Decisionscbd9a0946ae5d64997eccba0fdf7a9c12ee6582a2f12b1d4361c1334d7e03667,
+  receipt21a3f1ba321ddeb3e8ff509521b16287a61c9fdb97f9f374a0a2d82336ecef9c
+  bind75files for2207.03047/2211.01333/2511.11956/2005.13732. Separate reviewer
+  finish_benchmark has personally viewed26originalpages and verified3175source/20847native
+  slice occurrences,79references and65paired citations; written review still pending.
+  Explicit deficits remain92unpaired2207citations,129absent native bibliography field labels,
+  13unknownyears and broader role/fidelity incompleteness. Do not infer truth admission.
+- **Next-two reconciliation running** with review_k1_reconciliation, confined to
+  `reconciliation/next-two-v1/`:2311.02916/2301.05184, all8originalpages viewed first.
+  Input-freeze8efa883a514d8fe2cfaac8677605707ead43be83708518297686419b01c9e83f;
+  mechanicalv2763354c951babc592dde862bf174602b37abec2f080f1ee9cfb8faa70ba34620
+  verifies558source/5870native slices:20objects,11formal records,6conditions,
+  3proof-outline/2definition candidates,11bibliography entries,12citations,24references,4notes.
+  Finite closing-brace/period, field-membership and title-period decisions continue. Root can
+  independently review this pair; finalfour are still outside that assignment.
+- Root's new **retained source crosswalk** awaits separate review under
+  `reconciliation/references-root-v1/source-crosswalk-{diagnostic,decisions}-root-v1.json`:
+  diagnostic1735441c8eaa122a38ef8473c029c7db500eee3b40fd1ec2f30b54c4595f088b,
+  decisions20bc4369766c36a76976b4cc6b3a2f64a35b0b09738e296852d3464341719d61.
+  It accounts89automatic source objects versus82manual numbered/captioned/formal records for
+  2404/2011/1911:77exact source occurrences,5unique contained row-to-whole-display mappings,
+  7objects in literal nonprinting iffalses recorded by both annotators. Three extra unnumbered
+  displays retain no automatic ID. All original automatic eligibility remains false; this is
+  source occurrence evidence, not PDF fidelity or guard override. No automatic labels were
+  used before the original independent inventories were frozen.
+- Root's **2109 source failure diagnosis** also awaits separate review:
+  `~/.cache/lysilogy/k1-coverage/source-support-assessment-2109-v1/diagnosis.json`,
+  SHAba03079a5808623e1d8114ba1492d28cb171186d10d203035be2171ac9a62090.
+  Frozen deposited `mybibfile.bib` has percent-prefixed text at field-name position394;
+  inert parser reproduces its original fatal failure (.078731s). Three bounded, generated-only
+  BibTeX0.99e cases establish valid fields/literal percent in values succeed while that field-
+  position form fails. Generated receiptf3ff5478d309d46b45ae9859cf2da4c1977eb37448554322f1c0a7e9c019b3b1
+  retains raw outputs and binary hash; no deposited TeX/style was executed. Two documentation
+  web calls are separately accounted (primary full PDF403); no registry/provider/corpus/model
+  calls. Keep failure, no parser relaxation or new issue. Any later printed-BBL/manual
+  construction needs separate provenance and review and cannot silently erase the failure.
+- No downloads, native queue or heavy job run. Preserve blocked #33 store worktree and drafts
+  #93/#94/#95 for71/25/72. Four registry/provider hosts remain approved but not effective at
+  last verification; config mount is read-only, not an automatic-review rejection. Normal
+  terminal action remains `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`,
+  then restart/resume host verification. Continue useful offline work without repeated approval.
+  Production10k, Playwright, phase exits and all later phases remain pending.
+
+
+### 2026-09-14 11:07 UTC — three reconciliation reviews clear; bounded replay review findings
+
+- Last merged123/PR128; main3181a02 before this docs checkpoint. Still Phase A/A2,
+  1/5 gates and3/30 objectives O1/O2/O30 at target. No new publication, score or follow-up issue.
+  Fifteen-file continuity receipt at the preparation base
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation-checkpoint-root-20260914T1107.json`,
+  SHA030e3698558c3f9f05300db99ce0e7249bdbab6e5952be461a20509c45e642d4.
+  All10 protected preview files unchanged. Base below means that preparation directory.
+- **#129** source checkpoint9a081c6583be57ce4cdfbe8d3caa893fc31df542 in
+  `.worktrees/feat/e8.3-bounded-k1-replay`, owner finish_corpus_proxy, no PR yet. Initial
+  36release/layout/transport/replay,17versioned and49collector tests pass. TTY45190 terminal0
+  after49.9101s: fmt, strict all-target Clippy and focused Rust eval tests pass; heavy slot
+  RELEASED. Receipt `~/.cache/lysilogy/bounded-k1-replay-129/focused-9a081c6/receipt.json`,
+  SHAcf25cd3e204b6036797f3293ef7e9767498887cd29cf113f34d6cbb1fc5dbc55,
+  retains exact sources, Cargo-selected lib-test executable and all73legacy file bindings.
+- Separate **finish_benchmark** source review is running under
+  `~/.cache/lysilogy/review-bounded-k1-129-source-v1/`. Two reproduced findings at9a081c6:
+  SIGTERM bypasses cleanup and leaves the separately grouped worker alive without failed
+  receipt; process-output writes bypass the20GiB floor. Only short inert test children were
+  used and cleaned. Owner has findings and is preparing corrections. Collector JSON-boundary
+  probe continues. No source clearance or actual new-layout resource/cohort result yet.
+  Real comparison must retain all117 unchanged V1–V4 outcomes and exercise both legacy replay
+  and new serial collector/layout verification via four explicit external scratch layouts;
+  no repository V5 pin. The scratch adapter verifies old fixed release records and evidence,
+  without claiming a later codec newly recomputed them. Separate500inert complete-record
+  lifecycle/resource experiment is planned at approximately64MiB retained payload, with mixed
+  negative/ineligible rows and a separate late failure. Pin/review its exact runner first;
+  this will not establish real500-paper manual-codec or corpus performance. Full final gates
+  and separate measurement/PR reviews still required.
+- **Next-four finite review CLEAR**: `~/.cache/lysilogy/review-k1-next-four-v1/review.json`,
+  SHAe071c2e0e0419001fa8d11d470e64f1a4214a58cd24d0bf1841653b047acb422.
+  Reviewer finish_benchmark viewed26original pages and79reference/65paired citation contexts;
+  112bindings54,046,145bytes,27source encodings and3175source/20847native slices verified.
+  All92missing citation mappings,129missing native field labels,13unknownyears and remaining
+  geometry/fidelity/role gaps stay explicit. Original next-four package stays frozen.
+- **Next-two finite review CLEAR**, root distinct from original pair and reconciler:
+  `~/.cache/lysilogy/review-k1-next-two-root-v1/review.json`, SHA
+  fd6d777ee2d9c3c9bc8f0c947bba1c50a00c2d6e08f1982489cbd7dcc7becaa1,
+  75bindings31,830,580bytes. Actual8original page views; original PDF/archive/render closure,
+  5text-member encodings,1103source/18910native recursive occurrences,5360whole native-token
+  copies,20objects,33fields,4title-period/12token-array completions,11formal partitions,
+  10parent/child checks,24references and12citations/15targets verified. Separate reviewer
+  binary-member-decode assumption failure preserved; corrected script verifies binary bytes
+  without decoding. Current original package receipt5cbe733e, mechanicalv4512c0f5f,
+  decisionsv2d4d9595c, verificatione29d47b7 remain frozen. Missing primary definition bodies,
+  supplementary occurrence, full prose/geometry/fidelity and all other limitations remain.
+- **Root-source crosswalk/diagnosis review CLEAR** by review_k1_reconciliation:
+  `~/.cache/lysilogy/review-k1-source-crosswalk-v1/review.json`, SHA
+  9c0fb1df5a9b485602a17f0aeaee94f1be8ade126c5cd142a435ef94fabddeda,127bindings.
+  Recomputed all89source IDs/origins,3inventory/expanded-source hashes and25source-map pieces:
+  77exact+5contained mappings,7objects in2literal iffalse passages,3unnumbered supplements.
+  Original2109 failure and inert parser code-point394 reproduced; generated-only BibTeX
+  outputs exactly repeat statuses0/2/0. Seven relevant original pages viewed. Failed raw-
+  source-map assumption retained/corrected via finite comment masking. No source execution,
+  guard override, full fidelity/admission, parser fix or failure erasure; documentation web
+  history explicitly producer-reported and inaccessible full PDF unused.
+- **review_k1_reconciliation** now reconciles finalfour original indices11–14 only:
+  2207.05468/2310.01528/2112.14697/2302.00973 (21pages), under
+  `reconciliation/final-four-v1/`. Original primary is finish_benchmark by explicit handoff;
+  independent review_ready_prs; reconciler is distinct. Freeze inputs/view pages first and
+  preserve missing roles/corrections. Needs separate review after its finite package freezes.
+- Root prepared **next-two math geometry**, `reconciliation/next-two-geometry-root-v1/`:
+  diagnostic6c05ac8c92bcab38ff366c990b2840cad4c58455b098ec2d023c7d09c63c3868;
+  decisions79ca5091a8a1cfe9cfd850abfd6cf2d7463e19406ac9a230373a3cd2c3455265.
+  Fifteen complete display bodies and9printed numbers on6already-viewed original pages.
+  One explicit correction:2311equation3scope top478 to488 excludes preceding prose ending483;
+  rows484–488blank, equation ink489–505. Original independent numbered regions included
+  body+number, so new separate boxes are explicitly root post-freeze partitions. Pending
+  distinct visual review; no original supplement is manufactured, no native glyph repair.
+- Root also personally re-viewed2404p2/p3 and recorded source/printed identity for all7frozen
+  numbered displays, under `reconciliation/references-root-v1/source-printed-math-2404-root-v1.json`,
+  SHA24be705fea45198c64bf0b78fbfdead1917e55e8286add5d6ea8852557b8e5aa,143578bytes.
+  Both original annotations, source excerpts, native bodies/numbers and reviewed geometry are
+  bound. Explicit cases/fraction/script/punctuation correspondence and eq3two-row/blank-number-
+  row scope are recorded; native flattening/loss remains non-quote evidence. This is visual
+  source/display identity, not algebraic validity or full-paper admission. Needs distinct
+  source/printed review before any later supported codec construction. No source execution.
+- Next: finish129 corrections and exact source/runner review, run approved finite measurements
+  and final gates, draft/review/merge; receive finalfour reconciliation and queue both new root
+  preparations for distinct review. No downloads/native queue/heavy process runs at this
+  checkpoint. Blocked33 and drafts93/94/95 stay preserved. Four approved hosts remain ineffective
+  at last check; normal-terminal script and restart/resume verification from prior entries
+  remain necessary. Production10k, Playwright, phase exits and later phases are outstanding.
