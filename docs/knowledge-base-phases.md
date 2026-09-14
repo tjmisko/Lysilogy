@@ -245,6 +245,16 @@ acceptance are unchanged.
   no network or host-home mount. Keep current parser and all retained truth unchanged.
   A documented experimental no-go does not close #97 or lower its coverage requirement.
 
+- [ ] **#115 Publish reconciled visual pilot with attached table notes** (after #105,#111;
+  bounded part of #97). Branch `feat/e8.3-visual-tranche`. Owns new
+  `scripts/truth/latex/tranche_visual.py`/tests; narrow manual dispatch/fingerprint registration,
+  versioned release registration/tests, explicit collector truth selection and v3 derived labels.
+  Validate existing2409.03655v1 annotations,96dpi regions, attached table notes/markers and
+  exhaustive formal negatives; retain all references and omit O8–O11 for the new paper.
+  Preserve immutable v1/v2, every existing paper row and all metric denominators. No parser or
+  detector edits; coordinate shared registrations with109. Independent construction review
+  precedes publication and actual v1/v2/v3 measurements. This does not close97.
+
 ### Wave A3
 
 - [ ] **#37 E2.5 Resolution gold set and evaluation** (after #25, #69). Branch `feat/e2.5-gold-set`.
