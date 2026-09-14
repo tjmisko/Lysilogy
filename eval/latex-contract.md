@@ -87,8 +87,15 @@ are scanned through their real delimiters, retained and marked unresolved.
 Duplicate field names withhold every value of that field; duplicate database
 keys, compared without case, withhold every spelling's values. This does not
 change the separate fatal duplicate-key rule for printed `bibitem` inventories.
-Citation keys retain literal apostrophes, including an initial apostrophe; they
-are ordinary key characters, not field quotation delimiters or escaping syntax.
+Citation keys retain literal apostrophes and parentheses, including unmatched
+parentheses and an initial apostrophe. Parentheses remain literal within a key
+even when the record uses parentheses; the scanner does not truncate the key at
+an inner closing parenthesis. Field and string-macro identifiers can begin with
+an underscore or `@`; these metadata names do not establish printed field roles.
+Exact spans, case-insensitive duplicate withholding and unresolved macro values
+apply to these spellings too. Empty database keys remain an explicit identity
+support limit, although the generated reference accepts them; no synthetic key
+or association is inferred.
 Literal-percent values that the TeX text renderer would truncate supply no
 supplementary label. Explicit deposited BBL field roles remain authoritative;
 database values cannot establish absent printed boundaries or override conflicts.

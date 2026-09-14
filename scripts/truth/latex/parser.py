@@ -483,7 +483,8 @@ class BibtexScanner:
     only at brace depth zero, including when preceded by a backslash. Neither
     this scanner nor its outer database search applies TeX percent comments.
     """
-    identifier = re.compile(r"[A-Za-z][A-Za-z0-9_:.+/-]*")
+    command_identifier = re.compile(r"[A-Za-z][A-Za-z0-9_:.+/-]*")
+    identifier = re.compile(r"[A-Za-z_@][A-Za-z0-9_:.+/-]*")
     number = re.compile(r"[0-9]+")
 
     def __init__(self, text, limits, budget):
@@ -498,9 +499,9 @@ class BibtexScanner:
     def space(self):
         self.at = skip_space(self.text, self.at)
 
-    def name(self):
+    def name(self, command=False):
         self.space()
-        match = self.identifier.match(self.text, self.at)
+        match = (self.command_identifier if command else self.identifier).match(self.text, self.at)
         if not match:
             raise UnsupportedSource("unsupported or malformed BibTeX identifier")
         self.at = match.end()
@@ -590,7 +591,7 @@ class BibtexScanner:
                 return
             self.step()
             self.at = start + 1
-            kind = self.name().casefold()
+            kind = self.name(command=True).casefold()
             if kind == 'comment':
                 end = self.line_end()
                 if '@' in self.text[self.at:end]:
@@ -612,8 +613,11 @@ class BibtexScanner:
             else:
                 self.space()
                 key_start = self.at
-                while self.at < len(self.text) and self.text[self.at] not in ',})' and not self.text[self.at].isspace():
-                    if self.text[self.at] in '"#%()={\\':
+                # Parentheses are literal key characters, even for a record
+                # opened by '('. Only a comma (or whitespace before the actual
+                # delimiter) ends that key; do not truncate at an inner ')'.
+                while self.at < len(self.text) and self.text[self.at] not in ',}' and not self.text[self.at].isspace():
+                    if self.text[self.at] in '"#%={\\':
                         raise UnsupportedSource("unsupported BibTeX entry key syntax")
                     self.at += 1
                 if self.at == key_start:

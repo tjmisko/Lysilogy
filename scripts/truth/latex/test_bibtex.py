@@ -170,6 +170,77 @@ class BibtexTests(unittest.TestCase):
         for row in evidence['entries']:
             self.assertEqual(source[row['key_span']['start']:row['key_span']['end']], row['key'])
 
+    def test_should_retain_prefixed_metadata_when_field_identifiers_start_with_underscore_or_at(self):
+        source = '@misc{case,title={Title},_month={06},__markedentry={marker},@organization={Institution},year=2020}'
+        labels, issues, evidence = self.scan(source)
+        self.assertEqual(labels['case']['labels'], {'title': 'Title', 'year': '2020'})
+        self.assertFalse(issues)
+        fields = evidence['entries'][0]['fields']
+        self.assertEqual([field['name'] for field in fields],
+                         ['title', '_month', '__markedentry', '@organization', 'year'])
+        for field, exact in zip(fields[1:4], ('_month={06}', '__markedentry={marker}', '@organization={Institution}')):
+            self.assertEqual(source[field['start']:field['end']], exact)
+            self.assertEqual(field['sha256'], sha256(exact.encode()))
+            part = field['parts'][0]
+            self.assertEqual(source[part['content_start']:part['content_end']], exact.split('={', 1)[1][:-1])
+
+    def test_should_withhold_duplicate_prefixed_fields_when_only_their_case_differs(self):
+        for name in ('_month', '__markedentry', '@organization'):
+            source = '@misc{case,' + name + '={First},' + name.upper() + '={Second},title={Title}}'
+            labels, issues, evidence = self.scan(source)
+            self.assertEqual(labels['case']['labels'], {'title': 'Title'})
+            self.assertEqual(issues['duplicate_bibtex_field'], 2)
+            fields = evidence['entries'][0]['fields'][:2]
+            self.assertEqual([field['unsupported'] for field in fields], [['duplicate_field'], ['duplicate_field']])
+            self.assertEqual([source[field['start']:field['end']] for field in fields],
+                             [name + '={First}', name.upper() + '={Second}'])
+
+    def test_should_keep_prefixed_macros_unresolved_when_a_string_directive_supplies_a_value(self):
+        for name in ('_word', '@word'):
+            source = '@string{' + name + '={Title}}\n@misc{case,title=' + name + ',year=2020}'
+            labels, issues, evidence = self.scan(source)
+            self.assertEqual(labels['case']['labels'], {'year': '2020'})
+            self.assertEqual(issues['bibtex_string_macro'], 1)
+            self.assertEqual(issues['bibtex_unresolved_field_macro'], 1)
+            field = evidence['entries'][1]['fields'][0]
+            self.assertEqual(field['unsupported'], ['string_macro'])
+            part = field['parts'][0]
+            self.assertEqual(source[part['content_start']:part['content_end']], name)
+            self.assertEqual(evidence['entries'][0]['fields'][0]['name'], name)
+
+    def test_should_preserve_parentheses_in_keys_when_record_delimiters_use_braces_or_parentheses(self):
+        for key in ('a(b)c', 'a)b', 'a(b', 'case)'):
+            for opening, closing in (('{', '}'), ('(', ')')):
+                source = '@misc' + opening + key + ' ,title={Title},note={literal ) token}' + closing
+                labels, issues, evidence = self.scan(source)
+                self.assertEqual(list(labels), [key])
+                self.assertEqual(labels[key]['labels'], {'title': 'Title'})
+                self.assertFalse(issues)
+                row = evidence['entries'][0]
+                self.assertEqual(source[row['key_span']['start']:row['key_span']['end']], key)
+                self.assertEqual(row['end'], len(source))
+                self.assertEqual(labels[key]['provenance']['title']['key'], key)
+
+    def test_should_withhold_duplicate_parentheses_keys_when_case_variants_use_different_record_delimiters(self):
+        source = '@misc{a(b)c,title={First}}\n@misc(A(B)C,title={Second})'
+        labels, issues, evidence = self.scan(source)
+        self.assertEqual(labels, {'a(b)c': None, 'A(B)C': None})
+        self.assertEqual(issues['duplicate_bibtex_key'], 1)
+        self.assertEqual([row['key'] for row in evidence['entries']], ['a(b)c', 'A(B)C'])
+        for row in evidence['entries']:
+            self.assertEqual(source[row['key_span']['start']:row['key_span']['end']], row['key'])
+
+    def test_should_reject_missing_or_wrong_terminators_when_parentheses_are_literal_key_characters(self):
+        for source in ('@misc(a(b)c title={Title})', '@misc(a(b)c,title={Title}}',
+                       '@misc{a(b)c,title={Title})', '@misc(case)',
+                       '@misc{a(b)c,title={Title}', '@misc(a(b)c,title={Title}',
+                       '@misc(a(b)c,title={Title}) @misc{later,title={Later}}'):
+            with self.subTest(source=source), self.assertRaises(UnsupportedSource):
+                self.scan(source)
+        for source in ('@misc{,title={Title}}', '@misc(,title={Title})'):
+            with self.subTest(source=source), self.assertRaisesRegex(UnsupportedSource, 'empty BibTeX entry key'):
+                self.scan(source)
+
     def test_should_bind_decoded_offsets_and_complete_field_hashes_when_unicode_precedes_fields(self):
         source = 'Résumé outside\n@misc{case, title = "A {nested \"quote\"} title",\n year = 2020 }\n'
         labels, _, evidence = self.scan(source)
