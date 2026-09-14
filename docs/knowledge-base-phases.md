@@ -7365,3 +7365,74 @@ date, last merged issue, in-flight branches and their state, next action, and op
   then restart/resume/effectively verify. Approval already granted; do not ask again or bypass.
   No credentials or sudo missing. Continue all independent offline work. #97 approximately500/
   all-kind, Phase A exit, production10k, Playwright and Phases B–D remain unfinished.
+
+
+### 2026-09-14 14:43 UTC — formal implementation active; cleanup and next source reviews retained
+
+- Last merged #131 / PR133, merge6059dcfc0ec7d7c13df3a535c4d96f1f63028da7, reviewed51e3221;
+  mainb645951 before this docs checkpoint. Phase A / A2. V5 remains pinned with11papers/60O3
+  equations; all117 historical outcomes exact. Published score1/5gates,3/30objectives O1/O2/O30.
+  No new issue or PR since133; #97 approximately500/all-kind and all phase/system exits remain open.
+- #131 cleanup COMPLETE: local/remote branch and merged worktree removed; only WT target and
+  `numbered-math-131/target` cleaned with explicit Cargo clean. Receipt
+  `numbered-math-131/cleanup-v1/receipt.json`, SHA256
+  `f4af19e31080b37ec0b90de5517cd7a0d3eed90dbaf6025df6abec08b6d63cf1`.
+  All734 portable files and exact before/final CLI/bridge verified before/after; extra results
+  preserved externally. Targets held6,096files/2,268,758,016 summed allocated bytes; observed
+  filesystem free-space increase1,179,246,592bytes is a separate measurement. All ten protected
+  preview files and unrelated worktrees preserved. #131 project statusDone confirmed.
+- **#132 In Progress**, owner finish_corpus_proxy, worktree `.worktrees/feat/e8.3-formal-tranche`,
+  branch same suffix, from mainb645951 via gh worktree create. No PR; light implementation active.
+  Owning before-build/objects check passed, portable CLI/result/source/logs retained:
+  `formal-tranche-132/baseline-v1/receipt.json`, SHA256
+  `37f8b13dfe13e7944aa15e65dbe89e61b5e46160ccbed43c22f9e8a52ca61983`.
+  CLI75262f9a / resultdeae9c34; baseline111.137983s total, build110.186803s,
+  objects0.464384s. Its RUSAGE_CHILDREN RSS field is cumulative high-water, not individual
+  objects-process RSS. Real WT target will be reused for collector with20GiB floor; record the
+  bounded build-location deviation. Preserve generated subset docs/kb-scorecard externally and
+  restore only this owner-generated file. Heavy slot currently free; reserve it for owner as needed.
+- Prospective separate132 code/contract review by finish_benchmark:
+  `review-formal-contract-132-v1/receipt.json`, SHA256
+  `86d8c6c43d01f071c1fa5626d084dcb19583191f963c485e657cc444b5036501`.
+  Seven invariant/test groups sent to owner: final whole/direct/header/child/QED partitions,
+  four whole-statement endpoints, raw unresolved named-heading rejection, exact source scope,
+  nonquote body membership, O5/O6-only flags and real attachment/replay. The reviewer's original
+  primary2310 annotator role is explicit; this is not independent annotation/construction review.
+  Root source-scopeb6986951/producerhistory5ce1cc3a and printed017f96fb/geometry67ab9a3b stand.
+  Next: concrete code+construction reviews, real V6 publication/replay/measurement/gates/draftPR.
+- Additional2301 original producer history independently CLEAR:
+  `review-numbered-producer-history-2301-root-v1/review.json`, SHA256
+  `c0f37e8474cf80e380e4656c15bf6e38e27fcf7b728dc43879cb272e6863c9de`.
+  Twenty-eight bindings/5,127,394bytes; original assignment62ed1dd0/checkpointfb7f0cb2 and fifth
+  dispatches0701a83b/83077a6f retain finish_corpus_proxy/review_ready_prs attribution, six pages
+  before exports, exact407.569726s/835.493738s recorded intervals. Independent has no producer
+  field: attribution uses original dispatch/path/freeze only. Root rehashed declared provenance
+  separately from original annotator read access. No content/codec/publication admission.
+- review_k1_reconciliation prepares cache-only2301 construction proposal under
+  `numbered-2301-readiness/construction-proposal-v1/`, no repo/issue mutation. Existing131 codec
+  fixes a two-paper subset and expects different original schema/numbered-only arrays, so data-only
+  reuse is insufficient. Propose a narrow explicit profile, keeping original UTF-8 snippet hashes
+  distinct from Latin-1 member hashes, four numbered plus six unnumbered records and all unscored
+  roles/14dispositions. Source-scope52a3f6c7 and printedaae575c1 remain exact. Future release waits132.
+- finish_benchmark prepares cache-only2011 source-scope dossier under
+  `formal-2011-readiness/source-scope-preparation-v1/`; current parse/module/source/guard/finite
+  dependency closure pending. Root personally read full main, all nine input members and separate
+  BibTeX-shapedBBL, plus all2,029 nonempty non-pure-comment class lines in contiguous chunks.
+  Class is197,574codepoints/bytes, not prior approximate169k; root12562codepoints/12573UTF-8bytes.
+  Reading receipt `review-formal-source-scope-2011-root-v1/original-reading-v1.json`, SHA256
+  `7979f611c8006f88cbd8cb4f7740f297caa0966eeab5ea34ce4a248d08df9bc3`.
+  All12text member bytes match export. Pure-comment class lines omitted; no complete literal
+  header-reading claim because initial header output truncated. No^^; sole local Q=3 catcode at
+  171409 scoped for ifmtarg, endinput197462. All class dynamic machinery remains bound, not
+  generically trusted. Eight document iffalse regions, distinct from two owning7automatic
+  nonprinting objects. Three Problem units plus one Theorem, nested displays, omitted-proof
+  prose, repeated declarations, exact input graph and inline bibliography retained. Root source-
+  scope clearance still awaits final dossier/current metadata/crosswalk; no new metric grant.
+- About43,993,907,200bytes free (14:42), keep20GiB floor and one heavy task. No downloads/native
+  queue; corpus10951uniquePDFs/1000sources and native indexes remain untouched in Corpora/cache.
+  Preserved blockers: #33 feat/e2.1-kb-store905c341/noPR; #71 feat/e8.4-reference-truthd5e12aa/
+  draft93; #72 feat/e8.5-person-labelsc867ec6/draft95; #25 feat/e1.2-bibliography201c53c/draft94.
+  Four-host approval already exists; active profile remains blocked/read-only config. Normal
+  terminal command `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, restart,
+  resume and effective probes remain required. User reminded once during this interval. Do not
+  ask again or bypass. Continue132 and independent source preparation; no credentials/sudo missing.
