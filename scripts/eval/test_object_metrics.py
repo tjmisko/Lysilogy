@@ -34,6 +34,9 @@ class ObjectMetricTests(unittest.TestCase):
         self.assertTrue(all(original[key]!=expanded[key] for key in ('truth','config','trace')))
         self.assertEqual(original['input'],expanded['input'])
         self.assertIn('eval/truth/k1-limited-v2-build.json',m.implementation_files(m.ROOT,'k1-limited-v2'))
+        visual=m.release_paths('k1-limited-v3')
+        self.assertTrue(all(visual[key] not in (original[key],expanded[key]) for key in ('truth','config','trace')))
+        self.assertEqual(visual['input'],original['input'])
         for version in ('../k1-limited-v1','latest','',None):
             with self.subTest(version=version),self.assertRaisesRegex(ValueError,'unsupported collector truth version'):
                 m.release_paths(version)
@@ -56,7 +59,7 @@ class ObjectMetricTests(unittest.TestCase):
                     self.assertEqual((folder/'input.json').read_bytes(),old_input)
                     self.assertEqual((folder/'observation.json').read_bytes(),old_observation)
                 previous=archive,m.canonical(payload)+b'\n',raw
-            self.assertEqual(m.document((repo/m.INPUT).read_bytes())['truth_sets']['K1']['version'],'k1-limited-v2')
+            self.assertEqual(m.document((repo/m.INPUT).read_bytes())['truth_sets']['K1']['version'],'k1-limited-v3')
 
     def should_reject_changed_prior_observations_when_a_new_cohort_would_replace_them(self):
         with tempfile.TemporaryDirectory() as directory:

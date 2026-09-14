@@ -45,14 +45,15 @@ print(json.dumps({name:str(value.__file__) for name,value in loaded.items()},sor
                            'yes' if contaminate else 'no', version], capture_output=True, timeout=10)
 
 
-def second_fixture(directory):
+def second_fixture(directory, visual=False):
     """Synthetic publication pins; no real new release or manual labels."""
     repo, _ = fixture(directory)
-    version = versioned.CURRENT_VERSION
+    version = versioned.VISUAL_VERSION if visual else versioned.CURRENT_VERSION
+    modules = versioned.VISUAL_MODULES if visual else versioned.CURRENT_MODULES
     bundle = repo / 'eval/implementations' / version
     bundle.mkdir()
     files = {}
-    for name in versioned.CURRENT_MODULES:
+    for name in modules:
         relative = 'scripts/corpus/corpus.py' if name == 'corpus.py' else 'scripts/truth/latex/' + name
         raw = (ROOT / relative).read_bytes()
         (bundle / name).write_bytes(raw)
@@ -76,13 +77,37 @@ def second_fixture(directory):
     (bundle / 'manifest.json').write_bytes(raw)
     manifest_hash = versioned.digest(raw)
     worker = repo / 'scripts/truth/latex/versioned.py'
-    worker.write_text(re.sub(r'^CURRENT_MANIFEST_SHA256 = .*$',
-                            'CURRENT_MANIFEST_SHA256 = ' + repr(manifest_hash),
+    pin = 'VISUAL_MANIFEST_SHA256' if visual else 'CURRENT_MANIFEST_SHA256'
+    worker.write_text(re.sub('^' + pin + r' = .*$',
+                            pin + ' = ' + repr(manifest_hash),
                             worker.read_text(), flags=re.M))
     return repo, bundle, manifest_hash
 
 
 class VersionedTests(unittest.TestCase):
+    def test_should_keep_visual_release_disabled_when_its_independent_publication_pin_is_absent(self):
+        with patch.object(versioned, 'VISUAL_MANIFEST_SHA256', None):
+            with self.assertRaisesRegex(ValueError, 'not published'):
+                versioned.pinned_release(ROOT, versioned.VISUAL_VERSION)
+        self.assertEqual(len(versioned.release_spec(versioned.VERSION)[1]), 12)
+        self.assertEqual(len(versioned.release_spec(versioned.CURRENT_VERSION)[1]), 14)
+
+    def test_should_load_exact_fifteen_modules_when_visual_release_is_explicitly_selected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, bundle, digest = second_fixture(directory, visual=True)
+            with patch.object(versioned, 'VISUAL_MANIFEST_SHA256', digest):
+                manifest = versioned.pinned_release(repo, versioned.VISUAL_VERSION)[1]
+                self.assertEqual(set(manifest['files']), versioned.CURRENT_MODULES | {'tranche_visual.py'})
+                (repo / 'scripts/truth/latex/tranche_visual.py').write_text('raise RuntimeError("unreviewed current source")')
+                result = imports_in_worker(repo, version=versioned.VISUAL_VERSION)
+                self.assertEqual(result.returncode, 0, result.stderr.decode())
+                loaded = json.loads(result.stdout)
+                self.assertEqual(len(loaded), 15)
+                self.assertEqual(loaded['tranche_visual'], str(bundle / 'tranche_visual.py'))
+                (bundle / 'tranche_visual.py').write_bytes(b'raise RuntimeError("replaced retained source")')
+                with self.assertRaisesRegex(ValueError, 'module differs'):
+                    versioned.pinned_release(repo, versioned.VISUAL_VERSION)
+
     def test_should_reject_unpublished_truth_when_no_reviewed_release_pin_exists(self):
         with patch.object(versioned, 'CURRENT_MANIFEST_SHA256', None):
             with self.assertRaisesRegex(ValueError, 'not published'):

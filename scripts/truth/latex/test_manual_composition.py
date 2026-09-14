@@ -72,6 +72,8 @@ class ManualCompositionTests(unittest.TestCase):
             (cache/'inputs.json').write_bytes(canonical({'papers': [{'arxiv_id': 'synthetic'}]}))
             (cache/'indexes.json').write_bytes(canonical({'papers': [{'paper_id': 'paper'}]}))
             with patch('tranche.attach_tranche', return_value={'retained': True}) as tranche, patch('manual.attach_objects') as legacy:
+                (cache / 'new-format').mkdir()
+                (cache / 'new-format/manifest.json').write_bytes(canonical({'format': 'k1-manual-tranche-v1'}))
                 output = assemble(cache, cache, cache, 'candidate.json', None, inputs_relative='inputs.json', indexes_relative='indexes.json', tranche_relative='new-format')
                 self.assertEqual(output, {'retained': True}); tranche.assert_called_once(); legacy.assert_not_called()
                 with self.assertRaisesRegex(ValueError, 'legacy bundle arguments'):

@@ -190,6 +190,18 @@ def attach_bibliography(cache, corpus_root, data_root, candidate_raw, paper, map
     return output
 
 
+def attach_declared_tranche(cache, corpus_root, data_root, candidate_raw, paper, mapped, relative):
+    from tranche import FORMAT as MIXED_FORMAT, attach_tranche
+    from tranche_visual import FORMAT as VISUAL_FORMAT, attach_visual
+    raw = bounded(cache, relative + '/manifest.json')
+    declared = document(raw).get('format')
+    require(declared in (MIXED_FORMAT, VISUAL_FORMAT), 'unsupported explicit tranche format')
+    codec = attach_tranche if declared == MIXED_FORMAT else attach_visual
+    result = codec(cache, corpus_root, data_root, candidate_raw, paper, mapped, relative)
+    require(bounded(cache, relative + '/manifest.json') == raw, 'tranche dispatch manifest changed')
+    return result
+
+
 def assemble(cache, corpus_root, data_root, candidate_relative, region_relative, panel_relative=None,
              inputs_relative='k1-full-eval-inputs.json', indexes_relative='k1-full-index.json', object_relative=None, bibliography_relative=None, tranche_relative=None):
     inputs_raw, indexes_raw = bounded(cache, inputs_relative), bounded(cache, indexes_relative)
@@ -203,8 +215,7 @@ def assemble(cache, corpus_root, data_root, candidate_relative, region_relative,
     if tranche_relative:
         if any((region_relative, object_relative, panel_relative, bibliography_relative)):
             raise ValueError('explicit tranche format cannot be combined with legacy bundle arguments')
-        from tranche import attach_tranche
-        return attach_tranche(cache, corpus_root, data_root, candidate_raw, papers[0], mappings[0], tranche_relative)
+        return attach_declared_tranche(cache, corpus_root, data_root, candidate_raw, papers[0], mappings[0], tranche_relative)
     if not region_relative and not object_relative:
         raise ValueError('at least one manual region/object bundle is required')
     if panel_relative and not region_relative:
