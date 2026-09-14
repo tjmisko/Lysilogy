@@ -318,6 +318,17 @@ acceptance are unchanged.
   separately enumerate new-version source provenance changes. No parser/detector edits,
   source-failure guard waivers, partial-paper denominator or unrelated metric grants.
 
+
+- [ ] **#132 Complete formal K1 cohort** (after #131; bounded part of #97).
+  Branch `feat/e8.3-formal-tranche`. Owns a new `tranche_formal.py`, focused tests and
+  narrow manual/release/versioned/builder registrations, new reviewed construction/release
+  evidence, contracts and report. Publish exactly 2310.01528v1's seven statements and four
+  proofs through an explicit O5/O6-only codec after finite source-scope and distinct construction
+  review. Preserve three associated Lemma2 parts, exact whole-statement proof endpoints, every
+  unscored role and all fourteen original dispositions. Retain all pinned versions including
+  #131's release, previous semantic records and outcomes. No detector/parser edits, generic
+  conditional waiver, source-failure fallback or smaller partial denominator.
+
 ### Wave A3
 
 - [ ] **#37 E2.5 Resolution gold set and evaluation** (after #25, #69). Branch `feat/e2.5-gold-set`.
@@ -6831,3 +6842,347 @@ date, last merged issue, in-flight branches and their state, next action, and op
   is free after #129 cleanup. Next: start #131 in its new worktree, baseline objects, implement
   and separately review code/construction, publish/replay only after clearance, measure/gate,
   draft PR, independent final review and merge. Continue useful offline work meanwhile.
+
+
+### 2026-09-14 12:56 UTC — numbered codec implementation and two source/printed preparations
+
+- Last merged #129 / PR130 at d9a62af; main 1aceca0 before this checkpoint. Phase A / A2;
+  score unchanged at 1/5 hard gates and 3/30 objectives (O1/O2/O30). V4 remains 49 TP / 0 FP /
+  1 FN and 50 regions, O1=.98989898989899 / O2=.8910021250829322. #131 is open under epic67 /
+  project12, In Progress, with #129 closed. No new truth admission or phase completion.
+- **#131 implementation active** under review_k1_reconciliation. Worktree created with
+  `gh worktree create --branch feat/e8.3-numbered-math-tranche` from main1aceca0 at
+  `.worktrees/feat/e8.3-numbered-math-tranche`. No PR or implementation commit yet. Own-worktree
+  baseline/build reserved the single heavy slot; no parallel heavy job. Current edits include
+  the new numbered-math module and generated scorecard. Require separate source/module and
+  complete construction review before publication. finish_benchmark independently reviews the
+  root 55-equation mechanical proposal first; review pending. Preserve exact fixed 7+48 scope.
+- Current source-scope question is explicit: the historical two candidates retain automatic
+  `unsupported_source_semantics`. Root read all of original spconf.sty and the LyX address
+  declaration/invocation. The style changes layout/title/section/bibliography/captions and has
+  dynamic section-name machinery; it must not be characterized as generically free of dynamic
+  commands. Its exact bytes and actual uses require a finite whole-paper scope review. The
+  LyX wrapper's actual argument is address/center text and its definition forwards that argument
+  once. Preserve all automatic diagnostics and source encodings. Unchanged parser IDs and a
+  generic review flag alone cannot establish complete inventory; reject changed local styles,
+  structural insertions or unsupported scope. Implementer is preparing precise bound evidence.
+- **Root formal source/printed preparation for 2310.01528v1**:
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation/source-printed-formal-2310-root-v1/decisions.json`,
+  SHA256 `a099d83c0d7d6028fecc7907539b4de122ab8f62f5e3e46d8107e521cbe1883a`,
+  2,375,866 bytes. Seven statements, four proofs, three retained Lemma2 children; root personally
+  re-viewed original pages2/3/4 and read every complete source occurrence. Nineteen bindings,
+  98 source occurrences, 3,626 native copies and 3,550 whole tokens checked. All eleven exact
+  historical candidate occurrences and four unnamed nearest-preceding proof targets retained;
+  native QED remains literal l despite the visible hollow square. The gzip's original name
+  Nash_Equilibrium.tex and exported main.tex alias bind the same 15,073 UTF8 bytes. The first
+  prepare.py failed an exact-child-interval assumption; preparation-failure-v1.json retains it.
+  prepare-v2.py records exactly 5/5/4 extra trailing whitespace characters in independent child
+  ranges; both originals remain unchanged. finish_corpus_proxy independently passed mechanical
+  and page/source checks, final scoped receipt pending. No current parser or metric grant.
+- **Root four numbered source/printed identities for 2301.05184v1**:
+  `reconciliation/source-printed-math-2301-root-v1/decisions.json` under the same preparation
+  root, SHA256 `0735dddd03f0427e1fed0dfe4d2f312e0a9d78878e1b6a119135a69f3a9fb6b6`,
+  110,280 bytes. Root personally viewed original full page2 after reading four original source
+  rows and then read five local macros. Thirteen bindings, 16 source occurrences, 193 native
+  copies and 92 whole tokens checked. Preserve original Latin-1 full-member versus UTF8 snippet
+  hash domains, the integral exponent and entire two-row/cases groups under their single numbers.
+  Literal bd macro has def over tightly overlapped equals; no math correction or normalized
+  quotation. Prior body/number geometry clearance b2a92a00 is bound unchanged. Six unnumbered
+  displays, eleven statements and all other roles stay unscored. Candidate occurrence mappings
+  are retained candidates, with final source construction still pending. No failed preparation.
+  finish_benchmark is queued to review this small packet after the 55-equation proposal.
+- Seven new checkpoint bindings in `~/.cache/lysilogy/kb-session-checkpoint-20260914T1256.json`,
+  SHA256 `8e1d080d5f783e89bb66417ac5319b99e30feda2765be15f47e2f82f077c8380`.
+  All ten protected preview files remain byte-identical. No source execution, renderer, network
+  or external model calls in these preparations; external cost zero, reasoning cost unmetered.
+- Next: finish distinct preparation reviews, inspect #131's concrete source-scope and codec,
+  fix findings, publish/replay only after construction clearance, measure/gate/draft PR/review/
+  merge. Then continue #97's unchanged approximately 500-paper and all-kind requirement.
+  No downloads/native queue; 42 GiB free at last check, 20 GiB floor unchanged. Preserved #33
+  worktree and drafts PR93/94/95 remain as in the 12:44 entry. Four approved hosts still require
+  normal-terminal permission-script execution/restart because the config mount is read-only;
+  no repeat approval or bypass. Production10k, Playwright and later phases remain open.
+
+
+### 2026-09-14 13:01 UTC — formal identity review clear; unscored endpoint correction preserved
+
+- Last merged #129 / PR130 at d9a62af. Main a9b79d7 before this docs checkpoint. Phase A / A2;
+  #131 remains active in `.worktrees/feat/e8.3-numbered-math-tranche`, branch same suffix,
+  implementer review_k1_reconciliation. No implementation commit/PR yet. New module and narrow
+  dispatch/fingerprint registrations are being written; heavy slot reserved for its own baseline
+  build until owner reports release. Preserve baseline receipts before source mutation.
+- **2310.01528v1 formal source/printed preparation independently CLEAR**:
+  `~/.cache/lysilogy/review-k1-source-printed-formal-2310-v1/review.json`, SHA256
+  `017f96fb4ca0c2bb198d58c040c544cb4b414c0ccf942f2e7d744d38bcd673ac`.
+  Reviewer finish_corpus_proxy personally viewed original pages2/3/4 and read full source.
+  Nineteen bindings, 7,325 record references, 98 source / 3,626 native / 3,550 token copies,
+  eleven exact candidate occurrences, twelve geometry associations and four nearest-preceding
+  proof targets verified. Three child boundary differences remain exactly 5/5/4 trailing spaces/
+  tab; original failed producer script is retained. No findings. No current parser validation,
+  native quotation fidelity or metric admission. This closes only the bounded preparation review.
+- **55-equation construction review has one concrete unscored endpoint finding.** In 1911's
+  original primary `/literal_references/0`, destination_id is section-3, but that inventory has
+  no section-3 owner. Independent `/sections/2` has that id. Original proposal retained both
+  records but supplied no endpoint crosswalk. Root inspected exact originals and prepared
+  `~/.cache/lysilogy/k1-coverage/numbered-equation-construction-root-v1/unscored-endpoint-addendum-v1.json`,
+  SHA256 `4cf9d5cf1fa78808b1ed72082c93c4a2a8772ffb38e196cc77f0c0bb1618737d`, 3,395 bytes.
+  Keep an explicit unresolved-primary-endpoint disposition with exact record pointer/hash;
+  retain independent possible owner separately, with no automatic cross-inventory resolution.
+  Reject undeclared dangling owners. Selected 55 equations and O4=false remain unchanged.
+  finish_benchmark reviews the addendum alongside the original proposal; final verdict pending.
+  Implementer informed and must bind this history into final construction after clearance.
+- finish_benchmark next reviews root's four numbered 2301 source/printed identities (0735dddd,
+  full path/hash in 12:56 entry). finish_corpus_proxy now prepares a cache-only bounded formal
+  extension proposal for 2310's seven statements/four proofs after #131. No issue or code change
+  authorized by that proposal alone. Root independently read full preamble and bibliography
+  suffix: sole ifx/csname/else/fi machinery is the bibliography's unused doi-definition choice
+  after final proof; doi has two declarations and no invocation. Both branches are literal
+  formatting. The automatic unparsed bibliography prefix and all guard diagnostics stay intact.
+  This finite association needs explicit construction review; it is not a general conditional
+  evaluator or guard waiver. Existing positive formal V4 records remain acknowledged.
+- Score unchanged: 1/5 hard gates, 3/30 objectives O1/O2/O30; V4 O1=.98989898989899 and
+  O2=.8910021250829322 over all 50 regions. No new release or phase completion. No downloads
+  or native queue. Protected preview files unchanged at 12:56 check and untouched since.
+  Blocked #33 and drafts93/94/95, approved-host normal-terminal script/restart requirement,
+  free-space floor, #97 coverage, production10k and Playwright acceptance remain as above.
+  Next: complete current independent reviews, freeze/review #131 source/module and construction,
+  then publish/replay, measure/gate, draft PR, independent final review and merge. Continue.
+
+
+### 2026-09-14 13:07 UTC — equation proposal and finite source-scope reviews clear
+
+- Last merged #129 / PR130 at d9a62af; main731d3c6 before checkpoint. Phase A / A2. #131
+  implementation remains active under review_k1_reconciliation in its recorded worktree, with
+  no PR/implementation commit yet. All ten protected main preview files verified unchanged.
+  Eight continuity bindings in `~/.cache/lysilogy/kb-session-checkpoint-20260914T1309.json`,
+  SHA256 `9c36e6254f9da50ab92ceb1aee633d09246be54d26bfec74b4bc4a617b0711b3`.
+  Filename is a checkpoint label; its actual created_at records 13:07 UTC.
+- **#131 baseline complete, heavy slot released.** Own-worktree CLI built before codec edits
+  at `1aceca0bfe6a2327d19b13d367ae6b889fb9acad`; offline build 33.72 s, actual
+  `eval objects --check` exit0. Receipt `~/.cache/lysilogy/numbered-math-131/baseline-receipt.json`,
+  SHA256 `426c0202e832dc113b6e7812caea314ffe970c5518423e6d93ef5b16559d101a`.
+  O1=.98989898989899 / O2=.8910021250829322 over 50 cases; O3 remains unavailable.
+  Fresh worktree lacks unrelated prior G5/O30 local results; this does not change the published
+  1/5 gates and 3/30 objectives. Final full gates and fresh measurement remain required.
+- **55-equation proposal plus endpoint addendum independently CLEAR** by finish_benchmark:
+  `review-numbered-equation-construction-131-v1/review.json`, SHA256
+  `d80691ccc32473d30a3d47b97f1a8676977588ccfa0cc3c4940c143413f95370`.
+  Verified 55 files / 16,044,895 bytes before addendum, all 330 selected pointers, 110 body/
+  number regions, 50 exact plus five contained source mappings, 584 original ledger entries
+  and 164 source-array entries. F1 resolved by the explicit unresolved endpoint addendum
+  4cf9d5cf; failed original review assertion and original proposal remain. Complete source
+  metadata beyond the three arrays must also be retained by the final codec, including coverage,
+  labels, source identities/maps and unknowns. Current-source/producer/corpus/runtime/final
+  construction closure remains required. Implementer has the review and complete-metadata rule.
+- **Finite source-scope packet independently CLEAR by root** for the exact two inputs:
+  producer `numbered-math-131/source-scope-v2.json`, SHA256
+  `896ecb4dfab2b407a99b7823aa95c112bbfdfdf18cefa606360978b4ef8764bf`, 188,587 bytes;
+  root receipt `review-numbered-source-scope-131-root-v1/review.json`, SHA256
+  `0508f7b52a0c0d52e8b7d6f3ae29bf5d3b156dc5774e26794e4e883d34487cb5`, 45,001 bytes.
+  Thirty-six bindings, six exact main/worktree parser/archive/native modules and 115 source
+  spans checked. Root freshly reparsed both original archives and verified complete equality
+  to both historical inventories and exact native exports. Root read the whole spconf style,
+  headers, complete table-wrapper arguments, LyX declaration/invocation, figure paragraph scope
+  and entire1911 bibliography. Per-guard reasons cover all six/thirteen original diagnostics;
+  automatic flags remain false. Added exact full argument scopes for address/name/captionsetup/
+  resizebox/rotatebox/geometry/lyxaddress. Dynamic section-counter machinery is retained with
+  its finite uses; no generic style whitelist or arbitrary conditional evaluator is granted.
+  Producer v1 failed after omitting .bbl while finding begingroup; original script/stderr bound,
+  v2 includes .bbl. No source execution. A changed style/argument/guard cannot inherit this review.
+  This clears only the finite source scope; final code/module inventory/construction/replay
+  still need separate review before publication. finish_benchmark is available for that review.
+- **2301 four-display source/printed preparation independently CLEAR**:
+  `review-source-printed-math-2301-v1/review.json`, SHA256
+  `aae575c12ee19da680a46dc1b2fe1fe638c86641414d3735b7e6881515d4d2a5`.
+  Reviewer personally viewed original full page2; 13 direct bindings plus producer/assignment
+  closure total 18 files / 4,680,722 bytes. Exact Latin-1 source member, 16 source / 193 native
+  records and 92 whole tokens verified. All four complete numbered groups and the literal bd
+  definition marker retained; six unnumbered and other roles stay unscored. Source mappings
+  still need final current-source construction. This additive clearance raises prepared reviewed
+  numbered source/printed identities from 85 to 89, while geometry total stays94; do not rewrite
+  the frozen V3 matrix or count any new published coverage.
+- finish_corpus_proxy prepares the bounded cache-only next formal extension proposal using the
+  now-cleared 2310 seven statements/four proofs. Root awaits #131 code/module/construction
+  freeze and will coordinate independent review, then actual bounded publication/replay,
+  measurements, gates, draft PR, final review and merge. No new follow-up issue beyond131.
+  Score and all outstanding #97/A2/10k/Playwright requirements remain unchanged. Preserved
+  #33 and drafts93/94/95 still await the approved-host normal-terminal script/restart action;
+  no repeat approval. No downloads/native queue, external calls or models in these reviews.
+
+
+### 2026-09-14 13:19 UTC — formal extension issue ready after numbered codec
+
+- Last merged #129 / PR130 at d9a62af; main3c72424 before this docs checkpoint. Phase A / A2.
+  #131 remains active in `.worktrees/feat/e8.3-numbered-math-tranche` from1aceca0 under
+  review_k1_reconciliation; no implementation commit/PR yet. All55 concrete projection rows
+  now pass. First construction v1 incorrectly assumed the independent kind spelling; its
+  failed script/log are retained under `~/.cache/lysilogy/numbered-math-131/`. Corrected code
+  uses exact `numbered_equation`. Complete source metadata, guard/argument/archive review and
+  original endpoint dispositions are being bound. Final20-module inventory/construction freeze,
+  meaningful fixture tests and distinct finish_benchmark review remain before publication.
+  Heavy slot free after the previously recorded successful own-CLI baseline.
+- **Formal readiness proposal independently CLEAR; #132 opened**, blocked by131. Epic67,
+  project12, PhaseA, Todo; branch `feat/e8.3-formal-tranche`. No worktree or code yet. Root receipt
+  `~/.cache/lysilogy/review-formal-2310-proposal-root-v1/review.json`, SHA256
+  `3333756384a089c15430c65d8881746011a31a95faac2e2604e3e190be092b76`, 15,947 bytes.
+  Verified58 bindings /6,098,826 bytes,17 retained source files,14 exact original dispositions,
+  current fresh parse equals historical candidate,7 whole statements /4 proofs /4 exact nearest
+  targets, and existing V4 positive formal records. This clears issue scope, not final source
+  semantics, codec, construction, runtime or metric admission. Original automatic flags remain
+  false. Source bibliography condition lies after the last formal unit; both literal branches,
+  dormant declarations and all29 guard diagnostics must remain explicit in finite source review.
+- Producer proposal `~/.cache/lysilogy/k1-coverage/formal-2310-readiness-proposal-v1/proposal.md`,
+  SHA256 `32dc4d586e2f3c70b07e83e4837b050993334f25845afe33342185500e9ef953`; producer receipt
+  `0f74a583c6223cd9b787d391564eb35031c7e0e4144b85d6df591720f9688caf`. Snapshot v1 failed on
+  a docs-only main advancement; v2 failed an off-by-one bibliography-header newline assumption.
+  Both failures/scripts remain; v3 preserves exact source boundaries and original candidates.
+  finish_corpus_proxy now prepares cache-only complete source-scope evidence under
+  `~/.cache/lysilogy/formal-tranche-132/source-scope-preparation-v1/` for root's separate review.
+  Implementation waits131 to avoid shared-module conflicts; no deposited source execution.
+- Next: independently review131's frozen code/module inventory and final construction, fix
+  findings, then bounded publication/replay, actual metric/gate checks, draft PR/final review,
+  ordinary main integration, merge and cleanup. Continue132 and the unchanged #97 approximately
+  500-paper/all-kind requirement. Main's unrelated ten preview files remain untouched; last
+  byte verification13:07. No downloads/native queue. Score unchanged:1/5 gates,3/30 objectives
+  O1/O2/O30; O1=.98989898989899/O2=.8910021250829322 over50regions, no new O3/O5/O6 score.
+  Preserved #33 and drafts93/94/95 still await normal-terminal execution of the already-approved
+  four-host script and restart because config is read-only here; no repeat approval or bypass.
+  Production10k, actual Playwright and later phase requirements remain open.
+
+
+### 2026-09-14 13:29 UTC — numbered codec frozen for independent review
+
+- Last merged #129 / PR130 at d9a62af; main174cb67 before checkpoint. Phase A / A2. #131
+  source frozen at `320d18961003bb8d2b216e5daabe0408f17f7735`, seven owned source/test files,
+  in `.worktrees/feat/e8.3-numbered-math-tranche`. No PR yet; only generated scorecard dirty.
+  Own focused codec/dispatch/release/layout/versioned tests:67 passed,1.585s. Receipt
+  `~/.cache/lysilogy/numbered-math-131/source-checkpoint-v1.json`, SHA256
+  `524ad51355c737780220532510a4dde4c5513267b67de7cfe700cc8adb306b9a`, binds all20 proposed
+  V5 producer modules, versioned dispatch and original failed preparation scripts/logs v1–v5.
+  V5 pin remains None. finish_benchmark reviews exact source and changed module inventory;
+  review_k1_reconciliation concurrently prepares final construction/all14dispositions against
+  the frozen bytes. Source/printed judgments now bind exact original rows. Full gates and
+  actual publication/replay are pending; reserve one heavy job at a time, currently free.
+- **Root independently CLEARed original producer history** for2404/1911, using the codec's
+  already planned producer_history slot. `review-numbered-producer-history-131-root-v1/review.json`
+  under the cache, SHA256 `0e1c3a07dff328a986042b1849702b0103be53fc8e9ddc7995a78e25c09c0107`,
+  38,682 bytes. Forty bindings /13,078,799 bytes; exact assignment62ed1dd0/checkpointfb7f0cb2,
+  both assigned packets, four original inventory/receipt identities and all original input/image
+  hashes verified. Primary finish_corpus_proxy / independent review_ready_prs, recorded pages-first
+  and no-peer/no-parser histories retained. Later1911dispatch is bound separately. Primary2404's
+  unmeasured initial viewing timestamp/active time/cost stay null. No new content, source-semantics
+  or metric grant; final independent construction reviewer still required. Owner has this receipt.
+- **Root prepared four2011 source/printed statement judgments** while131 code was finishing:
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation/source-printed-formal-2011-root-v1/decisions-v2.json`,
+  SHA256 `d3b10cd9cf523541b368cc48c875f6a1890dd7438dc89b178c80fad05605ab12`,271,266 bytes.
+  Root personally viewed complete original pages3/4, read all four complete source statements,
+  norm/theorem declarations, preamble, finite class excerpt and proof-omission context. Twenty-five
+  bindings,30 original source /721 native record references, exact four historical source object
+  occurrences. Problem1 retains nested numbered Eq1; Problem3 retains its unnumbered MM display.
+  The original missing primary header/body partition remains an explicit post-freeze completion,
+  not paired first-pass agreement. Source-snippet versus full-member hash domains preserved.
+  Whole class/source-scope review, seven nonprinting automatic objects, full construction and
+  metric admission remain pending. finish_benchmark is queued for this small distinct preparation
+  review after131 source/construction priorities. No new truth coverage is claimed.
+- Preparation v1 for the four statements passed raw checks but root caught five derived literal
+  references incorrectly naming its Python script as a JSON-pointer artifact. Original v1
+  `decisions.json` dd351f5b remains unchanged. `preparation-correction-v1.json` and prepare-v2.py
+  retain the correction: verified derived source literals are inline, without fabricated JSON
+  pointers. No original source/native or judgment changed. This is not an implementation test
+  failure or source-parser fix. The v2 packet is the review target.
+- #132 is open, PhaseA/E8/Todo under epic67/project12, blocked131, no branch/worktree yet.
+  finish_corpus_proxy prepares finite source-scope evidence at the previously recorded path.
+  One current source-only parse at174cb67 equals historical inventory,0.052s;29guard keys,
+  7statements/4proofs,6labels,17macros/10theorems,608command tokens and40comments (4insideproofs).
+  Per-guard proposed judgments and receipt still pending. Two preparation-only failures retained:
+  binding helper returned bytes before parse; literal-group scan met authored [0,delta[ interval.
+  No original source/flags changed, no additional parser call required by either failure.
+- Five current artifact bindings and ten protected preview hashes verified in
+  `~/.cache/lysilogy/kb-session-checkpoint-20260914T1329.json`, SHA256
+  `72c86befafc88ce00768cf9ce9d8ebb2841d096cf4ef45738d2f728bc571a47d`.
+  No downloads/native queue;42GiB free at last check,20GiB floor. Score unchanged1/5gates,
+  3/30objectives O1/O2/O30. Preserved #33 and drafts93/94/95 still await the already-approved
+  four-host script in a normal terminal and restart; no repeated approval or bypass.
+  Next: finish131 independent source/construction reviews, fix findings, bounded actual
+  publication/replay and full gates/metrics, draft PR/final review, ordinary main integration,
+  merge/cleanup. Then132 and #97's unchanged approximately500-paper/all-kind requirement.
+  Production10k, actual Playwright and phasesB–D remain open; no system or phase completion.
+
+
+### 2026-09-14 13:43 UTC — actual equation attachment correction; formal source scope clear
+
+- Last merged #129 / PR130 at d9a62af; maincc0355a before checkpoint. Phase A / A2. Active
+  #131 worktree unchanged, now `f7b6c0d` after two concrete review/runtime corrections. No PR
+  or published V5 yet. finish_benchmark independently reviews the latest narrow source delta;
+  review_k1_reconciliation prepares publication/report after exact construction review reissue.
+  Heavy slot free. All ten protected main preview files verified byte-identical;41GiB free.
+- At320d189, reviewer found that a nonempty native range list containing only whitespace could
+  pass complete-O3 validation. Frozen public-validator reproduction and review
+  `review-numbered-math-131-source-320d189/review.json` SHA256
+  `ddd2d0b27f0aee874eb1c9175be20c9f07636f3243221e49f358c749e4f2ffa5` remain. Fix681fd20
+  requires nonempty non-whitespace support, with fully resealed negative and valid corrupted
+  nonquote control. Distinct source clear `review-numbered-math-131-source-681fd20/review.json`
+  SHA256 `1e23b42d2c29a0301c4156457a8f1eb44cec08760dd19365f61bfde8de29f495`.
+- Root independently CLEARed complete v2 construction after that source fix:
+  `review-numbered-construction-131-root-v1/review.json` SHA256
+  `2f2b148ceaa1c734984505b3ec319529ae50e26026bebf81ff968c85fee8388d`, with exact per-paper
+  reviews a0bdbceb/99ea24a5. Ninety-two bindings /18,804,452 bytes;584 original ledger records,
+  164 source-array records, full remaining source metadata,2,864 native range checks,110 regions,
+  50 exact/five contained source mappings,211 original endpoints/one explicitly unresolved.
+  Both whole 7/48 inventories and all14 original dispositions retained. Entire previews from
+  v1 and v2 equal; only construction timestamp/codec hash and disposition timestamp changed.
+- **First actual reviewed CLI attach then caught a post-validation TypeError**: four final raw
+  byte rechecks called JSON exact() and tried to canonicalize bytes. Both failed actual runs are
+  retained under `numbered-math-131/run/attach-{2404,1911}-v1.*`; nothing published. Fixf7b6c0d
+  uses direct byte equality and adds an actual filesystem success/late-mutation regression.
+  All409 truth tests pass. Source-checkpoint-v3.json SHA256
+  `c1f36fcb80677039c62ca15a0a2036de1c696de4721b1d4b32d54db808f033ca` is the review target.
+  Complete construction refreshed to `numbered-math-131/final-construction-v3/receipt.json`,
+  SHA256 `87060dd0ec6e3ad092fc425572cb1909283fb8d34d819b598f1bbfadf520a757`; preflight
+  ea9a8396cb01b7470e5c30c6c3abfe628080c1d88298885d5b383ce9908154b2 still rejects pending
+  distinct review. Root mechanical v3 checks pass with all same counts:
+  `review-numbered-construction-131-root-v1/checks-v3.json`, SHA256
+  `70aa571c03a1bb9e97a6586d50a1096e7014899af6061af4c63b208982047999`.
+  Prior v1/v2 preparations/reviews stay unchanged; final v3 review not yet issued at checkpoint.
+- Offline fmt/strict all-feature Clippy/all428Rust tests passed; first G5 failed only because
+  the new worktree lacked TypeScript. Retain g5-v1/receipt.json d20628b1. Reusing existing local
+  main node_modules offline resolved it. **G5 v2 passed428Rust/626Python/85Node**,22.704s;
+  `numbered-math-131/g5-v2/receipt.json`, SHA256
+  `4c47a7f5414b7fbe341bfc2153685fd345cc155ab437f779c9e2551ce9f8ab82`. This precedes the
+  final attachment-byte fix; final627Python check remains required. G5 uses real WT/target
+  for small bounded logs, external per-worktree CARGO_TARGET_DIR and cache TMPDIR for builds/
+  fixtures. No target symlink/external-root workaround is required. Preserve logs before cleanup.
+- **#132 finite source-scope independently CLEAR by root**, for exact2310 inputs only:
+  `review-formal-source-scope-132-root-v1/review.json`, SHA256
+  `b698695134a05a8721e233598f58cb2fcb61e71233b6fafe6583ae2b11cef099`,394,976 bytes.
+  Sixty-seven bindings /9,842,279 bytes;29 guard keys/countsum30,17 macros,10 theorem declarations,
+  608 literal tokens,40 comments,23 contiguous source partitions covering15,073 codepoints,
+  1,235 exact source records,7statements/4proofs/3children/6labels and4 exact nearest whole targets.
+  Root read the entire original source and all finite per-guard/declaration reasons. The sole
+  bibliography conditional and two unused DOI declarations stay after the last formal unit;
+  dormant claim/comment/link wrappers and all automatic warnings stay intact. Source-scope only,
+  not codec/runtime/admission. Root audit v1 had its own bytes-versus-binding-record assertion
+  mistake before source checks; audit-v2 fixes that helper use and binds the retained failure.
+- Producer scope receipt `formal-tranche-132/source-scope-preparation-v1/receipt.json`, SHA256
+  `bdc80156ba4f810ac476de8ed0871f237a445ae1434d9931d5787f0907ae560b`. Use the final six
+  machine files named in its final_machine_files array, including four -v2 filenames. Exact
+  current parse at174cb67 took.052418764s/27680KiB; final literal preparation.024426434s/23424KiB.
+  Finalization.173092341s includes.148795866s checks. Separate RSS maxima are not summed.
+  Both earlier helper/group-scan failures and corrected DOI body-dependency classification remain.
+  #132 still Todo, blocked131, no worktree/code. Producer finish_corpus_proxy is available.
+- **Four2011 statement source/printed preparation independently CLEAR**:
+  `review-source-printed-formal-2011-v1/review.json`, SHA256
+  `010c9454016bcbfcde61e9a77b7347ea6a7ad7ee899f3ccb986551c1ade27271`; checks3a237348.
+  Reviewer personally viewed full original pages3/4;27 files/11,291,875 bytes, five bounded
+  archive members,30 source/721 native refs/five literals. All4 units plus nested numbered and
+  unnumbered ownership agree. Both producer-v1 bad Python pointers and reviewer assumptions
+  remain recorded. No current whole source-scope/class/proof/codec/metric admission.
+- Seven latest artifact bindings in `~/.cache/lysilogy/kb-session-checkpoint-20260914T1343.json`,
+  SHA256 `648bba4c0690f090e4bcee73303c3585445b1547340dfadcbd4da05125701b60`. No downloads/
+  native queue or external/model calls. Published score remains1/5gates,3/30objectives O1/O2/O30.
+  Next: clear the narrow attachment source fix, reissue v3 construction reviews, run successful
+  actual attach, bounded publication/replay and full semantic/outcome comparisons, final gates/
+  owning objects measurement, draft PR/separate final review/main integration/merge/cleanup.
+  Then132; #97 approximately500/all-kind, production10k, Playwright and later phases remain open.
+  Preserved #33 and drafts93/94/95 still need the already-approved four-host normal-terminal
+  permission script and restart; no repeated approval or sandbox bypass.
