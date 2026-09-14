@@ -38,7 +38,7 @@ BOUNDED_VERSION = 'k1-limited-v5'
 BOUNDED_MODULES = VISUAL_ONLY_MODULES | {'release_layout.py', 'release_process.py', 'release_replay.py',
                                       'tranche_numbered_math.py'}
 # Mechanism only. Activation requires a separately reviewed actual construction.
-BOUNDED_MANIFEST_SHA256 = None
+BOUNDED_MANIFEST_SHA256 = '2c96e2c435bb3b6ea5ee33c3cfbe347bf48795b8e155862fc3b732d3db33889c'
 MAX_DOCUMENT = 1024 * 1024
 
 
