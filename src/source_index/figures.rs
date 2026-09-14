@@ -384,10 +384,7 @@ fn figure_region(
         // provide a stronger grid cue than a generic diagram/prose rectangle.
         return Some(above);
     }
-    let mut top = prose_top(index, candidate, captions, body_font, dimensions.height);
-    if candidate.kind == "Figure" {
-        top = table_floor(index, candidate, captions, images, body_font, top);
-    }
+    let top = prose_top(index, candidate, captions, body_font, dimensions.height);
     let height = caption.y_min - top;
     if height < 35.0 || height > dimensions.height * 0.70 {
         return None;
@@ -408,7 +405,12 @@ fn figure_region(
         .filter(|rect| horizontal_gap(*rect, caption) == 0.0)
         .reduce(|a, b| union([a, b].into_iter()))
         .map(|seed| connected_bounds(seed, &image_regions, body_font * 3.0, body_font * 3.0));
-    let native = native_regions(index, candidate, captions, top, body_font);
+    let native_top = if candidate.kind == "Figure" {
+        table_floor(index, candidate, captions, images, body_font, top)
+    } else {
+        top
+    };
+    let native = native_regions(index, candidate, captions, native_top, body_font);
     let regions = &native.rects;
     if regions.len() > 1024 {
         return None;
@@ -443,7 +445,7 @@ fn figure_region(
         bounds,
         body_font * 0.4,
         dimensions.width,
-        top,
+        native_top,
         caption.y_min,
     ))
 }
@@ -1991,6 +1993,32 @@ mod tests {
         assert!(objects[0].rect.is_some());
         assert!(objects[1].rect.is_none());
         assert!(objects[1].spans.is_empty());
+    }
+
+    #[test]
+    fn should_preserve_an_owned_image_when_it_starts_inside_the_table_padding_margin() {
+        let index = fixture(&[
+            ("Table 1: Scores.", "caption", 50.0, 100.0),
+            ("First 12.5", "float", 60.0, 130.0),
+            ("Second 25.0", "float", 60.0, 146.0),
+            ("Figure 1: Plot.", "caption", 50.0, 260.0),
+        ]);
+        let rect = TextRect {
+            x_min: 50.0,
+            x_max: 200.0,
+            y_min: 162.0,
+            y_max: 220.0,
+        };
+        let graphics = super::super::graphics::PageGraphics {
+            page: 1,
+            status: "complete".into(),
+            trace_sha256: None,
+            unsupported_images: 0,
+            mask: None,
+            images: vec![rect],
+        };
+        let objects = find_with_images(&index, &[graphics]);
+        assert_eq!(objects[1].rect, Some(rect));
     }
 
     #[test]
