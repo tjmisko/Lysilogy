@@ -13,8 +13,8 @@ System acceptance requires 5/5 gates and at least 24/30 objectives; use `eval al
 | G3 | Published enrichment quote source mismatches | objects | — | — | ≤ 0 | count | unavailable |
 | G4 | Rebuild determinism: entities, IDs, aliases | resolution | — | — | ≥ 1 | fraction | unavailable |
 | G5 | Tests pass with network disabled and no model CLIs | tests | 1 | 1 | ≥ 1 | pass | pass |
-| O1 | Figure and table detection F1 | objects | 0.897959 | 1 | ≥ 0.9 | fraction | REGRESSION |
-| O2 | Figure and table region IoU, median | objects | 0.882642 | 0.916972 | ≥ 0.75 | fraction | REGRESSION |
+| O1 | Figure and table detection F1 | objects | 0.897959 | 0.897959 | ≥ 0.9 | fraction | below target |
+| O2 | Figure and table region IoU, median | objects | 0.882642 | 0.882642 | ≥ 0.75 | fraction | at target |
 | O3 | Numbered equation detection F1 | objects | — | — | ≥ 0.85 | fraction | unavailable |
 | O4 | Equation and statement mention link accuracy | objects | — | — | ≥ 0.9 | fraction | unavailable |
 | O5 | Theorem-like statement detection F1 | objects | — | — | ≥ 0.85 | fraction | unavailable |
@@ -92,3 +92,12 @@ Measurements are calculated from `eval/inputs/<suite>/<collector>.json` or the l
 ## Ratchet policy
 
 Hard targets never change. Proportions permit one percentage point of objective regression; latency permits 10% relative. Other objective units permit no regression without evidence. Baselines improve automatically only when the run has no failed gate or unjustified regression. Smaller within-tolerance scores do not lower baselines. Explicit objective resets require `--justification` with a reason and a content-verified evidence file; the adjustment remains in baseline history. Reported R metrics have no target or ratchet.
+
+## V4 cohort release note (#117)
+
+The separately reviewed cohort baseline transition keeps the O1 .90 / O2 .75 targets
+and all hard gates unchanged. O1 remains below target; only **2/30 objectives are at
+target**. [#125](https://github.com/tjmisko/Lysilogy/issues/125) tracks the five new table
+misses, four label-only false positives and interleaved Figure3 caption. All 50 IoUs,
+eight zeros and the original failed check remain in the [measured report](experiment-reports/2026-09-14-kb-visual-only-pilot.md).
+This release note is appended to the exact CLI-generated scorecard; its tables are unchanged.
