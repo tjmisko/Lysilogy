@@ -7048,3 +7048,62 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Preserved #33 and drafts93/94/95 still await normal-terminal execution of the already-approved
   four-host script and restart because config is read-only here; no repeat approval or bypass.
   Production10k, actual Playwright and later phase requirements remain open.
+
+
+### 2026-09-14 13:29 UTC — numbered codec frozen for independent review
+
+- Last merged #129 / PR130 at d9a62af; main174cb67 before checkpoint. Phase A / A2. #131
+  source frozen at `320d18961003bb8d2b216e5daabe0408f17f7735`, seven owned source/test files,
+  in `.worktrees/feat/e8.3-numbered-math-tranche`. No PR yet; only generated scorecard dirty.
+  Own focused codec/dispatch/release/layout/versioned tests:67 passed,1.585s. Receipt
+  `~/.cache/lysilogy/numbered-math-131/source-checkpoint-v1.json`, SHA256
+  `524ad51355c737780220532510a4dde4c5513267b67de7cfe700cc8adb306b9a`, binds all20 proposed
+  V5 producer modules, versioned dispatch and original failed preparation scripts/logs v1–v5.
+  V5 pin remains None. finish_benchmark reviews exact source and changed module inventory;
+  review_k1_reconciliation concurrently prepares final construction/all14dispositions against
+  the frozen bytes. Source/printed judgments now bind exact original rows. Full gates and
+  actual publication/replay are pending; reserve one heavy job at a time, currently free.
+- **Root independently CLEARed original producer history** for2404/1911, using the codec's
+  already planned producer_history slot. `review-numbered-producer-history-131-root-v1/review.json`
+  under the cache, SHA256 `0e1c3a07dff328a986042b1849702b0103be53fc8e9ddc7995a78e25c09c0107`,
+  38,682 bytes. Forty bindings /13,078,799 bytes; exact assignment62ed1dd0/checkpointfb7f0cb2,
+  both assigned packets, four original inventory/receipt identities and all original input/image
+  hashes verified. Primary finish_corpus_proxy / independent review_ready_prs, recorded pages-first
+  and no-peer/no-parser histories retained. Later1911dispatch is bound separately. Primary2404's
+  unmeasured initial viewing timestamp/active time/cost stay null. No new content, source-semantics
+  or metric grant; final independent construction reviewer still required. Owner has this receipt.
+- **Root prepared four2011 source/printed statement judgments** while131 code was finishing:
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation/source-printed-formal-2011-root-v1/decisions-v2.json`,
+  SHA256 `d3b10cd9cf523541b368cc48c875f6a1890dd7438dc89b178c80fad05605ab12`,271,266 bytes.
+  Root personally viewed complete original pages3/4, read all four complete source statements,
+  norm/theorem declarations, preamble, finite class excerpt and proof-omission context. Twenty-five
+  bindings,30 original source /721 native record references, exact four historical source object
+  occurrences. Problem1 retains nested numbered Eq1; Problem3 retains its unnumbered MM display.
+  The original missing primary header/body partition remains an explicit post-freeze completion,
+  not paired first-pass agreement. Source-snippet versus full-member hash domains preserved.
+  Whole class/source-scope review, seven nonprinting automatic objects, full construction and
+  metric admission remain pending. finish_benchmark is queued for this small distinct preparation
+  review after131 source/construction priorities. No new truth coverage is claimed.
+- Preparation v1 for the four statements passed raw checks but root caught five derived literal
+  references incorrectly naming its Python script as a JSON-pointer artifact. Original v1
+  `decisions.json` dd351f5b remains unchanged. `preparation-correction-v1.json` and prepare-v2.py
+  retain the correction: verified derived source literals are inline, without fabricated JSON
+  pointers. No original source/native or judgment changed. This is not an implementation test
+  failure or source-parser fix. The v2 packet is the review target.
+- #132 is open, PhaseA/E8/Todo under epic67/project12, blocked131, no branch/worktree yet.
+  finish_corpus_proxy prepares finite source-scope evidence at the previously recorded path.
+  One current source-only parse at174cb67 equals historical inventory,0.052s;29guard keys,
+  7statements/4proofs,6labels,17macros/10theorems,608command tokens and40comments (4insideproofs).
+  Per-guard proposed judgments and receipt still pending. Two preparation-only failures retained:
+  binding helper returned bytes before parse; literal-group scan met authored [0,delta[ interval.
+  No original source/flags changed, no additional parser call required by either failure.
+- Five current artifact bindings and ten protected preview hashes verified in
+  `~/.cache/lysilogy/kb-session-checkpoint-20260914T1329.json`, SHA256
+  `72c86befafc88ce00768cf9ce9d8ebb2841d096cf4ef45738d2f728bc571a47d`.
+  No downloads/native queue;42GiB free at last check,20GiB floor. Score unchanged1/5gates,
+  3/30objectives O1/O2/O30. Preserved #33 and drafts93/94/95 still await the already-approved
+  four-host script in a normal terminal and restart; no repeated approval or bypass.
+  Next: finish131 independent source/construction reviews, fix findings, bounded actual
+  publication/replay and full gates/metrics, draft PR/final review, ordinary main integration,
+  merge/cleanup. Then132 and #97's unchanged approximately500-paper/all-kind requirement.
+  Production10k, actual Playwright and phasesB–D remain open; no system or phase completion.
