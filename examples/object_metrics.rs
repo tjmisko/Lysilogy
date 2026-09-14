@@ -63,7 +63,7 @@ async fn bounded_index(path: &Path) -> Result<Vec<u8>, Failure> {
     }
     Ok(bytes)
 }
-async fn retain_trace(root: &Path, raw: &[u8]) -> Result<PathBuf, Failure> {
+async fn retain_trace(root: &Path, raw: &[u8], extension: &str) -> Result<PathBuf, Failure> {
     // A fixed external cache holds source-derived trace bytes. No canonical
     // native index or user-selected output path is ever writable here.
     for ancestor in root.ancestors() {
@@ -77,7 +77,7 @@ async fn retain_trace(root: &Path, raw: &[u8]) -> Result<PathBuf, Failure> {
         }
     }
     tokio::fs::create_dir_all(root).await?;
-    let path = root.join(format!("{:x}.xml", Sha256::digest(raw)));
+    let path = root.join(format!("{:x}.{extension}", Sha256::digest(raw)));
     if path.exists() {
         regular_file(&path)?;
         if tokio::fs::metadata(&path).await?.len() != u64::try_from(raw.len())?
@@ -234,9 +234,25 @@ async fn main() -> Result<(), Failure> {
         let graphics_basis_json = String::from_utf8(graphics.basis_json()?)?;
         let mut graphics_traces = Vec::new();
         for (page, raw) in derived.traces {
-            let path =
-                retain_trace(&home.join(".cache/lysilogy/object-graphics-traces"), &raw).await?;
+            let path = retain_trace(
+                &home.join(".cache/lysilogy/object-graphics-traces"),
+                &raw,
+                "xml",
+            )
+            .await?;
             graphics_traces.push(
+                json!({"page":page,"sha256":format!("{:x}",Sha256::digest(&raw)),"path":path}),
+            );
+        }
+        let mut graphics_masks = Vec::new();
+        for (page, raw) in derived.mask_receipts {
+            let path = retain_trace(
+                &home.join(".cache/lysilogy/object-graphics-masks"),
+                &raw,
+                "json",
+            )
+            .await?;
+            graphics_masks.push(
                 json!({"page":page,"sha256":format!("{:x}",Sha256::digest(&raw)),"path":path}),
             );
         }
@@ -244,7 +260,7 @@ async fn main() -> Result<(), Failure> {
             return Err("canonical index changed during graphics derivation".into());
         }
         let artifact_json = serde_json::to_string(&artifact)?;
-        let row = json!({"paper_id":paper.paper_id,"index_sha256":paper.index_sha256,"object_sha256":format!("{:x}",Sha256::digest(artifact_json.as_bytes())),"artifact_json":artifact_json,"native_basis_sha256":native_basis_sha256,"native_basis_format":"native-json-f32-v1","native_schema_version":document.index.schema_version,"graphics_basis_json":graphics_basis_json,"graphics_traces":graphics_traces});
+        let row = json!({"paper_id":paper.paper_id,"index_sha256":paper.index_sha256,"object_sha256":format!("{:x}",Sha256::digest(artifact_json.as_bytes())),"artifact_json":artifact_json,"native_basis_sha256":native_basis_sha256,"native_basis_format":"native-json-f32-v1","native_schema_version":document.index.schema_version,"graphics_basis_json":graphics_basis_json,"graphics_traces":graphics_traces,"graphics_masks":graphics_masks});
         output_bytes += serde_json::to_vec(&row)?.len() + 1;
         if output_bytes > 16 * 1024 * 1024 - 1024 {
             return Err("object response exceeds16MiB".into());
