@@ -120,7 +120,7 @@ class ObjectMetricTests(unittest.TestCase):
                     self.assertEqual((folder/'input.json').read_bytes(),old_input)
                     self.assertEqual((folder/'observation.json').read_bytes(),old_observation)
                 previous=archive,m.canonical(payload)+b'\n',raw
-            self.assertEqual(m.document((repo/m.INPUT).read_bytes())['truth_sets']['K1']['version'],'k1-limited-v4')
+            self.assertEqual(m.document((repo/m.INPUT).read_bytes())['truth_sets']['K1']['version'],'k1-limited-v5')
 
     def should_reject_changed_prior_observations_when_a_new_cohort_would_replace_them(self):
         with tempfile.TemporaryDirectory() as directory:

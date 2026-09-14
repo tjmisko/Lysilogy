@@ -88,6 +88,38 @@ def second_fixture(directory, visual=False, visual_only=False):
 
 
 class VersionedTests(unittest.TestCase):
+    def test_should_load_only_fixed_source_when_new_publication_modules_have_hostile_bytecode(self):
+        with tempfile.TemporaryDirectory() as folder:
+            repo = Path(folder)/'repo'; files = {}
+            for name in versioned.BOUNDED_MODULES | {'versioned.py'}:
+                relative = 'scripts/corpus/corpus.py' if name == 'corpus.py' else 'scripts/truth/latex/'+name
+                source = ROOT/relative; target = repo/relative; target.parent.mkdir(parents=True, exist_ok=True)
+                raw = source.read_bytes(); target.write_bytes(raw)
+                if name != 'versioned.py': files[name] = versioned.digest(raw)
+                if name == 'release_layout.py':
+                    bytecode = Path(importlib.util.cache_from_source(str(target))); bytecode.parent.mkdir(exist_ok=True)
+                    stat = target.stat()
+                    bytecode.write_bytes(importlib.util.MAGIC_NUMBER + struct.pack('<III', 0, int(stat.st_mtime), len(raw))
+                                         + marshal.dumps(compile("raise RuntimeError('unreviewed bytecode')", str(target), 'exec')))
+            program = '''import importlib.util,json,pathlib,sys,types
+repo=pathlib.Path(sys.argv[1]);spec=importlib.util.spec_from_file_location('versioned',repo/'scripts/truth/latex/versioned.py')
+module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+if sys.argv[3]=='contaminated':sys.modules['release_layout']=types.ModuleType('release_layout')
+loaded=module.current_modules(repo,json.loads(sys.argv[2]))
+assert loaded['release_layout'].VERSION=='k1-limited-v5'
+assert len(loaded)==19
+'''
+            def invoke(mode='normal'):
+                return subprocess.run([sys.executable,'-I','-B','-c',program,str(repo),json.dumps(files),mode],
+                                      capture_output=True,timeout=10)
+            self.assertEqual(invoke().returncode, 0)
+            self.assertNotEqual(invoke('contaminated').returncode, 0)
+            source = repo/'scripts/truth/latex/release_layout.py'; original = source.read_bytes()
+            source.write_bytes(original+b'\n')
+            self.assertNotEqual(invoke().returncode, 0)
+            source.unlink(); source.symlink_to(ROOT/'scripts/truth/latex/release_layout.py')
+            self.assertNotEqual(invoke().returncode, 0)
+
     def test_should_keep_visual_only_release_disabled_when_its_publication_is_pending(self):
         with patch.object(versioned, 'VISUAL_ONLY_MANIFEST_SHA256', None):
             with self.assertRaisesRegex(ValueError, 'not published'):

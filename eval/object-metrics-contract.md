@@ -275,3 +275,10 @@ Cargo producer owns component derivation; the collector does not rerun segmentat
 change matching, IoU, truth, denominators or targets. Raw raster failures are retained when
 available, with no components admitted. Unknown trace, native, tool, resource and raster
 states remain explicit; transient tool/time failures cannot be reused as successful caches.
+
+## Inactive bounded per-paper transport
+
+Issue #129 adds the mechanically checked, inactive v5 path described in
+[k1-per-paper-contract.md](k1-per-paper-contract.md). It preserves v1–v4 replay,
+truth bytes, metric definitions and targets. Activation and new truth admission
+remain separate reviewed work; synthetic scale records are not K1 coverage.

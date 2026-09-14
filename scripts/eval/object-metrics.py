@@ -24,7 +24,8 @@ TRACE = 'eval/inputs/evidence/object-metrics.json'
 INPUT = 'eval/inputs/objects/figure-table.json'
 KINDS = ('figure', 'table')
 VERSION = 'figure-table-metrics-v6'
-TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2', 'k1-limited-v3', 'k1-limited-v4')
+TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2', 'k1-limited-v3', 'k1-limited-v4', 'k1-limited-v5')
+BOUNDED_TRUTH_VERSION = 'k1-limited-v5'
 NATIVE_BASIS_FORMAT = 'native-json-f32-v1'
 DETECTOR_VERSION = 6
 GRAPHICS_VERSION = 5
@@ -141,7 +142,9 @@ def iou(truth, predicted):
 
 def evaluate_paper(paper, artifact, index, truth_version=TRUTH_VERSIONS[0]):
     require(truth_version in TRUTH_VERSIONS, 'unsupported collector truth version')
-    require(paper['metric_eligibility'].get('O1') is True, 'paper is outside complete O1 cohort')
+    require(paper['metric_eligibility'].get('O1') is True
+            or truth_version == BOUNDED_TRUTH_VERSION and paper['metric_eligibility'].get('O2') is True,
+            'paper is outside complete visual cohorts')
     require(artifact['paper_id'] == paper['paper_id'] and artifact['reading_index_generation'] == '"'+paper['index']['sha256']+'"', 'wrong object paper or index generation')
     require(len(artifact['objects']) <= 2000 and len(paper['objects']) <= 2000, 'object population exceeds bound')
     pages = {p['number']:p for p in index['pages']}
@@ -181,7 +184,7 @@ def evaluate_paper(paper, artifact, index, truth_version=TRUTH_VERSIONS[0]):
     matched = {n for n,_ in winners.values()}; values=[]; matched_values=[]; outcomes=[]; unknown=0
     for j,t in enumerate(truths):
         n,score = winners.get(j,(None,None)); regions=t.get('region')
-        if truth_version in ('k1-limited-v3', 'k1-limited-v4') and isinstance(regions,dict):
+        if truth_version in ('k1-limited-v3', 'k1-limited-v4', BOUNDED_TRUTH_VERSION) and isinstance(regions,dict):
             require(set(regions)=={'page','rect'} and type(regions['page']) is int
                     and isinstance(regions['rect'],dict)
                     and set(regions['rect'])=={'x_min','y_min','x_max','y_max'},
@@ -225,6 +228,47 @@ def aggregate_metrics(truth, metrics):
     return totals, values, matched
 
 
+def aggregate_layout_metrics(truth, decisions):
+    """Stream complete ordered decisions; count only each metric's declared cohort."""
+    totals = dict.fromkeys(('tp', 'fp', 'fn', 'truth_objects', 'predictions', 'unknown_truth_regions'), 0)
+    values = []; matched = []; cohorts = {'O1': [], 'O2': []}
+    for descriptor, decision in zip(truth['papers'], decisions, strict=True):
+        require(decision['paper_id'] == descriptor['paper_id']
+                and decision['metric_eligibility'] == descriptor['metric_eligibility'], 'decision population differs')
+        eligible = descriptor['metric_eligibility']
+        if not (eligible['O1'] or eligible['O2']):
+            require(decision['status'] == 'not_in_visual_cohort' and decision['outcomes'] == [],
+                    'ineligible paper claims measured outcomes')
+            continue
+        require(decision['status'] == 'measured', 'visual cohort paper was not measured')
+        row = decision['metrics']
+        require(row['paper_id'] == descriptor['paper_id'], 'measured decision paper differs')
+        require(type(row['truth_objects']) is int and row['truth_objects'] >= 0
+                and row['truth_objects'] == descriptor['counts'].get('figure', 0) + descriptor['counts'].get('table', 0),
+                'per-paper truth denominator differs')
+        if eligible['O1']:
+            cohorts['O1'].append(descriptor['paper_id'])
+            for key in totals:
+                require(type(row[key]) is int and row[key] >= 0, 'invalid metric count')
+                totals[key] += row[key]
+        if eligible['O2']:
+            cohorts['O2'].append(descriptor['paper_id'])
+            require(len(values) + len(row['region_values']) <= 100000, 'global metric value bound exceeded')
+            require(all(type(v) in (int, float) and math.isfinite(v) and 0 <= v <= 1
+                        for v in row['region_values']), 'invalid region metric')
+            require(len(row['region_values']) == row['truth_objects']
+                    and len(row['matched_region_values']) <= row['truth_objects']
+                    and all(type(v) in (int, float) and math.isfinite(v) and 0 <= v <= 1
+                            for v in row['matched_region_values']), 'incomplete per-paper region denominator')
+            values.extend(row['region_values']); matched.extend(row['matched_region_values'])
+    expected = truth['coverage']['denominators']
+    require(all(cohorts[m] == truth['coverage']['cohort_papers'][m] for m in cohorts), 'metric cohort is incomplete')
+    require(totals['truth_objects'] == expected['O1']['truth_objects'] > 0,
+            'incomplete frozen O1 denominator')
+    require(len(values) == expected['O2']['all_annotated_truth_objects'] > 0, 'incomplete frozen O2 denominator')
+    return totals, values, matched
+
+
 def validate_registry(registry, papers, corpus_pdf_root):
     require(registry['schema_version']==1 and registry['library_root']==str(corpus_pdf_root), 'registry root or schema differs')
     records=registry['records'];active=Counter(r['relative_path'] for r in records.values() if r['active'])
@@ -246,7 +290,8 @@ def truth_verifier(repo):
 def validate_truth(repo, cache, corpus, data, truth_raw, with_receipt=False):
     """Replay the selected immutable release without using current parser modules."""
     truth=document(truth_raw)
-    require(truth['schema_version']==1 and truth['truth_set']=='K1' and truth['origin']=='arxiv-latex', 'unsupported frozen K1 identity')
+    require(truth['schema_version'] == (2 if truth['version'] == BOUNDED_TRUTH_VERSION else 1)
+            and truth['truth_set']=='K1' and truth['origin']=='arxiv-latex', 'unsupported frozen K1 identity')
     # Current detector output is rederived from immutable native coordinates.
     # validate_derivation binds that separately versioned generation below.
     rebuilt,config,receipt=truth_verifier(repo).replay(repo,cache,corpus,data,truth['version'])
@@ -560,6 +605,176 @@ def build_bridge(repo, truth_version=TRUTH_VERSIONS[0]):
     print(json.dumps({'executable':str(expected),'sha256':receipt['executable_sha256'],'wall_seconds':receipt['wall_seconds']}))
 
 
+def collect_layout(truth, config, before, truth_raw, paths, sources, executable_hash, expected, started):
+    """New-format only: complete ordered records, one native/bridge paper at a time."""
+    cache = Path.home() / '.cache/lysilogy'; corpus = Path.home() / 'Corpora/arxiv'; data = cache / 'arxiv-kb-data'
+    verifier = truth_verifier(ROOT)
+    bundle, fixed = verifier.verified_bundle(ROOT, BOUNDED_TRUTH_VERSION)
+    api = verifier.bounded_api(ROOT, bundle, fixed)
+    with api['release_process'].address_limit():
+        return _collect_layout(truth, config, before, truth_raw, paths, sources, executable_hash,
+                               expected, started, api, cache, corpus, data)
+
+
+def _collect_layout(truth, config, before, truth_raw, paths, sources, executable_hash,
+                    expected, started, api, cache, corpus, data):
+    layout, transport = api['release_layout'], api['release_process']
+    descriptors = layout.check_manifest(truth)
+    root = ROOT / 'eval/truth' / BOUNDED_TRUTH_VERSION
+    run_id = digest(truth_raw)[:16] + '-' + str(time.time_ns())
+    external = cache / 'object-metrics-layout' / run_id
+    decisions_root = ROOT / 'eval/evidence/object-metrics-layout' / run_id
+    layout.direct(external).mkdir(parents=True)
+    layout.direct(decisions_root / 'papers').mkdir(parents=True)
+    deadline = time.monotonic() + 220 * len(descriptors) + 540
+    registry_path = data / 'paper-identities.json'; registry_raw = read(registry_path)
+    registry = document(registry_raw); decision_rows = []; prediction_rows = []
+    decision_bytes = prediction_bytes = 0
+
+    def timely():
+        require(time.monotonic() < deadline, 'serial collector aggregate deadline exceeded')
+
+    def check_source():
+        timely()
+        require(sources == {path: digest(read(ROOT / path)) for path in sources}
+                and read(ROOT / paths['truth']) == truth_raw
+                and layout.fingerprint(expected, 128 * 1024 * 1024)['sha256'] == executable_hash,
+                'serial measurement source changed')
+
+    def check_external(bindings):
+        for name, expected_hash in bindings.items():
+            timely()
+            require(layout.fingerprint(Path(name), 512 * 1024 * 1024)['sha256'] == expected_hash,
+                    'canonical input changed during serial measurement')
+
+    with (external / 'ledger.jsonl').open('x') as ledger:
+        def event(row):
+            ledger.write((canonical(row) + b'\n').decode()); ledger.flush(); os.fsync(ledger.fileno())
+        try:
+            for descriptor in descriptors:
+                timely(); paper = layout.paper(root, descriptor)
+                ident = paper['paper_id']; ordinal = descriptor['ordinal']; eligibility = paper['metric_eligibility']
+                decision = {'paper_id': ident, 'metric_eligibility': eligibility,
+                            'truth': descriptor, 'status': 'not_in_visual_cohort', 'outcomes': []}
+                if eligibility['O1'] or eligibility['O2']:
+                    validate_registry(registry, [paper], corpus / 'pdf')
+                    require(paper['index']['path'] == 'papers/' + ident + '/reading-index.json', 'wrong canonical index path')
+                    tracked = {str(registry_path): digest(registry_raw)}
+                    for kind, extension in (('pdf', 'pdf'), ('source', 'src')):
+                        path = corpus / kind / (paper['arxiv_id'] + 'v' + str(paper['arxiv_version']) + '.' + extension)
+                        h = layout.fingerprint(path, 512 * 1024 * 1024)['sha256']
+                        require(h == paper[kind + '_sha256'], 'frozen corpus identity differs')
+                        tracked[str(path)] = h
+                    native_path = data / paper['index']['path']; raw = read(native_path)
+                    require(digest(raw) == paper['index']['sha256'], 'native index changed')
+                    tracked[str(native_path)] = digest(raw); index = document(raw)['index']; del raw
+                    request = {'corpus_root': str(corpus / 'pdf'), 'data_root': str(data),
+                               'papers': [{'paper_id': ident, 'relative_path': paper['arxiv_id'] + 'v' + str(paper['arxiv_version']) + '.pdf',
+                                           'index_sha256': paper['index']['sha256']}]}
+                    check_source()
+                    raw, process_receipt = transport.run([str(expected)], canonical(request), external / ('bridge-' + str(ordinal)),
+                        cwd=ROOT, seconds=min(40, deadline - time.monotonic()), stdout_cap=layout.PAPER_BYTES)
+                    check_source()
+                    response = layout.document(raw, layout.PAPER_BYTES)
+                    require(response['schema_version'] == 1 and response['network_calls'] == response['model_calls'] == 0
+                            and [row['paper_id'] for row in response['papers']] == [ident], 'serial bridge population differs')
+                    row = response['papers'][0]
+                    require(row['index_sha256'] == paper['index']['sha256'], 'bridge index differs')
+                    artifact_raw = row['artifact_json'].encode()
+                    require(digest(artifact_raw) == row['object_sha256'], 'object artifact hash differs')
+                    artifact = layout.document(artifact_raw, layout.PAPER_BYTES)
+                    derivation = validate_derivation(row, artifact, index)
+                    derivation['graphics'] = validate_graphics(row, artifact, paper, index, cache)
+                    for field in ('trace_hashes', 'mask_hashes', 'vector_hashes'):
+                        tracked.update(derivation['graphics'][field])
+                    metric = evaluate_paper(paper, artifact, index, BOUNDED_TRUTH_VERSION)
+                    prediction_raw = canonical(response) + b'\n'
+                    prediction_bytes += len(prediction_raw)
+                    require(prediction_bytes <= layout.TOTAL_BYTES, 'cumulative prediction bytes exceeded')
+                    prediction_path = external / (ident + '.json')
+                    layout.immutable(prediction_path, prediction_raw, layout.PAPER_BYTES)
+                    prediction = {'ordinal': ordinal, 'paper_id': ident, 'path': str(prediction_path),
+                                  'bytes': len(prediction_raw), 'sha256': digest(prediction_raw)}
+                    prediction_rows.append(prediction)
+                    decision.update(status='measured', metrics=metric, outcomes=metric['outcomes'],
+                        prediction=prediction, external_input_hashes=tracked,
+                        object_hashes={'rust_serialized_sha256': row['object_sha256'],
+                                       'canonical_sha256': digest(canonical(artifact)), 'derivation': derivation},
+                        process_receipt=process_receipt)
+                    check_external(tracked)
+                    del index, response, row, artifact, artifact_raw, raw, prediction_raw, metric
+                raw = layout.canonical(decision); decision_bytes += len(raw)
+                require(decision_bytes <= layout.TOTAL_BYTES, 'cumulative decision bytes exceeded')
+                saved = layout.decision_descriptor(ident, ordinal, raw)
+                layout.immutable(decisions_root / saved['path'], raw, layout.PAPER_BYTES)
+                decision_rows.append(saved); event({'status': decision['status'], 'decision': saved})
+                del decision, paper, raw
+
+            def read_decisions():
+                for descriptor in decision_rows:
+                    raw = layout.read(decisions_root / descriptor['path'], layout.PAPER_BYTES)
+                    require(len(raw) == descriptor['bytes'] and digest(raw) == descriptor['sha256'], 'decision bytes changed')
+                    row = layout.document(raw, layout.PAPER_BYTES)
+                    if row['status'] == 'measured':
+                        check_external(row['external_input_hashes'])
+                        p = row['prediction']
+                        require(layout.fingerprint(Path(p['path']), layout.PAPER_BYTES) == {k: p[k] for k in ('bytes', 'sha256')},
+                                'prediction changed after serial measurement')
+                    yield row
+
+            totals, values, matched = aggregate_layout_metrics(truth, read_decisions())
+            check_source()
+            _, _, after = validate_truth(ROOT, cache, corpus, data, truth_raw, True)
+            timely()
+            check_source()
+            for row in descriptors:
+                layout.paper(root, row)
+            for _ in read_decisions():
+                pass
+            prediction_manifest = {'schema_version': 1, 'truth_sha256': digest(truth_raw),
+                                   'papers': prediction_rows, 'total_bytes': prediction_bytes}
+            layout.immutable(external / 'manifest.json', layout.canonical(prediction_manifest), layout.MANIFEST_BYTES)
+            observation = {'schema_version': 2, 'collector': VERSION, 'truth_version': BOUNDED_TRUTH_VERSION,
+                'truth_sha256': digest(truth_raw), 'coverage': truth['coverage'],
+                'truth_verification': {'before': before, 'after': after}, 'summary': totals,
+                'O1': 2 * totals['tp'] / (2 * totals['tp'] + totals['fp'] + totals['fn']),
+                'O2': statistics.median(values), 'matched_only_median': statistics.median(matched) if matched else None,
+                'papers': decision_rows, 'decision_root': str(decisions_root.relative_to(ROOT)),
+                'predictions': {'path': str(external / 'manifest.json'),
+                                **layout.fingerprint(external / 'manifest.json', layout.MANIFEST_BYTES)},
+                'executable_sha256': executable_hash, 'build_receipt_sha256': digest(read(ROOT / 'target/object-metrics-build.json')),
+                'network_calls': 0, 'model_calls': 0, 'cost_usd': 0, 'wall_seconds': time.monotonic() - started}
+            child_evidence = []
+            for row in descriptors:
+                child_evidence.append({'path': str((root / row['path']).relative_to(ROOT)),
+                                       'version': BOUNDED_TRUTH_VERSION, 'sha256': row['sha256']})
+            for row in decision_rows:
+                child_evidence.append({'path': str((decisions_root / row['path']).relative_to(ROOT)),
+                                       'version': VERSION, 'sha256': row['sha256']})
+            observation_ref = {'path': paths['trace'], 'version': VERSION, 'sha256': digest(canonical(observation) + b'\n')}
+            def reference(path, version):
+                return {'path': path, 'version': version, 'sha256': digest(read(ROOT / path))}
+            payload = {'schema_version': 1, 'suite': 'objects', 'collector': VERSION,
+                'implementation': [reference(path, VERSION) for path in sources],
+                'truth_sets': {'K1': reference(paths['truth'], BOUNDED_TRUTH_VERSION)},
+                'metrics': {'O1': {'sample': {'method': 'f1', 'true_positive': totals['tp'], 'false_positive': totals['fp'],
+                                            'false_negative': totals['fn']}, 'cases': totals['truth_objects'],
+                                   'evidence': [observation_ref, *child_evidence]},
+                            'O2': {'sample': {'method': 'median', 'values': values}, 'cases': len(values),
+                                   'evidence': [observation_ref, *child_evidence]}},
+                'cost_usd': 0, 'wall_seconds': observation['wall_seconds']}
+            timely()
+            # Preflight both active files before the historical publication routine mutates either.
+            layout.canonical(observation, layout.PAPER_BYTES)
+            layout.canonical(payload, layout.PAPER_BYTES)
+            publish_measurement(ROOT, paths, observation, payload)
+            event({'status': 'complete', 'summary': totals})
+            print(json.dumps({k: observation[k] for k in ('summary', 'O1', 'O2', 'matched_only_median', 'wall_seconds')}, sort_keys=True))
+        except BaseException as error:
+            event({'status': 'failed', 'error': str(error)[:4096], 'retained_decisions': len(decision_rows)})
+            raise
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--truth-version', choices=TRUTH_VERSIONS, default=TRUTH_VERSIONS[0], help='Explicit immutable cohort; preserve prior observations/input before selecting the active cohort')
@@ -584,6 +799,10 @@ def main():
     require(build['truth_version']==args.truth_version and build['executable_sha256']==executable_hash and build['implementation']==sources, 'executable build receipt is stale')
     truth_raw=read(ROOT/paths['truth']);truth,config,truth_verification_before=validate_truth(ROOT,cache,corpus,data,truth_raw,True)
     require(truth['version']==args.truth_version and config['version']==args.truth_version, 'selected collector truth version differs')
+    if args.truth_version == BOUNDED_TRUTH_VERSION:
+        collect_layout(truth, config, truth_verification_before, truth_raw, paths, sources,
+                       executable_hash, expected, started)
+        return
     papers=[p for p in truth['papers'] if p['metric_eligibility']['O1']]
     require([p['paper_id'] for p in papers]==truth['coverage']['cohort_papers']['O1'] and papers,'incomplete frozen detection cohort')
     registry_path=data/'paper-identities.json';registry_raw=read(registry_path)
