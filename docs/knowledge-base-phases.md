@@ -273,7 +273,7 @@ acceptance are unchanged.
   current-source crosswalk and complete construction review remain required before admission.
   Preserve prior versions and complete visual denominators; no parser/detector changes.
 
-- [ ] **#121 Investigate two weak visual-tranche figure regions** (after #115).
+- [x] **#121 Investigate two weak visual-tranche figure regions** (after #115).
   Branch `fix/e1.1-visual-tranche-regions`. Owns bounded diagnostics and, only when justified,
   `src/source_index/figures.rs`, `src/source_index/graphics.rs`, focused fixtures and measured
   evidence/report. Preserve all v1/v2/v3 truth and full denominators. Figure3/4 in2409.03655
@@ -292,6 +292,17 @@ acceptance are unchanged.
   `cargo test` that loads the gold set.
 
 ### Phase A notes
+
+- #121 merged via PR124 (`339ded4`) after independent final review of `cb6e676`.
+  Detector4 uses an observed preceding table grid as a boundary for native figure labels;
+  image filtering and all native/graphics inputs remain unchanged. Five added ownership
+  controls and final386Rust/537Python/85Node G5 pass. Full15/23/29 cohorts show no regressions:
+  historical SHAP IoU .525589→.882020; new privacy/emotion plot .162546→.879385. O1/O2
+  aggregate targets remain met; historical zero and t-SNE .184384 remain explicit. New #123
+  on E1/project12 tracks bounded vector support; it is a remaining region improvement,
+  not an unmet aggregate target or a blocker for unrelated ready implementations. Keep
+  detector/collector version4 when integrating #117. Report `2026-09-14-kb-visual-regions.md`;
+  complete portable evidence/reviews under `eval/evidence/visual-regions-121*.json`.
 
 - #115 merged via PR122 (`e0d3df1`), independently reviewed final head `abde1d8`. Immutable
   K1 v3 now contains four papers and29 visual regions. Actual O1=1/O2=.9169720168893188,
@@ -5234,3 +5245,82 @@ date, last merged issue, in-flight branches and their state, next action, and op
   configuration. Prior normal-terminal script/restart instructions still apply; no new permission
   request or bypass. #25/33/71/72 remain provider/dependency blocked. No rebase without asking,
   sudo/rm-rf/private/env reads/user-data destruction/full_model batch. Goal incomplete.
+
+### 2026-09-14 05:37 UTC — #121 merged; 8299 scale indexes; primary annotations resume
+
+- **Last merged #121 / PR124**, merge `339ded4f2e51d2696d79989a7230ec3898fa9582`,
+  05:34:54UTC, reviewed head `cb6e676b3e2f192284bc404a3d567c729b4cb3cb`. Final independent
+  review `~/.cache/lysilogy/review-visual-regions-pr124-cb6e676/review.json`, SHA
+  `7a6fe156e3f2593449b6dfbd25433db49d788f0156f517c8ec36267024071e58`, no findings.
+  Main fast-forwarded; all10 protected PDF-preview hashes unchanged. Worktree/target and
+  local/remote branch removed. Checklist/phase notes updated here. Current **A/A2**;
+  no phase exit, broad500-paper truth or system completion.
+- #121 source correction and all outcomes are in
+  `docs/experiment-reports/2026-09-14-kb-visual-regions.md` and
+  `eval/evidence/visual-regions-121{,-final}.json`. Actual full15/23/29 measurement
+  `visual-tranche-regions-121/measurement-734372a-v1/receipt.json`, SHA
+  `4d1b69d7cd303bae77ab2ebd8bda733e2a0700c72eced1a2ef9d4349176ab9ae`,85.867978s/275744KiB.
+  Independently recomputed actual reviewa990367a55ae504b7de85f95dcc2c34c3b9e2ef032f961a56280c0a0b828bef9.
+  Two unique improved objects, no regressions: historicalshapPlot .5255890483769016→.8820197414368678;
+  newtradeoff .16254643935124297→.8793852892966821. All caption matches, oldtimeToEvent zero,
+  t-SNE .18438363161698818 and full29-case median .9169720168893188 retained. O1=1.
+- Final integrated gates at aab83fc pass; receipt
+  `visual-tranche-regions-121/final-gates-v1/receipt.json`, SHA
+  `4983b8f52209111163b1aa2a417327c2e19af10b751f788c63e9e5fd6f71fb60`.
+  Eight commands,386Rust/537Python/85Node G5; portable CLI/logs/results/source manifest
+  retained outside removed worktree. CLI after-check36b62a29. New worktree initially lacked
+  the untracked provider fixture input; offline owning collector then scaleCLI passed O30=0/10k.
+  Current main scorecard remains **1/5 hard gates,3/30 objectives(O1/O2/O30)**.
+  The initial generated-pycache archive rename failed EXDEV before moving bytes; verified copies
+  and deletion of only owned generated files completed afterward, cleanup receipt138e2ea0.
+  The preceding entry's completed-cleanup sentence anticipated that correction; no evidence lost.
+- New **#123**, linked E1#12/project12, tracks bounded vector figure support after121.
+  This is an explicit remaining per-object improvement, not a lowered target or an unrelated
+  implementation blocker. Detector/collector4 is now main; graphics version3 and all original
+  native/graphics evidence stay unchanged. No vector-frame guess or native rebuild.
+- Native **batch33 passed**, terminalTTY9838 exit0,250success/0failure,358.639024s;
+  now9250unique/1000eval/**8299scale**,1701scale remain. Receipt
+  `scale-index-batches/batch-0033/receipt.json`, SHA
+  `b8d498a7167ac7c7cb375d3d023af4c29c1c99e737e9c2e74c7b4beb940d465f`;
+  queue-v3 audit6500707d7f0c11e705a0b3f46dbc731f58216a066e7313e857b340ea296587ae.
+  Root launched **batch34**, sole heavy slot; same reviewed launch3b584d0e and20GiB floor.
+  Poll retained TTY from launch tool output; continue35 only after34's terminal audit passes.
+  Queue paths, original paused queues, corpus10951PDF/1000source and registry unchanged.
+  No downloads or production10k acceptance claim.
+- **#117 ongoing**, ownerfinish_benchmark, WT `feat/e8.3-visual-only-pilot`, committed082f502
+  plus uncommitted codec/builder/release/manual/collector/tests/versioned work. NoPR. Source
+  checkpoint/construction seam pending,14pure core tests pass. Merge latestmain after safely
+  checkpointing own changes; preserve detector4 in collector. No fresh full1000 run or automatic
+  closure equivalence assumed. Root identity confirmationf1224811 and original5 body/annotation
+  records remain available. `review_ready_prs` is now free for bounded source/construction review;
+  owner notified. Heavy work waits for root/native34 boundary.
+- **#97 next14:** first2 dual frozen outputs are listed in the preceding entry. Root has now
+  actually viewed all6originalpages of2404 and all8of2011; visual-only inspection records:
+  `manual-tranche-v2-preparation/reconciliation/2404.17771/root-original-page-inspection-v1.json`
+  SHA1bebbe0f58516b5802f02cd5995bb7f7fd166fb914659a1c927f600002f10e21;
+  corresponding2011.00685 recordSHA3b4dc9c1246fb6baaa2d8b37d143d19301f9fa4e7ac72f817b606b6ff3a7afe4.
+  Fourfigures/twotables versus eightfigures/onetable confirmed visually, including30/12nested
+  panels and attached2404Table2 note. These are inspection records only; exact crosswalk,
+  final region boxes, literal-reference disagreements and mathematical fidelity remain pending.
+- Independent next2 are now frozen byreview_ready_prs; no peer labels read:
+  2109.04966v2 inventoryf56d4a928abbc875cc76ffb788efb6e2d61af1b59512bf1a8b0a8c1511e17fda,
+  receipt3f414001b847319c5d7c21cb5d22f28da86cdb711965d5eeab5cfc8a69037c11;
+  8fig/4table/16numberedmath/1algorithm/24bib. 1911.08525v2 inventory
+  34ec3b708f411f72eb10235875529500b76b80143792e5b7674a507ae68b80a9,
+  receipt3903e6907eca5f1bb1470a54260c25e9c51bdb8523bb7a12e9b0b73105317e69;
+  1fig/48numberedeq/18bib,2unheaded argument candidates and3unknown years explicit.
+  Stored in original assigned `annotations/independent/<id>/` inventory-v1/receipt-v1 paths.
+  Root has not inspected these two originals or reconciled their labels.
+- **Primary next2 RUNNING now**, finish_corpus_proxy newly dispatched after124 review:
+  2109.04966v2 then1911.08525v2,8pages each. Use unchanged dispatcha69eb7d5 and originalv2prompt;
+  paths `annotations/primary/<id>/inventory-v1.json` +receipt-v1.json. Do not read independent
+  labels before freezing; all originalpage images before source/native exports, no detector
+  outputs/fullindexes. Stop afterthese2. Remaining10 packets not dispatched. No new truth
+  admission; externalcalls0, agent reasoning costunknown. Current independent agent idle.
+- Approved four registry/provider hosts remain effectively blocked; prepared normal-terminal
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart/resume,
+  still needed. Managed read-only configuration/allowlist limitation, not missing permission
+  or auto-review rejection. #25/33/71/72 unchanged and blocked; PR93/94/95 remain drafts.
+  No new approval request, rebase, sudo/rm-rf/private/env reads/user-data destruction/full_model.
+  Next: keep #117 moving through review, primary annotations, native34 audit and first2 root
+  reconciliation. Goal incomplete across remaining A–D/system acceptance.
