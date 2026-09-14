@@ -1260,6 +1260,21 @@ justification and separate old/new denominators; objective targets are unchanged
 This bounded release closes #105 only. The approximately 500-paper requirement in #97
 and broad system acceptance remain open.
 
+Visual tranche decision (#115, 2026-09-13): a separate reusable codec validates
+independently reconciled visual inventories and formal negatives from the original
+annotation schemas, grounded producer assignment history and a distinct construction
+review. It preserves native UTF-16 membership, original 96-dpi region precision and
+explicit attached-note ownership without manufacturing empty math supplements.
+The fixed selection adds 2409.03655v1 only: four figures and two tables, twelve local
+references and one unresolved external subsection locator. Bibliography/citation
+evidence remains retained but supplies no new O8–O11 cohort. The separately pinned
+fifteen-module `k1-limited-v3` keeps all three prior compact rows and all v1/v2 files
+unchanged, yielding 29 visual regions across four papers. Its verified singleton
+page/rectangle region encoding is adapted explicitly only for v3 before unchanged
+strict geometry and IoU arithmetic; publication of metric inputs requires the full
+frozen O2 denominator. The original failed 23-value collector attempt is retained.
+This is limited coverage toward #97, whose approximately 500-paper target remains open.
+
 The bounded #110 source-layout experiment uses an explicitly invoked Linux aarch64
 PDFLaTeX runner with fresh namespaces, a positive syscall filter, fixed read-only
 runtime/source mounts and finitely many writable output inodes. Exact input and

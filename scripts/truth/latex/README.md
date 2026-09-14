@@ -112,3 +112,55 @@ complete metric cohorts, preserves supported negatives, and reports the unchange
 coverage target with follow-up #97. The bibliography projection is accepted by the E1.2 collector
 using its explicit `--k1` path. Release version, exact cohort size and selection bias must accompany
 any detector measurement.
+
+The explicit `k1-manual-visual-tranche-v1` format supports direct figures/tables and
+separately reconciled formal negatives from the primary schema version 1 and
+`lysilogy.blind-manual-inventory.v1` originals. Its manifest binds both inventories
+and receipts, their real page-first histories, the native allowlist export, all
+96-dpi original images, the original source export, and the root geometry/role
+reconciliations. A later construction, source crosswalk and distinct reviewer
+receipt bind those originals without changing their historical input ledgers.
+Positive math/formal objects and overlapping source owners require another codec.
+
+The visual crosswalk separately names each original `table_N_notes` ancillary group
+and its `table_N_note_scope` reconciliation. The validator proves the full table
+membership is the exact union of the independently recorded core, note text and
+original superscript tokens. A marker can occur later in native reading order;
+its exact native token and recorded note ownership remain required. Missing notes,
+reused groups, changed source owners and cross-page membership fail validation.
+The compact release retains separately owned attached notes and unknown external
+locators. Visual/section/citation source occurrences are exhaustively crosswalked;
+bibliography excerpts and field evidence remain external and O8–O11 are omitted
+unless their separate existing codecs are supplied. Informal roles remain reviewable
+and cannot silently disappear into a formal-negative cohort.
+
+The reviewed `k1-limited-v3` selects a separate fixed 15-module implementation,
+including this codec. It retains the three complete v2 paper records and adds
+2409.03655v1: six visual objects with separately reviewed formal negatives, for
+29 visual objects across four papers. New O8–O11 eligibility remains omitted.
+This limited release does not satisfy the 500-paper coverage target. The v1 and
+v2 pins, fixed modules, payloads and configurations remain unchanged; the collector
+defaults to v1 and requires explicit `--truth-version k1-limited-v3` for the later
+cohort. Every version has a separate
+observation path while one current figure/table metric input owns O1/O2; prior
+input/observation pairs are preserved by the existing immutable history writer.
+
+Historical automatic candidates retain their original bytes and confidence flags
+as diagnostic history. The visual construction also records a fresh bounded parse
+of the same deposited source and every changed top-level inventory field. Validation
+recomputes that parse, checks exact source-occurrence correspondence, and uses its
+current duplicate-label/raw-source guards for object and section destinations.
+Each printed reference number is nonempty, belongs to its complete original phrase,
+and cannot be reused by another source occurrence. Phrases may share context when
+their independently recorded number spans remain distinct. Section destinations
+must belong to the current parser's unique section heading; visual labels cannot
+be reclassified as section labels. Current bibliography parsing differences stay
+separate from the omitted bibliography metrics.
+
+Producer independence is grounded separately from string distinctness. The visual
+manifest retains the original assignment proposal, an audit of committed assignment
+and freeze records, and a distinct reconciler's confirmation of those records against
+both original inventories and receipts. Original role-only receipts remain unchanged.
+The codec checks the actual retained history bytes and exact source excerpts, proposal
+selection/prompt/output paths, complete confirmation hashes and final reviewer binding.
+A proposed assignment or three different identity strings alone cannot enable an overlay.

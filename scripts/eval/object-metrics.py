@@ -23,8 +23,8 @@ CONFIG = 'eval/truth/k1-limited-v1-build.json'
 TRACE = 'eval/inputs/evidence/object-metrics.json'
 INPUT = 'eval/inputs/objects/figure-table.json'
 KINDS = ('figure', 'table')
-VERSION = 'figure-table-metrics-v5'
-TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2')
+VERSION = 'figure-table-metrics-v6'
+TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2', 'k1-limited-v3')
 NATIVE_BASIS_FORMAT = 'native-json-f32-v1'
 DETECTOR_VERSION = 3
 GRAPHICS_VERSION = 3
@@ -139,7 +139,8 @@ def iou(truth, predicted):
     return intersection/(union_area(truth)+union_area([predicted])-intersection)
 
 
-def evaluate_paper(paper, artifact, index):
+def evaluate_paper(paper, artifact, index, truth_version=TRUTH_VERSIONS[0]):
+    require(truth_version in TRUTH_VERSIONS, 'unsupported collector truth version')
     require(paper['metric_eligibility'].get('O1') is True, 'paper is outside complete O1 cohort')
     require(artifact['paper_id'] == paper['paper_id'] and artifact['reading_index_generation'] == '"'+paper['index']['sha256']+'"', 'wrong object paper or index generation')
     require(len(artifact['objects']) <= 2000 and len(paper['objects']) <= 2000, 'object population exceeds bound')
@@ -180,6 +181,12 @@ def evaluate_paper(paper, artifact, index):
     matched = {n for n,_ in winners.values()}; values=[]; matched_values=[]; outcomes=[]; unknown=0
     for j,t in enumerate(truths):
         n,score = winners.get(j,(None,None)); regions=t.get('region')
+        if truth_version == 'k1-limited-v3' and isinstance(regions,dict):
+            require(set(regions)=={'page','rect'} and type(regions['page']) is int
+                    and isinstance(regions['rect'],dict)
+                    and set(regions['rect'])=={'x_min','y_min','x_max','y_max'},
+                    'invalid singleton truth region')
+            regions=[regions]
         annotated = isinstance(regions,list) and bool(regions)
         if not annotated: unknown+=1
         validated=[]
@@ -206,6 +213,16 @@ def evaluate_paper(paper, artifact, index):
     tp=len(winners);fp=len(predictions)-tp;fn=len(truths)-tp
     by_kind={kind:{'tp':sum(truths[j]['kind']==kind for j in winners),'fp':sum(o['kind']==kind and n not in matched for n,o in enumerate(predictions)),'fn':sum(t['kind']==kind and j not in winners for j,t in enumerate(truths))} for kind in KINDS}
     return {'paper_id':paper['paper_id'],'tp':tp,'fp':fp,'fn':fn,'by_kind':by_kind,'truth_objects':len(truths),'predictions':len(predictions),'region_values':values,'matched_region_values':matched_values,'unknown_truth_regions':unknown,'excluded_O2':not paper['metric_eligibility'].get('O2'),'ambiguous_prediction_positions':ambiguous,'invalid_caption_anchors':errors,'unmatched_prediction_positions':[n for n in range(len(predictions)) if n not in matched],'outcomes':outcomes}
+
+
+def aggregate_metrics(truth, metrics):
+    totals={k:sum(p[k] for p in metrics) for k in ('tp','fp','fn','truth_objects','predictions','unknown_truth_regions')}
+    values=[v for p in metrics for v in p['region_values']]
+    matched=[v for p in metrics for v in p['matched_region_values']]
+    expected=truth['coverage']['denominators']['O2']['all_annotated_truth_objects']
+    require(type(expected) is int and len(values)==expected, 'incomplete frozen O2 region denominator')
+    require(totals['truth_objects']>0 and values,'empty objective denominator')
+    return totals, values, matched
 
 
 def validate_registry(registry, papers, corpus_pdf_root):
@@ -531,14 +548,12 @@ def main():
         tracked.update(derivation['graphics']['trace_hashes'])
         tracked.update(derivation['graphics']['mask_hashes'])
         object_hashes[paper['paper_id']]={'rust_serialized_sha256':row['object_sha256'],'canonical_sha256':digest(canonical(artifact)),'derivation':derivation}
-        metrics.append(evaluate_paper(paper,artifact,indexes[paper['paper_id']]))
+        metrics.append(evaluate_paper(paper,artifact,indexes[paper['paper_id']],args.truth_version))
     require(sources=={p:digest(read(ROOT/p)) for p in sources} and read(ROOT/paths['truth'])==truth_raw and digest(read(expected,128*1024*1024))==executable_hash,'measurement source or truth changed')
     for path,expected_hash in tracked.items():require(digest(read(Path(path),512*1024*1024))==expected_hash,'canonical input changed during measurement')
     _,_,truth_verification_after=validate_truth(ROOT,cache,corpus,data,truth_raw,True)
     require(sources=={p:digest(read(ROOT/p)) for p in sources},'measurement source changed during final truth replay')
-    totals={k:sum(p[k] for p in metrics) for k in ('tp','fp','fn','truth_objects','predictions','unknown_truth_regions')}
-    values=[v for p in metrics for v in p['region_values']];matched=[v for p in metrics for v in p['matched_region_values']]
-    require(totals['truth_objects']>0 and values,'empty objective denominator')
+    totals,values,matched=aggregate_metrics(truth,metrics)
     observation={'schema_version':1,'collector':VERSION,'truth_sha256':digest(truth_raw),'truth_version':truth['version'],'coverage':truth['coverage'],'truth_verification':{'before':truth_verification_before,'after':truth_verification_after},'summary':totals,'O1':2*totals['tp']/(2*totals['tp']+totals['fp']+totals['fn']),'O2':statistics.median(values),'matched_only_median':statistics.median(matched) if matched else None,'papers':metrics,'object_hashes':object_hashes,'executable_sha256':executable_hash,'build_receipt_sha256':digest(read(ROOT/'target/object-metrics-build.json')),'external_input_hashes':tracked,'network_calls':0,'model_calls':0,'cost_usd':0,'wall_seconds':time.monotonic()-started}
     # Freeze full predictions externally; commit only derived diagnostic records.
     run_root=cache/'object-metrics'/digest(result.stdout)

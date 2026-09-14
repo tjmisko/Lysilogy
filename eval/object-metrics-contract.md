@@ -26,6 +26,13 @@ truth. Multiple truth rectangles use exact planar union/intersection area, separ
 Matched-only IoU is a separate diagnostic and cannot replace the objective denominator. Unknown
 truth regions and excluded O2 cohorts are reported separately and never guessed. The O1 target
 is 0.90; the O2 target is 0.75. Empty populations cannot create a passing metric.
+The published v3 visual tranche records each new single-page region as `{page, rect}`;
+its earlier paper records retain region lists. Collector v6 interprets that exact singleton
+shape only for explicit v3, applying the same page, coordinate and IoU checks as a one-item
+list. It does not rewrite pinned truth. V1/v2 interpretation remains unchanged. Before
+publishing a measurement, the count of O2 values must equal the selected frozen release's
+`all_annotated_truth_objects` denominator; unsupported or missing geometry cannot silently
+reduce a declared complete region cohort.
 
 The collector revalidates the immutable K1 configuration, original automatic reports and all
 review bundles, reproducing the published projections in memory. It checks full per-kind
@@ -167,7 +174,7 @@ registry or evidence fail before publication. External raw artifacts stay in the
 only compact observation identities/counts/IoUs/hashes and collector inputs enter the repo.
 Tests use synthetic arithmetic/provenance fixtures only; they never register objective values.
 
-Collector v5 accepts an explicit `--truth-version k1-limited-v1|k1-limited-v2`;
+Collector v6 accepts an explicit `--truth-version k1-limited-v1|k1-limited-v2|k1-limited-v3`;
 v1 remains the default. The selected version fixes the configuration, retained
 verifier manifest and module inventory, truth payload, build receipt, and output
 paths. V2 writes `object-metrics-k1-limited-v2.json` observations. The harness
@@ -176,6 +183,6 @@ Before replacement, the collector preserves the exact prior input and observatio
 bytes with a hash manifest under `eval/evidence/object-metrics-history/`; it also
 freezes every new pair there. These histories sit outside the active input folder,
 so overlapping releases cannot create duplicate O1/O2 owners.
-Both versions use identical matching, arithmetic, geometry and native/detector
+All three versions use identical matching, arithmetic, geometry and native/detector
 provenance checks. Coverage always identifies the selected immutable cohort;
 results from the two releases must not be combined as disjoint samples.

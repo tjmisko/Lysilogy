@@ -48,6 +48,33 @@ def automatic_fixture(cache):
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_should_preserve_prior_papers_and_attached_notes_when_visual_negative_cohort_is_appended(self):
+        from test_tranche_visual import fixture as visual_fixture, seal
+        from tranche_visual import validate_visual
+        rows, config, inputs, history = fixture()
+        before, before_bibliography = build_release(rows, config, inputs, history)
+        candidate, native, source, docs, images = visual_fixture()
+        candidate['metric_eligibility'] = {f'O{i}': False for i in range(1, 12)}
+        assembled = validate_visual(canonical(candidate), canonical(native), source, seal(candidate, docs), images,
+                                    {r['retained_path']: r['sha256'] for r in docs['assignment_history']['records']})
+        assembled['manual_assembly'] = {'candidate_sha256': sha256(canonical(candidate))}
+        rows.append(assembled)
+        config['version'] = 'k1-limited-v3'
+        config['papers'].append({'arxiv_id': candidate['arxiv_id'], 'paper_id': candidate['paper_id'], 'candidate': 'external/new-candidate.json'})
+        inputs['papers'].append({'arxiv_id': candidate['arxiv_id'], 'version': 1, 'stratum': candidate['stratum'],
+                                 'pdf': {'sha256': candidate['pdf_sha256']}, 'source': {'sha256': candidate['source_sha256']}})
+        after, bibliography = build_release(rows, config, inputs, history)
+        self.assertEqual(canonical(after['papers'][:-1]), canonical(before['papers']))
+        self.assertEqual(canonical(bibliography['papers']), canonical(before_bibliography['papers']))
+        paper = after['papers'][-1]
+        self.assertEqual(paper['associated_content'], assembled['manual_object_overlay']['associated_content'])
+        self.assertEqual(len(paper['associated_content'][0]['spans']), 2)
+        self.assertTrue(all(paper['metric_eligibility'][f'O{i}'] for i in range(1, 8)))
+        self.assertFalse(any(paper['metric_eligibility'][f'O{i}'] for i in range(8, 12)))
+        self.assertEqual(after['coverage']['denominators']['O2']['all_annotated_truth_objects'], 3)
+        self.assertEqual(after['coverage']['target_papers'], 500)
+        self.assertFalse(after['coverage']['target_met'])
+
     def test_should_retain_scope_and_negatives_when_every_kind_has_reviewed_positive_truth(self):
         release,bibliography=build_release(*fixture())
         coverage=release['coverage'];self.assertEqual(coverage['target_papers'],500);self.assertFalse(coverage['target_met'])
