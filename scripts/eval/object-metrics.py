@@ -27,7 +27,7 @@ VERSION = 'figure-table-metrics-v5'
 TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2')
 NATIVE_BASIS_FORMAT = 'native-json-f32-v1'
 DETECTOR_VERSION = 3
-GRAPHICS_VERSION = 2
+GRAPHICS_VERSION = 3
 MAX_JSON = 32 * 1024 * 1024
 
 
@@ -304,6 +304,18 @@ def validate_derivation(row, artifact, index):
     return {'version':DETECTOR_VERSION,'generation':generation,'native_basis_format':NATIVE_BASIS_FORMAT,'native_schema_version':6,'native_basis_sha256':row['native_basis_sha256'],'index_sha256':row['index_sha256']}
 
 
+def mask_runtime():
+    wrapper=Path('/usr/bin/prlimit')
+    if sys.platform!='linux' or not wrapper.is_file(): return None
+    wrapper=wrapper.resolve()
+    return {'wrapper_path':str(wrapper),'wrapper_sha256':digest(read(wrapper,8*1024*1024)),
+            'script_sha256':digest(read(ROOT/'src/source_index/graphics/masks.js',64*1024))}
+
+
+def mask_runtime_key(runtime):
+    return [runtime[key] for key in ('wrapper_path','wrapper_sha256','script_sha256')] if runtime else None
+
+
 def validate_graphics(row, artifact, paper, index, cache):
     evidence=artifact.get('graphics')
     require(isinstance(evidence,dict) and type(evidence.get('version')) is int and evidence['version']==GRAPHICS_VERSION,'current source factory omitted graphics evidence')
@@ -314,7 +326,8 @@ def validate_graphics(row, artifact, paper, index, cache):
     expected_tool=str(Path(expected_tool).resolve()) if expected_tool else None
     require(evidence.get('tool_path')==expected_tool,'graphics tool path differs')
     require(evidence.get('tool_sha256')==(digest(read(Path(expected_tool),128*1024*1024)) if expected_tool else None),'graphics executable changed')
-    require(evidence['cache_key']==digest(canonical([GRAPHICS_VERSION,evidence['native_generation'],evidence['pdf_sha256'],evidence['tool_sha256']])),'graphics cache identity differs')
+    runtime=mask_runtime();require(evidence.get('mask_runtime')==runtime,'mask runtime provenance differs')
+    require(evidence['cache_key']==digest(canonical([GRAPHICS_VERSION,evidence['native_generation'],evidence['pdf_sha256'],evidence['tool_sha256'],mask_runtime_key(runtime)])),'graphics cache identity differs')
     pages=evidence['pages'];require(isinstance(pages,list) and len(pages)<=400,'invalid graphics page inventory')
     page_ids=[page['page'] for page in pages]
     require(all(type(number) is int and 1<=number<=400 for number in page_ids),'invalid graphics page number')
@@ -344,7 +357,30 @@ def validate_graphics(row, artifact, paper, index, cache):
         raw=read(expected,16*1024*1024);total+=len(raw)
         require(digest(raw)==sha and total<=64*1024*1024,'graphics trace bytes differ or exceed bound')
         retained[str(expected)]=sha
-    return {'generation':evidence['generation'],'cache_key':evidence['cache_key'],'tool_sha256':evidence['tool_sha256'],'page_statuses':dict(Counter(page['status'] for page in pages)),'trace_hashes':retained}
+    masks=row['graphics_masks'];require(isinstance(masks,list) and len(masks)<=64,'invalid mask receipt inventory')
+    require(len({mask['page'] for mask in masks})==len(masks),'duplicate mask receipt')
+    by_page={mask['page']:mask for mask in masks};mask_hashes={}
+    require(set(by_page)=={page['page'] for page in pages if page.get('mask') is not None and page['mask']['receipt_sha256'] is not None},'mask receipt coverage differs')
+    for page in pages:
+        mask=page.get('mask')
+        if mask is None: continue
+        require(mask['status'] in {'evaluated','unsupported_receipt','tool_failed','tool_unavailable','resource_limit'},'invalid mask status')
+        require(all(type(mask[key]) is int and 0<=mask[key]<=256 for key in ('supported_images','empty_images')),'invalid mask counts')
+        require(mask['supported_images']<=len(page['images']) and len(page['images'])+page['unsupported_images']+mask['empty_images']<=256,'mask image accounting differs')
+        require(mask['status']=='evaluated' or mask['supported_images']==mask['empty_images']==0,'unevaluated mask admitted images')
+        require(runtime is not None or mask['status'] in {'tool_unavailable','resource_limit'},'mask data lacks runtime')
+        sha=mask['receipt_sha256']
+        if sha is None:
+            require(mask['status'] not in {'evaluated','unsupported_receipt'},'mask receipt missing');continue
+        require(mask['status'] in {'evaluated','unsupported_receipt'} and isinstance(sha,str) and re.fullmatch('[0-9a-f]{64}',sha),'invalid mask receipt state/hash')
+        saved=by_page[page['page']];expected=cache/'object-graphics-masks'/(sha+'.json')
+        require(saved['sha256']==sha and saved['path']==str(expected),'mask receipt path/hash differs')
+        raw=read(expected,16*1024*1024);total+=len(raw)
+        require(digest(raw)==sha and total<=64*1024*1024,'mask receipt bytes differ or exceed bound')
+        if mask['status']=='evaluated':
+            decoded=document(raw);require(decoded['schema_version']==1 and decoded['page']==page['page'],'mask decoded identity differs')
+        mask_hashes[str(expected)]=sha
+    return {'generation':evidence['generation'],'cache_key':evidence['cache_key'],'tool_sha256':evidence['tool_sha256'],'mask_runtime':runtime,'page_statuses':dict(Counter(page['status'] for page in pages)),'trace_hashes':retained,'mask_hashes':mask_hashes}
 
 
 def atomic_json(path, value):
@@ -405,7 +441,7 @@ def publish_measurement(repo, paths, observation, payload):
 
 
 def implementation_files(repo, truth_version=TRUTH_VERSIONS[0]):
-    files=[release_paths(truth_version)['config'],'eval/native-basis-vectors.json','Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
+    files=['src/source_index/graphics/masks.js',release_paths(truth_version)['config'],'eval/native-basis-vectors.json','Cargo.toml','Cargo.lock','examples/object_metrics.rs','scripts/eval/object-metrics.py','eval/object-metrics-contract.md','src/domain.rs','src/layout.rs','src/objects/mod.rs','src/source_index.rs','src/library.rs']
     for root in ('src','scripts/truth/latex'):
         if (repo/root).is_dir():
             files.extend(str(p.relative_to(repo)) for p in (repo/root).rglob('*') if p.is_file() and p.suffix in ('.rs','.py') and not p.name.startswith('test'))
@@ -493,6 +529,7 @@ def main():
         derivation=validate_derivation(row,artifact,indexes[paper['paper_id']])
         derivation['graphics']=validate_graphics(row,artifact,paper,indexes[paper['paper_id']],cache)
         tracked.update(derivation['graphics']['trace_hashes'])
+        tracked.update(derivation['graphics']['mask_hashes'])
         object_hashes[paper['paper_id']]={'rust_serialized_sha256':row['object_sha256'],'canonical_sha256':digest(canonical(artifact)),'derivation':derivation}
         metrics.append(evaluate_paper(paper,artifact,indexes[paper['paper_id']]))
     require(sources=={p:digest(read(ROOT/p)) for p in sources} and read(ROOT/paths['truth'])==truth_raw and digest(read(expected,128*1024*1024))==executable_hash,'measurement source or truth changed')

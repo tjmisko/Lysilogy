@@ -14,7 +14,7 @@ System acceptance requires 5/5 gates and at least 24/30 objectives; use `eval al
 | G4 | Rebuild determinism: entities, IDs, aliases | resolution | — | — | ≥ 1 | fraction | unavailable |
 | G5 | Tests pass with network disabled and no model CLIs | tests | 1 | 1 | ≥ 1 | pass | pass |
 | O1 | Figure and table detection F1 | objects | 1 | 1 | ≥ 0.9 | fraction | at target |
-| O2 | Figure and table region IoU, median | objects | 0.907601 | 0.907601 | ≥ 0.75 | fraction | at target |
+| O2 | Figure and table region IoU, median | objects | 0.916972 | 0.916972 | ≥ 0.75 | fraction | at target |
 | O3 | Numbered equation detection F1 | objects | — | — | ≥ 0.85 | fraction | unavailable |
 | O4 | Equation and statement mention link accuracy | objects | — | — | ≥ 0.9 | fraction | unavailable |
 | O5 | Theorem-like statement detection F1 | objects | — | — | ≥ 0.85 | fraction | unavailable |
@@ -72,12 +72,6 @@ Measurements are calculated from `eval/inputs/<suite>/<collector>.json` or the l
 - **O5:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 - **O6:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 - **O7:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
-- **O8:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
-- **O9.title:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
-- **O9.first_author:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
-- **O9.year:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
-- **O10.precision:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
-- **O10.recall:** no owning collector in eval/inputs/bibliography.json or eval/inputs/bibliography/; truth/collector not built
 - **O11:** no owning collector in eval/inputs/objects.json or eval/inputs/objects/; truth/collector not built
 - **O25:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built
 - **O26.render:** no owning collector in eval/inputs/scale.json or eval/inputs/scale/; truth/collector not built

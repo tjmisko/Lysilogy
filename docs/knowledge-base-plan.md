@@ -382,6 +382,21 @@ When only raster inserts are supported within an independently enclosing native 
 multiple small nonnumeric labels above and below the inserts retain that native extent.
 This evidence does not infer the contents or bounds of unsupported masks.
 
+The mask follow-up enables the existing `serde_json/float_roundtrip` feature after a
+retained reproduction showed its default binary64 decoder shift valid native transform
+decimals by one ULP. This adds no dependency and retains exact coordinate comparisons;
+full gates and native commitments cover the feature's global JSON-decoding scope.
+
+Mask follow-up (#111) adds optional, separately fingerprinted decoded opacity to graphics
+version3. The XML trace still owns page/state/event framing. A mask may supply a candidate
+envelope only from all its nonzero pixel cells, with an identical attached mask and independently
+opaque base image in the same coordinates. Nested masks, extra cropping, interpolation and
+unknown transparency remain excluded; holes are not declared painted. The fixed local adapter
+and resource wrapper are hashed into graphics cache identity, and raw opacity stays external.
+Both immutable cohorts, native indexes, caption ownership and scoring remain unchanged.
+The detailed resource/provenance protocol and independent adversarial fixtures are recorded in
+`eval/object-metrics-contract.md`. Actual before/after measurement is required before merge.
+
 ### E1.2 Backend bibliography extraction and parsing
 
 Move bibliography detection and entry splitting from `paperLinks.ts` to the backend, and persist
@@ -1244,6 +1259,23 @@ bytes. Any baseline transition between overlapping cohorts requires an evidence-
 justification and separate old/new denominators; objective targets are unchanged.
 This bounded release closes #105 only. The approximately 500-paper requirement in #97
 and broad system acceptance remain open.
+
+The bounded #110 source-layout experiment uses an explicitly invoked Linux aarch64
+PDFLaTeX runner with fresh namespaces, a positive syscall filter, fixed read-only
+runtime/source mounts and finitely many writable output inodes. Exact input and
+runtime inventories, isolated source loading, resource/deadline limits and independent
+synthetic/launch review precede deposited-source execution. Fixed inodes make aggregate
+output bounded but intentionally leave arbitrary auxiliary-file and SyncTeX rename
+support unavailable. This tooling publishes no truth. The frozen availability-only ten
+papers produced one build and zero complete documents matching every original page at
+both96/192dpi, below the unchanged exploratory8-build/5-document criteria. No source,
+package or engine repair was attempted. Retained first-pass hashes do not preserve
+mutable bytes overwritten on pass2, and the original baseline CLI was not archived;
+these inspection limits are explicit. A later experiment first needs a separately
+reviewed complete runtime and reproduction measurement on the unchanged selection.
+The [measured report](experiment-reports/2026-09-13-kb-source-layout-probe.md) records
+the no-go, corrected verification wrapper, exact current metrics and durable evidence.
+No K1 coverage, truth-admission or system target is relaxed by this experiment.
 
 Acceptance: truth covers every E1 object kind; alignment quality is reported per paper; the suite
 runs offline from the corpus cache.
