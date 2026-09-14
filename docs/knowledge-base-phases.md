@@ -297,6 +297,16 @@ acceptance are unchanged.
   needs explicit disjoint support or must remain unresolved. Do not widen across prose.
   Retain all 50 outcomes/eight zeros, unchanged .90/.75 targets and separate body gaps.
 
+- [ ] **#129 Bounded per-paper K1 release replay and collection** (after #123; part of #97).
+  Branch `feat/e8.3-bounded-k1-replay`. Owns a narrow new release-layout module, current
+  release/versioned dispatch and projection factoring, focused tests, object collector/tests,
+  contracts and measured report; optional narrowly streamed harness evidence hashing.
+  Preserve all73 immutable v1–v4 files, original dispatch/limits and all117 outcomes. Add
+  explicit per-paper truth/prediction manifests with exact complete cohorts, bounded serial
+  workers and child-evidence closure under one metric owner. Independently review source,
+  resource runner and actual results; measure500 inert synthetic rows before claiming scale.
+  The mechanism does not publish pending annotations or meet #97's truth-coverage target.
+
 ### Wave A3
 
 - [ ] **#37 E2.5 Resolution gold set and evaluation** (after #25, #69). Branch `feat/e2.5-gold-set`.
@@ -6233,3 +6243,44 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Next: register bounded97 replay-capacity work from the finished assessment, continue
   separate review_k1_reconciliation and complete remaining truth construction. No final
   system report or phase-exit success is claimed.
+
+
+### 2026-09-14 10:07 UTC — bounded replay registered; root preparation review clear
+
+- Last merged issue remains #123 / PR128, merge ebe976339a5c93771375400bae5935cbf9ae1b3a.
+  Phase A / A2; published score remains1/5 gates,3/30 objectives (O1/O2/O30), current
+  V4 O1=.98989898989899 and O2=.8910021250829322. No new measurement or admission.
+- Registered **#129** on project12 under epic67, after closed123, branch
+  `feat/e8.3-bounded-k1-replay`; bounded mechanism work for97. Full assessment and issue
+  text remain under `~/.cache/lysilogy/k1-coverage/release-layout-assessment-20260914-v1/`.
+  Owner finish_corpus_proxy next creates its worktree from updated main. No PR yet.
+  Owns explicit per-paper format, bounded serial replay/collection, complete denominators,
+  child-evidence closure and synthetic scale verification; all73 legacy files immutable.
+  It does not admit the14 annotated papers, meet500-paper coverage or close97.
+- Independent root-preparation review is complete: `~/.cache/lysilogy/review-k1-root-parts-v1/review.json`,
+  SHA0456679ce081199eff9e574030ce8ad2f29335bebc0e2dec061d6ba48ac89175, binds107 files.
+  Reviewer checked443 source slices,3789 native slices,8 native comparisons,67 original-copy
+  checks,77 equation diagnostics and9 selected regions, and personally viewed7 original pages.
+  Only R1 was low-severity wording: equation7's summary inaccurately said its body strip was
+  wholly within the original proposal union despite the separately disclosed.75-point extension.
+- Original v3, original review and failed preparations remain frozen. Root issued wording-only
+  `k1-coverage/manual-tranche-v2-preparation/reconciliation/references-root-v1/math-condition-geometry-root-v4.json`,
+  SHA34650f2115ccffd8e4749d2feb594871297406c4fa59608006e5efbb5c89eac5,12218 bytes.
+  Its retained producer pins v3 and asserts all content except equation7 summary and correction
+  provenance exact. No new image inspection claim; existing v3 blank-space evidence is cited.
+  Separate clearance `review-k1-root-parts-v1/clearance-v4.json`, SHA
+  f79b71b649479d423fb91957dddf915d3096d6c9d9dcd8a5728ae4281b384274,3882 bytes,
+  independently verifies the exact correction and unchanged structured values; no open findings
+  in this bounded scope. No truth or metric eligibility granted. Reviewer now idle.
+- All14 annotation pairs/56 original files remain at checkpointfb7f0cb2 from09:50.
+  Remaining first-four number/body/fidelity work and other10-paper reconciliation continue;
+  both original annotators remain distinct from the independent root-preparation reviewer.
+- No corpus download/native queue or heavy job runs. All10951 corpus PDFs/indexes audited;
+  production10k/application/system acceptance remain pending. All10 protected preview files
+  hash-identical. Preserve blocked store905c341(no PR), bibliography94/201c53c,
+  reference93/d5e12aa, person95/c867ec6 and all unrelated worktrees.
+- Four registry/provider host grants remain approved, config still read-only at the last
+ 09:47 check. Required normal-terminal action remains
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart/resume
+  effective-access verification. No approval renewal, fresh network call or provider result
+  claimed. Storage probes passed. Continue129 implementation/source review and97 reconciliation.
