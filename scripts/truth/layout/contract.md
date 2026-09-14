@@ -78,6 +78,10 @@ Sandbox setup consumes that deadline too. The controller checks immediately
 before process creation and recomputes the wait budget afterward; expiration
 during setup prevents a launch, and expiration during creation triggers cleanup.
 
-Current checkpoint: complete source and synthetic tests are prepared, with final
-independent review and actual ten-paper experiment pending. Deposited-source
-execution remains withheld. Synthetic results prove only the tested capability.
+The independently reviewed ten-paper experiment completed on 2026-09-13: one
+paper built and zero complete documents matched. All selected failures remain
+in the denominator. This is an exploratory no-go; no layout truth is admitted.
+See [the measured report](../../../docs/experiment-reports/2026-09-13-kb-source-layout-probe.md).
+Original inputs and the executed source snapshot remain immutable. A later
+experiment needs a separately reviewed runtime and launch; synthetic results
+establish only the tested capability.

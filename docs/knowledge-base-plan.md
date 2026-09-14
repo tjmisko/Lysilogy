@@ -1260,6 +1260,23 @@ justification and separate old/new denominators; objective targets are unchanged
 This bounded release closes #105 only. The approximately 500-paper requirement in #97
 and broad system acceptance remain open.
 
+The bounded #110 source-layout experiment uses an explicitly invoked Linux aarch64
+PDFLaTeX runner with fresh namespaces, a positive syscall filter, fixed read-only
+runtime/source mounts and finitely many writable output inodes. Exact input and
+runtime inventories, isolated source loading, resource/deadline limits and independent
+synthetic/launch review precede deposited-source execution. Fixed inodes make aggregate
+output bounded but intentionally leave arbitrary auxiliary-file and SyncTeX rename
+support unavailable. This tooling publishes no truth. The frozen availability-only ten
+papers produced one build and zero complete documents matching every original page at
+both96/192dpi, below the unchanged exploratory8-build/5-document criteria. No source,
+package or engine repair was attempted. Retained first-pass hashes do not preserve
+mutable bytes overwritten on pass2, and the original baseline CLI was not archived;
+these inspection limits are explicit. A later experiment first needs a separately
+reviewed complete runtime and reproduction measurement on the unchanged selection.
+The [measured report](experiment-reports/2026-09-13-kb-source-layout-probe.md) records
+the no-go, corrected verification wrapper, exact current metrics and durable evidence.
+No K1 coverage, truth-admission or system target is relaxed by this experiment.
+
 Acceptance: truth covers every E1 object kind; alignment quality is reported per paper; the suite
 runs offline from the corpus cache.
 
