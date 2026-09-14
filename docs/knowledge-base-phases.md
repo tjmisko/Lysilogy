@@ -297,7 +297,7 @@ acceptance are unchanged.
   needs explicit disjoint support or must remain unresolved. Do not widen across prose.
   Retain all 50 outcomes/eight zeros, unchanged .90/.75 targets and separate body gaps.
 
-- [ ] **#129 Bounded per-paper K1 release replay and collection** (after #123; part of #97).
+- [x] **#129 Bounded per-paper K1 release replay and collection** (after #123; part of #97).
   Branch `feat/e8.3-bounded-k1-replay`. Owns a narrow new release-layout module, current
   release/versioned dispatch and projection factoring, focused tests, object collector/tests,
   contracts and measured report; optional narrowly streamed harness evidence hashing.
@@ -306,6 +306,17 @@ acceptance are unchanged.
   workers and child-evidence closure under one metric owner. Independently review source,
   resource runner and actual results; measure500 inert synthetic rows before claiming scale.
   The mechanism does not publish pending annotations or meet #97's truth-coverage target.
+
+- [ ] **#131 Complete numbered-equation K1 cohorts** (after #129; bounded part of #97).
+  Branch `feat/e8.3-numbered-math-tranche`. Owns a new `tranche_numbered_math.py`, narrow
+  manual/release/versioned dispatch and builder fingerprint registration, focused Python tests,
+  new reviewed annotation/release artifacts, contracts and report. Add an explicit O3-only
+  codec for exactly 2404.17771v2's seven and 1911.08525v2's 48 numbered equations. Retain all
+  fourteen original dispositions and every unscored role through stable evidence pointers.
+  Require complete source/native/printed identity, body and number regions, and distinct
+  construction review. Keep V1–V4 immutable and existing nine-paper semantics/outcomes exact;
+  separately enumerate new-version source provenance changes. No parser/detector edits,
+  source-failure guard waivers, partial-paper denominator or unrelated metric grants.
 
 ### Wave A3
 
@@ -318,6 +329,20 @@ acceptance are unchanged.
   `cargo test` that loads the gold set.
 
 ### Phase A notes
+
+- #129 merged via PR130 at `d9a62af3855c9bbf49dc8171cadf088bf644878d`, independently clear
+  at `8c51bee8345f748bf4e4a2ed75108e71b2aabbd9`. Bounded per-paper publication/replay and
+  collection retain complete ordered cohorts and unscored evidence, with one metric owner.
+  All 73 legacy files and all 117 actual outcomes are preserved. Real comparison took 337.663 s;
+  generated 500-record publication/replay took 240.528 s, with a separate 153.095 s deliberate
+  final-paper failure preserving 499 staged rows and publishing no success root. These are
+  infrastructure measurements, not 500-paper truth coverage. Gates passed: 428 Rust, 612 Python,
+  85 Node tests, formatting and strict Clippy. Final integrated gates and owning objects check
+  passed. O1=.98989898989899 and O2=.8910021250829322 remain unchanged over 50 regions.
+  [Report](experiment-reports/2026-09-14-kb-bounded-k1-replay.md) and
+  `eval/evidence/bounded-k1-replay-129.json` bind 14,644 portable files / 735,704,720 bytes.
+  V5 remains unpublished. #131 now owns its first bounded new-codec construction; #97 stays
+  open. The merged branch/worktree/target were removed; all protected preview bytes unchanged.
 
 - #123 merged via PR128 at `ebe976339a5c93771375400bae5935cbf9ae1b3a` (reviewed61dda7c).
   Detector6/graphics5 add bounded painted vector components after exact supported trace checks;
@@ -6722,3 +6747,87 @@ date, last merged issue, in-flight branches and their state, next action, and op
 - Blocked #33 and drafts93/94/95 remain preserved. Approvedfourhosts still require the previously
   prepared normal-terminal script because Codex's config is mounted read-only; approval already
   exists. Production10k, Playwright, remaining A2 acceptance and all later phases remain open.
+
+
+### 2026-09-14 12:44 UTC — bounded replay merged; complete numbered-equation construction starts
+
+- Last merged **#129 / PR130**, merge `d9a62af3855c9bbf49dc8171cadf088bf644878d` at
+  12:42:20 UTC. Phase **A / Wave A2**. Separate final review cleared exact head
+  `8c51bee8345f748bf4e4a2ed75108e71b2aabbd9`; receipt
+  `~/.cache/lysilogy/review-pr130-8c51bee/review.json`, SHA256
+  `9137dba72f4e1ea7c901e0eabb06e2828acd7caccb256643750360ea1096cdd3`.
+  All 36 changed files, 14,644 portable files / 735,704,720 bytes, 541 gate bindings and
+  212 measured sources verified. Final integrated formatting, strict Clippy, 428 Rust tests
+  and owning objects check passed; full G5 also binds 612 Python / 85 Node tests. Merge commit
+  used, branch/worktree/target removed, main safely fast-forwarded, all ten protected preview
+  files unchanged. Fourteen checkpoint bindings in
+  `~/.cache/lysilogy/kb-session-checkpoint-20260914T1244.json`, SHA256
+  `1cb0312051ea715d22acb1cebe4dcddc9b911c75c9707c9cea4c8e6bbbed48e8`.
+- **Actual real and synthetic replay independently clear.** Real audit
+  `review-bounded-k1-129-actual-v4/review.json`, SHA256
+  `9192b9d52fa9a0984f53edfb845850ede23021a0ef601fd0feb8251326ea9a3d`, verifies
+  18 complete records / all 117 exact matching and IoU outcomes. Synthetic audit
+  `review-bounded-k1-129-actual-v4/synthetic-review.json`, SHA256
+  `97a89d3640b0a9c1a254ff44e257ed59280bd9571c636729d1759d4b9a3bb6a5`, verifies
+  all 500 complete rows, 499 retained staged failure rows, exact eleven cohort/denominator
+  sets, 84 negative and 83 all-false records. Generated publication/replay took 240.528 s;
+  deliberate final-paper failure took 153.095 s. Parent 33,056 KiB and child 31,520 KiB
+  high-water RSS are separate maxima, not a simultaneous sum. No real 500-paper truth or
+  production corpus performance claim. The original real v3 build-limit failure and all
+  runner revisions remain evidence. Own-CLI aftercheck is independently clear in
+  `review-bounded-k1-129-actual-v4/aftercheck-review.json`, SHA256
+  `68b9ddbbf84291e8f1eaea98df6d0a0c1c9f8c28825dedfb1bf83c97f751050c`.
+- **#131 opened, attached to epic #67 and project 12, Phase A / In Progress.** Branch
+  `feat/e8.3-numbered-math-tranche`, next implementer `review_k1_reconciliation`; no PR or
+  worktree yet at this checkpoint. Blocker #129 is now closed. Implement explicit complete-O3
+  construction for exactly seven 2404.17771v2 and 48 1911.08525v2 numbered equations. Current
+  V5 is still unpublished; independently review its explicit module inventory before first
+  publication. No general per-metric framework, source-failure basis or parser/detector change.
+  Retain all fourteen original dispositions, unscored records and existing nine-paper semantic
+  records/outcomes; keep V1–V4 immutable and enumerate permitted new provenance deltas.
+- **Completion matrix and proposal independently clear by root.** Authoritative matrix
+  `k1-coverage/completion-matrix-20260914-v1/completion-matrix-v3.json`, SHA256
+  `a06221eaa747c2987aa6a0aab2ad3dc7da6de16cf12bb01e08335d59989e2607`; root review
+  `review-k1-completion-matrix-root-v1/review-v4.json`, SHA256
+  `0a1d5fe042c376ba158e8e3bce572606da2b8daf1db4f4420c836dbd52f61018`, verifies
+  160 bindings / 61,979,186 bytes. V3 corrects M1: retain the earlier 28 root visual geometry
+  preparations as prepared, distinct from the 14 separately cleared later visual objects;
+  do not redo them as absent or claim independent review they lack. Totals distinguish 94
+  reviewed numbered geometries from 85 source/printed identities; the next two papers have
+  all 55 of both. Original fourteen-paper order, seven candidates with all automatic flags
+  false, seven genuine source failures and 154 paper/metric states remain exact. Three failed
+  root review adapters are retained as reviewer schema assumptions, not input defects.
+- **Root 55-equation construction proposal**, awaiting distinct construction review:
+  `k1-coverage/numbered-equation-construction-root-v1/proposal.json`, SHA256
+  `61a5d22dd253e5805753e8e919f1803070c480b577d81704ce051b60069527e1`.
+  Twenty-six bindings, 55 complete rows, 50 exact source mappings and five explicitly contained
+  occurrence-to-whole-display mappings. Paired originals, selected native memberships, source
+  spans, printed numbers and reviewed regions retain exact pointers and hashes. Every other
+  original/source object or value remains in an unscored ledger. This is a mechanical proposal,
+  not a final codec bundle, runtime validation, metric admission or semantic quote guarantee.
+- **Final-four formal geometry independently clear** by review_k1_reconciliation:
+  `review-k1-final-four-formal-geometry-v1/review.json`, SHA256
+  `67ab9a3b03f4ead7735a875aa3aed131378f4cbc5b383c1f6c1f3584d387fb08`;
+  checks SHA256 `fadd88d6da04bfb00d6d0c549374493fca570547071ecb4860d1ed41156d84a6`.
+  Four original pages personally viewed, 27 bindings / 10,546,461 bytes, 14 objects / 15 page
+  parts: 2310.01528v1 seven statements and four proofs, 2112.14697v1 three statements. All
+  selected body scopes lie inside original unions; four-pixel surrounding rings contain no
+  dark pixels. Header/QED/nested ownership and literal native corruption remain; no new
+  source/printed formal identity or whole-kind admission. 2112's source failure still applies.
+- **Score remains 1/5 hard gates and 3/30 objectives (O1/O2/O30).** O1=.98989898989899,
+  O2=.8910021250829322, 49 TP / 0 FP / 1 FN, 50 regions / two zeros / no unknowns. No new
+  truth release, objective change or phase completion. #97's approximately 500-paper goal,
+  #25/#33/#71/#72, production 10k and Playwright system acceptance remain open.
+- **Preserved in-flight work:** #33 `feat/e2.1-kb-store` at 905c341 (no PR; missing Rust
+  registry dependencies); #71 `feat/e8.4-reference-truth` at d5e12aa / draft PR93; #72
+  `feat/e8.5-person-labels` at c867ec6 / draft PR95 stacked on 93; #25
+  `feat/e1.2-bibliography` at 201c53c / draft PR94 awaits actual K2/full O9. Preserve #33's
+  dirty notes/ignore file and every worktree. The approved four hosts remain ineffective;
+  config is read-only even with approved escalation. User normal-terminal action remains
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart/resume and
+  verify effective access. Do not ask approval again or bypass host controls.
+- No background downloads or native queue; 42 GiB free, 20 GiB floor retained. Corpus and all
+  10,951 native indexes complete; production scale validation is separate. Heavy build slot
+  is free after #129 cleanup. Next: start #131 in its new worktree, baseline objects, implement
+  and separately review code/construction, publish/replay only after clearance, measure/gate,
+  draft PR, independent final review and merge. Continue useful offline work meanwhile.
