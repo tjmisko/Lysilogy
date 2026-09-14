@@ -255,6 +255,15 @@ acceptance are unchanged.
   detector edits; coordinate shared registrations with109. Independent construction review
   precedes publication and actual v1/v2/v3 measurements. This does not close97.
 
+- [ ] **#117 Publish fixed visual-only pilot cohorts** (after #115; bounded part of #97).
+  Branch `feat/e8.3-visual-only-pilot`. Owns a separate evaluation-only visual projection,
+  focused tests and narrow manual/fingerprint/versioned release/collector registrations.
+  Preserve the fixed remaining-five ledger in original order:2310.04162,2001.05217,
+  2002.03492,2207.03024,2303.07834. Admit only independently completed O1/O2 cohorts;
+  retain positive or unfinished formal/math/reference evidence without granting O3–O11.
+  Finish the four pending visual-body decisions before the last two papers can be admitted.
+  Preserve prior versions and complete visual denominators; no parser/detector changes.
+
 ### Wave A3
 
 - [ ] **#37 E2.5 Resolution gold set and evaluation** (after #25, #69). Branch `feat/e2.5-gold-set`.
@@ -4405,3 +4414,85 @@ date, last merged issue, in-flight branches and their state, next action, and op
   reiterated without requesting approval. Preserve pending WTs, all original corpus/vault data
   and unrelated preview work. No rebase/sudo/rm-rf/private-file access. Use followup_task to wake
   idle review_ready_prs; source/source-result reviews remain separate from implementers.
+
+
+### 2026-09-14 01:19 UTC — source regressions retained, producer identities grounded, batch26 complete
+
+- PhaseA/WaveA2; last merged issue remains110/PR116, merge230bf8182881d5cb923785e3896de05f46e3389b.
+  Main before this checkpoint ce2a085. Earlier this continuation111/PR114 also merged;
+  both completed worktrees/targets/local and remote branches are removed. Main carries only
+  the protected10 PDF-preview files plus this docs change; all10 original hashes verified
+  against `~/.cache/lysilogy/kb-preview-before.json` SHA
+  2cee9c1f5f12ca1d0b1e3979952252d7bcd37b414df76142f919e6b5cb449870.
+- **Native batch26 TERMINAL exit0**, retainedTTY68972 closed. Pinned queue paused before27;
+  `scale-index-queue/status.json` is paused_at_batch_boundary/next_batch27. Now7500 unique
+  indexes,1000eval/6549scale;3451scale remain. Batch445.458867s,250new indexes/757424252bytes,
+  $0/no network/model calls. Independent aggregate/new-byte audit
+  `native-index-after-batch26-review.json` SHA
+  f07be8b59360a2f9a87ada0d9ec47e544daccb64d2ac588d357b3037ff1a2d9f;
+  runner receipt18da72d0be6cfd92c37a80f8306ae3cf66ac85b0fbd917a6d02b962b4c9fc7ac.
+  QueueSHA0cdcc62d36899022b39010ab4ab285c7d8d4318294c2148e3dc40059e4d27583,
+  runner9d8ae083a30808110d09cb94aadad1aeb7bdcc2c76203a8a6c7e07ca0347325b,
+  auditorc37667c8ef614c3df03996939a980c7a43e964925893b1f02fe3bdd48a7228e8.
+  PAUSE explicitly reserves next heavy window for109/115. No downloads. This is preparation,
+  not production10k/O25/O27 acceptance. Original corpus/registry/native identities unchanged.
+- **#109 full710 at142b835 completed exit0** after848.687413s/335680KiB. Snapshot
+  `bibtex-fields/comparison-142b835-v1/`, launch048f00ae7d7ea0a6d03bc99d357a7cf9fe8ce6a1b8c9ab38f339e8191e26155d.
+  Actual683 candidates =678/702 prior successes retained+5/8 old failures recovered;
+  **24 new prior failures**,27total, zero raw admissions/all automatic metrics0. Compare took
+  21.599s/86016KiB, regressionSHAed074ca96b64d2011db4cbafd052d7fb1be3570105cd158552be9040ae8c354c.
+  Independent result review `review-bibtex-142b835/comparison/review.json` SHA
+  7079f21da582e8033671b106d0bae4d66b89203613baf2ceed0e324dbcac0974 clears accurate exploratory
+  history only:3161 artifacts,199440 raw field slices,683current/702prior payloads, exact1000
+  accounting. Surviving objects/links/BBL IDs unchanged;13110 changed entries in297papers
+  differ only in field_conflicts. Preserve this failed-coverage generation; no unqualified gain.
+- #109 owner finish_corpus_proxy, WT `fix/e8.3-bibtex-fields`, clean correction
+  **6a9d65ad516d36ace4cde17c425a2c83ded76f12**,300 offline tests. Exact source review is pending
+  review_ready_prs; next prepare frozen snapshot, review runner, first8 then corrected full710.
+  No heavy process currently. Generated-only installedBibTeX16 identifier probes/.215s receipt
+  716f3da9dadcdfa8ebee9f348175821dbef97b3c894b67623b01d8cdd1fc4fc1 and11terminator probes/.100s
+  receipt8c6bd94a8edbe960f4109b11a6d527a2606c685e58018b03a499d959ee2453ff prove underscores,
+  literal parentheses keys and@ prefixes; bounded grammar/duplicate/span guards corrected.
+  Empty keys accepted byBibTeX but explicitly identity-unsupported here. Missing commas/equal/
+  values and in-record percent probes error; other unsupported physical-line/cap cases remain
+  classified. Test receipt8b8b72c90f2159aa1d8e6501868f06228c91e9448a4678f42b89a596bc77f874.
+- **#115 owner finish_benchmark**, WT `feat/e8.3-visual-tranche`, source
+  **3d613f24ca0a2266a164fb5dfe7bfe10df663333**, includes main110/111 throughce2a085 by ordinary
+  merge.304LaTeX/37collector tests pass. Source-only independent review
+  `review-visual-tranche-754120f/source-review-3d613f2.json` SHA
+  14bcc94380c05cfe6898a6ba6f74c4a3249ae8aa326bc953e151cd31a3a7f9cc is clear. Fixes reject
+  object-kind/section laundering, empty/reused numeric ownership; shared phrases preserved.
+  Root independently verified original Git blobs7cceb76/9407cd5, exact assignment/freeze excerpts,
+  all four frozen2409 inventory/receipt hashes. Primary=/root/finish_benchmark, independent=
+  /root/review_ready_prs, reconciler=/root are grounded in actual committed history.
+  Separate identity-only confirmation `k1-coverage/visual-tranche-115/assignment-evidence/identity-review.root-v1.json`
+  SHA687c640a4d6b17a9a2ab0553fbbe856e1124ad909c9ccbfff0ba7f496955d6a1; pending template unchanged.
+- #115 **next root review**: fresh `k1-coverage/visual-tranche-115/construction-3d613f2/` receipt
+  00cafcee17575b326bc7d1f10d6fd16724a5edcd6809b4c50ef01b46e207e5b9; prepare.py/.240s,
+  construction.json, object_crosswalk.json(6owners+notes), link_crosswalk.json(all45links),
+  manifest.pending.json(19input hashes), review.pending.json. Root is distinct construction
+  reviewer; review_ready_prs authored independent original labels and reviews code only.
+  No construction verdict/publication yet. Need fresh current-source inventory, preserved
+  historical542da50 diagnosis, all6pages/4fig2table/notes/12local+external ref ownership,
+  exhaustive negative formal roles and omitted newO8–O11. V3 disabled, v1/v2 unchanged.
+  **A current710 run plus290 unexecuted history is NOT a genuine current1000 report**;
+  prepare reviewed full1000 automatic run at final integrated109+115 source before release.
+- New **#117**, attached to epic67/project12, blocked by115: one explicit O1/O2-only continuation
+  over fixed remaining-five pilot ledger. Source body at `k1-coverage/visual-only-followup-issue.md`.
+  Independent readiness `review-manual-visual-readiness-v1/review.json` SHA
+  39f6bac6d94fa9b57a30d6a1acbf799758dae7ff228883a8910af6fe8845944c:2310has13readyvisuals,
+  2001has4,2002completevisualnegative;2207threefigures/2303onetable need final paired body
+  decisions. Positive/unfinished formal roles remain visible/unscored. First2310mechanical
+  join `k1-coverage/visual-readiness-2310-v1/mechanical-join.json` SHA
+  42f968bf8b2383109b7f15ceb319ef69b9414f15731e34d680d9c09f3a91d2b9 verifies13pairedcaptions/
+  source spans/memberships/existinggeometry, no current-parser/truth acceptance. Frozen21/
+  active7 policy and97approximately500target unchanged. No117 worktree/implementation yet.
+- Scorecard unchanged:1/5 gates,3/30 objectives(O1/O2/O30), current O1=1/O2=.9169720168893188
+  across23visualobjects. HistoricalO25/O26misses tracked21/22. System/phase incomplete.
+  OpenPRs93/94/95 remain blocked;109/115 not yet PRs. #33WT905c341/#25PR94/#71PR93/#72PR95
+  await effective already-approved index.crates.io,static.crates.io,api.crossref.org,
+  api.openalex.org grants. Managed~/.codex read-only prevented prepared4-host script mutation;
+  not a missing approval. Previously provided terminal command remains
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restartCodex.
+  Do not repeat known failing writes, bypass hosts or ask approval again. Existing corpus
+  storage/OAI/export/GCS grants work. No rebase/sudo/rm-rf/private/env access; no model batch.
