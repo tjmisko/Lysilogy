@@ -6364,3 +6364,74 @@ date, last merged issue, in-flight branches and their state, next action, and op
   review and implementation, receive bounded geometry clearances, continue97 source/role
   closure and independent next-four review. Production10k/Playwright/Phase A exit/all later
   phases and final report remain pending.
+
+
+### 2026-09-14 10:45 UTC — first-four bounded reviews clear; replay implementation continues
+
+- Last merged issue123/PR128, main0212690 before this docs checkpoint. Phase A/A2;
+  1/5 gates and3/30 objectives at target (O1/O2/O30). No new truth admission or score change.
+  Seventeen-file continuation receipt under
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation-checkpoint-root-20260914T1045.json`,
+  SHAfd6a0c733348d544882223f777a21552d9f75d22841480c0867f132eef648a77,
+  binds the preceding checkpoint, new clearances and source preparation. All10 protected
+  main-checkout PDF-preview files remain hash-identical.
+- **#129** owner finish_corpus_proxy, `.worktrees/feat/e8.3-bounded-k1-replay`, branch
+  `feat/e8.3-bounded-k1-replay` from76dff5e, no PR yet. Per-metric denominators and ordered
+  all-false child retention implemented; source-only serial replay/publication workers and
+  serial collector now present. Focused worker/collector tests and finite process controls
+  continue before a source checkpoint. No heavy job running, V5 remains unpinned and all73
+  legacy files unchanged. Next: integrate main, separate source/runner review, full gates,
+  unchanged V1–V4 outcomes and bounded500-record synthetic resource measurement, results review,
+  draft PR and merge. Before measurement receipt72d56a49 remains the published50-case baseline.
+- **First-four bounded reviews are CLEAR.** Math v2 wording supplement
+  `~/.cache/lysilogy/review-k1-all-math-geometry-v1/review-v2-supplement.json`,
+  SHA3dd43156e689ac0ccd9bf4588ffe9d346ebd4769a03840aef206729901420643,
+  verifies the sole equation6 starts654-to655 correction; all geometry and other content exact.
+  Formal/algorithm geometry review `review-k1-formal-algorithm-geometry-v2/review.json`,
+  SHA58f81e2414343db277410d4d8b848ed467afca3fe1e239a9c9ad68742e93fee0,
+  verifies25bindings,18source slices,9regions and the two explicit blank-column extensions.
+  The prior prose-role review is also clear. Original failures and artifacts remain immutable;
+  glyph/style/role/codec closure and complete per-kind admission remain separate.
+- **Next-four reconciliation frozen**, under the base checkpoint directory's
+  `reconciliation/next-four-v1/`. Decisionscbd9a0946ae5d64997eccba0fdf7a9c12ee6582a2f12b1d4361c1334d7e03667,
+  receipt21a3f1ba321ddeb3e8ff509521b16287a61c9fdb97f9f374a0a2d82336ecef9c
+  bind75files for2207.03047/2211.01333/2511.11956/2005.13732. Separate reviewer
+  finish_benchmark has personally viewed26originalpages and verified3175source/20847native
+  slice occurrences,79references and65paired citations; written review still pending.
+  Explicit deficits remain92unpaired2207citations,129absent native bibliography field labels,
+  13unknownyears and broader role/fidelity incompleteness. Do not infer truth admission.
+- **Next-two reconciliation running** with review_k1_reconciliation, confined to
+  `reconciliation/next-two-v1/`:2311.02916/2301.05184, all8originalpages viewed first.
+  Input-freeze8efa883a514d8fe2cfaac8677605707ead43be83708518297686419b01c9e83f;
+  mechanicalv2763354c951babc592dde862bf174602b37abec2f080f1ee9cfb8faa70ba34620
+  verifies558source/5870native slices:20objects,11formal records,6conditions,
+  3proof-outline/2definition candidates,11bibliography entries,12citations,24references,4notes.
+  Finite closing-brace/period, field-membership and title-period decisions continue. Root can
+  independently review this pair; finalfour are still outside that assignment.
+- Root's new **retained source crosswalk** awaits separate review under
+  `reconciliation/references-root-v1/source-crosswalk-{diagnostic,decisions}-root-v1.json`:
+  diagnostic1735441c8eaa122a38ef8473c029c7db500eee3b40fd1ec2f30b54c4595f088b,
+  decisions20bc4369766c36a76976b4cc6b3a2f64a35b0b09738e296852d3464341719d61.
+  It accounts89automatic source objects versus82manual numbered/captioned/formal records for
+  2404/2011/1911:77exact source occurrences,5unique contained row-to-whole-display mappings,
+  7objects in literal nonprinting iffalses recorded by both annotators. Three extra unnumbered
+  displays retain no automatic ID. All original automatic eligibility remains false; this is
+  source occurrence evidence, not PDF fidelity or guard override. No automatic labels were
+  used before the original independent inventories were frozen.
+- Root's **2109 source failure diagnosis** also awaits separate review:
+  `~/.cache/lysilogy/k1-coverage/source-support-assessment-2109-v1/diagnosis.json`,
+  SHAba03079a5808623e1d8114ba1492d28cb171186d10d203035be2171ac9a62090.
+  Frozen deposited `mybibfile.bib` has percent-prefixed text at field-name position394;
+  inert parser reproduces its original fatal failure (.078731s). Three bounded, generated-only
+  BibTeX0.99e cases establish valid fields/literal percent in values succeed while that field-
+  position form fails. Generated receiptf3ff5478d309d46b45ae9859cf2da4c1977eb37448554322f1c0a7e9c019b3b1
+  retains raw outputs and binary hash; no deposited TeX/style was executed. Two documentation
+  web calls are separately accounted (primary full PDF403); no registry/provider/corpus/model
+  calls. Keep failure, no parser relaxation or new issue. Any later printed-BBL/manual
+  construction needs separate provenance and review and cannot silently erase the failure.
+- No downloads, native queue or heavy job run. Preserve blocked #33 store worktree and drafts
+  #93/#94/#95 for71/25/72. Four registry/provider hosts remain approved but not effective at
+  last verification; config mount is read-only, not an automatic-review rejection. Normal
+  terminal action remains `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`,
+  then restart/resume host verification. Continue useful offline work without repeated approval.
+  Production10k, Playwright, phase exits and all later phases remain pending.
