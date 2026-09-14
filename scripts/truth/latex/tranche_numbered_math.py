@@ -686,16 +686,16 @@ def attach_numbered_math(cache, corpus_root, data_root, candidate_raw, paper, ma
     result = validate_numbered_math(candidate_raw, index_raw, source_raw, raws, evidence_raws,
                                    {row['path']: verified[row['path']] for row in packet['images']}, implementation)
     for key, binding in manifest['artifacts'].items():
-        exact(bounded(cache, binding['path']), raws[key], 'numbered artifact changed during validation')
+        require(bounded(cache, binding['path']) == raws[key], 'numbered artifact changed during validation')
     for key, binding in proposal['artifacts'].items():
-        exact(bounded(cache, str(Path(binding['path']).relative_to(cache))), evidence_raws[key],
+        require(bounded(cache, str(Path(binding['path']).relative_to(cache))) == evidence_raws[key],
               'numbered proposal changed during validation')
-    exact(bounded(cache, relative + '/manifest.json'), manifest_raw, 'numbered manifest changed during validation')
+    require(bounded(cache, relative + '/manifest.json') == manifest_raw, 'numbered manifest changed during validation')
     for binding in original_files:
         path = Path(binding['path']); owner = corpus_root if path.is_relative_to(corpus_root) else cache
         actual, size = fingerprint_file(safe_file(owner, str(path.relative_to(owner))), cap=32*1024*1024)
         require(actual == binding['sha256'] and size == binding['bytes'], 'original evidence changed during validation')
-    exact(bounded(data_root, mapped['index']['path']), index_raw, 'native index changed during validation')
+    require(bounded(data_root, mapped['index']['path']) == index_raw, 'native index changed during validation')
     for kind in ('pdf', 'source'):
         actual, size = fingerprint_file(safe_file(corpus_root, paper[kind]['path']), cap=64*1024*1024)
         require(actual == paper[kind]['sha256'] and size == paper[kind]['bytes'],

@@ -1,6 +1,9 @@
 """Finite O3 admission tests with synthetic sources, producers and native defects."""
 from copy import deepcopy
+from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 from annotations import canonical
 from archive import read_archive, sha256
@@ -8,7 +11,7 @@ from native_exports import native_projection
 from parser import parse_project
 from tranche_numbered_math import (ARTIFACTS, FORMAT, OMITTED_METRICS, PRODUCER_MODULES,
     REVIEW_FORMAT, original_endpoints, original_native, project_numbered, retention,
-    source_scope, validate_numbered_math)
+    source_scope, validate_numbered_math, attach_numbered_math)
 
 
 def binding(raw, path='fixture.json'):
@@ -190,7 +193,66 @@ def admit(data, mutate=None):
         raws, evidence, images, data['construction']['producer_modules'])
 
 
+def attachment_fixture(directory):
+    """Real bounded files for the adapter; pure semantic admission is tested above."""
+    root = Path(directory); cache, corpus, data_root = [root / name for name in ('cache', 'corpus', 'data')]
+    for folder in (cache, corpus, data_root):
+        folder.mkdir()
+    def put(path, raw):
+        path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(raw)
+        return binding(raw, str(path))
+    data = fixture(); candidate = data['candidate']; pdf = b'%PDF synthetic identity only'
+    candidate['pdf_sha256'] = sha256(pdf)
+    docs, _, _, _ = seal(data); packet = docs['packet']; evidence = data['evidence']
+    packet.update(version=1, pdf=put(corpus/'paper.pdf', pdf),
+                  source=put(corpus/'paper.src', data['source_raw']),
+                  index=put(data_root/'index.json', canonical(data['wrapped'])),
+                  policy_sha256=sha256(canonical(docs['policy'])), selection_sha256=sha256(canonical(docs['selection'])))
+    image = packet['images'][0]; image.update(put(cache/'page.png', b'png'))
+    paths = {}
+    for side in ('primary', 'independent'):
+        paths[side] = put(cache/'originals'/(side+'.json'), canonical(evidence['synthetic:'+side]))
+        packet['annotation_paths'][side] = paths[side]['path']
+    inputs = {key: put(cache/'inputs'/(key+'.json'), raw) for key, raw in [
+        ('rendered_packet', canonical(packet)), ('source_export', canonical(evidence['synthetic:source'])),
+        ('native_export', canonical(evidence['synthetic:native'])), ('prompt', docs['prompt'].encode())]}
+    primary_receipt = evidence['synthetic:primary_receipt']; primary_receipt['inventory'] = paths['primary']
+    primary_receipt['inputs'].update(inputs, images=[image])
+    independent_receipt = evidence['synthetic:independent_receipt']; independent_receipt['inventory'] = paths['independent']
+    independent_receipt['inputs'] = list(inputs.values()) + [image]
+    docs['proposal']['artifacts'] = {name: put(cache/'evidence'/(name+'.json'), canonical(value))
+                                    for name, value in evidence.items()}
+    manifest = {'format': FORMAT, 'schema_version': 1, 'artifacts': {}}
+    for name, value in docs.items():
+        item = put(cache/'artifacts'/(name+'.json'), value.encode() if name == 'prompt' else canonical(value))
+        manifest['artifacts'][name] = dict(item, path=str(Path(item['path']).relative_to(cache)))
+    put(cache/'bundle/manifest.json', canonical(manifest))
+    paper = {'arxiv_id': candidate['arxiv_id'], 'version': 1, 'stratum': candidate['stratum'],
+             'pdf': dict(packet['pdf'], path='paper.pdf'), 'source': dict(packet['source'], path='paper.src')}
+    mapped = {'paper_id': candidate['paper_id'], 'index': candidate['index'], 'pdf_sha256': candidate['pdf_sha256']}
+    return data, (cache, corpus, data_root, canonical(candidate), paper, mapped, 'bundle')
+
+
 class NumberedMathTests(unittest.TestCase):
+    def test_should_recheck_raw_bytes_when_validated_attachment_returns_or_evidence_changes_late(self):
+        for changed in (False, True):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as directory:
+                data, arguments = attachment_fixture(directory)
+                def validated(*_args):
+                    if changed:
+                        path = arguments[0] / 'artifacts/policy.json'
+                        path.write_bytes(path.read_bytes() + b' ')
+                    return deepcopy(data['candidate'])
+                with patch('tranche_numbered_math.validate_numbered_math', side_effect=validated), \
+                     patch('tranche_numbered_math.producer_modules', return_value=data['construction']['producer_modules']):
+                    if changed:
+                        with self.assertRaisesRegex(ValueError, 'artifact changed during validation'):
+                            attach_numbered_math(*arguments)
+                    else:
+                        result = attach_numbered_math(*arguments)
+                        self.assertEqual(result['manual_assembly']['format'], FORMAT)
+                        self.assertEqual(result['manual_assembly']['omitted_metrics'], OMITTED_METRICS)
+
     def test_should_reject_empty_mathematical_support_when_both_originals_select_only_whitespace(self):
         data = fixture(); claim = data['paper']['rows'][0]
         p = data['evidence']['synthetic:primary']['objects'][0]
