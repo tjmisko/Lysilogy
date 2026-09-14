@@ -143,6 +143,22 @@ def admit(data):
 
 
 class VisualOnlyProjectionTests(unittest.TestCase):
+    def test_should_expose_original_resolution_variants_when_references_remain_unscored(self):
+        original={'references':[{'id':'unresolved','role':'equation_reference',
+                    'source_labels':['missing'],'target_ids':[], 'resolution':'unknown',
+                    'ambiguity':'No matching printed destination exists.'},
+                    {'occurrence_id':'paired','target_occurrence_ids':['eq1','eq2'],
+                     'source_keys_in_authored_order':['b','a']}],
+                  'objects':[{'id':'proof','kind':'proof','parent_id':'statement',
+                              'proof_targets':['claim1','claim2'],'source_child_objects':['eq3']}]}
+        ledger=retained_original(original,set())
+        for collection in ledger:
+            for row in collection['records']:
+                source=pointer(original,row['pointer'])
+                self.assertEqual(row['original_roles'],source)
+                self.assertEqual(row['record_sha256'],sha256(canonical(source)))
+                self.assertEqual(row['disposition'],'retained_unscored_original')
+
     def test_should_reject_different_nonvisual_occurrences_when_both_are_inside_one_float(self):
         extra=r'\begin{equation}y=2\end{equation}'
         data=exclusion_fixture(extra=extra);row=data[2]['objects'][1];text=data[4][row['source']['member']]

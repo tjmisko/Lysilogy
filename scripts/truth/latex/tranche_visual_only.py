@@ -73,8 +73,17 @@ def retained_original(original, scored):
             if isinstance(record, dict):
                 # These are original labels, not normalized source/parser truth.
                 row['original_roles'] = {name: deepcopy(record[name]) for name in
-                    ('id', 'occurrence_id', 'kind', 'role', 'target_kind', 'parent', 'parent_object',
-                     'child_objects', 'target', 'target_id', 'targets', 'target_keys', 'source_keys')
+                    ('id', 'occurrence_id', 'kind', 'role', 'role_note', 'role_notes', 'role_evidence',
+                     'source_role', 'target_kind', 'parent', 'parent_id', 'parent_object',
+                     'source_parent_object', 'children', 'child_objects', 'child_ids',
+                     'source_child_objects', 'proof_target', 'proof_target_ids', 'proof_targets',
+                     'proof_linkage', 'proof_target_basis', 'target_basis',
+                     'target', 'target_id', 'target_ids', 'target_occurrence_ids', 'targets',
+                     'target_keys', 'candidate_targets', 'source_keys', 'source_labels',
+                     'source_keys_in_authored_order', 'source_target_keys_in_order',
+                     'source_target_key', 'source_target_label', 'source_target_labels',
+                     'target_keys_in_printed_order', 'printed_target_order', 'resolution',
+                     'ambiguity', 'ambiguities', 'target_ambiguities', 'certainty', 'semantic_caution')
                     if name in record}
             records.append(row)
         output.append({'pointer': root, 'value_sha256': sha256(canonical(value)),
