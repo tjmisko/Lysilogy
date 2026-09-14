@@ -6284,3 +6284,83 @@ date, last merged issue, in-flight branches and their state, next action, and op
   `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart/resume
   effective-access verification. No approval renewal, fresh network call or provider result
   claimed. Storage probes passed. Continue129 implementation/source review and97 reconciliation.
+
+
+### 2026-09-14 10:25 UTC — bounded replay underway; first-four math and role decisions
+
+- Last merged issue remains123/PR128 (ebe976339a5c93771375400bae5935cbf9ae1b3a).
+  Main76dff5e before this docs checkpoint. Phase A/A2;1/5 gates,3/30 objectives at target
+  (O1/O2/O30), no new truth admission, score change, objective miss or new follow-up beyond129.
+- **#129** implementation running under finish_corpus_proxy in
+  `.worktrees/feat/e8.3-bounded-k1-replay` from76dff5e; no PR yet. Owning baseline
+  TTY92871 terminal0,97.778s, fresh50cases O1=.98989898989899/O2=.8910021250829322.
+  `~/.cache/lysilogy/bounded-k1-replay-129/before-76dff5e/receipt.json`, SHA
+  72d56a4941abf90ed813a54db15eb87ce0484982c87e17baa623f656ba5be690, binds206sources,
+  exact inputs, portable Cargo-selected CLI and raw logs. Heavy slot released.
+  Initial manifest/per-paper projection layer and9 focused tests, including500 inert mixed-
+  eligibility records, pass along with prior release tests. Source still evolving; bounded
+  worker transport/replay and serial collector remain. One fixture-state failure is retained.
+  No legacy or annotation codec/activation change. Root identified an early per-metric
+  denominator concern in evolving Summary.coverage: totals must derive from each metric's
+  exact eligibility cohort, with wholly ineligible retained records handled explicitly.
+  Owner notified; resolve/test before source checkpoint, then independent review and actual
+  unchanged-cohort plus separately allocated synthetic resource measurements.
+- New21-file preparation/review checkpoint:
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation-checkpoint-root-20260914T1025.json`,
+  SHA9a0c436c8d25a2dd4349eb487a605ffd4f6ea316a04376b7e10831d6e1d7af35.
+  Base below means its `reconciliation/references-root-v1/` directory. Every original
+  annotation, earlier root artifact, failure and review remains unchanged.
+- Root personally re-viewed13 original pages covering all77 first-four numbered equations.
+  `math-all-geometry-diagnostic-root-v1.json`39831cda retains154 raw proposal-union ink
+  diagnostics; no automatic threshold adjudication. `math-all-geometry-decisions-root-v1.json`
+  a0df89a7 records77 body+77 printed-number regions with exact previous5body/2condition
+  decisions. Six explicit overrides remove neighboring prose for2109 equations3/6/7/10
+  and1911 equation17's number;2109 equation8 adds one original blank pixel at its tall
+  parenthesis top (819 to818). Existing2011 equation7 extension is retained separately.
+  Actual number ink stays outside body regions; blank margins may overlap explicitly.
+- Independent **finish_benchmark** reviewed all13 original pages/154regions,154source slices,
+ 2095native slices and70bindings; review `~/.cache/lysilogy/review-k1-all-math-geometry-v1/review.json`,
+  SHAe59c9daeb2c7973d44a67935235d6891174607c34122ef95e7329aa229302219.
+  Geometry clear; F1 identified only prose off-by-one:2109 equation6 ink starts655, not654.
+  Originalfinding5b161624 and reviewer list/mapping preparation failure retained. Root's
+  `math-all-geometry-decisions-root-v2.json`, SHA
+  6e096a47b7b68ccbb1a160422d8c95e7b8a112cd773feaf856051f57f60dab6c,335420bytes,
+  changes that one phrase plus correction provenance only, asserts all other content exact.
+  Reviewer is checking the separate clearance; do not assume it until its receipt arrives.
+- `prose-role-decisions-1911-root-v1.json`, SHA
+  4f725f1b9d0f6493c2c0b4770cf4cef46be06bfbdda13738327e3e76bb876a22, retains two unheaded
+  derivations inside the broader primary exposition,27nested equations and the explicit
+  conjectural-results notice. Existing E1.4 scopes headed proofs; root retains these arguments
+  outside that object scope without assessing mathematical validity or inventing targets.
+  Independent review `review-k1-prose-role-1911-v1/review.json`, SHA
+  725253497461f570571c1937e729b2392fe7757207fb63f37a01d5e7ce6f6602, is clear:33source,
+ 26candidate+4notice native slices, actualp3–7 views and exact design text. Complete source/
+  codec closure, fine prose/glyph roles and any negative-cohort admission remain separate.
+- Root also re-viewed2011p4/p5 and prepared nine full formal/unnumbered/algorithm regions:
+  four formal statements, three unnumbered displays, two Algorithm1 bodies. Original
+  `formal-algorithm-geometry-root-v1.json`f4440964 retains7decisions/2margin failures.
+  V2 `formal-algorithm-geometry-root-v2.json`, SHA
+  8fcb80d7df34d7f8ce185a36621a51f0e9ba02c62ddb646ec595a46be5a73b2f, explicitly extends
+  Problem2/Theorem1's left scope417 to416originalpixels into independently measured blank
+  columns413–416, before italic ink417. Same ink/counts, other7decisions exact. Caption,
+  header/body/number and nested function/source partitions stay separate. Independent review
+  assigned to finish_benchmark after the current wording clearance/prose review. Pending.
+- **review_k1_reconciliation** is now distinct reconciler for nextfour fixed papers
+  2207.03047,2211.01333,2511.11956,2005.13732; writes only
+  `k1-coverage/manual-tranche-v2-preparation/reconciliation/next-four-v1/`.
+  All26 originalpages viewed before exports; input-freeze0afd865c. Mechanicalv2
+  8420f6d146b0c621c939a76f03376a7dc37cf561ae9aadc48daa523e32bb6cb1 is7690188bytes:
+ 104objects,106bibliography entries/318fields,157citations,79references;3175source and
+ 20847native slice occurrences verify, no unmatched rows. Original classifier failure kept.
+  It is resolving2207 citation/field/visual-label gaps,2511 equation9 omitted dx,2211 title
+  hyphen and five2005 year spans choosing URL digits. All proposals/uncertainty remain.
+  Root has not independently reviewed this new reconciliation; no admissions follow.
+- No corpus downloads/native queue or heavy job runs.44GiB free;20GiBfloor and one heavy
+  job remain. All10 protected previewfiles hash-identical. Preserve existing blocked33/25/71/72
+  worktrees/drafts and unrelated worktrees. Four registry/provider host grants remain approved
+  but last config check read-only; normal-terminal command is still
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart/resume
+  verification. No new provider/model/network result claimed. Next: finish129 source/runner
+  review and implementation, receive bounded geometry clearances, continue97 source/role
+  closure and independent next-four review. Production10k/Playwright/Phase A exit/all later
+  phases and final report remain pending.
