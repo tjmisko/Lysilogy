@@ -215,7 +215,7 @@ acceptance are unchanged.
   pages, using existing bounded OCR or explicit unavailable provenance. Preserve valid frozen
   indexes and all identity records. Coordinate shared `src/source_index.rs` with #70.
 
-- [ ] **#118 Retain usable native output with bounded diagnostics** (after #98).
+- [x] **#118 Retain usable native output with bounded diagnostics** (after #98).
   Branch `fix/e0-native-diagnostics`. Owns `src/source_index.rs`, a narrow command module if
   needed, focused tests and measured evidence/report. Retain a bounded diagnostic prefix and
   a finite drainage ceiling for pdftotext; preserve stdout/time/cancellation/status and native
@@ -583,6 +583,16 @@ acceptance are unchanged.
   Worktree and both branches removed; main's ten preview files are unchanged.
 
 ---
+
+- #118 merged via PR120. Native pdftotext now retains a64KiB diagnostic prefix with a1MiB
+  drain ceiling; OCR/graphics/time/stdout/cancellation checks remain strict. One original scale
+  failure recovered, all7999 prior indexes/registry bytes preserved. Current-v2 O1=1 and
+  O2=.9169720168893188/all23 outcomes unchanged;381Rust/505Python/85Node pass.
+  Report: `experiment-reports/2026-09-13-kb-native-diagnostics.md`. Portable helper is
+  `~/.cache/lysilogy/native-diagnostics-118/build-033f0a5/k1_index`; the removed worktree is
+  not required by successor queue-v3. Only that separately reviewed queue may continue at29;
+  the original queue's failed batch28 and queue-v2 review findings stay retained. Native
+  preparation is not production10k/O25/O27 acceptance. See latest session entry for exact pins.
 
 ## Phase B: resolution and paper objects
 
@@ -4925,3 +4935,85 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Managed~/.codex remains read-only; existing four-host script/restart instructions still
   apply, no repeated write/approval/bypass. No rebase/sudo/rm-rf/private/env access, user
   vault/data destruction or model batch. Phase/system/goal incomplete; continue from above.
+
+
+### 2026-09-14 04:00 UTC — #118 merged; v3 publication and successor queue clear
+
+- Phase A / Wave A2. Last merged **#118 / PR120**, merge
+  d88f6f0f925a8d410169ef5eb61a59df815d213d at03:58:24UTC; final reviewed head
+  042db929c136959e0756eda3f524e7928b137ced. Issue closed, remote/local branch and
+  worktree/target removed. Main fast-forwarded; all10 protected preview hashes unchanged.
+  No phase exit or final acceptance. No background downloads or heavy process is running.
+- #118 final review review-native-pr120-042db92/review.json SHA
+  ef27da2cf2b31b16151d205f70b7c8148cc19d7bc6eec9e914bdb541ab01177f:680 portable files/
+  221722342B,398 gated source copies/309 measured sources exact. Source033f0a5 and
+  integrated674dd07881a93207739c2709f2ffc04e66c11ada native bytes unchanged; only docs/
+  evidence/metric history changed afterward. Final12 commands42.483s,381Rust/505Python/
+  85Node, both immutable replays pass. Actual current-v2 refresh27.906s, receipt
+  native-diagnostics-118/metric-refresh-674dd07/receipt.json SHA
+  237f1f32f341be74745a1a3f896fe76b6ac3443cd0a1cc4470c5d89b0c95179e. Independent actual
+  review195fe162edc930b0ad92eb086ace819db7a043808b25d09d9b89fb3ae7d58330 verifies
+  all23 outcomes/full predictions unchanged and fresh available O1=1/O2=.9169720168893188.
+  Portable final manifest57a92cf2599b48088e09d1a4365ab6e3a001095e42aae31791f6b38085b4f1dd;
+  final machine evidence bbefea9d2b9d1b05a70cdb68e72ebf2eb45c1b56785df10c8022b92a81c4dec6.
+- Actual #118 recovery independently CLEAR at
+  review-native-recovery-actual-033f0a5/review.json SHA
+  33f50708f040802b2e335cf3c0535ba97f1114d8adf38215d793eac4ec93297f:all7999 prior
+  hashes/23325711591B rehashed, original PDF/registry unchanged, recovered indexb035196b
+  exactly18native pages/9493tokens/62185UTF16units/0gaps. Owner receipt47da60e4 and
+  outputc3bfe011 from previous entry remain immutable. Initial audit's exact-current-HEAD
+  precondition rejected the authorized docs-only674dd07 integration after execution; corrected
+  source-bound audit retained that stopped attempt, with no source finding/native rerun.
+- **#115 ownerfinish_benchmark**, clean/pushed publication checkpoint
+  e9ff5b92f63ef81d52edd0bb2effa025f36ef9fc, WTfeat/e8.3-visual-tranche, no PR yet.
+  Corrected preview review312395d5dfedeaee15ec34e73f135ff7d82c6d3d7b21a88f345e32c80d6cb7be;
+  activation/replay script reviewb6c671267f3567450ffbf8a005d48c1a047603e48ce6767f91de0c87452e3938.
+  Actual publication independently clear review-visual-publication-e9ff5b9/review.json SHA
+  3eff93401b4b86fdad45b4daf34feacbb436909502ae5d0c2b8376d7149d4419:21 changed files,
+ 15 fixed modules/34 old files exact, all3 retained replays and328LaTeX/37collector tests
+  pass. Proposed active v3 has29 visuals/4 papers; old3 complete rows remain exact, new
+  O8–O11 omitted. This is branch publication, not a merged or measured v3 performance claim.
+  Next **resume owner with followup_task**, ordinary integration of this latestmain, inspect
+  conflicts/source closure, freeze/review prepared measurement template1718b28c, actual
+  explicit v1/v2/v3 measurements, final gates, draft PR/separate review/merge. Current6f
+  full1000 actual review843177d3 remains valid for unchanged executed Python derivation;
+  do not rerun only for native/docs integration. #117 remains blocked until115 merges.
+- **Root successor queue-v3 READY BUT PAUSED**, at ~/.cache/lysilogy/scale-index-queue-v3/.
+  Queue-v2 retained with valid actual-recovery-derived baseline but three source guard findings
+  (review-scale-queue-v2/findings-v1.json b41a758ecf412b75f492b735dcb9abc486d8a5911ee53107c83b415cc6d80940).
+  v3 validates actual-review semantics, defers batch mkdir until after all preflight checks,
+  and routes SIGINT/SIGTERM through cleanup plus terminal status.10 guard controls+6 bounded
+  pipe/process controls+2 stage cancellation/status controls pass; no native batch executed.
+  Source queue.py d5a2a3b5f298cb942981dea60cc7c694c629a376a36e3bc2f56b96cefc6d55ff,
+  run-batch.py ef0868d1f43593f63ccc6d8ea3da0acf6164f9753869a8c93b92fbb39553ce50,
+  audit.py d4134531712d69893fc4f84f19053fe87726b94a374dbcec7a0b85a2c8dfcd56,
+  freeze.py f44e0416d362f3fa0d177a74498f458c9812bad4a22f4c69c3e47bb96185b2b8.
+- v3 frozen launch3b584d0e04d955ba9366630927e6c5ef029badc5d67055c2882585945b65cc65;
+  read-only fresh baseline native-index-after-batch28-review.json SHA
+  49ae3b5d3402cb16b1807e0ed2939e564351f1cb8ddf9f86f8be8493d956903a:
+  8000successful/1000eval/7049scale/0unresolved failures,249 originalbatch28 successes plus
+  recovered index rehashed (701893222B). Both explicit recoveries and old failures retained.
+  Separate reviewerfinish_benchmark clear review-scale-queue-v3/review.json SHA
+  eb1e0f0a509ee27168be215fc4c068fca66a30e3cda3206a5ef8b7170b8722c4 checked223bindings/
+  24005376B/all78 archived native sources, recomputed all tier/identity arithmetic, replayed
+  12 small controls+3 additional guards, and ran real --check only. Six128MiB boundary cases
+  reused exact source/receipt, not rerun independently. No unresolved source finding.
+- Native sequence after115 short measurement/gates: root allocates queue-v3 batch29 using
+  `/usr/bin/python3.14 -I -B -u ~/.cache/lysilogy/scale-index-queue-v3/queue.py --start 29
+  --launch-sha 3b584d0e04d955ba9366630927e6c5ef029badc5d67055c2882585945b65cc65`.
+  Archive/remove only v3 PAUSE before launch; original queue and v2 remain paused/immutable.
+  One batch/invocation default, explicit larger allocation only when no competing heavy job.
+  2951 scale papers remain unattempted (batches29–40, final201). Never skip a failure or
+  overwrite occupied paths.20GiB disk floor; about62GiB free. Latest machine memory had
+  4.4GiB available and substantial existing swap use; retain single heavy job scheduling.
+- #117 prior fixed-five readiness933f90d8/body decisions remain unchanged; no WT/code yet.
+  #33 WT905c341 and draft PR93/94/95 remain blocked on effective already-approved four
+  Rust/provider hosts: index.crates.io,static.crates.io,api.crossref.org,api.openalex.org.
+  Managed~/.codex is read-only, so the approved script still needs normal-terminal execution:
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart Codex and
+  verify effective grants. Do not retry the known rejected filesystem mutation or ask for
+  approval again; it was a managed read-only failure, not an automatic-review rejection.
+  Current main scorecard still1/5 hard gates,3/30 objectives(O1/O2/O30); coverage97 and scale
+  misses21/22 remain open. No new follow-up this checkpoint. All subagents now idle after their
+  bounded tasks; use followup_task to resume. Continue115, then117 and native queue. No
+  rebase/sudo/rm-rf/private/env access, destructive user-data action, or model batch. Goal incomplete.
