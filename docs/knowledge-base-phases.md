@@ -220,7 +220,7 @@ acceptance are unchanged.
   trace parsing in `src/source_index/graphics.rs`, focused fixtures and measured evidence.
   Preserve immutable v1/v2 truth and full denominators; measure both cohorts, keep current
   detector/native generations explicit, and coordinate object plumbing with #25.
-- [ ] **#111 Resolve remaining mask-clipped figure regions** (after #106).
+- [x] **#111 Resolve remaining mask-clipped figure regions** (after #106).
   Branch `fix/e1.1-mask-regions`. Owns bounded mask evidence in `src/source_index/graphics.rs`,
   necessary region composition in `figures.rs`, focused synthetic fixtures and measured report.
   Preserve arbitrary/empty mask uncertainty, native anchors and both immutable cohorts. Never
@@ -256,6 +256,15 @@ acceptance are unchanged.
   `cargo test` that loads the gold set.
 
 ### Phase A notes
+
+- #111 merged via PR114 (`d7d25c3`), reviewed head `c0fb861`. All three new-paper masked
+  figures recover from zero; O1=1 and all23-object O2=0.9169720168893188. Both older records
+  and every other region remain exact; one earlier zero stays included. Bounded exact opacity
+  evidence requires attached masks, matching transforms and an opaque base. Existing serde_json
+  float_roundtrip fixes three observed one-ULP parse errors without tolerance or new dependency.
+  Final G5 passes368 Rust/424 Python/85 Node; all12 integrated commands and both refreshed
+  cohorts pass. Root verified316 portable external artifacts before worktree removal. Report:
+  [masked regions](experiment-reports/2026-09-13-kb-mask-regions.md). Broader coverage remains97.
 
 - #105 merged in PR108 (`7ef8fda`) after independent final review of `670ff4d`.
   The immutable three-paper `k1-limited-v2` has23 visual regions and reproduces both prior
@@ -4243,3 +4252,49 @@ date, last merged issue, in-flight branches and their state, next action, and op
   actual provider truth/dependencies. Allfour host grants are already approved but managed
   ~/.codex remains read-only and grants ineffective. User-terminal script remains
   ~/.config/lysilogy/apply-codex-kb-network-permissions.py, then restart; do not ask again.
+
+
+### 2026-09-14 00:15 UTC — #111 merged; layout final integration next
+
+- Last merged **#111/PR114**, merge d7d25c39d2c2ec87ea7234068b58e60c4eff5c3b at00:12:22Z,
+  reviewed head c0fb8610a9ff665aa66fa0b69221b32a0a227b05. Independent final review
+  `review-mask-final-e5e7157/review-c0fb861.json` SHA
+  320c50b67d17655b44dfe2caae79f97bd868e112241b45a1679fafd89b6e31c2 is clear. Root rehashed
+  all316 portable artifacts/432706017bytes. Final12 gates pass at431e4f1:368Rust/424Python/85Node,
+  receipt971530b1a49aec1d52e91d996204a10d30ef45380566e5bf193c68e7b9563e1f.
+  Explicit conventional merge subject/body with co-author trailer used. Main fast-forwarded,
+  all10 unrelated preview hashes exact. Durable baseline is now
+  `~/.cache/lysilogy/kb-preview-before.json` SHA
+  2cee9c1f5f12ca1d0b1e3979952252d7bcd37b414df76142f919e6b5cb449870.
+- Corrected actual111 atd596880 took41.373s/279472KiB/$0 with no network/model calls, receipt
+  7cbcc7baa4bbef1e20e6f7f3327077440b486f91625fa2605e477d6d5a8df1c9. All3 masks recover;
+  O1=1/O2=.9169720168893188 across23, zeros4→1. V1 exact1/.9107793204006069. Independent
+  actual review04f266d4179032b0d8ff69a1dd5a41ed0d69c3cc771225de4d778052782e7f68
+  recomputed76 historical/current IoUs and2062628 opacity cells. Prior failed generations remain.
+- Root110 branch `feat/e8.3-source-layout-probe` currently da6f279, no PR. Actual executed
+  source8c153b3 remains unchanged:1/10 builds,0/10 complete exact documents, no truth admission.
+  Independent actual review `review-layout-actual-8c153b3/review.json` SHA
+  a6baf0118b50cbc9b4003d29f5dc6c6b842ea689995db7d65e08a72e0d703d48 clears739references,
+  234materialized members,30originals,45processes,32rasters. First-pass overwrite and nested
+  materialization-only execution-flag limits remain explicit. No deposited-source rerun needed.
+  Next: ordinary merge111/main, bind clean integrated head/incoming observation and reviewed
+  `source-layout-probe/release-tools/final-checks.py` SHA
+  feea0603b852f3366020aa1b10f08461e3c3c52bd2314f8cb2193eba4de696a9, then final gates/current-v2
+  refresh preserving111's full decisions. Wrapper independently clear at
+  review-layout-final-wrapper/review-v2.json SHA6d8161d83357aa1084089c7741b3b1ab54395c59487213bdaed3eec0e6068e3d.
+  Finish external report/evidence drafts, draftPR, separate review/merge. All metric gains belong
+  106/111, not110. Wrapper has not executed. Contract checkpoint text needs docs-only update.
+- Owner finish_corpus_proxy109 worktree `fix/e8.3-bibtex-fields` from7d0bffa has initial scanner
+  insideparser.py and16new inert tests;292current truth tests pass. Own beforeCLI objects receipt
+  8dc9aeae40d12022e9ef6eca05feb028d1f5c91e18a1f6f83726b8c9e89ff024 records available1/.90760069.
+  Generated-only installedBibTeX probes12+11cases took.119s+.0793s/$0, second receipt
+  9e792ea61afa8ba51a7fb9f92e4c92713171c7869d37a35e34ea1411f90e922e. Percent is field data,
+  quote/brace rules differ fromTeX; unsupported outer forms remain explicit. Proposed comparison
+  exact8old failures+107's702successes in original1000 order, historical612subset labeled, needs
+  independent source/selection/runner review before actual. Owner stays light while root110 gates.
+- Still PhaseA/WaveA2;1/5 gates available/pass,3/30objectives at target(O1/O2/O30). No new
+  follow-up or phase/system completion. Native queue paused before26,7250unique/6299scale,
+  3701scale indexes remain; no downloads. #25/PR94,#33,#71/PR93,#72/PR95 still wait on effective
+  four-host grants. Allfour already approved; managed~/.codex read-only prevents applying them.
+  Existing user-terminal command:python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py,
+  then restart. Do not ask approval again. Preserve blocked WTs and unrelated preview changes.
