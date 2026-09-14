@@ -133,7 +133,7 @@ fn captions<'a>(
 }
 
 impl Caption<'_> {
-    fn contains(&self, paragraph: &super::Paragraph) -> bool {
+    const fn contains(&self, paragraph: &super::Paragraph) -> bool {
         self.paragraph.start <= paragraph.start && paragraph.end <= self.end
     }
 }
