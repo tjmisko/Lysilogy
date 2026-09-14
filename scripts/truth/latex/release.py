@@ -35,6 +35,90 @@ def compact_entry(row):
     return {key: row[key] for key in ('id', 'printed_key', 'spans', 'field_labels', 'source_members')} | {'field_provenance': fields}
 
 
+def project_paper(candidate, specification, frozen, *, retain_ineligible=False):
+    """Project one fully assembled paper; retain all legacy fields and admission checks."""
+    require(candidate['arxiv_id'] == specification['arxiv_id'] and candidate['paper_id'] == specification['paper_id'], 'release paper order/identity differs from frozen cohort')
+    require(candidate['arxiv_id'] in frozen, 'release paper is outside frozen eval inputs')
+    source = frozen[candidate['arxiv_id']]
+    require(re.fullmatch(r'[0-9a-f]{16}', candidate['paper_id']) and type(source['version']) is int and source['version'] > 0, 'release lacks a valid mapped ID and pinned arXiv version')
+    require(candidate['stratum'] == source['stratum'], 'release stratum differs from frozen eval selection')
+    require(all(candidate[key] == source['version'] for key in ('version','arxiv_version') if key in candidate), 'release candidate version differs from frozen source version')
+    require(candidate['pdf_sha256'] == source['pdf']['sha256'] and candidate['source_sha256'] == source['source']['sha256'], 'release artifact differs from frozen corpus cohort')
+    row = {key: candidate[key] for key in ('arxiv_id', 'paper_id', 'pdf_sha256', 'source_sha256', 'index', 'stratum', 'source_inventory_sha256')}
+    row.update(arxiv_version=source['version'], arxiv_url='https://arxiv.org/abs/' + candidate['arxiv_id'] + 'v' + str(source['version']),
+               alignment={'quality': 1.0, 'method': 'complete source/PDF inventory independently annotated and reconciled per eligible metric'},
+               objects=[], entries=[], mentions=[], references=[], associated_content=[],
+               metric_eligibility={key: False for key in METRICS}, reviewed_absent_kinds=[],
+               provenance={'automatic_candidate': specification['candidate'], 'automatic_candidate_sha256': candidate['manual_assembly']['candidate_sha256'],
+                           'assembly_sha256': sha256(canonical(candidate)), 'automatic_accepted': candidate['accepted'],
+                           'automatic_metric_eligibility': candidate['metric_eligibility'], 'overlay_evidence': {}})
+    if 'manual_figure_table_overlay' in candidate:
+        overlay = candidate['manual_figure_table_overlay']
+        require(overlay['metric_eligibility'] == {'O1': True, 'O2': True}, 'figure/table overlay is incomplete')
+        row['objects'].extend(compact_object(item) for item in overlay['objects'])
+        row['metric_eligibility'].update(overlay['metric_eligibility'])
+        row['provenance']['overlay_evidence']['figure_table'] = overlay['evidence_hashes']
+    if 'manual_visual_only_overlay' in candidate:
+        overlay = candidate['manual_visual_only_overlay']
+        require(not any(key in candidate for key in ('manual_figure_table_overlay', 'manual_object_overlay',
+                'manual_bibliography_overlay', 'independent_panel')), 'visual-only release cannot mix metric overlays')
+        require(overlay['metric_eligibility'] == {'O1': True, 'O2': True}
+                and overlay['omitted_metrics'] == METRICS[2:], 'visual-only overlay changes its metric scope')
+        require(all(item['kind'] in ('figure', 'table') for item in overlay['objects']),
+                'visual-only overlay contains a formal or other object')
+        expected_absent = [kind for kind in ('figure', 'table') if not any(item['kind'] == kind for item in overlay['objects'])]
+        require(overlay['reviewed_absent_kinds'] == expected_absent, 'visual-only negative kind inventory differs')
+        row['objects'].extend(compact_object(item) for item in overlay['objects'])
+        row['metric_eligibility'].update(overlay['metric_eligibility'])
+        row['reviewed_absent_kinds'] = overlay['reviewed_absent_kinds']
+        row['associated_content'] = overlay['associated_content']
+        row['unscored_inventory'] = {'records': overlay['retained_inventory'],
+            'source_visual_exclusions': overlay['source_visual_exclusions'],
+            'supplemental_history': overlay['supplemental_unscored_history'],
+            'omitted_metrics': overlay['omitted_metrics'],
+            'current_source_inventory_sha256': overlay['current_source_inventory_sha256'],
+            'historical_source_difference_fields': overlay['historical_source_difference_fields']}
+        row['alignment']['method'] = 'Complete independently reviewed figure/table projection; other original and source roles retained unscored'
+        row['provenance']['overlay_evidence']['visual_only'] = overlay['evidence_hashes']
+    if 'manual_object_overlay' in candidate:
+        overlay = candidate['manual_object_overlay']
+        require(all(overlay['metric_eligibility'].get(key) is True for key in ('O3','O4','O5','O6','O7')), 'manual object overlay is incomplete')
+        row['objects'].extend(compact_object(item) for item in overlay['objects'])
+        row['references'] = overlay['references']; row['associated_content'] = overlay['associated_content']
+        row['non_object_references'] = overlay['non_object_references']
+        if overlay.get('other_object_references'):
+            row['other_object_references'] = overlay['other_object_references']
+        row['metric_eligibility'].update(overlay['metric_eligibility'])
+        row['reviewed_absent_kinds'] = overlay['reviewed_absent_kinds']
+        if set(row['reviewed_absent_kinds']) == {'figure','table'}:
+            row['metric_eligibility'].update(O1=True, O2=True)
+        row['provenance']['overlay_evidence']['objects'] = overlay['evidence_hashes']
+    if 'manual_bibliography_overlay' in candidate:
+        overlay = candidate['manual_bibliography_overlay']
+        require(overlay['metric_eligibility'] == {'O8': True, 'O9': True, 'O10': True}, 'manual bibliography overlay is incomplete')
+        row['entries'] = [compact_entry(item) for item in overlay['entries']]
+        row['mentions'] = overlay['mentions']; row['citation_groups'] = overlay['citation_groups']
+        row['metric_eligibility'].update(overlay['metric_eligibility'])
+        row['provenance']['overlay_evidence']['bibliography'] = overlay['evidence_hashes']
+    if 'independent_panel' in candidate:
+        panel = candidate['independent_panel']
+        require(row['metric_eligibility']['O1'] and len(panel['identities']) == len(panel['panelists']) == 3 and len({item['agent_identity'] for item in panel['identities']}) == 3, 'O11 requires a complete figure/table cohort and three distinct panelists')
+        row['panel'] = {key: panel[key] for key in ('identities','valid_ids','panelists','packet_sha256','prompt_sha256','review_sha256','scoring_policy_sha256','selection_policy')}
+        row['metric_eligibility']['O11'] = True
+    if not any(row['metric_eligibility'].values()):
+        require(retain_ineligible, 'release paper has no independently eligible metric')
+        row['alignment'] = {'quality': None, 'method': 'Retained unscored candidate; no independent metric alignment claimed'}
+        row['unscored_inventory'] = {'retained_candidate': candidate,
+                                     'scope': 'no independently eligible metric; retained only'}
+    object_ids = {item['id'] for item in row['objects']}
+    require(len(object_ids) == len(row['objects']), 'release object identities collide')
+    counts = Counter(item['kind'] for item in row['objects']); counts['bib_entry'] = len(row['entries'])
+    row['metric_alignment_quality'] = {key: 1.0 if eligible else None for key, eligible in row['metric_eligibility'].items()}
+    row['counts'] = dict(counts)
+    row['bibliography_eligible'] = row['metric_eligibility']['O8'] and row['metric_eligibility']['O10']
+    return row
+
+
 def build_release(assemblies, config, inputs, history):
     """Only caller-verified complete overlays can enter a predeclared cohort."""
     require(re.fullmatch(r'k1-limited-v[1-9][0-9]*', config['version']), 'limited release version is invalid')
@@ -46,78 +130,8 @@ def build_release(assemblies, config, inputs, history):
     papers, totals, strata = [], Counter(), Counter()
     cohort_papers = {key: [] for key in METRICS}
     for candidate, specification in zip(assemblies, config['papers']):
-        require(candidate['arxiv_id'] == specification['arxiv_id'] and candidate['paper_id'] == specification['paper_id'], 'release paper order/identity differs from frozen cohort')
-        require(candidate['arxiv_id'] in frozen, 'release paper is outside frozen eval inputs')
-        source = frozen[candidate['arxiv_id']]
-        require(re.fullmatch(r'[0-9a-f]{16}', candidate['paper_id']) and type(source['version']) is int and source['version'] > 0, 'release lacks a valid mapped ID and pinned arXiv version')
-        require(candidate['stratum'] == source['stratum'], 'release stratum differs from frozen eval selection')
-        require(all(candidate[key] == source['version'] for key in ('version','arxiv_version') if key in candidate), 'release candidate version differs from frozen source version')
-        require(candidate['pdf_sha256'] == source['pdf']['sha256'] and candidate['source_sha256'] == source['source']['sha256'], 'release artifact differs from frozen corpus cohort')
-        row = {key: candidate[key] for key in ('arxiv_id', 'paper_id', 'pdf_sha256', 'source_sha256', 'index', 'stratum', 'source_inventory_sha256')}
-        row.update(arxiv_version=source['version'], arxiv_url='https://arxiv.org/abs/' + candidate['arxiv_id'] + 'v' + str(source['version']),
-                   alignment={'quality': 1.0, 'method': 'complete source/PDF inventory independently annotated and reconciled per eligible metric'},
-                   objects=[], entries=[], mentions=[], references=[], associated_content=[],
-                   metric_eligibility={key: False for key in METRICS}, reviewed_absent_kinds=[],
-                   provenance={'automatic_candidate': specification['candidate'], 'automatic_candidate_sha256': candidate['manual_assembly']['candidate_sha256'],
-                               'assembly_sha256': sha256(canonical(candidate)), 'automatic_accepted': candidate['accepted'],
-                               'automatic_metric_eligibility': candidate['metric_eligibility'], 'overlay_evidence': {}})
-        if 'manual_figure_table_overlay' in candidate:
-            overlay = candidate['manual_figure_table_overlay']
-            require(overlay['metric_eligibility'] == {'O1': True, 'O2': True}, 'figure/table overlay is incomplete')
-            row['objects'].extend(compact_object(item) for item in overlay['objects'])
-            row['metric_eligibility'].update(overlay['metric_eligibility'])
-            row['provenance']['overlay_evidence']['figure_table'] = overlay['evidence_hashes']
-        if 'manual_visual_only_overlay' in candidate:
-            overlay = candidate['manual_visual_only_overlay']
-            require(not any(key in candidate for key in ('manual_figure_table_overlay', 'manual_object_overlay',
-                    'manual_bibliography_overlay', 'independent_panel')), 'visual-only release cannot mix metric overlays')
-            require(overlay['metric_eligibility'] == {'O1': True, 'O2': True}
-                    and overlay['omitted_metrics'] == METRICS[2:], 'visual-only overlay changes its metric scope')
-            require(all(item['kind'] in ('figure', 'table') for item in overlay['objects']),
-                    'visual-only overlay contains a formal or other object')
-            expected_absent = [kind for kind in ('figure', 'table') if not any(item['kind'] == kind for item in overlay['objects'])]
-            require(overlay['reviewed_absent_kinds'] == expected_absent, 'visual-only negative kind inventory differs')
-            row['objects'].extend(compact_object(item) for item in overlay['objects'])
-            row['metric_eligibility'].update(overlay['metric_eligibility'])
-            row['reviewed_absent_kinds'] = overlay['reviewed_absent_kinds']
-            row['associated_content'] = overlay['associated_content']
-            row['unscored_inventory'] = {'records': overlay['retained_inventory'],
-                'source_visual_exclusions': overlay['source_visual_exclusions'],
-                'supplemental_history': overlay['supplemental_unscored_history'],
-                'omitted_metrics': overlay['omitted_metrics'],
-                'current_source_inventory_sha256': overlay['current_source_inventory_sha256'],
-                'historical_source_difference_fields': overlay['historical_source_difference_fields']}
-            row['alignment']['method'] = 'Complete independently reviewed figure/table projection; other original and source roles retained unscored'
-            row['provenance']['overlay_evidence']['visual_only'] = overlay['evidence_hashes']
-        if 'manual_object_overlay' in candidate:
-            overlay = candidate['manual_object_overlay']
-            require(all(overlay['metric_eligibility'].get(key) is True for key in ('O3','O4','O5','O6','O7')), 'manual object overlay is incomplete')
-            row['objects'].extend(compact_object(item) for item in overlay['objects'])
-            row['references'] = overlay['references']; row['associated_content'] = overlay['associated_content']
-            row['non_object_references'] = overlay['non_object_references']
-            if overlay.get('other_object_references'):
-                row['other_object_references'] = overlay['other_object_references']
-            row['metric_eligibility'].update(overlay['metric_eligibility'])
-            row['reviewed_absent_kinds'] = overlay['reviewed_absent_kinds']
-            if set(row['reviewed_absent_kinds']) == {'figure','table'}:
-                row['metric_eligibility'].update(O1=True, O2=True)
-            row['provenance']['overlay_evidence']['objects'] = overlay['evidence_hashes']
-        if 'manual_bibliography_overlay' in candidate:
-            overlay = candidate['manual_bibliography_overlay']
-            require(overlay['metric_eligibility'] == {'O8': True, 'O9': True, 'O10': True}, 'manual bibliography overlay is incomplete')
-            row['entries'] = [compact_entry(item) for item in overlay['entries']]
-            row['mentions'] = overlay['mentions']; row['citation_groups'] = overlay['citation_groups']
-            row['metric_eligibility'].update(overlay['metric_eligibility'])
-            row['provenance']['overlay_evidence']['bibliography'] = overlay['evidence_hashes']
-        if 'independent_panel' in candidate:
-            panel = candidate['independent_panel']
-            require(row['metric_eligibility']['O1'] and len(panel['identities']) == len(panel['panelists']) == 3 and len({item['agent_identity'] for item in panel['identities']}) == 3, 'O11 requires a complete figure/table cohort and three distinct panelists')
-            row['panel'] = {key: panel[key] for key in ('identities','valid_ids','panelists','packet_sha256','prompt_sha256','review_sha256','scoring_policy_sha256','selection_policy')}
-            row['metric_eligibility']['O11'] = True
-        require(any(row['metric_eligibility'].values()), 'release paper has no independently eligible metric')
-        object_ids = {item['id'] for item in row['objects']}
-        require(len(object_ids) == len(row['objects']), 'release object identities collide')
-        counts = Counter(item['kind'] for item in row['objects']); counts['bib_entry'] = len(row['entries'])
+        row = project_paper(candidate, specification, frozen)
+        counts = Counter(row['counts'])
         totals.update(counts)
         for metric, eligible in row['metric_eligibility'].items():
             if eligible: cohort_papers[metric].append(row['paper_id'])
@@ -151,7 +165,7 @@ def build_release(assemblies, config, inputs, history):
     return release, bibliography
 
 
-def evidence_paths(config):
+def required_evidence_paths(config):
     required = {config['inputs'], config['indexes']}
     required.update(item[key] for item in config['automatic_builds'] for key in ('path','paper_summaries','launch','runner'))
     for paper in config['papers']:
@@ -166,6 +180,11 @@ def evidence_paths(config):
                              ('bibliography_bundle', ('packet.json','bibliography-packet.json','bibliography-root-v1.json','bibliography-independent-v1.json','bibliography-independent-v1-receipt.json','bibliography-reconciliation-independent-v1.json')),
                              ('panel_bundle', ('packet.json','prompt.txt','vote-evaluator-1.json','vote-evaluator-2.json','vote-evaluator-3.json','panel-root-review-v1.json','scoring-policy-v1.json'))]:
             if paper.get(field): required.update(paper[field] + '/' + name for name in names)
+    return required
+
+
+def evidence_paths(config):
+    required = required_evidence_paths(config)
     require(required == set(config['evidence_sha256']), 'release must pin every consumed external evidence document')
     return required
 

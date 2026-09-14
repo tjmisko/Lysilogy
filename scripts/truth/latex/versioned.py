@@ -16,6 +16,7 @@ import resource
 import subprocess
 import sys
 import time
+import types
 
 VERSION = 'k1-limited-v1'
 MANIFEST_SHA256 = '770ba066d41931f3fae8682ead5216214de780c2d3349ff12da1f35b685dd118'
@@ -33,6 +34,10 @@ VISUAL_MANIFEST_SHA256 = 'd02b71b0f9604bdd3e2535825d0d257b587ce1219c5552eb978c6c
 VISUAL_ONLY_VERSION = 'k1-limited-v4'
 VISUAL_ONLY_MODULES = VISUAL_MODULES | {'tranche_visual_only.py'}
 VISUAL_ONLY_MANIFEST_SHA256 = 'a491c9976befff0fadb0e7fe8220422360636dbb456b1ded2ebf5baa7520929a'  # Remains disabled until separately reviewed immutable publication.
+BOUNDED_VERSION = 'k1-limited-v5'
+BOUNDED_MODULES = VISUAL_ONLY_MODULES | {'release_layout.py', 'release_process.py', 'release_replay.py'}
+# Mechanism only. Activation requires a separately reviewed actual construction.
+BOUNDED_MANIFEST_SHA256 = None
 MAX_DOCUMENT = 1024 * 1024
 
 
@@ -68,7 +73,10 @@ def document(raw):
 
 
 def release_spec(version):
-    require(version in (VERSION, CURRENT_VERSION, VISUAL_VERSION, VISUAL_ONLY_VERSION), 'unsupported retained truth version')
+    require(version in (VERSION, CURRENT_VERSION, VISUAL_VERSION, VISUAL_ONLY_VERSION, BOUNDED_VERSION), 'unsupported retained truth version')
+    if version == BOUNDED_VERSION:
+        require(BOUNDED_MANIFEST_SHA256 is not None, 'truth version is not published')
+        return BOUNDED_MANIFEST_SHA256, BOUNDED_MODULES
     if version == VERSION:
         return MANIFEST_SHA256, MODULES
     if version == VISUAL_VERSION:
@@ -125,7 +133,8 @@ def load_modules(repo, version):
     """Compile verified bytes directly, without searching a bundle or bytecode cache."""
     require(sys.flags.isolated and sys.flags.dont_write_bytecode, 'verifier requires isolated Python')
     bundle, manifest = verified_bundle(repo, version)
-    namespace = VISUAL_ONLY_MODULES if version == VISUAL_ONLY_VERSION else CURRENT_MODULES
+    namespace = (BOUNDED_MODULES if version == BOUNDED_VERSION else
+                 VISUAL_ONLY_MODULES if version == VISUAL_ONLY_VERSION else CURRENT_MODULES)
     require(not any(Path(name).stem in sys.modules for name in namespace),
             'verifier module namespace is contaminated')
     sources = {}
@@ -164,10 +173,71 @@ def load_modules(repo, version):
     return modules
 
 
+def bounded_api(repo, bundle=None, manifest=None):
+    """Load three fixed transport modules directly; never use a bytecode search path."""
+    names = ('release_layout', 'release_process', 'release_replay')
+    require(not any(name in sys.modules for name in names), 'bounded transport namespace is contaminated')
+    folder = Path(repo) / 'scripts/truth/latex' if bundle is None else bundle
+    raw = {name: read(folder / (name + '.py')) for name in names}
+    if manifest is not None:
+        require(all(digest(value) == manifest['files'][name + '.py']['sha256']
+                    for name, value in raw.items()), 'bounded transport source differs')
+    modules = {}
+    try:
+        for name in names:
+            module = types.ModuleType(name); module.__file__ = str(folder / (name + '.py'))
+            sys.modules[name] = module
+            exec(compile(raw[name], module.__file__, 'exec'), module.__dict__)
+            modules[name] = module
+    finally:
+        for name in names:
+            sys.modules.pop(name, None)
+    require(all(read(folder / (name + '.py')) == value for name, value in raw.items()),
+            'bounded transport source changed while loading')
+    return modules
+
+
+def current_modules(repo, expected):
+    """Publication worker: exact fixed current application files, not caller-selected code."""
+    require(sys.flags.isolated and sys.flags.dont_write_bytecode, 'publication worker must be isolated')
+    require(set(expected) == BOUNDED_MODULES, 'publication source inventory differs')
+    require(not any(Path(name).stem in sys.modules for name in BOUNDED_MODULES), 'publication namespace is contaminated')
+    origins = {Path(name).stem: Path(repo) / ('scripts/corpus/corpus.py' if name == 'corpus.py'
+               else 'scripts/truth/latex/' + name) for name in expected}
+    sources = {name: read(path) for name, path in origins.items()}
+    require(all(digest(raw) == expected[name + '.py'] for name, raw in sources.items()), 'publication source bytes differ')
+
+    class Loader(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+        def find_spec(self, fullname, path=None, target=None):
+            if fullname in sources:
+                return importlib.util.spec_from_file_location(fullname, origins[fullname], loader=self)
+            return None
+        def create_module(self, spec):
+            return None
+        def exec_module(self, module):
+            exec(compile(sources[module.__name__], str(origins[module.__name__]), 'exec'), module.__dict__)
+
+    loader = Loader(); before_path = sys.path[:]; sys.meta_path.insert(0, loader)
+    try:
+        modules = {name: importlib.import_module(name) for name in sources}
+        require(modules['builder'].ROOT == Path(repo), 'publication worker repository differs')
+    finally:
+        sys.meta_path.remove(loader); sys.path[:] = before_path
+    require(all(read(origins[name]) == raw for name, raw in sources.items()), 'publication code changed during import')
+    return modules
+
+
 def replay(repo, cache, corpus, data, version=VERSION):
     """Validate in a fresh interpreter; return unchanged historical labels/config."""
     repo = Path(repo).absolute()
-    _, manifest, truth_raw, _, config_raw = pinned_release(repo, version)
+    bundle, manifest, truth_raw, _, config_raw = pinned_release(repo, version)
+    if version == BOUNDED_VERSION:
+        api = bounded_api(repo, bundle, manifest)
+        with api['release_process'].address_limit():
+            result = api['release_replay'].replay(repo, cache, corpus, data, manifest, truth_raw, config_raw)
+        _, _, final_truth, _, final_config = pinned_release(repo, version)
+        require(final_truth == truth_raw and final_config == config_raw, 'release changed during bounded replay')
+        return result
     manifest_hash, _ = release_spec(version)
     worker = repo / 'scripts/truth/latex/versioned.py'
     worker_hash = digest(read(worker))
@@ -201,6 +271,16 @@ def worker(request):
     resource.setrlimit(resource.RLIMIT_AS, (768 * 1024 * 1024, 768 * 1024 * 1024))
     resource.setrlimit(resource.RLIMIT_CPU, (60, 60))
     started = time.monotonic()
+    if request['version'] == BOUNDED_VERSION:
+        if request.get('publication') is True:
+            modules = current_modules(repo, request['current_sources'])
+        else:
+            pinned_release(repo, request['version'])
+            modules = load_modules(repo, request['version'])
+        result = modules['release_replay'].worker(request, modules)
+        if request.get('publication') is not True:
+            pinned_release(repo, request['version'])
+        return result
     bundle, manifest, truth_raw, bibliography_raw, config_raw = pinned_release(repo, request['version'])
     modules = load_modules(repo, request['version'])
     release, manual = modules['release'], modules['manual']
@@ -235,9 +315,22 @@ def worker(request):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--worker', action='store_true')
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--worker', action='store_true')
+    mode.add_argument('--publish', action='store_true', help='Construct an unactivated per-paper release from reviewed config')
+    parser.add_argument('--config', type=Path)
     arguments = parser.parse_args()
-    require(arguments.worker, 'use the replay API with explicit roots')
-    raw = sys.stdin.buffer.read(8193)
-    require(len(raw) <= 8192, 'verifier request exceeds its bound')
-    print(json.dumps(worker(document(raw)), sort_keys=True))
+    if arguments.publish:
+        require(sys.flags.isolated and sys.flags.dont_write_bytecode, 'publisher requires isolated Python')
+        require(arguments.config is not None, 'publisher requires a reviewed config')
+        repo = Path(__file__).absolute().parents[3]
+        cache = Path.home() / '.cache/lysilogy'
+        api = bounded_api(repo)
+        _, receipt = api['release_replay'].publish_current(repo, cache, Path.home() / 'Corpora/arxiv',
+            cache / 'arxiv-kb-data', arguments.config, sys.modules[__name__])
+        print(json.dumps(receipt, sort_keys=True))
+    else:
+        require(arguments.config is None, 'worker cannot select a CLI config')
+        raw = sys.stdin.buffer.read(8193)
+        require(len(raw) <= 8192, 'verifier request exceeds its bound')
+        print(json.dumps(worker(document(raw)), sort_keys=True))

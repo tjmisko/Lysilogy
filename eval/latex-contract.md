@@ -390,3 +390,10 @@ Replay checks the complete source/evidence history and reproduces both payloads,
 without publishing files or executing deposited TeX. This permits later parser
 changes while preserving both prior baselines. The three-paper release is the
 bounded work in issue #105; issue #97's approximately 500-paper target stays open.
+
+## Inactive bounded per-paper transport
+
+Issue #129 adds the mechanically checked, inactive v5 path described in
+[k1-per-paper-contract.md](k1-per-paper-contract.md). It preserves v1–v4 replay,
+truth bytes, metric definitions and targets. Activation and new truth admission
+remain separate reviewed work; synthetic scale records are not K1 coverage.
