@@ -253,7 +253,7 @@ acceptance are unchanged.
   no network or host-home mount. Keep current parser and all retained truth unchanged.
   A documented experimental no-go does not close #97 or lower its coverage requirement.
 
-- [ ] **#115 Publish reconciled visual pilot with attached table notes** (after #105,#111;
+- [x] **#115 Publish reconciled visual pilot with attached table notes** (after #105,#111;
   bounded part of #97). Branch `feat/e8.3-visual-tranche`. Owns new
   `scripts/truth/latex/tranche_visual.py`/tests; narrow manual dispatch/fingerprint registration,
   versioned release registration/tests, explicit collector truth selection and v3 derived labels.
@@ -273,6 +273,14 @@ acceptance are unchanged.
   current-source crosswalk and complete construction review remain required before admission.
   Preserve prior versions and complete visual denominators; no parser/detector changes.
 
+- [ ] **#121 Investigate two weak visual-tranche figure regions** (after #115).
+  Branch `fix/e1.1-visual-tranche-regions`. Owns bounded diagnostics and, only when justified,
+  `src/source_index/figures.rs`, `src/source_index/graphics.rs`, focused fixtures and measured
+  evidence/report. Preserve all v1/v2/v3 truth and full denominators. Figure3/4 in2409.03655
+  have measured IoU .162546/.184384 and observed unsupported graphics traces; establish the
+  cause before changing ownership or trace support. Coordinate measurements with117 and
+  root's single heavy-job allocation. No native index rebuild or truth edits are presumed.
+
 ### Wave A3
 
 - [ ] **#37 E2.5 Resolution gold set and evaluation** (after #25, #69). Branch `feat/e2.5-gold-set`.
@@ -284,6 +292,21 @@ acceptance are unchanged.
   `cargo test` that loads the gold set.
 
 ### Phase A notes
+
+- #115 merged via PR122 (`e0d3df1`), independently reviewed final head `abde1d8`. Immutable
+  K1 v3 now contains four papers and29 visual regions. Actual O1=1/O2=.9169720168893188,
+  all old per-paper outcomes/predictions exact, zero unknown regions; one historical zero and
+  two new low regions remain included. #121 tracks those two cases, with no target reset.
+  The first collector run's missing singleton regions and the final G5 missing-TypeScript
+  environment failure are preserved; the reviewed adapter and offline dependency repair pass
+  381Rust/537Python/85Node and all three immutable replays. No detector, native-index or
+  LaTeX parser change in115. Report: `docs/experiment-reports/2026-09-13-kb-visual-tranche.md`.
+  Current full1000 source evidence remains724 parsed/276 failed/zero automatic admissions;
+  six modules were loaded and nine unused within the retained fifteen-module bundle.
+  #117 is now ready for its original fixed five; #97's approximately500-paper target stays open.
+  A separate next14 availability-only annotation tranche has85 original pages, with verified
+  blind source/native exports and original PDF renders. It grants no metric eligibility.
+  See the latest session entry for exact continuation, packet and indexing state.
 
 - #109 merged via PR119 (`722b6b2`), independently reviewed final head `1b3d029`. Bounded
   BibTeX fields now preserve literal percent text and protected quotes. The fixed710 execution
@@ -299,12 +322,13 @@ acceptance are unchanged.
   Ordinary main integration replaced rebase under the standing restriction. Next source-support
   work must retain these explicit failures and use reference-backed semantics; no target changed.
 
-- #118 records the first failure in scale batch28: 249 successes and one bounded-stderr error
+- #118's retained pre-recovery checkpoint records scale batch28:249 successes and one bounded-stderr error
   for 2106.09069v1. Root audit verifies 7,999 successful unique indexes, 1,000 eval/7,048 scale;
   2,951 scale papers remain unattempted and the one failed paper remains in the denominator.
   The original queue stopped before its aggregate audit; root ran that read-only audit and
   recorded terminal failure instead of leaving its stale running status. Do not resume the
-  old queue or overwrite the failed batch. A reviewed new recovery/auditor generation is needed.
+  old queue or overwrite the failed batch. The subsequent recovery and reviewed queue-v3 are
+  recorded in the latest session entries; this paragraph preserves the original failure.
   The read-only diagnostic exits0 with18 pages/9,520 finite ordered word rectangles and
   169,653 stderr bytes; this is structural evidence, not application/native recovery.
 
@@ -5017,3 +5041,104 @@ date, last merged issue, in-flight branches and their state, next action, and op
   misses21/22 remain open. No new follow-up this checkpoint. All subagents now idle after their
   bounded tasks; use followup_task to resume. Continue115, then117 and native queue. No
   rebase/sudo/rm-rf/private/env access, destructive user-data action, or model batch. Goal incomplete.
+
+
+### 2026-09-14 04:47 UTC — #115 merged; next annotation packets ready; scale batch30 running
+
+- Phase A / Wave A2. Last merged **#115 / PR122**, merge
+  `e0d3df18b6d6dc4f2b77c1facb16ff5e8a2a9d3e` at04:43:56UTC. Final reviewed head
+  `abde1d8087ca7a7ac9be8299ad808840d37446c1`; final review
+  `~/.cache/lysilogy/review-visual-pr122-abde1d8/review.json` SHA
+  `4b8e3ca3c0e458301d4ba939ae8182f08337c1ccc8dfb067ea047f7fafdc53f0` is clear.
+  Main fast-forwarded; all10 protected preview hashes unchanged. Issue closed; implementation
+  worktree/target and local/remote branch removed. This entry is the required direct-main docs
+  checkpoint. No phase exit, complete500-paper truth, production10k acceptance or final report.
+- Published immutable v3 has4papers/29visuals:29TP/0FP/0FN, O1=1,
+  O2=.9169720168893188 overall29,0unknowns. All old outcomes/predictions exact; one historical
+  zero and new Figure3/4 values .16254643935124297/.18438363161698818 remain included.
+  New **#121**, E1#12/project12, tracks bounded diagnosis with truth/targets unchanged.
+  Final report `docs/experiment-reports/2026-09-13-kb-visual-tranche.md`; machine evidence
+  `eval/evidence/visual-tranche.json` and `visual-tranche-cohort-comparison.json`.
+- First actual collector run at71e773a failed its external full-O2 guard (23values/29truths),
+  retained receipt7514099a/all46files. Reviewed70eebb5 adapter accepts only explicitv3 singleton
+  page/rect geometry before unchanged arithmetic and rejects incomplete aggregate denominators.
+  Corrected actual receipt `k1-coverage/visual-tranche-115/measurement-70eebb5/receipt.json`
+  SHA `b2669bd043696a642ba02a48a5e6abbf9a7f35d4f3a1352521afd26bf756b85a`,83.474023s;
+  independent actual review `review-visual-actual-70eebb5/review.json` SHA
+  `abc5620341e4fc8ccb8504f6a43ba85e5d3ba1f03df4d4868984594d22ff024b` checks all67
+  overlapping cohort outcomes/29uniqueobjects. The full1000 derivation remains6f49e55,
+  724parsed/276failed/zeroautomatic admissions, six executed/nine unused retained modules;
+  actual review843177d3 from the preceding entries remains valid, not rerun for collector/docs.
+- Final required fmt/strictClippy/allRust/ownCLI and all three isolated truth replays pass.
+  The first77.046s gate run at677d2d0 had a real G5 missing-TypeScript dependency failure.
+  Its20logs/results remain retained;132 exact locked TypeScript5.9.3 files were restored from
+  existing local bytes offline, without source changes. Affected G5 plus pending replays then
+  passed39.213s,381Rust/537Python/85Node, receipt
+  `k1-coverage/visual-tranche-115/final-gates-677d2d0-g5-retry/receipt.json` SHA
+  `cb68f4f266fa962526add683c4ef54fdef5707632b2f5cef10d0b01d13fdaef0`.
+  No hard gate/target reset or unrecorded rerun. Source, binaries and all final evidence are
+  portable outside the removed worktree.
+- **Root owns the sole heavy slot: queue-v3 batch30 RUNNING, retained TTY30480.** No downloads
+  run; original10951PDF/1000source corpus is complete. Batch29 terminalTTY89398 exited0:
+  250successes,319.992752s,8250unique/1000eval/7299scale verified indexes. Receipt
+  `scale-index-batches/batch-0029/receipt.json` SHA
+  `13844edacdae54a03a1888b4aa110b650db15ac0e31becee7a3cf125852cec5f`; queue-v3 aggregate
+  `native-index-after-batch29-review.json` SHA
+  `11a64e96e11981ae60e727da10823d737946c94872cf647bc79a4c438568d28b`.
+  Batch30 currently attempts250 of2701 remaining scale papers. Poll its terminal and the reviewed
+  auditor; never overwrite an occupied batch or skip a failure. Continue31 only after30 passes.
+- Queue root `~/.cache/lysilogy/scale-index-queue-v3/`; reviewed launch
+  `3b584d0e04d955ba9366630927e6c5ef029badc5d67055c2882585945b65cc65` and code unchanged.
+  Invoke `/usr/bin/python3.14 -I -B -u <queue-root>/queue.py --start <next-batch>
+  --launch-sha <that-hash>` in a retained TTY; default stops after one batch. Original queue/v2
+  stay immutable and paused. Only v3 PAUSE was archived as `PAUSE.before-batch29`; no v3 PAUSE
+  currently exists. One heavy job and20GiB floor remain required. Index preparation does not
+  claim production O25/O27 or10k app acceptance.
+- **#117 ready**, owner to resume `finish_benchmark` with `followup_task` after this checkpoint:
+  create `feat/e8.3-visual-only-pilot` using `gh worktree create --branch ...` from latestmain.
+  Read issue117 and its owned-files entry. Original fixedfive/body reconciliations/readiness
+  `k1-coverage/visual-only-current-source-readiness-6f49e55.json` SHA933f90d8 remain unchanged.
+  Explicit O1/O2-only projection; keep unscored positive formal/math/reference roles, complete
+  candidate dispositions and old v1/v2/v3 rows/bundles. No detector/parser changes. Code/read-only
+  work may proceed during30; heavy builds/measurements wait for root allocation. #121's new
+  `fix/e1.1-visual-tranche-regions` is also ready but has no worktree or implementation yet.
+- **#97 next14 annotation inputs are ready**, under
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/`. Exact original category ranks2/3,
+  14papers/85pages, disjoint from all original7/#117; no replacements. Proposal-v2 SHA
+  `344c271bd21e379020f91d9ba70aa5f33cc89df1f1075dad38d1520b998e2fd3`; originalselection
+  0ba9a356 unchanged. First exporter wrote43files then failed cleanup due a shadowed module
+  variable; originalproposal/producer/packets remain retained. Terminal record8eef3b0b.
+  Corrected `prepare-packets-v2.py` cb009a26 passes full14-paper synthetic lifecycle and actual
+  export terminal0; root direct archive/native comparison `root-packets-v2-review.json` SHA
+  `418a0fe143c39ab7142c85c0edf4c507b0d5566e910e3ff7be664bafaafa001f` verifies all43files.
+- Corrected `render-originals-v2.py` f005c514 / `render-plan-v2.json`15455bb7 preserves20GiB
+  plus paper PNG budget; original unlaunched4GiB proposal retained. Seven root generated
+  pipe/timeout/owned-descendant/PNG controls clear e2f6bc60. ActualTTY55035 terminal0 rendered
+  all85 originalpages with28mutool commands in2.732231s/42096KiB; render receipt SHA
+  `b103897f9a393f780918125dd20676f35533de7dd5373df0d4a241ea5be4fb1d`. Root independently
+  decoded all85PNGs/18831542B and verified every original PDF/source/index/packet/command binding:
+  `root-rendered-packets-v2-review.json` SHA
+  `23b67aaafdd74367050a71e18484e429a970c08be196dfc7bb2c283ecd8871ac`.
+  This is mechanical input validation, no image-semantic judgment or metric eligibility.
+- Annotation dispatch is prepared, not yet launched at this checkpoint: `annotation-assignments-v2.json`
+  SHA `62ed1dd091dcad5a846180e07f9225cedc4750be74d3dd059c366877ff726285`, prompt
+  `annotation-prompt-v2.md` SHA `c6b65701ae3a40e253f8da96369a70731c7bd340387ce6e3ac1a50f7fd1476e1`.
+  Use primary `finish_corpus_proxy`, independent `review_ready_prs`, root reconciler. First two
+  fixedpapers2404.17771v2/2011.00685v3 active; next12planned. Resume both agents with only their
+  assigned neutral packets; each must actually inspect all originalpages before source/native
+  transcription, never read peer labels/fullindexes/detector outputs, and freeze its exact
+  `annotations/<role>/<id>/inventory-v1.json` plus `receipt-v1.json`. Interleave later packets
+  with implementation review. Agent reasoning cost unknown; external model/network calls0.
+- Main scorecard remains **1/5 hard gates,3/30 objectives(O1/O2/O30)**, now29visual cases.
+  Current measured region misses tracked121; broadtruth97 and historicalscale21/22 remain open.
+  #25 draftPR94/head201c53c and #71 PR93/d5e12aa, #72 PR95/c867ec6 remain unmerged pending
+  actual provider truth; #33 WT905c341 has no PR and still needs Rust dependencies/G4/O28.
+  Do not equate small K1 bibliography evidence with fullK2/O9.
+- Already-approved hosts index.crates.io/static.crates.io/api.crossref.org/api.openalex.org
+  remain blocked by the effective allowlist. A fresh require_escalated HEAD check also failed
+  before execution, receipt `~/.cache/lysilogy/kb-network-escalated-recheck-20260914T0420.json`
+  SHA484746ed. This is a managed allowlist/read-only configuration limit, not an automatic-review
+  rejection or missing authorization. User must run the prepared normal-terminal command
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, restart Codex and resume;
+  then verify effective storage/host grants. Do not repeat permission questions or bypass hosts.
+  No rebase/sudo/rm-rf/private/env access, user-data destruction or model batch. Goal incomplete.
