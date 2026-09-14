@@ -6936,3 +6936,64 @@ date, last merged issue, in-flight branches and their state, next action, and op
   free-space floor, #97 coverage, production10k and Playwright acceptance remain as above.
   Next: complete current independent reviews, freeze/review #131 source/module and construction,
   then publish/replay, measure/gate, draft PR, independent final review and merge. Continue.
+
+
+### 2026-09-14 13:07 UTC — equation proposal and finite source-scope reviews clear
+
+- Last merged #129 / PR130 at d9a62af; main731d3c6 before checkpoint. Phase A / A2. #131
+  implementation remains active under review_k1_reconciliation in its recorded worktree, with
+  no PR/implementation commit yet. All ten protected main preview files verified unchanged.
+  Eight continuity bindings in `~/.cache/lysilogy/kb-session-checkpoint-20260914T1309.json`,
+  SHA256 `9c36e6254f9da50ab92ceb1aee633d09246be54d26bfec74b4bc4a617b0711b3`.
+  Filename is a checkpoint label; its actual created_at records 13:07 UTC.
+- **#131 baseline complete, heavy slot released.** Own-worktree CLI built before codec edits
+  at `1aceca0bfe6a2327d19b13d367ae6b889fb9acad`; offline build 33.72 s, actual
+  `eval objects --check` exit0. Receipt `~/.cache/lysilogy/numbered-math-131/baseline-receipt.json`,
+  SHA256 `426c0202e832dc113b6e7812caea314ffe970c5518423e6d93ef5b16559d101a`.
+  O1=.98989898989899 / O2=.8910021250829322 over 50 cases; O3 remains unavailable.
+  Fresh worktree lacks unrelated prior G5/O30 local results; this does not change the published
+  1/5 gates and 3/30 objectives. Final full gates and fresh measurement remain required.
+- **55-equation proposal plus endpoint addendum independently CLEAR** by finish_benchmark:
+  `review-numbered-equation-construction-131-v1/review.json`, SHA256
+  `d80691ccc32473d30a3d47b97f1a8676977588ccfa0cc3c4940c143413f95370`.
+  Verified 55 files / 16,044,895 bytes before addendum, all 330 selected pointers, 110 body/
+  number regions, 50 exact plus five contained source mappings, 584 original ledger entries
+  and 164 source-array entries. F1 resolved by the explicit unresolved endpoint addendum
+  4cf9d5cf; failed original review assertion and original proposal remain. Complete source
+  metadata beyond the three arrays must also be retained by the final codec, including coverage,
+  labels, source identities/maps and unknowns. Current-source/producer/corpus/runtime/final
+  construction closure remains required. Implementer has the review and complete-metadata rule.
+- **Finite source-scope packet independently CLEAR by root** for the exact two inputs:
+  producer `numbered-math-131/source-scope-v2.json`, SHA256
+  `896ecb4dfab2b407a99b7823aa95c112bbfdfdf18cefa606360978b4ef8764bf`, 188,587 bytes;
+  root receipt `review-numbered-source-scope-131-root-v1/review.json`, SHA256
+  `0508f7b52a0c0d52e8b7d6f3ae29bf5d3b156dc5774e26794e4e883d34487cb5`, 45,001 bytes.
+  Thirty-six bindings, six exact main/worktree parser/archive/native modules and 115 source
+  spans checked. Root freshly reparsed both original archives and verified complete equality
+  to both historical inventories and exact native exports. Root read the whole spconf style,
+  headers, complete table-wrapper arguments, LyX declaration/invocation, figure paragraph scope
+  and entire1911 bibliography. Per-guard reasons cover all six/thirteen original diagnostics;
+  automatic flags remain false. Added exact full argument scopes for address/name/captionsetup/
+  resizebox/rotatebox/geometry/lyxaddress. Dynamic section-counter machinery is retained with
+  its finite uses; no generic style whitelist or arbitrary conditional evaluator is granted.
+  Producer v1 failed after omitting .bbl while finding begingroup; original script/stderr bound,
+  v2 includes .bbl. No source execution. A changed style/argument/guard cannot inherit this review.
+  This clears only the finite source scope; final code/module inventory/construction/replay
+  still need separate review before publication. finish_benchmark is available for that review.
+- **2301 four-display source/printed preparation independently CLEAR**:
+  `review-source-printed-math-2301-v1/review.json`, SHA256
+  `aae575c12ee19da680a46dc1b2fe1fe638c86641414d3735b7e6881515d4d2a5`.
+  Reviewer personally viewed original full page2; 13 direct bindings plus producer/assignment
+  closure total 18 files / 4,680,722 bytes. Exact Latin-1 source member, 16 source / 193 native
+  records and 92 whole tokens verified. All four complete numbered groups and the literal bd
+  definition marker retained; six unnumbered and other roles stay unscored. Source mappings
+  still need final current-source construction. This additive clearance raises prepared reviewed
+  numbered source/printed identities from 85 to 89, while geometry total stays94; do not rewrite
+  the frozen V3 matrix or count any new published coverage.
+- finish_corpus_proxy prepares the bounded cache-only next formal extension proposal using the
+  now-cleared 2310 seven statements/four proofs. Root awaits #131 code/module/construction
+  freeze and will coordinate independent review, then actual bounded publication/replay,
+  measurements, gates, draft PR, final review and merge. No new follow-up issue beyond131.
+  Score and all outstanding #97/A2/10k/Playwright requirements remain unchanged. Preserved
+  #33 and drafts93/94/95 still await the approved-host normal-terminal script/restart action;
+  no repeat approval. No downloads/native queue, external calls or models in these reviews.
