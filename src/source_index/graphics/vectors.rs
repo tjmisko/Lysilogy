@@ -314,8 +314,14 @@ mod tests {
         assert_eq!(result.components.len(), 1);
         assert_eq!(result.components[0].bounds, [1, 4, 15, 5]);
         assert_eq!(result.components[0].pixels, 14);
-        assert_eq!(result.components[0].rect().x_min, 0.5);
-        assert_eq!(result.components[0].rect().x_max, 7.5);
+        assert_eq!(
+            result.components[0].rect().x_min.to_bits(),
+            0.5_f32.to_bits()
+        );
+        assert_eq!(
+            result.components[0].rect().x_max.to_bits(),
+            7.5_f32.to_bits()
+        );
     }
 
     #[test]

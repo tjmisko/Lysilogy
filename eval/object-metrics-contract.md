@@ -195,7 +195,7 @@ RGB antialiasing (`mutool draw -F pam -c rgb -r 144 -A 8`). It never seeds a bod
 a path, clip, group or page bounding box. The existing strict image and mask parser
 is unchanged. A separate trace mode permits finite `Normal` transparency groups,
 including nonisolated/knockout groups, and requires actual curved paint, no images,
-no unknown drawing state and only closed rectangular path clips. Original rendering
+no unknown drawing state and only closed rectangular path clips; self-closing or unproved clips are unsupported. Original rendering
 resolves paint order, opacity and compositing. It does not establish semantic ownership.
 
 All existing page image/mask work finishes before optional vectors use the remaining
@@ -207,7 +207,8 @@ The graphics4 cache key uses `[4,native-etag,pdf-sha256,tool-sha256,mask-runtime
 DPI, threshold, dimensions, component records, raster hashes and explicit statuses enter
 the exact graphics generation. Prior generations cannot substitute for these bytes.
 
-Only complete native pages without declared gaps can supply vector ownership. At144
+Only complete native pages without declared gaps can supply vector ownership. Every
+non-whitespace native token needs finite, nonempty, page-contained geometry. At144
 DPI, dimensions must exactly equal the rounded-up native page dimensions, with8192 pixels
 per side and4,194,304 pixels total. Oversized pages do not select a lower DPI. At least
 one RGB channel must differ from white by5 for a pixel to count. Eight-neighbor components
@@ -226,8 +227,11 @@ barrier bottom plus4 points, and a35-point to70%-page height range. An overlappi
 table caption without an observed body withholds the new supplement. Combined groups and
 the final union with the existing native body must also cross no known barrier. Image-backed
 figures and table regions use their existing paths. A native glyph count above32768,
-more than64 page captions,4096 barriers or16,777,216 component/exclusion comparisons
-withholds this optional supplement; the component graph has at most8,386,560 pairs.
+more than64 page captions or4096 barriers withholds this optional supplement. An explicit
+upper bound of16,777,216 component exclusions, graph pairs and group/combined-envelope
+checks applies across all eligible caption windows on the page. Repeated graphs cannot
+multiply a per-invocation allowance. One graph has at most8,386,560 pairs. This count bound
+applies to synchronous candidate work after the separately timed graphics stage.
 
 These are candidate heuristics. Outlined prose absent from the native index can still look
 like compact vector marks; its synthetic false candidate is retained. No semantic certainty,

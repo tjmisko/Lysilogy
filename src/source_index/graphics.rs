@@ -822,6 +822,9 @@ fn renderer_group(value: &Tag<'_>) -> bool {
 }
 
 fn renderer_command(value: &Tag<'_>, stack: &[&str]) -> bool {
+    if value.name == "clip_path" && value.empty {
+        return false;
+    }
     if matches!(
         value.name,
         "fill_image"
@@ -1231,6 +1234,10 @@ mod tests {
         for body in [
             format!("{}{}", curve(), image("10 0 0 10 0 0")),
             format!("<fill_shade/>{}", curve()),
+            format!(
+                "<clip_path winding=\"nonzero\" transform=\"1 0 0 1 0 0\"/>{}<pop_clip/>",
+                curve()
+            ),
             format!(
                 "<group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Multiply\" alpha=\"1\">{}</group>",
                 curve()

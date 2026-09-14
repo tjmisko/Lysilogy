@@ -486,6 +486,24 @@ struct VectorContext {
     windows: Vec<(usize, TextRect)>,
 }
 
+fn complete_vector_glyphs(index: &ReadingIndex, page: &super::ReadingPage) -> bool {
+    index
+        .tokens
+        .iter()
+        .filter(|token| token.page == page.number && !token.text.trim().is_empty())
+        .all(|token| {
+            token.provenance == super::Provenance::Native
+                && !token.rects.is_empty()
+                && token.rects.iter().all(|rect| {
+                    valid_rect(*rect)
+                        && rect.x_min >= 0.0
+                        && rect.y_min >= 0.0
+                        && rect.x_max <= page.width
+                        && rect.y_max <= page.height
+                })
+        })
+}
+
 fn vector_context(
     index: &ReadingIndex,
     candidate: &Caption<'_>,
@@ -501,9 +519,7 @@ fn vector_context(
         .filter(|caption| caption.page == candidate.page)
         .count()
         > 64
-        || index.tokens.iter().any(|token| {
-            token.page == candidate.page && token.provenance != super::Provenance::Native
-        })
+        || !complete_vector_glyphs(index, page)
     {
         return None;
     }
@@ -613,6 +629,21 @@ fn marker_groups(regions: &[TextRect], distance: f32) -> Vec<Vec<TextRect>> {
     groups.into_values().collect()
 }
 
+const MAX_MARKER_CHECKS: usize = 16_777_216;
+
+fn marker_checks(count: usize, context: &VectorContext) -> usize {
+    let exclusions = context.glyphs.len().saturating_add(context.barriers.len());
+    let groups = context.barriers.len().saturating_add(context.windows.len());
+    let per_owner = count
+        .saturating_mul(exclusions)
+        .saturating_add(count.saturating_mul(count.saturating_sub(1)) / 2)
+        .saturating_add(count.saturating_mul(groups))
+        .saturating_add(context.barriers.len().saturating_mul(2));
+    // Missing owners return before graph/exclusion work. Multiplying by all
+    // eligible windows bounds repeated graphs across the complete page.
+    per_owner.saturating_mul(context.windows.len())
+}
+
 fn owned_markers(
     components: &[super::graphics::vectors::InkComponent],
     context: &VectorContext,
@@ -620,10 +651,9 @@ fn owned_markers(
     owner: usize,
 ) -> Option<TextRect> {
     if components.len() > super::graphics::vectors::MAX_COMPONENTS
-        || components
-            .len()
-            .saturating_mul(context.glyphs.len().saturating_add(context.barriers.len()))
-            > 16_777_216
+        || context.windows.len() > 64
+        || !context.windows.iter().any(|(id, _)| *id == owner)
+        || marker_checks(components.len(), context) > MAX_MARKER_CHECKS
         || !font.is_finite()
         || font <= 0.0
     {
@@ -685,6 +715,7 @@ fn vector_region(
     let evidence = graphics.vectors.as_ref()?;
     let page = index.pages.iter().find(|p| p.number == candidate.page)?;
     if evidence.status != "complete"
+        || evidence.components.len() < 6
         || evidence.dpi != super::graphics::vectors::DPI
         || evidence.contrast != super::graphics::vectors::CONTRAST
         || evidence.raster_sha256.is_none()
@@ -1450,6 +1481,17 @@ mod tests {
     }
 
     #[test]
+    fn should_limit_total_graph_work_when_multiple_captions_share_a_vector_page() {
+        let mut context = marker_context();
+        assert!(marker_checks(4096, &context) < MAX_MARKER_CHECKS);
+        context.windows.push((8, context.windows[0].1));
+        assert!(marker_checks(4096, &context) > MAX_MARKER_CHECKS);
+        let components = vec![markers()[0].clone(); 4096];
+        assert!(owned_markers(&components, &context, 10.0, 7).is_none());
+        assert_eq!(marker_checks(usize::MAX, &context), usize::MAX);
+    }
+
+    #[test]
     fn should_withhold_a_combined_envelope_when_separate_clusters_surround_a_barrier() {
         let mut components = markers();
         let second = markers().into_iter().map(|mut marker| {
@@ -1520,6 +1562,35 @@ mod tests {
         );
         assert_eq!(result[0].start, find(&index)[0].start);
         assert_eq!(result[0].caption, find(&index)[0].caption);
+    }
+
+    #[test]
+    fn should_withhold_vector_support_when_a_known_native_token_has_no_geometry() {
+        let original = fixture(&[("Figure 1: Compact marks.", "caption", 40.0, 250.0)]);
+        assert!(
+            find_with_images(&original, &[vector_page()])[0]
+                .rect
+                .is_some()
+        );
+        for text in ["unlocated", " "] {
+            let mut index = original.clone();
+            let start = index.text.encode_utf16().count();
+            index.text.push_str(text);
+            let end = index.text.encode_utf16().count();
+            index.pages[0].end = end;
+            index.tokens.push(ReadingToken {
+                start,
+                end,
+                page: 1,
+                text: text.into(),
+                rects: vec![],
+                provenance: Provenance::Native,
+            });
+            assert_eq!(
+                find_with_images(&index, &[vector_page()])[0].rect.is_none(),
+                text == "unlocated"
+            );
+        }
     }
 
     #[test]

@@ -172,6 +172,24 @@ fn native_value_digest(value: &serde_json::Value) -> Result<String, Failure> {
     Ok(format!("{:x}", hash.finalize()))
 }
 
+async fn retain_vectors(
+    home: &Path,
+    rasters: Vec<(u32, Vec<u8>)>,
+) -> Result<Vec<serde_json::Value>, Failure> {
+    let mut graphics_vectors = Vec::new();
+    for (page, raw) in rasters {
+        let path = retain_trace(
+            &home.join(".cache/lysilogy/object-graphics-vectors"),
+            &raw,
+            "pam",
+        )
+        .await?;
+        graphics_vectors
+            .push(json!({"page":page,"sha256":format!("{:x}",Sha256::digest(&raw)),"path":path}));
+    }
+    Ok(graphics_vectors)
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Failure> {
     let mut raw = String::new();
@@ -256,18 +274,7 @@ async fn main() -> Result<(), Failure> {
                 json!({"page":page,"sha256":format!("{:x}",Sha256::digest(&raw)),"path":path}),
             );
         }
-        let mut graphics_vectors = Vec::new();
-        for (page, raw) in derived.vector_rasters {
-            let path = retain_trace(
-                &home.join(".cache/lysilogy/object-graphics-vectors"),
-                &raw,
-                "pam",
-            )
-            .await?;
-            graphics_vectors.push(
-                json!({"page":page,"sha256":format!("{:x}",Sha256::digest(&raw)),"path":path}),
-            );
-        }
+        let graphics_vectors = retain_vectors(&home, derived.vector_rasters).await?;
         if bounded_index(&path).await? != before {
             return Err("canonical index changed during graphics derivation".into());
         }
