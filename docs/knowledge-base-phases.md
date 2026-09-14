@@ -237,7 +237,7 @@ acceptance are unchanged.
   `eval/latex-contract.md` and measured evidence. Preserve literal percent characters and
   brace-protected quotes; do not infer printed field roles from database metadata. Keep
   all malformed-input/resource/ambiguity guards and immutable v1/v2 implementations.
-- [ ] **#110 Test confined source-layout reconstruction** (after #105; experiment for #97).
+- [x] **#110 Test confined source-layout reconstruction** (after #105; experiment for #97).
   Branch `feat/e8.3-source-layout-probe`. Root owns new `scripts/truth/layout/` runner,
   adversarial synthetic tests/contracts and experiment report; minimal G5 tooling registration
   only if needed. Independently review confinement and a frozen availability-only10-paper
@@ -266,6 +266,19 @@ acceptance are unchanged.
   `cargo test` that loads the gold set.
 
 ### Phase A notes
+
+- #110 merged via PR116 (`230bf81`), reviewed head `2daacd0`. The independently reviewed
+  confined ten-paper source-layout experiment is a no-go:1/10 builds,0/10 complete documents
+  matching every original page at96/192dpi. No truth admitted, no targets lowered;97 stays open.
+  Source8c153b3 actual took15.785762s/45processes/$0 with no network/model calls. Final gated
+  integration21fd644 passes368Rust/481Python/85Node. The first final wrapper correctly failed
+  metric availability because --build did not measure; corrected --executable refresh passes
+  in28.400502s, all23 decisions/predictions/per-paper records exact111, available O1=1,
+  O2=.9169720168893188. Only affected checks repeated; earlier passed gates remain bound.
+  Root and reviewer verified2576 external artifacts/843285720bytes. Final binary archives and
+  all actual artifacts remain outside the removed worktree; missing original baseline binary
+  and overwritten pass1 output states are explicitly disclosed. Report:
+  [source-layout experiment](experiment-reports/2026-09-13-kb-source-layout-probe.md).
 
 - #111 merged via PR114 (`d7d25c3`), reviewed head `c0fb861`. All three new-paper masked
   figures recover from zero; O1=1 and all23-object O2=0.9169720168893188. Both older records
@@ -4308,3 +4321,87 @@ date, last merged issue, in-flight branches and their state, next action, and op
   four-host grants. Allfour already approved; managed~/.codex read-only prevents applying them.
   Existing user-terminal command:python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py,
   then restart. Do not ask approval again. Preserve blocked WTs and unrelated preview changes.
+
+
+### 2026-09-14 00:45 UTC — #110 merged; #109 full710 running and #115 implements the next tranche
+
+- Last merged **#110/PR116**, merge230bf8182881d5cb923785e3896de05f46e3389b at00:42:34Z,
+  reviewedhead2daacd00a0bbd77d0ff940882a4260748bf49af1. Independent final receipt
+  `review-layout-final-2daacd0/review.json` SHA
+  e7eae789dfec155489297b8c27fb500a56f49efa681a7162115230a0e1843793 is clear. Root and reviewer
+  rehashed all2576 portable files/843285720bytes,196gate fingerprints,99bridge inputs,
+  full source/executable/decision bindings. Main fast-forwarded; all10 unrelated preview hashes
+  remain exact against durable `~/.cache/lysilogy/kb-preview-before.json` SHA
+  2cee9c1f5f12ca1d0b1e3979952252d7bcd37b414df76142f919e6b5cb449870. Completed110 worktree/target
+  and local/remote branch are removed. Explicit conventional merge subject/body/trailer used.
+- Actual110 remains1/10 builds,0/10 complete exact documents, no truth admission, source8c153b3.
+  Full report `2026-09-13-kb-source-layout-probe.md`, machine `eval/evidence/source-layout-probe.json`
+  SHA941dfc25b2b163376072ded61ba9bcda000ce113d1a4f63070fe8f324cd6bd2c. External manifest
+  `source-layout-probe/release-21fd644/artifacts.json` SHA
+  18476b4dd2b9202410f6c095210c775a8cf4f4349999c3a2f8a3a0c71018c457. The baseline CLI was hashed
+  but not archived before overwrite; do not reconstruct and relabel it as old execution. The
+  final CLI/bridge and exact-source gate CLI are archived. Four mutable pass1 states remain
+  historical hashes only; source.deposited_source_executed=false describes materialization,
+  not the later eleven depositedPDFLaTeX invocations. All limits/no-go accurately reviewed.
+- Final110 integration21fd644 fmt/Clippy/build/G5 passed368Rust/481Python/85Node. First final
+  wrapper receipt `final-21fd644/receipt.json` SHA
+  d209278b151c2ffd389fbfa911e7ca005e03189bc2596fefa7119120f19619f4 remains FAILED: --build
+  returned without measuring, so new objects metrics were unavailable from staleg5 fingerprint.
+  Its availability assertion caught the omission. Corrected wrapper a1688b44 and dispatch
+  independently cleared by recovery-21fd644-review.json SHA
+  0e33898abc7e5beaf73850b4f69cbece3ebc780725de0b7a151ddb853ec4331a. Only collector/objects
+  repeated; `refresh-21fd644-v2/receipt.json` SHA
+  2e0f3510e06f36125b936c7c8853d4ded01b16f5e318887200bb40cf7780116b passes28.400502s,
+  available1/.9169720168893188, complete incoming111 records/23decisions/predictions/external
+  hashes exact. Cumulative main scorecard remains1/5gates and3/30objectives(O1/O2/O30);
+  this release remeasures objects/G5 and retains111's unchanged provider result, not a newscale run.
+- **#109 FULL710 IS RUNNING**, owner finish_corpus_proxy, retainedTTY78001; branch
+  `fix/e8.3-bibtex-fields`, source142b835c9b4c0d1fbc09ec9e724238679a7c62fc remains fixed.
+  Exact snapshot `~/.cache/lysilogy/bibtex-fields/comparison-142b835-v1/launch.json` SHA
+  048f00ae7d7ea0a6d03bc99d357a7cf9fe8ce6a1b8c9ab38f339e8191e26155d. Reviewed original8 failures
+  plus107's702successes are disjoint in original1000 order, historical612/recovered90 explicit;
+  original999-success/one-failure indexmap remains.30s/paper,1.5GiB bound; no native rebuild,
+  network/model calls or parallel heavy job. SelectionSHA5fe92e42ff3d77b446723435bb73d1ca23fc802fcfdf9af9590d983190ab7d1f.
+  Next: poll owner/TTY, keep source frozen, review all710 raw outcomes and complete prior-success
+  comparison. Then ordinary main integration, current metrics/appropriate gates, draftPR/review.
+- #109 originalacf77a9 first8 recovered3/8, zero admissions; receipt/5remaining failure contexts
+  preserved. First actual independent reviewd3eebac4c30fdfb9a42f238307229309f4346effda37b4a6a148a63a10d8cdc2.
+  Generated-only apostrophe-key probe3cases/.02879s SHA
+  22be36fec4eb306f15c08a81c1a3995a87ae98c4f13f054b65527bc1f15e524b proves leading/internal keys
+  and case-insensitive duplicates. One-character grammar change+two inert tests yields294truth
+  tests at142b835. Source review8c291eada97851a1f50d257e52e3e37cdcea5108bbc1123348b5cad8569853fc,
+  runnerreview91aa320e82a90db61e614a062a74d53926b4d2f77ab2b52dff3f3262ce435781 are clear.
+  Correctedfirst8 took7.339952s/171152KiB:5/8 parses,602entries/6464fields/1130memberships,
+  original3payloads exact, remaining3 malformed/unsupported failures exact, no metric admission.
+  Receipt df331e1d367c95c10d0d5e45f5d0c075d71f6ed7fb07b46a31b8873f5f43ab89; independentactual
+  fb96d9755a7afcd6303494bbd2c8d238c5972896dd0afe86613fb1e255f433a0 cleared the710 launch.
+- **#115 opened/project12**, bounded visual/negative codec and immutablev3 publication for
+  existing independently reconciled2409.03655v1. Owner finish_benchmark; required worktree
+  `feat/e8.3-visual-tranche` created fromaa64d24. OwnCLIbefore completed95.09s, receipt
+  `k1-coverage/visual-tranche-115/before-aa64d24-cli/receipt.json` SHA
+  d83d6a68eafc858d56400e19f89749172ecfab4accd16462b948e449422711bc. It reuses reviewed111
+  v1/v2 measurements and checks ownCLI availableobjects before source edits. External crosswalk
+  parsed6visualobjects/45links(12refs+33cites) in.041s, matching frozen inventories; no labels
+  edited or truthpublished. Codec implementation/testdesign is light while109 runs. Identity,
+  count, geometry and component ownership derive from frozen histories, without hard-coded
+  paper/annotator IDs or fabricated math/correction supplements. Preserve v1/v2 and omit new
+  O8–O11. Expected new full visual denominator29 across4papers. Independent construction review
+  before publication and real v1/v2/v3 measurements required; coordinate shared registrations109.
+  Exact issue body retained at `k1-coverage/visual-tranche-issue.md`. An ordinary gh issue read
+  reportedly hit deniedcafe.github.com, but required ordinary worktree creation succeeded;
+  cached exact body/main merge records provide scope. No new host grant or alternate routing.
+- No other heavy job. Native queue still paused before26:7250unique/6299scale,3701scale remain;
+  no downloads. Resume only after109/115 implementation windows, using retained pinned runner.
+  Read-only107 visual planning diagnostic `k1-coverage/107-visual-planning-diagnostic.json` SHA
+  d239488788f7a334c6e8f3fb05a38c75fcd302e3d8587c14352f09fed7918ece counts182 complete visual
+  candidate inventories(61positive) among702; these are parser alignment counts, zero admitted
+  truth, not a new selection or eligibility claim. #97 remains broad approximate500 coverage.
+- Still PhaseA/WaveA2. Merged in this continuation111/110; new bounded follow-up115. Historical
+  O25/O26 misses remain21/22. Phase/system acceptance incomplete. #25/PR94,#33,#71/PR93,#72/PR95
+  remain held on actual provider truth/dependencies. The four hosts index.crates.io,
+  static.crates.io,api.crossref.org,api.openalex.org are already permanently approved, but the
+  managed~/.codex mount remains read-only and grants ineffective. Existing user-terminal action
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restartCodex, was
+  reiterated without requesting approval. Preserve pending WTs, all original corpus/vault data
+  and unrelated preview work. No rebase/sudo/rm-rf/private-file access. Use followup_task to wake
+  idle review_ready_prs; source/source-result reviews remain separate from implementers.

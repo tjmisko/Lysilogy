@@ -19,7 +19,7 @@ import unittest
 MODELS = ("codex", "claude", "gemini", "aider", "ollama")
 TOOLS = ("sh", "bash", "env", "node", "npm", "python3", "cc", "gcc", "as", "ld", "mold", "ld.mold", "ar",
          "pkg-config", "git", "pdftotext", "pdfinfo", "pdftoppm", "tesseract", "printf", "cat", "sleep",
-         "mkdir", "chmod", "cp", "dirname", "basename", "head", "sed", "uname", "nice")
+         "mkdir", "chmod", "cp", "dirname", "basename", "head", "sed", "uname", "nice", "bwrap", "unshare")
 
 
 def tooling_path(bin_dir):
