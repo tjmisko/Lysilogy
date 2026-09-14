@@ -409,6 +409,26 @@ def nonvisual_float_context(occurrence, inner, files, inventory):
             'nonvisual context rule has unsupported drawing parameters')
 
 
+def nonrendered_predecessor(wrapper, parsed, scored, files):
+    """Support a wrapper immediately after a separately paired visual closes.
+
+    Unknown preceding macro consumption is not inferred. A declaration alone,
+    prose boundary or unreviewed syntactic closing command is insufficient.
+    """
+    matches = []
+    for sid in scored:
+        pieces = parsed[sid]['source_members']
+        if len(pieces) != 1: continue
+        previous = pieces[0]
+        if previous['path'] != wrapper['path'] or previous['end'] > wrapper['start']: continue
+        text = files[previous['path']]
+        if text[previous['end']:wrapper['start']].strip(): continue
+        body = text[previous['start']:previous['end']]
+        opening = re.match(r'\\begin\{(figure\*?|table\*?)\}', body)
+        if opening is not None and body.endswith('\\end{' + opening[1] + '}'): matches.append(sid)
+    require(len(matches) == 1, 'nonrendered wrapper lacks a preceding paired visual boundary')
+
+
 def visual_projection(construction, primary, independent, inventory, files, index, geometry):
     """Validate a separately reviewed crosswalk; no parsing or admission side effects."""
     rows = construction['visuals']
@@ -499,6 +519,7 @@ def visual_projection(construction, primary, independent, inventory, files, inde
             match = re.fullmatch(r'\\newcommand\{\\([A-Za-z]+)\}\[1\]\{\}', raw[definition['start']:definition['end']])
             require(match is not None, 'unsupported original empty-macro declaration')
             literal_macro_scope(match[1], definition, source_comments, inventory, braced_invocations=True)
+            nonrendered_predecessor(wrapper, parsed, source_claims, source_comments)
             require(re.fullmatch(re.escape('\\' + match[1] + '{') + r'\s*', raw[wrapper['start']:occurrence['start']]) is not None
                     and re.fullmatch(r'\s*\}', raw[occurrence['end']:wrapper['end']]) is not None,
                     'nonrendered wrapper contains extra source payload')

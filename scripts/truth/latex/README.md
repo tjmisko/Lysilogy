@@ -191,6 +191,11 @@ redefinitions reject. An empty-wrapper exclusion requires one literal definition
 other definitions, dynamic assignments, conditional or grouped source scope are
 unsupported. Deferred assignment primitives inside source macros also reject,
 and the empty consumer cannot be used as an unexplained control-sequence argument.
+The supported invocation must immediately follow only whitespace/comments after
+the exact closing source span of a preceding independently paired visual. An
+adjacent declaration, arbitrary prose, or unreviewed syntactic closing command
+does not establish this boundary; unresolved preceding argument consumption
+rejects. This deliberate restriction does not claim general TeX token ownership.
 Rule checks run over the complete bounded alias composition, preserving adjacent
 token effects. These checks constrain the recorded source role; they do not execute
 TeX, prove arbitrary package semantics or certify mathematical rendering. The

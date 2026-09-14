@@ -48,16 +48,42 @@ def seal(data):
                                          {r['source_id']: r for r in c['source_visual_exclusions']})}
 
 
-def exclusion_fixture(discard=False, before='', between='', residual='', extra=''):
+def insert_source(data, name, at, added):
+    data[4][name] = data[4][name][:at] + added + data[4][name][at:]
+    visited=set()
+    def shift(value):
+        if isinstance(value,(dict,list)):
+            if id(value) in visited:return
+            visited.add(id(value))
+        if isinstance(value, dict):
+            if value.get('member', value.get('path')) == name and {'start','end'}.issubset(value):
+                if value['start'] >= at: value['start'] += len(added); value['end'] += len(added)
+                elif value['end'] > at: value['end'] += len(added)
+                if 'text' in value:
+                    value['text'] = data[4][name][value['start']:value['end']]
+                    if 'sha256' in value:value['sha256']=sha256(value['text'].encode())
+            for item in value.values():shift(item)
+        elif isinstance(value,list):
+            for item in value:shift(item)
+    for document in data[1:4]:shift(document)
+
+
+def exclusion_fixture(discard=False, before='', between='', residual='', extra='', consumer=''):
     data = fixture(); c, p, i, inventory, files, _, _ = data
     name = next(iter(files)); files[name] += before
     definition = r'\newcommand{\discard}[1]{}'
-    definition_start = len(files[name])
-    if discard: files[name] += definition + between + '\\discard{\n'
-    start = len(files[name]); opening = r'\begin{figure}'
+    definition_start = len(files[name]); opening = r'\begin{figure}'
     equation = r'\begin{equation}x=1\end{equation}'
     body = opening + residual + equation + extra + r'\end{figure}'
-    files[name] += body + ('\n}' if discard else '')
+    if discard:
+        insert_source(data,name,0,definition+between)
+        definition_start=0
+        previous=inventory['objects'][0]['source_members'][0]
+        wrapper_start=previous['end']+len(consumer)
+        insert_source(data,name,previous['end'],consumer+'\\discard{\n'+body+'\n}')
+        start=wrapper_start+len('\\discard{\n')
+    else:
+        start=len(files[name]);files[name] += body
     occurrence = {'path': name, 'start': start, 'end': start + len(body)}
     def src(a,b):return {'member':name,'start':a,'end':b,'text':files[name][a:b]}
     inventory['objects'].append({'id':'excluded','kind':'figure','labels':[],'source_members':[occurrence]})
@@ -66,7 +92,7 @@ def exclusion_fixture(discard=False, before='', between='', residual='', extra='
         i['source_semantics_notes']=['Original pages retain zero printed payload for this source wrapper.']
         row.update(disposition='reviewed_nonrendered_source',
             original_evidence=[{'artifact':'independent','pointer':'/source_semantics_notes/0','record_sha256':sha256(canonical(i['source_semantics_notes'][0]))}],
-            source_role_evidence={'wrapper':src(definition_start+len(definition)+len(between),len(files[name])),
+            source_role_evidence={'wrapper':src(wrapper_start,start+len(body)+len('\n}')),
                                   'empty_macro_definition':src(definition_start,definition_start+len(definition))})
     else:
         inner = src(start+len(opening)+len(residual),start+len(opening)+len(residual)+len(equation))
@@ -200,6 +226,25 @@ class VisualOnlyProjectionTests(unittest.TestCase):
                         r'\unknown{\discard}', r'\unknown\discard'):
             with self.subTest(between=between), self.assertRaises(ValueError):
                 visual_projection(*exclusion_fixture(discard=True,between=between))
+
+    def test_should_reject_consumed_wrapper_when_a_macro_precedes_the_asserted_empty_invocation(self):
+        for between, consumer in (('',r'\string'),
+                                  (r'\newcommand{\drop}[1]{}',r'\drop'),
+                                  (r'\newcommand{\drop}[2]{}',r'\drop{first}')):
+            with self.subTest(consumer=consumer), self.assertRaisesRegex(ValueError,'preceding paired visual boundary'):
+                visual_projection(*exclusion_fixture(discard=True,between=between,consumer=consumer))
+        self.assertEqual(len(visual_projection(*exclusion_fixture(discard=True,consumer='\n% inert comment\n'))['objects']),1)
+
+    def test_should_reject_unpaired_predecessor_when_a_matching_end_command_is_only_source_syntax(self):
+        data=exclusion_fixture(discard=True)
+        span=data[3]['objects'][0]['source_members'][0]
+        # The boundary helper cannot count an unscored syntactic source role as
+        # an independently paired preceding visual, even if its spelling fits.
+        from tranche_visual_only import nonrendered_predecessor
+        wrapper=data[0]['source_visual_exclusions'][0]['source_role_evidence']['wrapper']
+        normalized={'path':wrapper['member'],'start':wrapper['start'],'end':wrapper['end']}
+        with self.assertRaisesRegex(ValueError,'preceding paired visual boundary'):
+            nonrendered_predecessor(normalized,{'only_syntax':{'source_members':[span]}},set(),data[4])
 
     def test_should_reject_composed_rule_dimensions_when_either_token_piece_comes_from_an_alias(self):
         for before, residual in ((r'\newcommand{\Rule}{\hrule}',r'\Rule width 100pt height 100pt'),
@@ -450,24 +495,8 @@ class VisualOnlyProjectionTests(unittest.TestCase):
             visual_projection(*data)
 
     def test_should_retain_nonrendered_source_when_exact_empty_macro_owns_the_float(self):
-        data = fixture(); c, p, i, inventory, files, _, _ = data
-        name = next(iter(files)); definition = r'\newcommand{\discard}[1]{}'
-        define_start = len(files[name]); files[name] += definition
-        wrapper_start = len(files[name]); image = r'\begin{figure}\caption{Unused}\end{figure}'
-        wrapper = '\\discard{\n' + image + '\n}'
-        files[name] += wrapper
-        start = wrapper_start + len('\\discard{\n')
-        span = {'path': name, 'start': start, 'end': start + len(image)}
-        inventory['objects'].append({'id': 'not-printed', 'kind': 'figure', 'labels': [], 'source_members': [span]})
-        i['source_semantics_notes'] = ['The recorded source consumer is empty; printed figure inventory excludes its payload.']
-        def src(start, end): return {'member': name, 'start': start, 'end': end, 'text': files[name][start:end]}
-        c['source_visual_exclusions'] = [{'source_id': 'not-printed', 'disposition': 'reviewed_nonrendered_source',
-            'source_members': [span], 'reason': 'Original pages and source role separately reviewed.',
-            'original_evidence': [{'artifact': 'independent', 'pointer': '/source_semantics_notes/0',
-                                   'record_sha256': sha256(canonical(i['source_semantics_notes'][0]))}],
-            'source_role_evidence': {'wrapper': src(wrapper_start, len(files[name])),
-                                     'empty_macro_definition': src(define_start, wrapper_start)}}]
-        seal(data); result = visual_projection(*data)
+        data = exclusion_fixture(discard=True);name=next(iter(data[4]))
+        result = visual_projection(*data)
         self.assertEqual(len(result['objects']), 1)
         self.assertEqual(result['source_visual_exclusions'][0]['disposition'], 'reviewed_nonrendered_source')
         original = deepcopy(data)
