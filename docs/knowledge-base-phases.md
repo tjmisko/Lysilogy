@@ -6009,3 +6009,98 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Preserve store905c341(no PR), bibliography draft94/201c53c, reference draft93/d5e12aa,
   person draft95/c867ec6 and unrelated worktrees. No vault writes or live provider/model
   calls. Continue123 and97; all later phases and final system acceptance remain incomplete.
+
+
+### 2026-09-14 09:07 UTC — vector measurement running and annotation reconciliation
+
+- Phase A / Wave A2. Last merged **#125 / PR127**, merge4a9c684; main before this
+  checkpoint5aab284. Published score remains1/5 gates and3/30 objectives (O1/O2/O30),
+  v4 O1=.98989898989899/O2=.8863525877384802,50 objects/two zeros/no unknowns.
+  Final caption review b6faa8b3 and complete08:41 entry/report remain authoritative.
+  No new merge, objective miss or follow-up issue since that entry. All ten protected
+  preview files remain unchanged. No main implementation edits.
+- **SOLE HEAVY JOB: #123 actual four-cohort measurement**, owner finish_corpus_proxy,
+  retained TTY26113. Source is frozen at `0978f8656fb85f1f7bebc9d31ac9ccd214ff56ce`
+  in `.worktrees/fix/e1.1-vector-regions`, no PR yet. It ordinarily integrated main5aab284
+  into cleared77a05a0, retained both complete caption/vector ownership paths, detector6,
+  and added the composition regression. No further source edit or overlapping heavy job
+  until terminal. First15-object cohort completed15 TP/0 FP/0 FN/no IoU regression;
+  later cohorts still running at last owner update. These are provisional, not new
+  published scores. Await owner terminal/receipt; do not start a duplicate measurement.
+- Integrated source review `review-vector-integration-0978f86/review.json`, SHA
+  `4fb167338475ddd6b8f54082b07643990fbbf8a892f688980c37ffba7898e87b`; independent compiled
+  replay `compiled-review-v2.json` SHA
+  `abdd277812ada47d5b89e79ae82e8bc391d459f83c2826a2a6ee1b440cceac9e`. All206 source copies
+  and Cargo-selected artifacts verified. Focused integration143 Rust/45 collector tests,
+  fmt/strict all-target Clippy pass (receipt79c9272b). Full Rust/own CLI TTY92543 terminal0,
+ 14.974446902s: `vector-regions-123/compiled-0978f86-v1/receipt.json`, SHA
+  `22b1e10c9eb28164d2aa8d00fc8b4cd0e1fad2bb712bc2700ec7ec7ab46573c4`.
+  Remaining bibliography/scale/G5 TTY88251 terminal0,25.976778513s, receipt
+  `7367d3bc0234f800c01486ebdcc641815c6ea515b6573cfa13a9632b7b044c38` under
+  `remaining-gates-0978f86-v1/`. G5 is424 Rust/584 Python/85 Node, isolated network/model
+  absence proven. All logs, sources, CLI and generated provider inputs are retained.
+- Runner preparation found an inherited zip edge allowing a trailing negative-only paper
+  to disappear. Original125 actual audit checked complete identities independently, so its
+  verdict remains valid. Corrected123 runner59b4d107 checks complete ordered observation/
+  prediction identities and binds every archive immediately. Preparation reviewcec9d7cb
+  is clear. Exact launchc744ffe7 is clear via
+  `review-vector-launch-0978f86/review.json` SHA
+  `628bf25935690ca1d7be9a65267e2d299f2db460fa37c00a7493377e2b8c7a16`,622 artifacts,
+  exact interpreter/argv,201 measurement/206 compiled sources and all four complete cohorts.
+  Baseline is the retained reviewed detector5/999c96b measurement from125, not a new run.
+  Before-implementation own-CLI detector4/7a224ab remains separately recorded. After-objects
+  wrapperd33d08ba is prepared but unrun; normal automatic improvements allowed, no reset.
+  finish_benchmark prepares the independent actual audit; final gates/report/PR review
+  and merge still remain. Integrate this docs-only checkpoint before final PR as needed.
+- **#97 independent annotations:** first eight original packets are frozen; ninth2311.02916
+  just completed and review_ready_prs is now on2301.05184v1 only, then stops. Fifth dispatch
+  `annotation-independent-fifth-dispatch-v1.json` SHA
+  `83077a6f44a50ccb9504b61f6178b97489e7f6e26ad7aceb6829e0bb1ebf0f1e`. Last two pairs remain
+  undispatched. All14 primary outputs remain immutable.44-file checkpoint of14 primary/
+  first8 independent: `annotation-checkpoint-root-20260914T0905.json`, SHA
+  `64bae747704a673eb1054aec559f26cee630632901362b34373ead6d81176d63` in
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/` (base for paths below).
+  Ninth independent inventorycd1ec923cf22f42a83b2d096ba62175abaf1282fb92025f42e5f472ddc36dc59,
+  receiptfe8fd9ee5887f9bb854f93977ccec75276890c16f5026bb4d2dcdd5b63f2933e;2 pages,
+  1 figure/1 table/5 equations/4 bibliography entries,287.032s. Duplicate bellman labels,
+  post-end template and unresolved fidelity retained. No new eligibility or provider call.
+- New **root first-four reconciliation**, all preparation-only, under
+  `reconciliation/references-root-v1/`:
+  `bibliography-comparison-root-v1.json` SHA
+  `3ccf91d901652b93bb404dd969d7965feedda5f7a88920a718969674fe1cb527` compares91 entries/
+  273 field rows:91 native entries and270 present field spans exact,3 absent years separate.
+  `bibliography-decisions-root-v1.json` SHA
+  `97a426e9ad26f4cbb8ceee21aa9404131a5ab8ab799806f2e83dd1e5d4158d1f` corrects two root
+  source-role selections:2011 entry16 year in citation key vs explicit publication year;
+  2109 entry18 first-author source extending into second author. Four display-value
+  differences (newlines, cedilla normalization, missing native hyphen) and18 trailing
+  source-entry newline differences stay explicit. All original annotations unchanged.
+- `math-membership-comparison-root-v2.json` SHA
+  `069378266b37b8e47c05abf33b986d67986768e8df9e0866631f0c8e4f82d7f3` compares77 numbered
+  equations: all printed-number positions exact,61 source spans exact;16 source boundaries
+  differ by whitespace. Two non-whitespace body differences are2011 equations7/8 prefacing
+  quantifier clauses. Root personally re-viewed original page3 and retained explicit attached
+  conditions, parent equations and outside-math trailing commas in `math-conditions-root-v2.json`,
+  SHA `998d5930d338632fed9d2099685f3dc59765bade1c89cd24436a4859759e193a`. Primary condition
+  tokens explain every independent-only non-whitespace position. Preserve both body/condition
+  memberships; no guessed glyph or truth admission. Initial UTF-8 member-hash assumption
+  failed on original Latin-1 paper2.tex; exact encoded member rehash fixes it. Failed v1
+  reproduction receiptcb118bba remains. First whitespace classifier also stopped before
+  publication on11a/11b end-boundary differences; corrected general relation preserves them.
+- `formal-membership-comparison-root-v1.json` SHA
+  `b55ef90120d41ebd3312cf247201564840147b5a7ed80cd7e2c0de1096a46b0b` compares four2011
+  headed statements: full source and non-whitespace native membership exact. Header/body
+  split and nested math need further reconciliation; equal membership is not complete
+  typography/glyph/geometry fidelity. All unnumbered/formal/proof construction and remaining
+  papers stay unfinished; approximately500-paper coverage and payload-cap decision remain open.
+- No corpus download or native queue runs: all10,951 unique PDFs/indexes remain audited;
+  do not restart batch41. The current collector run is derived object measurement only.
+  Production10k, Playwright app flow, remaining phases and system acceptance remain pending.
+  Keep20GiB free-space floor and one heavy job; no live model/provider calls or vault writes.
+- Four approved registry/provider grants remain ineffective, last verified07:04:20 with no
+  environment change. Normal-terminal script
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, restart and effective
+  verification remain the external action; no renewed approval request or sandbox bypass.
+  Preserve store905c341(no PR), bibliography draft94/201c53c, reference draft93/d5e12aa,
+  person draft95/c867ec6 and all unrelated worktrees. Continue123 terminal/audit/merge and97
+  original blind sequence; the A–D goal is incomplete.
