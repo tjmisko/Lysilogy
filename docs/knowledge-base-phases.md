@@ -4767,3 +4767,75 @@ date, last merged issue, in-flight branches and their state, next action, and op
   remains read-only; existing four-host script command and restart requirement from priorentry
   remain, with no new approval request/retry/bypass. No rebase/sudo/rm-rf/private/env access,
   destructive vault/data operation or model batch. Continue115+118 and preserve blockedWTs.
+
+
+### 2026-09-14 03:00 UTC — full1000 running; native diagnostic source reviewed
+
+- Phase A / Wave A2; last merged109/PR119 (`722b6b24aa57fc454cd9f4fb54b14071dfcc235e`).
+  Main before this checkpoint82e8b59, pushed; protected10 preview files remain the only
+  unrelated changes. No new PR/merge, download, native recovery or publication. Scorecard
+  still1/5gates and3/30objectives(O1/O2/O30), O1=1/O2=.9169720168893188 over23visuals.
+  #118 is the new follow-up; blockedPR93/94/95 and33WT are unchanged.
+- **#115 full1000 RUNNING**, ownerfinish_benchmark, clean source
+  `6f49e5501abc50efa13aecbe7fec8b30176c1de3` after ordinary82e8b59 integration.328LaTeX/
+  37collector tests pass. RetainedTTY79197, command `/usr/bin/python3.14 -I -B -u
+  ~/.cache/lysilogy/k1-full-alignment-6f49e55-visual-v3/execute.py`; no reliable OS PID is
+  exposed by cross-call ps, so use the retained tool session/command. Exactlaunch SHA
+  48b3b80ce3922d7af8cf7e2c40255529fa8cfb3164ab9be85d406627c2d43a33. Independent exact
+  launch review `review-full-current-snapshot-6f49e55/review.json` SHA
+  0cd5622112f7415ae69f124af97f0a4e0bc20561f2c42705ac5965077a255fb1 verifies45files/all15
+  frozen modules, unchanged reviewed runner/interpreter and original1000order/999-success map.
+  Only current parser bytes differ from reviewed3d; exact1096a source. Latest observed log
+  checkpoint275papers/196parsed/zero raw accepted; these are partial progress, not final counts.
+  This run owns the single heavy window. Require terminal status, loaded-module attestation,
+  full1000ledger/counters and no partial/orphan payloads before any result/publication claim.
+- **#115 root construction delta CLEAR**, `root-construction-review-6f49e55/review.json`
+  SHA b444701e8b6c8bd2dd764b4a43f9f0c86a00acd7992a3265afc3229f0713af73. Independent
+  check05c9f3cd3122c02d58a4575aee193834c64575011e9a6943fc2c4d9fb6135b2c confirms411
+  added nodes (1BibTeX coverage+410supplementary entry provenance),168 original field slices/
+  82provenance slices, zero existing-value changes, exact6objects/45links/18shared artifacts/
+  all6images. Current inventory e85b9edf5d927af56134a2c748a38264ba5be6472c7521c2b6a52b7e0a44486a.
+  Old all-page/excerpt/geometry review is explicitly reused through immutable bindings;
+  no new page viewing claimed. Direct Git imports10 before/12after validation, only manual/
+  panel added; other3 modules explicitly unexecuted. Two root checker preparation/schema
+  mistakes were corrected with stopped attempts preserved; neither was a source finding.
+- New6f construction receipt b029374e04c8d54f860852b567d4029fc00809d7f4fbafca74f564949fb4d352;
+  delta00b7c1c74ad5d5ccda9885536b5c58723a2ce8338ee9aab4ab5f4f0cc49b14b2. Owner attached
+  root verdict in fresh20-artifact manifest904ded2264f32967d4c47fa0a03e389f917772b047125047f92633ae030fd893.
+  Exact-source manual attachment passed.400s, receipt32ce16f3bb618ccc3162fb3981242776275c5b153b798f818e7dfa9945162d68.
+  Pure complete-old3 row/bibliography compatibility passed.467s, receipt
+  d9703ed56e4e3321dd21548647f53d1fbb33ae7b1b3bddaca9db76960f17c5c4. New source/snapshot
+  remain unchanged; v3 disabled. Next: full1000 actual audit, config/preview/publication
+  review, explicit v1/v2/v3 metrics, final gates/draftPR/finalreview/merge. #117 stays blocked.
+- **#118 clean source033f0a50b4e382acf86be056fcc8060a322eef05**, ownerfinish_corpus_proxy,
+  WTfix/e0-native-diagnostics. Source9c6795e plus receipt timing docs correction. Before-change
+  own-CLI baseline at722b6b2 passed with available1/.9169720168893188/23cases;94.822s build,
+  .297s check. TTY70622 terminalexit0. Receipt native-diagnostics-118/before-722b6b2-cli/receipt.json
+  e67c95aca913c94cbb4987c59e6f4bec2c7b900aecff1c48ecae41921e062173; portable baseline
+  manifestd0e979c91384b9fce84a6246e0dd43d2287a42b6b47d945a3c3ae3a931d4e96e binds CLI+13files.
+- #11813 new synthetic command tests/fmt/strict all-target all-featureClippy passed in47.198s/
+  1288944KiB; TTY5044 terminalexit0, receipt56b291e1fd9f2627fd77a5dbd1c8dcf4a39a3e4b8791e08fbf135c55f3f06cc0.
+  Independent source/compiled replay `review-native-diagnostics-033f0a5/review.json` SHA
+  c0c4efddd6d5e7b0b9b91951b31d130cafd5c5462903e41bc1b4c5518f314351 verifies81source
+  fingerprints and13new+existingoverflow tests. Initial selected test binary comes from
+  ordinary Cargo logs, explicitly disclosed. Pdftotext-only1MiB drainage/64KiB prefix/8KiB
+  scratch, typed count/completeness and bounded escaped tracing sink; OCR/graphics defaults,
+  stdout/time/cancel/status/native geometry unchanged. Helper adds stderr-only subscriber;
+  no index schema change or invented page gap. No actual native retry yet.
+- #118 next build-only script `native-diagnostics-118/build-helper.py` SHA
+  6447eda599091eca4cf636aab852d75997768c0116863746bf4732fa915948d0 is unlaunched, pins
+  source033f0a5 and requires exact Cargo JSON target/source/executable plus portable source/
+  logs. Recovery proposal-v2/plan.json c39674c21530e6ae1a9a5d79ba80a0a3ac74b1dfc1f21c714ff248f914e13b56
+  fixes exactly original2106.09069 failure and pins7999 prior successful indexes/registry934d7fa.
+  Initial preparer mistakenly included the already recovered historical98 failure and stopped
+  before writes; correction retained. Future actual wrapper must concurrently bound helper
+  stdout/stderr1MiB/512KiB, retain escaped diagnostic prefix/count, guard target absence and
+  all prior hashes, then obtain independent actual review. Root owns new queue/auditor
+  continuation with old-failure-to-new-success provenance. No overwrite/skip/replacement.
+- Heavy sequence:115full1000 now; after terminal,118helper build/review/recovery/gates can
+  use its released window during115result/publication review, then115measurements/gates.
+  Native queue remains failed_at_batch_boundary after28,7048scale successes/1failed/2951
+  unattempted; original output/audit/status pins frompreviousentry unchanged. No downloads.
+  Already-approved four hosts remain ineffective; existing script/restart instructions stand,
+  no repeated permission request or bypass. Preserve all unrelated/vault/corpus files and
+  blocked worktrees; no rebase/sudo/rm-rf/private/env access or model batch. Goal/system incomplete.
