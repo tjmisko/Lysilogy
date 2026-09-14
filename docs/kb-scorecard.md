@@ -14,7 +14,7 @@ System acceptance requires 5/5 gates and at least 24/30 objectives; use `eval al
 | G4 | Rebuild determinism: entities, IDs, aliases | resolution | — | — | ≥ 1 | fraction | unavailable |
 | G5 | Tests pass with network disabled and no model CLIs | tests | 1 | 1 | ≥ 1 | pass | pass |
 | O1 | Figure and table detection F1 | objects | 0.989899 | 0.989899 | ≥ 0.9 | fraction | at target |
-| O2 | Figure and table region IoU, median | objects | 0.886353 | 0.886353 | ≥ 0.75 | fraction | at target |
+| O2 | Figure and table region IoU, median | objects | 0.891002 | 0.891002 | ≥ 0.75 | fraction | at target |
 | O3 | Numbered equation detection F1 | objects | — | — | ≥ 0.85 | fraction | unavailable |
 | O4 | Equation and statement mention link accuracy | objects | — | — | ≥ 0.9 | fraction | unavailable |
 | O5 | Theorem-like statement detection F1 | objects | — | — | ≥ 0.85 | fraction | unavailable |
