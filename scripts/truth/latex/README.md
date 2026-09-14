@@ -153,3 +153,11 @@ their independently recorded number spans remain distinct. Section destinations
 must belong to the current parser's unique section heading; visual labels cannot
 be reclassified as section labels. Current bibliography parsing differences stay
 separate from the omitted bibliography metrics.
+
+Producer independence is grounded separately from string distinctness. The visual
+manifest retains the original assignment proposal, an audit of committed assignment
+and freeze records, and a distinct reconciler's confirmation of those records against
+both original inventories and receipts. Original role-only receipts remain unchanged.
+The codec checks the actual retained history bytes and exact source excerpts, proposal
+selection/prompt/output paths, complete confirmation hashes and final reviewer binding.
+A proposed assignment or three different identity strings alone cannot enable an overlay.

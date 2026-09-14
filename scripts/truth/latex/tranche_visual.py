@@ -21,7 +21,8 @@ MAX_BUNDLE_BYTES = 64 * 1024 * 1024
 ARTIFACTS = {'policy', 'selection', 'prompt', 'packet', 'source_export', 'native_export',
              'primary', 'primary_receipt', 'independent', 'independent_receipt',
              'initial_review', 'role_review', 'visual_review', 'construction',
-             'object_crosswalk', 'link_crosswalk', 'review'}
+             'object_crosswalk', 'link_crosswalk', 'assignment_proposal',
+             'assignment_history', 'identity_review', 'review'}
 PRIMARY_ROLES = ('definition_candidates', 'narrative_method_candidates',
                  'manual_procedure_candidates', 'constraint_lists', 'system_lists')
 INDEPENDENT_ROLES = ('prose_procedure_candidates', 'informal_definition_candidates')
@@ -164,6 +165,60 @@ def history(docs, raws, candidate, candidate_raw, pages):
         hash_ref(construction['original_artifacts'][key], raws[key], 'construction changes an original artifact')
     exact(construction['objects'], candidate['source_inventory']['objects'], 'construction drops source objects')
     exact(construction['links'], candidate['source_inventory']['links'], 'construction drops source links')
+
+
+def producer_history(docs, raws, verified_records):
+    """Bind producer identities to retained assignments and separate confirmation."""
+    proposal, audit, review = (docs[k] for k in ('assignment_proposal', 'assignment_history', 'identity_review'))
+    require(type(proposal['schema_version']) is int and proposal['schema_version'] == 1
+            and proposal['assignment_status'].startswith('proposed'), 'unsupported original assignment proposal')
+    hash_ref(audit['assignment_proposal'], raws['assignment_proposal'], 'assignment audit changes original proposal')
+    exact(proposal['selection_sha256'], sha256(raws['selection']), 'assignment selected another frozen cohort')
+    hash_ref(proposal['prompt'], raws['prompt'], 'assignment used another original prompt')
+    rows = [row for row in proposal['papers'] if row['arxiv_id'] == docs['packet']['arxiv_id']]
+    require(len(rows) == 1, 'assignment omits or repeats the selected paper')
+    for role in ('primary', 'independent'):
+        exact(rows[0][role + '_output'], docs['packet']['blind_' + role + '_output'], 'assignment changes original output ownership')
+    records = audit['records']
+    require(isinstance(records, list) and 1 <= len(records) <= 16, 'assignment history inventory exceeds its bound')
+    declared = {row['retained_path']: row['sha256'] for row in records}
+    require(len(declared) == len(records), 'assignment history repeats a record')
+    exact(declared, verified_records, 'actual retained assignment history differs')
+    require(review.get('format') == 'k1-manual-producer-review-v1'
+            and review.get('verdict') == 'clear_grounded_original_producers' and review.get('findings') == [],
+            'producer independence lacks separate grounded confirmation')
+    exact(review['assignment_proposal_sha256'], sha256(raws['assignment_proposal']), 'producer review changes proposal')
+    exact(review['assignment_history_sha256'], sha256(raws['assignment_history']), 'producer review changes assignment history')
+    expected = {role: proposal[role + '_agent'] for role in ('primary', 'independent')}
+    require(all(isinstance(value, str) and value.strip() for value in expected.values())
+            and len(set(expected.values())) == 2, 'original producer identities are missing or not separate')
+    exact(review['confirmed_producers'], expected, 'producer confirmation changes recorded assignments')
+    exact(review['reviewer'], proposal['reconciler'], 'producer review changes recorded reconciler')
+    require(isinstance(review['reviewer'], str) and review['reviewer'].strip()
+            and review['reviewer'] not in expected.values(), 'producer confirmation is not separate from annotators')
+    for key in ('primary', 'primary_receipt', 'independent', 'independent_receipt'):
+        hash_ref(review['original_artifacts'][key], raws[key], 'producer confirmation changes original annotation bytes')
+    exact(review['reviewed_history_records'], records, 'producer confirmation omits original assignment evidence')
+    return expected, review['reviewer']
+
+
+def assignment_records(cache, audit):
+    from manual import bounded
+    output = {}; total = 0
+    require(isinstance(audit['records'], list) and 1 <= len(audit['records']) <= 16, 'assignment history inventory exceeds its bound')
+    for row in audit['records']:
+        raw = bounded(cache, row['retained_path']); total += len(raw)
+        require(total <= 4 * 1024 * 1024, 'assignment history exceeds its cumulative byte bound')
+        hash_ref(row, raw, 'retained assignment history bytes differ')
+        require(re.fullmatch(r'[0-9a-f]{40}', row['git_commit']) and row['git_path'] == 'docs/knowledge-base-phases.md',
+                'unsupported assignment history source')
+        excerpt = row['excerpt']; text = raw.decode('utf-8')
+        require(excerpt['unit'] == 'Unicode code points' and type(excerpt['start']) is int and type(excerpt['end']) is int
+                and 0 <= excerpt['start'] < excerpt['end'] <= len(text), 'assignment history excerpt bounds differ')
+        exact(excerpt['text'], text[excerpt['start']:excerpt['end']], 'assignment history excerpt differs')
+        require(row['retained_path'] not in output, 'assignment history repeats a record')
+        output[row['retained_path']] = sha256(raw)
+    return output
 
 
 def validate_roles(docs, files):
@@ -446,7 +501,7 @@ def validate_links(docs, candidate, files, index, pmap, imap):
     return references, sections, deepcopy(external)
 
 
-def validate_visual(candidate_raw, index_raw, source_raw, raws, verified_images):
+def validate_visual(candidate_raw, index_raw, source_raw, raws, verified_images, verified_assignment_records):
     """Pure review-bound validation. It cannot publish or revise original evidence."""
     require(set(raws) == ARTIFACTS and sum(map(len, raws.values())) <= MAX_BUNDLE_BYTES, 'visual tranche evidence inventory/size differs')
     docs = {k: document(v) if k != 'prompt' else v.decode('utf-8') for k, v in raws.items()}
@@ -460,6 +515,7 @@ def validate_visual(candidate_raw, index_raw, source_raw, raws, verified_images)
         exact(packet[kind]['sha256'], candidate[kind + '_sha256'], 'blind packet names another corpus artifact')
     pages = [row['number'] for row in index['pages']]
     history(docs, raws, candidate, candidate_raw, pages)
+    producer_ids, reconciler = producer_history(docs, raws, verified_assignment_records)
     files, archive_members = read_archive(source_raw)
     require(not any('^^' in text for text in files.values()), 'manual source cannot verify pre-tokenization substitution')
     exact(docs['source_export']['source_sha256'], sha256(source_raw), 'source export names another archive')
@@ -499,10 +555,8 @@ def validate_visual(candidate_raw, index_raw, source_raw, raws, verified_images)
     exact(review['pages_inspected'], pages, 'construction reviewer omitted original pages')
     exact(review['complete_kind_counts'], {**{k: 0 for k in ('equation', 'statement', 'proof', 'algorithm')}, **counts}, 'construction kind counts differ')
     exact(review['reference_counts'], {'local': len(refs) + len(sections), 'visual': len(refs), 'section': len(sections), 'external': len(external), 'O4': 0}, 'construction reference counts differ')
-    identities = review['annotators']; require(set(identities) == {'primary', 'independent'}
-        and all(isinstance(v, str) and v.strip() for v in identities.values())
-        and len(set(identities.values())) == 2 and isinstance(review.get('reviewer'), str)
-        and review['reviewer'].strip() and review['reviewer'] not in identities.values(), 'construction review lacks independent identities')
+    exact(review['annotators'], producer_ids, 'construction review changes grounded producer identities')
+    exact(review['reviewer'], reconciler, 'construction review changes separately confirmed reviewer')
     require(review['later_crosswalk_reviewed_after_annotation_freeze'] is True, 'post-freeze review order is absent')
     common = {'evidence_format': FORMAT, 'evidence_hashes': {k: sha256(v) for k, v in raws.items()},
               'automatic_candidate_retained': True, 'final_k1_publication': False,
@@ -536,6 +590,8 @@ def attach_visual(cache, corpus_root, data_root, candidate_raw, paper, mapped, r
         hash_ref(row, raw, 'visual evidence hash/size differs'); raws[key] = raw
     docs = {k: document(v) for k, v in raws.items() if k != 'prompt'}
     candidate = document(candidate_raw); packet = docs['packet']
+    exact(manifest['artifacts']['assignment_proposal']['path'], docs['assignment_history']['assignment_proposal']['path'],
+          'assignment audit names another proposal path')
     exact(candidate['index'], mapped['index'], 'visual candidate names another mapped index')
     exact(candidate['paper_id'], mapped['paper_id'], 'visual candidate names another mapped paper')
     exact(candidate['arxiv_id'], paper['arxiv_id'], 'visual candidate changes arXiv identity')
@@ -563,11 +619,13 @@ def attach_visual(cache, corpus_root, data_root, candidate_raw, paper, mapped, r
     selected = [r for r in docs['selection']['selected'] if r['arxiv_id'] == paper['arxiv_id']]
     require(len(selected) == 1, 'visual paper absent or repeated in frozen selection')
     exact(selected[0]['mapping'], mapped, 'visual selection names another mapping')
-    result = validate_visual(candidate_raw, index_raw, source_raw, raws, images)
+    verified_assignments = assignment_records(cache, docs['assignment_history'])
+    result = validate_visual(candidate_raw, index_raw, source_raw, raws, images, verified_assignments)
     for key, row in manifest['artifacts'].items():
         require(bounded(cache, row['path']) == raws[key], 'visual evidence changed during validation')
     for row in original_rows + packet['images']:
         verify_original_file(cache, annotation_root, row)
+    exact(assignment_records(cache, docs['assignment_history']), verified_assignments, 'assignment history changed during validation')
     require(bounded(cache, relative + '/manifest.json') == manifest_raw, 'visual manifest changed during validation')
     result['manual_assembly'] = {'format': FORMAT, 'manifest_sha256': sha256(manifest_raw), 'candidate_sha256': sha256(candidate_raw),
         'final_k1_publication': False, 'omitted_manual_kinds': ['bib_entry'], 'omitted_metrics': ['O8', 'O9', 'O10', 'O11'],

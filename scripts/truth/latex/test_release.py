@@ -55,7 +55,8 @@ class ReleaseTests(unittest.TestCase):
         before, before_bibliography = build_release(rows, config, inputs, history)
         candidate, native, source, docs, images = visual_fixture()
         candidate['metric_eligibility'] = {f'O{i}': False for i in range(1, 12)}
-        assembled = validate_visual(canonical(candidate), canonical(native), source, seal(candidate, docs), images)
+        assembled = validate_visual(canonical(candidate), canonical(native), source, seal(candidate, docs), images,
+                                    {r['retained_path']: r['sha256'] for r in docs['assignment_history']['records']})
         assembled['manual_assembly'] = {'candidate_sha256': sha256(canonical(candidate))}
         rows.append(assembled)
         config['version'] = 'k1-limited-v3'

@@ -10,7 +10,7 @@ from archive import read_archive, sha256
 from native_exports import native_projection
 from parser import parse_project
 from tranche_visual import (ARTIFACTS, FORMAT, REVIEW_FORMAT, PRIMARY_ROLES, INDEPENDENT_ROLES,
-                            validate_visual, validate_objects, validate_roles, audit_excerpts)
+                            validate_visual, validate_objects, validate_roles, audit_excerpts, assignment_records)
 
 
 def fixture(note_group=3, with_links=False):
@@ -45,7 +45,8 @@ def fixture(note_group=3, with_links=False):
     image = {'path': '/synthetic/page.png', 'sha256': 'b' * 64, 'page': 1, 'dpi': 96, 'pixel_width': 200,
              'pixel_height': 200, 'pdf_width_points': 150, 'pdf_height_points': 150}
     packet = {k: deepcopy(candidate[k]) for k in ('arxiv_id', 'paper_id', 'index', 'stratum')}
-    packet.update(version=1, pdf={'sha256': candidate['pdf_sha256']}, source={'sha256': candidate['source_sha256']}, images=[image])
+    packet.update(version=1, pdf={'sha256': candidate['pdf_sha256']}, source={'sha256': candidate['source_sha256']}, images=[image],
+                  blind_primary_output='primary/synthetic-only', blind_independent_output='independent/synthetic-only')
     identity = {k: packet[k] for k in ('arxiv_id', 'paper_id', 'version')}
     primary = {'schema_version': 1, 'annotator_role': 'primary', 'paper': identity, 'objects': [{
         'id': 'primary-table', 'kind': 'table', 'source_environment': env, 'source_caption': caption_source,
@@ -88,6 +89,14 @@ def fixture(note_group=3, with_links=False):
         'table_notes': [{'primary_id': 'primary-table', 'independent_id': 'independent-table', 'source_id': parsed_object['id'],
                          'independent_notes_key': group, 'review_scope_key': scope}]}
     docs['link_crosswalk'] = {'links': []}
+    docs['assignment_proposal'] = {'schema_version': 1, 'assignment_status': 'proposed; separately confirmed after completion',
+        'primary_agent': 'synthetic-first', 'independent_agent': 'synthetic-second', 'reconciler': 'synthetic-third',
+        'papers': [{'arxiv_id': candidate['arxiv_id'], 'primary_output': packet['blind_primary_output'], 'independent_output': packet['blind_independent_output']}]}
+    docs['assignment_history'] = {'records': [{'retained_path': 'history/phases.md', 'sha256': 'd' * 64, 'bytes': 10,
+        'git_commit': 'e' * 40, 'git_path': 'docs/knowledge-base-phases.md',
+        'excerpt': {'start': 0, 'end': 10, 'text': 'assignment', 'unit': 'Unicode code points'}}]}
+    docs['identity_review'] = {'format': 'k1-manual-producer-review-v1', 'verdict': 'clear_grounded_original_producers',
+        'findings': [], 'reviewer': 'synthetic-third', 'confirmed_producers': {'primary': 'synthetic-first', 'independent': 'synthetic-second'}}
     if with_links:
         def last_occurrence(value):
             start = text.rindex(value)
@@ -144,6 +153,12 @@ def seal(candidate, docs):
         'changed_source_inventory_fields': sorted(k for k in set(current) | set(candidate['source_inventory'])
             if canonical(current.get(k)) != canonical(candidate['source_inventory'].get(k)))}
     docs['review']['candidate_sha256'] = sha256(candidate_raw)
+    docs['assignment_proposal'].update(selection_sha256=sha256(raw('selection')), prompt=ref('prompt'))
+    docs['assignment_history']['assignment_proposal'] = ref('assignment_proposal')
+    docs['identity_review'].update(assignment_proposal_sha256=sha256(raw('assignment_proposal')),
+        assignment_history_sha256=sha256(raw('assignment_history')),
+        original_artifacts={k: ref(k) for k in ('primary', 'primary_receipt', 'independent', 'independent_receipt')},
+        reviewed_history_records=deepcopy(docs['assignment_history']['records']))
     docs['review']['artifacts'] = {k: ref(k)['sha256'] for k in docs if k != 'review'}
     return {k: raw(k) for k in docs}
 
@@ -151,7 +166,8 @@ def seal(candidate, docs):
 class VisualTrancheTests(unittest.TestCase):
     def validate(self, data):
         candidate, index, source_raw, docs, images = data
-        return validate_visual(canonical(candidate), canonical(index), source_raw, seal(candidate, docs), images)
+        return validate_visual(canonical(candidate), canonical(index), source_raw, seal(candidate, docs), images,
+                               {r['retained_path']: r['sha256'] for r in docs['assignment_history']['records']})
 
     def test_should_retain_separate_note_components_when_marker_follows_note_in_native_order(self):
         data = fixture(); result = self.validate(data)
@@ -358,3 +374,24 @@ class VisualTrancheTests(unittest.TestCase):
             result = self.validate(data)
         self.assertEqual(result['source_inventory'], data[0]['source_inventory'])
         self.assertEqual(result['manual_object_overlay']['historical_source_difference_fields'], ['coverage'])
+
+    def test_should_reject_distinct_invented_identities_when_retained_assignments_are_not_confirmed(self):
+        for mutate in [lambda d: d['review']['annotators'].update(independent='invented-fourth'),
+            lambda d: d['identity_review'].update(verdict='pending'),
+            lambda d: d['identity_review']['confirmed_producers'].update(independent='invented-fourth'),
+            lambda d: d['identity_review'].update(reviewer='synthetic-first'),
+            lambda d: d['assignment_history'].update(records=[]),
+            lambda d: d['assignment_proposal']['papers'][0].update(independent_output='primary/synthetic-only')]:
+            data = fixture(); mutate(data[3])
+            with self.subTest(mutation=mutate), self.assertRaises(ValueError): self.validate(data)
+
+    def test_should_reject_history_substitution_when_retained_bytes_excerpt_or_safe_path_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = Path(directory); path = cache/'phases.md'; raw = b'Independent assignment history.'; path.write_bytes(raw)
+            row = {'retained_path': 'phases.md', 'sha256': sha256(raw), 'bytes': len(raw), 'git_commit': 'a' * 40,
+                   'git_path': 'docs/knowledge-base-phases.md', 'excerpt': {'start': 0, 'end': 11, 'text': 'Independent', 'unit': 'Unicode code points'}}
+            self.assertEqual(assignment_records(cache, {'records': [row]}), {'phases.md': sha256(raw)})
+            for change in ({'retained_path': '../phases.md'}, {'sha256': 'c' * 64}, {'git_path': 'another.md'},
+                           {'excerpt': {'start': 0, 'end': 11, 'text': 'Invented!!!', 'unit': 'Unicode code points'}}):
+                with self.subTest(change=change), self.assertRaises(ValueError):
+                    assignment_records(cache, {'records': [{**row, **change}]})
