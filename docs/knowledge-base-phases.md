@@ -6891,3 +6891,48 @@ date, last merged issue, in-flight branches and their state, next action, and op
   worktree and drafts PR93/94/95 remain as in the 12:44 entry. Four approved hosts still require
   normal-terminal permission-script execution/restart because the config mount is read-only;
   no repeat approval or bypass. Production10k, Playwright and later phases remain open.
+
+
+### 2026-09-14 13:01 UTC — formal identity review clear; unscored endpoint correction preserved
+
+- Last merged #129 / PR130 at d9a62af. Main a9b79d7 before this docs checkpoint. Phase A / A2;
+  #131 remains active in `.worktrees/feat/e8.3-numbered-math-tranche`, branch same suffix,
+  implementer review_k1_reconciliation. No implementation commit/PR yet. New module and narrow
+  dispatch/fingerprint registrations are being written; heavy slot reserved for its own baseline
+  build until owner reports release. Preserve baseline receipts before source mutation.
+- **2310.01528v1 formal source/printed preparation independently CLEAR**:
+  `~/.cache/lysilogy/review-k1-source-printed-formal-2310-v1/review.json`, SHA256
+  `017f96fb4ca0c2bb198d58c040c544cb4b414c0ccf942f2e7d744d38bcd673ac`.
+  Reviewer finish_corpus_proxy personally viewed original pages2/3/4 and read full source.
+  Nineteen bindings, 7,325 record references, 98 source / 3,626 native / 3,550 token copies,
+  eleven exact candidate occurrences, twelve geometry associations and four nearest-preceding
+  proof targets verified. Three child boundary differences remain exactly 5/5/4 trailing spaces/
+  tab; original failed producer script is retained. No findings. No current parser validation,
+  native quotation fidelity or metric admission. This closes only the bounded preparation review.
+- **55-equation construction review has one concrete unscored endpoint finding.** In 1911's
+  original primary `/literal_references/0`, destination_id is section-3, but that inventory has
+  no section-3 owner. Independent `/sections/2` has that id. Original proposal retained both
+  records but supplied no endpoint crosswalk. Root inspected exact originals and prepared
+  `~/.cache/lysilogy/k1-coverage/numbered-equation-construction-root-v1/unscored-endpoint-addendum-v1.json`,
+  SHA256 `4cf9d5cf1fa78808b1ed72082c93c4a2a8772ffb38e196cc77f0c0bb1618737d`, 3,395 bytes.
+  Keep an explicit unresolved-primary-endpoint disposition with exact record pointer/hash;
+  retain independent possible owner separately, with no automatic cross-inventory resolution.
+  Reject undeclared dangling owners. Selected 55 equations and O4=false remain unchanged.
+  finish_benchmark reviews the addendum alongside the original proposal; final verdict pending.
+  Implementer informed and must bind this history into final construction after clearance.
+- finish_benchmark next reviews root's four numbered 2301 source/printed identities (0735dddd,
+  full path/hash in 12:56 entry). finish_corpus_proxy now prepares a cache-only bounded formal
+  extension proposal for 2310's seven statements/four proofs after #131. No issue or code change
+  authorized by that proposal alone. Root independently read full preamble and bibliography
+  suffix: sole ifx/csname/else/fi machinery is the bibliography's unused doi-definition choice
+  after final proof; doi has two declarations and no invocation. Both branches are literal
+  formatting. The automatic unparsed bibliography prefix and all guard diagnostics stay intact.
+  This finite association needs explicit construction review; it is not a general conditional
+  evaluator or guard waiver. Existing positive formal V4 records remain acknowledged.
+- Score unchanged: 1/5 hard gates, 3/30 objectives O1/O2/O30; V4 O1=.98989898989899 and
+  O2=.8910021250829322 over all 50 regions. No new release or phase completion. No downloads
+  or native queue. Protected preview files unchanged at 12:56 check and untouched since.
+  Blocked #33 and drafts93/94/95, approved-host normal-terminal script/restart requirement,
+  free-space floor, #97 coverage, production10k and Playwright acceptance remain as above.
+  Next: complete current independent reviews, freeze/review #131 source/module and construction,
+  then publish/replay, measure/gate, draft PR, independent final review and merge. Continue.
