@@ -48,6 +48,36 @@ def automatic_fixture(cache):
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_should_preserve_old_rows_and_formal_denominators_when_visual_only_truth_is_appended(self):
+        from test_tranche_visual_only import admission_fixture, admit
+        rows, config, inputs, history = fixture()
+        before, before_bibliography = build_release(rows, config, inputs, history)
+        data = admission_fixture(); assembled = admit(data)
+        assembled['manual_assembly'] = {'candidate_sha256': sha256(canonical(data[0]))}
+        rows.append(assembled); config['version'] = 'k1-limited-v4'
+        config['papers'].append({'arxiv_id': assembled['arxiv_id'], 'paper_id': assembled['paper_id'], 'candidate': 'visual-only.json'})
+        inputs['papers'].append({'arxiv_id': assembled['arxiv_id'], 'version': 1, 'stratum': assembled['stratum'],
+            'pdf': {'sha256': assembled['pdf_sha256']}, 'source': {'sha256': assembled['source_sha256']}})
+        after, bibliography = build_release(rows, config, inputs, history)
+        self.assertEqual(canonical(after['papers'][:-1]), canonical(before['papers']))
+        self.assertEqual(canonical(bibliography['papers']), canonical(before_bibliography['papers']))
+        current = after['papers'][-1]
+        self.assertEqual([key for key,value in current['metric_eligibility'].items() if value], ['O1','O2'])
+        self.assertEqual(current['references'], [])
+        self.assertEqual(len(current['unscored_inventory']['records']['current_source']['links']), 3)
+        for metric in [f'O{n}' for n in range(3,12)]:
+            self.assertEqual(after['coverage']['denominators'][metric], before['coverage']['denominators'][metric])
+        self.assertEqual(after['coverage']['denominators']['O2']['all_annotated_truth_objects'], 3)
+        # A genuinely reviewed visual-negative paper adds an O1 false-positive
+        # opportunity, not an invented formal-negative cohort or O2 region.
+        overlay = assembled['manual_visual_only_overlay']
+        overlay['objects'] = []; overlay['reviewed_absent_kinds'] = ['figure','table']
+        negative, _ = build_release(rows, config, inputs, history)
+        self.assertEqual(negative['coverage']['denominators']['O1']['negative_papers'], 2)
+        self.assertEqual(negative['coverage']['denominators']['O2']['all_annotated_truth_objects'], 2)
+        for metric in [f'O{n}' for n in range(3,12)]:
+            self.assertEqual(negative['coverage']['denominators'][metric], before['coverage']['denominators'][metric])
+
     def test_should_preserve_prior_papers_and_attached_notes_when_visual_negative_cohort_is_appended(self):
         from test_tranche_visual import fixture as visual_fixture, seal
         from tranche_visual import validate_visual

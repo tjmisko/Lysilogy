@@ -1275,6 +1275,25 @@ strict geometry and IoU arithmetic; publication of metric inputs requires the fu
 frozen O2 denominator. The original failed 23-value collector attempt is retained.
 This is limited coverage toward #97, whose approximately 500-paper target remains open.
 
+Visual-only pilot decision (#117, 2026-09-14): the separate finite visual codec adds
+O1/O2 only for the five remaining original pilot papers, retaining all original and
+current formal/math/reference/bibliography roles without manufacturing O3–O11
+eligibility. Distinct root construction reviews bind the two original annotators;
+source/release review is a separate role. Immutable sixteen-module `k1-limited-v4`
+preserves all 53 older files and four complete prior rows, yielding nine papers and
+50 visual regions. Its objects payload uses 991,418 of the unchanged 1,048,576-byte
+cap; further growth requires a reviewed layout/cap decision, never omitted records.
+Actual detector4 results are 44 TP / 4 FP / 6 FN, O1 .8979591836734694 and
+O2 .8826424973982893 over all 50 values (eight zeros, no unknowns). Exact old-paper
+outcomes justify the separately reviewed append-only cohort baseline transition;
+the failed unadjusted check remains evidence. Targets .90/.75 and hard gates are
+unchanged. O1 is below target and only 2/30 objectives are at target. #125 tracks
+split table captions and interleaved Figure3 caption ownership; #123 remains the
+separate vector-region follow-up. The historical 6f full1000 diagnostic is reused
+only through verified executed-source continuity, with no new execution claim.
+The [measured report](experiment-reports/2026-09-14-kb-visual-only-pilot.md) binds the
+complete denominator and limitations. #97's approximately 500-paper target stays open.
+
 The bounded #110 source-layout experiment uses an explicitly invoked Linux aarch64
 PDFLaTeX runner with fresh namespaces, a positive syscall filter, fixed read-only
 runtime/source mounts and finitely many writable output inodes. Exact input and

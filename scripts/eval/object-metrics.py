@@ -24,7 +24,7 @@ TRACE = 'eval/inputs/evidence/object-metrics.json'
 INPUT = 'eval/inputs/objects/figure-table.json'
 KINDS = ('figure', 'table')
 VERSION = 'figure-table-metrics-v6'
-TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2', 'k1-limited-v3')
+TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2', 'k1-limited-v3', 'k1-limited-v4')
 NATIVE_BASIS_FORMAT = 'native-json-f32-v1'
 DETECTOR_VERSION = 4
 GRAPHICS_VERSION = 3
@@ -181,7 +181,7 @@ def evaluate_paper(paper, artifact, index, truth_version=TRUTH_VERSIONS[0]):
     matched = {n for n,_ in winners.values()}; values=[]; matched_values=[]; outcomes=[]; unknown=0
     for j,t in enumerate(truths):
         n,score = winners.get(j,(None,None)); regions=t.get('region')
-        if truth_version == 'k1-limited-v3' and isinstance(regions,dict):
+        if truth_version in ('k1-limited-v3', 'k1-limited-v4') and isinstance(regions,dict):
             require(set(regions)=={'page','rect'} and type(regions['page']) is int
                     and isinstance(regions['rect'],dict)
                     and set(regions['rect'])=={'x_min','y_min','x_max','y_max'},

@@ -28,6 +28,15 @@ def fixture():
 
 
 class ObjectMetricTests(unittest.TestCase):
+    def should_preserve_every_old_region_shape_when_visual_only_cohort_is_selected(self):
+        paper,artifact,index=fixture()
+        expected=m.evaluate_paper(paper,artifact,index,'k1-limited-v3')
+        self.assertEqual(m.evaluate_paper(paper,artifact,index,'k1-limited-v4'),expected)
+        paper['objects'][0]['region']=paper['objects'][0]['region'][0]
+        self.assertEqual(m.evaluate_paper(paper,artifact,index,'k1-limited-v4'),expected)
+        paper['objects'][0]['region']['page']=True
+        with self.assertRaises(ValueError):m.evaluate_paper(paper,artifact,index,'k1-limited-v4')
+
     def should_score_singleton_regions_when_the_explicit_visual_release_is_selected(self):
         paper,artifact,index=fixture()
         expected=m.evaluate_paper(paper,artifact,index)
@@ -111,7 +120,7 @@ class ObjectMetricTests(unittest.TestCase):
                     self.assertEqual((folder/'input.json').read_bytes(),old_input)
                     self.assertEqual((folder/'observation.json').read_bytes(),old_observation)
                 previous=archive,m.canonical(payload)+b'\n',raw
-            self.assertEqual(m.document((repo/m.INPUT).read_bytes())['truth_sets']['K1']['version'],'k1-limited-v3')
+            self.assertEqual(m.document((repo/m.INPUT).read_bytes())['truth_sets']['K1']['version'],'k1-limited-v4')
 
     def should_reject_changed_prior_observations_when_a_new_cohort_would_replace_them(self):
         with tempfile.TemporaryDirectory() as directory:
