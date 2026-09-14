@@ -397,6 +397,17 @@ Both immutable cohorts, native indexes, caption ownership and scoring remain unc
 The detailed resource/provenance protocol and independent adversarial fixtures are recorded in
 `eval/object-metrics-contract.md`. Actual before/after measurement is required before merge.
 
+Contiguous caption ownership follow-up (#125) keeps the native schema and public object
+anchor shape unchanged. Detector5 may extend an uppercase stand-alone table label through
+its immediately adjacent uppercase title only with same-page, centered, single-line native
+geometry and an observed multi-column grid. Source gaps must contain only whitespace;
+heading/list/equation, prose, image and neighboring-caption barriers withhold the join.
+All fully owned caption paragraphs are excluded from body candidates. Unsupported joins
+preserve earlier label-only predictions or absence. Disjoint caption lines interleaved with
+other-column prose remain unresolved; body-member anchors are not caption membership.
+Actual complete v1/v2/v3/v4 measurements are required before merge, with unchanged truth,
+matching and .90/.75 targets. This does not broaden vector/image support.
+
 ### E1.2 Backend bibliography extraction and parsing
 
 Move bibliography detection and entry splitting from `paperLinks.ts` to the backend, and persist
