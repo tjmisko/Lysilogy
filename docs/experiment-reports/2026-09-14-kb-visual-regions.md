@@ -76,3 +76,8 @@ independently recomputed every old/new per-paper record from complete prediction
 The source is unchanged after that measurement. Ordinary main integration is used
 under the standing no-rebase-without-approval rule; final gates and PR review precede
 the merge commit. No PDFs or LaTeX sources are committed.
+
+Final gates after integration with main pass at`aab83fc81f483d664f7ed6a117bbbd13c5db3452`:
+fmt, strict Clippy, allRust, own CLI objects/bibliography/scale and isolatedG5.
+[Final receipt and portable logs](../../eval/evidence/visual-regions-121-final.json)
+bind the unchanged measured implementation and386Rust/537Python/85Node tests.
