@@ -263,7 +263,7 @@ acceptance are unchanged.
   detector edits; coordinate shared registrations with109. Independent construction review
   precedes publication and actual v1/v2/v3 measurements. This does not close97.
 
-- [ ] **#117 Publish fixed visual-only pilot cohorts** (after #115; bounded part of #97).
+- [x] **#117 Publish fixed visual-only pilot cohorts** (after #115; bounded part of #97).
   Branch `feat/e8.3-visual-only-pilot`. Owns a separate evaluation-only visual projection,
   focused tests and narrow manual/fingerprint/versioned release/collector registrations.
   Preserve the fixed remaining-five ledger in original order:2310.04162,2001.05217,
@@ -309,8 +309,8 @@ acceptance are unchanged.
 
 ### Phase A notes
 
-- #117 implementation/publication and gates are complete, pending independent final PR
-  review and root merge. V4 contains nine papers/50 visual regions; actual O1=.8979591836734694
+- #117 merged in PR126 at `2e02c38a0696b4bc5e59ccc2b31b8ebae5c3b1f4` after independent
+  final review of exact `80fd227`. V4 contains nine papers/50 visual regions; actual O1=.8979591836734694
   (44 TP/4 FP/6 FN), O2=.8826424973982893, eight zeros/no unknowns. All old detector4
   records remain exact. The separately reviewed cohort baseline transition preserves the
   unadjusted failure and unchanged .90/.75 targets; O1 remains unmet, only2/30 objectives
@@ -5774,3 +5774,53 @@ date, last merged issue, in-flight branches and their state, next action, and op
   plus unrelated /tmp worktrees. No rebase, forbidden reads, sudo/rm-rf or vault mutations.
   Continue117 final review/merge, then125 and123 with coordinated detector versions; #97 remains
   approximately500-paper work, all later phases and final system acceptance incomplete.
+
+
+### 2026-09-14 07:32 UTC — fixed visual-only pilot merged; detector follow-ups ready
+
+- **Last merged issue #117 / PR126**, merge `2e02c38a0696b4bc5e59ccc2b31b8ebae5c3b1f4`,
+  exact reviewed head `80fd227f6af769b04ecc71d28b55c8ece6b0b3cd`. Final separate review
+  `~/.cache/lysilogy/review-pr126-80fd227/review.json` SHA
+  `c4a973e6659f0c883307a597dc201591926dd13f6023cef4c4b3653fe4c34a8f` is clear:1,058 portable
+  artifacts/202,579,903 bytes,294 aliases,205 source fingerprints, all raw gate counts verified.
+  Actual transition review `review-k1-v4-transition-0b9fa27/review.json` SHA
+  `25e1dd67222e168a427758b755ead3841cfb4bf7c1502468e29c3a9a547e71d5` independently verifies
+  exactly two approved append-only adjustments and stable subsequent normal check. Full earlier
+  measurements/construction/failures remain bound in machine evidence and prior session entries.
+- Main safely fast-forwarded; all10 protected preview hashes exact. Completed117 worktree,
+  target, local and remote branch removed; all cleanup commands terminal zero. Ordinary main
+  integration follows standing no-rebase policy. PR126 final metadata is archived under
+  `visual-only-117/pr-preparation-v1/pr126-final-status.json` SHA
+  `01dbdad8335e5b6c93f1fd3db44eeb41763eac718d505d735bdd2e4515938a0e`.
+- Phase A/Wave A2 continues. Published score now **1/5 gates,2/30 objectives** (O2/O30).
+  V4 includes9papers/50visuals,44TP/4FP/6FN,O1=.8979591836734694 below unchanged.90,
+  O2=.8826424973982893 above.75,8zeros/0unknown. No target/hard gate lowered. G5 passes
+  386Rust/581Python/85Node. #125 is the O1 follow-up; #123 separate vector support; #97 and
+  approximately500-paper truth coverage/capacity decision remain open. A2 is not complete.
+- **Next root action #125:** create `fix/e1.1-visual-only-captions` via gh worktree from this
+  checkpoint. Run owning CLI baseline before source edits, then narrow same-page contiguous
+  label/title ownership with actual grid corroboration, exact native bytes and adversarial tests.
+  Preserve interleaved Figure3 as unresolved unless an explicit caption-span representation is
+  separately implemented/reviewed. Source plans use Caption's original paragraph plus explicit
+  end and membership checks; coordinate shared figures.rs/version changes with123.
+- **#123 finish_corpus_proxy** continues in clean `fix/e1.1-vector-regions` atf03bb6e.
+  Candidate proposal `vector-regions-123/preparation-v1/candidate-boundary-v1.md` SHA
+  `d80ce85a10122425d4adc377d6d41c4b1d7d5e2f2755519f264edf2a919197f2` and12 pure controls
+  are frozen (receipt `387a4a7b30481a1a4c863f9177d3fec3add5ac5826413a10ce6710b77ea77e97`).
+  Actual-raster thin/subpixel/contrast/ownership controls are next, parameters fixed before corpus
+  outcomes. Generated renderer experiment/reviews from07:17 remain valid. No production source
+  edits or new heavy launch yet; integrate current main and owning baseline before implementation.
+  Root allocates the sole heavy slot. No heavy job currently running.
+- **#97 scheduling:** first10 primary/first4 independent original packets remain immutable.
+  Primary last4 papers and independent3rd–5th pairs remain undispatched. finish_benchmark is
+  now available for a separately recorded primary handoff; review_ready_prs is available for
+  independent third pair after reviewer assignment. Root first4 geometry/reference preparation
+  from07:17 remains unfinished preparation, with no new truth/metric eligibility.
+- All corpus downloads and native queues are complete; do not restart batch41.10,951 unique,
+  1,000eval/10,000scale indexes are audited; production10k and app acceptance remain pending.
+  Four approved registry/provider hosts remain ineffective as verified07:04:20. Existing script
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py` must run in a normal terminal,
+  followed by restart/resume. Approval already persists; config mount is read-only, not an
+  auto-review rejection. Preserve bibliography draft94/201c53c, store905c341(no PR), reference
+  draft93/d5e12aa, person draft95/c867ec6 and all unrelated worktrees. No vault writes or live
+  provider/model calls. Overall A–D/system goal remains incomplete; continue useful offline work.
