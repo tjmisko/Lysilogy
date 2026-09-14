@@ -57,6 +57,7 @@ class ObjectMetricTests(unittest.TestCase):
     def should_reject_malformed_singletons_when_visual_geometry_is_declared(self):
         paper,artifact,index=fixture()
         malformed=[{}, {'page':1}, {'page':1,'rect':rectangle(),'extra':True},
+                   {'page':1,'rect':{**rectangle(),'extra':True}},
                    *({'page':page,'rect':rectangle()} for page in (True,1.0,0,2)),
                    *({'page':1,'rect':rect} for rect in (None,rectangle(x1=0),rectangle(x0=11),
                      rectangle(x1=101),rectangle(y1=float('nan')),rectangle(x0=True)))]
