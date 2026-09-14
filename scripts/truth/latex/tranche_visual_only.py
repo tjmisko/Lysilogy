@@ -13,7 +13,7 @@ from annotations import canonical, document, require
 from archive import read_archive, sha256
 from native_exports import FORMAT as NATIVE_FORMAT, verify_native_export
 from parser import argument_commands, reference_names_verified
-from tex import comments
+from tex import COMMAND, SYMBOLS, comments, group
 from tranche import covered, hash_ref, member_pages, rectangle, source_member, unique, verify_original_file
 from tranche_visual import (COORDS, MAX_BUNDLE_BYTES, assignment_records, audit_excerpts,
                             current_source_binding, exact, members, source)
@@ -234,6 +234,8 @@ def associated_notes(primary, independent, visuals, files, index):
     by_primary = {pointer(primary, row['primary'])['id']: row for row in visuals}
     original = [row for row in primary.get('ancillary_members', []) if row.get('parent_id') in by_primary]
     result = []; occupied = set(); used = set()
+    caption_points = set().union(*(covered(members(pointer(primary, row['primary'])['native_caption_members'], index), index)
+                                  for row in visuals))
     for claim in visuals:
         p = pointer(primary, claim['primary']); i = pointer(independent, claim['independent'])
         notes = i.get('ancillary', [])
@@ -262,6 +264,21 @@ def associated_notes(primary, independent, visuals, files, index):
             require(points and points == covered(b, index), 'attached note native memberships disagree')
             require(not points & occupied and member_pages(a, index) == {claim['region']['page']},
                     'attached note is reused or belongs to another page')
+            require(not points & caption_points, 'attached note reuses caption membership')
+            rect = claim['region']['rect']; positioned = set()
+            for token in index['tokens']:
+                overlap = points & set(range(token['start'], token['end']))
+                if not overlap: continue
+                require(token['page'] == claim['region']['page'] and token['rects'],
+                        'attached note has missing or wrong-page native geometry')
+                for box in token['rects']:
+                    require(set(box) == set(COORDS), 'attached note token rectangle differs')
+                    rectangle(token['page'], [box[key] for key in COORDS], index)
+                    require(rect['x_min'] <= box['x_min'] < box['x_max'] <= rect['x_max']
+                            and rect['y_min'] <= box['y_min'] < box['y_max'] <= rect['y_max'],
+                            'attached note token geometry escapes reviewed full body')
+                positioned |= overlap
+            exact(positioned, points, 'attached note has unpositioned native membership')
             occupied |= points
             result.append({'kind': 'attached_table_note', 'parent': claim['source_id'],
                            'source_members': [full], 'visible_source_members': [visible], 'spans': a,
@@ -269,6 +286,89 @@ def associated_notes(primary, independent, visuals, files, index):
                            'scope': 'Included in reviewed full visual body; not an independent formal object.'})
     exact(used, {row['id'] for row in original}, 'attached note ownership is incomplete')
     return result
+
+
+def literal_macro_declarations(name, files):
+    """Find definitions in position-preserving comment-masked text, even dormant bodies."""
+    control = re.escape('\\' + name) + (r'(?![A-Za-z@])' if name[-1].isalpha() else '')
+    target = r'(?:\{\s*' + control + r'\s*\}|' + control + ')'
+    pattern = re.compile(r'\\(?:newcommand|renewcommand|providecommand|DeclareRobustCommand)\*?\s*' + target
+                         + r'|\\(?:def|gdef|edef|xdef|let|futurelet)\s*' + control
+                         + r'|\\(?:newenvironment|renewenvironment)\*?\s*\{' + re.escape(name) + r'\}')
+    return [(path, match.start()) for path, raw in files.items() for match in pattern.finditer(raw)]
+
+
+def literal_macro_scope(name, definition, files, inventory):
+    exact(literal_macro_declarations(name, files), [(definition['path'], definition['start'])],
+          'nonvisual macro has another or unsupported definition')
+    active = inventory.get('coverage', {}).get('expanded_files', [definition['path']])
+    require(isinstance(active, list) and 1 <= len(active) <= 256 and all(path in files for path in active),
+            'nonvisual macro source closure is unsupported')
+    dynamic = {'csname', 'catcode', 'lccode', 'uccode', 'lowercase', 'uppercase', 'scantokens',
+               'read', 'readline', 'let', 'futurelet', 'afterassignment', 'aftergroup',
+               'begingroup', 'endgroup', 'newif', 'else', 'fi', 'unless'}
+    require(not any(match[1] in dynamic or match[1].startswith('if')
+                    for path in active for match in COMMAND.finditer(files[path])),
+            'nonvisual macro has unverified dynamic source binding')
+    prefix = files[definition['path']][:definition['start']]
+    depth = 0; at = 0
+    while at < len(prefix):
+        if prefix[at] == '\\':
+            token = COMMAND.match(prefix, at)
+            require(token is not None, 'nonvisual macro has unsupported source tokenization')
+            at = token.end(); continue
+        if prefix[at] == '{': depth += 1
+        elif prefix[at] == '}': depth -= 1
+        require(depth >= 0, 'nonvisual macro has unbalanced source scope')
+        at += 1
+    require(depth == 0, 'nonvisual macro definition is inside an unproven source scope')
+
+
+def nonvisual_float_context(occurrence, inner, files, inventory):
+    """Check finite text/math/rule framing outside one paired formal occurrence.
+
+    This is a source-role guard, not TeX execution or mathematical fidelity.
+    Unknown commands, additional environments and parameterized aliases reject.
+    Only unique earlier local zero-argument aliases with the same finite grammar
+    can extend the literal commands; original full-page review remains required.
+    """
+    raw = files[occurrence['path']]
+    prefix = raw[occurrence['start']:inner['start']]
+    suffix = raw[inner['end']:occurrence['end']]
+    opening = re.match(r'\\begin\{(figure\*?|table\*?)\}(?:\[[htbp!H ]{1,32}\])?', prefix)
+    require(opening is not None, 'nonvisual source lacks direct float framing')
+    ending = re.search(re.escape('\\end{' + opening[1] + '}') + r'\s*$', suffix)
+    require(ending is not None, 'nonvisual source float framing differs')
+    context = prefix[opening.end():] + suffix[:ending.start()]
+    allowed = set(SYMBOLS) | {'textbf', 'textit', 'emph', 'mbox', 'text', 'mathrm', 'mathbf', 'mathit',
+        'mathbb', 'mathcal', 'mathsf', 'operatorname', 'ensuremath', 'bf', 'it', 'rm', 'cal',
+        'centering', 'hrule', 'vspace', 'hspace', 'label', 'quad', 'qquad', 'hfill', 'vfill',
+        'ne', 'in', 'notin', 'forall', 'exists', ',', ';', ':', '!', ' ', '\\'}
+    budget = [512]; declaration_cache = {}
+    def check(text, depth):
+        require(depth <= 8 and len(text) <= 16384, 'nonvisual context expansion exceeds its bound')
+        require(re.search(r'\\hrule\s*(?:width|height|depth)\b', text) is None,
+                'nonvisual context rule has unsupported drawing parameters')
+        for token in COMMAND.finditer(text):
+            budget[0] -= 1
+            require(budget[0] >= 0, 'nonvisual context command budget exceeded')
+            name = token[1]
+            if name not in declaration_cache: declaration_cache[name] = literal_macro_declarations(name, files)
+            declarations = declaration_cache[name]
+            if not declarations:
+                require(name in allowed, 'nonvisual float contains unsupported extra source payload')
+                continue
+            require(name not in allowed and len(declarations) == 1, 'nonvisual context primitive is redefined')
+            path, start = declarations[0]
+            require(path == occurrence['path'] and start < occurrence['start'], 'nonvisual context alias is not an earlier local definition')
+            source_text = files[path]
+            head = re.match(r'\\newcommand\{\s*' + re.escape('\\' + name) + r'\s*\}\s*', source_text[start:])
+            require(head is not None, 'nonvisual context alias has unsupported definition syntax')
+            body, end = group(source_text, start + head.end())
+            require(end <= occurrence['start'] and '#' not in body, 'nonvisual context alias is parameterized or out of scope')
+            literal_macro_scope(name, {'path': path, 'start': start, 'end': end}, files, inventory)
+            check(body, depth + 1)
+    check(context, 0)
 
 
 def visual_projection(construction, primary, independent, inventory, files, index, geometry):
@@ -321,6 +421,7 @@ def visual_projection(construction, primary, independent, inventory, files, inde
     excluded = unique(construction['source_visual_exclusions'], 'source_id', 'source visual exclusion repeats')
     expected = {sid for sid, row in parsed.items() if row['kind'] in VISUAL_KINDS} - source_claims
     exact(set(excluded), expected, 'current syntactic visual source role is unaccounted')
+    source_comments = {path: comments(raw) for path, raw in files.items()} if excluded else {}
     for sid, row in excluded.items():
         require(set(row) == {'source_id', 'disposition', 'source_members', 'original_evidence', 'reason', 'source_role_evidence'},
                 'source visual exclusion fields differ')
@@ -340,6 +441,7 @@ def visual_projection(construction, primary, independent, inventory, files, inde
         occurrence = parsed[sid]['source_members'][0]
         if row['disposition'] == 'reviewed_printed_nonvisual':
             require(set(roles) == {'primary_object', 'independent_object'}, 'nonvisual role must bind both originals')
+            paired = []
             for side, original in [('primary', primary), ('independent', independent)]:
                 path = roles[side + '_object']
                 require(re.fullmatch(r'/objects/(0|[1-9][0-9]*)', path) is not None, 'nonvisual role lacks original object')
@@ -347,6 +449,9 @@ def visual_projection(construction, primary, independent, inventory, files, inde
                 require(item['kind'] not in VISUAL_KINDS, 'printed visual cannot be relabeled as nonvisual')
                 span = source(item['source_environment'] if side == 'primary' else item['source'], files)
                 require(contains(occurrence, span), 'nonvisual original does not belong to the syntactic source object')
+                paired.append((span, item['kind'], item.get('printed_number' if side == 'primary' else 'printed_label')))
+            exact(paired[0], paired[1], 'nonvisual originals identify different source occurrences or roles')
+            nonvisual_float_context(occurrence, paired[0][0], source_comments, inventory)
         else:
             require(set(roles) == {'wrapper', 'empty_macro_definition'}, 'nonrendered role lacks exact source context')
             wrapper = source(roles['wrapper'], files); definition = source(roles['empty_macro_definition'], files)
@@ -355,6 +460,7 @@ def visual_projection(construction, primary, independent, inventory, files, inde
             raw = files[wrapper['path']]
             match = re.fullmatch(r'\\newcommand\{\\([A-Za-z]+)\}\[1\]\{\}', raw[definition['start']:definition['end']])
             require(match is not None, 'unsupported original empty-macro declaration')
+            literal_macro_scope(match[1], definition, source_comments, inventory)
             require(re.fullmatch(re.escape('\\' + match[1] + '{') + r'\s*', raw[wrapper['start']:occurrence['start']]) is not None
                     and re.fullmatch(r'\s*\}', raw[occurrence['end']:wrapper['end']]) is not None,
                     'nonrendered wrapper contains extra source payload')

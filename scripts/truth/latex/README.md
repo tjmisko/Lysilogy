@@ -182,6 +182,20 @@ dependency records. Separately recorded table notes retain their source owner
 and native spans through the visual-only overlay. They do not become statements
 or independent metric objects.
 
+An excluded printed nonvisual occurrence must bind the same source span, kind
+and printed label in both originals. Its remaining float context admits only
+the finite text/math/spacing commands listed in the codec, bare rule framing,
+and unique earlier local zero-argument aliases built from that same grammar.
+Additional environments, graphics, unknown commands, parameterized aliases and
+redefinitions reject. An empty-wrapper exclusion requires one literal definition;
+other definitions, dynamic assignments, conditional or grouped source scope are
+unsupported. These checks constrain the recorded source role; they do not execute
+TeX, prove arbitrary package semantics or certify mathematical rendering. The
+distinct original-page/construction review and retained source limitations remain
+required. Every attached note must have complete native token rectangles inside
+its reviewed full body and membership disjoint from every caption. Missing native
+geometry stays an explicit rejection, without inferred rectangles.
+
 Every original top-level value and collection member is retained by its canonical
 JSON pointer/hash, original role/ownership labels and scored/unscored disposition;
 the unchanged original artifact supplies all nested source/native/fidelity fields.

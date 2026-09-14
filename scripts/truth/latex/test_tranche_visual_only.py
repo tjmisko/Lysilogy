@@ -48,6 +48,37 @@ def seal(data):
                                          {r['source_id']: r for r in c['source_visual_exclusions']})}
 
 
+def exclusion_fixture(discard=False, before='', between='', residual='', extra=''):
+    data = fixture(); c, p, i, inventory, files, _, _ = data
+    name = next(iter(files)); files[name] += before
+    definition = r'\newcommand{\discard}[1]{}'
+    definition_start = len(files[name])
+    if discard: files[name] += definition + between + '\\discard{\n'
+    start = len(files[name]); opening = r'\begin{figure}'
+    equation = r'\begin{equation}x=1\end{equation}'
+    body = opening + residual + equation + extra + r'\end{figure}'
+    files[name] += body + ('\n}' if discard else '')
+    occurrence = {'path': name, 'start': start, 'end': start + len(body)}
+    def src(a,b):return {'member':name,'start':a,'end':b,'text':files[name][a:b]}
+    inventory['objects'].append({'id':'excluded','kind':'figure','labels':[],'source_members':[occurrence]})
+    row = {'source_id':'excluded','source_members':[occurrence],'reason':'Synthetic paired original source role.'}
+    if discard:
+        i['source_semantics_notes']=['Original pages retain zero printed payload for this source wrapper.']
+        row.update(disposition='reviewed_nonrendered_source',
+            original_evidence=[{'artifact':'independent','pointer':'/source_semantics_notes/0','record_sha256':sha256(canonical(i['source_semantics_notes'][0]))}],
+            source_role_evidence={'wrapper':src(definition_start+len(definition)+len(between),len(files[name])),
+                                  'empty_macro_definition':src(definition_start,definition_start+len(definition))})
+    else:
+        inner = src(start+len(opening)+len(residual),start+len(opening)+len(residual)+len(equation))
+        p['objects'].append({'id':'equation','kind':'equation','source_environment':inner})
+        i['objects'].append({'id':'equation','kind':'equation','source':deepcopy(inner)})
+        row.update(disposition='reviewed_printed_nonvisual',
+            original_evidence=[{'artifact':side,'pointer':'/objects/1','record_sha256':sha256(canonical(original['objects'][1]))} for side,original in [('primary',p),('independent',i)]],
+            source_role_evidence={'primary_object':'/objects/1','independent_object':'/objects/1'})
+    c['source_visual_exclusions']=[row];seal(data)
+    return data
+
+
 def admission_fixture():
     data = fixture(); candidate, wrapped, source_raw, old, images = original_fixture(with_links=True)
     c, p, i, parsed, files, index, geometry = data
@@ -112,6 +143,39 @@ def admit(data):
 
 
 class VisualOnlyProjectionTests(unittest.TestCase):
+    def test_should_reject_different_nonvisual_occurrences_when_both_are_inside_one_float(self):
+        extra=r'\begin{equation}y=2\end{equation}'
+        data=exclusion_fixture(extra=extra);row=data[2]['objects'][1];text=data[4][row['source']['member']]
+        start=text.index(extra);row['source'].update(start=start,end=start+len(extra),text=extra)
+        evidence=data[0]['source_visual_exclusions'][0]['original_evidence'][1]
+        evidence['record_sha256']=sha256(canonical(row));seal(data)
+        with self.assertRaisesRegex(ValueError,'different source occurrences'):visual_projection(*data)
+
+    def test_should_reject_unaccounted_float_payload_when_one_equation_is_paired(self):
+        for extra in (r'\includegraphics{plot}', r'\begin{equation}y=2\end{equation}',
+                      r'\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}', r'\unknown'):
+            with self.subTest(extra=extra), self.assertRaisesRegex(ValueError,'extra source payload'):
+                visual_projection(*exclusion_fixture(extra=extra))
+
+    def test_should_bound_nonvisual_context_when_a_literal_math_alias_is_used(self):
+        definition=r'\newcommand{\Vector}{{\bf W}}'
+        good=exclusion_fixture(before=definition,residual=r'Let $\Vector_i := 1$.\hrule ',extra=r'\vspace{3mm}\hrule')
+        self.assertEqual(len(visual_projection(*good)['objects']),1)
+        for before in (r'\newcommand{\Vector}{\includegraphics{plot}}',
+                       r'\newcommand{\Vector}{\Vector}', r'\newcommand{\Vector}[1]{#1}',
+                       definition+r'\renewcommand{\Vector}{\includegraphics{plot}}',
+                       '{'+definition+'}', r'\iffalse'+definition+r'\fi'):
+            with self.subTest(before=before), self.assertRaises(ValueError):
+                visual_projection(*exclusion_fixture(before=before,residual=r'\Vector'))
+
+    def test_should_reject_redefined_discard_when_an_earlier_empty_definition_is_supplied(self):
+        for between in (r'\renewcommand{\discard}[1]{#1}', r'\def\discard#1{#1}',
+                        r'\newcommand{\later}{\renewcommand{\discard}[1]{#1}}\later',
+                        r'\let\discard\relax', r'\csname discard\endcsname'):
+            with self.subTest(between=between), self.assertRaises(ValueError):
+                visual_projection(*exclusion_fixture(discard=True,between=between))
+        self.assertEqual(len(visual_projection(*exclusion_fixture(discard=True,between='% commented \\renewcommand{\\discard}[1]{#1}\n'))['objects']),1)
+
     def test_should_dispatch_only_visual_projection_when_explicit_visual_only_manifest_is_selected(self):
         from manual import attach_declared_tranche
         with tempfile.TemporaryDirectory() as directory:
@@ -129,22 +193,29 @@ class VisualOnlyProjectionTests(unittest.TestCase):
         env=src(0,len(text));start=text.index(r'\begin{tablenotes}');end=text.index(r'\end{tablenotes}')+len(r'\end{tablenotes}')
         full=src(start,end);visible=src(text.index('Note.'),text.index('Note.')+5)
         native={'start':5,'end':10,'text':'Note.','pages':[1]}
-        p={'objects':[{'id':'p','kind':'table'}], 'ancillary_members':[{'id':'p-note','parent_id':'p','source':full,'native_members':[native]}]}
+        p={'objects':[{'id':'p','kind':'table','native_caption_members':[{'start':0,'end':4,'text':'Cell'}]}], 'ancillary_members':[{'id':'p-note','parent_id':'p','source':full,'native_members':[native]}]}
         i={'objects':[{'id':'i','kind':'table','source':env,'ancillary':[{'role':'table_note','source':visible,'native_members':[native]}]}]}
-        claims=[{'primary':'/objects/0','independent':'/objects/0','source_id':'source-table','region':{'page':1}}]
-        index={'text':'Cell\nNote.','pages':[{'number':1,'start':0,'end':10,'width':150,'height':150}]}
+        claims=[{'primary':'/objects/0','independent':'/objects/0','source_id':'source-table','region':{'page':1,'rect':{'x_min':10,'y_min':20,'x_max':100,'y_max':80}}}]
+        index={'text':'Cell\nNote.','pages':[{'number':1,'start':0,'end':10,'width':150,'height':150}],
+               'tokens':[{'start':5,'end':10,'text':'Note.','page':1,'rects':[{'x_min':15,'y_min':60,'x_max':40,'y_max':70}]}]}
         result=associated_notes(p,i,claims,files,index)
         self.assertEqual(result[0]['parent'],'source-table')
         self.assertEqual(result[0]['metric_eligibility'],{})
-        for case in ('missing_primary','other_owner','altered_native','additional_source_payload'):
+        for case in ('missing_primary','other_owner','altered_native','additional_source_payload',
+                     'outside_body','reuses_caption','missing_rects','unpositioned','wrong_page'):
             with self.subTest(case=case):
-                a,b=deepcopy(p),deepcopy(i)
+                a,b,changed_index=deepcopy(p),deepcopy(i),deepcopy(index)
                 if case=='missing_primary':a['ancillary_members']=[]
                 elif case=='other_owner':a['ancillary_members'][0]['parent_id']='unrelated'
                 elif case=='altered_native':b['objects'][0]['ancillary'][0]['native_members'][0]['text']='Other'
-                else:
+                elif case=='additional_source_payload':
                     span=b['objects'][0]['ancillary'][0]['source'];span['end']-=1;span['text']=span['text'][:-1]
-                with self.assertRaises(ValueError):associated_notes(a,b,claims,files,index)
+                elif case=='outside_body':changed_index['tokens'][0]['rects'][0].update(y_min=90,y_max=100)
+                elif case=='reuses_caption':a['objects'][0]['native_caption_members']=[deepcopy(native)]
+                elif case=='missing_rects':changed_index['tokens'][0]['rects']=[]
+                elif case=='unpositioned':changed_index['tokens']=[]
+                else:changed_index['tokens'][0]['page']=2
+                with self.assertRaises(ValueError):associated_notes(a,b,claims,files,changed_index)
 
     def test_should_require_separate_admission_when_pure_visual_projection_is_complete(self):
         data = admission_fixture(); result = admit(data)
