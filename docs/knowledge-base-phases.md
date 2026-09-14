@@ -6520,3 +6520,65 @@ date, last merged issue, in-flight branches and their state, next action, and op
   checkpoint. Blocked33 and drafts93/94/95 stay preserved. Four approved hosts remain ineffective
   at last check; normal-terminal script and restart/resume verification from prior entries
   remain necessary. Production10k, Playwright, phase exits and later phases are outstanding.
+
+
+### 2026-09-14 11:27 UTC — bounded replay source and offline gates clear; final-four review underway
+
+- Last merged #123/PR128; main f77e470 before this checkpoint. Phase A/A2 remains at
+  1/5 hard gates and 3/30 objectives (O1/O2/O30). All 10 protected preview files unchanged.
+  Continuity receipt `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation-checkpoint-root-20260914T1127.json`,
+  SHAc77ca1eada17b3eb981d4f6a7522e843f681f4f05132b5c2a683657265d85af2, binds 11 new artifacts. No downloads or native queue runs.
+- #129 source review retained three reproduced findings in
+  `~/.cache/lysilogy/review-bounded-k1-129-source-v1/review.json`, SHA
+  35c92658c690b21a25d3b048f3a6393cc0d85813b33be472c2bb565a0e2ea2f5:
+  SIGTERM cleanup, process output free-space reservation, and nested collector JSON bounds.
+  Corrected source 3644201ff3b1bca81cde228ac75dc4c41f3df590 independently CLEAR in
+  `review-bounded-k1-129-source-3644201/review.json`, SHA
+  0e567f42ca33e19923221411107b10284958a356b740fe57d788caf4fc3397ab.
+  Reviewer checked 39 scoped tests, 50 collector tests and 5 focused controls. Owner's 394
+  truth tests pass. Ordinary main merge 47ef6f9aaf54cb7520e3db2fbb8d086d599740e3 changes only
+  phase docs relative to reviewed source; no rebase. Branch/worktree remain
+  feat/e8.3-bounded-k1-replay, owner finish_corpus_proxy, no PR yet.
+- Compiled all-target tests and CLI build passed at 47ef6f9 in 15.822s (TTY49087 terminal0);
+  receipt `bounded-k1-replay-129/compiled-47ef6f9-v1/receipt.json`, SHA
+  49fca9c42ff5778a9bf10b845def4c77b0fb89ed98116074dacc4e2b5f3ef322.
+  Remaining provider-budget/bibliography/scale/G5 checks passed in 29.501s (TTY47674 done),
+  receipt `bounded-k1-replay-129/remaining-gates-47ef6f9-v1/receipt.json`, SHA
+  f3d048c3eaa1f564e6e76f9ca36fbc4a535c4426a57d000fd4fd56c7fe7cd887. Heavy slot released.
+  Reviewer finish_benchmark independently froze expected legacy packet SHA
+  d1a35f14bac33b760a8d17fb0b985611866fd78198019cb440c965a894f888b4,
+  18 ordered records across 2/3/4/9-paper legacy releases, 117 outcomes. Exact real adapter and
+  500-inert-record resource runners remain in preparation; their launch is not cleared yet.
+  Owner will resume reviewer when frozen. No new-path cohort/resource result claimed.
+- Final-four reconciliation is frozen: preparation `reconciliation/final-four-v1/receipt-v1.json`,
+  SHA0f72b096afc5ff999be50c7787ffdbd505ad1eae80c568fe044f98138cc85d08,
+  85 bindings totaling 60,404,307 bytes. Decisions 6a5085affc72c09f0616aa6d94abf09955de14fd6dfd91bf5d52b1817062fed7;
+  mechanical comparison v2 8b1cec2fec8b664d273bc887ff4e53b0d2f037cc15b4bb99bf76e511ccdc8086;
+  extension d70d3ad5ca96995f7b587ccfc8a8c359ff89e37be5e59ceb646338492812736d.
+  It resolves finite source/native identity, 132 bibliography fields, 118 original partial
+  token arrays, 22 objects, 10 statements, four proofs, three lemma parts, 52 citations/55
+  targets, 51 top-level reference pairs and two nested panel-locator pairs. Five suffix/panel
+  selections and four primary-only locators preserve first-pass absence. A separate post-freeze
+  2207 owner-star supplement and all original source/archive bytes are bound; failed all-tar
+  assumption is retained (2310 is single gzip with original Nash_Equilibrium.tex filename and
+  exported main.tex alias). All geometry/full fidelity/table-cell/inline/narrative/affiliation
+  marker deficits remain explicit; no truth or metric admission.
+- Root has personally viewed all 21 final-four original pages before detailed source/native
+  inspection. Four page receipts under `~/.cache/lysilogy/review-k1-final-four-root-v1/` are
+  checkpoint-bound. Root now independently reviews final-four exact closure and decisions.
+  Producer review_k1_reconciliation switched to independent review of the three root preps:
+  next-two math geometry, 2404 source/printed math, and new 2011 source/printed math.
+- New `reconciliation/references-root-v1/source-printed-math-2011-root-v1.json`, SHA
+  ed997dc4348e69ed34751098238ad0275787bf8a768c9d0dbf8abfff6c887e99, records six numbered
+  displays (1,4,5,6,7,8), three unnumbered displays and two attached conditions after actual
+  original p3/p4/p5 views. Native eq7/8 independent bodies include prefacing conditions while
+  primary bodies exclude them; both originals and explicit unions remain intact. Trailing
+  source condition commas and literal norm declaration are bound. Source/printed identity
+  only: no algebraic validity, native quote fidelity, source execution, guard override or
+  admission. Distinct review pending alongside the earlier two root packages.
+- Next: finish and separately review #129 exact runners, execute bounded measurements, review
+  actual evidence, draft/review/merge; finish final-four independent review and three root prep
+  reviews. Blocked #33 and drafts #93/#94/#95 remain preserved. Four approved registry/provider
+  hosts remain ineffective at last verification; the read-only config mount requires the
+  normal-terminal script and restart/resume verification recorded above. No repeated approval
+  needed. Production 10k, Playwright, phase exits and later phases remain outstanding.
