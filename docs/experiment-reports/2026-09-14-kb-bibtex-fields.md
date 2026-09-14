@@ -95,8 +95,8 @@ Initial wrapper-review findings and the stopped preparation caused by generated
 G5 bytecode remain recorded; the corrected wrapper rejects stale result selection
 and build-only dispatch. No production source changed after the measured gates.
 Ordinary main merges replaced rebase under the standing permission restriction.
-The before-change executable was hashed but not archived before replacement;
-its original bytes are not claimed retained. Final executables are archived.
+The before-change executable is retained with its original receipt hash.
+Both final executables are also archived.
 
 
 The clean before-change own-CLI objects check took 94.620132 seconds including
