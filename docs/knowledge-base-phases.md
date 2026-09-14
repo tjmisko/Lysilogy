@@ -215,6 +215,14 @@ acceptance are unchanged.
   pages, using existing bounded OCR or explicit unavailable provenance. Preserve valid frozen
   indexes and all identity records. Coordinate shared `src/source_index.rs` with #70.
 
+- [ ] **#118 Retain usable native output with bounded diagnostics** (after #98).
+  Branch `fix/e0-native-diagnostics`. Owns `src/source_index.rs`, a narrow command module if
+  needed, focused tests and measured evidence/report. Retain a bounded diagnostic prefix and
+  a finite drainage ceiling for pdftotext; preserve stdout/time/cancellation/status and native
+  coordinate checks. Keep OCR/graphics policies unchanged. Recover only the failed original
+  2106.09069v1 scale paper after source review, retaining the old failure and exact identities.
+  Root coordinates a new queue/auditor generation; no failed paper is skipped or replaced.
+
 - [x] **#106 Recover regions and reject duplicate captions on expanded K1** (after #105).
   Branch `fix/e1.1-expanded-k1-regions`. Owns `src/source_index/figures.rs`, bounded graphics
   trace parsing in `src/source_index/graphics.rs`, focused fixtures and measured evidence.
@@ -231,7 +239,7 @@ acceptance are unchanged.
   manual consumer guards and tests in `scripts/truth/latex/`, new-generation evidence/contract.
   Keep source-occurrence objects distinct, every ambiguous reference counted but unresolved,
   and all source/math/native guards. Retained v1/v2 modules and truth are immutable.
-- [ ] **#109 Preserve literal BibTeX field syntax** (after #107; part of #97).
+- [x] **#109 Preserve literal BibTeX field syntax** (after #107; part of #97).
   Branch `fix/e8.3-bibtex-fields`. Owns the current bounded BibTeX scanner in
   `scripts/truth/latex/parser.py` or a narrow extracted module, focused fixtures/tests,
   `eval/latex-contract.md` and measured evidence. Preserve literal percent characters and
@@ -276,6 +284,29 @@ acceptance are unchanged.
   `cargo test` that loads the gold set.
 
 ### Phase A notes
+
+- #109 merged via PR119 (`722b6b2`), independently reviewed final head `1b3d029`. Bounded
+  BibTeX fields now preserve literal percent text and protected quotes. The fixed710 execution
+  yields689 candidates:5/8 original failures recovered and684/702 prior successes retained;
+  18 prior-source losses and3 remaining original failures stay explicit. This is a net13
+  source-parse loss, not an unqualified coverage gain. Malformed syntax, physical-line behavior,
+  empty identities and the cumulative cap are classified in the report;97 retains coverage work.
+  All surviving object/link/BBL identities are unchanged; only supplementary field_conflicts
+  differ. Actual current objects refresh remains O1=1/O2=.9169720168893188 over23 visuals,
+  with every incoming paper outcome and full prediction exact. Gates pass368Rust/505Python/
+  85Node; both immutable versions replay. Baseline and final executables are retained. Report:
+  `docs/experiment-reports/2026-09-14-kb-bibtex-fields.md`; evidence `eval/evidence/bibtex-fields.json`.
+  Ordinary main integration replaced rebase under the standing restriction. Next source-support
+  work must retain these explicit failures and use reference-backed semantics; no target changed.
+
+- #118 records the first failure in scale batch28: 249 successes and one bounded-stderr error
+  for 2106.09069v1. Root audit verifies 7,999 successful unique indexes, 1,000 eval/7,048 scale;
+  2,951 scale papers remain unattempted and the one failed paper remains in the denominator.
+  The original queue stopped before its aggregate audit; root ran that read-only audit and
+  recorded terminal failure instead of leaving its stale running status. Do not resume the
+  old queue or overwrite the failed batch. A reviewed new recovery/auditor generation is needed.
+  The read-only diagnostic exits0 with18 pages/9,520 finite ordered word rectangles and
+  169,653 stderr bytes; this is structural evidence, not application/native recovery.
 
 - #110 merged via PR116 (`230bf81`), reviewed head `2daacd0`. The independently reviewed
   confined ten-paper source-layout experiment is a no-go:1/10 builds,0/10 complete documents
@@ -4651,3 +4682,88 @@ date, last merged issue, in-flight branches and their state, next action, and op
   corpusstorage/OAI/export/GCSwork. PreserveblockedWTs/unrelatedWTs/preview/vault/corpus;
   no rebase/sudo/rm-rf/private/env access ormodelbatch. Followupissues21/22/97/103/109/115/117
   remainopen; only117wasnewthislatestinterval. No goal/phase completion claim.
+
+
+### 2026-09-14 02:40 UTC — #109 merged; scale diagnostic failure retained; #115/#118 active
+
+- Phase A / Wave A2 remains incomplete. Last merged issue109, PR119, merge
+  `722b6b24aa57fc454cd9f4fb54b14071dfcc235e` at02:38:30UTC. Final reviewed head
+  `1b3d029b8b8b3c43aca297e4bc5010db86be4add`; independent review
+  `review-bibtex-pr119-1b3d029/review.json` SHA
+  dab091c0123cd063f4b07086fee086029288538061403ed79e74d5ebd76e0680. Root completed report/
+  metadata finalization; no implementation changed after gated19f549e. Worktree/target and
+  local/remote branch removed. All10 protected preview files still match
+  `kb-preview-before.json` (2cee9c1f5f12ca1d0b1e3979952252d7bcd37b414df76142f919e6b5cb449870).
+- #109 final gates at19f549e:12commands,98.014107s/1268704KiB;368Rust/505Python/85Node,
+  immutable v1/v2 replay pass. Receipt `bibtex-fields/final-gates-19f549e/receipt.json`
+  26b9c15c2c162d79998b62e2ee8e1522bad045ffd866363767fd5806e00d24a9. Initial objects result
+  correctly unavailable for stale parser fingerprint; actual --executable refresh28.447967s/
+  277792KiB establishes available O1=1/O2=.9169720168893188, exact3papers/23outcomes/full
+  predictions and all incoming truth/coverage/external hashes. Refresh receipt
+  517f7c49878c16e4049b956e2f0697ae1c2a6fc15e683bdc8624aab37fa85415; actual review
+  a1701e689ba023326ac7e2ccc8a20928e539e0f01d323adf9d7ff7116bbbbf27.
+  Exact launch review c191b1c37cf16b8dc699f0ea34b8c10ea3bf9f2944c29d7cea1f0117ed15ac75.
+- Corrected710 source6a9d65a and its previous receipt/review remain unchanged:689candidates,
+  18prior-source losses+3original failures, zeroautomatic admissions,859.394191s/332656KiB.
+  This is not a current full1000 run. Root portable manifest
+  `bibtex-fields/root-finalization-19f549e/artifacts-v2.json` SHA
+  73590b955a1748459b1ed4ed715853e47657a709b7b50874b3be85d27026d934 binds477files/139222817B,
+  including392 gated Git source copies, actual CLI/bridge, G5/Cargo logs and the original
+  baseline executable. The superseded manifest/report incorrectly described that baseline as
+  absent; final review found and verified the already-retained41070680B binary SHA
+  81682c1de727370f5267d1307bc6483c3b33e649128a39b6a1a3d7922661c7a1. Correction retained
+  explicitly; do not inherit #110's different baseline limitation. Committed machine evidence
+  SHA b1b19beb83b247cb4f75b487b1f18bd867ab3c5048102006ba899aff5fec7420.
+- Native batch27 completed before109 gates:7750unique/1000eval/6799scale, audit
+  ccb23a9211da49f5c68e8a0bc8734207a4747241f41d1144a3b9ee40952bfa00;502.603470s,
+  250new indexes/709507760B. Batch28 then ran alone during report work. RetainedTTY55890
+  TERMINAL exit1, native child exit0;416.882122s/247760KiB,249successes and one failure
+  2106.09069v1, PaperId5ad6cdda040648c1, PDFSHA
+  4c592541bfc0394b8d984bbd870b2f8e8c90b797750985842bb0ff769e851aed: pdftotext stderr cap.
+  Original receipt bb818bc7ce11046525a5493bed62a0f752f6f2b1fbf9a6c539a6851198098526.
+- Root manually ran the unchanged read-only batch auditor after the queue assertion stopped.
+  `native-index-after-batch28-review.json` SHA
+  08f651b0d4eeac7ab11cedf803e7d30234260a1c6ebef3c7a208e2286fbaf58c rehashes249new indexes/
+  699633905B. Now8000unique papers,7999successful indexes,1000eval/7048scale;2951scale
+  unattempted plus1recorded failure. Registry/selection identities unchanged. Queue status is
+  failed_at_batch_boundary, resume_allowed=false, next29; PAUSE remains. Original stale
+  running status is retained in batch-0028.terminal-status-before.json, corrected terminal
+  record at scale-index-queue/batch-0028.terminal-failure.json. Do not run oldqueue--start29:
+  it must not skip or overwrite the failed selected paper. No native job/download is running.
+- New **#118**, on epic11/project12, ownerfinish_corpus_proxy. Fresh WT
+  `fix/e0-native-diagnostics` starts at722b6b2; light scope/source work only at this checkpoint,
+  no code or actual recovery claimed. Root structural diagnostic (not application acceptance)
+  ran exact installed pdftotext arguments with35s/1.5GiB/48MiB stdout bounds and64KiB retained
+  stderr prefix:exit0,.088538s,18pages/9520finite ordered word rectangles,1210510stdout/
+  169653stderr bytes. Probe drained stderr with time/memory limits but no byte-drain ceiling;
+  only the retained prefix is rehashable, full-stream count/hash remain original probe evidence.
+  `native-stderr-2106-diagnostic-v1/artifacts.json` SHA
+  4d921972099bc8a51ccb03bc7ded7ed0248512a5b10b29e7e1ed79471ed70caf; receipt
+  5c924506f894567046965b601e03b1fc74c2714b002f449ceb223c126d9f8201. Independent scope review
+  `review-native-stderr-118-v1/review.json` SHA
+  1c7c82297d77d49ba797f28e1fcecae77e76de2c7199f6de0218b1bd0839bf26 suggests pdftotext-only
+  64KiB retained prefix/1MiB hard drain/fixed8KiB scratch/limit+1 rejection, explicit truncation
+  metadata and unchanged OCR/graphics defaults. Preserve stdout/time/cancel/nonzero/native
+  bounds. Source review precedes one-paper recovery and new queue/audit generation; root owns
+  continuation. Actual failed PDF/successful indexes stay immutable. No recovery claim yet.
+- #115 ownerfinish_benchmark, cleanWT `feat/e8.3-visual-tranche` still3d613f2, noPR/v3
+  publication. Resume now that109merged: ordinary latestmain integration, fresh construction
+  and explicit old/current delta, root separate construction review, reviewed exact15module
+  full1000snapshot and genuine execution. Prior3d construction/actualattachment/compatibility
+  and v2 runner preparation clearances remain valid only for their exact artifacts (previous
+  session entry). New release preparation at visual-tranche-115/release-preparation-v1/receipt.json
+  SHA486400fab748a1f37ef21d51a431812fec5ffb727a85d485bf4b8d4370889861 records exact nextsteps
+  and report skeleton; no dependent command ran during preparation. Full1000 has priority for
+  next heavy window;118baseline/build must coordinate. Nativequeue remains stopped.
+- #117 remains blocked by115; noWT/code/publication. Original five visual body decisions and
+  source caveats from priorentry remain. Additional read-only planning
+  `k1-coverage/visual-only-implementation-notes-v1.md` SHA
+  0b68e6178612248cbd873c37681f9a1f46c4f25dfdffccadc2cd7cf53b725eeb identifies explicit
+  visual-negative coverage and associated-note ownership paths without fabricated O3–O7
+  eligibility; retain every parsed/source role, including2303framedEq1/ignoredfigure.
+- Cumulative scorecard unchanged1/5gates,3/30objectives(O1/O2/O30); source coverage97 and
+  historical scale misses21/22 remain open. Newfollowup118;109closed. Phase/system incomplete.
+  OpenPR93/94/95 and33WT still await effective approved Rust/provider hosts. Managed~/.codex
+  remains read-only; existing four-host script command and restart requirement from priorentry
+  remain, with no new approval request/retry/bypass. No rebase/sudo/rm-rf/private/env access,
+  destructive vault/data operation or model batch. Continue115+118 and preserve blockedWTs.
