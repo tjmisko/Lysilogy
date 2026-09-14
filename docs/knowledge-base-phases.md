@@ -4576,3 +4576,78 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Existing terminal command `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`,
   then restartCodex; no new permission request/retry/bypass. Originalcorpusstorage/hostswork.
   PreserveunrelatedWTs/preview/vault/corpus. No rebase/sudo/rm-rf/private/env access/modelbatch.
+
+
+### 2026-09-14 01:50 UTC — #109 full result terminal; batch27 running during final review
+
+- StillPhaseA/WaveA2, lastmerged110/PR116 (230bf8182881d5cb923785e3896de05f46e3389b), mainbefore
+  thischeckpointbb0d2b6 pushed. Earliercontinuation111/PR114 merged/cleaned too. Current scorecard
+  unchanged1/5gates,3/30objectives(O1/O2/O30), O1=1/O2=.9169720168893188 over23visualobjects;
+  finalsystem/phase incomplete. No newmerge/PR; pending93/94/95 and33WT remainblocked. All10
+  protectedpreview files unchanged against kb-preview-before.json. No downloads.
+- **#109 corrected710 TERMINALexit0**, ownerfinish_corpus_proxy, cleanWTfix/e8.3-bibtex-fields
+  source6a9d65ad516d36ace4cde17c425a2c83ded76f12. RetainedTTY60065 closed. Snapshot
+  `bibtex-fields/comparison-6a9d65a-v1/` launch35955f75445ace6f08217ceed4edcc187bec63f5078bb8c4d445084c6e7b1d01.
+  Actual689source/candidate successes=5/8oldquotedfailures recovered+684/702priorsuccesses retained;
+  **18prior-source losses plus3originalfailures**, zeroautomaticeligibility.859.394191s/332656KiB,
+  no native/network/model calls. Receipt d2b8346a31e57dab4496f157237595e41d723d21b66f5f5b49d9d375c99f2547;
+  reportb00290e97aa1c13de8255983ba70ad317c28c15415f320d3795f7a22b4a2c6eb;
+  ledger8463a79561a095fabd8e629146665684b4b00e06aedf18a51e7bc4fb282ce992.
+- Mechanicalcomparison/diagnostics terminal; receiptb848434c59c0d5f29f1f9dd2bbf9ac82ffa9e1ed34a5abcb473e839204616973.
+  All683 shared142inventory/candidate pairs byte-identical;6confirmedidentifier recoveries,
+  no newloss,21remainingerrorstrings exact. Correctioncomparison86c686b538714e4855739a9c1cc1f83705fe750642f7fdb3c9f93d6a4ef2ae82;
+  failureclassificationd3f05012a6ffcfa116d318d9b213d015d04867e241f0fb5a92c8b485a2146594 binds
+  everycase to exactcontext/reference. Full independentactual audit is clear:review-bibtex-6a9d65a/comparison/review.json SHA
+  438481302029ee65180b716279fc4339cb496f9fa6975faeb67a41f58ccd084d verifies4549artifacts/206806fields.
+  All13380changedentries/303papers differonlyinfield_conflicts; objects/links/BBLIDs/printedfields
+  unchanged. Remaining18priorlosses:8malformed,6physical-line,3emptyidentity,1cap.
+  Preserve142andallfirst8history;689is not an unqualified improvement over702 oldsourceparses.
+  Justify malformed versus explicitunsupported emptyidentity/physical-line/cap boundaries;
+  no skippedtails, no newBBL/provideridentity assumptions, no loweredtargets.97remainscoveragework.
+- #109 finalwrapper preparation review `review-bibtex-final-validation-v1/review.json` SHA
+  05aa6083b2b2ed0b094af1da1248041052d0ef3bf08be1b5bb618d5d0d2c8281 found stale last-globbed objectresult selection, missing
+  actualCLI/bridge/rawCargo/G5child-log portability and unenforced actualcollectorargv.
+  Owner preparedexternalv2 fixes; no gatesexecuted. Actualcollector must enforce --executable
+  andv2 (reject--build), exactfresh result/currenthead/availableO1/O2/all23cases, fullincoming
+  papers/coverage/prediction/object equality, and immutableproducerbyte/log archive.110helpers
+  are `source-layout-probe/release-tools/{refresh-after-build-only,build-release}.py`;
+  historical110initialbuild-only failure remains explicit. Next actualclearance→ordinarylatest
+  mainmerge→exactlaunchreview→finalgates/realrefresh→report/draftPR/separatereview/merge/cleanup.
+- **Root nativebatch27 RUNNING**, retainedTTY31372, after109released heavywindow for estimated
+  5–10minute lightreview/preparation. Pinnedqueue `run-remaining-scale-indexes.py --start27`
+  SHA0cdcc62d36899022b39010ab4ab285c7d8d4318294c2148e3dc40059e4d27583. Beforelaunch7500unique/
+  1000eval/6549scale,3451scale remaining,free66666086400bytes>20GiBfloor. PAUSEalreadyrestored
+  **before28**, oldmarkerretainedscale-index-queue/before-batch27-pause.txt. Parent must terminal
+  exit0 andstatuspaused_at_batch_boundary/next_batch28; inspect verifiedevent/audit beforecounting
+  progress. No otherheavyjob;109finalgates getnext priority. Expected~7min from01:48, not yetdone.
+  Registry/selection/nativehelper/runner/auditor pins unchanged; no production-scaleclaim.
+- #115 clean3d613f24ca0a2266a164fb5dfe7bfe10df663333, WTfeat/e8.3-visual-tranche, noPR. Root
+  construction15e8268c, actualattachment54e9dcbc, pureold-row compatibilitye878d3b1 remainclear;
+  identity687c640a grounded inoriginalGitassignment/freeze records. Prospective29visuals/4papers,
+  oldv1/v2/threecompactrows exact; newO8–O11omitted. **V3 disabled** pending109mainintegration,
+  freshcurrentconstructiondelta, genuinecurrent1000 andindependentpublication/measurement/gates.
+- #115 revisedexternalrunner `k1-coverage/visual-tranche-115/full-current-runner-proposal-v2/`
+  assessment66ce3c393b65057404f32986be742e99ca8dbae990ed1f9845dfde099dbdcd88. Independentprep
+  `review-full-current-runner-proposal-v2/review.json` SHA
+  881d505314d66e88e19f73aaf44557e2f18185401c412b9ba040128447da096f clears84artifacts/15owner
+  probes+4independentfilebounds. Original542derive/reportbody/order1000/999map/30s/1.5GiB exact
+  exceptdeclaredsource-loader/path/hashattestation. Exactflat15sources/no-symlink/regularfile
+  pre/post/directsource-loader/loadedmodulehashes supplied; oldtemplatesunchanged. No source
+  snapshot/actualrun yet. SIGALRM remains diagnostic acrossderive/serialization/accounting,
+  not perpaperprocess/whole-run deadline; finalartifact+aggregateaudit must catchpartialwrites.
+  Resume finish_benchmark viafollowup_task after109merge; finalintegratedlaunchreviewrequired.
+- #117 remainsblockedby115, noWT. Fixed5visualbodyreadiness is recorded (previousentry/issuev2),
+  but sourceclearance is separate. New read-only historicalplanningdiagnostic
+  `k1-coverage/visual-only-source-readiness-diagnostic-v1.json` SHA
+  e81a3c7ddbe9c3eb566758f45412ec72c1af4569d8fa3234255e89cb782f32d7:2207hadold542unterminatedTeX
+  argument/no107candidate; fresh1000must establishcurrentstatus.2303historical107nominalvisuals
+  include framedEq1 and an ignoredfigure* besidesrealTableI. Originalsource explicitly wraps
+  the absentgraphic inignore{...}; allpagesreviewed. Codec117mustretain/reconciletheseroles,
+  not blindlyfilter/drop parsedfigures.2001is recoveredby109;2310/2002/2409/2303parseinboth142/
+  corrected710. Diagnostics are not currentfull1000/truthadmission.97approximately500target unchanged.
+- Alreadyapprovedfourhosts remainineffective underread-only managed~/.codex; do notaskagain,
+  retryknownwrites or bypass. Existinguserterminalcommand:
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, thenrestartCodex. Original
+  corpusstorage/OAI/export/GCSwork. PreserveblockedWTs/unrelatedWTs/preview/vault/corpus;
+  no rebase/sudo/rm-rf/private/env access ormodelbatch. Followupissues21/22/97/103/109/115/117
+  remainopen; only117wasnewthislatestinterval. No goal/phase completion claim.
