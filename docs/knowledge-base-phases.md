@@ -7698,3 +7698,79 @@ date, last merged issue, in-flight branches and their state, next action, and op
   drafts93/94/95 remain at their prior heads. Corpus10951PDFs/1000sources and audited indexes
   stay external; no download/native queue. Preserve all ten main preview files and unrelated
   worktrees,20GiBfree floor, one heavy job. Latest preview check after06c3e66 was exact.
+
+
+### 2026-09-14 16:17 UTC — user-requested strategy and architecture review
+
+- The user asked to zoom out on interactive blockers, architecture and planning. New implementation
+  starts are paused for this discussion. No phase-order or acceptance change has been applied.
+  Last merged issue remains #131 / PR133 at6059dcfc. Phase A / Wave A2; global score remains
+  1/5 gates and3/30 objectives (O1/O2/O30). No new issue or PR was opened during this review.
+- #132 is preserved at b4ff5b99ddbf29abec94947eb9cb54c3d21d32fb on feat/e8.3-formal-tranche
+  in its existing worktree, owner finish_corpus_proxy, no PR yet. The first collector failed
+  before measurement because its anonymous verifier loader had no sys.modules entry; failure
+  formal-tranche-132/collector-v1/receipt.json8abd59afeca4423c8898c0d2b9671432e821d11103e3e2d8e9549888af433ae0
+  and diagnosis558497df are retained. The two-file correction passes the actual anonymous-loader
+  regression; benchmark independently cleared it in review-formal-dispatch-b4ff5b9/review.json,
+  SHA256 b15a30e8be16a00c30155cbd6fc42e5e3e2583281c3c68c08544733700d8f2af.
+  All21 producer modules and145 published/legacy files remain exact; V6 was not republished.
+- Corrected launch review09baffd1 cleared b4ff5b9. All six fresh replays completed and were
+  independently cleared in review-formal-runtime-132-v1/replay-v2-review.json, SHA256
+  01daef223824b698cfdd61470bebb545bcea8f1b31b0a88a77333d108413e2fa.
+  Actual corrected replay receipt formal-tranche-132/pinned-replays-v2/receipt.json is
+  e247eb7102def857cd14d081216029b6d6c65c62e9ed635f72fde977e92511a4.
+- The already-running corrected collector finished successfully before the pause: TTY16772
+  terminal0,86.598899s, formal-tranche-132/collector-v2/receipt.json SHA256
+  3fd6b074743301261a34165653f0ffeb8bffc3254a88606f4831bee58c243599.
+  Twelve decisions/nine visual prediction papers/all50 outcomes unchanged; O1=.98989898989899,
+  O2=.8910021250829322. New formal truth is outside the visual cohort; no O5/O6 detector metric.
+  Its independent actual audit,117 historical comparison, own CLI after-check, final ordinary
+  main integration/gates/report/draft PR review and merge remain. No heavy/background process
+  remains. Preserve the successful retry and all earlier attempts as distinct evidence.
+- #134 and #135 stay queued without worktrees/code. Root appended a concrete finite parent plan
+  to134: validate all12 immediate V6 rows and their closure, dispatch11 exact V5 workers plus
+  one V6 formal worker, then compare full results with V6 parent rows. Preserve nested original
+  claims separately from new parent bookkeeping; no nested worker. Root static receipt
+  numbered-2301-parent-readiness-v1/receipt.json51b3d941; separate static review
+  review-numbered-2301-parent-static-v1/review.json8aa1b75d confirms72 parent files and feasibility.
+  This is planning clearance; implementation waits132 and the user's strategic steering.
+- Independent planning and architecture reviews are consolidated in external review note
+  ~/.cache/lysilogy/2026-09-14-kb-strategy-review.md, SHA256 9f1bd9a633c2dc978df87ecb3a9944717f3127cad23a4ddb8c018f8d671d3188.
+  Recommendations: retain SQLite/canonical-text separation; allow dependency-ready product work
+  alongside97 without claiming Phase A complete or lowering final coverage/gates; prioritize33,
+  staged71 and one real artifact-to-KB-to-rebuild integration milestone. The current all-A-issues
+  phase exit makes500-paper97 a global scheduling barrier. Acceptance wording also says every
+  issue closed while permitting open objective follow-ups; distinguish required implementation
+  issues from permitted measured-miss follow-ups. These are proposals, not applied scope changes.
+- Confirmed architecture concerns: #33's KB-open failure propagates through reader startup;
+  src/store.rs atomic replacement lacks explicit file/directory durability; per-paper model
+  fan-out has no application-wide budget; truth codec/release routing is becoming cohort-specific.
+  No user data loss or deployed outage was observed. These are engineering tasks for agents.
+  The user can also settle/protect their preview changes before overlapping Home/Figures UI work.
+- Saved permission fields were inspected without reading credential values. The four already
+  approved hosts have no saved grants; three arXiv/GCS grants do. Existing normal-terminal script
+  ~/.config/lysilogy/apply-codex-kb-network-permissions.py still applies exactly the approved four.
+  Restart Codex and verify effective access afterward. In-session config is read-only; earlier
+  escalation failed before mutation, not through auto-review rejection. Do not ask for those four
+  grants again. A separate OPTIONAL proposal script
+  ~/.config/lysilogy/apply-codex-kb-planned-network-permissions.py adds the same four plus
+  registry.npmjs.org,api.semanticscholar.org,api.opencitations.net. Its --check passed; none of the
+  additional three grants is approved or applied. The original four-host script is unchanged.
+  Official current OpenAlex help permits basic keyless calls and a larger free-key budget; an
+  optional LYSILOGY_OPENALEX_API_KEY can improve throughput. No credential blocker is confirmed.
+- #33 feat/e2.1-kb-store905c341/noPR, #71 feat/e8.4-reference-truthd5e12aa/draft93,
+  #72 feat/e8.5-person-labelsc867ec6/draft95 and #25 feat/e1.2-bibliography201c53c/draft94 remain
+  preserved. All ten main preview files remain protected. Corpus10951PDFs/1000sources and audited
+  indexes remain external, no download/native queue. Free space at16:14 was43,690,196,992bytes.
+- Bounded97 assessment: k1-coverage/source-support-intersections-20260914-v1/receipt.json68189b8a
+  binds724-record intersections; no single unknown-command guard removal clears a paper.
+  Its sole requested visual diagnostic1909.06187v4 has5/5 figures and ten guard names; all metric
+  flags remain false. Additive negative-evidence-clarification-v1.jsond131523d confirms aligned155>0
+  already satisfies the existing negative-evidence branch; false empty-document flag is not a
+  separate zero-table barrier. Root's provisional source inspection found150 live occurrences,
+ 12 bare minipage/subcaption/endminipage pairs and an early b0000U label before a panel caption.
+  Only source prefix and final figure section plus lexical occurrence contexts were read; no full
+  semantic review, PDF annotation or new admission. Archive4635fbea/source9d4751b3 match candidate
+  da26ce24. Root's ten-command counterfactual clears only this one of724 structural records.
+  No new capability issue/code or parser rerun. Next truth strategy should be a bounded capability
+  pilot with measured admitted-paper throughput, alongside the core integration work if approved.
