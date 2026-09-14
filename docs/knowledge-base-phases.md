@@ -5824,3 +5824,87 @@ date, last merged issue, in-flight branches and their state, next action, and op
   auto-review rejection. Preserve bibliography draft94/201c53c, store905c341(no PR), reference
   draft93/d5e12aa, person draft95/c867ec6 and all unrelated worktrees. No vault writes or live
   provider/model calls. Overall A–D/system goal remains incomplete; continue useful offline work.
+
+
+### 2026-09-14 07:52 UTC — caption implementation and reviewed vector candidates
+
+- Phase A/Wave A2; last merged #117/PR126 remains `2e02c38a0696b4bc5e59ccc2b31b8ebae5c3b1f4`.
+  Main before checkpoint e248ea2. Protected10 preview hashes exact. Score1/5 gates,2/30 objectives,
+  O1=.897959 below.90, O2=.882642 above.75,all50/8zeros/0unknown. #125 is the existing O1
+  follow-up; no new follow-up issue in this interval. All corpus/native queues remain complete.
+- **#125 root implementation** in `fix/e1.1-visual-only-captions`, created via gh worktree from
+  e248ea2. Current committed source `aaf5b0a` follows initial10eefe0; no PR/push/measurement yet.
+  Own CLI before receipt `~/.cache/lysilogy/visual-captions-125/before-e248ea2/receipt.json` SHA
+  `f5c026e1057109248f37d97f95157177d2163853ddd82a10c1fd7f59bb0691dd`, TTY60865 terminal0,
+  95.829719s.205 source copies/current v4 input/baseline hashes retained, own Cargo-selected
+  binary/result archived; only generated scorecard restored. No native rebuild/collector call.
+  Proposal-v1.md SHA `1a5c69628b9e47628ecee47576a62ec94dc4d5db312e53ebc43dfbfe8f7720c4`.
+- Caption source adds explicit contiguous end/paragraph containment; uppercase adjacent title
+  requires centered single-line valid native page geometry and observed two-column numeric grid.
+  Complete title ownership excludes both original paragraphs from body candidates. Public/native
+  schema unchanged, detector/collector5; interleaved Figure3 remains explicitly unresolved.
+  First12 new regressions plus32 existing focused tests pass44 (TTY58296 terminal0). Three more
+  endpoint/image/header tests are committed but full gates unfinished. First compiled attempt
+  `compiled-10eefe0-v1/receipt.json` SHA
+  `42cbd28b65c2e391cadbd53d5513f7a13b3bd9eaff92f1e062425cd8614baeb7` failed only missing
+  const on Caption.contains; aaf5b0a fixes it. Second `compiled-aaf5b0a-v2/receipt.json` SHA
+  `9efbfe1fef3c56365f0ab3e1fc7c1551d3b3fea25df0532147cb87c157fdb0e5` (TTY29772 terminal1)
+  failed test-helper suboptimal_flops. Both exact failed generations/logs/sources are retained.
+- **Uncommitted125 work is intentional:** test helper mul_add correction plus a new composed
+  regression `should_withhold_a_join_when_a_classified_paragraph_crosses_the_caption_grid_boundary`.
+  Reviewer review_ready_prs identified a heading/list/equation paragraph whose high line starts
+  above the caption but lower METHOD token enters the grid; current y_min-only guard misses it.
+  Original condition is still present to execute the regression before repair once123 baseline
+  releases heavy slot. Then fix whole-paragraph vertical overlap, rerun tests/strict gates,
+  commit and request exact source clearance. Reviewer also checks prepared four-cohort runner
+  `visual-captions-125/measure-four-cohorts-v1.py` SHA
+  `6b6829549484d66eb073994765c26f7059d2f5af795a153098c3e22827de5aa9`: all15/23/29/50 against
+  frozen117 detector4. Extra caption pages may extend graphics-page selection, so preserve and
+  compare complete before/after graphics bases explicitly; native/PDF commitments remain exact.
+  No changed-source corpus prediction has run. Root coordinates next heavy allocation.
+- **#123 finish_corpus_proxy** ordinarily integrated main e248ea2, clean source
+  `7a224ab7c25ee2c4632d97bc4b86d7c9a7e8066a`. No production edit yet. Actual-raster controls
+  frozen under `vector-regions-123/raster-boundary-v1/`,17generated fixtures/51commands. Original
+  unlaunched wrapper's late-success deadline bug was independently reproduced and corrected;
+  original finding review SHA `4a7a753b7b83e68ba3209d8b5e95807369f0700c52556dce6c767855a30e0766`.
+  Exact corrected launch `b2adb95f9c90a14806b21c2b9fe6d1b023f771bd2e535b326cea12b92931a1b6`,
+  runner `b6e9f7d1387b848bab924b7be99ced975374a393faba7255e77b3f0707252626`, clear review
+  `524d97e7ff3eaa86245c6bb7e89e1b238f66d3a85e2280bd59526267cb46ed05` with11mock controls.
+  Actual TTY40959 terminal0,1.39s/25,136KiB; receipt `actual-v2/receipt.json` SHA
+  `94d88a061c9e48f097f930c95e6141733f18c438351619caf292d7ab93ef47ae`. Fixed144dpi/threshold5,
+  six components, font10/compact≤font/gap1.5font; no parameters chosen from real outcomes.
+- Root independent actual review `~/.cache/lysilogy/review-vector-raster-actual-v2/review.json`
+  SHA `dc17f3e1cc35af551e5b01077dbb871e2fdc674c242f6622f8b5746e5cd7d1bc` is CLEAR:182bindings,
+  all51commands and34 full independent raster/component/rejection/window/group recomputations.
+  Subpixel marks absent72/present144, very-thin/near-white omissions and missing-native-role
+  outlined-prose false candidates remain explicit. Generated success is not corpus accuracy.
+  Production-design-v1.md SHA `4c4308f7f53bc95ae498adeeaa37566ccedd7e3aaff4044c9cb819e7f06e737b`.
+- **SOLE HEAVY JOB NOW123 owning CLI baseline**, TTY58760 CargoPID5, exact7a224ab, script
+  `vector-regions-123/before-7a224ab/run.py` SHA
+  `b56cc882056e2e86fce3eb84857ef7ae42c1082420255c57837112c2230bf55f`.
+  Preparation SHA `562897a24062142626eb82a882a487403af2e97faccf3d3ab423a1ddf47038c5`.
+  Offline, own target/jobs1/debug0/incremental0; no source mutation. Upon terminal send slot to
+  root125 regression/gates.123 implementation after baseline; version coordination125→5,
+  123→6 after later integration. No native/download job and no model/provider call.
+- **#97 primary handoff explicit:** finish_benchmark now annotates last4 original papers,
+  earlier10 remain finish_corpus_proxy provenance. Sixth dispatch SHA
+  `7950a422fa2fa6e291edaee8ca4c6c0dc3007225013badee3b25e838b82fa5e4`;2207.05468 inventory
+  `f61f8d9363be7eba4c1314f6d24cd9ba4449d5b668dcb2df6afbec290b369f91`,receipt
+  `9f0b21fc01c1fa3e240dd5517a01732858198a46425b42f6e4cec2eceecd59b8`:6pages,1fig/3table/2eq/
+  9printed bib,351.728s.2310.01528 inventory
+  `ac2c06a2b329495c29efcdf31eecd2ed8f2529292498bd23b0de198cb94ec958`,receipt
+  `aeedcb7cc28f3a3611114398beec496173a0833a6df5bbefb7224113e82134e4`:4pages,7statements/4proofs/
+  6bib,278.258s. Native glyph/math/QED gaps and unrendered source remain unnormalized.
+  Seventh/final original pair dispatch SHA
+  `94e94b40a459fbddf53a724f4e9fda325b957e5aabd7a0d1d3a57eb57af633ee` is active.2112.14697
+  inventory `8f941f65cc97c7136df58a2ae89f956626d4b22d057993eae6a23c03f9d3adc4`,receipt
+  `8bb3a6c5e09ef9df89861332f5b0cf2b4170b946c7144aaec92ec7d68aacf6ec`:5pages,1diagram/5eq/
+  3formal statements/5bib,308.194s. Agent is now on final2302.00973 only. All pages personally
+  viewed first, outputs immutable, no peer/automatic/native-index/TeX reads/execution beyond
+  allowed blind exports. Reasoning costs unknown. Independent first4 frozen; thirdpair remains
+  undispatched until125source/runner review done. No new truth eligibility.
+- Preserve other WTs/PRs exactly as07:32; approved registry/provider grants still ineffective,
+  last fresh verification07:04:20. Existing normal-terminal four-host script/restart remains the
+  external action, no renewed approval request. Continue125 source/gates/measurement/review,
+  123 bounded implementation and97 original annotation sequence. Phase exits, production10k,
+  appPlaywright and all later phases/system acceptance remain incomplete.
