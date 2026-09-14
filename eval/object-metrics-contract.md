@@ -202,3 +202,76 @@ one existed. Disjoint caption membership remains unavailable. The public anchor/
 member meanings, native index bytes, immutable truth, matching and IoU computation
 are unchanged. The detector and collector's expected detector version advance together;
 all four frozen cohorts must be measured and every caption/region delta retained.
+
+
+## Vector candidate supplement (graphics5, detector6)
+
+The optional vector path renders the complete original page at144 DPI with eight-bit
+RGB antialiasing (`mutool draw -F pam -c rgb -r 144 -A 8`). It never seeds a body from
+a path, clip, group or page bounding box. The existing strict image and mask parser
+is unchanged. A separate trace mode permits finite `Normal` transparency groups,
+including nonisolated/knockout groups, and requires actual curved paint, no images,
+no unknown drawing state and only closed rectangular path clips; self-closing or unproved clips are unsupported. Original rendering
+resolves paint order, opacity and compositing. It does not establish semantic ownership.
+
+The first page command may be one self-closing `set_default_colorspaces` with exactly
+`gray="DeviceGray"`, `rgb="DeviceRGB"`, `cmyk="DeviceCMYK"`, and `oi="None"`.
+These identity defaults do not substitute a profile or output intent. Missing, extra,
+duplicate or changed attributes, nonempty forms, repeated or late defaults, and defaults
+inside drawing/group state withhold the renderer path. Graphics4 rejected even this
+identity preamble in all23 measured traces (also present in all17 prior generated
+fixtures), so its complete no-improvement run remains historical. Graphics5 invalidates
+those unsupported cache records; candidate parameters and existing image behavior stay
+unchanged. Acceptance of this preamble alone does not establish supported later commands
+or a complete raster/component result.
+
+All existing page image/mask work finishes before optional vectors use the remaining
+30s/64MiB paper allowance. Each raster uses the hash-bound `prlimit` wrapper (768MiB
+address space,5 CPU seconds, no core file,16MiB regular-file cap), at most5 wall seconds
+shortened to the remaining paper time, and the shared bounded pipes/cancellation path.
+There is no script or shell. Tool/PDF/wrapper hashes are rechecked after derivation.
+The graphics5 cache key uses `[5,native-etag,pdf-sha256,tool-sha256,mask-runtime]`;
+DPI, threshold, dimensions, component records, raster hashes and explicit statuses enter
+the exact graphics generation. Prior generations cannot substitute for these bytes.
+
+Only complete native pages without declared gaps can supply vector ownership. Every
+non-whitespace native token needs finite, nonempty, page-contained geometry. At144
+DPI, dimensions must exactly equal the rounded-up native page dimensions, with8192 pixels
+per side and4,194,304 pixels total. Oversized pages do not select a lower DPI. At least
+one RGB channel must differ from white by5 for a pixel to count. Eight-neighbor components
+are formed over the full page before any exclusion;4097 components withhold the entire
+new page result. Full pixel cells determine each component's integer bounds and count.
+Raster scans and flood fill check the remaining paper deadline; no partial component
+inventory is returned on failure. Near-white, very thin and subpixel omissions remain
+limitations, as demonstrated by the fixed synthetic experiment.
+
+Only compact components at most one median native font height in either extent are
+considered. Whole components touching native glyph rectangles, recognized prose, caption
+bounds or observed table grids are excluded. Complete groups use a1.5-font-height gap and
+at least six components. The full group must cross no barrier and fit exactly one native
+figure window. Windows use caption horizontal bounds, a5%-page top floor or preceding
+barrier bottom plus4 points, and a35-point to70%-page height range. An overlapping preceding
+table caption without an observed body withholds the new supplement. Combined groups and
+the final union with the existing native body must also cross no known barrier. Image-backed
+figures and table regions use their existing paths. A native glyph count above32768,
+more than64 page captions or4096 barriers withholds this optional supplement. An explicit
+upper bound of16,777,216 component exclusions, graph pairs and group/combined-envelope
+checks applies across all eligible caption windows on the page. Repeated graphs cannot
+multiply a per-invocation allowance. One graph has at most8,386,560 pairs. This count bound
+applies to synchronous candidate work after the separately timed graphics stage.
+
+These are candidate heuristics. Outlined prose absent from the native index can still look
+like compact vector marks; its synthetic false candidate is retained. No semantic certainty,
+truth eligibility or complete painted-interior claim follows from a successful raster.
+The established source/native/annotation truth remains immutable, and every15/23/29/50
+cohort outcome, zero, false positive and regression must be measured independently.
+
+Exact full-page PAM bytes remain external at
+`~/.cache/lysilogy/object-graphics-vectors/<sha256>.pam`. The source-backed bridge retains
+them through the same safe immutable artifact channel as traces and masks. The collector
+requires exact page/hash/path, fixed policy, native dimensions, PAM sample bytes, component
+types/bounds/counts, status and aggregate resource accounting before scoring. The selected
+Cargo producer owns component derivation; the collector does not rerun segmentation or
+change matching, IoU, truth, denominators or targets. Raw raster failures are retained when
+available, with no components admitted. Unknown trace, native, tool, resource and raster
+states remain explicit; transient tool/time failures cannot be reused as successful caches.

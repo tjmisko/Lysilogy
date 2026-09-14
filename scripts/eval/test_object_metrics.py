@@ -195,18 +195,65 @@ class ObjectMetricTests(unittest.TestCase):
             def seal(e):
                 e['generation']='';basis=m.canonical(e).decode();e['generation']=m.digest(basis.encode());return basis
             basis=seal(evidence);artifact['graphics']=evidence
-            row={'graphics_basis_json':basis,'graphics_masks':[],'graphics_traces':[{'page':1,'sha256':sha,'path':str(path)}]}
+            row={'graphics_basis_json':basis,'graphics_vectors':[],'graphics_masks':[],'graphics_traces':[{'page':1,'sha256':sha,'path':str(path)}]}
             # Pure receipt validation does not execute a tool or fetch a resource.
             self.assertEqual(m.validate_graphics(row,artifact,paper,index,cache)['trace_hashes'],{str(path):sha})
             for field,value in [('version',1),('version',2.0),('pdf_sha256','c'*64),('native_generation','foreign'),('cache_key','wrong'),('tool_path','/not-a-tool')]:
                 changed=copy.deepcopy(artifact);changed['graphics'][field]=value
                 changed_row={**row,'graphics_basis_json':seal(changed['graphics'])}
                 with self.subTest(field=field),self.assertRaises(ValueError):m.validate_graphics(changed_row,changed,paper,index,cache)
-            for changed_row in [{**row,'graphics_masks':[],'graphics_traces':[]},{**row,'graphics_traces':row['graphics_traces']*2},
-                {**row,'graphics_masks':[],'graphics_traces':[{**row['graphics_traces'][0],'path':str(cache/'foreign.xml')}]}]:
+            for changed_row in [{**row,'graphics_vectors':[],'graphics_masks':[],'graphics_traces':[]},{**row,'graphics_traces':row['graphics_traces']*2},
+                {**row,'graphics_vectors':[],'graphics_masks':[],'graphics_traces':[{**row['graphics_traces'][0],'path':str(cache/'foreign.xml')}]}]:
                 with self.assertRaises(ValueError):m.validate_graphics(changed_row,artifact,paper,index,cache)
             path.write_bytes(b'changed')
             with self.assertRaisesRegex(ValueError,'trace bytes differ'):m.validate_graphics(row,artifact,paper,index,cache)
+
+    def should_bind_complete_vector_rasters_when_the_current_helper_supplies_support(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache=Path(directory);paper,artifact,index=fixture();index['gaps']=[]
+            raw=b'P7\nWIDTH 200\nHEIGHT 200\nDEPTH 3\nMAXVAL 255\nTUPLTYPE RGB\nENDHDR\n'+bytes([255])*(200*200*3)
+            sha=m.digest(raw);path=cache/'object-graphics-vectors'/(sha+'.pam');path.parent.mkdir();path.write_bytes(raw)
+            evidence={'status':'complete','raster_sha256':sha,'dpi':144,'contrast':5,'width':200,'height':200,'components':[],'diagnostic':None}
+            page={'page':1,'trace_sha256':'a'*64,'images':[],'unsupported_images':0,'mask':None,'vectors':evidence}
+            row={'graphics_vectors':[{'page':1,'sha256':sha,'path':str(path)}]}
+            self.assertEqual(m.validate_vectors(row,[page],index,cache,{'bound':'runtime'},0)[0],{str(path):sha})
+            for changed in [{**row,'graphics_vectors':[]},{**row,'graphics_vectors':row['graphics_vectors']*2},
+                {'graphics_vectors':[{**row['graphics_vectors'][0],'page':True}]},
+                {'graphics_vectors':[{**row['graphics_vectors'][0],'path':str(cache/'other.pam')}]}]:
+                with self.assertRaises(ValueError):m.validate_vectors(changed,[page],index,cache,{},0)
+            for change in [lambda p:p['vectors'].update(dpi=True),lambda p:p['vectors'].update(contrast=4),
+                lambda p:p['vectors'].update(width=199),lambda p:p['vectors'].update(status='tool_failed'),
+                lambda p:p.update(images=[rectangle()]),lambda p:p.update(trace_sha256=None)]:
+                changed=copy.deepcopy(page);change(changed)
+                with self.assertRaises(ValueError):m.validate_vectors(row,[changed],index,cache,{},0)
+            index['gaps']=[{'page':1,'reason':'known missing text'}]
+            with self.assertRaisesRegex(ValueError,'native basis'):m.validate_vectors(row,[page],index,cache,{},0)
+            index['gaps']=[];path.write_bytes(raw+b'x')
+            with self.assertRaisesRegex(ValueError,'bytes differ'):m.validate_vectors(row,[page],index,cache,{},0)
+
+    def should_reject_component_shape_or_types_when_raster_evidence_is_resealed(self):
+        raw=b'P7\nWIDTH 8\nHEIGHT 8\nDEPTH 3\nMAXVAL 255\nTUPLTYPE RGB\nENDHDR\n'+bytes([0])*(8*8*3)
+        native={'width':4,'height':4}
+        evidence={'width':8,'height':8,'components':[{'bounds':[0,0,8,8],'pixels':64}]}
+        m.validate_vector_raster(raw,evidence,native)
+        for component in [{'bounds':[False,0,8,8],'pixels':64},{'bounds':[0,0,9,8],'pixels':64},
+            {'bounds':[0,0,8,8],'pixels':True},{'bounds':[0,0,8,8],'pixels':65},
+            {'bounds':[0,0,8,8],'pixels':0},{'bounds':[0,0,8,8],'pixels':64,'extra':0}]:
+            with self.assertRaises(ValueError):m.validate_vector_raster(raw,{**evidence,'components':[component]},native)
+        for changed in [raw[:-1],raw+b'x',raw.replace(b'DEPTH 3',b'DEPTH 4'),raw.replace(b'DEPTH 3',b'DEPTH 3\nDEPTH 3')]:
+            with self.assertRaises(ValueError):m.validate_vector_raster(changed,evidence,native)
+        with self.assertRaises(ValueError):m.validate_vector_raster(raw,{**evidence,'components':evidence['components']*2},native)
+
+    def should_preserve_failed_raster_artifacts_when_component_derivation_is_withheld(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache=Path(directory);_,_,index=fixture();raw=b'bounded failed raster';sha=m.digest(raw)
+            path=cache/'object-graphics-vectors'/(sha+'.pam');path.parent.mkdir();path.write_bytes(raw)
+            evidence={'status':'unsupported_raster','raster_sha256':sha,'dpi':144,'contrast':5,'width':None,'height':None,'components':[],'diagnostic':None}
+            page={'page':1,'trace_sha256':'a'*64,'vectors':evidence}
+            row={'graphics_vectors':[{'page':1,'sha256':sha,'path':str(path)}]}
+            self.assertEqual(m.validate_vectors(row,[page],index,cache,{},0)[1],{'unsupported_raster':1})
+            evidence['components']=[{'bounds':[0,0,1,1],'pixels':1}]
+            with self.assertRaises(ValueError):m.validate_vectors(row,[page],index,cache,{},0)
 
     def should_reject_mask_provenance_drift_when_rehashed_receipts_claim_new_placements(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -226,7 +273,7 @@ class ObjectMetricTests(unittest.TestCase):
                     e['generation']='';basis=m.canonical(e).decode();e['generation']=m.digest(basis.encode());return basis
                 artifact['graphics']=evidence
                 row={'graphics_basis_json':seal(evidence),'graphics_traces':[{'page':1,'sha256':sha,'path':str(path)}],
-                    'graphics_masks':[{'page':1,'sha256':mask_sha,'path':str(mask_path)}]}
+                    'graphics_vectors':[],'graphics_masks':[{'page':1,'sha256':mask_sha,'path':str(mask_path)}]}
                 self.assertEqual(m.validate_graphics(row,artifact,paper,index,cache)['mask_hashes'],{str(mask_path):mask_sha})
                 for change in [lambda e:e['mask_runtime'].update(script_sha256='0'*64),
                     lambda e:e['pages'][0]['mask'].update(status='tool_failed'),
@@ -234,7 +281,7 @@ class ObjectMetricTests(unittest.TestCase):
                     lambda e:e['pages'][0]['mask'].update(empty_images=256)]:
                     changed=copy.deepcopy(artifact);change(changed['graphics']);changed_row={**row,'graphics_basis_json':seal(changed['graphics'])}
                     with self.assertRaises(ValueError):m.validate_graphics(changed_row,changed,paper,index,cache)
-                for changed_row in [{**row,'graphics_masks':[]},{**row,'graphics_masks':row['graphics_masks']*2},
+                for changed_row in [{**row,'graphics_vectors':[],'graphics_masks':[]},{**row,'graphics_masks':row['graphics_masks']*2},
                     {**row,'graphics_masks':[{**row['graphics_masks'][0],'path':str(cache/'foreign.json')}]}]:
                     with self.assertRaises(ValueError):m.validate_graphics(changed_row,artifact,paper,index,cache)
                 mask_path.write_bytes(b'changed')
@@ -250,7 +297,7 @@ class ObjectMetricTests(unittest.TestCase):
                 lambda e:e['pages'][0].update(images=[rectangle()]),lambda e:e['pages'][0].update(status='complete'),
                 lambda e:e['pages'][0].update(unsupported_images=-1)]:
                 evidence=copy.deepcopy(base);mutate(evidence);basis=m.canonical(evidence).decode();evidence['generation']=m.digest(basis.encode());artifact['graphics']=evidence
-                with self.assertRaises(ValueError):m.validate_graphics({'graphics_basis_json':basis,'graphics_masks':[],'graphics_traces':[]},artifact,paper,index,cache)
+                with self.assertRaises(ValueError):m.validate_graphics({'graphics_basis_json':basis,'graphics_vectors':[],'graphics_masks':[],'graphics_traces':[]},artifact,paper,index,cache)
 
     def should_reject_changed_native_basis_when_a_new_detector_generation_is_measured(self):
         _,artifact,index=fixture()

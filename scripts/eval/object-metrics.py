@@ -26,8 +26,8 @@ KINDS = ('figure', 'table')
 VERSION = 'figure-table-metrics-v6'
 TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2', 'k1-limited-v3', 'k1-limited-v4')
 NATIVE_BASIS_FORMAT = 'native-json-f32-v1'
-DETECTOR_VERSION = 5
-GRAPHICS_VERSION = 3
+DETECTOR_VERSION = 6
+GRAPHICS_VERSION = 5
 MAX_JSON = 32 * 1024 * 1024
 
 
@@ -333,6 +333,73 @@ def mask_runtime_key(runtime):
     return [runtime[key] for key in ('wrapper_path','wrapper_sha256','script_sha256')] if runtime else None
 
 
+def validate_vector_raster(raw, evidence, native):
+    """Validate the retained renderer format and bounded component records.
+
+    The Cargo-bound producer owns flood-fill derivation; this check binds its
+    complete component output to the exact full-page RGB artifact, never a crop.
+    """
+    width,height=evidence['width'],evidence['height']
+    require(all(type(n) is int and 0<n<=8192 for n in (width,height)) and width*height<=4194304,'vector pixel bound differs')
+    require(width==math.ceil(native['width']*2) and height==math.ceil(native['height']*2),'vector native dimensions differ')
+    end=raw.find(b'ENDHDR\n',0,1031)
+    require(0<=end<=1024,'vector PAM header missing')
+    lines=raw[:end].splitlines();require(lines and lines[0]==b'P7','vector PAM magic differs')
+    pairs=[line.split() for line in lines[1:]]
+    require(all(len(pair)==2 for pair in pairs) and len(pairs)==5,'vector PAM fields differ')
+    header=dict(pairs)
+    require(len(header)==5 and header=={b'WIDTH':str(width).encode(),b'HEIGHT':str(height).encode(),b'DEPTH':b'3',b'MAXVAL':b'255',b'TUPLTYPE':b'RGB'},'vector PAM identity differs')
+    require(len(raw)-end-7==width*height*3,'vector PAM sample length differs')
+    components=evidence['components'];require(isinstance(components,list) and len(components)<=4096,'vector component bound differs')
+    total=0
+    for component in components:
+        require(isinstance(component,dict) and set(component)=={'bounds','pixels'},'vector component fields differ')
+        bounds=component['bounds'];count=component['pixels']
+        require(isinstance(bounds,list) and len(bounds)==4 and all(type(n) is int for n in bounds),'vector component coordinates differ')
+        x0,y0,x1,y1=bounds
+        require(0<=x0<x1<=width and 0<=y0<y1<=height,'vector component outside page')
+        require(type(count) is int and 0<count<=(x1-x0)*(y1-y0),'vector component pixel count differs')
+        total+=count
+    require(total<=width*height,'vector component inventory exceeds page')
+
+
+def validate_vectors(row, pages, index, cache, runtime, total):
+    rasters=row['graphics_vectors']
+    require(isinstance(rasters,list) and len(rasters)<=64,'invalid vector raster inventory')
+    require(all(isinstance(r,dict) and set(r)=={'page','sha256','path'} and type(r['page']) is int for r in rasters),'invalid vector raster binding')
+    by_page={r['page']:r for r in rasters};retained={};statuses=Counter()
+    require(len(by_page)==len(rasters),'duplicate vector raster')
+    expected={page['page'] for page in pages if page.get('vectors') is not None and page['vectors']['raster_sha256'] is not None}
+    require(set(by_page)==expected,'vector raster coverage differs')
+    allowed={'complete','unsupported_renderer_trace','native_gap_or_unavailable','pixel_limit','component_limit','unsupported_raster','resource_wrapper_unavailable','resource_limit','tool_failed'}
+    for page in pages:
+        evidence=page.get('vectors')
+        if evidence is None: continue
+        require(isinstance(evidence,dict) and set(evidence)=={'status','raster_sha256','dpi','contrast','width','height','components','diagnostic'},'vector evidence fields differ')
+        status=evidence['status'];statuses[status]+=1
+        require(status in allowed and type(evidence['dpi']) is int and evidence['dpi']==144 and type(evidence['contrast']) is int and evidence['contrast']==5,'vector policy differs')
+        require(evidence['diagnostic'] is None or isinstance(evidence['diagnostic'],str) and len(evidence['diagnostic'])<=1024,'vector diagnostic exceeds bound')
+        require(page['trace_sha256'] is not None,'vector evidence lacks trace')
+        if status!='complete':
+            require(evidence['components']==[] and evidence['width'] is None and evidence['height'] is None,'unavailable vector page admitted support')
+        sha=evidence['raster_sha256']
+        if sha is None:
+            require(status not in {'complete','component_limit','unsupported_raster'},'vector raster missing');continue
+        require(runtime is not None and status in {'complete','component_limit','unsupported_raster','resource_limit'},'vector raster status/runtime differs')
+        require(isinstance(sha,str) and re.fullmatch('[0-9a-f]{64}',sha),'invalid vector raster hash')
+        saved=by_page[page['page']];path=cache/'object-graphics-vectors'/(sha+'.pam')
+        require(saved['sha256']==sha and saved['path']==str(path),'vector raster path/hash differs')
+        raw=read(path,16*1024*1024);total+=len(raw)
+        require(digest(raw)==sha and total<=64*1024*1024,'vector raster bytes differ or exceed bound')
+        if status=='complete':
+            native=next(native for native in index['pages'] if native['number']==page['page'])
+            require(native['provenance']=='native' and not any(gap['page']==page['page'] for gap in index.get('gaps',[])),'vector page lacks complete native basis')
+            require(page['images']==[] and page['unsupported_images']==0 and page.get('mask') is None,'vector page broadened an image path')
+            validate_vector_raster(raw,evidence,native)
+        retained[str(path)]=sha
+    return retained,dict(statuses)
+
+
 def validate_graphics(row, artifact, paper, index, cache):
     evidence=artifact.get('graphics')
     require(isinstance(evidence,dict) and type(evidence.get('version')) is int and evidence['version']==GRAPHICS_VERSION,'current source factory omitted graphics evidence')
@@ -397,7 +464,8 @@ def validate_graphics(row, artifact, paper, index, cache):
         if mask['status']=='evaluated':
             decoded=document(raw);require(decoded['schema_version']==1 and decoded['page']==page['page'],'mask decoded identity differs')
         mask_hashes[str(expected)]=sha
-    return {'generation':evidence['generation'],'cache_key':evidence['cache_key'],'tool_sha256':evidence['tool_sha256'],'mask_runtime':runtime,'page_statuses':dict(Counter(page['status'] for page in pages)),'trace_hashes':retained,'mask_hashes':mask_hashes}
+    vector_hashes,vector_statuses=validate_vectors(row,pages,index,cache,runtime,total)
+    return {'vector_hashes':vector_hashes,'vector_statuses':vector_statuses,'generation':evidence['generation'],'cache_key':evidence['cache_key'],'tool_sha256':evidence['tool_sha256'],'mask_runtime':runtime,'page_statuses':dict(Counter(page['status'] for page in pages)),'trace_hashes':retained,'mask_hashes':mask_hashes}
 
 
 def atomic_json(path, value):
@@ -547,6 +615,7 @@ def main():
         derivation['graphics']=validate_graphics(row,artifact,paper,indexes[paper['paper_id']],cache)
         tracked.update(derivation['graphics']['trace_hashes'])
         tracked.update(derivation['graphics']['mask_hashes'])
+        tracked.update(derivation['graphics']['vector_hashes'])
         object_hashes[paper['paper_id']]={'rust_serialized_sha256':row['object_sha256'],'canonical_sha256':digest(canonical(artifact)),'derivation':derivation}
         metrics.append(evaluate_paper(paper,artifact,indexes[paper['paper_id']],args.truth_version))
     require(sources=={p:digest(read(ROOT/p)) for p in sources} and read(ROOT/paths['truth'])==truth_raw and digest(read(expected,128*1024*1024))==executable_hash,'measurement source or truth changed')
