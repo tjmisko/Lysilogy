@@ -1243,7 +1243,10 @@ mod tests {
         assert!(parse_renderer_trace(&trace(&body), &page()).unwrap());
         assert!(parse_trace(&trace(&body), &page()).is_err());
         let image_body = format!("{}{}", identity_defaults(), image("10 0 0 10 0 0"));
-        assert_eq!(parse_trace(&trace(&image_body), &page()).unwrap().0.len(), 1);
+        assert_eq!(
+            parse_trace(&trace(&image_body), &page()).unwrap().0.len(),
+            1
+        );
         assert!(parse_renderer_trace(&trace(&image_body), &page()).is_err());
     }
 
@@ -1278,7 +1281,10 @@ mod tests {
             ),
             format!("<fill_path>{}</fill_path>{}", identity_defaults(), curve()),
         ] {
-            assert!(parse_renderer_trace(&trace(&body), &page()).is_err(), "{body}");
+            assert!(
+                parse_renderer_trace(&trace(&body), &page()).is_err(),
+                "{body}"
+            );
         }
     }
 
