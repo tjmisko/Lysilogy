@@ -107,7 +107,7 @@ module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
 if sys.argv[3]=='contaminated':sys.modules['release_layout']=types.ModuleType('release_layout')
 loaded=module.current_modules(repo,json.loads(sys.argv[2]))
 assert loaded['release_layout'].VERSION=='k1-limited-v5'
-assert len(loaded)==19
+assert len(loaded)==20
 '''
             def invoke(mode='normal'):
                 return subprocess.run([sys.executable,'-I','-B','-c',program,str(repo),json.dumps(files),mode],

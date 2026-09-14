@@ -52,6 +52,28 @@ def project_paper(candidate, specification, frozen, *, retain_ineligible=False):
                provenance={'automatic_candidate': specification['candidate'], 'automatic_candidate_sha256': candidate['manual_assembly']['candidate_sha256'],
                            'assembly_sha256': sha256(canonical(candidate)), 'automatic_accepted': candidate['accepted'],
                            'automatic_metric_eligibility': candidate['metric_eligibility'], 'overlay_evidence': {}})
+    if 'manual_numbered_math_overlay' in candidate:
+        overlay = candidate['manual_numbered_math_overlay']
+        require(not any(key in candidate for key in ('manual_figure_table_overlay', 'manual_object_overlay',
+                'manual_visual_only_overlay', 'manual_bibliography_overlay', 'independent_panel')),
+                'numbered-only release cannot mix metric overlays')
+        require(overlay['metric_eligibility'] == {'O3': True}
+                and overlay['omitted_metrics'] == [key for key in METRICS if key != 'O3']
+                and overlay['reviewed_absent_kinds'] == [], 'numbered-only overlay changes its metric scope')
+        require(overlay['objects'] and all(item['kind'] == 'equation' for item in overlay['objects']),
+                'numbered-only overlay lacks a complete positive equation inventory')
+        row['objects'].extend(compact_object(item) | {key: item[key] for key in
+            ('printed_number_spans', 'printed_number_regions')} for item in overlay['objects'])
+        row['metric_eligibility']['O3'] = True
+        row['unscored_inventory'] = {'records': overlay['retained_inventory'],
+            'fourteen_paper_dispositions': overlay['fourteen_paper_dispositions'],
+            'omitted_metrics': overlay['omitted_metrics'],
+            'current_source_inventory_sha256': overlay['current_source_inventory_sha256'],
+            'historical_source_difference_fields': overlay['historical_source_difference_fields'],
+            'source_scope': overlay['source_scope']}
+        row['alignment']['method'] = 'Complete independently reviewed numbered equations; other original and source roles retained unscored'
+        row['provenance']['overlay_evidence']['numbered_math'] = overlay['evidence_hashes']
+        row['provenance']['overlay_evidence']['numbered_math_proposal'] = overlay['proposal_evidence_hashes']
     if 'manual_figure_table_overlay' in candidate:
         overlay = candidate['manual_figure_table_overlay']
         require(overlay['metric_eligibility'] == {'O1': True, 'O2': True}, 'figure/table overlay is incomplete')

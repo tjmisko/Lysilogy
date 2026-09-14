@@ -194,10 +194,12 @@ def attach_declared_tranche(cache, corpus_root, data_root, candidate_raw, paper,
     from tranche import FORMAT as MIXED_FORMAT, attach_tranche
     from tranche_visual import FORMAT as VISUAL_FORMAT, attach_visual
     from tranche_visual_only import FORMAT as VISUAL_ONLY_FORMAT, attach_visual_only
+    from tranche_numbered_math import FORMAT as NUMBERED_FORMAT, attach_numbered_math
     raw = bounded(cache, relative + '/manifest.json')
     declared = document(raw).get('format')
-    require(declared in (MIXED_FORMAT, VISUAL_FORMAT, VISUAL_ONLY_FORMAT), 'unsupported explicit tranche format')
-    codec = {MIXED_FORMAT: attach_tranche, VISUAL_FORMAT: attach_visual, VISUAL_ONLY_FORMAT: attach_visual_only}[declared]
+    require(declared in (MIXED_FORMAT, VISUAL_FORMAT, VISUAL_ONLY_FORMAT, NUMBERED_FORMAT), 'unsupported explicit tranche format')
+    codec = {MIXED_FORMAT: attach_tranche, VISUAL_FORMAT: attach_visual,
+             VISUAL_ONLY_FORMAT: attach_visual_only, NUMBERED_FORMAT: attach_numbered_math}[declared]
     result = codec(cache, corpus_root, data_root, candidate_raw, paper, mapped, relative)
     require(bounded(cache, relative + '/manifest.json') == raw, 'tranche dispatch manifest changed')
     return result
