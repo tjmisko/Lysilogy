@@ -249,28 +249,37 @@ fn corroborated_title_grid(
     let Some(grid) = table_below(index, candidate, captions, font, images) else {
         return false;
     };
-    if index
+    // Corroboration must use the same retained paragraph memberships as the
+    // region builder. Raw tokens can otherwise reintroduce rejected captions,
+    // prose or another object's text lying inside a logical paragraph's gaps.
+    let paragraphs = index
         .objects
         .paragraph
         .iter()
-        .filter(|p| matches!(p.kind.as_str(), "heading" | "list" | "equation"))
-        .any(|p| {
+        .filter(|p| !candidate.contains(p))
+        .map(|p| {
             let text = paragraph_tokens(index, p, candidate.page);
-            if text.is_empty() {
-                return false;
-            }
+            let blocked = grid_paragraph_barrier(p, &text, captions, font);
+            (text, blocked)
+        })
+        .filter(|(text, _)| !text.is_empty())
+        .collect::<Vec<_>>();
+    if paragraphs
+        .iter()
+        .filter(|(_, blocked)| *blocked)
+        .any(|(text, _)| {
             let rect = union(text.iter().flat_map(|t| t.rects.iter().copied()));
             rect.y_max >= candidate.rect.y_max
                 && rect.y_min <= grid.y_max
-                && horizontal_gap(rect, candidate.rect) == 0.0
+                && horizontal_gap(rect, grid) == 0.0
         })
     {
         return false;
     }
-    let cells = index
-        .tokens
+    let cells = paragraphs
         .iter()
-        .filter(|t| t.page == candidate.page)
+        .filter(|(_, blocked)| !*blocked)
+        .flat_map(|(text, _)| text.iter().copied())
         .flat_map(|t| t.rects.iter().map(move |r| (t, *r)))
         .filter(|(_, r)| {
             r.x_min >= grid.x_min
@@ -307,6 +316,17 @@ fn corroborated_title_grid(
             .skip(i + 1)
             .any(|b| (a.y_min - b.y_min).abs() < font * 0.35 && horizontal_gap(*a, *b) > font * 1.5)
     })
+}
+
+fn grid_paragraph_barrier(
+    paragraph: &super::Paragraph,
+    text: &[&ReadingToken],
+    captions: &[Caption<'_>],
+    font: f32,
+) -> bool {
+    captions.iter().any(|c| c.contains(paragraph))
+        || matches!(paragraph.kind.as_str(), "heading" | "list" | "equation")
+        || prose_barrier(text, font)
 }
 
 fn continues_prose(
@@ -1667,6 +1687,101 @@ mod tests {
             accepted.is_empty(),
             "classified paragraphs supplied false grid headers: {accepted:?}"
         );
+    }
+
+    #[test]
+    fn should_withhold_a_join_when_an_extended_grid_column_has_a_classified_header() {
+        let mut accepted = Vec::new();
+        for kind in ["heading", "list", "equation"] {
+            let mut index =
+                split_caption_fixture("TABLE I", "body", "AVERAGE SCORE COMPARISON", "body");
+            index.objects.paragraph[2].kind = kind.into();
+            for t in index
+                .tokens
+                .iter_mut()
+                .filter(|t| matches!(t.text.as_str(), "METHOD" | "12.5"))
+            {
+                for r in &mut t.rects {
+                    r.x_min -= 34.0;
+                    r.x_max -= 34.0;
+                }
+            }
+            if !find(&index).is_empty() {
+                accepted.push(kind);
+            }
+        }
+        assert!(
+            accepted.is_empty(),
+            "extended classified columns supplied false headers: {accepted:?}"
+        );
+    }
+
+    #[test]
+    fn should_withhold_a_join_when_a_neighboring_caption_supplies_a_grid_number() {
+        let index = fixture(&[
+            ("TABLE I", "body", 136.0, 100.0),
+            ("AVERAGE SCORE COMPARISON", "body", 102.0, 112.0),
+            ("METHOD", "body", 70.0, 136.0),
+            ("VALUE", "body", 176.0, 136.0),
+            ("Figure 3", "caption", 66.0, 154.0),
+            ("26.0", "body", 176.0, 154.0),
+        ]);
+        let found = find(&index);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].kind, "figure");
+    }
+
+    #[test]
+    fn should_withhold_a_join_when_excluded_prose_supplies_a_grid_header() {
+        let mut index = fixture(&[
+            ("TABLE I", "body", 136.0, 100.0),
+            ("AVERAGE SCORE COMPARISON", "body", 102.0, 112.0),
+            (
+                "THIS PARAGRAPH IS ORDINARY PROSE WITH ENOUGH WORDS TO DESCRIBE AN UNRELATED RESULT",
+                "body",
+                104.0,
+                116.0,
+            ),
+            ("METHOD", "body", 104.0, 136.0),
+            ("VALUE", "body", 176.0, 136.0),
+            ("12.5", "body", 104.0, 154.0),
+            ("26.0", "body", 176.0, 154.0),
+        ]);
+        index.objects.paragraph[2].end = index.objects.paragraph[3].end;
+        index.objects.paragraph.remove(3);
+        assert!(prose_barrier(
+            &paragraph_tokens(&index, &index.objects.paragraph[2], 1),
+            10.0
+        ));
+        assert!(find(&index).is_empty());
+    }
+
+    #[test]
+    fn should_withhold_a_join_when_the_only_left_header_is_outside_retained_paragraph_pieces() {
+        let mut index = fixture(&[
+            ("TABLE I", "body", 136.0, 100.0),
+            ("AVERAGE SCORE COMPARISON", "body", 102.0, 112.0),
+            ("ROW", "body", 176.0, 136.0),
+            ("METHOD", "float", 104.0, 136.0),
+            ("VALUE", "body", 190.0, 136.0),
+            ("12.5", "body", 104.0, 154.0),
+            ("26.0", "body", 176.0, 154.0),
+        ]);
+        let first = index.objects.paragraph[2].clone();
+        let last = index.objects.paragraph[4].clone();
+        index.objects.paragraph[2].end = last.end;
+        index.objects.paragraph[2].spans = vec![
+            TextRange {
+                start: first.start,
+                end: first.end,
+            },
+            TextRange {
+                start: last.start,
+                end: last.end,
+            },
+        ];
+        index.objects.paragraph.drain(3..5);
+        assert!(find(&index).is_empty());
     }
 
     #[test]
