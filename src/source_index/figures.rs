@@ -260,7 +260,7 @@ fn corroborated_title_grid(
                 return false;
             }
             let rect = union(text.iter().flat_map(|t| t.rects.iter().copied()));
-            rect.y_min >= candidate.rect.y_max
+            rect.y_max >= candidate.rect.y_max
                 && rect.y_min <= grid.y_max
                 && horizontal_gap(rect, candidate.rect) == 0.0
         })
@@ -1354,7 +1354,7 @@ mod tests {
                     .iter()
                     .flat_map(|t| t.rects.iter().copied()),
             );
-            let delta = 150.0 - (bounds.x_min + bounds.x_max) * 0.5;
+            let delta = (bounds.x_min + bounds.x_max).mul_add(-0.5, 150.0);
             for t in index
                 .tokens
                 .iter_mut()
@@ -1611,6 +1611,62 @@ mod tests {
             index.objects.paragraph[part].start += 1;
             assert!(find(&index).is_empty());
         }
+    }
+
+    #[test]
+    fn should_withhold_a_join_when_a_classified_paragraph_crosses_the_caption_grid_boundary() {
+        let mut accepted = Vec::new();
+        for kind in ["heading", "list", "equation"] {
+            let mut index =
+                split_caption_fixture("TABLE I", "body", "AVERAGE SCORE COMPARISON", "body");
+            let header = index.objects.paragraph[2].clone();
+            // Native reading order puts this paragraph after the caption, while
+            // its two physical lines straddle the caption's vertical boundary.
+            index
+                .text
+                .replace_range(header.start..header.end, "UPPER METHOD");
+            for t in index.tokens.iter_mut().filter(|t| t.start >= header.start) {
+                t.start += 6;
+                t.end += 6;
+            }
+            for p in index
+                .objects
+                .paragraph
+                .iter_mut()
+                .filter(|p| p.start >= header.start)
+            {
+                if p.start > header.start {
+                    p.start += 6;
+                }
+                p.end += 6;
+            }
+            index.objects.paragraph[2].kind = kind.into();
+            index.pages[0].end += 6;
+            let position = index.tokens.partition_point(|t| t.start < header.start);
+            index.tokens.insert(
+                position,
+                ReadingToken {
+                    start: header.start,
+                    end: header.start + 5,
+                    page: 1,
+                    text: "UPPER".into(),
+                    rects: vec![TextRect {
+                        x_min: 104.0,
+                        x_max: 124.0,
+                        y_min: 80.0,
+                        y_max: 90.0,
+                    }],
+                    provenance: Provenance::Native,
+                },
+            );
+            if !find(&index).is_empty() {
+                accepted.push(kind);
+            }
+        }
+        assert!(
+            accepted.is_empty(),
+            "classified paragraphs supplied false grid headers: {accepted:?}"
+        );
     }
 
     #[test]
