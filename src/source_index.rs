@@ -4,6 +4,7 @@
 //! Native text is never silently replaced by model output. OCR pages carry provenance.
 
 mod cache;
+mod command;
 mod figures;
 pub mod graphics;
 mod native;
@@ -19,10 +20,15 @@ pub(crate) mod test_support;
 use std::{path::Path, time::Duration};
 
 use serde::{Deserialize, Serialize};
-use tokio::{io::AsyncReadExt, process::Command};
+use tokio::process::Command;
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::{Error, Result, domain::TextRect};
+use crate::{Result, domain::TextRect};
+
+use command::bounded_command;
+
+#[cfg(test)]
+use crate::Error;
 
 pub use figures::{
     DETECTOR_VERSION as FIGURE_DETECTOR_VERSION, find as detect_figures,
@@ -197,7 +203,7 @@ async fn build(
         ])
         .arg(source)
         .arg("-");
-    let bytes = bounded_command(&mut command, "pdftotext", MAX_COMMAND_BYTES).await?;
+    let bytes = command::native_command(&mut command, MAX_COMMAND_BYTES).await?;
     let native = native::parse(&String::from_utf8_lossy(&bytes))?;
     let mut pages = native.pages;
     let native_failures = native.gaps.iter().map(|gap| gap.page).collect::<Vec<_>>();
@@ -281,77 +287,6 @@ fn extraction_command(program: &str, priority: BuildPriority) -> Command {
     }
     let _ = priority;
     Command::new(program)
-}
-
-/// Hard output/time limits and kill-on-drop also apply if a build task is canceled.
-async fn bounded_command(command: &mut Command, program: &str, limit: usize) -> Result<Vec<u8>> {
-    use std::process::Stdio;
-    let mut child = command
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .kill_on_drop(true)
-        .spawn()
-        .map_err(|error| {
-            if error.kind() == std::io::ErrorKind::NotFound {
-                Error::ProgramUnavailable(program.into())
-            } else {
-                Error::io(program, error)
-            }
-        })?;
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| Error::Task("Command has no output pipe".into()))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| Error::Task("Command has no error pipe".into()))?;
-    let read = async {
-        let mut bytes = Vec::new();
-        stdout
-            .take(u64::try_from(limit).unwrap_or(u64::MAX) + 1)
-            .read_to_end(&mut bytes)
-            .await
-            .map_err(|error| Error::io(program, error))?;
-        if bytes.len() > limit {
-            return Err(Error::Task(format!(
-                "{program} output exceeded its bounded limit"
-            )));
-        }
-        Ok(bytes)
-    };
-    let errors = async {
-        let mut bytes = Vec::new();
-        stderr
-            .take(65537)
-            .read_to_end(&mut bytes)
-            .await
-            .map_err(|error| Error::io(program, error))?;
-        if bytes.len() > 65536 {
-            return Err(Error::Task(format!(
-                "{program} error output exceeded its bounded limit"
-            )));
-        }
-        Ok(bytes)
-    };
-    tokio::time::timeout(COMMAND_TIMEOUT, async {
-        let (bytes, errors) = tokio::try_join!(read, errors)?;
-        let status = child
-            .wait()
-            .await
-            .map_err(|error| Error::io(program, error))?;
-        if !status.success() {
-            return Err(Error::CommandFailed {
-                program: program.into(),
-                status: status.to_string(),
-                stderr: String::from_utf8_lossy(&errors).trim().to_owned(),
-            });
-        }
-        Ok(bytes)
-    })
-    .await
-    .map_err(|_| Error::Task(format!("{program} timed out after 35 seconds")))?
 }
 
 #[cfg(test)]
