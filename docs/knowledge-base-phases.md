@@ -7186,3 +7186,89 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Then132; #97 approximately500/all-kind, production10k, Playwright and later phases remain open.
   Preserved #33 and drafts93/94/95 still need the already-approved four-host normal-terminal
   permission script and restart; no repeated approval or sandbox bypass.
+
+
+### 2026-09-14 14:04 UTC — equation release reviewed; activation and final measurement next
+
+- Last merged #129 / PR130 at d9a62af; main7c77be6 before this checkpoint. Phase A / A2.
+  #131 remains at worktree `feat/e8.3-numbered-math-tranche`, a86da05 ordinary main integration
+  after f7b6c0d source/2691fd8 docs. Owner review_k1_reconciliation activates the reviewed V5
+  manifest and runs final collector/gates; finish_benchmark separately reviews the final pin/test
+  and PR delta. No PR yet at checkpoint. One heavy slot reserved for owner. No rebase.
+- Narrow f7b6c0d source correction independently CLEAR:
+  `review-numbered-math-131-source-f7b6c0d/review.json`, SHA256
+  `9cce18d3f2ad81d32a2f4d93127ee4b68d4eff64858d265302dd203afd8539a5`.
+  All15 numbered tests, two prior public body controls and five real-filesystem adapter controls
+  pass, including all4 late-byte mutations. Exact23 source/test bindings and docs-only integration
+  verified. Both actual TypeError failures stay retained.
+- Root final V3 construction CLEAR, exact f7 codec/source review bound:
+  `review-numbered-construction-131-root-v1/review-v3.json`, SHA256
+  `f6573b7cf4630154236019ce854f5c3fc91b2bd2309f11a60f4925b8595ccf3c`.
+  Per-paper2404 review0e7e6b44 /1911 reviewce429604. All92 prior bindings/checks pass;
+  V2-to-V3 entire projected previews byte-identical, construction only timestamp/one codec hash,
+  fourteen dispositions timestamp only. Previous reviews and preparations remain unchanged.
+- **Actual attachment passed both papers** using the real manual CLI:
+  `numbered-math-131/actual-attachment-v3-receipt.json`, SHA256
+  `c04416a0610d099254f56cb655b3cff248bebefa4e8f215b5cb1e408cdc850db`.
+  Bounded V5 publication completed16.734357s wrapper /16.671648s publisher,
+  peak child174544KiB,12 isolated history/paper workers,768MiB per-worker memory/60CPU/90wall.
+  Publication receipt2472ea5b329f7b2ac59ab4abf88d16e4988da8559742102625c4d9a3f9796d70.
+- **Root actual unactivated V5 release CLEAR**:
+  `review-numbered-release-131-root-v1/review.json`, SHA256
+  `45c9d683f4ddecb277e9e8e5e91f782be7ea460ae7f914c4ac287eefce142ce9`.
+  277bindings/19,921,322 bytes; all9 old paper fields and every old bibliography field exact,
+  all73 legacy files unchanged,20 retained modules exact reviewed f7 source. All55 new compact
+  equation records equal the reviewed projection. Full unscored original/source metadata and
+  original endpoint dispositions remain exact. No prior provenance-field difference in paper rows.
+  Root provenance separately records added modules/config/evidence and existing figures.rs update.
+- Exact implementation manifest2c96e2c435bb3b6ea5ee33c3cfbe347bf48795b8e155862fc3b732d3db33889c;
+  objects rootae7f145013d89a9f23c6f58e35cec7d58864a7e7584ef3e360e1256654d01b3d;
+  bibliography rootd22a957d27cb8310c85d2c808efc04ad636416fb1ce24f347e934a730f8d0dae.
+  Receipt `numbered-math-131/unactivated-v5-receipt-v2.json`, SHA256
+  `10455cad39f89fe504d7456be58a0773a74aa9538b35743b65fd2d5cfed87d56`.
+  Eleven papers; O3 truth5→60, O1/O2 still50, all other denominators unchanged. New rows onlyO3
+  true; no O3 detector measurement claimed. Owner may now activate this exact manifest.
+  Existing unpublished-pin regression must patch None locally after activation; reviewer checks it.
+- Producer freeze-v1 expected counts without explicit bib_entry:0; retained failure, v2 corrected
+  that assumption only. Root release audit retained three own preparation mistakes: endpoint ledger
+  is appended during attachment; bibliography now uses shared paper descriptors rather than inline
+  values; bibliography paper_bytes retains whole-release aggregate. Final audit-v4 checks every
+  exact field and shared aggregate/subset as specified, without changing producer/release bytes.
+- Fresh V1–V4 isolated historical replay all pass, about31s total:
+  `numbered-math-131/historical-replay-v1/receipt.json`, SHA256
+  `b2fe37429c7ed3298b71790644afc4933fbca52a552fc40535258839dd73243b`.
+  Pinned V5 replay, actual collector with own WT target, all117 prior measured outcomes, final
+  G5/full gates and draft PR/final diff review remain next. Preserve owningCLI/bridge/logs before
+  removing the WT and both its own target and issue-specific external cache target after merge.
+- #132 still Todo/blocked131, no worktree/code. Its exact2310 source scope and source/printed/
+  geometry readiness remain CLEAR. Root now also CLEARs original producer history at
+  `review-formal-producer-history-132-root-v1/review.json`, SHA256
+  `5ce1cc3a570c3bc5b83fea8260578deac371762df1b85a0caeec8076ffd372b9`.
+  Forty bindings/4,126,927 bytes, explicit primary handoff to finish_benchmark in dispatch7950a422,
+  later independent dispatch278d7382 to review_ready_prs, all original page-first/input/freeze
+  identities verified. Independent schema lacks a producer field: use exact dispatch attribution,
+  never fabricate one. Declared original provenance rehashed here is separate from annotator access.
+- **First-two whole visual geometry independently CLEAR**:15 regions, seven affected full pages
+  and15 crops personally viewed by finish_benchmark;182source refs/1,179native slices/1,099token
+  rectangles,44bindings/17,969,095 bytes. Receipt
+  `review-k1-first-two-visual-geometry-v1/review.json`, SHA256
+  `bd31b1dded037a5c76df307d0c505276f5935c1b58cb877a01fa678083b1b903`.
+  Table2 notes and2011 Figure7 native-body absence retained. Geometry only, no source/codec or
+  metric grant. Reviewer archive-relative-path preparation assumption failure preserved.
+- finish_corpus_proxy prepares exact2301 finite source scope while132 waits: cache-only
+  `numbered-2301-readiness/source-scope-preparation-v1/`. One current parse equals historical,
+ 16guardkeys/38declarations, exact No2/No4 groups and six unnumbered displays; final receipt
+  pending. No new code/source execution/network or metric admission.
+- Root read-only structural diagnostic aggregates724 existing candidates, no parser rerun/selection:
+  `k1-coverage/structural-readiness-diagnostic-20260914-v1/diagnostic.json`, SHA256
+  `f8dc4fda2d7c3307610abc186acab2e84372b1e273e47c9bf67c76a7991cc0a4`.
+  Unknown inventory commands affect723 papers, control flow420, local styles362. These are paper
+  frequencies, not automatic admissions or a safe command whitelist. Every metric remains false.
+- Eight artifacts and all10 protected main preview file hashes verified in
+  `/home/tjmisko/.cache/lysilogy/kb-session-checkpoint-20260914T1404.json`, SHA256
+  `760ddc7385a68eb9e13a2ecb0dcb0c63bf5c71643565ba08d39b0643fd7be34a`. About41GiB free;20GiB floor. No downloads/native queue.
+  Published score remains1/5gates,3/30objectives O1/O2/O30; no objective target lowered.
+  Preserved #33 and drafts93/94/95 remain blocked by already-approved four-host effective access;
+  normal-terminal permission script/restart still needed, no repeated approval or bypass.
+  Next: finish131 activation/replay/measurement/gates/PR/review/integration/merge/cleanup, then132.
+  #97 approximately500/all-kind, production10k, actual Playwright and phasesB–D remain open.
