@@ -2,7 +2,7 @@ use super::{Figure, FigureReference, ReadingIndex, ReadingToken, TextRange, nati
 use crate::domain::TextRect;
 
 /// Changes to derived caption/region behavior invalidate objects, not native anchors.
-pub const DETECTOR_VERSION: u16 = 3;
+pub const DETECTOR_VERSION: u16 = 4;
 
 struct Caption<'a> {
     paragraph: &'a super::Paragraph,
@@ -384,7 +384,10 @@ fn figure_region(
         // provide a stronger grid cue than a generic diagram/prose rectangle.
         return Some(above);
     }
-    let top = prose_top(index, candidate, captions, body_font, dimensions.height);
+    let mut top = prose_top(index, candidate, captions, body_font, dimensions.height);
+    if candidate.kind == "Figure" {
+        top = table_floor(index, candidate, captions, images, body_font, top);
+    }
     let height = caption.y_min - top;
     if height < 35.0 || height > dimensions.height * 0.70 {
         return None;
@@ -449,6 +452,36 @@ struct NativeRegions {
     rects: Vec<TextRect>,
     diagram_labels: Vec<TextRect>,
     diagram_only: bool,
+}
+
+fn table_floor(
+    index: &ReadingIndex,
+    candidate: &Caption<'_>,
+    captions: &[Caption<'_>],
+    images: &[TextRect],
+    font: f32,
+    mut top: f32,
+) -> f32 {
+    // A preceding table's caption is above its cells. The caption alone cannot
+    // prevent those short numeric paragraphs from becoming a later figure's
+    // native seed. Use the same observed grid as the table detector, never an
+    // inferred frame or a caption-only exclusion band.
+    for table in captions.iter().filter(|other| {
+        other.kind == "Table"
+            && other.page == candidate.page
+            && other.rect.y_max < candidate.rect.y_min
+    }) {
+        if let Some(grid) = table_below(index, table, captions, font, images) {
+            let overlap =
+                grid.x_max.min(candidate.rect.x_max) - grid.x_min.max(candidate.rect.x_min);
+            if grid.y_max < candidate.rect.y_min
+                && overlap > (candidate.rect.x_max - candidate.rect.x_min) * 0.35
+            {
+                top = top.max(grid.y_max + 4.0);
+            }
+        }
+    }
+    top
 }
 
 impl NativeRegions {
@@ -1894,6 +1927,70 @@ mod tests {
         let objects = find_with_images(&index, &[images]);
         assert!(objects[0].rect.unwrap().y_max < 175.0);
         assert_eq!(objects[1].rect, Some(rect));
+    }
+
+    #[test]
+    fn should_exclude_preceding_table_cells_when_a_figure_has_only_native_labels() {
+        let index = fixture(&[
+            ("Table V: Scores.", "body", 50.0, 100.0),
+            ("First 12.5", "float", 60.0, 130.0),
+            ("Second 25.0", "float", 60.0, 146.0),
+            ("Axis", "float", 70.0, 200.0),
+            ("0 1 2", "float", 70.0, 240.0),
+            ("Figure 8: Plot.", "caption", 50.0, 280.0),
+        ]);
+        let original = serde_json::to_vec(&index).unwrap();
+        let objects = find(&index);
+        let grid = objects[0].rect.unwrap();
+        let plot = objects[1].rect.unwrap();
+        assert!(grid.y_max < 175.0);
+        assert!(plot.y_min > 190.0 && plot.y_max < 260.0);
+        assert!(objects[1].spans.iter().all(|span| {
+            let text = utf16_slice(&index.text, span.start, span.end);
+            !text.contains("First") && !text.contains("Second")
+        }));
+        assert_eq!(serde_json::to_vec(&index).unwrap(), original);
+    }
+
+    #[test]
+    fn should_preserve_a_neighboring_plot_when_a_table_occupies_another_column() {
+        let index = fixture(&[
+            ("Table 1: Scores.", "caption", 350.0, 100.0),
+            ("First 12.5", "float", 360.0, 130.0),
+            ("Second 25.0", "float", 360.0, 146.0),
+            ("Axis", "float", 70.0, 130.0),
+            ("0 1 2", "float", 70.0, 200.0),
+            ("Figure 1: Plot.", "caption", 50.0, 250.0),
+        ]);
+        let plot = find(&index)[1].rect.unwrap();
+        assert!(plot.y_min < 135.0 && plot.y_max > 200.0);
+        assert!(plot.x_max < 200.0);
+    }
+
+    #[test]
+    fn should_keep_observed_labels_when_a_preceding_table_caption_has_no_grid() {
+        let index = fixture(&[
+            ("Table 1: Scores.", "caption", 50.0, 100.0),
+            ("Legend", "float", 70.0, 140.0),
+            ("Group A", "float", 70.0, 155.0),
+            ("Figure 1: Plot.", "caption", 50.0, 250.0),
+        ]);
+        let plot = find(&index)[1].rect.unwrap();
+        assert!(plot.y_min < 145.0 && plot.y_max > 155.0);
+    }
+
+    #[test]
+    fn should_preserve_unavailable_geometry_when_only_a_preceding_grid_is_observed() {
+        let index = fixture(&[
+            ("Table 1: Scores.", "caption", 50.0, 100.0),
+            ("First 12.5", "float", 60.0, 130.0),
+            ("Second 25.0", "float", 60.0, 146.0),
+            ("Figure 1: Unobserved vector plot.", "caption", 50.0, 280.0),
+        ]);
+        let objects = find(&index);
+        assert!(objects[0].rect.is_some());
+        assert!(objects[1].rect.is_none());
+        assert!(objects[1].spans.is_empty());
     }
 
     #[test]

@@ -254,7 +254,7 @@ class ObjectMetricTests(unittest.TestCase):
             altered=copy.deepcopy(index);altered[key]=None
             with self.subTest(key=key),self.assertRaisesRegex(ValueError,'native text, tokens, geometry or provenance differs'):
                 m.validate_derivation(row,artifact,altered)
-        for changes in [{'figure_detector_version':1},{'figure_detector_version':2},{'figure_detector_version':True},{'figure_detector_generation':'forged'}]:
+        for changes in [{'figure_detector_version':1},{'figure_detector_version':2},{'figure_detector_version':3},{'figure_detector_version':True},{'figure_detector_generation':'forged'}]:
             with self.subTest(changes=changes),self.assertRaises(ValueError):m.validate_derivation(row,{**artifact,**changes},index)
         for changes in [{'native_basis_format':'unknown'},{'native_schema_version':7}]:
             with self.subTest(changes=changes),self.assertRaises(ValueError):m.validate_derivation({**row,**changes},artifact,index)
