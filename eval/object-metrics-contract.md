@@ -188,6 +188,22 @@ provenance checks. Coverage always identifies the selected immutable cohort;
 results from the two releases must not be combined as disjoint samples.
 
 
+## Contiguous table caption ownership (issue125, detector5)
+
+A joined label/title is one exact native UTF-16 slice across two original paragraphs
+separated only by at most four whitespace code units. Both paragraph pieces must be
+contiguous and page-local. The new title path requires native provenance and valid
+single-line glyph geometry on a complete native page; uppercase title text alone is
+insufficient. Centered label/title placement and an observed grid with two numeric
+columns sharing a row and preceding header/row evidence corroborate ownership.
+Existing prose/caption/image boundaries and explicit heading/list/equation guards
+constrain the grid. Unconfirmed extensions retain the prior label-only prediction if
+one existed. Disjoint caption membership remains unavailable. The public anchor/body
+member meanings, native index bytes, immutable truth, matching and IoU computation
+are unchanged. The detector and collector's expected detector version advance together;
+all four frozen cohorts must be measured and every caption/region delta retained.
+
+
 ## Vector candidate supplement (graphics4, detector6)
 
 The optional vector path renders the complete original page at144 DPI with eight-bit
