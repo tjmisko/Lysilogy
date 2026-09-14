@@ -204,7 +204,7 @@ are unchanged. The detector and collector's expected detector version advance to
 all four frozen cohorts must be measured and every caption/region delta retained.
 
 
-## Vector candidate supplement (graphics4, detector6)
+## Vector candidate supplement (graphics5, detector6)
 
 The optional vector path renders the complete original page at144 DPI with eight-bit
 RGB antialiasing (`mutool draw -F pam -c rgb -r 144 -A 8`). It never seeds a body from
@@ -214,12 +214,23 @@ including nonisolated/knockout groups, and requires actual curved paint, no imag
 no unknown drawing state and only closed rectangular path clips; self-closing or unproved clips are unsupported. Original rendering
 resolves paint order, opacity and compositing. It does not establish semantic ownership.
 
+The first page command may be one self-closing `set_default_colorspaces` with exactly
+`gray="DeviceGray"`, `rgb="DeviceRGB"`, `cmyk="DeviceCMYK"`, and `oi="None"`.
+These identity defaults do not substitute a profile or output intent. Missing, extra,
+duplicate or changed attributes, nonempty forms, repeated or late defaults, and defaults
+inside drawing/group state withhold the renderer path. Graphics4 rejected even this
+identity preamble in all23 measured traces (also present in all17 prior generated
+fixtures), so its complete no-improvement run remains historical. Graphics5 invalidates
+those unsupported cache records; candidate parameters and existing image behavior stay
+unchanged. Acceptance of this preamble alone does not establish supported later commands
+or a complete raster/component result.
+
 All existing page image/mask work finishes before optional vectors use the remaining
 30s/64MiB paper allowance. Each raster uses the hash-bound `prlimit` wrapper (768MiB
 address space,5 CPU seconds, no core file,16MiB regular-file cap), at most5 wall seconds
 shortened to the remaining paper time, and the shared bounded pipes/cancellation path.
 There is no script or shell. Tool/PDF/wrapper hashes are rechecked after derivation.
-The graphics4 cache key uses `[4,native-etag,pdf-sha256,tool-sha256,mask-runtime]`;
+The graphics5 cache key uses `[5,native-etag,pdf-sha256,tool-sha256,mask-runtime]`;
 DPI, threshold, dimensions, component records, raster hashes and explicit statuses enter
 the exact graphics generation. Prior generations cannot substitute for these bytes.
 

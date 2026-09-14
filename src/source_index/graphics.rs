@@ -17,7 +17,7 @@ pub(super) mod vectors;
 pub use masks::{MaskPageEvidence, MaskRuntime};
 pub use vectors::VectorPageEvidence;
 
-pub const VERSION: u16 = 4;
+pub const VERSION: u16 = 5;
 const PAGE_BYTES: usize = 16 * 1024 * 1024;
 const TOTAL_BYTES: usize = 64 * 1024 * 1024;
 const MAX_PAGES: usize = 64;
@@ -822,6 +822,15 @@ fn renderer_group(value: &Tag<'_>) -> bool {
 }
 
 fn renderer_command(value: &Tag<'_>, stack: &[&str]) -> bool {
+    if value.name == "set_default_colorspaces" {
+        return value.empty
+            && stack == ["document", "page"]
+            && value.attrs.len() == 4
+            && value.attrs.get("gray") == Some(&"DeviceGray")
+            && value.attrs.get("rgb") == Some(&"DeviceRGB")
+            && value.attrs.get("cmyk") == Some(&"DeviceCMYK")
+            && value.attrs.get("oi") == Some(&"None");
+    }
     if value.name == "clip_path" && value.empty {
         return false;
     }
@@ -832,7 +841,6 @@ fn renderer_command(value: &Tag<'_>, stack: &[&str]) -> bool {
             | "clip_text"
             | "clip_stroke_text"
             | "clip_stroke_path"
-            | "set_default_colorspaces"
             | "rect"
     ) || (!known_command(value.name) && !matches!(value.name, "group" | "metatext"))
     {
@@ -882,6 +890,7 @@ fn renderer_command(value: &Tag<'_>, stack: &[&str]) -> bool {
 #[derive(Default)]
 struct TraceState<'a> {
     renderer: bool,
+    renderer_page_command_seen: bool,
     curved_paint: bool,
     receipt: Option<&'a masks::Receipt>,
     operations: usize,
@@ -917,8 +926,13 @@ impl<'a> TraceState<'a> {
     }
 
     fn observe(&mut self, value: &Tag<'a>, page: &ReadingPage) -> Result<()> {
-        if self.renderer && !renderer_command(value, &self.stack) {
-            return Err(invalid());
+        if self.renderer {
+            if !renderer_command(value, &self.stack)
+                || (value.name == "set_default_colorspaces" && self.renderer_page_command_seen)
+            {
+                return Err(invalid());
+            }
+            self.renderer_page_command_seen |= !matches!(value.name, "document" | "page");
         }
         if value.name == "curveto"
             && matches!(self.stack.last(), Some(&"fill_path" | &"stroke_path"))
@@ -1213,6 +1227,59 @@ mod tests {
     }
     fn curve() -> &'static str {
         "<fill_path winding=\"nonzero\" colorspace=\"DeviceRGB\" color=\"0 0 0\" alpha=\"1\" transform=\"1 0 0 1 0 0\"><moveto x=\"10\" y=\"10\"/><curveto x1=\"12\" y1=\"9\" x2=\"13\" y2=\"14\" x3=\"10\" y3=\"10\"/><closepath/></fill_path>"
+    }
+
+    const fn identity_defaults() -> &'static str {
+        "<set_default_colorspaces gray=\"DeviceGray\" rgb=\"DeviceRGB\" cmyk=\"DeviceCMYK\" oi=\"None\"/>"
+    }
+
+    #[test]
+    fn should_accept_identity_device_defaults_when_they_are_the_first_page_command() {
+        let body = format!(
+            "{}<group bbox=\"5 5 60 60\" isolated=\"0\" knockout=\"1\" blendmode=\"Normal\" alpha=\"1\">{}</group>",
+            identity_defaults(),
+            curve()
+        );
+        assert!(parse_renderer_trace(&trace(&body), &page()).unwrap());
+        assert!(parse_trace(&trace(&body), &page()).is_err());
+        let image_body = format!("{}{}", identity_defaults(), image("10 0 0 10 0 0"));
+        assert_eq!(parse_trace(&trace(&image_body), &page()).unwrap().0.len(), 1);
+        assert!(parse_renderer_trace(&trace(&image_body), &page()).is_err());
+    }
+
+    #[test]
+    fn should_withhold_renderer_support_when_device_defaults_are_not_exact_identities() {
+        for defaults in [
+            identity_defaults().replace("DeviceGray", "ICCBased"),
+            identity_defaults().replace("DeviceRGB", "DeviceCMYK"),
+            identity_defaults().replace("DeviceCMYK", "DefaultCMYK"),
+            identity_defaults().replace("oi=\"None\"", "oi=\"DeviceRGB\""),
+            identity_defaults().replace(" oi=\"None\"", ""),
+            identity_defaults().replace("/>", " extra=\"0\"/>"),
+            identity_defaults().replace("/>", " gray=\"DeviceGray\"/>"),
+            identity_defaults().replace("/>", "></set_default_colorspaces>"),
+        ] {
+            assert!(
+                parse_renderer_trace(&trace(&format!("{defaults}{}", curve())), &page()).is_err(),
+                "{defaults}"
+            );
+        }
+    }
+
+    #[test]
+    fn should_withhold_renderer_support_when_identity_defaults_have_late_or_nested_placement() {
+        for body in [
+            format!("{}{}{}", identity_defaults(), identity_defaults(), curve()),
+            format!("{}{}", curve(), identity_defaults()),
+            format!(
+                "<group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\">{}{}</group>",
+                identity_defaults(),
+                curve()
+            ),
+            format!("<fill_path>{}</fill_path>{}", identity_defaults(), curve()),
+        ] {
+            assert!(parse_renderer_trace(&trace(&body), &page()).is_err(), "{body}");
+        }
     }
 
     #[test]

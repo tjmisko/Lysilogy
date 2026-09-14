@@ -27,7 +27,7 @@ VERSION = 'figure-table-metrics-v6'
 TRUTH_VERSIONS = ('k1-limited-v1', 'k1-limited-v2', 'k1-limited-v3', 'k1-limited-v4')
 NATIVE_BASIS_FORMAT = 'native-json-f32-v1'
 DETECTOR_VERSION = 6
-GRAPHICS_VERSION = 4
+GRAPHICS_VERSION = 5
 MAX_JSON = 32 * 1024 * 1024
 
 
