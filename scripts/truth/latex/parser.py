@@ -476,78 +476,245 @@ def render_text(renderer, text):
         return ""
 
 
-def bibtex_fields(files, renderer):
-    output, issues = {}, Counter()
+class BibtexScanner:
+    """Bounded lexical spans in original decoded BibTeX, never TeX execution.
+
+    BibTeX braces count even after a backslash. A quote closes a quoted atom
+    only at brace depth zero, including when preceded by a backslash. Neither
+    this scanner nor its outer database search applies TeX percent comments.
+    """
+    command_identifier = re.compile(r"[A-Za-z][A-Za-z0-9_:.+/-]*")
+    identifier = re.compile(r"[A-Za-z_@][A-Za-z0-9_:.+/-]*")
+    number = re.compile(r"[0-9]+")
+
+    def __init__(self, text, limits, budget):
+        self.text, self.limits, self.budget = text, limits, budget
+        self.at = 0
+
+    def step(self):
+        self.budget[0] -= 1
+        if self.budget[0] < 0:
+            raise UnsupportedSource("BibTeX record/atom count exceeds its cumulative bound")
+
+    def space(self):
+        self.at = skip_space(self.text, self.at)
+
+    def name(self, command=False):
+        self.space()
+        match = (self.command_identifier if command else self.identifier).match(self.text, self.at)
+        if not match:
+            raise UnsupportedSource("unsupported or malformed BibTeX identifier")
+        self.at = match.end()
+        return match[0]
+
+    def expect(self, token):
+        self.space()
+        if self.text[self.at:self.at + 1] != token:
+            raise UnsupportedSource("malformed BibTeX field/entry delimiter: expected " + token)
+        self.at += 1
+
+    def atom(self):
+        self.step()
+        self.space()
+        start = self.at
+        opening = self.text[start:start + 1]
+        if opening in ('{', '"'):
+            depth = 1 if opening == '{' else 0
+            if depth > self.limits.group_depth:
+                raise UnsupportedSource("BibTeX brace nesting exceeds its bound")
+            self.at += 1
+            while self.at < len(self.text):
+                char = self.text[self.at]
+                if char == '{':
+                    depth += 1
+                elif char == '}':
+                    depth -= 1
+                    if depth < 0:
+                        raise UnsupportedSource("unbalanced closing brace in quoted BibTeX field")
+                    if opening == '{' and depth == 0:
+                        break
+                elif char == '"' and opening == '"' and depth == 0:
+                    break
+                if depth > self.limits.group_depth:
+                    raise UnsupportedSource("BibTeX brace nesting exceeds its bound")
+                self.at += 1
+            if self.at == len(self.text):
+                raise UnsupportedSource("unterminated " + ("braced" if opening == '{' else "quoted") + " BibTeX field")
+            content_end = self.at
+            self.at += 1
+            return {"kind": "braced" if opening == '{' else "quoted", "start": start, "end": self.at,
+                    "content_start": start + 1, "content_end": content_end}
+        match = self.number.match(self.text, self.at)
+        if match:
+            self.at = match.end()
+            kind = "number"
+        else:
+            self.name()
+            kind = "macro"
+        return {"kind": kind, "start": start, "end": self.at, "content_start": start, "content_end": self.at}
+
+    def value(self):
+        parts = [self.atom()]
+        self.space()
+        while self.text[self.at:self.at + 1] == '#':
+            self.at += 1
+            parts.append(self.atom())
+            self.space()
+        return parts
+
+    def field(self):
+        self.step()
+        self.space()
+        start = self.at
+        name = self.name().casefold()
+        self.expect('=')
+        parts = self.value()
+        return {"name": name, "start": start, "end": parts[-1]["end"], "parts": parts,
+                "unsupported": (["concatenation"] if len(parts) > 1 else []) +
+                               (["string_macro"] if any(part["kind"] == "macro" for part in parts) else [])}
+
+    def line_end(self):
+        end = self.text.find('\n', self.at)
+        return len(self.text) if end < 0 else end + 1
+
+    def entries(self):
+        """Yield all supported commands; retain rather than execute directives.
+
+        The reference BibTeX reads the next physical line after a completed
+        entry. Inline second commands and inline @comment searches have extra
+        lexical behavior outside this finite subset; reject them explicitly.
+        A comment command does not establish a balanced multiline TeX group.
+        """
+        while self.at < len(self.text):
+            start = self.text.find('@', self.at)
+            if start < 0:
+                return
+            self.step()
+            self.at = start + 1
+            kind = self.name(command=True).casefold()
+            if kind == 'comment':
+                end = self.line_end()
+                if '@' in self.text[self.at:end]:
+                    raise UnsupportedSource("unsupported inline BibTeX comment command search")
+                self.at = end
+                yield {"type": kind, "start": start, "end": end, "fields": []}
+                continue
+            self.space()
+            opening = self.text[self.at:self.at + 1]
+            if opening not in ('{', '('):
+                raise UnsupportedSource("unsupported or malformed BibTeX entry opening")
+            self.at += 1
+            closing = '}' if opening == '{' else ')'
+            row = {"type": kind, "start": start, "fields": []}
+            if kind == 'preamble':
+                row['parts'] = self.value()
+            elif kind == 'string':
+                row['fields'].append(self.field())
+            else:
+                self.space()
+                key_start = self.at
+                # Parentheses are literal key characters, even for a record
+                # opened by '('. Only a comma (or whitespace before the actual
+                # delimiter) ends that key; do not truncate at an inner ')'.
+                while self.at < len(self.text) and self.text[self.at] not in ',}' and not self.text[self.at].isspace():
+                    if self.text[self.at] in '"#%={\\':
+                        raise UnsupportedSource("unsupported BibTeX entry key syntax")
+                    self.at += 1
+                if self.at == key_start:
+                    raise UnsupportedSource("empty BibTeX entry key")
+                row.update(key=self.text[key_start:self.at], key_span={"start": key_start, "end": self.at})
+                self.space()
+                if self.text[self.at:self.at + 1] != closing:
+                    self.expect(',')
+                    self.space()
+                    while self.text[self.at:self.at + 1] != closing:
+                        row['fields'].append(self.field())
+                        if self.text[self.at:self.at + 1] == closing:
+                            break
+                        self.expect(',')
+                        self.space()
+            self.space()
+            if kind in ('string', 'preamble') and self.text[self.at:self.at + 1] == ',':
+                self.at += 1
+            self.expect(closing)
+            row['end'] = self.at
+            end = self.line_end()
+            if '@' in self.text[self.at:end]:
+                raise UnsupportedSource("unsupported multiple BibTeX commands on one physical line")
+            self.at = end
+            yield row
+
+
+def bibtex_fields(files, renderer, source_evidence=None):
+    output, issues, key_spellings = {}, Counter(), {}
+    budget, total_bytes = [renderer.limits.expansion_steps], 0
     for path, raw in sorted(files.items()):
         if not path.endswith(".bib"):
             continue
-        text = comments(raw)
-        at = 0
-        for match in re.finditer(r"@([A-Za-z]+)\s*([({])", text):
-            if match.start() < at:
-                continue
-            opening = match[2]
-            body, at = group(text, match.end() - 1, opening, ")" if opening == "(" else "}")
-            if match[1].casefold() in ("comment", "preamble", "string"):
-                if match[1].casefold() == "string":
+        encoded = raw.encode()
+        total_bytes += len(encoded)
+        if len(encoded) > renderer.limits.member_bytes or total_bytes > renderer.limits.text_bytes:
+            raise UnsupportedSource("BibTeX source bytes exceed their cumulative/member bound")
+        member = {"path": path, "decoded_sha256": sha256(encoded), "entries": []}
+        if source_evidence is not None:
+            source_evidence.append(member)
+        for row in BibtexScanner(raw, renderer.limits, budget).entries():
+            member['entries'].append(row)
+            if row['type'] in ('comment', 'preamble', 'string'):
+                if row['type'] == 'string':
                     issues["bibtex_string_macro"] += 1
+                elif row['type'] == 'preamble':
+                    issues["bibtex_preamble_not_evaluated"] += 1
                 continue
-            if "," not in body:
+            key = row['key']
+            if not row['fields']:
                 issues["bibtex_entry_without_fields"] += 1
-                continue
-            key, rest = body.split(",", 1)
-            key = key.strip()
-            fields, pos = {}, 0
-            while pos < len(rest):
-                field = re.match(r"\s*,?\s*([A-Za-z-]+)\s*=\s*", rest[pos:])
-                if not field:
-                    if rest[pos:].strip(" ,\r\n\t"):
-                        issues["bibtex_unsupported_field"] += 1
-                    break
-                name = field[1].lower()
-                pos += field.end()
-                if rest[pos:pos + 1] == "{":
-                    value, pos = group(rest, pos)
-                elif rest[pos:pos + 1] == '"':
-                    end = pos + 1
-                    while end < len(rest):
-                        if rest[end] == '"' and rest[end - 1] != "\\":
-                            break
-                        end += 1
-                    if end == len(rest):
-                        raise UnsupportedSource("unterminated quoted BibTeX field")
-                    value, pos = rest[pos + 1:end], end + 1
-                else:
-                    bare = re.match(r"\d+", rest[pos:])
-                    if not bare:
-                        issues["bibtex_unresolved_field_macro"] += 1
-                        next_field = rest.find(",", pos)
-                        pos = next_field if next_field >= 0 else len(rest)
-                        continue
-                    value, pos = bare[0], pos + bare.end()
-                if rest[skip_space(rest, pos):].startswith("#"):
+            fields = {}
+            counts = Counter(field['name'] for field in row['fields'])
+            for field in row['fields']:
+                name = field['name']
+                field['sha256'] = sha256(raw[field['start']:field['end']].encode())
+                if counts[name] > 1:
+                    field['unsupported'].append('duplicate_field')
+                    issues['duplicate_bibtex_field'] += 1
+                if 'string_macro' in field['unsupported']:
+                    issues['bibtex_unresolved_field_macro'] += 1
+                if 'concatenation' in field['unsupported']:
                     issues["bibtex_concatenated_field"] += 1
-                    next_field = rest.find(",", pos)
-                    pos = next_field if next_field >= 0 else len(rest)
-                    continue
-                fields[name] = value
+                if not field['unsupported']:
+                    fields[name] = field
             labels, provenance = {}, {}
             for target, source in (("title", "title"), ("first_author", "author"), ("year", "year")):
                 if source not in fields:
                     continue
-                value = fields[source]
+                field = fields[source]
+                part = field['parts'][0]
+                value = raw[part['content_start']:part['content_end']]
+                # TeX comment masking is not BibTeX field syntax. Never let the
+                # downstream renderer turn a valid complete value into a prefix.
+                if comments(value) != value:
+                    field['unsupported'].append('literal_percent_rendering')
+                    issues['bibtex_literal_percent_rendering'] += 1
+                    continue
                 if source == "author":
                     value = re.split(r"\s+and\s+", value, maxsplit=1)[0]
                 before = renderer.unsupported.copy()
                 rendered = render_text(renderer, value)
                 if rendered and renderer.unsupported == before and (source != "year" or re.fullmatch(r"(?:18|19|20)\d{2}[a-z]?", rendered)):
                     labels[target] = rendered
-                    provenance[target] = {"path": path, "key": key, "field": source}
-            if key in output:
+                    provenance[target] = {"path": path, "key": key, "field": source,
+                                          "decoded_sha256": member['decoded_sha256'],
+                                          "entry_span": {"start": row['start'], "end": row['end']},
+                                          "field_span": {"start": field['start'], "end": field['end']},
+                                          "field_sha256": field['sha256'], "value_part": dict(part)}
+            folded = key.casefold()
+            if folded in key_spellings:
                 issues["duplicate_bibtex_key"] += 1
-                output[key] = None
+                output[key_spellings[folded]] = None
+                output[key] = None  # Every spelling loses a privileged value.
             else:
                 output[key] = {"labels": labels, "provenance": provenance}
+                key_spellings[folded] = key
     return output, issues
 
 
@@ -951,7 +1118,8 @@ def parse_project(files, limits=Limits(), selected_main=None):
                 source_role_evidence.append({'kind': 'algorithm', 'reason': 'step-labeled procedural list has no parsed algorithm container',
                                              'source_members': expanded.origins(node['start'], node['end'])})
     entries, entry_keys, occupied = [], set(), []
-    database, bib_issues = bibtex_fields({path: files[path] for path in expanded.coverage["bibliography_files"]}, renderer)
+    bibtex_source = []
+    database, bib_issues = bibtex_fields({path: files[path] for path in expanded.coverage["bibliography_files"]}, renderer, bibtex_source)
     ignored.update(bib_issues)
     for bibliography in bibliographies:
         raw = text[bibliography["content_start"]:bibliography["content_end"]]
@@ -1109,6 +1277,7 @@ def parse_project(files, limits=Limits(), selected_main=None):
             "ambiguous_labels": ambiguous_labels, "unverified_label_names": unverified_label_names,
             "label_targets": label_targets, "statement_definitions": definitions,
             "coverage": {**expanded.coverage, "unsupported_commands": dict(renderer.unsupported),
+                         "bibtex_source": bibtex_source,
                          'raw_lexical_substitutions': lexical_substitutions,
                          'label_resolution': {'occurrences': len(label_occurrences), 'ambiguous_names': len(ambiguous_labels),
                                               'ambiguous_occurrences': sum(row['candidate_count'] for row in ambiguous_labels.values()),

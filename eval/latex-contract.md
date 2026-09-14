@@ -67,6 +67,50 @@ does not establish the resulting token stream. This is separate from naming-only
 The retained v1/v2 modules, payloads and configuration remain immutable. New candidate metadata
 does not rewrite their inventories or change their version-selected replay.
 
+The current BibTeX reader (#109) scans selected database members in their original
+decoded form. TeX percent-comment masking and TeX argument parsing do not define
+BibTeX syntax. Braced atoms count every brace, including braces after backslashes;
+quoted atoms terminate at a quote only at brace depth zero, including a quote
+after a backslash. Percent characters, protected quotes, accent spellings and
+entry-like text inside values remain intact. Entry braces and parentheses close
+only outside those atoms. Missing values, unmatched braces/quotes, invalid field
+separators and malformed concatenation tails explicitly fail the source parse;
+a valid prefix does not excuse its remaining syntax.
+
+`coverage.bibtex_source` retains each selected member's decoded SHA-256 and each
+scanned entry/directive, key, complete field and value-part span in decoded
+character coordinates. Ordinary fields also retain their complete field hash.
+Original archive bytes remain separately bound by the source receipt. This is
+supplementary database evidence, not a printed bibliography inventory or field
+annotation. String directives and concatenations are not evaluated. All parts
+are scanned through their real delimiters, retained and marked unresolved.
+Duplicate field names withhold every value of that field; duplicate database
+keys, compared without case, withhold every spelling's values. This does not
+change the separate fatal duplicate-key rule for printed `bibitem` inventories.
+Citation keys retain literal apostrophes and parentheses, including unmatched
+parentheses and an initial apostrophe. Parentheses remain literal within a key
+even when the record uses parentheses; the scanner does not truncate the key at
+an inner closing parenthesis. Field and string-macro identifiers can begin with
+an underscore or `@`; these metadata names do not establish printed field roles.
+Exact spans, case-insensitive duplicate withholding and unresolved macro values
+apply to these spellings too. Empty database keys remain an explicit identity
+support limit, although the generated reference accepts them; no synthetic key
+or association is inferred.
+Literal-percent values that the TeX text renderer would truncate supply no
+supplementary label. Explicit deposited BBL field roles remain authoritative;
+database values cannot establish absent printed boundaries or override conflicts.
+
+The bounded outer syntax follows the retained generated-only BibTeX reference
+fixtures for successive physical lines. Ordinary text outside commands is inert;
+an outer percent does not hide a following command. A comment command does not
+create a balanced multiline TeX group. Later physical lines are scanned normally.
+Another command on the same line as a completed entry, or inside a comment's
+remaining line, is explicitly unsupported rather than interpreted by a global
+entry regex. No system BibTeX program is invoked by parsing or tests. The scanner
+enforces member/cumulative byte limits, brace depth and a cumulative record/atom
+count using the existing limits. The raw `^^` guard, all source/math/native quality
+guards, and the retained v1/v2 implementations and truth remain unchanged.
+
 | Metric | Complete inventory required from a paper |
 | --- | --- |
 | O1 | All figures and all tables, including independently supported empty inventories |
