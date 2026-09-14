@@ -6831,3 +6831,63 @@ date, last merged issue, in-flight branches and their state, next action, and op
   is free after #129 cleanup. Next: start #131 in its new worktree, baseline objects, implement
   and separately review code/construction, publish/replay only after clearance, measure/gate,
   draft PR, independent final review and merge. Continue useful offline work meanwhile.
+
+
+### 2026-09-14 12:56 UTC — numbered codec implementation and two source/printed preparations
+
+- Last merged #129 / PR130 at d9a62af; main 1aceca0 before this checkpoint. Phase A / A2;
+  score unchanged at 1/5 hard gates and 3/30 objectives (O1/O2/O30). V4 remains 49 TP / 0 FP /
+  1 FN and 50 regions, O1=.98989898989899 / O2=.8910021250829322. #131 is open under epic67 /
+  project12, In Progress, with #129 closed. No new truth admission or phase completion.
+- **#131 implementation active** under review_k1_reconciliation. Worktree created with
+  `gh worktree create --branch feat/e8.3-numbered-math-tranche` from main1aceca0 at
+  `.worktrees/feat/e8.3-numbered-math-tranche`. No PR or implementation commit yet. Own-worktree
+  baseline/build reserved the single heavy slot; no parallel heavy job. Current edits include
+  the new numbered-math module and generated scorecard. Require separate source/module and
+  complete construction review before publication. finish_benchmark independently reviews the
+  root 55-equation mechanical proposal first; review pending. Preserve exact fixed 7+48 scope.
+- Current source-scope question is explicit: the historical two candidates retain automatic
+  `unsupported_source_semantics`. Root read all of original spconf.sty and the LyX address
+  declaration/invocation. The style changes layout/title/section/bibliography/captions and has
+  dynamic section-name machinery; it must not be characterized as generically free of dynamic
+  commands. Its exact bytes and actual uses require a finite whole-paper scope review. The
+  LyX wrapper's actual argument is address/center text and its definition forwards that argument
+  once. Preserve all automatic diagnostics and source encodings. Unchanged parser IDs and a
+  generic review flag alone cannot establish complete inventory; reject changed local styles,
+  structural insertions or unsupported scope. Implementer is preparing precise bound evidence.
+- **Root formal source/printed preparation for 2310.01528v1**:
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation/source-printed-formal-2310-root-v1/decisions.json`,
+  SHA256 `a099d83c0d7d6028fecc7907539b4de122ab8f62f5e3e46d8107e521cbe1883a`,
+  2,375,866 bytes. Seven statements, four proofs, three retained Lemma2 children; root personally
+  re-viewed original pages2/3/4 and read every complete source occurrence. Nineteen bindings,
+  98 source occurrences, 3,626 native copies and 3,550 whole tokens checked. All eleven exact
+  historical candidate occurrences and four unnamed nearest-preceding proof targets retained;
+  native QED remains literal l despite the visible hollow square. The gzip's original name
+  Nash_Equilibrium.tex and exported main.tex alias bind the same 15,073 UTF8 bytes. The first
+  prepare.py failed an exact-child-interval assumption; preparation-failure-v1.json retains it.
+  prepare-v2.py records exactly 5/5/4 extra trailing whitespace characters in independent child
+  ranges; both originals remain unchanged. finish_corpus_proxy independently passed mechanical
+  and page/source checks, final scoped receipt pending. No current parser or metric grant.
+- **Root four numbered source/printed identities for 2301.05184v1**:
+  `reconciliation/source-printed-math-2301-root-v1/decisions.json` under the same preparation
+  root, SHA256 `0735dddd03f0427e1fed0dfe4d2f312e0a9d78878e1b6a119135a69f3a9fb6b6`,
+  110,280 bytes. Root personally viewed original full page2 after reading four original source
+  rows and then read five local macros. Thirteen bindings, 16 source occurrences, 193 native
+  copies and 92 whole tokens checked. Preserve original Latin-1 full-member versus UTF8 snippet
+  hash domains, the integral exponent and entire two-row/cases groups under their single numbers.
+  Literal bd macro has def over tightly overlapped equals; no math correction or normalized
+  quotation. Prior body/number geometry clearance b2a92a00 is bound unchanged. Six unnumbered
+  displays, eleven statements and all other roles stay unscored. Candidate occurrence mappings
+  are retained candidates, with final source construction still pending. No failed preparation.
+  finish_benchmark is queued to review this small packet after the 55-equation proposal.
+- Seven new checkpoint bindings in `~/.cache/lysilogy/kb-session-checkpoint-20260914T1256.json`,
+  SHA256 `8e1d080d5f783e89bb66417ac5319b99e30feda2765be15f47e2f82f077c8380`.
+  All ten protected preview files remain byte-identical. No source execution, renderer, network
+  or external model calls in these preparations; external cost zero, reasoning cost unmetered.
+- Next: finish distinct preparation reviews, inspect #131's concrete source-scope and codec,
+  fix findings, publish/replay only after construction clearance, measure/gate/draft PR/review/
+  merge. Then continue #97's unchanged approximately 500-paper and all-kind requirement.
+  No downloads/native queue; 42 GiB free at last check, 20 GiB floor unchanged. Preserved #33
+  worktree and drafts PR93/94/95 remain as in the 12:44 entry. Four approved hosts still require
+  normal-terminal permission-script execution/restart because the config mount is read-only;
+  no repeat approval or bypass. Production10k, Playwright and later phases remain open.
