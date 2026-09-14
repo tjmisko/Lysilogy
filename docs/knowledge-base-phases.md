@@ -6658,3 +6658,67 @@ date, last merged issue, in-flight branches and their state, next action, and op
   unavailable and a read-only config mount. Normal-terminal script/restart action from earlier
   entries remains required; no repeated approval. Production10k, Playwright and later phases
   remain outstanding. Continue useful work and exact checkpointed reviews.
+
+
+### 2026-09-14 12:10 UTC — real bounded replay passed; final geometry and source/printed reviews clear
+
+- Last merged #123/PR128; main9d1188e before checkpoint. Phase A/A2. Published score remains
+  1/5 hard gates and3/30 objectives (O1/O2/O30); no new truth admission or phase completion.
+  All10 protected preview files unchanged. No downloads or native queue. Fourteen continuity
+  bindings in `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation-checkpoint-root-20260914T1210.json`,
+  SHA72d9d00fbadf6b9b84ec8a6f43d4d22c99fa186f0774a2d0aaae574ab9834d46.
+- **Remaining first-four source/printed math independently CLEAR** by root:
+  `~/.cache/lysilogy/review-k1-source-printed-1911-2109-root-v1/review.json`, SHA
+  4aaf0d107f50ad230370512c07744f616538fc754df02e003b5cf19befcf8c64,
+  52bindings/25,062,549B. Producer receipt5bc2ff47b612082f765ad3e62fd211936e3a3b2987112ca44770e58bf4604e53.
+  Ten original full pages personally re-viewed; all48numbered1911 and16numbered2109 displays
+  checked against original source, native memberships, numbers and separately reviewed geometry.
+  Exact audit covers25archive members/eight encodings,128original records,301source slices plus
+  literal bs macro,1,776native occurrences and1,617whole-token copies. All48source pairs exact;
+  all16other pairs preserve original whitespace-boundary differences. Parent11 is retained above
+  separate11a/11b children; no extra printed11. Literal printed oddities and native extraction
+  defects remain unchanged and nonquote. No algebraic validity, source execution or admission.
+- **Final-four root8math/14visual packages independently CLEAR** by review_k1_reconciliation:
+  `~/.cache/lysilogy/review-k1-final-four-geometry-source-v1/review.json`, SHA
+  07399b323724568d5f48b933e383a65cd2635e0b373fc03615327b008b4856c9;
+  checks7f59b1983c6c8372e0486bc16093df02c771c88968ae9ccbbf7daade07dfbe49.
+  64bindings/42,681,555B;12original pages personally re-viewed, all30regions,374source slices,
+  2,258native occurrences,1,961tokens,36source/44native comparisons,12encodings and8printed
+  identities verified. Five blank-margin extensions add no ink.2302figure6 restores exactly
+  (427,129)/(427,130), with the retained surrounding scan confirming no other added ink.
+  Both failed producer preparations remain bound. Full fidelity, incomplete roles/fields/cells,
+  source exclusions and metric eligibility remain unchanged.
+- **#129 actual real replay terminal0**, owning TTY4064, fixedsource47ef6f9. First actualv3
+  attempt stopped before measurement because mold could not mmap under the1.5GiB outer
+  address-space limit; failed artifacts are retained and independently audited in
+  `review-bounded-k1-129-real-failed-v3/review.json` SHA
+  9d529b8f596244ed86f8929dc553e992d787d39961fa26cb612b7b9400e417d5.
+  Exact build-only diagnostics show4GiB succeeds; reviewedv4 changes only legacy/build stage
+  address space, then restores1.5GiB scratch outer and unchanged768MiB per-paper worker limits.
+  Runner clearance153a2ad384331521b49207d27c8421f812aeb22f36bc278fa69b525b9ffe1b8f.
+  Successful real launch23616e1c4974172021508adfe870877e57ade4c96c9efa6a8725f51dd8745a4f;
+  summary `bounded-k1-replay-129/real-47ef6f9-v4/summary.json`, SHA
+  dc9b8f6528260abb23b6938ed06ff7ce0c31ad40fc2362bcb87270a71869cd59.
+  Wall337.663s, parent108,896KiB/child187,552KiB high-water RSS (not simultaneous sum),
+  zero network/model calls and external-call cost. Fresh legacy and new serial scratch paths
+  preserve all18complete records/117outcomes and predictions exactly; V4 remains49TP/0FP/1FN,
+  O1=.98989898989899,O2=.8910021250829322,twozeros/no unknowns. Separate actual audit pending;
+  this is infrastructure equality, not a new release or500-paper truth claim.
+- Owning CLI aftercheck terminal0 in0.405s; receipt
+  `bounded-k1-replay-129/after-47ef6f9-v4-objects/receipt.json`, SHA
+  998cc2bc76c348673050a8ffa93a39f0c3c4f8964afc586e6544766c7a608118.
+  Fresh50-case objects check available; baseline bytes and history unchanged. Prepared synthetic
+  launch's clean-worktree precondition now conflicts with the16expected generated measurement/
+  history files. Owner is binding precisely these files for separate narrow launch review while
+  holding47ef6f9fixed for actual audit. Do not repeat real run or mutate source during its audit.
+  Next: execute reviewed500-inert-record publication/replay and499-stage failed-tail experiment,
+  review actual evidence, write report/draftPR, integrate main ordinarily, final gates/review/merge.
+  finish_corpus_proxy owns implementation; finish_benchmark reviews. Heavy slot reserved for
+  that serial experiment, no second heavy build.
+- review_k1_reconciliation now prepares a cache-only completion matrix and bounded next codec
+  proposal for #97 across the14frozen pairs. Root separately assesses construction architecture.
+  Determine complete metric cohorts from reviewed evidence without falsely granting unrelated
+  negative kinds or semantic quote fidelity. No new annotation selection or eligibility claim.
+- Blocked #33 and drafts93/94/95 remain preserved. Approvedfourhosts still require the previously
+  prepared normal-terminal script because Codex's config is mounted read-only; approval already
+  exists. Production10k, Playwright, remaining A2 acceptance and all later phases remain open.
