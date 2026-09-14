@@ -73,7 +73,7 @@ class LayoutCollectorTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 m.aggregate_layout_metrics(truth, iter(rows))
 
-    def exercise(self, folder, fail_last=False, mutate_after=False):
+    def exercise(self, folder, fail_last=False, mutate_after=False, invalid_json=None):
         papers, _, artifacts, natives, truth = population()
         repo, cache, corpus, data = (folder / name for name in ('repo', 'cache', 'corpus', 'data'))
         for path in (repo, cache, corpus/'pdf', corpus/'source', data):
@@ -113,10 +113,20 @@ class LayoutCollectorTests(unittest.TestCase):
             self.assertEqual(len(request['papers']), 1)
             if fail_last and len(calls) == 4:
                 raise ValueError('inert late bridge failure')
-            artifact_raw = m.canonical(artifacts[ident]).decode()
-            return m.canonical({'schema_version': 1, 'network_calls': 0, 'model_calls': 0,
+            artifact = deepcopy(artifacts[ident]); metadata = []
+            if invalid_json and 'depth' in invalid_json:
+                for _ in range(65): metadata = [metadata]
+            elif invalid_json:
+                metadata = [0]*200001
+            if invalid_json and invalid_json.startswith('artifact'):
+                artifact['extra'] = metadata
+            artifact_raw = m.canonical(artifact).decode()
+            response = {'schema_version': 1, 'network_calls': 0, 'model_calls': 0,
                 'papers': [{'paper_id': ident, 'index_sha256': papers[int(ident,16)]['index']['sha256'],
-                            'artifact_json': artifact_raw, 'object_sha256': m.digest(artifact_raw.encode())}]}), {'inert': True}
+                            'artifact_json': artifact_raw, 'object_sha256': m.digest(artifact_raw.encode())}]}
+            if invalid_json and invalid_json.startswith('response'):
+                response['extra'] = metadata
+            return m.canonical(response), {'inert': True}
         def final_replay(*args):
             if mutate_after:
                 (root/truth['papers'][-1]['path']).write_bytes(b'{}')
@@ -131,7 +141,7 @@ class LayoutCollectorTests(unittest.TestCase):
             invoke = lambda: m._collect_layout(truth, {}, {'inert': 'before'}, truth_raw, paths, sources,
                 m.digest(expected.read_bytes()), expected, time.monotonic(),
                 {'release_layout': layout, 'release_process': transport}, cache, corpus, data)
-            if fail_last or mutate_after:
+            if fail_last or mutate_after or invalid_json:
                 with self.assertRaises(ValueError):
                     invoke()
                 self.assertEqual((repo/m.INPUT).read_bytes(), original_active)
@@ -163,6 +173,11 @@ class LayoutCollectorTests(unittest.TestCase):
         for failure in ('bridge', 'child'):
             with self.subTest(failure=failure), tempfile.TemporaryDirectory() as folder:
                 self.exercise(Path(folder), fail_last=failure=='bridge', mutate_after=failure=='child')
+
+    def test_should_reject_before_publication_when_bridge_or_nested_artifact_json_exceeds_structure_limits(self):
+        for kind in ('response-depth','response-nodes','artifact-depth','artifact-nodes'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as folder:
+                self.exercise(Path(folder), invalid_json=kind)
 
 
 if __name__ == '__main__':

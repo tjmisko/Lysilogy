@@ -675,14 +675,14 @@ def _collect_layout(truth, config, before, truth_raw, paths, sources, executable
                     raw, process_receipt = transport.run([str(expected)], canonical(request), external / ('bridge-' + str(ordinal)),
                         cwd=ROOT, seconds=min(40, deadline - time.monotonic()), stdout_cap=layout.PAPER_BYTES)
                     check_source()
-                    response = document(raw)
+                    response = layout.document(raw, layout.PAPER_BYTES)
                     require(response['schema_version'] == 1 and response['network_calls'] == response['model_calls'] == 0
                             and [row['paper_id'] for row in response['papers']] == [ident], 'serial bridge population differs')
                     row = response['papers'][0]
                     require(row['index_sha256'] == paper['index']['sha256'], 'bridge index differs')
                     artifact_raw = row['artifact_json'].encode()
                     require(digest(artifact_raw) == row['object_sha256'], 'object artifact hash differs')
-                    artifact = document(artifact_raw)
+                    artifact = layout.document(artifact_raw, layout.PAPER_BYTES)
                     derivation = validate_derivation(row, artifact, index)
                     derivation['graphics'] = validate_graphics(row, artifact, paper, index, cache)
                     for field in ('trace_hashes', 'mask_hashes', 'vector_hashes'):

@@ -10,6 +10,7 @@ import signal
 import subprocess
 import time
 
+import release_layout as layout
 from release_layout import MANIFEST_BYTES, PAPER_BYTES, canonical, direct, require
 
 STDERR_BYTES = 256 * 1024
@@ -36,13 +37,33 @@ class ProcessFailure(ValueError):
 
 
 def run(argv, request, directory, *, cwd, seconds=90, stdout_cap=MANIFEST_BYTES, environment=None):
+    """Turn ordinary coordinator termination into the owned-group cleanup path."""
+    previous = signal.getsignal(signal.SIGTERM)
+    def terminate(_signum, _frame):
+        raise ValueError('process coordinator received SIGTERM')
+    signal.signal(signal.SIGTERM, terminate)
+    try:
+        return _run(argv, request, directory, cwd=cwd, seconds=seconds,
+                    stdout_cap=stdout_cap, environment=environment)
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+
+
+def _run(argv, request, directory, *, cwd, seconds, stdout_cap, environment):
     """Retain exact bounded request/output prefixes and kill all owned group members."""
     require(type(seconds) in (int, float) and 0 < seconds <= 90,
             'invalid per-paper process deadline')
     require(type(stdout_cap) is int and 0 < stdout_cap <= PAPER_BYTES, 'invalid process output cap')
-    require(type(request) is bytes and len(request) <= MANIFEST_BYTES, 'process request exceeds bound')
-    directory = direct(directory); directory.mkdir(parents=True)
-    (directory / 'request.json').write_bytes(request)
+    require(type(request) is bytes and len(request) <= 8192, 'process request exceeds bound')
+    require(0 < len(argv) <= 64 and all(isinstance(item, str) and len(item) <= 4096 for item in argv),
+            'process argv exceeds bound')
+    directory = direct(directory)
+    # Reserve the complete allowed capture plus a compact receipt before spawning.
+    reserve = len(request) + stdout_cap + STDERR_BYTES + 2 + MANIFEST_BYTES
+    require(layout.shutil.disk_usage(directory.parent).free >= layout.FREE_BYTES + reserve,
+            'process free-space floor')
+    directory.mkdir(parents=True)
+    layout.immutable(directory / 'request.json', request, 8192)
     started = time.monotonic(); deadline = started + seconds
     output = {'stdout': bytearray(), 'stderr': bytearray()}
     limits = {'stdout': stdout_cap, 'stderr': STDERR_BYTES}
@@ -99,6 +120,8 @@ def run(argv, request, directory, *, cwd, seconds=90, stdout_cap=MANIFEST_BYTES,
     except (OSError, ValueError, MemoryError, subprocess.SubprocessError) as error:
         receipt['error'] = str(error)[:4096]
     finally:
+        # A repeated termination request must not interrupt owned-group cleanup.
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
         selector.close()
         if child is not None:
             # Leader exit is not proof that inherited descendants exited.
@@ -116,12 +139,15 @@ def run(argv, request, directory, *, cwd, seconds=90, stdout_cap=MANIFEST_BYTES,
         if time.monotonic() >= deadline:
             receipt['status'] = 'failed'; receipt['error'] = 'process exceeded wall deadline'
         receipt['wall_seconds'] = time.monotonic() - started
+        require(layout.shutil.disk_usage(directory).free >= layout.FREE_BYTES
+                + sum(len(raw) for raw in output.values()) + MANIFEST_BYTES,
+                'process retention free-space floor')
         for name, raw in output.items():
             path = directory / (name + '.bin')
-            path.write_bytes(raw)
+            layout.immutable(path, raw, limits[name] + 1)
             receipt[name] = {'path': str(path), 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest(),
                              'complete': receipt['status'] == 'passed'}
-        (directory / 'receipt.json').write_bytes(canonical(receipt))
+        layout.immutable(directory / 'receipt.json', canonical(receipt, MANIFEST_BYTES), MANIFEST_BYTES)
     if receipt['status'] != 'passed':
         raise ProcessFailure(receipt)
     return bytes(output['stdout']), receipt

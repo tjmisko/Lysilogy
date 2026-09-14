@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import signal
 import tempfile
 import time
 import unittest
@@ -11,6 +12,11 @@ import release_process as process
 
 
 class ProcessTests(unittest.TestCase):
+    def setUp(self):
+        # /tmp may be a small tmpfs. The independent low-space control still
+        # exercises the complete reservation calculation with a zero base floor.
+        self.enterContext(patch.object(process.layout, 'FREE_BYTES', 0))
+
     def invoke(self, root, program, **kwargs):
         return process.run([sys.executable, '-I', '-B', '-c', program], b'{}', root / 'run',
                            cwd=root, seconds=kwargs.pop('seconds', 3), **kwargs)
@@ -81,6 +87,47 @@ class ProcessTests(unittest.TestCase):
                 self.assertLessEqual(process.resource.getrlimit(process.resource.RLIMIT_AS)[0], process.MEMORY_BYTES)
                 raise ValueError('control')
         self.assertEqual(process.resource.getrlimit(process.resource.RLIMIT_AS), before)
+
+    def test_should_reject_before_spawn_or_writes_when_free_space_cannot_cover_worst_case_capture(self):
+        for free in (0, process.layout.FREE_BYTES + 1):
+            with self.subTest(free=free), tempfile.TemporaryDirectory() as raw:
+                root = Path(raw)
+                with patch.object(process.layout.shutil, 'disk_usage') as usage, patch.object(process.subprocess, 'Popen') as spawn:
+                    usage.return_value.free = free
+                    with self.assertRaisesRegex(ValueError, 'free-space floor'):
+                        self.invoke(root, 'unused')
+                    spawn.assert_not_called()
+                    self.assertFalse((root/'run').exists())
+
+    def test_should_clean_the_owned_worker_and_retain_failure_when_coordinator_receives_sigterm(self):
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw); pid_file = root/'worker.pid'
+            folder = Path(process.__file__).parent
+            worker = "import os,pathlib,sys,time;sys.stdin.buffer.read();pathlib.Path("+repr(str(pid_file))+").write_text(str(os.getpid()));time.sleep(10)"
+            driver = "import pathlib,sys,types\nfolder=pathlib.Path("+repr(str(folder))+")\n"
+            driver += "for name in ('release_layout','release_process'):\n p=folder/(name+'.py');m=types.ModuleType(name);m.__file__=str(p);sys.modules[name]=m;exec(compile(p.read_bytes(),str(p),'exec'),m.__dict__)\n"
+            driver += "sys.modules['release_layout'].FREE_BYTES=0 # inert tmpfs fixture only\n"
+            driver += "sys.modules['release_process'].run([sys.executable,'-I','-B','-c',"+repr(worker)+"],b'{}',pathlib.Path("+repr(str(root/'run'))+"),cwd=folder,seconds=3)\n"
+            coordinator = subprocess.Popen([sys.executable,'-I','-B','-c',driver], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            try:
+                deadline = time.monotonic()+2
+                while not pid_file.exists() and time.monotonic()<deadline:
+                    time.sleep(.01)
+                self.assertTrue(pid_file.exists())
+                coordinator.send_signal(signal.SIGTERM)
+                coordinator.communicate(timeout=2)
+                self.assertNotEqual(coordinator.returncode, 0)
+                receipt = json.loads((root/'run/receipt.json').read_bytes())
+                self.assertEqual(receipt['status'], 'failed')
+                self.assertIn('SIGTERM', receipt['error'])
+                path = Path('/proc')/pid_file.read_text()/'stat'
+                try:
+                    self.assertEqual(path.read_text().split()[2], 'Z')
+                except (FileNotFoundError, ProcessLookupError):
+                    pass
+            finally:
+                if coordinator.poll() is None:
+                    coordinator.kill(); coordinator.communicate(timeout=2)
 
     def test_should_retain_failure_when_cancellation_or_late_spawn_interrupts_transport(self):
         for failure in (KeyboardInterrupt(), ValueError('process exceeded wall deadline')):
