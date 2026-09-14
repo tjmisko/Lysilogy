@@ -281,7 +281,7 @@ acceptance are unchanged.
   cause before changing ownership or trace support. Coordinate measurements with117 and
   root's single heavy-job allocation. No native index rebuild or truth edits are presumed.
 
-- [ ] **#123 Bound vector figure-region evidence** (after #121). Branch
+- [x] **#123 Bound vector figure-region evidence** (after #121). Branch
   `fix/e1.1-vector-regions`. Owns bounded synthetic renderer/trace diagnostics,
   `src/source_index/graphics.rs`, necessary figure composition, focused fixtures and
   measured report only after evidence supports a conservative policy. Preserve all
@@ -308,6 +308,21 @@ acceptance are unchanged.
   `cargo test` that loads the gold set.
 
 ### Phase A notes
+
+- #123 merged via PR128 at `ebe976339a5c93771375400bae5935cbf9ae1b3a` (reviewed61dda7c).
+  Detector6/graphics5 add bounded painted vector components after exact supported trace checks;
+  the identity-default preamble correction preserves strict image semantics and unknowns.
+  t-SNE IoU improves .18438363161698818 to .9301568442382464; all117 overlapping outcomes
+  are retained with no regression. V4 remains49 TP/0 FP/1 FN, O1=.98989898989899;
+  median O2=.8910021250829322 over all50 objects/two zeros/no unknowns. Only O2 ratchets;
+  all four prior adjustments/other baselines/targets remain unchanged. Six rasters and
+  13077 components independently reproduced;17 traces remain unsupported, one old page
+  lacks a trace. First graphics4 no-op and all failed checks remain evidence. Gates pass
+  427 Rust/584 Python/85 Node. [Report](experiment-reports/2026-09-14-kb-vector-regions.md)
+  and `eval/evidence/vector-regions-123.json` bind actual source, results and portable inputs.
+  This meets the bounded123 task, not production10k or broad K1 coverage. Final separate
+  review57aa3fce is clear; branch/worktree/target removed, protected preview bytes unchanged.
+
 
 - #125 merged in PR127 at `4a9c6842aa04c22b1533d8de145fff4b3bac3704`, exact reviewed
   head `9bf9d50`. Detector 5 recovers five complete split table captions: fixed v4 is
@@ -6104,3 +6119,117 @@ date, last merged issue, in-flight branches and their state, next action, and op
   Preserve store905c341(no PR), bibliography draft94/201c53c, reference draft93/d5e12aa,
   person draft95/c867ec6 and all unrelated worktrees. Continue123 terminal/audit/merge and97
   original blind sequence; the A–D goal is incomplete.
+
+
+### 2026-09-14 09:57 UTC — vector fix merged and all fourteen annotation pairs frozen
+
+- Phase A / Wave A2. Last merged **#123 / PR128**, merge
+  `ebe976339a5c93771375400bae5935cbf9ae1b3a` at09:55:07UTC, exact reviewed head
+  `61dda7c01bdfc993d91ecec6d3d8c07e3093a33d`. Main safely fast-forwarded; local/remote
+  branch and worktree/target removed. All ten unrelated PDF-preview hashes are unchanged.
+  Final independent review `~/.cache/lysilogy/review-pr128-61dda7c/review.json`, SHA
+  `57aa3fce03348c1de2b466322fdf92e65341c106c88054b324cf163a6b2e31dc`, has no findings.
+  Root cleanup receipt is `vector-regions-123/root-merge-128-v1/receipt.json` under cache,
+  SHA db2cda3b0373809beabfd2f43f641f8a8a0934af36770d20dce719973e67593f.
+  Remote deletion TTY35925 terminated0 despite the known credential-store lock warning.
+  Ordinary main integration6afcf1e preserved all206 executed d033b51 source files
+  (continuity9162d26b); no rebase or main implementation edit. No heavy job is active.
+- First graphics4 run at0978f86 was a no-op: all117 overlapping outcomes unchanged,
+  all23 attempted vector pages unsupported, no raster. Actual receipt aabbfd8fd92238b6001de3291a66d99680495ac19a890a170cd7e2b4b933edfc,
+  independent actual review2e33c359292d8264f81d8eb48610682dd7d11b186d52bc1e9a235188c4888c2c,
+  normal aftercheck review3311545bb9b1e4762545ef068a36af08ce41d58ebcc8a28a3b7a3569b81f0d4d.
+  All remain preserved, including the actual155.367839295s/279008KiB run.
+- Corrected measured source **d033b515628fcdc79ad0de0c97f46da28286b183**, detector6/graphics5,
+  accepts only the exact first direct-page identity device-default preamble. All23 actual
+  and17 prior generated traces had this preamble; unknown substitutions, attributes and
+  placement still reject. Candidate parameters/image parsing unchanged. Focused146 Rust/
+ 45 collector tests, fmt and strict Clippy pass. Full/remaining gates pass427 Rust/
+ 584 Python/85 Node; receipts8504fa8b/d9fcbda9. Source/focused review3be98b84 and exact
+  launch reviewf3fa30412680356bb24458ce5375e0b6dc81d0c549abae513bd45d01893087ad are clear.
+  Format/state-representation failures and the original graphics4 generation are retained.
+- Second measurement TTY82595 terminal0,162.145825350s/278592KiB:
+  `~/.cache/lysilogy/vector-regions-123/measurement-d033b51-v1/receipt.json`, SHA
+  `9dd0f31c6bbcfb76bb4cf086e9d8a8b36426037bb536224b7d0f58fefd6cd12d`.
+  The only changed unique object is2409.03655v1 Figure4/t-SNE, IoU
+  .18438363161698818 to .9301568442382464. All117 outcomes remain, no regression;
+  V1/V2 exact, V3 O2=.9176618036504631, V4 O1=.98989898989899/O2=.8910021250829322,
+ 49 TP/0 FP/1 FN, two unchanged zeros/no unknowns. Six complete rasters/17 unsupported
+  traces/one old no-trace page; original native/image/mask/tool projections unchanged.
+  Independent actual review `review-vector-actual-d033b51/review.json`, SHA
+  `98f2dce16f0542b60444a01aae23f0e159f613711fcf2b2c6b378cc8ff0f19f6`, reconstructs all
+  13077 components from11766552 pixels and all117 current/prior outcomes exactly.
+- Normal owning-CLI aftercheck04bc46bd is fresh50-case, .360617181s; independent review
+  `review-vector-aftercheck-d033b51/review.json`, SHA
+  `78bc37aae4d5c33b8caa5ec87e1b0a59448c15de4a45e022b8981d39602dd1e5`. Only O2 improves
+  automatically; all four prior adjustments, other baselines and targets are unchanged.
+  Published main is1/5 gates and3/30 objectives (O1/O2/O30), with O2=.8910021250829322.
+  No new objective miss or follow-up issue. Final report and machine evidence are committed
+  in128: `docs/experiment-reports/2026-09-14-kb-vector-regions.md` and
+  `eval/evidence/vector-regions-123.json`. Portable manifest69305c09303ac476bfec7d29ce976747c925b32d350978995f4ae41933f18d6b
+  binds5455 artifacts/1007780822bytes outside the worktree. PR snapshot receipt19eaf290
+  is under `vector-regions-123/publication-v1/final-pr-61dda7c/`. Final review57aa3fce is clear, including all portable files, ignored provider inputs,
+  source/gate continuity and complete reference classification. Its exact receipt survives cleanup.
+- **#97: all14 primary and all14 independent first passes are complete and immutable.**
+  Final independent agent review_ready_prs is idle after the original seventh pair;
+  no undispatched original packet remains.56-file checkpoint under
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/` (base below):
+  `annotation-checkpoint-root-20260914T0950.json`, SHA
+  `fb7f0cb2030904456cefe4d71b16730350a384a8c7e3a805cc9ccda1240ebdf6`.
+  It retains the original fixed order and every earlier hash. Sixth/seventh independent
+  dispatches278d7382/70452745 remain separate history. Final2112 inventorydb9c517f,
+  receipt421fbb90,513.749967s; final2302 inventory5a6ad556,
+  receiptedbeae2c,436.785682s. All original pages were viewed before exports. Tables,
+  proofs, informal roles, native glyph loss and unresolved mappings remain explicit;
+  no new truth or O1–O11 eligibility follows from completed annotation passes.
+- New root first-four reconciliation is bound by
+  `reconciliation-checkpoint-root-20260914T0941.json`, SHA
+  `ad137371e5b55600ce3e498c46901f286c55faa7b4e28bf810ad221c887914a0` (23 artifacts).
+  Under `reconciliation/references-root-v1/`, formal-parts-2011-root-v1 ff8e65f5 records
+  four header/body/number root completions, two nested displays, three unnumbered
+  comparisons, Algorithm1 and its omitted-proof notice (complete source period retained).
+  algorithm-parts-2109-root-v1 68196306 binds complete algorithm membership and exact
+  DataCollect/PolicyUpdate aliases, headers and closing braces. Original primary records
+  contain only full-object membership; these new partitions are not paired agreement.
+  math-geometry-comparison-root-v1 06cf7d70 compares all77 bodies/numbers without scoring
+  or admission. Five white-space boundary decisions b844f4d1 and separate2011 equation7/8
+  condition/body decisions bf133aca retain original96dpi evidence and explicit root choices.
+  Two failed crop preparations609726eb/1b182ee9 remain. Root re-viewed equation7's brace:
+  last ink row433, rows434–442 blank; root bottom326.25points adds one blank pixel to
+  the independently proposed325.5 boundary. No original annotation was edited.
+- New **review_k1_reconciliation** is independently auditing only these bounded root
+  preparations and original source/native/pages, with outputs under
+  `~/.cache/lysilogy/review-k1-root-parts-v1/`. It is distinct from both original labelers.
+  This review cannot grant incomplete cohorts or replace final construction review.
+  Root still must reconcile remaining math/number/fidelity roles and the other ten papers.
+  Approximate500-paper coverage remains unmet; no target or quality threshold changed.
+- **finish_corpus_proxy** completed a read-only #97 payload/replay assessment. Receipt
+  `k1-coverage/release-layout-assessment-20260914-v1/receipt.json`, SHA
+  `33012b0b84a94b564144bc114f6ffee7eb19ed3a27c52b5a76412a8b36409196`, binds15 source
+  copies and73 immutable files. Proposal46b034aa5e9b4817b9bbd00d7d4ff06992808c5364dbff09cd0c121efe3068b2
+  and diagnosis365b25fe81f0a1366fbd0ed1a17c444535917af7d7cbe4b31fcd3a1900ee5516
+  are in that directory. V4 objects991418 bytes leaves57158 bytes under the1MiB
+  verifier cap; five retained unscored inventories account for about805KB. Other actual
+  limits include16MiB bridge output,8MiB collector writes,32MiB reads, and replay768MiB/
+ 60CPU/90wall. Current V4 predictions1293671bytes versus17712-byte harness input distinguish
+  raw evidence from metric inputs. It recommends a bounded new-version per-paper format, serial replay/collection and
+  one complete harness owner, preserving v1–v4 and complete denominators. No global cap
+  bump or discarded unscored fields. Its55MB truth/72MB prediction estimates at500 are
+  explicit current-mean extrapolations, not measurements or forecasts. No implementation
+  or new issue yet; inspect the proposal and register the next bounded97 implementation.
+- No corpus download/native queue runs: all10951 unique PDFs/indexes remain audited;
+  no batch41. Production10k, Playwright flow, Phase A exit and all later phases remain pending.
+  Free space45GiB; keep20GiB floor and one heavy job. No live model/provider calls or vault writes.
+- Storage write/read/remove probes passed for both approved directories. Current config
+  still has none of the four approved registry/provider grants; profile mount is read-only.
+  The fresh four-host HEAD command was rejected before execution at index.crates.io;
+  no fresh HTTP responses are claimed. Status receipt
+  `~/.cache/lysilogy/kb-four-host-status-20260914T0947.json`, SHA
+  `da072dd11f9897bcbcf25de3be1f82127e005b3d6354c35b405034b5bed774b2`.
+  The four-only script passes --check. Required normal-terminal action remains
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, restart and verify.
+  Approval already persists; no renewed request or sandbox bypass. This is a read-only
+  mount, not an auto-review rejection. Preserve store905c341(no PR), bibliography
+  draft94/201c53c, reference draft93/d5e12aa, person draft95/c867ec6 and unrelated worktrees.
+  Next: register bounded97 replay-capacity work from the finished assessment, continue
+  separate review_k1_reconciliation and complete remaining truth construction. No final
+  system report or phase-exit success is claimed.
