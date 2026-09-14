@@ -164,3 +164,57 @@ both original inventories and receipts. Original role-only receipts remain uncha
 The codec checks the actual retained history bytes and exact source excerpts, proposal
 selection/prompt/output paths, complete confirmation hashes and final reviewer binding.
 A proposed assignment or three different identity strings alone cannot enable an overlay.
+
+The separate `k1-manual-visual-only-tranche-v1` codec supports an O1/O2 projection
+when the same paper also contains unscored formal mathematics, procedures or
+unresolved references. It cannot emit the formal-negative overlay or combine
+with bibliography/panel overlays. Both original printed visual inventories and
+every current syntactic visual source occurrence must be accounted for. A source
+figure environment around a printed equation, or a reviewed nonrendered literal
+empty-macro payload, stays explicit in the source-role ledger. It is never silently
+dropped to manufacture a visual negative.
+
+The crosswalk checks per-occurrence kinds/labels, complete original source caption
+arguments, exact UTF-16 caption memberships, page ownership and independently
+reconciled full-body geometry. The supported included-source case has one literal
+input/include and three exact expanded source-map pieces, with both original
+dependency records. Separately recorded table notes retain their source owner
+and native spans through the visual-only overlay. They do not become statements
+or independent metric objects.
+
+An excluded printed nonvisual occurrence must bind the same source span, kind
+and printed label in both originals. Its remaining float context admits only
+the finite text/math/spacing commands listed in the codec, bare rule framing,
+and unique earlier local zero-argument aliases built from that same grammar.
+Additional environments, graphics, unknown commands, parameterized aliases and
+redefinitions reject. An empty-wrapper exclusion requires one literal definition;
+other definitions, dynamic assignments, conditional or grouped source scope are
+unsupported. Deferred assignment primitives inside source macros also reject,
+and the empty consumer cannot be used as an unexplained control-sequence argument.
+The supported invocation must immediately follow only whitespace/comments after
+the exact closing source span of a preceding independently paired visual. An
+adjacent declaration, arbitrary prose, or unreviewed syntactic closing command
+does not establish this boundary; unresolved preceding argument consumption
+rejects. This deliberate restriction does not claim general TeX token ownership.
+Rule checks run over the complete bounded alias composition, preserving adjacent
+token effects. These checks constrain the recorded source role; they do not execute
+TeX, prove arbitrary package semantics or certify mathematical rendering. The
+distinct original-page/construction review and retained source limitations remain
+required. Every attached note must have complete native token rectangles inside
+its reviewed full body and membership disjoint from every caption. Missing native
+geometry stays an explicit rejection, without inferred rectangles.
+
+Every original top-level value and collection member is retained by its canonical
+JSON pointer/hash, original role/ownership labels and scored/unscored disposition;
+the unchanged original artifact supplies all nested source/native/fidelity fields.
+Every current parsed object, reference/citation occurrence and bibliography entry
+also has an explicit ordinal/identity/hash/source-role record. The original raw
+inventories, additive corrections and later current-parser construction remain
+separate. This retention does not adjudicate omitted O3–O11 labels.
+
+The planned `k1-limited-v4` has its own fixed 16-module set and remains disabled
+until separately reviewed construction and immutable publication establish its
+manifest pin. It preserves the complete v1/v2/v3 bundles and prior four compact
+paper rows. Explicit collector selection preserves both supported historical
+region shapes and still requires every frozen O2 value, including zeros. Matching
+rules and IoU arithmetic remain unchanged; the 500-paper target remains open.

@@ -45,11 +45,13 @@ print(json.dumps({name:str(value.__file__) for name,value in loaded.items()},sor
                            'yes' if contaminate else 'no', version], capture_output=True, timeout=10)
 
 
-def second_fixture(directory, visual=False):
+def second_fixture(directory, visual=False, visual_only=False):
     """Synthetic publication pins; no real new release or manual labels."""
     repo, _ = fixture(directory)
     version = versioned.VISUAL_VERSION if visual else versioned.CURRENT_VERSION
     modules = versioned.VISUAL_MODULES if visual else versioned.CURRENT_MODULES
+    if visual_only:
+        version, modules = versioned.VISUAL_ONLY_VERSION, versioned.VISUAL_ONLY_MODULES
     bundle = repo / 'eval/implementations' / version
     bundle.mkdir()
     files = {}
@@ -78,6 +80,7 @@ def second_fixture(directory, visual=False):
     manifest_hash = versioned.digest(raw)
     worker = repo / 'scripts/truth/latex/versioned.py'
     pin = 'VISUAL_MANIFEST_SHA256' if visual else 'CURRENT_MANIFEST_SHA256'
+    if visual_only: pin = 'VISUAL_ONLY_MANIFEST_SHA256'
     worker.write_text(re.sub('^' + pin + r' = .*$',
                             pin + ' = ' + repr(manifest_hash),
                             worker.read_text(), flags=re.M))
@@ -85,6 +88,29 @@ def second_fixture(directory, visual=False):
 
 
 class VersionedTests(unittest.TestCase):
+    def test_should_keep_visual_only_release_disabled_when_its_publication_is_pending(self):
+        with patch.object(versioned, 'VISUAL_ONLY_MANIFEST_SHA256', None):
+            with self.assertRaisesRegex(ValueError, 'not published'):
+                versioned.pinned_release(ROOT, versioned.VISUAL_ONLY_VERSION)
+        self.assertEqual([len(versioned.release_spec(version)[1]) for version in
+                          (versioned.VERSION, versioned.CURRENT_VERSION, versioned.VISUAL_VERSION)], [12, 14, 15])
+
+    def test_should_load_exact_sixteen_modules_when_visual_only_release_is_explicitly_selected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, bundle, digest = second_fixture(directory, visual_only=True)
+            with patch.object(versioned, 'VISUAL_ONLY_MANIFEST_SHA256', digest):
+                manifest = versioned.pinned_release(repo, versioned.VISUAL_ONLY_VERSION)[1]
+                self.assertEqual(set(manifest['files']), versioned.VISUAL_MODULES | {'tranche_visual_only.py'})
+                (repo / 'scripts/truth/latex/tranche_visual_only.py').write_text('raise RuntimeError("current source must not load")')
+                result = imports_in_worker(repo, version=versioned.VISUAL_ONLY_VERSION)
+                self.assertEqual(result.returncode, 0, result.stderr.decode())
+                loaded = json.loads(result.stdout)
+                self.assertEqual(len(loaded), 16)
+                self.assertEqual(loaded['tranche_visual_only'], str(bundle / 'tranche_visual_only.py'))
+                (bundle / 'tranche_visual_only.py').write_bytes(b'raise RuntimeError("replaced frozen source")')
+                with self.assertRaisesRegex(ValueError, 'module differs'):
+                    versioned.pinned_release(repo, versioned.VISUAL_ONLY_VERSION)
+
     def test_should_keep_visual_release_disabled_when_its_independent_publication_pin_is_absent(self):
         with patch.object(versioned, 'VISUAL_MANIFEST_SHA256', None):
             with self.assertRaisesRegex(ValueError, 'not published'):

@@ -281,6 +281,22 @@ acceptance are unchanged.
   cause before changing ownership or trace support. Coordinate measurements with117 and
   root's single heavy-job allocation. No native index rebuild or truth edits are presumed.
 
+- [ ] **#123 Bound vector figure-region evidence** (after #121). Branch
+  `fix/e1.1-vector-regions`. Owns bounded synthetic renderer/trace diagnostics,
+  `src/source_index/graphics.rs`, necessary figure composition, focused fixtures and
+  measured report only after evidence supports a conservative policy. Preserve all
+  truth versions, caption membership and full region denominators. Coordinate the
+  detector/collector version and sole heavy slot; unknown support remains explicit.
+
+- [ ] **#125 Recover split and interleaved visual captions** (after #117). Branch
+  `fix/e1.1-visual-only-captions`. Owns conservative caption ownership in
+  `src/source_index/figures.rs`, minimal shared object/schema/API support only if needed
+  for disjoint caption spans, focused fixtures and measured evidence/report. Preserve
+  native bytes and all v1–v4 truth. Five 2310 tables and four label-only false positives
+  need complete separate-title ownership; 2207 Figure3's interleaved native paragraph
+  needs explicit disjoint support or must remain unresolved. Do not widen across prose.
+  Retain all 50 outcomes/eight zeros, unchanged .90/.75 targets and separate body gaps.
+
 ### Wave A3
 
 - [ ] **#37 E2.5 Resolution gold set and evaluation** (after #25, #69). Branch `feat/e2.5-gold-set`.
@@ -292,6 +308,17 @@ acceptance are unchanged.
   `cargo test` that loads the gold set.
 
 ### Phase A notes
+
+- #117 implementation/publication and gates are complete, pending independent final PR
+  review and root merge. V4 contains nine papers/50 visual regions; actual O1=.8979591836734694
+  (44 TP/4 FP/6 FN), O2=.8826424973982893, eight zeros/no unknowns. All old detector4
+  records remain exact. The separately reviewed cohort baseline transition preserves the
+  unadjusted failure and unchanged .90/.75 targets; O1 remains unmet, only2/30 objectives
+  are at target. #125 is the scoped caption follow-up, #123 the separate vector work.
+  Report `2026-09-14-kb-visual-only-pilot.md`, machine evidence `visual-only-pilot.json`.
+  Raw G5 passes386Rust/581Python/85Node; all four immutable replays and owning CLI checks
+  pass. The991,418-byte objects payload has57,158bytes below the unchanged1MiB cap;
+  future #97 expansion needs a bounded layout/cap decision. Approximately500 remains open.
 
 - Corpus native preparation is complete as of 2026-09-14: all 10,951 unique PDFs have audited
   indexes, covering all 1,000 eval and 10,000 scale papers (49 overlap). Queue v3 batch40 was
