@@ -162,6 +162,7 @@ pub struct SourceObjects {
     /// the product in its object cache or native reading index.
     pub traces: Vec<(u32, Vec<u8>)>,
     pub mask_receipts: Vec<(u32, Vec<u8>)>,
+    pub vector_rasters: Vec<(u32, Vec<u8>)>,
 }
 
 async fn derive_source(
@@ -189,6 +190,7 @@ async fn derive_source(
         artifact,
         traces: graphics.traces,
         mask_receipts: graphics.mask_receipts,
+        vector_rasters: graphics.vector_rasters,
     })
 }
 

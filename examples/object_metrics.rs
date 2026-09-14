@@ -256,11 +256,23 @@ async fn main() -> Result<(), Failure> {
                 json!({"page":page,"sha256":format!("{:x}",Sha256::digest(&raw)),"path":path}),
             );
         }
+        let mut graphics_vectors = Vec::new();
+        for (page, raw) in derived.vector_rasters {
+            let path = retain_trace(
+                &home.join(".cache/lysilogy/object-graphics-vectors"),
+                &raw,
+                "pam",
+            )
+            .await?;
+            graphics_vectors.push(
+                json!({"page":page,"sha256":format!("{:x}",Sha256::digest(&raw)),"path":path}),
+            );
+        }
         if bounded_index(&path).await? != before {
             return Err("canonical index changed during graphics derivation".into());
         }
         let artifact_json = serde_json::to_string(&artifact)?;
-        let row = json!({"paper_id":paper.paper_id,"index_sha256":paper.index_sha256,"object_sha256":format!("{:x}",Sha256::digest(artifact_json.as_bytes())),"artifact_json":artifact_json,"native_basis_sha256":native_basis_sha256,"native_basis_format":"native-json-f32-v1","native_schema_version":document.index.schema_version,"graphics_basis_json":graphics_basis_json,"graphics_traces":graphics_traces,"graphics_masks":graphics_masks});
+        let row = json!({"paper_id":paper.paper_id,"index_sha256":paper.index_sha256,"object_sha256":format!("{:x}",Sha256::digest(artifact_json.as_bytes())),"artifact_json":artifact_json,"native_basis_sha256":native_basis_sha256,"native_basis_format":"native-json-f32-v1","native_schema_version":document.index.schema_version,"graphics_basis_json":graphics_basis_json,"graphics_traces":graphics_traces,"graphics_masks":graphics_masks,"graphics_vectors":graphics_vectors});
         output_bytes += serde_json::to_vec(&row)?.len() + 1;
         if output_bytes > 16 * 1024 * 1024 - 1024 {
             return Err("object response exceeds16MiB".into());

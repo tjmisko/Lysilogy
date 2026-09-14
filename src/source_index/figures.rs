@@ -2,7 +2,7 @@ use super::{Figure, FigureReference, ReadingIndex, ReadingToken, TextRange, nati
 use crate::domain::TextRect;
 
 /// Changes to derived caption/region behavior invalidate objects, not native anchors.
-pub const DETECTOR_VERSION: u16 = 4;
+pub const DETECTOR_VERSION: u16 = 6;
 
 struct Caption<'a> {
     paragraph: &'a super::Paragraph,
@@ -33,6 +33,11 @@ pub fn find_with_images(
             .find(|page| page.page == candidate.page)
             .map_or(&[][..], |page| page.images.as_slice());
         let rect = figure_region(index, candidate, &captions, images);
+        let rect = pages
+            .iter()
+            .find(|page| page.page == candidate.page)
+            .and_then(|page| vector_region(index, candidate, &captions, page, rect))
+            .or(rect);
         figures.push(Figure {
             id: format!(
                 "{}-{}",
@@ -454,6 +459,255 @@ struct NativeRegions {
     rects: Vec<TextRect>,
     diagram_labels: Vec<TextRect>,
     diagram_only: bool,
+}
+
+fn overlaps(a: TextRect, b: TextRect) -> bool {
+    a.x_min < b.x_max && b.x_min < a.x_max && a.y_min < b.y_max && b.y_min < a.y_max
+}
+
+fn contains_rect(outer: TextRect, inner: TextRect) -> bool {
+    outer.x_min <= inner.x_min
+        && outer.y_min <= inner.y_min
+        && outer.x_max >= inner.x_max
+        && outer.y_max >= inner.y_max
+}
+
+fn valid_rect(rect: TextRect) -> bool {
+    [rect.x_min, rect.y_min, rect.x_max, rect.y_max]
+        .into_iter()
+        .all(f32::is_finite)
+        && rect.x_min < rect.x_max
+        && rect.y_min < rect.y_max
+}
+
+struct VectorContext {
+    glyphs: Vec<TextRect>,
+    barriers: Vec<TextRect>,
+    windows: Vec<(usize, TextRect)>,
+}
+
+fn vector_context(
+    index: &ReadingIndex,
+    candidate: &Caption<'_>,
+    captions: &[Caption<'_>],
+    font: f32,
+) -> Option<VectorContext> {
+    let page = index
+        .pages
+        .iter()
+        .find(|page| page.number == candidate.page)?;
+    if captions
+        .iter()
+        .filter(|caption| caption.page == candidate.page)
+        .count()
+        > 64
+        || index.tokens.iter().any(|token| {
+            token.page == candidate.page && token.provenance != super::Provenance::Native
+        })
+    {
+        return None;
+    }
+    let glyphs = index
+        .tokens
+        .iter()
+        .filter(|token| token.page == candidate.page)
+        .flat_map(|token| token.rects.iter().copied())
+        .take(32769)
+        .collect::<Vec<_>>();
+    if glyphs.is_empty() || glyphs.len() > 32768 || glyphs.iter().any(|r| !valid_rect(*r)) {
+        return None;
+    }
+    let mut barriers = captions
+        .iter()
+        .filter(|caption| caption.page == candidate.page)
+        .map(|caption| caption.rect)
+        .collect::<Vec<_>>();
+    for paragraph in &index.objects.paragraph {
+        let text = paragraph_tokens(index, paragraph, candidate.page);
+        if !text.is_empty() && prose_barrier(&text, font) {
+            barriers.push(union(text.iter().flat_map(|t| t.rects.iter().copied())));
+        }
+    }
+    for table in captions
+        .iter()
+        .filter(|c| c.page == candidate.page && c.kind == "Table")
+    {
+        let grid = table_below(index, table, captions, font, &[])
+            .or_else(|| table_above(index, table, captions, font, &[]));
+        if let Some(grid) = grid {
+            barriers.push(grid);
+        } else if table.rect.y_max < candidate.rect.y_min
+            && horizontal_gap(table.rect, candidate.rect) == 0.0
+        {
+            // A table caption without an observed grid leaves its lower body
+            // unresolved. It cannot authorize collecting marks for a figure.
+            return None;
+        }
+    }
+    if barriers.len() > 4096 || barriers.iter().any(|r| !valid_rect(*r)) {
+        return None;
+    }
+    let mut windows = Vec::new();
+    for caption in captions
+        .iter()
+        .filter(|c| c.page == candidate.page && c.kind == "Figure")
+    {
+        let mut top = page.height * 0.05;
+        for barrier in &barriers {
+            let overlap =
+                barrier.x_max.min(caption.rect.x_max) - barrier.x_min.max(caption.rect.x_min);
+            if barrier.y_max < caption.rect.y_min
+                && overlap > (caption.rect.x_max - caption.rect.x_min) * 0.35
+            {
+                top = top.max(barrier.y_max + 4.0);
+            }
+        }
+        let height = caption.rect.y_min - top;
+        if height >= 35.0 && height <= page.height * 0.70 {
+            windows.push((
+                caption.paragraph.start,
+                TextRect {
+                    x_min: caption.rect.x_min,
+                    y_min: top,
+                    x_max: caption.rect.x_max,
+                    y_max: caption.rect.y_min,
+                },
+            ));
+        }
+    }
+    Some(VectorContext {
+        glyphs,
+        barriers,
+        windows,
+    })
+}
+
+fn marker_groups(regions: &[TextRect], distance: f32) -> Vec<Vec<TextRect>> {
+    // Exactly n(n-1)/2 pair checks, with n <=4096. Union by smaller root
+    // preserves deterministic group ordering without unbounded transitive scans.
+    fn root(owners: &mut [usize], mut index: usize) -> usize {
+        while owners[index] != index {
+            owners[index] = owners[owners[index]];
+            index = owners[index];
+        }
+        index
+    }
+    let mut owners = (0..regions.len()).collect::<Vec<_>>();
+    for left in 0..regions.len() {
+        for right in left + 1..regions.len() {
+            if horizontal_gap(regions[left], regions[right])
+                .hypot(vertical_gap(regions[left], regions[right]))
+                <= distance
+            {
+                let a = root(&mut owners, left);
+                let b = root(&mut owners, right);
+                owners[a.max(b)] = a.min(b);
+            }
+        }
+    }
+    let mut groups = std::collections::BTreeMap::<usize, Vec<TextRect>>::new();
+    for (index, rect) in regions.iter().enumerate() {
+        let owner = root(&mut owners, index);
+        groups.entry(owner).or_default().push(*rect);
+    }
+    groups.into_values().collect()
+}
+
+fn owned_markers(
+    components: &[super::graphics::vectors::InkComponent],
+    context: &VectorContext,
+    font: f32,
+    owner: usize,
+) -> Option<TextRect> {
+    if components.len() > super::graphics::vectors::MAX_COMPONENTS
+        || components
+            .len()
+            .saturating_mul(context.glyphs.len().saturating_add(context.barriers.len()))
+            > 16_777_216
+        || !font.is_finite()
+        || font <= 0.0
+    {
+        return None;
+    }
+    let regions = components
+        .iter()
+        .filter_map(|component| {
+            let rect = component.rect();
+            (component.pixels > 0
+                && valid_rect(rect)
+                && (rect.x_max - rect.x_min).max(rect.y_max - rect.y_min) <= font
+                && !context
+                    .glyphs
+                    .iter()
+                    .chain(&context.barriers)
+                    .any(|r| overlaps(rect, *r)))
+            .then_some(rect)
+        })
+        .collect::<Vec<_>>();
+    let bounds = marker_groups(&regions, font * 1.5)
+        .into_iter()
+        .filter_map(|group| {
+            if group.len() < 6 {
+                return None;
+            }
+            let bounds = union(group.into_iter());
+            if context.barriers.iter().any(|r| overlaps(bounds, *r)) {
+                return None;
+            }
+            let mut owners = context
+                .windows
+                .iter()
+                .filter(|(_, window)| contains_rect(*window, bounds));
+            let first = owners.next()?;
+            (first.0 == owner && owners.next().is_none()).then_some(bounds)
+        })
+        .reduce(|a, b| union([a, b].into_iter()))?;
+    // Multiple separately owned clusters still produce one product rectangle.
+    // Their final envelope must not bridge a known barrier.
+    (!context
+        .barriers
+        .iter()
+        .any(|barrier| overlaps(bounds, *barrier)))
+    .then_some(bounds)
+}
+
+fn vector_region(
+    index: &ReadingIndex,
+    candidate: &Caption<'_>,
+    captions: &[Caption<'_>],
+    graphics: &super::graphics::PageGraphics,
+    native: Option<TextRect>,
+) -> Option<TextRect> {
+    if candidate.kind != "Figure" || !graphics.images.is_empty() || graphics.unsupported_images != 0
+    {
+        return None;
+    }
+    let evidence = graphics.vectors.as_ref()?;
+    let page = index.pages.iter().find(|p| p.number == candidate.page)?;
+    if evidence.status != "complete"
+        || evidence.dpi != super::graphics::vectors::DPI
+        || evidence.contrast != super::graphics::vectors::CONTRAST
+        || evidence.raster_sha256.is_none()
+        || evidence.width.zip(evidence.height) != super::graphics::vectors::dimensions(page)
+        || page.provenance != super::Provenance::Native
+        || index.gaps.iter().any(|gap| gap.page == candidate.page)
+    {
+        return None;
+    }
+    let font = page_font(index, candidate.page);
+    let context = vector_context(index, candidate, captions, font)?;
+    let vectors = owned_markers(
+        &evidence.components,
+        &context,
+        font,
+        candidate.paragraph.start,
+    )?;
+    let bounds = native.map_or(vectors, |native| union([native, vectors].into_iter()));
+    (!context
+        .barriers
+        .iter()
+        .any(|barrier| overlaps(bounds, *barrier)))
+    .then_some(bounds)
 }
 
 fn table_floor(
@@ -1140,6 +1394,182 @@ mod tests {
         index
     }
 
+    fn markers() -> Vec<super::super::graphics::vectors::InkComponent> {
+        (0..6)
+            .map(|i| super::super::graphics::vectors::InkComponent {
+                bounds: [100 + i * 4, 200, 102 + i * 4, 202],
+                pixels: 4,
+            })
+            .collect()
+    }
+
+    fn marker_context() -> VectorContext {
+        VectorContext {
+            glyphs: vec![],
+            barriers: vec![],
+            windows: vec![(
+                7,
+                TextRect {
+                    x_min: 40.0,
+                    y_min: 80.0,
+                    x_max: 180.0,
+                    y_max: 200.0,
+                },
+            )],
+        }
+    }
+
+    #[test]
+    fn should_keep_whole_components_when_glyphs_or_barriers_touch_candidate_ink() {
+        let components = markers();
+        let mut context = marker_context();
+        assert_eq!(
+            owned_markers(&components, &context, 10.0, 7),
+            Some(TextRect {
+                x_min: 50.0,
+                y_min: 100.0,
+                x_max: 61.0,
+                y_max: 101.0,
+            })
+        );
+        context.glyphs.push(components[0].rect());
+        assert!(owned_markers(&components, &context, 10.0, 7).is_none());
+        context.glyphs.clear();
+        // The gap contains no pixel, but the complete group crosses a barrier.
+        context.barriers.push(TextRect {
+            x_min: 51.2,
+            y_min: 90.0,
+            x_max: 51.8,
+            y_max: 120.0,
+        });
+        assert!(owned_markers(&components, &context, 10.0, 7).is_none());
+        context.barriers.clear();
+        let mut crossing = components;
+        crossing[0].bounds = [20, 200, 102, 202];
+        assert!(owned_markers(&crossing, &context, 10.0, 7).is_none());
+    }
+
+    #[test]
+    fn should_withhold_a_combined_envelope_when_separate_clusters_surround_a_barrier() {
+        let mut components = markers();
+        let second = markers().into_iter().map(|mut marker| {
+            marker.bounds[0] += 120;
+            marker.bounds[2] += 120;
+            marker
+        });
+        components.extend(second);
+        let mut context = marker_context();
+        assert!(owned_markers(&components, &context, 10.0, 7).is_some());
+        context.barriers.push(TextRect {
+            x_min: 80.0,
+            y_min: 90.0,
+            x_max: 90.0,
+            y_max: 110.0,
+        });
+        assert!(owned_markers(&components, &context, 10.0, 7).is_none());
+    }
+
+    #[test]
+    fn should_withhold_groups_when_caption_ownership_is_missing_partial_or_ambiguous() {
+        let components = markers();
+        let mut context = marker_context();
+        assert!(owned_markers(&components, &context, 10.0, 8).is_none());
+        context.windows.push((8, context.windows[0].1));
+        assert!(owned_markers(&components, &context, 10.0, 7).is_none());
+        context.windows.pop();
+        context.windows[0].1.x_min = 50.5;
+        assert!(owned_markers(&components, &context, 10.0, 7).is_none());
+        context.windows.clear();
+        assert!(owned_markers(&components, &context, 10.0, 7).is_none());
+    }
+
+    fn vector_page() -> super::super::graphics::PageGraphics {
+        super::super::graphics::PageGraphics {
+            page: 1,
+            status: "unsupported_trace".into(),
+            trace_sha256: Some("a".repeat(64)),
+            images: vec![],
+            unsupported_images: 0,
+            mask: None,
+            vectors: Some(super::super::graphics::VectorPageEvidence {
+                status: "complete".into(),
+                raster_sha256: Some("b".repeat(64)),
+                dpi: 144,
+                contrast: 5,
+                width: Some(1200),
+                height: Some(1600),
+                components: markers(),
+                diagnostic: None,
+            }),
+        }
+    }
+
+    #[test]
+    fn should_add_only_owned_vector_support_when_native_figure_geometry_is_empty() {
+        let index = fixture(&[("Figure 1: Compact marks.", "caption", 40.0, 250.0)]);
+        assert!(find(&index)[0].rect.is_none());
+        let result = find_with_images(&index, &[vector_page()]);
+        assert_eq!(
+            result[0].rect,
+            Some(TextRect {
+                x_min: 50.0,
+                y_min: 100.0,
+                x_max: 61.0,
+                y_max: 101.0
+            })
+        );
+        assert_eq!(result[0].start, find(&index)[0].start);
+        assert_eq!(result[0].caption, find(&index)[0].caption);
+    }
+
+    #[test]
+    fn should_preserve_native_image_and_table_paths_when_vector_evidence_is_unavailable() {
+        let original = fixture(&[("Figure 1: Compact marks.", "caption", 40.0, 250.0)]);
+        for case in [
+            "gap",
+            "ocr",
+            "missing_native",
+            "unsupported",
+            "dimensions",
+            "policy",
+            "images",
+        ] {
+            let mut index = original.clone();
+            let mut page = vector_page();
+            match case {
+                "gap" => index.gaps.push(super::super::IndexGap {
+                    page: 1,
+                    reason: "unreadable".into(),
+                }),
+                "ocr" => index.pages[0].provenance = Provenance::Ocr,
+                "missing_native" => index.tokens.clear(),
+                "unsupported" => page.vectors.as_mut().unwrap().status = "component_limit".into(),
+                "dimensions" => page.vectors.as_mut().unwrap().width = Some(1199),
+                "policy" => page.vectors.as_mut().unwrap().dpi = 72,
+                "images" => page.images.push(TextRect {
+                    x_min: 60.0,
+                    y_min: 150.0,
+                    x_max: 100.0,
+                    y_max: 230.0,
+                }),
+                _ => unreachable!(),
+            }
+            let with = find_with_images(&index, &[page.clone()]);
+            page.vectors = None;
+            let without = find_with_images(&index, &[page]);
+            assert_eq!(
+                with.iter().map(|f| f.rect).collect::<Vec<_>>(),
+                without.iter().map(|f| f.rect).collect::<Vec<_>>(),
+                "{case}"
+            );
+        }
+        let table = fixture(&[("Table 1: Grid not supplied.", "caption", 40.0, 250.0)]);
+        assert_eq!(
+            find_with_images(&table, &[vector_page()])[0].rect,
+            find(&table)[0].rect
+        );
+    }
+
     #[test]
     fn should_recover_literal_roman_captions_when_native_paragraphs_are_body_or_footnote() {
         for (number, kind) in [
@@ -1736,6 +2166,7 @@ mod tests {
             images: vec![image],
             unsupported_images: 2,
             mask: None,
+            vectors: None,
         };
         let with_image = find_with_images(&index, &[page]);
         assert_eq!(with_image[0].rect, native[0].rect);
@@ -1816,6 +2247,7 @@ mod tests {
                 images: vec![image],
                 unsupported_images: 2,
                 mask: None,
+                vectors: None,
             };
             let result = find_with_images(&index, &[page]);
             let figure = result
@@ -1838,6 +2270,7 @@ mod tests {
             trace_sha256: None,
             unsupported_images: 0,
             mask: None,
+            vectors: None,
             images: vec![
                 TextRect {
                     x_min: 40.0,
@@ -1897,6 +2330,7 @@ mod tests {
             trace_sha256: None,
             unsupported_images: 0,
             mask: None,
+            vectors: None,
             images: vec![table, plot],
         };
         let figures = find_with_images(&index, &[images]);
@@ -1924,6 +2358,7 @@ mod tests {
             trace_sha256: None,
             unsupported_images: 0,
             mask: None,
+            vectors: None,
             images: vec![rect],
         };
         let objects = find_with_images(&index, &[images]);
@@ -2015,6 +2450,7 @@ mod tests {
             trace_sha256: None,
             unsupported_images: 0,
             mask: None,
+            vectors: None,
             images: vec![rect],
         };
         let objects = find_with_images(&index, &[graphics]);
