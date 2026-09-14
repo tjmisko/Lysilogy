@@ -82,6 +82,8 @@ def seal_admission(data):
     ledger += deepcopy(docs['packet']['images'])
     docs['primary_receipt'].update(inputs=deepcopy(ledger),inventory=ref('primary'))
     docs['independent_receipt'].update(inputs=deepcopy(ledger), inventory=ref('independent'))
+    docs['assignment_proposal'].update(selection_sha256=ref('selection')['sha256'], prompt=ref('prompt'))
+    docs['assignment_history']['assignment_proposal']=ref('assignment_proposal')
     request = docs['assignment_request']
     request.update(assignment_proposal=ref('assignment_proposal'), prior_running_assignment_record=ref('assignment_history'),
         papers=[{'arxiv_id':candidate['arxiv_id'],'original_artifacts':{name:ref(name) for name in

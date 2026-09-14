@@ -382,6 +382,13 @@ def original_history(docs, raws, pages, verified_history):
     for field in ('assignment_proposal', 'assignment_history'):
         exact(identity[field + '_sha256'], sha256(raws[field]), 'identity confirmation changes historical assignment')
     proposal = docs['assignment_proposal']
+    require(type(proposal.get('schema_version')) is int and proposal['schema_version'] == 1
+            and isinstance(proposal.get('assignment_status'), str)
+            and proposal['assignment_status'].startswith('proposed'), 'unsupported original assignment proposal')
+    exact(proposal['selection_sha256'], sha256(raws['selection']), 'assignment proposal changes frozen selection')
+    hash_ref(proposal['prompt'], raws['prompt'], 'assignment proposal changes blind prompt')
+    hash_ref(docs['assignment_history']['assignment_proposal'], raws['assignment_proposal'],
+             'running history changes original assignment proposal')
     hash_ref(request['assignment_proposal'], raws['assignment_proposal'], 'identity request changes proposal')
     hash_ref(request['prior_running_assignment_record'], raws['assignment_history'], 'identity request changes running record')
     exact(identity['git_history'], request['git_history'], 'identity confirmation changes retained Git history')
