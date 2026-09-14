@@ -32,7 +32,7 @@ VISUAL_MODULES = CURRENT_MODULES | {'tranche_visual.py'}
 VISUAL_MANIFEST_SHA256 = 'd02b71b0f9604bdd3e2535825d0d257b587ce1219c5552eb978c6cd9886a682b'
 VISUAL_ONLY_VERSION = 'k1-limited-v4'
 VISUAL_ONLY_MODULES = VISUAL_MODULES | {'tranche_visual_only.py'}
-VISUAL_ONLY_MANIFEST_SHA256 = None  # Remains disabled until separately reviewed immutable publication.
+VISUAL_ONLY_MANIFEST_SHA256 = 'a491c9976befff0fadb0e7fe8220422360636dbb456b1ded2ebf5baa7520929a'  # Remains disabled until separately reviewed immutable publication.
 MAX_DOCUMENT = 1024 * 1024
 
 
