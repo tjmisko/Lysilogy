@@ -307,7 +307,7 @@ acceptance are unchanged.
   resource runner and actual results; measure500 inert synthetic rows before claiming scale.
   The mechanism does not publish pending annotations or meet #97's truth-coverage target.
 
-- [ ] **#131 Complete numbered-equation K1 cohorts** (after #129; bounded part of #97).
+- [x] **#131 Complete numbered-equation K1 cohorts** (after #129; bounded part of #97).
   Branch `feat/e8.3-numbered-math-tranche`. Owns a new `tranche_numbered_math.py`, narrow
   manual/release/versioned dispatch and builder fingerprint registration, focused Python tests,
   new reviewed annotation/release artifacts, contracts and report. Add an explicit O3-only
@@ -341,6 +341,19 @@ acceptance are unchanged.
 
 ### Phase A notes
 
+- #131 merged via PR133 at `6059dcfc0ec7d7c13df3a535c4d96f1f63028da7`, independently clear
+  at `51e32210e5ea8f28681048907eb83a3422eb4a01`. V5 adds complete O3-only inventories for
+  2404.17771v2 (7) and 1911.08525v2 (48), giving 60 truth equations across eleven papers.
+  All nine prior paper records, 73 legacy files and 117 historical outcomes remain exact.
+  Every other source/original role and all fourteen dispositions remain unscored and bound.
+  Fresh V1–V5 replay, owning evaluations, formatting, strict Clippy and isolated G5 pass:
+  428 Rust / 627 Python / 85 Node tests. O1=.98989898989899 and O2=.8910021250829322
+  remain unchanged over 50 regions; no O3 detector score is claimed. The first collector
+  allocation failure remains recorded; unchanged binary/request and original 768 MiB limit
+  passed on retry, so the cause remains unresolved and no limit changed. Exact before/after
+  executables and results are portable. [Report](experiment-reports/2026-09-14-kb-numbered-math-tranche.md)
+  and `eval/evidence/numbered-math-131.json` bind the evidence. #132 uses V6 next; #97 stays open.
+
 - #129 merged via PR130 at `d9a62af3855c9bbf49dc8171cadf088bf644878d`, independently clear
   at `8c51bee8345f748bf4e4a2ed75108e71b2aabbd9`. Bounded per-paper publication/replay and
   collection retain complete ordered cohorts and unscored evidence, with one metric owner.
@@ -352,7 +365,7 @@ acceptance are unchanged.
   passed. O1=.98989898989899 and O2=.8910021250829322 remain unchanged over 50 regions.
   [Report](experiment-reports/2026-09-14-kb-bounded-k1-replay.md) and
   `eval/evidence/bounded-k1-replay-129.json` bind 14,644 portable files / 735,704,720 bytes.
-  V5 remains unpublished. #131 now owns its first bounded new-codec construction; #97 stays
+  At that merge V5 remained unpublished. #131 owned its first new-codec construction; #97 stays
   open. The merged branch/worktree/target were removed; all protected preview bytes unchanged.
 
 - #123 merged via PR128 at `ebe976339a5c93771375400bae5935cbf9ae1b3a` (reviewed61dda7c).
@@ -7272,3 +7285,83 @@ date, last merged issue, in-flight branches and their state, next action, and op
   normal-terminal permission script/restart still needed, no repeated approval or bypass.
   Next: finish131 activation/replay/measurement/gates/PR/review/integration/merge/cleanup, then132.
   #97 approximately500/all-kind, production10k, actual Playwright and phasesB–D remain open.
+
+
+### 2026-09-14 14:30 UTC — numbered equations merged; formal cohort next
+
+- Last merged **#131 / PR133** at `6059dcfc0ec7d7c13df3a535c4d96f1f63028da7`, 14:29:18 UTC.
+  Reviewed head `51e32210e5ea8f28681048907eb83a3422eb4a01`; issue closed and main fast-forwarded.
+  Phase **A / Wave A2**. Root commits this docs-only checkpoint; unrelated main PDF-preview
+  files remain byte-identical. Owner review_k1_reconciliation is cleaning only the merged
+  `feat/e8.3-numbered-math-tranche` worktree/branch and its two task-owned compiled targets
+  (WT target and `~/.cache/lysilogy/numbered-math-131/target`), after portable closure.
+- Final independent PR review CLEAR: `review-pr133-2fd06f1/review.json`, SHA256
+  `a6aa8ae78f03f6ac76a64c16b21af5ad18748e34fb7b711a2c87cc992c4032b9`.
+  Rehashed 963 bindings / 213,917,404 bytes, including 734 portable files. All 113 measurement
+  source files and 161 other source/test inputs match gated ff33385. Final evidence-only fix
+  recovers exact before CLI/result without rebuilding: `numbered-math-131/baseline-portability-addendum-v1/receipt.json`,
+  SHA256 `5594fb28c72275653951355b0f08d4e47193e1dfe0c4b6ab6cb6189bfa830356`.
+  Machine evidence is `eval/evidence/numbered-math-131.json`, SHA256
+  `7e2a8040620ce7a28d9fdbc0ed0725be7310ffcb1fa0f25d3d7d097bb2a26b83`.
+- Activated V5 manifest `2c96e2c435bb3b6ea5ee33c3cfbe347bf48795b8e155862fc3b732d3db33889c`.
+  Objects root ae7f1450 / bibliography d22a957d; 11 papers, 60 O3 truth equations, +55 only.
+  All nine prior paper values/provenance, all73 V1–V4 files, 14 dispositions and all unscored
+  original/source metadata remain exact. New two papers have only O3 eligibility; no detector
+  score or automatic negative grant. V5 is pinned; the next extension must use V6.
+- Fresh V1–V5 replay independently CLEAR: `review-numbered-runtime-131-v1/replay-review.json`,
+  SHA256 `012ce664a46a93dd6b04f52aefa2b8443e6763ffc47ac41c052eecb58e5e39b2`.
+  Actual collector independently CLEAR: same directory `collector-review.json`, SHA256
+  `1f51041b34402cca92230e824dfdaf7b201674eb3282b9f58b50a670fd13863e`.
+  All117 prior outcomes and 18 complete overlapping predictions/rows are exact; all11 decisions
+  include both explicit O3-only visual exclusions. O1=.98989898989899, O2=.8910021250829322,
+  49TP/0FP/1FN, 50 regions, two zero IoUs, no unknowns. Global score stays **1/5 gates, 3/30
+  objectives** (O1/O2/O30); no target lowered and no extra follow-up opened for zero deltas.
+- First collector allocation failure at visual ordinal7 and partial decisions remain retained.
+  Same request/binary passed both 768/1536 MiB diagnostics with byte-identical output; unchanged
+  complete retry passed original 768 MiB. Cause unresolved; no resource/runtime/detector changes.
+  Retry receipt `numbered-math-131/collector-v2/receipt.json`, SHA256
+  `2b943ffc8d0863c7d01fcccf0d67bc99cb21a14a0aeada73600b59aac5fd88d9`;
+  collector80.525553s versus wrapper81.026804s. Final integrated gates receipt
+  `numbered-math-131/final-gates-v2/receipt.json`, SHA256
+  `075bebc72f610b3c7185d49f8cc39422d2cff4a3914e4e323c46502e6171a15e`:
+  formatting/strict Clippy/owning objects and all checks pass; G5 428Rust/627Python/85Node,
+  25.789s, real isolated network namespace, no model calls. Portable final CLI/bridge/build/G5
+  receipts in `numbered-math-131/portable-executables-v1/`; external billed cost zero throughout.
+- **Next implementation #132**, branch `feat/e8.3-formal-tranche`, now unblocked. Assign
+  finish_corpus_proxy after this docs push, using `gh worktree create --branch` from updated
+  main. Own only the new formal codec/tests and narrow current manual/release/builder/versioned
+  registrations/contracts/report; no parser/detector edits. Publish complete2310.01528v1 O5/O6
+  seven statements/four proofs, retain three associated Lemma2 parts and every unscored role.
+  All four edges target whole statements, including cross-page attribution; named ambiguity
+  cannot fall back. Bind complete exact finite source scope and original producer history.
+  Read full issue132 for concrete tests, bounds, review and publication requirements.
+- #132 root source scope CLEAR: `review-formal-source-scope-132-root-v1/review.json`, SHA256
+  `b698695134a05a8721e233598f58cb2fcb61e71233b6fafe6583ae2b11cef099`.
+  Root original producer history CLEAR: `review-formal-producer-history-132-root-v1/review.json`,
+  SHA256 `5ce1cc3a570c3bc5b83fea8260578deac371762df1b85a0caeec8076ffd372b9`.
+  Source/printed review017f96fb and geometry67ab9a3b remain exact. These readiness grants do
+  not substitute for separate concrete source, construction, actual release and final PR review.
+- Additional2301.05184v1 source-scope preparation/root review complete, cache only:
+  `numbered-2301-readiness/source-scope-preparation-v1/receipt.json`, SHA256
+  `c655de615071401b34a6e26a0dbaf2374e3ead1d94dcc25e38635bd2df7cf465`;
+  `review-numbered-source-scope-2301-root-v1/review.json`, SHA256
+  `52a3f6c7b20838322c44912a32a4dd2bb9fd357a3ffccef269bd07111efb44b7`.
+  Root read all source and 38 declarations/16 guards; 45 bindings/6,971,332bytes,2386 spans.
+  Four whole numbered groups; exact local bd stackrel definition retained without algebraic
+  flattening. Original26741 Latin-1 bytes and26827 UTF-8 bytes remain distinct. Nine partitions
+  cover full source; six unnumbered groups and all metadata stay unscored. No codec/history/
+  publication or metric grant. Prior printed reviewaae575c1 remains usable for later bounded work.
+- Nine receipts and all ten protected preview hashes verified in
+  `~/.cache/lysilogy/kb-session-checkpoint-20260914T1430.json`, SHA256
+  `10c01244b1d476632c50bc50e97f557a7f4dc3f2e8e48ff482ee73e56c2ed01a`.
+  Around41GiB free before target cleanup; keep20GiB floor and one heavy job at a time.
+  Corpus remains10951 unique PDFs/1000 sources in `~/Corpora/arxiv`, all native indexes audited;
+  no downloads or native queue running. This is preparation, not production10k acceptance.
+- Preserved in-flight work: #33 `feat/e2.1-kb-store`905c341/noPR; #71
+  `feat/e8.4-reference-truth`d5e12aa/draft93; #72 `feat/e8.5-person-labels`c867ec6/draft95;
+  #25 `feat/e1.2-bibliography`201c53c/draft94. Keep dirty #33 files and unrelated/tmp worktrees.
+  Their four approved hosts remain blocked in the active profile. Persistent config is mounted
+  read-only; normal terminal must run `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`
+  then restart/resume/effectively verify. Approval already granted; do not ask again or bypass.
+  No credentials or sudo missing. Continue all independent offline work. #97 approximately500/
+  all-kind, Phase A exit, production10k, Playwright and Phases B–D remain unfinished.
