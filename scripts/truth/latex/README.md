@@ -234,8 +234,9 @@ identity review does not waive automatic source guards. No TeX executes. This
 format cannot mix with another manual overlay, and it does not change the legacy
 O3–O7 contract. See the [numbered-only contract](../../../eval/latex-contract.md#complete-numbered-only-construction).
 
-The unpublished V5 inventory is explicitly extended from nineteen to twenty
-modules for this codec. Publication uses the existing per-paper producer and
-requires separate source/module and concrete construction clearance. The V1–V4
-bundles remain immutable. A new version may enumerate source/assembly provenance
-changes while preserving prior paper semantics, metric flags and outcomes.
+V5 publishes the explicitly reviewed twenty-module inventory through the existing
+per-paper producer, after separate source/module, concrete construction and actual
+release clearance. Its eleven children retain the nine prior paper records exactly
+and add these two complete O3 inventories. V1–V4 bundles remain immutable. The
+release enumerates current source provenance while preserving prior paper
+semantics, metric flags and outcomes. The 500-paper target remains open.

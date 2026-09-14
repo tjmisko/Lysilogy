@@ -1,9 +1,11 @@
 # Bounded K1 per-paper transport, format 1
 
-Issue #129 adds a release and measurement mechanism. `k1-limited-v5` remains
-unpublished: its fixed manifest pin is `None`. It adds no annotation, admission,
-detector change, or completed-paper claim. All 73 v1–v4 implementation, config,
-and truth files remain immutable and use their existing replay path.
+Issue #129 introduced the release and measurement mechanism. Issue #131 publishes
+`k1-limited-v5` with the reviewed twenty-module implementation: nine unchanged
+prior paper records and two complete numbered-equation inventories, adding 55
+O3 equations. All other roles and fourteen frozen dispositions remain explicit
+and unscored. All 73 v1–v4 implementation, config and truth files remain immutable
+and use their existing replay path. The 500-paper target remains open.
 
 The new object root is a canonical JSON manifest (`schema_version: 2`,
 `layout: k1-per-paper-v1`). Each ordered descriptor commits the exact paper ID,
@@ -17,8 +19,8 @@ unknowns, exclusions, source memberships, attached content and provenance surviv
 A wholly ineligible selected candidate remains an ordered child with all flags
 false and no independent alignment claim. Its full candidate is retained in
 `unscored_inventory.retained_candidate`. Transport never promotes an eligibility
-flag. Later annotation codecs may use the same projection seam; this format adds
-no annotation codec.
+flag. Separate annotation codecs use the projection seam; the transport itself
+does not establish annotation eligibility.
 
 O1–O11 cohorts and denominators are recomputed from each metric's own flags.
 An O1-only record contributes no O2 values; an O3-ineligible equation contributes
@@ -68,10 +70,11 @@ The explicit producer is `python3 -I -B scripts/truth/latex/versioned.py --publi
 source-loaded. Isolated workers compile verified bytes directly: stale `.pyc`,
 search paths, preloaded namespaces and arbitrary module paths cannot replace the
 selected implementation. Future replay also requires the fixed v5 pin and its
-exact retained 20-module bundle. Issue #131 adds the separate numbered-only
-codec to the previously unpublished nineteen-module inventory; that changed
-inventory requires explicit source review before first publication. V1–V4 module
-inventories and pins remain unchanged.
+exact retained 20-module bundle. Issue #131 added the separate numbered-only
+codec to the previously unpublished nineteen-module inventory. That complete
+inventory, concrete constructions and actual unactivated release received
+distinct review before the manifest was pinned. V1–V4 module inventories and
+pins remain unchanged.
 
 One history worker checks both automatic runs and original input order/index map
 once per replay. Each following worker assembles one paper through the existing
