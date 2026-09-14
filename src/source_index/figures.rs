@@ -631,7 +631,7 @@ fn marker_groups(regions: &[TextRect], distance: f32) -> Vec<Vec<TextRect>> {
 
 const MAX_MARKER_CHECKS: usize = 16_777_216;
 
-fn marker_checks(count: usize, context: &VectorContext) -> usize {
+const fn marker_checks(count: usize, context: &VectorContext) -> usize {
     let exclusions = context.glyphs.len().saturating_add(context.barriers.len());
     let groups = context.barriers.len().saturating_add(context.windows.len());
     let per_owner = count
