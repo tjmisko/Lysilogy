@@ -6582,3 +6582,79 @@ date, last merged issue, in-flight branches and their state, next action, and op
   hosts remain ineffective at last verification; the read-only config mount requires the
   normal-terminal script and restart/resume verification recorded above. No repeated approval
   needed. Production 10k, Playwright, phase exits and later phases remain outstanding.
+
+
+### 2026-09-14 11:48 UTC — all fourteen original pairs reconciled; source/display preparations continue
+
+- Last merged #123/PR128; main04b6728 before checkpoint. Phase A/A2; published score stays
+  1/5 gates,3/30 objectives O1/O2/O30. All10 protected preview files unchanged. No downloads,
+  native queue or heavy job runs. Sixteen new continuity bindings:
+  `~/.cache/lysilogy/k1-coverage/manual-tranche-v2-preparation/reconciliation-checkpoint-root-20260914T1148.json`,
+  SHA34edc5c01db444d234ca55120a58f481a0639c7de54abebb48383a5430dc33e5. Preparation base below is that file's parent directory.
+- **Final-four finite reconciliation independently CLEAR** by root, distinct from reconciler
+  and original annotators: `~/.cache/lysilogy/review-k1-final-four-root-v1/review.json`, SHA
+  cd74daa592d26b8dd4856b8a30b61bfef5321cea946cb1337da22d574a33a5f4.
+  Receipt lists114bindings/63,253,404B plus separate6,392B finish.py binding. Actual21original
+  pages viewed before detailed source/native work. Exact audit verifies51archive members,
+  13text encodings, all8original inventories,4,810source/28,177native occurrences,
+  20,868whole-token copies,1,265original record pointers,1,129membership differences,
+  137token-context/intersection packages,132selected bibliography fields,52citations/55targets,
+  22object bodies,12disjoint note markers and17formal/proof/item partitions.
+  Mechanical v2 receipt4d849d34493581231483efad26dffb8b529f04c9434772408ce9bc4ad770145c;
+  separate original PDF/source/export/render closureb1eb3c149f0f71d04a553d6b46300304660372074decdda03046f548282cf1a2.
+  A reviewer assumption that statement children shared full-statement summary fields failed;
+  original failed script/result remain, and v2 recomputes original partitions/parent containment.
+  No input finding or annotation mutation. All original remaining full geometry, glyph fidelity,
+  cell/inline/narrative/affiliation-marker omissions and source exclusions remain explicit.
+- **Three root packages independently CLEAR** by review_k1_reconciliation:
+  `~/.cache/lysilogy/review-k1-root-geometry-source-v1/review.json`, SHA
+  b2a92a00de2040241be39ad531cb02d8e6946dc4fad95d21e3d8fe4a3598c5fc,43bindings.
+  Eleven original pages re-viewed; all15next-two display bodies/nine numbers,7numbered2404
+  displays,6numbered plus3unnumbered2011 displays and2attached conditions/literal norm declaration
+  checked. Source/native slices96/400 and17original encodings pass. This clears finite root
+  geometry/source-print identity only; full native fidelity and eligibility remain ungranted.
+- **review_k1_reconciliation now prepares remaining first-four source/printed math** in a new
+  cache directory: exactly48numbered1911 displays and16numbered2109 displays, on10original
+  pages personally re-viewed before source detail. Literal potentially questionable printed
+  expressions remain verbatim:1911eq24 f(theta_j)g(theta_j) despite g/h pairing notation;
+  2109eq6 V^pi(s',a') andeq15 additional closing parenthesis. No algebraic correction/validity,
+  native quote repair, source execution, source-failure erasure or truth admission. Root must
+  independently review the frozen result. Agent then reviews the two new root packages below.
+- **Root final-four math geometry/source-print preparation**, under
+  `reconciliation/final-four-math-geometry-root-v1/`: diagnostic01cd184e6b1e3ae3852a5586c6c98c3c5c5750602cdb40576f20a9aa406b77a5;
+  decisions7d466ede538dbc50f65b9f96ae23c7b4146fd48c79cff4bbc98a3ff6195747b2;
+  source-printed-v3.json05d63a7ac7c3f7b527d58c07539b4c32c2e8da874e0fb0a6c0b9090a8e85fae6.
+  Eight numbered bodies/eight separate numbers on2112p2,2207p2/p3,2302p3; root personally
+  re-viewed all4original pages. Both2207number scopes extend down one verified blank pixel.
+  Original independent whole windows include body+number; new separate boxes are explicit
+  root post-freeze selections. Source/print expressions correspond, including2112case/fraction
+  layout and2302two velocity expressions under one number. Native control character/question
+  mark/flattened fractions and body partitions stay nonquote. Two failed preparation scripts
+  remain bound: falsely assumed exact source boundaries (2112eq1/2differ by one trailing blank),
+  then a helper tried to decode a Python script as JSON. V3 checks both original exact intervals
+  and hashes non-JSON files without decoding. No original or reviewed-input defect. Distinct
+  review pending; no native full fidelity, metric eligibility or admission.
+- **Root final-four visual body geometry preparation**, under
+  `reconciliation/final-four-visual-geometry-root-v1/`: diagnosticdb36a4af32bb1a3453ef89ebd04cb10fe4b14a66739b49f95c4cfd7fb8b78801;
+  decisionsba2ebb1404ddedf53ec2b1a6f1436dc1541972b85ad3d4a00bf76a68b57089f1.
+  Fourteen figure/table whole bodies on9original pages personally re-viewed. Three touching
+  edges extend one verified blank pixel for a consistent margin.2302figure6 original proposals
+  clipped two owned axis-label pixels at(427,129)/(427,130); root scope left428to426 preserves
+  these plus margin. Four-pixel surrounding diagnostic is retained. Captions remain separate;
+  cell/panel/full-content fidelity is pending. Distinct review queued, no metric publication.
+- **#129** remains source-clear at47ef6f9 with full428Rust/612Python/85Node gates passed.
+  Owner finish_corpus_proxy; no PR yet. Separate finish_benchmark runner review retained v1
+  combined-root accounting finding (two1.75GiB roots independently passed) and v2 failure-receipt
+  guard/archived-bridge executable-mode findings. Preparation v3 now frozen for narrow recheck:
+  real launch41123207,synthetic9300cba8 under `bounded-k1-replay-129/integration-preparation-v1`.
+  All earlier launch generations remain unexecuted. Root has reserved the heavy slot for serial
+  real four-cohort/scratch comparison, synthetic500publication/replay/499-stage failed-tail
+  experiment and ownCLI aftercheck as soon as reviewer clears exactv3. No actual new-path
+  measurement yet. Preserve all73legacy files; then separate actual review, draft PR, final
+  integration/gates/review/merge. Current main integration may use an ordinary merge, no rebase.
+- No new follow-up issue or phase completion. #33 and drafts93/94/95 remain blocked/preserved.
+  Four-host script --check again validates only the proposed four grants without changing files;
+  it is not proof of effective host access. The last effective check still found approved hosts
+  unavailable and a read-only config mount. Normal-terminal script/restart action from earlier
+  entries remains required; no repeated approval. Production10k, Playwright and later phases
+  remain outstanding. Continue useful work and exact checkpointed reviews.
