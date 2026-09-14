@@ -293,6 +293,14 @@ acceptance are unchanged.
 
 ### Phase A notes
 
+- Corpus native preparation is complete as of 2026-09-14: all 10,951 unique PDFs have audited
+  indexes, covering all 1,000 eval and 10,000 scale papers (49 overlap). Queue v3 batch40 was
+  terminal zero with201 successes; no native/download job remains. Historical two native
+  failures and explicit reviewed recoveries remain recorded. This is preparation, not the
+  production scale/O25/O27 or running-app acceptance. Final audit:
+  `~/.cache/lysilogy/scale-index-queue-v3/native-index-after-batch40-review.json`, SHA
+  `c043dca8a0c3b949d8bcdb38bd1260b55c589e4a4b0f48d5eee28a3107c462df`.
+
 - #121 merged via PR124 (`339ded4`) after independent final review of `cb6e676`.
   Detector4 uses an observed preceding table grid as a boundary for native figure labels;
   image filtering and all native/graphics inputs remain unchanged. Five added ownership
@@ -5559,3 +5567,81 @@ date, last merged issue, in-flight branches and their state, next action, and op
   rejection. No rebase without asking, sudo/rm-rf, forbidden reads or destructive user data changes.
   Next: allocate heavy slot, finish #117 preview/review/measurement/PR, finish native39/40,
   preserve primary fourth-pair work and resume independent third pair when free. Goal incomplete.
+
+
+### 2026-09-14 06:49 UTC — all scale indexes prepared; #117 publication reviewed
+
+- Phase A/Wave A2; last merged issue remains #121 via PR124/source `339ded4`. Main before
+  this docs checkpoint is `a0ba231`; all10 protected PDF-preview file hashes match the original
+  baseline. Current main score remains1/5 gates,3/30 objectives (O1/O2/O30); no score target
+  changed, phase exit or system acceptance claimed. No new follow-up issues this checkpoint.
+- **Native preparation COMPLETE.** Root queue-v3 batch39 TTY43962 terminal0:250/250,
+  332.089128855s,10,750 unique/9,799 scale. Receipt SHA
+  `a4fff06604c340ce87ceac9adcf57eabdc56064666623bb4de20f70fe82e82e5`, audit
+  `1313ea5ea5389a0b4274643eae6bd170f3f632b911a9e5783245f433dbf2291e`.
+  Final batch40 TTY81762 terminal0:201/201,263.758970297s,10,951 unique/1,000 eval/10,000
+  scale. `scale-index-batches/batch-0040/receipt.json` SHA
+  `172bad0fa05210d5c9c4e07234208327cb55fa4d12c7ff26010a0b309d6795c6`; final audit above
+  rehashes all201 new indexes (553,546,600B), preserves original failed row/recovery, and checks
+  exact original tiers. Queue finished; do not launch41. No downloads or native indexing running.
+  Corpus stays external; free space48GiB, above20GiB floor. No network/model calls or external
+  cost. Production scale and app scenarios remain unexecuted.
+- **#117 source/root construction review clear** as in06:23; actual publication now also clear.
+  Worktree `.worktrees/feat/e8.3-visual-only-pilot`, owner `finish_benchmark`; latest integrated
+  checkpoint `2e7e3ad` follows pure publication `aa49f6e` and ordinary docs-only main merge.
+  New v4 has9 papers/50 visuals (21 new), only O1/O2 eligibility added; all53 prior files and
+  four old rows/bibliography exact. Objects991,418B under unchanged1MiB cap. Further #97
+  expansion must explicitly address capacity with measured evidence, never omit papers to fit.
+  External base `~/.cache/lysilogy/k1-coverage/visual-only-117/`:
+  preview `release-v4-review-4cb74a5-v1/receipt.json` SHA
+  `2ce7a0fbcf7dd4101b32b90aa8a5fafd22bfc8dc285fc7ac2405b9270e50743e`;
+  activation `activation/receipt.json` SHA
+  `c7c8070831691c5ab380e7420aa13b9d31dd4042031420660a57cc848f849625`,11.971s.
+  Four isolated immutable replays cover15/23/29/50 objects, all pass. Reviewer `review_ready_prs`
+  independently checked exact publication and replay bindings; review at
+  `~/.cache/lysilogy/review-visual-only-publication-aa49f6e/review.json` SHA
+  `81b9e1b0721e5f4aab2759c537e3d8626ef5f6863ef41c78594b52e5a23dd57f`.
+  Earlier separate preview review `review-visual-only-preview-4cb74a5/review.json` SHA
+  `c483df237a39748d93bfaf126e8a49308f4670ef19f96a8dfbbd8a43ee0754f0` rehashed242 artifacts
+  and independently rebuilt outputs; activation script review SHA
+  `552768f88fadd233b18eb4d5776e61306a585b41cc36e5bcf7b6c56dd492b16c` is also retained.
+- **Sole heavy slot now belongs to #117 owner.** Compiled gates running TTY84682 in
+  `compiled-gates-2e7e3ad/`:fmt, strict Clippy, all-target Rust and owning CLI build,205source/
+  fourinput guards. Reviewer checking exact measurement launch ff1e09c2 before four-cohort
+  measurement. Preserve original afcd CLI baseline separately from post-#121 detector4
+  comparison receipt `4d1b69d7cd303bae77ab2ebd8bda733e2a0700c72eced1a2ef9d4349176ab9ae`.
+  No new measured scores yet. Next owner actions: actual measurement/review, final gates/report,
+  draft PR and separate final diff review, ordinary main integration (no rebase), merge/cleanup.
+- **#97 first4 root original inspections all complete.** New1911 receipt
+  `manual-tranche-v2-preparation/reconciliation/1911.08525/root-original-page-inspection-v1.json`
+  SHA `ff7dd0aa2acda50de24290ce7b9c87e615fcff29093d10918931ec4d452589b0` records all8 original
+  pages. One contour figure includes axes/poles/theta labels despite no native body glyphs;
+  48 equations, unheaded conjecture/argument candidates and3 unknown bibliography years remain.
+  Root re-viewed8 relevant original visual pages of2109/1911 and reconciled13 full bodies in
+  `reconciliation/geometry-root-v2/`:2109 JSON SHA
+  `7d76bd42000f7e4a97e02e15f382be8b9e706c6ab218e11755421231e2b94eb9`,1911 JSON SHA
+  `ed24f4e5842b7bdd94730dbefe0a31b24d9d87c2019f15cd76c67b4da69d4104`. Root-confirmed full
+  scope, original proposal union, bounded ink refinement/1px margin; both exact original source
+  intervals retained, including12 explicit2109 leading-indent relations. First4 now28 root
+  visual-body decisions. These remain preparation only; mathematical/reference/fidelity work,
+  compatible construction codec and separate review are unfinished. No metric eligibility.
+- **#97 primary fourth pair frozen.** 2511 earlier inventory/receipt6ead2ee9/ddaf9ec4 exact.
+  New2005.13732 inventory SHA `9d16e4f00810f6e5103aed2773e2cce60ae24537b08e04b5d7582427de053756`,
+  receipt `c28150da4016116c1caf170196ced3df714815e8eb8fc2b534fa9a129287ca61` in original
+  `annotations/primary/2005.13732/`;7pages,2fig/44numbered equations/40bib,32citation groups/
+  50pairs,28object refs,13unknown years,395source/1,913native checks,772.762s. Prior seven
+  pairs unchanged. Primary fifth pair now dispatched to `finish_corpus_proxy`:2311.02916v1
+  then2301.05184v1 (2/6 pages), stop after second, same blind rules. Scheduling-only file
+  `annotation-dispatch-fifth-pair-v1.json` SHA
+  `0701a83b90531ff7ea1611d66ac8920772a74a53fbd94fbc52280e81386786ea`. No heavy work or live
+  calls; reasoning costs unknown. Independent first4 frozen; third/fourth/fifth pending.
+  `review_ready_prs` prioritizes #117 actual/final reviews before third pair dispatch c42965aa.
+- Preserved other worktrees: bibliography201c53c (draft94), KB-store905c341 (no PR),
+  reference-truthd5e12aa (draft93), person-labelsc867ec6 (draft95), unrelated /tmp worktrees.
+  #25/33/71/72 remain blocked by approved but ineffective registry/provider host grants.
+  User already approved all4 hosts; no new permission question is needed. The managed config
+  mount is read-only, not an auto-review rejection. Normal-terminal script remains
+  `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart/resume and
+  verify effective access. Continue useful offline work; no sandbox bypasses or forbidden reads.
+  Goal incomplete: finish117 then continue earliest ready A2 work, retained approximately500
+  K1 target, all later phases, production scale and Playwright system acceptance.
