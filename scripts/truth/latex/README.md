@@ -141,3 +141,15 @@ remain unchanged; the collector defaults to v1 and requires explicit
 `--truth-version k1-limited-v3` for the later cohort. Every version has a separate
 observation path while one current figure/table metric input owns O1/O2; prior
 input/observation pairs are preserved by the existing immutable history writer.
+
+Historical automatic candidates retain their original bytes and confidence flags
+as diagnostic history. The visual construction also records a fresh bounded parse
+of the same deposited source and every changed top-level inventory field. Validation
+recomputes that parse, checks exact source-occurrence correspondence, and uses its
+current duplicate-label/raw-source guards for object and section destinations.
+Each printed reference number is nonempty, belongs to its complete original phrase,
+and cannot be reused by another source occurrence. Phrases may share context when
+their independently recorded number spans remain distinct. Section destinations
+must belong to the current parser's unique section heading; visual labels cannot
+be reclassified as section labels. Current bibliography parsing differences stay
+separate from the omitted bibliography metrics.

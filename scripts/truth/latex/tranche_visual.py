@@ -10,7 +10,7 @@ import re
 from annotations import canonical, document, require
 from archive import read_archive, sha256
 from native_exports import FORMAT as NATIVE_FORMAT, verify_native_export
-from parser import argument_commands, reference_names_verified
+from parser import argument_commands, parse_project, reference_names_verified
 from tex import comments
 from tranche import (covered, exact as exact_json, hash_ref, member_pages, native_members, rectangle,
                      source_member, unique, verify_original_file)
@@ -67,6 +67,25 @@ def parsed_identity(row):
     require(len(row['source_members']) == 1, 'direct visual source requires one original member')
     member = row['source_members'][0]
     return member['path'], member['start'], member['end']
+
+
+def current_source_binding(docs, candidate, files):
+    """A historical candidate cannot supply current label-confidence claims."""
+    current = parse_project(files)
+    construction = docs['construction']
+    exact(construction['current_source_inventory'], current, 'construction current source inventory differs')
+    exact(construction['current_source_inventory_sha256'], sha256(canonical(current)), 'construction current source hash differs')
+    historical = candidate['source_inventory']
+    changed = sorted(k for k in set(current) | set(historical) if canonical(current.get(k)) != canonical(historical.get(k)))
+    exact(construction['changed_source_inventory_fields'], changed, 'construction conceals historical/current source differences')
+    # This codec supports a direct one-to-one source crosswalk. Other source
+    # occurrence changes need an explicitly extended ownership contract.
+    for key in ('objects', 'links'):
+        def occurrences(inventory):
+            return [{k: row[k] for k in ('id', 'kind', 'source_members', 'labels', 'targets') if k in row}
+                    for row in inventory[key]]
+        exact(occurrences(current), occurrences(historical), 'current source occurrence crosswalk differs from historical candidate')
+    return current
 
 
 def audit_excerpts(value, files, index):
@@ -304,6 +323,7 @@ def validate_objects(docs, candidate, files, index):
         require(sid not in used and other['id'] not in pmap, 'visual source or primary occurrence reused'); used.add(sid)
         pmap[other['id']] = sid; imap[iid] = sid
         exact(row['kind'], other['kind'], 'original visual kinds disagree')
+        exact(row['kind'], parsed_row['kind'], 'visual kind differs from its source occurrence')
         require(len(row['source_labels']) == 1, 'direct visual object needs a unique source label')
         exact(row['source_labels'], parsed_row['labels'], 'visual source labels disagree')
         exact(other['source_label'], row['source_labels'][0], 'primary visual label differs')
@@ -356,7 +376,7 @@ def validate_links(docs, candidate, files, index, pmap, imap):
     for row in external:
         require(row['target_subsection'] is None and row['target_ambiguities'], 'unknown external subsection was resolved without evidence')
         source(row['source'], files); native(row['native'], index)
-    references = []; sections = []; crosswalk = []; claimed = set()
+    references = []; sections = []; crosswalk = []; claimed = set(); native_claimed = set()
     parsed_refs = [(n, r) for n, r in enumerate(inventory['links']) if r['kind'] == 'reference']
     require(len(local) == len(p['references']) == len(parsed_refs), 'complete local reference inventories differ')
     for row in local:
@@ -373,18 +393,35 @@ def validate_links(docs, candidate, files, index, pmap, imap):
         whole = native(row['native'], index)
         exact(whole, native(other['native_occurrence'], index), 'reference occurrence membership differs')
         number = native(other['native_number'], index)
-        require(covered(number, index) <= covered(whole, index) and other['native_number']['text'] == other['printed_number'],
+        require(covered(number, index) and covered(number, index) <= covered(whole, index)
+                and other['native_number']['text'] == other['printed_number'],
                 'reference number is not an exact part of the printed phrase')
+        points = covered(number, index)
+        require(not native_claimed & points, 'distinct source links reuse a native occurrence')
+        native_claimed |= points
         target = inventory['label_targets'].get(row['source_label'])
         if row['kind'] == 'object_reference':
             require(imap.get(row['target_id']) == pmap.get(other['target']) == target, 'reference visual target differs')
+            destination = next(o for o in p['objects'] if o['id'] == other['target'])
+            exact(other['printed_number'], destination['printed_number'], 'reference number differs from its visual destination')
             references.append({'source_link': n, 'target': target, 'spans': number, 'occurrence_spans': whole})
         else:
+            require(target is None, 'visual object label cannot be reclassified as a section')
             require(row['kind'] == 'section_reference' and other['target_kind'] == 'section', 'unsupported non-object reference role')
             matches = [s for s in i['nonobject_destinations'] if s['id'] == row['target_id']]
-            require(len(matches) == 1 and other['target'].startswith('section:'), 'section target lacks original evidence')
-            destination = matches[0]; source(destination['source_heading'], files); source(destination['source_label'], files)
+            require(len(matches) == 1 and other['target'] == 'section:' + row['source_label'], 'section target lacks original evidence')
+            destination = matches[0]; heading = source(destination['source_heading'], files); label = source(destination['source_label'], files)
             exact(destination['source_label']['text'], '\\label{' + row['source_label'] + '}', 'section destination changes its literal label')
+            occurrences = [o for o in inventory['label_occurrences'] if o['label'] == row['source_label']]
+            require(len(occurrences) == 1 and occurrences[0]['owner']['role'] == 'section', 'section label has no unique current section owner')
+            occurrence = occurrences[0]; owner = occurrence['owner']
+            exact(occurrence['source_members'], [label], 'section label source occurrence differs')
+            require(heading['path'] == label['path'] and heading['start'] == owner['start']
+                    and heading['end'] <= label['start'] < label['end'] <= owner['end'], 'section heading does not own its label')
+            commands = list(argument_commands(comments(files[heading['path']]), {owner['command']}, heading['start'], heading['end']))
+            require(len(commands) == 1 and commands[0]['start'] == heading['start'] and commands[0]['end'] == heading['end'],
+                    'section heading is not its complete source command')
+            native(destination['native_heading'], index)
             exact(destination['printed_label'], other['printed_number'], 'printed section number differs')
             sections.append({'source_link': n, 'target': other['target'], 'spans': number,
                              'occurrence_spans': whole, 'source_label': row['source_label'],
@@ -400,6 +437,9 @@ def validate_links(docs, candidate, files, index, pmap, imap):
         exact(a['target_keys'], parsed['targets'], 'primary citation keys differ')
         exact(b['source_keys'], parsed['targets'], 'independent citation keys differ')
         exact(native(a['native_occurrence'], index), native(b['native'], index), 'citation reading-order occurrence differs')
+        points = covered(native(b['native'], index), index)
+        require(not native_claimed & points, 'distinct source links reuse a native occurrence')
+        native_claimed |= points
         crosswalk.append({'source_link': n, 'kind': 'citation', 'primary_id': a['id'], 'independent_id': b['id']})
     exact(sorted(crosswalk, key=lambda r: r['source_link']), docs['link_crosswalk']['links'], 'complete link crosswalk differs')
     require(len(crosswalk) == len(inventory['links']), 'source link kind is unsupported or omitted')
@@ -425,6 +465,8 @@ def validate_visual(candidate_raw, index_raw, source_raw, raws, verified_images)
     exact(docs['source_export']['source_sha256'], sha256(source_raw), 'source export names another archive')
     exact(docs['source_export']['text_members'], files, 'source export changed deposited source')
     exact(docs['source_export']['members'], archive_members, 'source export omitted archive members')
+    current_inventory = current_source_binding(docs, candidate, files)
+    binding_candidate = {**candidate, 'source_inventory': current_inventory}
     verify_native_export(index_raw, raws['native_export'], candidate['paper_id'],
                          {'format': NATIVE_FORMAT, 'sha256': sha256(raws['native_export']),
                           'bytes': len(raws['native_export']), 'index_sha256': sha256(index_raw)})
@@ -443,12 +485,12 @@ def validate_visual(candidate_raw, index_raw, source_raw, raws, verified_images)
         for key in ('primary', 'independent', 'source_export', 'native_export'):
             require(sha256(raws[key]) in review['inputs'].values(), 'root review names different original evidence')
     roles = validate_roles(docs, files)
-    objects, associated, pmap, imap, counts = validate_objects(docs, candidate, files, index)
+    objects, associated, pmap, imap, counts = validate_objects(docs, binding_candidate, files, index)
     expected = [{'primary_id': pid, 'independent_id': next(iid for iid, target in imap.items() if target == sid), 'source_id': sid}
                 for pid, sid in pmap.items()]
     exact(sorted(expected, key=lambda r: r['source_id']), docs['object_crosswalk']['objects'], 'object crosswalk omits or changes original ownership')
     exact(docs['object_crosswalk']['source_inventory_sha256'], candidate['source_inventory_sha256'], 'object crosswalk changes source inventory')
-    refs, sections, external = validate_links(docs, candidate, files, index, pmap, imap)
+    refs, sections, external = validate_links(docs, binding_candidate, files, index, pmap, imap)
     review = docs['review']
     require(review.get('format') == REVIEW_FORMAT and review.get('verdict') == 'clear_complete_visual_negative_inventory'
             and review.get('findings') == [], 'independent construction review is not clear')
@@ -467,6 +509,9 @@ def validate_visual(candidate_raw, index_raw, source_raw, raws, verified_images)
               'omitted_metrics': {'O8': 'bibliography codec not supplied', 'O9': 'bibliography codec not supplied',
                                   'O10': 'bibliography codec not supplied', 'O11': 'no independent ranking panel'},
               'retained_role_candidates': roles, 'source_diagnostics_retained': deepcopy(candidate['source_inventory']['coverage'])}
+    common['current_source_inventory_sha256'] = sha256(canonical(current_inventory))
+    common['current_source_diagnostics'] = deepcopy(current_inventory['coverage'])
+    common['historical_source_difference_fields'] = docs['construction']['changed_source_inventory_fields']
     result = deepcopy(candidate)
     result['manual_figure_table_overlay'] = {**deepcopy(common), 'objects': objects, 'metric_eligibility': {'O1': True, 'O2': True}}
     result['manual_object_overlay'] = {**common, 'objects': [], 'references': [], 'other_object_references': refs,

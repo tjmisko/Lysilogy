@@ -92,9 +92,10 @@ def fixture(note_group=3, with_links=False):
         def last_occurrence(value):
             start = text.rindex(value)
             return {'start': start, 'end': start + len(value), 'text': value, 'pages': [1], 'unit': 'UTF-16'}
-        heading = source.index('Context'); label = source.index(r'\label{sec:a}')
+        heading = source.index(r'\section{Context}'); label = source.index(r'\label{sec:a}')
         independent['nonobject_destinations'] = [{'id': 'section-1', 'printed_label': '1',
-            'source_heading': src(heading, heading + len('Context')), 'source_label': src(label, label + len(r'\label{sec:a}'))}]
+            'source_heading': src(heading, heading + len(r'\section{Context}')), 'source_label': src(label, label + len(r'\label{sec:a}')),
+            'native_heading': last_occurrence('1 Context')}]
         for number, link in enumerate(parsed['links']):
             span = link['source_members'][0]; command = src(span['start'], span['end']); pid = 'primary-link-' + str(number); iid = 'independent-link-' + str(number)
             if link['kind'] == 'reference':
@@ -134,10 +135,14 @@ def seal(candidate, docs):
     for key in ('visual_review', 'role_review'):
         docs[key]['inputs'] = {k: ref(k)['sha256'] for k in ('primary', 'independent', 'source_export', 'native_export')}
     candidate_raw = canonical(candidate)
+    current = parse_project(docs['source_export']['text_members'])
     docs['construction'] = {'not_an_original_annotator_input': True,
         'candidate': {'sha256': sha256(candidate_raw), 'bytes': len(candidate_raw)},
         'original_artifacts': {k: ref(k) for k in ('primary', 'independent', 'packet', 'source_export', 'native_export')},
-        'objects': deepcopy(candidate['source_inventory']['objects']), 'links': deepcopy(candidate['source_inventory']['links'])}
+        'objects': deepcopy(candidate['source_inventory']['objects']), 'links': deepcopy(candidate['source_inventory']['links']),
+        'current_source_inventory': current, 'current_source_inventory_sha256': sha256(canonical(current)),
+        'changed_source_inventory_fields': sorted(k for k in set(current) | set(candidate['source_inventory'])
+            if canonical(current.get(k)) != canonical(candidate['source_inventory'].get(k)))}
     docs['review']['candidate_sha256'] = sha256(candidate_raw)
     docs['review']['artifacts'] = {k: ref(k)['sha256'] for k in docs if k != 'review'}
     return {k: raw(k) for k in docs}
@@ -268,6 +273,38 @@ class VisualTrancheTests(unittest.TestCase):
             data = fixture(with_links=True); mutate(data[3])
             with self.subTest(mutation=mutate), self.assertRaises(ValueError): self.validate(data)
 
+    def test_should_reject_section_reclassification_when_current_source_label_owns_a_visual_object(self):
+        data = fixture(with_links=True); docs = data[3]
+        docs['primary']['references'][0].update(target='section:tab:a', target_kind='section')
+        docs['independent']['references'][0].update(kind='section_reference', target_id='section-1')
+        with self.assertRaisesRegex(ValueError, 'reclassified as a section'): self.validate(data)
+
+    def test_should_reject_empty_or_reused_number_when_distinct_source_references_are_retained(self):
+        data = fixture(with_links=True); docs = data[3]; row = docs['primary']['references'][0]
+        row['printed_number'] = ' '; start = row['native_occurrence']['end'] - 2
+        row['native_number'] = {'start': start, 'end': start + 1, 'text': ' '}
+        with self.assertRaisesRegex(ValueError, 'reference number'): self.validate(data)
+        data = fixture(with_links=True); docs = data[3]
+        docs['primary']['references'][1]['native_occurrence'] = deepcopy(docs['primary']['references'][0]['native_occurrence'])
+        docs['primary']['references'][1]['native_number'] = deepcopy(docs['primary']['references'][0]['native_number'])
+        docs['independent']['references'][1]['native'] = deepcopy(docs['independent']['references'][0]['native'])
+        with self.assertRaisesRegex(ValueError, 'reuse a native occurrence'): self.validate(data)
+
+    def test_should_reject_wrong_section_heading_when_its_label_is_owned_by_another_source_command(self):
+        data = fixture(with_links=True); docs = data[3]
+        docs['independent']['nonobject_destinations'][0]['source_heading'] = deepcopy(docs['independent']['objects'][0]['caption_source'])
+        with self.assertRaisesRegex(ValueError, 'heading does not own'): self.validate(data)
+
+    def test_should_preserve_shared_context_when_separate_source_refs_have_distinct_numeric_members(self):
+        data = fixture(with_links=True); docs = data[3]; text = data[1]['index']['text']
+        start = text.index('See Table'); end = text.index('. [1]', start)
+        phrase = {'start': start, 'end': end, 'text': text[start:end], 'pages': [1], 'unit': 'UTF-16'}
+        for primary, independent in zip(docs['primary']['references'], docs['independent']['references']):
+            primary['native_occurrence'] = deepcopy(phrase); independent['native'] = deepcopy(phrase)
+        overlay = self.validate(data)['manual_object_overlay']
+        self.assertEqual(overlay['other_object_references'][0]['occurrence_spans'], overlay['non_object_references'][0]['occurrence_spans'])
+        self.assertNotEqual(overlay['other_object_references'][0]['spans'], overlay['non_object_references'][0]['spans'])
+
     def test_should_dispatch_explicit_format_when_legacy_and_visual_manifests_are_distinct(self):
         from manual import attach_declared_tranche
         from tranche import FORMAT as LEGACY_FORMAT
@@ -295,3 +332,18 @@ class VisualTrancheTests(unittest.TestCase):
                 manifest.write_bytes(canonical({'format': 'changed'})); return {}
             with patch('tranche_visual.attach_visual', side_effect=changed), self.assertRaisesRegex(ValueError, 'manifest changed'):
                 attach_declared_tranche(root, root, root, b'{}', {}, {}, 'bundle')
+
+    def test_should_use_current_duplicate_label_guard_when_historical_inventory_claimed_unique_target(self):
+        data = fixture(with_links=True); candidate, index, source, docs, images = data
+        current = deepcopy(candidate['source_inventory']); current['ambiguous_labels'] = {'tab:a': ['first', 'second']}
+        with patch('tranche_visual.parse_project', return_value=current), patch('test_tranche_visual.parse_project', return_value=current):
+            with self.assertRaisesRegex(ValueError, 'ambiguous'):
+                self.validate(data)
+
+    def test_should_retain_historical_source_differences_when_current_fields_are_diagnostic_only(self):
+        data = fixture(); current = deepcopy(data[0]['source_inventory'])
+        current['coverage']['new_reviewed_source_diagnostic'] = 'Kept separately from historical acceptance.'
+        with patch('tranche_visual.parse_project', return_value=current), patch('test_tranche_visual.parse_project', return_value=current):
+            result = self.validate(data)
+        self.assertEqual(result['source_inventory'], data[0]['source_inventory'])
+        self.assertEqual(result['manual_object_overlay']['historical_source_difference_fields'], ['coverage'])
