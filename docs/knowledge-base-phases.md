@@ -7774,3 +7774,25 @@ date, last merged issue, in-flight branches and their state, next action, and op
   da26ce24. Root's ten-command counterfactual clears only this one of724 structural records.
   No new capability issue/code or parser rerun. Next truth strategy should be a bounded capability
   pilot with measured admitted-paper throughput, alongside the core integration work if approved.
+
+
+### 2026-09-14 16:37 UTC — technical HTML explanation delivered; strategy pause continues
+
+- User requested a brief technical explanation of the seven reviewed issues, with code examples,
+  as a standalone HTML artifact. Created ~/.cache/lysilogy/artifacts/kb-technical-explanation.html,
+  SHA25614a0623016fb6333a6c95f0d5bfcba257a0877fcc481488f19b554215dd25fe7. It explains data flow,
+  complete expected inventories, recompilation, release coupling, the corrected loader bug,
+  startup error propagation, crash durability and shared concurrency limits. Examples distinguish
+  current excerpts, reduced demonstrations and proposed changes. No external dependencies.
+- Static structure/link checks pass; the Python example reproduces KeyError. Local Chromium
+  preview failed on a forbidden local socket even with approved escalation. No automatic-review
+  rejection occurred and no visual verification is claimed. Check receipt and browser error log
+  are retained beside the artifact. All ten protected preview hashes remain exact.
+- Implementation remains paused for strategic discussion: Phase A / A2, last merged131/PR133,
+  1/5 gates and3/30 objectives at target, no new issues/PRs/merges or running heavy/download jobs.
+  #132 remains b4ff5b9/noPR in feat/e8.3-formal-tranche; next is independent collector-v2 audit,
+  historical comparison, CLI after-check, ordinary latest-main integration and final gates/PR.
+  #134/#135 remain queued without worktrees. Preserved #33/noPR and drafts93/94/95 remain unchanged.
+  The previous detailed strategy checkpoint records exact heads/receipts, proposed scheduling and
+  setup scripts. Neither the phase-order change nor three additional host grants is approved.
+  The already-approved four-host grants still require terminal-side application and restart.
