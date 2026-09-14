@@ -5,19 +5,27 @@ An original theorem, proof, algorithm or unresolved locator cannot become a
 negative formal example merely because its figure/table projection is complete.
 """
 from copy import deepcopy
+import math
+from pathlib import Path
 import re
 
-from annotations import canonical, require
-from archive import sha256
+from annotations import canonical, document, require
+from archive import read_archive, sha256
+from native_exports import FORMAT as NATIVE_FORMAT, verify_native_export
 from parser import argument_commands, reference_names_verified
 from tex import comments
-from tranche import covered, member_pages, rectangle, source_member, unique
-from tranche_visual import COORDS, exact, members, source
+from tranche import covered, hash_ref, member_pages, rectangle, source_member, unique, verify_original_file
+from tranche_visual import (COORDS, MAX_BUNDLE_BYTES, assignment_records, audit_excerpts,
+                            current_source_binding, exact, members, source)
 
 FORMAT = 'k1-manual-visual-only-tranche-v1'
 REVIEW_FORMAT = 'k1-manual-visual-only-construction-review-v1'
 OMITTED_METRICS = [f'O{number}' for number in range(3, 12)]
 VISUAL_KINDS = {'figure', 'table'}
+ARTIFACTS = {'policy', 'selection', 'prompt', 'packet', 'source_export', 'native_export',
+             'primary', 'primary_receipt', 'independent', 'independent_receipt',
+             'geometry', 'geometry_approval', 'construction', 'supplement_history',
+             'assignment_proposal', 'assignment_request', 'assignment_history', 'identity_review', 'review'}
 
 
 def pointer(document, path):
@@ -53,7 +61,7 @@ def retained_original(original, scored):
     """
     require(isinstance(original, dict) and len(original) <= 1000, 'original inventory is not bounded')
     output = []
-    for key, value in original.items():
+    for key, value in sorted(original.items()):
         root = '/' + escape(key)
         values = list(enumerate(value)) if isinstance(value, list) else [(None, value)]
         require(len(values) <= 10000, 'original collection exceeds its bound')
@@ -180,7 +188,90 @@ def visual_caption(primary, independent, environment, files, index):
     return a, points
 
 
-def visual_projection(construction, primary, independent, inventory, files, index):
+def reviewed_body(claim, primary, independent, geometry, index):
+    """Replay the recorded geometry format, including both unchanged originals."""
+    basis = claim['body_basis']
+    require(isinstance(basis, dict) and set(basis) == {'pointer', 'record_sha256'},
+            'body basis must select one exact recorded geometry decision')
+    row = pointer(geometry, basis['pointer'])
+    exact(sha256(canonical(row)), basis['record_sha256'], 'body decision bytes differ')
+    exact(row['primary_id'], primary['id'], 'body decision changes primary occurrence')
+    exact(row['independent_id'], independent.get('id', independent.get('occurrence_id')),
+          'body decision changes independent occurrence')
+    exact(row['kind'], primary['kind'], 'body decision changes visual kind')
+    exact(row.get('printed_number', row.get('printed_label')), primary['printed_number'],
+          'body decision changes printed label')
+    if type(geometry.get('schema')) is int and geometry['schema'] == 1:
+        require(re.fullmatch(r'/objects/(0|[1-9][0-9]*)', basis['pointer']) is not None,
+                'geometry pointer is not an object decision')
+        body = row['body']
+        exact(body['original_primary_region'], primary['body_region'], 'geometry replaces primary body')
+        other = independent['visual_body']
+        exact(body['original_independent_region']['region'], other['region'], 'geometry replaces independent body')
+        exact(body['original_independent_region']['page'], other['page'], 'independent geometry page differs')
+        chosen = body['chosen_region']; pixels = [body['chosen_pixels_96dpi'][k] for k in COORDS]
+    elif geometry.get('schema') == 'independent-geometry-reconciliation-v1':
+        require(re.fullmatch(r'/objects/(0|[1-9][0-9]*)', basis['pointer']) is not None,
+                'geometry pointer is not an object decision')
+        exact(row['original_primary_body_region'], primary['body_region'], 'geometry replaces primary body')
+        exact(row['original_independent_body_region'], independent['full_visual_body']['region'],
+              'geometry replaces independent body')
+        chosen = row['chosen_full_body_region']; pixels = [row['chosen_original_96dpi_pixel_edges'][k] for k in COORDS]
+    else:
+        require(geometry.get('format') == 'k1-manual-visual-region-reconciliation-v1'
+                and re.fullmatch(r'/regions/(0|[1-9][0-9]*)', basis['pointer']) is not None,
+                'unsupported original geometry decision format')
+        exact(row['original_primary_body'], primary['body_regions'], 'geometry replaces primary body')
+        exact(row['original_independent_body'], independent['body_regions'], 'geometry replaces independent body')
+        chosen = {'page': row['page'], **row['body_pdf_points']}; pixels = row['body_pixels_96dpi']
+    require(chosen['page'] == row['page'], 'chosen geometry changes recorded page')
+    normalized = rectangle(chosen['page'], [chosen[k] for k in COORDS], index, pixels=pixels)
+    exact(claim['region'], normalized, 'projected body differs from exact recorded decision')
+
+
+def associated_notes(primary, independent, visuals, files, index):
+    """Retain the separately recorded tablenotes owner without a formal overlay."""
+    by_primary = {pointer(primary, row['primary'])['id']: row for row in visuals}
+    original = [row for row in primary.get('ancillary_members', []) if row.get('parent_id') in by_primary]
+    result = []; occupied = set(); used = set()
+    for claim in visuals:
+        p = pointer(primary, claim['primary']); i = pointer(independent, claim['independent'])
+        notes = i.get('ancillary', [])
+        require(isinstance(notes, list) and len(notes) <= 100, 'visual ancillary collection exceeds its bound')
+        matching = [row for row in original if row['parent_id'] == p['id']]
+        require(len(notes) == len(matching), 'attached visual note inventory differs')
+        if not notes: continue
+        require(p['kind'] == 'table', 'unsupported attached non-table content')
+        owner = source(i['source'], files)
+        for note in notes:
+            require(note['role'] == 'table_note', 'unsupported visual ancillary role')
+            visible = source(note['source'], files)
+            candidates = [row for row in matching if contains(source(row['source'], files), visible)]
+            require(len(candidates) == 1, 'attached note lacks unique paired source membership')
+            other = candidates[0]; key = other['id']
+            require(key not in used, 'attached note is reused'); used.add(key)
+            full = source(other['source'], files)
+            require(contains(owner, full), 'attached note escapes table source ownership')
+            raw = files[full['path']]
+            prefix = raw[full['start']:visible['start']]; suffix = raw[visible['end']:full['end']]
+            require(re.fullmatch(r'\\begin\{tablenotes\}\s*\\footnotesize\s*\\item\s*', prefix) is not None
+                    and re.fullmatch(r'\s*\\end\{tablenotes\}', suffix) is not None,
+                    'attached note has unsupported hidden or additional source payload')
+            a = members(other['native_members'], index); b = members(note['native_members'], index)
+            points = covered(a, index)
+            require(points and points == covered(b, index), 'attached note native memberships disagree')
+            require(not points & occupied and member_pages(a, index) == {claim['region']['page']},
+                    'attached note is reused or belongs to another page')
+            occupied |= points
+            result.append({'kind': 'attached_table_note', 'parent': claim['source_id'],
+                           'source_members': [full], 'visible_source_members': [visible], 'spans': a,
+                           'original_primary_id': key, 'metric_eligibility': {},
+                           'scope': 'Included in reviewed full visual body; not an independent formal object.'})
+    exact(used, {row['id'] for row in original}, 'attached note ownership is incomplete')
+    return result
+
+
+def visual_projection(construction, primary, independent, inventory, files, index, geometry):
     """Validate a separately reviewed crosswalk; no parsing or admission side effects."""
     rows = construction['visuals']
     require(isinstance(rows, list) and len(rows) <= 256, 'visual crosswalk exceeds its bound')
@@ -207,6 +298,8 @@ def visual_projection(construction, primary, independent, inventory, files, inde
                 'current visual label has ambiguous or unverified ownership')
         labels = i['source_labels']
         exact(labels, current['labels'], 'original visual source labels differ')
+        primary_labels = [p['source_label']] if 'source_label' in p else [item['value'] for item in p['source_labels']]
+        exact(primary_labels, labels, 'primary visual label roles differ')
         parts, environment = visual_source(current, p, i, files)
         spans, points = visual_caption(p, i, environment, files, index)
         require(not occupied & points, 'distinct visuals reuse native caption membership'); occupied |= points
@@ -216,11 +309,10 @@ def visual_projection(construction, primary, independent, inventory, files, inde
                 'visual region shape differs')
         rectangle(region['page'], [region['rect'][k] for k in COORDS], index)
         require(member_pages(spans, index) == {region['page']}, 'visual region is on another caption page')
-        require(isinstance(row['body_basis'], dict) and row['body_basis'], 'visual body lacks reviewed original provenance')
+        reviewed_body(row, p, i, geometry, index)
         objects.append({'id': sid, 'kind': current['kind'], 'labels': deepcopy(current['labels']),
             'printed_label': p['printed_number'], 'spans': spans, 'region': [deepcopy(region)],
             'source_members': deepcopy(parts),
-            'text_sha256': sha256(canonical(spans)),
             'reading_index_fidelity': 'exact original caption membership; body pixels independently reviewed',
             'semantic_quote_truth': False})
     for side, document in [('primary', primary), ('independent', independent)]:
@@ -230,7 +322,7 @@ def visual_projection(construction, primary, independent, inventory, files, inde
     expected = {sid for sid, row in parsed.items() if row['kind'] in VISUAL_KINDS} - source_claims
     exact(set(excluded), expected, 'current syntactic visual source role is unaccounted')
     for sid, row in excluded.items():
-        require(set(row) == {'source_id', 'disposition', 'source_members', 'original_evidence', 'reason'},
+        require(set(row) == {'source_id', 'disposition', 'source_members', 'original_evidence', 'reason', 'source_role_evidence'},
                 'source visual exclusion fields differ')
         require(row['disposition'] in {'reviewed_printed_nonvisual', 'reviewed_nonrendered_source'}
                 and isinstance(row['reason'], str) and row['reason'].strip(), 'unsupported source visual exclusion')
@@ -243,6 +335,29 @@ def visual_projection(construction, primary, independent, inventory, files, inde
             record = pointer(primary if item['artifact'] == 'primary' else independent, item['pointer'])
             exact(sha256(canonical(record)), item['record_sha256'], 'source exclusion changes original evidence')
             require(item['pointer'] not in claimed[item['artifact']], 'scored visual cannot be excluded as nonvisual')
+        roles = row['source_role_evidence']
+        require(len(parsed[sid]['source_members']) == 1, 'nonvisual source disposition requires one direct occurrence')
+        occurrence = parsed[sid]['source_members'][0]
+        if row['disposition'] == 'reviewed_printed_nonvisual':
+            require(set(roles) == {'primary_object', 'independent_object'}, 'nonvisual role must bind both originals')
+            for side, original in [('primary', primary), ('independent', independent)]:
+                path = roles[side + '_object']
+                require(re.fullmatch(r'/objects/(0|[1-9][0-9]*)', path) is not None, 'nonvisual role lacks original object')
+                item = pointer(original, path)
+                require(item['kind'] not in VISUAL_KINDS, 'printed visual cannot be relabeled as nonvisual')
+                span = source(item['source_environment'] if side == 'primary' else item['source'], files)
+                require(contains(occurrence, span), 'nonvisual original does not belong to the syntactic source object')
+        else:
+            require(set(roles) == {'wrapper', 'empty_macro_definition'}, 'nonrendered role lacks exact source context')
+            wrapper = source(roles['wrapper'], files); definition = source(roles['empty_macro_definition'], files)
+            require(contains(wrapper, occurrence) and definition['path'] == wrapper['path']
+                    and definition['end'] <= wrapper['start'], 'nonrendered source context does not own its occurrence')
+            raw = files[wrapper['path']]
+            match = re.fullmatch(r'\\newcommand\{\\([A-Za-z]+)\}\[1\]\{\}', raw[definition['start']:definition['end']])
+            require(match is not None, 'unsupported original empty-macro declaration')
+            require(re.fullmatch(re.escape('\\' + match[1] + '{') + r'\s*', raw[wrapper['start']:occurrence['start']]) is not None
+                    and re.fullmatch(r'\s*\}', raw[occurrence['end']:wrapper['end']]) is not None,
+                    'nonrendered wrapper contains extra source payload')
     ledger = {'primary': retained_original(primary, claimed['primary']),
               'independent': retained_original(independent, claimed['independent']),
               'current_source': retained_source(inventory, source_claims, excluded)}
@@ -252,5 +367,251 @@ def visual_projection(construction, primary, independent, inventory, files, inde
     absent = [kind for kind in ('figure', 'table') if counts[kind] == 0]
     exact(construction['reviewed_absent_visual_kinds'], absent, 'visual-negative kind evidence differs')
     return {'objects': objects, 'reviewed_absent_kinds': absent, 'retained_inventory': ledger,
+            'associated_content': associated_notes(primary, independent, rows, files, index),
             'source_visual_exclusions': deepcopy(list(excluded.values())),
             'metric_eligibility': {'O1': True, 'O2': True}, 'omitted_metrics': OMITTED_METRICS.copy()}
+
+
+def original_history(docs, raws, pages, verified_history):
+    """Ground identities in the separately confirmed frozen assignment history."""
+    packet = docs['packet']; identity = docs['identity_review']; request = docs['assignment_request']
+    require(identity.get('format') == 'k1-manual-producer-map-review-v1'
+            and identity.get('verdict') == 'clear_grounded_original_producers'
+            and identity.get('findings') == [], 'original producers lack grounded separate confirmation')
+    hash_ref(identity['request'], raws['assignment_request'], 'identity confirmation changes request')
+    for field in ('assignment_proposal', 'assignment_history'):
+        exact(identity[field + '_sha256'], sha256(raws[field]), 'identity confirmation changes historical assignment')
+    proposal = docs['assignment_proposal']
+    hash_ref(request['assignment_proposal'], raws['assignment_proposal'], 'identity request changes proposal')
+    hash_ref(request['prior_running_assignment_record'], raws['assignment_history'], 'identity request changes running record')
+    exact(identity['git_history'], request['git_history'], 'identity confirmation changes retained Git history')
+    expected_history = {row['retained_path']: row['sha256'] for row in docs['assignment_history']['records']}
+    expected_history[request['git_history']['retained_path']] = request['git_history']['sha256']
+    exact(verified_history, expected_history, 'actual retained assignment history differs')
+    producers = {side: proposal[side + '_agent'] for side in ('primary', 'independent')}
+    require(all(isinstance(value, str) and value.strip() for value in producers.values())
+            and len(set(producers.values())) == 2, 'original producer identities are missing or repeated')
+    exact(identity['confirmed_producers'], producers, 'grounded producer identities differ')
+    exact(identity['reviewer'], proposal['reconciler'], 'grounded reviewer differs')
+    require(isinstance(identity['reviewer'], str) and identity['reviewer'].strip()
+            and identity['reviewer'] not in producers.values(), 'identity confirmation is not separate from both annotators')
+    assigned = [row for row in proposal['papers'] if row['arxiv_id'] == packet['arxiv_id']]
+    require(len(assigned) == 1, 'original paper assignment is missing or repeated')
+    for side in ('primary', 'independent'):
+        exact(assigned[0][side + '_output'], packet['blind_' + side + '_output'], 'original output ownership differs')
+    records = [row for row in identity['papers'] if row['arxiv_id'] == packet['arxiv_id']]
+    requested = [row for row in request['papers'] if row['arxiv_id'] == packet['arxiv_id']]
+    require(len(records) == len(requested) == 1, 'producer confirmation omits or repeats this paper')
+    exact(records[0]['original_artifacts'], requested[0]['original_artifacts'], 'identity confirmation changes original bindings')
+    exact(records[0]['history_occurrences'], requested[0]['phase_exact_hash_occurrences'], 'identity confirmation changes historical excerpts')
+    for name in ('primary', 'independent', 'primary_receipt', 'independent_receipt'):
+        hash_ref(records[0]['original_artifacts'][name], raws[name], 'producer confirmation names another original')
+    p, i, pr, ir = (docs[name] for name in ('primary', 'independent', 'primary_receipt', 'independent_receipt'))
+    require(type(p.get('schema_version')) is int and p['schema_version'] == 1,
+            'unsupported primary inventory schema')
+    require(i.get('schema') in {'lysilogy-independent-manual-pilot-v1', 'lysilogy.blind-manual-inventory.v1',
+                               'lysilogy-blind-independent-pilot-v1'}, 'unsupported independent inventory schema')
+    for original in (p, i):
+        paper = original.get('paper', original)
+        exact(paper['paper_id'], packet['paper_id'], 'original mapped paper identity differs')
+        exact(paper['arxiv_id'], packet['arxiv_id'], 'original arXiv identity differs')
+        version = paper['version']
+        require((type(version) is int and version == packet['version'])
+                or (isinstance(version, str) and version == 'v' + str(packet['version'])),
+                'original pinned version differs')
+    hash_ref(pr['inventory'], raws['primary'], 'primary receipt changes its original inventory')
+    if 'inventory' in ir:
+        hash_ref(ir['inventory'], raws['independent'], 'independent receipt changes its original inventory')
+    else:
+        exact(ir['inventory_sha256'], sha256(raws['independent']), 'independent receipt changes original hash')
+        exact(ir['inventory_bytes'], len(raws['independent']), 'independent receipt changes original size')
+    require(pr.get('annotator_role', pr.get('annotation_role', 'primary')) == 'primary', 'primary receipt role differs')
+    exact(ir.get('annotator', ir.get('annotator_task')), producers['independent'], 'independent receipt producer differs')
+    if 'pages_seen_before_source_and_native' in pr:
+        exact(pr['pages_seen_before_source_and_native'], pages, 'primary pages-first history differs')
+        require(pr['blindness']['all_original_pages_viewed_before_source_and_native'] is True, 'primary pages-first assertion is absent')
+    elif 'pages_viewed_first' in pr:
+        exact(pr['pages_viewed_first'], pages, 'primary pages-first history differs')
+        require(pr['protocol']['all_original_pages_viewed_before_source_and_native'] is True, 'primary pages-first assertion is absent')
+    else:
+        exact(pr['all_pages_viewed_before_source_native'], pages, 'primary pages-first history differs')
+    if 'all_pages_inspected_before_source_native' in ir:
+        require(ir['all_pages_inspected_before_source_native'] is True, 'independent pages-first assertion is absent')
+        seen = ir['inspected_pages']
+    elif 'pages_inspected_before_source_native' in ir:
+        seen = ir['pages_inspected_before_source_native']
+    elif 'all_original_pages_before_source_native' in ir:
+        require(ir['all_original_pages_before_source_native'] is True, 'independent pages-first assertion is absent')
+        seen = ir['page_inspection_order']
+    else:
+        require(isinstance(ir.get('inspection_order'), str) and 'pages inspected first' in ir['inspection_order'],
+                'independent original inspection order is absent')
+        seen = ir['pages_inspected']
+    exact(seen, pages, 'independent pages-first history differs')
+    required = {sha256(raws[name]) for name in ('packet', 'source_export', 'native_export', 'prompt')}
+    required |= {row['sha256'] for row in packet['images']}
+    independent_inputs = ir.get('inputs', ir.get('inputs_rehashed'))
+    for ledger in (pr.get('inputs', pr.get('input_files')), independent_inputs):
+        require(isinstance(ledger, list) and len(ledger) <= 1000, 'original input ledger is missing or unbounded')
+        require(required <= {row['sha256'] for row in ledger}, 'original input ledger omits pages or source/native/prompt')
+        require(sha256(raws['construction']) not in {row['sha256'] for row in ledger}, 'later construction became a blind input')
+    return producers, identity['reviewer']
+
+
+def validate_visual_only(candidate_raw, index_raw, source_raw, raws, images, verified_history):
+    """Admission requires exact separate construction review after the blind freeze."""
+    require(set(raws) == ARTIFACTS and sum(map(len, raws.values())) <= MAX_BUNDLE_BYTES,
+            'visual-only evidence inventory or cumulative size differs')
+    docs = {key: raw.decode('utf-8') if key == 'prompt' else document(raw) for key, raw in raws.items()}
+    candidate = document(candidate_raw); index = document(index_raw)['index']; packet = docs['packet']
+    require(candidate['index']['sha256'] == sha256(index_raw) and candidate['source_sha256'] == sha256(source_raw),
+            'visual-only source/index identity differs')
+    exact(candidate['source_inventory_sha256'], sha256(canonical(candidate['source_inventory'])), 'historical source hash differs')
+    for key in ('arxiv_id', 'paper_id', 'index', 'stratum'):
+        exact(packet[key], candidate[key], 'blind packet names another original paper')
+    require(type(packet['version']) is int and packet['version'] > 0, 'blind packet version is invalid')
+    for kind in ('pdf', 'source'):
+        exact(packet[kind]['sha256'], candidate[kind + '_sha256'], 'blind packet names another artifact')
+    require(not {'candidate', 'source_inventory', 'candidate_sha256', 'inventory_sha256'} & packet.keys(),
+            'blind packet contains later parser output')
+    pages = [row['number'] for row in index['pages']]
+    require(1 <= len(pages) <= 32 and pages == list(range(1, len(pages) + 1)), 'original page inventory is invalid or unbounded')
+    producers, reviewer = original_history(docs, raws, pages, verified_history)
+    files, archive_members = read_archive(source_raw)
+    require(not any('^^' in text for text in files.values()), 'unverified source pre-tokenization substitution')
+    exact(docs['source_export']['source_sha256'], sha256(source_raw), 'original source export hash differs')
+    exact(docs['source_export']['text_members'], files, 'source export changes deposited source text')
+    exact(docs['source_export']['members'], archive_members, 'source export changes archive member inventory')
+    construction = docs['construction']
+    require(construction['not_an_original_annotator_input'] is True, 'construction timing is not explicit')
+    hash_ref(construction['candidate'], candidate_raw, 'construction changes its historical candidate')
+    for name in ('primary', 'independent', 'primary_receipt', 'independent_receipt', 'packet', 'source_export', 'native_export'):
+        hash_ref(construction['original_artifacts'][name], raws[name], 'construction changes an original artifact')
+    inventory = current_source_binding(docs, candidate, files)
+    verify_native_export(index_raw, raws['native_export'], candidate['paper_id'],
+                         {'format': NATIVE_FORMAT, 'sha256': sha256(raws['native_export']),
+                          'bytes': len(raws['native_export']), 'index_sha256': sha256(index_raw)})
+    exact({row['path']: row['sha256'] for row in packet['images']}, images, 'original image paths/hashes differ')
+    exact([row['page'] for row in packet['images']], pages, 'original image page order differs')
+    for image, page in zip(packet['images'], index['pages']):
+        require(type(image['dpi']) is int and image['dpi'] == 96, 'original rendering DPI differs')
+        for pixel, key, points in [('pixel_width', 'width', 'pdf_width_points'), ('pixel_height', 'height', 'pdf_height_points')]:
+            dimension = page[key]
+            require(type(dimension) in (int, float) and math.isfinite(dimension) and dimension > 0
+                    and type(image[pixel]) is int and image[pixel] == math.ceil(dimension * 96 / 72)
+                    and image[points] == dimension, 'original raster/native dimensions differ')
+    for side in ('primary', 'independent'):
+        audit_excerpts(docs[side], files, index)
+    overlay = visual_projection(construction, docs['primary'], docs['independent'], inventory, files, index, docs['geometry'])
+    review = docs['review']
+    require(review.get('format') == REVIEW_FORMAT and review.get('verdict') == 'clear_complete_visual_only_projection'
+            and review.get('findings') == [], 'visual-only construction review is not clear')
+    exact(review['artifacts'], {key: sha256(raw) for key, raw in raws.items() if key != 'review'}, 'construction review changes evidence closure')
+    exact(review['candidate_sha256'], sha256(candidate_raw), 'construction review changes original candidate')
+    exact(review['current_source_inventory_sha256'], sha256(canonical(inventory)), 'construction review changes current source')
+    exact(review['annotators'], producers, 'construction review changes grounded original producers')
+    exact(review['reviewer'], reviewer, 'construction reviewer is not separately confirmed')
+    exact(review['pages_covered_by_original_review'], pages, 'construction review omits original pages')
+    require(isinstance(review['original_page_review_basis'], str) and review['original_page_review_basis'].strip()
+            and review['later_crosswalk_reviewed_after_annotation_freeze'] is True, 'construction/page review timing is absent')
+    exact(review['complete_visual_counts'], construction['complete_visual_counts'], 'review visual counts differ')
+    exact(review['source_visual_exclusions'], construction['source_visual_exclusions'], 'review omits syntactic visual source roles')
+    exact(review['omitted_metrics'], OMITTED_METRICS, 'visual-only review grants unscored metrics')
+    require(not any(key in candidate for key in ('manual_figure_table_overlay', 'manual_object_overlay',
+            'manual_bibliography_overlay', 'manual_visual_only_overlay', 'independent_panel')),
+            'visual-only projection cannot mix other manual overlays')
+    overlay.update(evidence_format=FORMAT, evidence_hashes={key: sha256(raw) for key, raw in raws.items()},
+        historical_source_inventory_sha256=candidate['source_inventory_sha256'],
+        current_source_inventory_sha256=sha256(canonical(inventory)),
+        historical_source_difference_fields=construction['changed_source_inventory_fields'],
+        current_source_diagnostics=deepcopy(inventory['coverage']),
+        supplemental_unscored_history=deepcopy(docs['supplement_history']), final_k1_publication=False)
+    result = deepcopy(candidate); result['manual_visual_only_overlay'] = overlay
+    return result
+
+
+def attach_visual_only(cache, corpus_root, data_root, candidate_raw, paper, mapped, relative):
+    """Read only declared immutable cache evidence and original corpus inputs."""
+    from builder import fingerprint_file, safe_file
+    from manual import bounded
+    manifest_raw = bounded(cache, relative + '/manifest.json'); manifest = document(manifest_raw)
+    require(manifest.get('format') == FORMAT and type(manifest.get('schema_version')) is int
+            and manifest['schema_version'] == 1 and set(manifest['artifacts']) == ARTIFACTS,
+            'unsupported visual-only evidence manifest')
+    raws = {}; total = 0
+    for name, row in manifest['artifacts'].items():
+        require(set(row) == {'path', 'sha256', 'bytes'}, 'visual-only artifact declaration differs')
+        raw = bounded(cache, row['path']); total += len(raw)
+        require(total <= MAX_BUNDLE_BYTES, 'visual-only evidence exceeds cumulative byte limit')
+        hash_ref(row, raw, 'visual-only artifact hash/size differs'); raws[name] = raw
+    docs = {key: document(raw) for key, raw in raws.items() if key != 'prompt'}
+    candidate = document(candidate_raw); packet = docs['packet']
+    exact(candidate['index'], mapped['index'], 'visual-only candidate changes mapped native index')
+    exact(candidate['paper_id'], mapped['paper_id'], 'visual-only candidate changes mapped paper')
+    exact(candidate['arxiv_id'], paper['arxiv_id'], 'visual-only candidate changes original arXiv identity')
+    exact(packet['version'], paper['version'], 'visual-only packet changes original pinned version')
+    exact(packet['stratum'], paper['stratum'], 'visual-only packet changes original selection stratum')
+    index_raw = bounded(data_root, mapped['index']['path'])
+    require(sha256(index_raw) == mapped['index']['sha256'] and mapped['pdf_sha256'] == paper['pdf']['sha256'],
+            'mapped native index or PDF identity differs')
+    source_raw = None
+    for kind in ('pdf', 'source'):
+        path = safe_file(corpus_root, paper[kind]['path']); digest, size = fingerprint_file(path, cap=64*1024*1024)
+        require(digest == paper[kind]['sha256'] == candidate[kind + '_sha256'] and size == paper[kind]['bytes'],
+                'frozen original corpus artifact differs')
+        exact(packet[kind], paper[kind], 'original packet changes corpus receipt')
+        if kind == 'source':
+            source_raw = path.read_bytes()
+            require(len(source_raw) == size and sha256(source_raw) == digest, 'source archive changed during read')
+    exact(packet['selection_sha256'], sha256(raws['selection']), 'visual-only packet changes frozen selection')
+    exact(packet['policy_sha256'], sha256(raws['policy']), 'visual-only packet changes frozen policy')
+    selected = [row for row in docs['selection']['selected'] if row['arxiv_id'] == paper['arxiv_id']]
+    require(len(selected) == 1, 'visual-only paper is absent or repeated in frozen blind selection')
+    exact(selected[0]['mapping'], mapped, 'visual-only selection changes native mapping')
+    annotation_root = safe_file(cache, manifest['artifacts']['policy']['path']).parent
+    pr, ir = docs['primary_receipt'], docs['independent_receipt']
+    original_rows = pr.get('inputs', pr.get('input_files')) + ir.get('inputs', ir.get('inputs_rehashed'))
+    original_rows = original_rows + [pr['inventory']] + packet['images']
+    if 'inventory' in ir: original_rows.append(ir['inventory'])
+    supplements = docs['supplement_history']
+    require(supplements.get('status') == 'retained_unscored_additive_evidence'
+            and isinstance(supplements.get('artifacts'), list) and len(supplements['artifacts']) <= 256,
+            'supplement history is missing, unsupported or unbounded')
+    original_rows += supplements['artifacts']
+    identity = docs['identity_review']; request = docs['assignment_request']
+    require(isinstance(identity['papers'], list) and len(identity['papers']) <= 32, 'identity paper map exceeds its bound')
+    original_rows += [row for identity_paper in identity['papers'] for row in identity_paper['original_artifacts'].values()]
+    for row in original_rows: verify_original_file(cache, annotation_root, row)
+    images = {row['path']: verify_original_file(cache, annotation_root, row) for row in packet['images']}
+    verified_history = assignment_records(cache, docs['assignment_history'])
+    history = request['git_history']; history_path = Path(history['retained_path'])
+    # Original root receipts can retain absolute cache paths. Convert only
+    # inside this declared cache; safe_file still rejects traversal/symlinks.
+    history_relative = str(history_path.relative_to(cache)) if history_path.is_absolute() else str(history_path)
+    history_raw = bounded(cache, history_relative)
+    hash_ref(history, history_raw, 'retained original assignment history differs')
+    require(re.fullmatch(r'[0-9a-f]{40}', history['git_commit']) is not None
+            and history['git_path'] == 'docs/knowledge-base-phases.md', 'unsupported assignment history origin')
+    verified_history[history['retained_path']] = sha256(history_raw)
+    history_text = history_raw.decode('utf-8')
+    for row in request['papers']:
+        for occurrence in row['phase_exact_hash_occurrences']:
+            a, b = occurrence['start'], occurrence['end']
+            require(occurrence['unit'] == 'Unicode code points' and type(a) is int and type(b) is int
+                    and 0 <= a < b <= len(history_text), 'historical assignment excerpt bounds differ')
+            exact(history_text[a:b], occurrence['text'], 'historical assignment excerpt differs')
+    result = validate_visual_only(candidate_raw, index_raw, source_raw, raws, images, verified_history)
+    for name, row in manifest['artifacts'].items():
+        require(bounded(cache, row['path']) == raws[name], 'visual-only artifact changed during validation')
+    for row in original_rows: verify_original_file(cache, annotation_root, row)
+    require(bounded(cache, history_relative) == history_raw, 'assignment history changed during validation')
+    current_history = assignment_records(cache, docs['assignment_history'])
+    current_history[history['retained_path']] = sha256(history_raw)
+    exact(current_history, verified_history, 'retained running assignment changed during validation')
+    require(bounded(cache, relative + '/manifest.json') == manifest_raw, 'visual-only manifest changed during validation')
+    result['manual_assembly'] = {'format': FORMAT, 'manifest_sha256': sha256(manifest_raw),
+        'candidate_sha256': sha256(candidate_raw), 'final_k1_publication': False,
+        'omitted_manual_kinds': ['equation', 'statement', 'proof', 'algorithm', 'bib_entry'],
+        'omitted_metrics': OMITTED_METRICS.copy(),
+        'source_inventory_policy': 'All original/current roles retained unscored; complete reviewed visual projection only.'}
+    return result

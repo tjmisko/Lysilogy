@@ -193,10 +193,11 @@ def attach_bibliography(cache, corpus_root, data_root, candidate_raw, paper, map
 def attach_declared_tranche(cache, corpus_root, data_root, candidate_raw, paper, mapped, relative):
     from tranche import FORMAT as MIXED_FORMAT, attach_tranche
     from tranche_visual import FORMAT as VISUAL_FORMAT, attach_visual
+    from tranche_visual_only import FORMAT as VISUAL_ONLY_FORMAT, attach_visual_only
     raw = bounded(cache, relative + '/manifest.json')
     declared = document(raw).get('format')
-    require(declared in (MIXED_FORMAT, VISUAL_FORMAT), 'unsupported explicit tranche format')
-    codec = attach_tranche if declared == MIXED_FORMAT else attach_visual
+    require(declared in (MIXED_FORMAT, VISUAL_FORMAT, VISUAL_ONLY_FORMAT), 'unsupported explicit tranche format')
+    codec = {MIXED_FORMAT: attach_tranche, VISUAL_FORMAT: attach_visual, VISUAL_ONLY_FORMAT: attach_visual_only}[declared]
     result = codec(cache, corpus_root, data_root, candidate_raw, paper, mapped, relative)
     require(bounded(cache, relative + '/manifest.json') == raw, 'tranche dispatch manifest changed')
     return result

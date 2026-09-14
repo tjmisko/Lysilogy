@@ -67,6 +67,28 @@ def build_release(assemblies, config, inputs, history):
             row['objects'].extend(compact_object(item) for item in overlay['objects'])
             row['metric_eligibility'].update(overlay['metric_eligibility'])
             row['provenance']['overlay_evidence']['figure_table'] = overlay['evidence_hashes']
+        if 'manual_visual_only_overlay' in candidate:
+            overlay = candidate['manual_visual_only_overlay']
+            require(not any(key in candidate for key in ('manual_figure_table_overlay', 'manual_object_overlay',
+                    'manual_bibliography_overlay', 'independent_panel')), 'visual-only release cannot mix metric overlays')
+            require(overlay['metric_eligibility'] == {'O1': True, 'O2': True}
+                    and overlay['omitted_metrics'] == METRICS[2:], 'visual-only overlay changes its metric scope')
+            require(all(item['kind'] in ('figure', 'table') for item in overlay['objects']),
+                    'visual-only overlay contains a formal or other object')
+            expected_absent = [kind for kind in ('figure', 'table') if not any(item['kind'] == kind for item in overlay['objects'])]
+            require(overlay['reviewed_absent_kinds'] == expected_absent, 'visual-only negative kind inventory differs')
+            row['objects'].extend(compact_object(item) for item in overlay['objects'])
+            row['metric_eligibility'].update(overlay['metric_eligibility'])
+            row['reviewed_absent_kinds'] = overlay['reviewed_absent_kinds']
+            row['associated_content'] = overlay['associated_content']
+            row['unscored_inventory'] = {'records': overlay['retained_inventory'],
+                'source_visual_exclusions': overlay['source_visual_exclusions'],
+                'supplemental_history': overlay['supplemental_unscored_history'],
+                'omitted_metrics': overlay['omitted_metrics'],
+                'current_source_inventory_sha256': overlay['current_source_inventory_sha256'],
+                'historical_source_difference_fields': overlay['historical_source_difference_fields']}
+            row['alignment']['method'] = 'Complete independently reviewed figure/table projection; other original and source roles retained unscored'
+            row['provenance']['overlay_evidence']['visual_only'] = overlay['evidence_hashes']
         if 'manual_object_overlay' in candidate:
             overlay = candidate['manual_object_overlay']
             require(all(overlay['metric_eligibility'].get(key) is True for key in ('O3','O4','O5','O6','O7')), 'manual object overlay is incomplete')

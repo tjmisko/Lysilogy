@@ -164,3 +164,35 @@ both original inventories and receipts. Original role-only receipts remain uncha
 The codec checks the actual retained history bytes and exact source excerpts, proposal
 selection/prompt/output paths, complete confirmation hashes and final reviewer binding.
 A proposed assignment or three different identity strings alone cannot enable an overlay.
+
+The separate `k1-manual-visual-only-tranche-v1` codec supports an O1/O2 projection
+when the same paper also contains unscored formal mathematics, procedures or
+unresolved references. It cannot emit the formal-negative overlay or combine
+with bibliography/panel overlays. Both original printed visual inventories and
+every current syntactic visual source occurrence must be accounted for. A source
+figure environment around a printed equation, or a reviewed nonrendered literal
+empty-macro payload, stays explicit in the source-role ledger. It is never silently
+dropped to manufacture a visual negative.
+
+The crosswalk checks per-occurrence kinds/labels, complete original source caption
+arguments, exact UTF-16 caption memberships, page ownership and independently
+reconciled full-body geometry. The supported included-source case has one literal
+input/include and three exact expanded source-map pieces, with both original
+dependency records. Separately recorded table notes retain their source owner
+and native spans through the visual-only overlay. They do not become statements
+or independent metric objects.
+
+Every original top-level value and collection member is retained by its canonical
+JSON pointer/hash, original role/ownership labels and scored/unscored disposition;
+the unchanged original artifact supplies all nested source/native/fidelity fields.
+Every current parsed object, reference/citation occurrence and bibliography entry
+also has an explicit ordinal/identity/hash/source-role record. The original raw
+inventories, additive corrections and later current-parser construction remain
+separate. This retention does not adjudicate omitted O3–O11 labels.
+
+The planned `k1-limited-v4` has its own fixed 16-module set and remains disabled
+until separately reviewed construction and immutable publication establish its
+manifest pin. It preserves the complete v1/v2/v3 bundles and prior four compact
+paper rows. Explicit collector selection preserves both supported historical
+region shapes and still requires every frozen O2 value, including zeros. Matching
+rules and IoU arithmetic remain unchanged; the 500-paper target remains open.

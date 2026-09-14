@@ -30,6 +30,9 @@ CURRENT_MANIFEST_SHA256 = 'fdd6d2c5e9ec5f03f6461b15fe01c92ab93151a68ed695a661183
 VISUAL_VERSION = 'k1-limited-v3'
 VISUAL_MODULES = CURRENT_MODULES | {'tranche_visual.py'}
 VISUAL_MANIFEST_SHA256 = 'd02b71b0f9604bdd3e2535825d0d257b587ce1219c5552eb978c6cd9886a682b'
+VISUAL_ONLY_VERSION = 'k1-limited-v4'
+VISUAL_ONLY_MODULES = VISUAL_MODULES | {'tranche_visual_only.py'}
+VISUAL_ONLY_MANIFEST_SHA256 = None  # Remains disabled until separately reviewed immutable publication.
 MAX_DOCUMENT = 1024 * 1024
 
 
@@ -65,12 +68,15 @@ def document(raw):
 
 
 def release_spec(version):
-    require(version in (VERSION, CURRENT_VERSION, VISUAL_VERSION), 'unsupported retained truth version')
+    require(version in (VERSION, CURRENT_VERSION, VISUAL_VERSION, VISUAL_ONLY_VERSION), 'unsupported retained truth version')
     if version == VERSION:
         return MANIFEST_SHA256, MODULES
     if version == VISUAL_VERSION:
         require(VISUAL_MANIFEST_SHA256 is not None, 'truth version is not published')
         return VISUAL_MANIFEST_SHA256, VISUAL_MODULES
+    if version == VISUAL_ONLY_VERSION:
+        require(VISUAL_ONLY_MANIFEST_SHA256 is not None, 'truth version is not published')
+        return VISUAL_ONLY_MANIFEST_SHA256, VISUAL_ONLY_MODULES
     require(CURRENT_MANIFEST_SHA256 is not None, 'truth version is not published')
     return CURRENT_MANIFEST_SHA256, CURRENT_MODULES
 
@@ -119,7 +125,8 @@ def load_modules(repo, version):
     """Compile verified bytes directly, without searching a bundle or bytecode cache."""
     require(sys.flags.isolated and sys.flags.dont_write_bytecode, 'verifier requires isolated Python')
     bundle, manifest = verified_bundle(repo, version)
-    require(not any(Path(name).stem in sys.modules for name in CURRENT_MODULES),
+    namespace = VISUAL_ONLY_MODULES if version == VISUAL_ONLY_VERSION else CURRENT_MODULES
+    require(not any(Path(name).stem in sys.modules for name in namespace),
             'verifier module namespace is contaminated')
     sources = {}
     for name, row in manifest['files'].items():
