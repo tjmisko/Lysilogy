@@ -1231,6 +1231,17 @@ Blocked by: none
 
 ### E8.3 arXiv LaTeX object truth
 
+Bounded release layout (#129, 2026-09-14): future reviewed releases may use a
+small canonical manifest and complete per-paper children, with serial isolated
+replay and collection. Each metric retains its own complete cohort and denominator;
+wholly ineligible selected rows retain their unscored inventory. Child hashes and
+full prediction/process evidence close the active metric input. Publication fails
+as a whole if any selected row fails. The [per-paper contract](../eval/k1-per-paper-contract.md)
+sets finite byte, structural JSON, memory, time and disk limits. The existing
+V1–V4 bytes and replay remain immutable; this mechanism leaves the future V5 pin
+disabled and admits no papers. Synthetic 500-record resource evidence does not
+establish the approximately 500 defensible corpus papers required by #97.
+
 Build K1 from the K0 `eval` tier: parse LaTeX sources (resolving `\input`/`\include`, custom
 `\newtheorem` names, `\label`/`\ref`/`\eqref`, `\cite`, `.bbl`/`\bibitem`) into truth objects,
 align them to the PDF by caption and text matching, drop papers whose alignment falls below a
