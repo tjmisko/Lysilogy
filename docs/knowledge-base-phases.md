@@ -339,6 +339,16 @@ acceptance are unchanged.
   through the pinned parent verifier and bounded workers. No generic recursive transport,
   parser/detector/formal-codec edits, smaller denominator or extra metric eligibility.
 
+- [ ] **#135 Complete 2011 statement cohort** (after #132 and #134; bounded part of #97).
+  Branch `feat/e8.3-formal-2011`. Owns a narrow explicit original-protocol O5-only profile in
+  `tranche_formal.py`, matching `release.py` projection, required next-release dispatch,
+  focused tests and reviewed construction/release/contracts/report. Publish exactly three
+  Problems and one Theorem from2011.00685v3. Preserve nested unscored displays, including the
+  MM objective with no automatic ID, omitted-proof notice and every original field/disposition.
+  Bind finite source/class/guard review and original producer history with missing fields intact.
+  Every inherited paper/provenance/outcome remains exact. No parser/detector edits, O6negative,
+  extra metric eligibility or generic conditional/package waiver. Choose version after blockers.
+
 ### Wave A3
 
 - [ ] **#37 E2.5 Resolution gold set and evaluation** (after #25, #69). Branch `feat/e2.5-gold-set`.
@@ -7641,3 +7651,50 @@ date, last merged issue, in-flight branches and their state, next action, and op
  1000sources and native indexes unchanged in Corpora/cache, no background queue. Preserve all
  10main PDF-preview files/unrelated worktrees,20GiBfloor and one heavy process. Current main
   docs checkpoint must be ordinarily merged before final132PR integration; do not rebase.
+
+
+### 2026-09-14 15:45 UTC — formal runtime clear; next statement cohort queued
+
+- Phase A / A2; last merged #131 / PR133 at6059dcfc. Main06c3e66 before this docs checkpoint.
+  #132 remains in `feat/e8.3-formal-tranche`, worktree under `.worktrees/feat/`, owner
+  finish_corpus_proxy. Ordinary integration with main produced d90c4f27404cd21c7fe9dd96681b51406c14c4d6.
+  No132PR yet. One heavy slot reserved for owner's serial activation/replay/collector/checks.
+- Actual attachment passed: `formal-tranche-132/attachment-v1/receipt.json`, SHA256
+  `057488980f85147873f73a50aed8e84f7d9e61bcc0ae0b5df65c1ae12e67840b`,0.917217s wrapper.
+  Candidate0fdaa90a/bundle2267eca0 retain every original field and the exact complete projection.
+  Unpublished publication passed: `formal-tranche-132/publication-v1/receipt.json`, SHA256
+  `d3667c657dd9a0a8e38201e16e0b37027eacd99f07d39564b5835c750ed5565c`,18.074427s,
+ 13fresh workers including11pinnedV5 direct parent children;80raw transport files retained.
+- Separate actual runtime/publication CLEAR by review_k1_reconciliation:
+  `review-formal-runtime-132-v1/publication-review.json`, SHA256
+  `7e371b58feeff03618377d01f1becb82cffa7098f6bd0e47071ca47fbf94107f`.
+ 471bindings/43,866,408bytes;180worktree files copied externally;35parent dependencies,
+ 108legacy files,21modules and all11inherited paper/provenance records exact. New2310 truth is
+  seven statements/four proofs/three associated parts. Totals12papers,60O3,50visual,11O5,5O6.
+  Exact unpublished implementation manifest508bf5b2270ed497ab2cca901a3771f948e5da021d1076ab3f16cf652581e00b
+  may activate. Root authorized owner to continue after this clearance. Fresh V1–V6 replay,
+  current V6 collector, owning after-check and final integrated gates/review are still required.
+- #135 opened at https://github.com/tjmisko/Lysilogy/issues/135, epic67/project12 PhaseA/E8/Todo,
+  blocked132and134. No worktree/code/version reserved. Complete2011 O5-only proposal independently
+  CLEAR: `review-formal-2011-proposal-v1/review.json`, SHA256
+  `f958eb163c45b4ef4234b80581d98ac9c7ee61370112f92ddc039d39915c17e5`;
+ 112bindings/1710recordrefs/1091nativechecks, four wholes/two nested displays, all577original
+  entries/14dispositions and nine current adapter barriers. Prior dossier role is disclosed.
+  Root accepted exact proposal and independently rebound closure in
+  `review-formal-2011-proposal-root-v1/review.json`, SHA256
+  `f2451f13043d9834e1b48e07e075116193cf1415f6ded543b7aaaa80ca916c08`;
+  root does not claim a repeat of the separate native/record checks. Exact final issue body is
+  retained beside that review. Keep original missing dispatch/primary start missing and use
+  phase-portability-addendum-v1.json/e6b3e7bf for the historical phase snapshot. #134 stays queued
+  ahead of135. Neither proposal review grants construction, runtime or metric admission.
+- Next: complete132runtime/finalPR review and merge, preserve portable artifacts, delete only
+  completed branch/worktree, update main docs; start134from then-current main. finish_benchmark
+  is available for finalPR review. Do not rebase: ordinary-main-merge deviation remains.
+  Global score unchanged1/5hard gates,3/30objectives O1/O2/O30. No phase/system exit passes yet.
+- All four approved hosts remain effectively denied as recorded14:48; no new credentials or
+  sudo requirement. Persistent config is mounted read-only, not auto-review rejection. Normal
+  terminal script `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, then restart
+  and resume/effective verification, remains the unblock. No reapproval or bypass. #33/noPR and
+  drafts93/94/95 remain at their prior heads. Corpus10951PDFs/1000sources and audited indexes
+  stay external; no download/native queue. Preserve all ten main preview files and unrelated
+  worktrees,20GiBfree floor, one heavy job. Latest preview check after06c3e66 was exact.
