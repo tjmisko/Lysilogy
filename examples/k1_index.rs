@@ -146,6 +146,12 @@ async fn run(request: Request) -> Result<Value, Failure> {
 
 #[tokio::main]
 async fn main() -> Result<(), Failure> {
+    // Native diagnostics stay separate from the JSON result and reading-index schema.
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::WARN)
+        .with_ansi(false)
+        .with_writer(io::stderr)
+        .init();
     let mut input = String::new();
     io::stdin()
         .take(1024 * 1024 + 1)
