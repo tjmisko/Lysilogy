@@ -329,6 +329,16 @@ acceptance are unchanged.
   #131's release, previous semantic records and outcomes. No detector/parser edits, generic
   conditional waiver, source-failure fallback or smaller partial denominator.
 
+- [ ] **#134 Complete 2301 numbered-equation cohort** (after #132; bounded part of #97).
+  Branch `feat/e8.3-numbered-2301`. Owns a narrow explicit v2 original-protocol profile in
+  `tranche_numbered_math.py`, focused tests, required manual/versioned/release-layout/replay
+  dispatch, next immutable release/config, contracts and report/evidence. Add exactly four
+  whole O3 equations from 2301.05184v1. Retain six unnumbered displays, all original/source
+  records and fourteen dispositions, exact lowercase bd/stackrel and source encoding domains.
+  Use V7 only if #132 pins V6; require every inherited paper/provenance/outcome to stay exact
+  through the pinned parent verifier and bounded workers. No generic recursive transport,
+  parser/detector/formal-codec edits, smaller denominator or extra metric eligibility.
+
 ### Wave A3
 
 - [ ] **#37 E2.5 Resolution gold set and evaluation** (after #25, #69). Branch `feat/e2.5-gold-set`.
@@ -7436,3 +7446,107 @@ date, last merged issue, in-flight branches and their state, next action, and op
   terminal command `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`, restart,
   resume and effective probes remain required. User reminded once during this interval. Do not
   ask again or bypass. Continue132 and independent source preparation; no credentials/sudo missing.
+
+
+### 2026-09-14 15:13 UTC — formal code under review; next numbered cohort queued
+
+- Last merged #131 / PR133, merge6059dcfc0ec7d7c13df3a535c4d96f1f63028da7; main21d3eaa
+  before this docs checkpoint. Phase A / Wave A2. V5 remains active with11papers/60O3 equations.
+  Score remains1/5gates,3/30objectives O1/O2/O30. No new merge or measured detector delta;
+  #97 approximately500/all-kind, Phase A exit, production10k, Playwright and Phases B–D remain open.
+- #132 source committed **fac26847a9270690ef572e9a8ddeb2edd8846fb0**, owner finish_corpus_proxy,
+  worktree `.worktrees/feat/e8.3-formal-tranche`, branch same suffix. V6 disabled and unpublished;
+  no PR. Owner reports426truth+50collector tests passed; exact-head receipt/construction pending.
+  Separate source reviewer finish_benchmark is active. FindingF1: parent-plan's zero-inherited
+  early return allows a V6 configuration to omit all11 V5 papers (or remove all parent tags).
+  Owner is adding production V6 completeness validation and meaningful regression controls.
+  F2 also reproduced: current candidate/packet PDF identity can change while frozen original
+  history/packet/geometry remain, because current packet is not equated to the original packet.
+  Require exact original-input equality, not only presence in the evidence set. Owner will fix
+  F1/F2 together after review; no real label mutations or publication occurred.
+  Do not grant source/publication clearance at fac2684; wait for corrected source/re-review.
+- Necessary narrow inheritance seam: old numbered constructions bind V5 producer modules.
+  V6 must directly execute the exact pinned V5 per-paper worker for all11 inherited ordinals,
+  retain raw parent transport/results, and verify complete rebuilt paper equality plus transitive
+  relative portable source/evidence closure. The new formal paper alone uses V6. No nested
+  workers, general recursive framework or cached-only acceptance; existing memory/time/aggregate
+  bounds and complete denominators remain. This seam requires concrete source/runtime review.
+  Construction-v1 preparation receipt `formal-tranche-132/construction-v1/receipt.json`, SHA256
+  `f3b6386fc629067484c7fd08156b4aab1d12240c32f665bdc020235ec1869d90`, binds11objects/3parts,
+  one fresh parse equal to original and145602projected bytes. Keep this history; rebuild exact
+  producer bindings after code fixes before concrete construction review. No clearance yet.
+  Heavy slot free and reserved for owner's next required build; no other heavy work launched.
+  Before CLI/result receipt37f8b13d remains portable as recorded at14:43. Main must be ordinarily
+  merged before final gates; no rebase authorization and no protected preview modification.
+- **#134 opened**, linked under E8/#67 and project12, PhaseA/E8/Todo, blocked132. Branch
+  `feat/e8.3-numbered-2301`, no worktree/code. Root proposal independently CLEAR:
+  `review-numbered-2301-proposal-root-v1/review.json`, SHA256
+  `564735f85650151eeaccff05d94f5271628273a8498c75f7281675555d13a2a3`.
+  Rehashed139bindings/17,856,627bytes,719JSON refs/194native slices. Four exact numbered wholes,
+  six unnumbered pairs,198original list entries,39source-array records,107endpoint values including
+  five original nulls,14dispositions. Existing v1 cannot accept this original protocol as data only;
+  add a narrow explicit v2 profile within the numbered module after132. Root strengthens the draft:
+  all inherited V6 paper values including provenance stay exact, not merely semantic fields.
+  No new eligibility, detector metric, generic class trust or source/extraction correction.
+- Producer2301 cache proposal `numbered-2301-readiness/construction-proposal-v1/receipt.json`,
+  SHA256 `bd21e09db731ee39ddf0ce5481a7dc5b2536a563b8e39beac95a6608b4a2b0bc`;
+  proposal e52b26b7, input-bindings8c0dae47, original draft4ada5330. Root final issue body retained
+  alongside review. Exact lowercase bd marker, both whole nested arrays, Latin1-vs-UTF8 source
+  domains and post-freeze geometry provenance remain. Prior source-scope52a3f6c7, source-printed
+  aae575c1, geometryb2a92a00 and historyc0f37e84 are independent finite readiness evidence.
+- **2011 four-statement source scope root CLEAR**, cache only:
+  `review-formal-source-scope-2011-root-v1/review.json`, SHA256
+  `78f9df1360b389c801215a9d5af8fef25e823295f2f88bb9baaf0cc8a489fe1a`.
+  81bindings/14,479,981bytes;942source slices45record refs6836literal commands434outer definitions
+  and38specific guard judgments. Producer dossier0712f461 retains851declaration/775conditional
+  candidates and13corrected parameter-target extents. Root prior original-reading7979f611 covers
+  all12text members, full root/nine inputs/BibTeX-shaped BBL and all2029nonempty non-pure-comment
+  class lines. Complete class197574bytes/CP; no full comment-header-reading claim. No source
+  execution or general class/package/dynamic-reachability approval. Exact finite source/printed
+  identity grounds only three Problem wholes plus one Theorem whole.
+- Current2011 full source equals historical db2fc15e, all27objects90links29bib/eight theorem
+  declarations/five ambiguous labels/allfalse flags unchanged. All8iffalse blocks remain, with
+  seven automatic objects in two blocks; all4selected statements are outside them. Four exact
+  norm arguments, ordered let-to-relax assignments, all15package requests, repeatedqedsymbol,
+  margin/lockout/class theorem hooks and inline suffix retained. Problem1 owns Equation1;
+  Problem3 owns original mm-objective without invented parser ID. Omitted-proof notice is outside
+  Theorem1; no O6 negative or O3/algorithm grant. Source/printed010c9454 and geometry remain bound.
+- **2011 original producer history root CLEAR** with explicit missing fields:
+  `review-formal-producer-history-2011-root-v1/review.json`, SHA256
+  `91d0bcff054a766e6d3419c42105e14adfb9900f5eb340f2905244dfde933bef`.
+  47bindings/11,600,679bytes. Both originals self-identify finish_corpus_proxy/review_ready_prs,
+  match assigned paths/freeze and record eight pages before exports. Original first-pair dispatch
+  receipt/time absent in bounded11-file search; pending_dispatch states remain. Primary start,
+  elapsed and active durations unknown;04:52:19Z is first recorded time, completion05:11:46.834350.
+  Independent recorded05:04:30.824309–05:14:22.325114 =591.500805s wall, not active reasoning.
+  WholePDF/archive/index independently rehashed as declared provenance, not original access.
+  Independent's incomplete original class transcription remains explicit; root's later work is
+  never retroactively attributed. Initial audit's cache-only path check failed on main phase
+  corroboration; audit-v2 permits that exact file only, preserving the failed checker.
+- Producer2011 history `formal-2011-readiness/producer-history-preparation-v1/receipt.json`,
+  SHA256 `5ede2c5d61d2bfb12eea8f8a2212be738e8f96eaa04756103fd7b95dc5efc822`,
+  historyc21308a5. Before this docs write the exact old620865-byte phases file82f88252 was copied
+  to `knowledge-base-phases.snapshot.md` in that directory and root byte-compared it. Additive
+  `phase-portability-addendum-v1.json`, SHA256
+  `e6b3e7bf6a5e8fddfb40effefdb5b9d1ee2e7b734942fca6c7c3f377e85a0474`, maps old mutable
+  path to exact retained copy without rewriting original history/root review. Future construction
+  must use that retained mapping, not require future main docs to retain historical bytes.
+- review_k1_reconciliation now prepares cache-only2011 O5 construction proposal, after132/134,
+  using finite scope/history above. No issue/version number or code yet; root must review it.
+  Root next reviews132 concrete construction while finish_benchmark reviews corrected source.
+  Require actual attachment/unpublished release review, activation/replay/collector/gates and
+  separate final draft-PR review before merge. One heavy job at a time,20GiBfreefloor.
+- Fresh14:48 effective checks still rejected all four already-approved hosts at tool policy:
+  index.crates.io/static.crates.io/api.crossref.org/api.openalex.org. No HTTP response was obtained.
+  Receipt `kb-four-host-status-20260914T1448.json`, SHA256
+  `0a08984f36adb892ba9c95358e492f7bf12fb163ca3e444883a1df0c9215cce6` records tool denials,
+  not network-response evidence. Persistent config remains mounted read-only, not auto-review
+  rejection. Normal terminal must run `python3 ~/.config/lysilogy/apply-codex-kb-network-permissions.py`,
+  restart and resume for effective verification. Approval exists; do not ask again or bypass.
+  #33 feat/e2.1-kb-store905c341/noPR, #71 feat/e8.4-reference-truthd5e12aa/draft93,
+  #72 feat/e8.5-person-labelsc867ec6/draft95 and #25 feat/e1.2-bibliography201c53c/draft94
+  remain preserved. No missing credentials/sudo. Corpus10951uniquePDFs/1000sources and audited
+  indexes remain in Corpora/cache; no downloads/native queue running. User's ten PDF-preview
+  files and all unrelated/tmp worktrees stay untouched. Continue all independent offline work.
+
+- At15:13 all ten protected preview hashes remain exact; free43,984,396,288bytes.
