@@ -87,6 +87,8 @@ are scanned through their real delimiters, retained and marked unresolved.
 Duplicate field names withhold every value of that field; duplicate database
 keys, compared without case, withhold every spelling's values. This does not
 change the separate fatal duplicate-key rule for printed `bibitem` inventories.
+Citation keys retain literal apostrophes, including an initial apostrophe; they
+are ordinary key characters, not field quotation delimiters or escaping syntax.
 Literal-percent values that the TeX text renderer would truncate supply no
 supplementary label. Explicit deposited BBL field roles remain authoritative;
 database values cannot establish absent printed boundaries or override conflicts.

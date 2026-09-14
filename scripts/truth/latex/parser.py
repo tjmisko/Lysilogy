@@ -613,7 +613,7 @@ class BibtexScanner:
                 self.space()
                 key_start = self.at
                 while self.at < len(self.text) and self.text[self.at] not in ',})' and not self.text[self.at].isspace():
-                    if self.text[self.at] in '"#%\'()={\\':
+                    if self.text[self.at] in '"#%()={\\':
                         raise UnsupportedSource("unsupported BibTeX entry key syntax")
                     self.at += 1
                 if self.at == key_start:

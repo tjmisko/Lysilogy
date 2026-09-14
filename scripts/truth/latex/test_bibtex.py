@@ -148,6 +148,28 @@ class BibtexTests(unittest.TestCase):
         self.assertEqual(issues['duplicate_bibtex_key'], 2)
         self.assertEqual(sum(len(member['entries']) for member in evidence), 3)
 
+    def test_should_preserve_literal_apostrophes_when_keys_start_with_or_contain_them(self):
+        for key in ("O'Key", "'initial", "a'b'c"):
+            for opening, closing in (('{', '}'), ('(', ')')):
+                source = '@misc' + opening + key + ',title={Ordinary title}' + closing
+                labels, issues, evidence = self.scan(source)
+                self.assertEqual(list(labels), [key])
+                self.assertEqual(labels[key]['labels']['title'], 'Ordinary title')
+                self.assertFalse(issues)
+                row = evidence['entries'][0]
+                self.assertEqual(row['key'], key)
+                self.assertEqual(source[row['key_span']['start']:row['key_span']['end']], key)
+                self.assertEqual(labels[key]['provenance']['title']['key'], key)
+
+    def test_should_withhold_all_case_variants_when_apostrophe_keys_are_duplicated(self):
+        source = "@misc{O'Key,title={First}}\n@misc{o'key,title={Second}}"
+        labels, issues, evidence = self.scan(source)
+        self.assertEqual(labels, {"O'Key": None, "o'key": None})
+        self.assertEqual(issues['duplicate_bibtex_key'], 1)
+        self.assertEqual([entry['key'] for entry in evidence['entries']], ["O'Key", "o'key"])
+        for row in evidence['entries']:
+            self.assertEqual(source[row['key_span']['start']:row['key_span']['end']], row['key'])
+
     def test_should_bind_decoded_offsets_and_complete_field_hashes_when_unicode_precedes_fields(self):
         source = 'Résumé outside\n@misc{case, title = "A {nested \"quote\"} title",\n year = 2020 }\n'
         labels, _, evidence = self.scan(source)
