@@ -192,6 +192,27 @@ class VisualOnlyProjectionTests(unittest.TestCase):
                 visual_projection(*exclusion_fixture(discard=True,between=between))
         self.assertEqual(len(visual_projection(*exclusion_fixture(discard=True,between='% commented \\renewcommand{\\discard}[1]{#1}\n'))['objects']),1)
 
+    def test_should_reject_assignment_aliases_when_the_empty_consumer_name_is_not_literally_redefined(self):
+        for between in (r'\newcommand{\changer}{\renewcommand}\changer{\discard}[1]{#1}',
+                        r'\newcommand{\changer}{\def}\changer\discard#1{#1}',
+                        r'\newcommand{\changer}{\def}\changer\discard{}',
+                        r'\newcommand{\first}{\second}\newcommand{\second}{\def}\first\discard{}',
+                        r'\unknown{\discard}', r'\unknown\discard'):
+            with self.subTest(between=between), self.assertRaises(ValueError):
+                visual_projection(*exclusion_fixture(discard=True,between=between))
+
+    def test_should_reject_composed_rule_dimensions_when_either_token_piece_comes_from_an_alias(self):
+        for before, residual in ((r'\newcommand{\Rule}{\hrule}',r'\Rule width 100pt height 100pt'),
+                                 (r'\newcommand{\Rule}{\hrule}',r'\Rule width100pt'),
+                                 (r'\newcommand{\Rule}{\hrule}',r'\Rule HEIGHT100pt'),
+                                 (r'\newcommand{\Dimensions}{width 100pt height 100pt}',r'\hrule\Dimensions'),
+                                 (r'\newcommand{\Rule}{\hrule}\newcommand{\Dimensions}{width 100pt}',r'\Rule\Dimensions')):
+            with self.subTest(residual=residual), self.assertRaisesRegex(ValueError,'drawing parameters'):
+                visual_projection(*exclusion_fixture(before=before,residual=residual))
+        good=exclusion_fixture(before=r'\newcommand{\Rule}{\hrule}\newcommand{\Vector}{{\bf W}}',
+                               residual=r'Let $\Vector_i := 1$.\Rule ',extra=r'\vspace{3mm}\Rule')
+        self.assertEqual(len(visual_projection(*good)['objects']),1)
+
     def test_should_dispatch_only_visual_projection_when_explicit_visual_only_manifest_is_selected(self):
         from manual import attach_declared_tranche
         with tempfile.TemporaryDirectory() as directory:

@@ -13,7 +13,7 @@ from annotations import canonical, document, require
 from archive import read_archive, sha256
 from native_exports import FORMAT as NATIVE_FORMAT, verify_native_export
 from parser import argument_commands, reference_names_verified
-from tex import COMMAND, SYMBOLS, comments, group
+from tex import COMMAND, SYMBOLS, comments, definition_regions, group
 from tranche import covered, hash_ref, member_pages, rectangle, source_member, unique, verify_original_file
 from tranche_visual import (COORDS, MAX_BUNDLE_BYTES, assignment_records, audit_excerpts,
                             current_source_binding, exact, members, source)
@@ -307,10 +307,8 @@ def literal_macro_declarations(name, files):
     return [(path, match.start()) for path, raw in files.items() for match in pattern.finditer(raw)]
 
 
-def literal_macro_scope(name, definition, files, inventory):
-    exact(literal_macro_declarations(name, files), [(definition['path'], definition['start'])],
-          'nonvisual macro has another or unsupported definition')
-    active = inventory.get('coverage', {}).get('expanded_files', [definition['path']])
+def nonvisual_source_scope(path, files, inventory):
+    active = inventory.get('coverage', {}).get('expanded_files', [path])
     require(isinstance(active, list) and 1 <= len(active) <= 256 and all(path in files for path in active),
             'nonvisual macro source closure is unsupported')
     dynamic = {'csname', 'catcode', 'lccode', 'uccode', 'lowercase', 'uppercase', 'scantokens',
@@ -319,6 +317,29 @@ def literal_macro_scope(name, definition, files, inventory):
     require(not any(match[1] in dynamic or match[1].startswith('if')
                     for path in active for match in COMMAND.finditer(files[path])),
             'nonvisual macro has unverified dynamic source binding')
+    assignment = dynamic | {'newcommand', 'renewcommand', 'providecommand', 'DeclareRobustCommand',
+                            'def', 'gdef', 'edef', 'xdef', 'newenvironment', 'renewenvironment'}
+    for path in active:
+        for start, end in definition_regions(files[path]):
+            first = COMMAND.match(files[path], start)
+            require(first is not None and not any(token[1].rstrip('*') in assignment
+                    for token in COMMAND.finditer(files[path], first.end(), end)),
+                    'nonvisual source has deferred or aliased assignment semantics')
+    return active
+
+
+def literal_macro_scope(name, definition, files, inventory, *, braced_invocations=False):
+    exact(literal_macro_declarations(name, files), [(definition['path'], definition['start'])],
+          'nonvisual macro has another or unsupported definition')
+    active = nonvisual_source_scope(definition['path'], files, inventory)
+    for path in active:
+        for token in COMMAND.finditer(files[path]):
+            if not braced_invocations or token[1] != name or path == definition['path'] and definition['start'] <= token.start() < definition['end']:
+                continue
+            # A control sequence used as another command's name/parameter is
+            # not evidence of an ordinary invocation of this empty consumer.
+            require(files[path][token.end():].lstrip().startswith('{'),
+                    'nonvisual macro has an unexplained control-sequence use')
     prefix = files[definition['path']][:definition['start']]
     depth = 0; at = 0
     while at < len(prefix):
@@ -342,6 +363,7 @@ def nonvisual_float_context(occurrence, inner, files, inventory):
     can extend the literal commands; original full-page review remains required.
     """
     raw = files[occurrence['path']]
+    nonvisual_source_scope(occurrence['path'], files, inventory)
     prefix = raw[occurrence['start']:inner['start']]
     suffix = raw[inner['end']:occurrence['end']]
     opening = re.match(r'\\begin\{(figure\*?|table\*?)\}(?:\[[htbp!H ]{1,32}\])?', prefix)
@@ -354,11 +376,11 @@ def nonvisual_float_context(occurrence, inner, files, inventory):
         'centering', 'hrule', 'vspace', 'hspace', 'label', 'quad', 'qquad', 'hfill', 'vfill',
         'ne', 'in', 'notin', 'forall', 'exists', ',', ';', ':', '!', ' ', '\\'}
     budget = [512]; declaration_cache = {}
-    def check(text, depth):
+    def expand(text, depth):
         require(depth <= 8 and len(text) <= 16384, 'nonvisual context expansion exceeds its bound')
-        require(re.search(r'\\hrule\s*(?:width|height|depth)\b', text) is None,
-                'nonvisual context rule has unsupported drawing parameters')
+        output = []; end = 0
         for token in COMMAND.finditer(text):
+            output.append(text[end:token.start()]); end = token.end()
             budget[0] -= 1
             require(budget[0] >= 0, 'nonvisual context command budget exceeded')
             name = token[1]
@@ -366,6 +388,7 @@ def nonvisual_float_context(occurrence, inner, files, inventory):
             declarations = declaration_cache[name]
             if not declarations:
                 require(name in allowed, 'nonvisual float contains unsupported extra source payload')
+                output.append(token[0])
                 continue
             require(name not in allowed and len(declarations) == 1, 'nonvisual context primitive is redefined')
             path, start = declarations[0]
@@ -373,11 +396,17 @@ def nonvisual_float_context(occurrence, inner, files, inventory):
             source_text = files[path]
             head = re.match(r'\\newcommand\{\s*' + re.escape('\\' + name) + r'\s*\}\s*', source_text[start:])
             require(head is not None, 'nonvisual context alias has unsupported definition syntax')
-            body, end = group(source_text, start + head.end())
-            require(end <= occurrence['start'] and '#' not in body, 'nonvisual context alias is parameterized or out of scope')
-            literal_macro_scope(name, {'path': path, 'start': start, 'end': end}, files, inventory)
-            check(body, depth + 1)
-    check(context, 0)
+            body, body_end = group(source_text, start + head.end())
+            require(body_end <= occurrence['start'] and '#' not in body, 'nonvisual context alias is parameterized or out of scope')
+            literal_macro_scope(name, {'path': path, 'start': start, 'end': body_end}, files, inventory)
+            output.append(expand(body, depth + 1))
+            require(sum(map(len, output)) <= 16384, 'nonvisual composed context exceeds its bound')
+        output.append(text[end:]); result = ''.join(output)
+        require(len(result) <= 16384, 'nonvisual composed context exceeds its bound')
+        return result
+    expanded = expand(context, 0)
+    require(re.search(r'\\hrule\s*(?:width|height|depth)', expanded, re.IGNORECASE) is None,
+            'nonvisual context rule has unsupported drawing parameters')
 
 
 def visual_projection(construction, primary, independent, inventory, files, index, geometry):
@@ -469,7 +498,7 @@ def visual_projection(construction, primary, independent, inventory, files, inde
             raw = files[wrapper['path']]
             match = re.fullmatch(r'\\newcommand\{\\([A-Za-z]+)\}\[1\]\{\}', raw[definition['start']:definition['end']])
             require(match is not None, 'unsupported original empty-macro declaration')
-            literal_macro_scope(match[1], definition, source_comments, inventory)
+            literal_macro_scope(match[1], definition, source_comments, inventory, braced_invocations=True)
             require(re.fullmatch(re.escape('\\' + match[1] + '{') + r'\s*', raw[wrapper['start']:occurrence['start']]) is not None
                     and re.fullmatch(r'\s*\}', raw[occurrence['end']:wrapper['end']]) is not None,
                     'nonrendered wrapper contains extra source payload')

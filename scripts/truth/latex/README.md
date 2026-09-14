@@ -189,7 +189,10 @@ and unique earlier local zero-argument aliases built from that same grammar.
 Additional environments, graphics, unknown commands, parameterized aliases and
 redefinitions reject. An empty-wrapper exclusion requires one literal definition;
 other definitions, dynamic assignments, conditional or grouped source scope are
-unsupported. These checks constrain the recorded source role; they do not execute
+unsupported. Deferred assignment primitives inside source macros also reject,
+and the empty consumer cannot be used as an unexplained control-sequence argument.
+Rule checks run over the complete bounded alias composition, preserving adjacent
+token effects. These checks constrain the recorded source role; they do not execute
 TeX, prove arbitrary package semantics or certify mathematical rendering. The
 distinct original-page/construction review and retained source limitations remain
 required. Every attached note must have complete native token rectangles inside
