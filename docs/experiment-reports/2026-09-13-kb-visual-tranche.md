@@ -89,7 +89,7 @@ first-generation files remain preserved. It is not an accepted v3 measurement.
 The reviewed correction adapts only v3 singleton shapes before unchanged strict
 page/finite/rectangle/IoU checks. Extra keys and boolean/fractional page values are
 rejected. A new aggregate guard requires the exact frozen O2 denominator before
-publishing any metric input. V1/v2 interpretations and matching/scoring functions
+publishing any metric input. V1/v2 interpretations, matching rules and IoU arithmetic
 remain unchanged; no labels, detector source or coordinate tolerance changed.
 The corrected run at `70eebb5` completed all three cohorts in 83.474023 seconds,
 102,080 KiB peak child RSS, using the explicitly selected Cargo example and retained
