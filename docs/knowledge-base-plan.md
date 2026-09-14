@@ -382,6 +382,21 @@ When only raster inserts are supported within an independently enclosing native 
 multiple small nonnumeric labels above and below the inserts retain that native extent.
 This evidence does not infer the contents or bounds of unsupported masks.
 
+The mask follow-up enables the existing `serde_json/float_roundtrip` feature after a
+retained reproduction showed its default binary64 decoder shift valid native transform
+decimals by one ULP. This adds no dependency and retains exact coordinate comparisons;
+full gates and native commitments cover the feature's global JSON-decoding scope.
+
+Mask follow-up (#111) adds optional, separately fingerprinted decoded opacity to graphics
+version3. The XML trace still owns page/state/event framing. A mask may supply a candidate
+envelope only from all its nonzero pixel cells, with an identical attached mask and independently
+opaque base image in the same coordinates. Nested masks, extra cropping, interpolation and
+unknown transparency remain excluded; holes are not declared painted. The fixed local adapter
+and resource wrapper are hashed into graphics cache identity, and raw opacity stays external.
+Both immutable cohorts, native indexes, caption ownership and scoring remain unchanged.
+The detailed resource/provenance protocol and independent adversarial fixtures are recorded in
+`eval/object-metrics-contract.md`. Actual before/after measurement is required before merge.
+
 ### E1.2 Backend bibliography extraction and parsing
 
 Move bibliography detection and entry splitting from `paperLinks.ts` to the backend, and persist
