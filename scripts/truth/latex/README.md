@@ -134,11 +134,14 @@ bibliography excerpts and field evidence remain external and O8–O11 are omitte
 unless their separate existing codecs are supplied. Informal roles remain reviewable
 and cannot silently disappear into a formal-negative cohort.
 
-The planned `k1-limited-v3` selects a separate fixed 15-module implementation,
-including this codec. Its pin remains unavailable until independent construction
-and publication review. The v1 and v2 pins, fixed modules, payloads and configurations
-remain unchanged; the collector defaults to v1 and requires explicit
-`--truth-version k1-limited-v3` for the later cohort. Every version has a separate
+The reviewed `k1-limited-v3` selects a separate fixed 15-module implementation,
+including this codec. It retains the three complete v2 paper records and adds
+2409.03655v1: six visual objects with separately reviewed formal negatives, for
+29 visual objects across four papers. New O8–O11 eligibility remains omitted.
+This limited release does not satisfy the 500-paper coverage target. The v1 and
+v2 pins, fixed modules, payloads and configurations remain unchanged; the collector
+defaults to v1 and requires explicit `--truth-version k1-limited-v3` for the later
+cohort. Every version has a separate
 observation path while one current figure/table metric input owns O1/O2; prior
 input/observation pairs are preserved by the existing immutable history writer.
 
