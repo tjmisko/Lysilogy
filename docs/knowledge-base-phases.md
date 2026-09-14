@@ -7107,3 +7107,82 @@ date, last merged issue, in-flight branches and their state, next action, and op
   publication/replay and full gates/metrics, draft PR/final review, ordinary main integration,
   merge/cleanup. Then132 and #97's unchanged approximately500-paper/all-kind requirement.
   Production10k, actual Playwright and phasesB–D remain open; no system or phase completion.
+
+
+### 2026-09-14 13:43 UTC — actual equation attachment correction; formal source scope clear
+
+- Last merged #129 / PR130 at d9a62af; maincc0355a before checkpoint. Phase A / A2. Active
+  #131 worktree unchanged, now `f7b6c0d` after two concrete review/runtime corrections. No PR
+  or published V5 yet. finish_benchmark independently reviews the latest narrow source delta;
+  review_k1_reconciliation prepares publication/report after exact construction review reissue.
+  Heavy slot free. All ten protected main preview files verified byte-identical;41GiB free.
+- At320d189, reviewer found that a nonempty native range list containing only whitespace could
+  pass complete-O3 validation. Frozen public-validator reproduction and review
+  `review-numbered-math-131-source-320d189/review.json` SHA256
+  `ddd2d0b27f0aee874eb1c9175be20c9f07636f3243221e49f358c749e4f2ffa5` remain. Fix681fd20
+  requires nonempty non-whitespace support, with fully resealed negative and valid corrupted
+  nonquote control. Distinct source clear `review-numbered-math-131-source-681fd20/review.json`
+  SHA256 `1e23b42d2c29a0301c4156457a8f1eb44cec08760dd19365f61bfde8de29f495`.
+- Root independently CLEARed complete v2 construction after that source fix:
+  `review-numbered-construction-131-root-v1/review.json` SHA256
+  `2f2b148ceaa1c734984505b3ec319529ae50e26026bebf81ff968c85fee8388d`, with exact per-paper
+  reviews a0bdbceb/99ea24a5. Ninety-two bindings /18,804,452 bytes;584 original ledger records,
+  164 source-array records, full remaining source metadata,2,864 native range checks,110 regions,
+  50 exact/five contained source mappings,211 original endpoints/one explicitly unresolved.
+  Both whole 7/48 inventories and all14 original dispositions retained. Entire previews from
+  v1 and v2 equal; only construction timestamp/codec hash and disposition timestamp changed.
+- **First actual reviewed CLI attach then caught a post-validation TypeError**: four final raw
+  byte rechecks called JSON exact() and tried to canonicalize bytes. Both failed actual runs are
+  retained under `numbered-math-131/run/attach-{2404,1911}-v1.*`; nothing published. Fixf7b6c0d
+  uses direct byte equality and adds an actual filesystem success/late-mutation regression.
+  All409 truth tests pass. Source-checkpoint-v3.json SHA256
+  `c1f36fcb80677039c62ca15a0a2036de1c696de4721b1d4b32d54db808f033ca` is the review target.
+  Complete construction refreshed to `numbered-math-131/final-construction-v3/receipt.json`,
+  SHA256 `87060dd0ec6e3ad092fc425572cb1909283fb8d34d819b598f1bbfadf520a757`; preflight
+  ea9a8396cb01b7470e5c30c6c3abfe628080c1d88298885d5b383ce9908154b2 still rejects pending
+  distinct review. Root mechanical v3 checks pass with all same counts:
+  `review-numbered-construction-131-root-v1/checks-v3.json`, SHA256
+  `70aa571c03a1bb9e97a6586d50a1096e7014899af6061af4c63b208982047999`.
+  Prior v1/v2 preparations/reviews stay unchanged; final v3 review not yet issued at checkpoint.
+- Offline fmt/strict all-feature Clippy/all428Rust tests passed; first G5 failed only because
+  the new worktree lacked TypeScript. Retain g5-v1/receipt.json d20628b1. Reusing existing local
+  main node_modules offline resolved it. **G5 v2 passed428Rust/626Python/85Node**,22.704s;
+  `numbered-math-131/g5-v2/receipt.json`, SHA256
+  `4c47a7f5414b7fbe341bfc2153685fd345cc155ab437f779c9e2551ce9f8ab82`. This precedes the
+  final attachment-byte fix; final627Python check remains required. G5 uses real WT/target
+  for small bounded logs, external per-worktree CARGO_TARGET_DIR and cache TMPDIR for builds/
+  fixtures. No target symlink/external-root workaround is required. Preserve logs before cleanup.
+- **#132 finite source-scope independently CLEAR by root**, for exact2310 inputs only:
+  `review-formal-source-scope-132-root-v1/review.json`, SHA256
+  `b698695134a05a8721e233598f58cb2fcb61e71233b6fafe6583ae2b11cef099`,394,976 bytes.
+  Sixty-seven bindings /9,842,279 bytes;29 guard keys/countsum30,17 macros,10 theorem declarations,
+  608 literal tokens,40 comments,23 contiguous source partitions covering15,073 codepoints,
+  1,235 exact source records,7statements/4proofs/3children/6labels and4 exact nearest whole targets.
+  Root read the entire original source and all finite per-guard/declaration reasons. The sole
+  bibliography conditional and two unused DOI declarations stay after the last formal unit;
+  dormant claim/comment/link wrappers and all automatic warnings stay intact. Source-scope only,
+  not codec/runtime/admission. Root audit v1 had its own bytes-versus-binding-record assertion
+  mistake before source checks; audit-v2 fixes that helper use and binds the retained failure.
+- Producer scope receipt `formal-tranche-132/source-scope-preparation-v1/receipt.json`, SHA256
+  `bdc80156ba4f810ac476de8ed0871f237a445ae1434d9931d5787f0907ae560b`. Use the final six
+  machine files named in its final_machine_files array, including four -v2 filenames. Exact
+  current parse at174cb67 took.052418764s/27680KiB; final literal preparation.024426434s/23424KiB.
+  Finalization.173092341s includes.148795866s checks. Separate RSS maxima are not summed.
+  Both earlier helper/group-scan failures and corrected DOI body-dependency classification remain.
+  #132 still Todo, blocked131, no worktree/code. Producer finish_corpus_proxy is available.
+- **Four2011 statement source/printed preparation independently CLEAR**:
+  `review-source-printed-formal-2011-v1/review.json`, SHA256
+  `010c9454016bcbfcde61e9a77b7347ea6a7ad7ee899f3ccb986551c1ade27271`; checks3a237348.
+  Reviewer personally viewed full original pages3/4;27 files/11,291,875 bytes, five bounded
+  archive members,30 source/721 native refs/five literals. All4 units plus nested numbered and
+  unnumbered ownership agree. Both producer-v1 bad Python pointers and reviewer assumptions
+  remain recorded. No current whole source-scope/class/proof/codec/metric admission.
+- Seven latest artifact bindings in `~/.cache/lysilogy/kb-session-checkpoint-20260914T1343.json`,
+  SHA256 `648bba4c0690f090e4bcee73303c3585445b1547340dfadcbd4da05125701b60`. No downloads/
+  native queue or external/model calls. Published score remains1/5gates,3/30objectives O1/O2/O30.
+  Next: clear the narrow attachment source fix, reissue v3 construction reviews, run successful
+  actual attach, bounded publication/replay and full semantic/outcome comparisons, final gates/
+  owning objects measurement, draft PR/separate final review/main integration/merge/cleanup.
+  Then132; #97 approximately500/all-kind, production10k, Playwright and later phases remain open.
+  Preserved #33 and drafts93/94/95 still need the already-approved four-host normal-terminal
+  permission script and restart; no repeated approval or sandbox bypass.
