@@ -6,6 +6,10 @@ generated artifact is plain, diffable text stored outside the source library.
 
 **Lysilogos** is the agent who cuts papers and follows their references inside Lysilogy.
 
+> **Knowledge-base branch.** This is `integration/knowledge-base`: the reader plus the in-progress
+> cross-paper knowledge base. Read [docs/kb-status.md](docs/kb-status.md) first for what works,
+> how to grade figures and tables, and what is next. `main` holds the reader alone.
+
 The current demo has been exercised against a local corpus of 118 PDFs and ships with a mapped copy
 of Dijkstra's "GOTO Statements Considered Harmful."
 
