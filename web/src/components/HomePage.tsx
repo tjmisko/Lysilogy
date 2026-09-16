@@ -41,7 +41,7 @@ function paperStatus(paper: PaperOverview): string {
   }
 }
 
-export function HomePage({ name, papers, query, onQuery, activeId, onActive, onSelect, onImport, keyboardEnabled, darkInk, onToggleInk }: HomePageProps) {
+export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect, onImport, keyboardEnabled, darkInk, onToggleInk }: HomePageProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState("title");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -132,19 +132,10 @@ export function HomePage({ name, papers, query, onQuery, activeId, onActive, onS
   }, [keyboardEnabled, onSelect, onToggleInk, selectedId, visible]);
 
   return <section className={`home-page${darkInk ? " dark-ink" : ""}`} aria-labelledby="home-title">
-    <header className="home-intro">
-      <div>
-        <p className="home-eyebrow">{name}</p>
-        <h1 id="home-title">The reading room<span aria-hidden="true">.</span></h1>
-      </div>
-      <p className="home-counts"><strong>{papers.length}</strong> {papers.length === 1 ? "paper" : "papers"}<span aria-hidden="true"> / </span><strong>{mapped}</strong> mapped</p>
-    </header>
-
     <div className="home-controls">
       <label className="home-search">
         <span aria-hidden="true">⌕</span>
         <input ref={searchRef} type="search" aria-label="Search papers" value={query} placeholder="Search title, author, or year" onChange={(event) => onQuery(event.target.value)} />
-        <kbd aria-hidden="true">/</kbd>
       </label>
       <div className="home-filters" role="group" aria-label="Filter papers">
         {([["all", "All papers"], ["mapped", "Mapped"], ["unmapped", "Unmapped"]] as const).map(([value, label]) =>
@@ -153,7 +144,10 @@ export function HomePage({ name, papers, query, onQuery, activeId, onActive, onS
       <label className="home-sort"><span>Sort</span><select aria-label="Sort papers" value={sort} onChange={(event) => setSort(event.target.value)}><option value="title">Title A–Z</option><option value="newest">Newest first</option></select></label>
     </div>
 
-    <div className="home-results-line"><span role="status">{visible.length === papers.length ? "On the shelves" : `${visible.length} of ${papers.length} papers`}</span><button type="button" onClick={onImport}>Add a paper <span aria-hidden="true">↗</span></button></div>
+    <div className="home-results-line">
+        <p className="home-counts"><strong>{papers.length}</strong> {papers.length === 1 ? "paper" : "papers"}<span aria-hidden="true"> / </span><strong>{mapped}</strong> mapped</p>
+        <button type="button" onClick={onImport}>Add a paper <span aria-hidden="true">↗</span></button>
+    </div>
 
     {visible.length > 0 ? <ul className="paper-grid" ref={gridRef} aria-label="Papers">
       {visible.map((paper) => <li key={paper.id} style={{ "--paper-accent": paperAccent(paper.id) } as CSSProperties}>
