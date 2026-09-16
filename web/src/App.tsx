@@ -1021,10 +1021,9 @@ export function App() {
             if (!event.currentTarget.contains(next) && !(next instanceof Element && next.closest(".notes-panel, .pdf-source-tools, .section-figure-links, .section-figure-view") !== null)) setToolbarPeek(false);
           }}>
           <nav className="workspace-navigation" aria-label="Library navigation">
-            <button type="button" aria-label="Lysilogy home" title="Home" onClick={() => openHome()}>⌂</button>
             <button type="button" aria-label="Toggle library (F1)" title="Library (F1)" onClick={() => setLibraryOpen((value) => !value)}>☰</button>
           </nav>
-          {home ? <span className="home-topbar-label">Your reading library</span> : <div className="view-switch" role="group" aria-label="Reader view">
+          {home ? <span className="home-topbar-label"></span> : <div className="view-switch" role="group" aria-label="Reader view">
             {analysis === null ? <>
               <button type="button" className={textMode === "pdf" ? "is-active" : ""} onClick={() => setTextMode("pdf")}>PDF</button>
               <button type="button" className={textMode === "markdown" ? "is-active" : ""} onClick={() => setTextMode("markdown")}>Text</button>
@@ -1074,16 +1073,10 @@ export function App() {
             </>}
           </div>}
           <div className="topbar-actions">
-            {!home && <button className="queue-button notes-toggle" type="button" aria-pressed={notesOpen} title="Markdown notes (E)" onClick={() => { if (notesOpen) requestNotesClose(); else openNotes(); }}>Notes <kbd>E</kbd></button>}
-            {readingPdf && <button className="queue-button toolbar-pin" type="button" aria-pressed={toolbarPinned} title="Pin reader controls (T)" onClick={() => { setToolbarPinned((value) => !value); setToolbarPeek(false); }}>Pin <kbd>T</kbd></button>}
-
+            {!home && <button className="queue-button notes-toggle" type="button" aria-pressed={notesOpen} title="Markdown notes (E)" onClick={() => { if (notesOpen) requestNotesClose(); else openNotes(); }}>Notes</button>}
             {home ? <>
-              <button className="queue-button" type="button" onClick={scan}>Rescan</button>
-              <button className={`queue-button ${queueHasActive ? "has-work" : ""}`} type="button" onClick={() => { setQueueOpen(true); void refreshQueue(); }}>Queue <kbd>Q</kbd></button>
-            </> : paperView === null ? <span className="current-paper-label">Opening paper…</span> : analysis !== null && currentPaper !== null ? <span className="current-paper-label" title={`${currentPaper.metadata.authors.join(", ")} — ${currentPaper.metadata.year ?? ""} — ${currentPaper.metadata.title}`}>
-              {currentPaper.metadata.authors.length > 2 ? `${currentPaper.metadata.authors[0]} et al.` : currentPaper.metadata.authors.join(" & ")}
-              {currentPaper.metadata.year == null ? "" : ` — ${currentPaper.metadata.year}`} — {currentPaper.metadata.title}
-            </span> : <>
+              <button className={`queue-button ${queueHasActive ? "has-work" : ""}`} type="button" onClick={() => { setQueueOpen(true); void refreshQueue(); }}>Queue</button>
+            </> : paperView === null ? <span className="current-paper-label">Opening paper…</span> : analysis !== null && currentPaper !== null ? <span className="current-paper-label" title={`${currentPaper.metadata.authors.join(", ")} — ${currentPaper.metadata.year ?? ""} — ${currentPaper.metadata.title}`}></span> : <>
             <label className="provider-select">
               <span>Reader</span>
               <select value={provider} onChange={(event) => setProvider(event.target.value as AnalysisProvider)}>
