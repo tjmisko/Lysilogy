@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { api } from "../lib/api";
+import { HOME_PAGE_SIZE, pageOfIndex, pageSummary, pageWindow } from "../lib/homePaging";
 import { spatialNeighbor, type Direction } from "../lib/spatialNavigation";
 import type { PaperOverview } from "../types";
 import { PaperPreview } from "./PaperPreview";
@@ -41,9 +42,13 @@ function paperStatus(paper: PaperOverview): string {
   }
 }
 
-export function HomePage({ name, papers, query, onQuery, activeId, onActive, onSelect, onImport, keyboardEnabled, darkInk, onToggleInk }: HomePageProps) {
+export function HomePage({ papers, query, onQuery, activeId, onActive, onSelect, onImport, keyboardEnabled, darkInk, onToggleInk }: HomePageProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState("title");
+  // A page belongs to one filter/sort/query; changing any of them starts from the first page.
+  const viewKey = `${filter}\u0000${sort}\u0000${query}`;
+  const [paging, setPaging] = useState({ key: viewKey, page: 0 });
+  const page = paging.key === viewKey ? paging.page : 0;
   const searchRef = useRef<HTMLInputElement>(null);
   const gridRef = useRef<HTMLUListElement>(null);
   const mapped = papers.filter((paper) => paper.status.state === "ready").length;
@@ -62,7 +67,20 @@ export function HomePage({ name, papers, query, onQuery, activeId, onActive, onS
       return collator.compare(a.metadata.title, b.metadata.title);
     });
   }, [filter, papers, query, sort]);
-  const selectedId = visible.find((paper) => paper.id === activeId)?.id ?? visible[0]?.id;
+  // Only one page of cards is mounted; the active paper's page wins so a
+  // return from the reader lands on the card that was opened.
+  const activeIndex = visible.findIndex((paper) => paper.id === activeId);
+  const activePage = pageOfIndex(activeIndex);
+  const window_ = pageWindow(visible.length, activePage ?? page);
+  const shown = useMemo(() => visible.slice(window_.start, window_.end), [visible, window_.start, window_.end]);
+  const selectedId = activeIndex >= 0 ? activeId ?? undefined : shown[0]?.id;
+  const turnPage = useCallback((delta: number): void => {
+    const next = pageWindow(visible.length, window_.page + delta);
+    if (next.page === window_.page) return;
+    setPaging({ key: viewKey, page: next.page });
+    const first = visible[next.start];
+    if (first !== undefined) onActive(first.id);
+  }, [onActive, viewKey, visible, window_.page]);
 
   useEffect(() => {
     if (!keyboardEnabled) return;
@@ -119,6 +137,9 @@ export function HomePage({ name, papers, query, onQuery, activeId, onActive, onS
       } else if (["Home", "End", "G"].includes(event.key)) {
         event.preventDefault();
         focusCard(event.key === "Home" ? cards[0] : cards.at(-1));
+      } else if (["[", "]", "PageUp", "PageDown"].includes(event.key)) {
+        event.preventDefault();
+        turnPage(event.key === "[" || event.key === "PageUp" ? -1 : 1);
       } else if ((event.key === "Enter" || event.key === "o") && selectedId !== undefined) {
         // Enter on toolbar controls retains its native action.
         if (event.key === "Enter" && target instanceof HTMLElement && target.closest("button, a") !== null
@@ -129,22 +150,13 @@ export function HomePage({ name, papers, query, onQuery, activeId, onActive, onS
     };
     window.addEventListener("keydown", navigate);
     return () => window.removeEventListener("keydown", navigate);
-  }, [keyboardEnabled, onSelect, onToggleInk, selectedId, visible]);
+  }, [keyboardEnabled, onSelect, onToggleInk, selectedId, turnPage, visible]);
 
   return <section className={`home-page${darkInk ? " dark-ink" : ""}`} aria-labelledby="home-title">
-    <header className="home-intro">
-      <div>
-        <p className="home-eyebrow">{name}</p>
-        <h1 id="home-title">The reading room<span aria-hidden="true">.</span></h1>
-      </div>
-      <p className="home-counts"><strong>{papers.length}</strong> {papers.length === 1 ? "paper" : "papers"}<span aria-hidden="true"> / </span><strong>{mapped}</strong> mapped</p>
-    </header>
-
     <div className="home-controls">
       <label className="home-search">
         <span aria-hidden="true">⌕</span>
         <input ref={searchRef} type="search" aria-label="Search papers" value={query} placeholder="Search title, author, or year" onChange={(event) => onQuery(event.target.value)} />
-        <kbd aria-hidden="true">/</kbd>
       </label>
       <div className="home-filters" role="group" aria-label="Filter papers">
         {([["all", "All papers"], ["mapped", "Mapped"], ["unmapped", "Unmapped"]] as const).map(([value, label]) =>
@@ -153,10 +165,18 @@ export function HomePage({ name, papers, query, onQuery, activeId, onActive, onS
       <label className="home-sort"><span>Sort</span><select aria-label="Sort papers" value={sort} onChange={(event) => setSort(event.target.value)}><option value="title">Title A–Z</option><option value="newest">Newest first</option></select></label>
     </div>
 
-    <div className="home-results-line"><span role="status">{visible.length === papers.length ? "On the shelves" : `${visible.length} of ${papers.length} papers`}</span><button type="button" onClick={onImport}>Add a paper <span aria-hidden="true">↗</span></button></div>
+    <div className="home-results-line">
+        <p className="home-counts"><strong>{papers.length}</strong> {papers.length === 1 ? "paper" : "papers"}<span aria-hidden="true"> / </span><strong>{mapped}</strong> mapped</p>
+        {visible.length > HOME_PAGE_SIZE && <nav className="home-pager" aria-label="Library pages">
+          <button type="button" onClick={() => turnPage(-1)} disabled={window_.page === 0} aria-label="Previous page" title="Previous page ([ or PageUp)">‹</button>
+          <span>Showing <strong>{pageSummary(window_, visible.length)}</strong> · page {window_.page + 1} of {window_.pageCount}</span>
+          <button type="button" onClick={() => turnPage(1)} disabled={window_.page >= window_.pageCount - 1} aria-label="Next page" title="Next page (] or PageDown)">›</button>
+        </nav>}
+        <button type="button" onClick={onImport}>Add a paper <span aria-hidden="true">↗</span></button>
+    </div>
 
     {visible.length > 0 ? <ul className="paper-grid" ref={gridRef} aria-label="Papers">
-      {visible.map((paper) => <li key={paper.id} style={{ "--paper-accent": paperAccent(paper.id) } as CSSProperties}>
+      {shown.map((paper) => <li key={paper.id} style={{ "--paper-accent": paperAccent(paper.id) } as CSSProperties}>
         <button type="button" className={`paper-card ${paper.id === selectedId ? "is-active" : ""} ${paper.status.state === "ready" ? "is-mapped" : ""}`}
           data-paper-id={paper.id} tabIndex={paper.id === selectedId ? 0 : -1}
           aria-labelledby={`card-title-${paper.id}`} onFocus={() => onActive(paper.id)} onClick={() => onSelect(paper.id)}>
