@@ -7836,3 +7836,26 @@ date, last merged issue, in-flight branches and their state, next action, and op
   current SHA256af70e9e4c58707266da871a3819074c8a1ae0252f39288aaec6eb02942fd2b30,
   superseding the earlier light-artifact hash in the September14entry. Static validation passed;
   local-browser socket failure still means no rendered-browser verification claim.
+
+### 2026-09-16 04:52 UTC — handoff reviewed and merged
+
+- Delivered the requested six-file guide at `docs/kb-handoff/2026-09-15/README.md` via PR #136,
+  merge `eb01fe1f1e74eab03aca2295879776a7f9f72b6e` (documentation head9bdd2bc). Independent review
+  cleared all seven changed files after correcting the issue-register blocker extraction;
+  #131 depends on129, while67/97 are parent trackers. All94issues/41priorPRs,11snapshotworktrees,
+  14local branches/15cached remote refs and114local links were checked. No implementation tests
+  were rerun. Removed only the temporary docs worktree and its local/remote branch after merge.
+- No implementation issue merged or new follow-up opened this session. Last implementation
+  remains131/PR133; current PhaseA/A2; score1/5hard gates and3/30objectives, O1/O2/O30. Phase and
+  system acceptance remain incomplete. The handoff inventory is explicitly pre-documentation;
+  this entry records its delivery PR and cleanup rather than rewriting that snapshot.
+- All five unfinished KB worktrees retain their exact source heads and dirty status from the
+  preceding entry; drafts93/94/95 remain open and95stacked on93. #33/#132 have no PR. #134/#135
+  have no worktree/code. Ten protected main preview hashes match exactly after merge. Final
+  check retained at~/.cache/lysilogy/handoff-20260915/delivery-check.json; validation.json records
+  the documentation checks. Unrelated reader worktrees, corpus and data roots were untouched.
+- Next action on implementation resumption: first restore the20GiBfree-space floor (11.99GiB
+  observed), verify effective access to the four already-approved hosts after terminal-side
+  repair/restart, and separately audit132collector-v2 before its remaining final steps. No
+  downloads/native queues remained at prior pause and none were started here. Strategy/phase
+  changes and the three extra host grants remain proposals; no new credential/sudo block is known.
