@@ -13,6 +13,31 @@ Consolidated status, worktree/branch inventory and continuation guide:
 [2026-09-15 KB handoff](kb-handoff/2026-09-15/README.md). It is a dated snapshot;
 the session log below remains the authority for subsequent progress.
 
+## Decisions of 2026-09-15
+
+These supersede any conflicting rule or exit criterion below. Current state and the milestone
+order live in [kb-status.md](kb-status.md); this file keeps the design order, file ownership and
+dependencies as reference.
+
+1. **#97 is a reported metric, not a gate.** The approximately 500-paper K1 target no longer
+   blocks any phase exit or merge. Automatic LaTeX truth admission (0 of 1,000 papers in three
+   full runs) is retired as the coverage path; figure/table truth grows through the reader's
+   grading mode (#137, [contract](../eval/graded-objects-contract.md)).
+2. **Merge-sufficient truth is a complete reviewed cohort of a handful of papers**, with every
+   metric miss recorded and followed up. The detector-before-truth rule stands; its truth
+   requirement is met by the graded cohort or an existing limited release.
+3. **Milestones replace the phase barrier.** M0 grading tool; M1 vertical slice
+   (#33 → #25 → #39 → #38 exact-key matcher only → #40 → #42 → #44) ending in a Work page and a
+   deterministic `kb rebuild`; M2 remaining object detectors, the Figures tab and the 10k scale
+   fixes; later milestones follow the Phase C and D dependency order. Phase A is not declared
+   complete and does not need to be.
+4. **One review per PR.** Receipts, SHA-256 evidence tables and independent audits are reserved
+   for phase and system acceptance reports. Truth additions are data PRs.
+5. **Provider truth (K2, K4, K5, K7) is built small by the issue that consumes it.** #71/#72
+   builders stay on their branches until #46 or #62 needs them.
+6. **The session log is archived.** Append one short paragraph per merged PR; keep
+   `kb-status.md` current instead of narrating state here.
+
 ## Working rules for every issue
 
 1. **Orient.** Read the issue, its design section in `knowledge-base-plan.md`, this file's notes for
