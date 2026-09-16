@@ -15,6 +15,7 @@ const COMMANDS = [
   ["experiment", "Compare two learning-ramp prompts blind"],
   ["supercut", "Ask Lysilogos for a ten-paragraph or six-page cut"],
   ["references", "Save citations, find papers, and connect evidence"],
+  ["grade", "Grade the next queued paper’s figures and tables"],
   ["home", "Open the paper library home"],
   ["library", "Toggle the paper library"],
   ["switch", "Fuzzy-find another article"],
