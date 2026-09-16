@@ -1,0 +1,49 @@
+.pdf-object-box { position: fixed; z-index: 88; box-sizing: border-box; border: 2px solid #e0a626; background: #e0a62614; pointer-events: none; }
+.pdf-object-box[data-state="correct"] { border-color: #3fae5a; background: #3fae5a14; }
+.pdf-object-box[data-state="region"] { border-color: #3b82f6; background: #3b82f614; }
+.pdf-object-box[data-state="reject"] { border-style: dashed; border-color: #d64545; background: #d6454514; }
+.pdf-object-box[data-state="addition"] { border-color: #8b5cf6; background: #8b5cf614; }
+.pdf-object-box[data-focused="true"] { z-index: 89; border-width: 4px; box-shadow: 0 0 0 2px #fff9, 0 0 14px #0009; }
+.pdf-object-badge, .pdf-object-anchor {
+  pointer-events: auto;
+  border: 0;
+  border-radius: 3px;
+  padding: 0 6px;
+  background: #e0a626;
+  color: #1b1503;
+  font: bold 11px/18px ui-monospace, monospace;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 1px 4px #0006;
+}
+.pdf-object-badge { position: absolute; left: -2px; top: -20px; }
+.pdf-object-box[data-focused="true"] .pdf-object-badge { left: -4px; top: -22px; outline: 2px solid #fff; }
+.pdf-object-anchor { position: fixed; z-index: 89; transform: translateY(-100%); }
+.pdf-object-box[data-state="correct"] .pdf-object-badge, .pdf-object-anchor[data-state="correct"] { background: #3fae5a; color: #062a10; }
+.pdf-object-box[data-state="region"] .pdf-object-badge, .pdf-object-anchor[data-state="region"] { background: #3b82f6; color: #fff; }
+.pdf-object-box[data-state="reject"] .pdf-object-badge, .pdf-object-anchor[data-state="reject"] { background: #d64545; color: #fff; }
+.pdf-object-box[data-state="addition"] .pdf-object-badge, .pdf-object-anchor[data-state="addition"] { background: #8b5cf6; color: #fff; }
+.pdf-object-anchor[data-focused="true"] { outline: 2px solid #fff; }
+.pdf-object-grading[data-drawing="true"] .pdf-object-badge, .pdf-object-grading[data-drawing="true"] .pdf-object-anchor { pointer-events: none; }
+.pdf-object-drag { position: fixed; z-index: 90; pointer-events: none; border: 2px dashed #8b5cf6; background: #8b5cf624; }
+.pdf-object-grading-status {
+  position: fixed;
+  z-index: 91;
+  display: grid;
+  gap: 3px;
+  padding: 9px 36px 9px 12px;
+  border: 1px solid #928258;
+  border-radius: 6px;
+  background: #24231ff5;
+  color: #fff7db;
+  box-shadow: 0 2px 12px #0004;
+  font-size: 12px;
+}
+.pdf-object-grading-status span { overflow-wrap: anywhere; max-height: 4.5em; overflow: auto; }
+.pdf-object-grading-status .pdf-object-message { color: #ffd98a; }
+.pdf-object-grading-status em { font-style: normal; opacity: .75; }
+.pdf-object-grading-status em[data-save-state="conflict"], .pdf-object-grading-status em[data-save-state="error"] { color: #edb7a6; opacity: 1; }
+.pdf-object-grading-status em[data-save-state="dirty"], .pdf-object-grading-status em[data-save-state="saving"] { color: #ffd98a; }
+.pdf-object-grading-status button { position: absolute; right: 5px; top: 3px; color: inherit; background: transparent; border: 0; font-size: 20px; cursor: pointer; }
+.pdf-reader[data-object-drawing] .pdf-viewport { cursor: crosshair; user-select: none; }
+.pdf-reader[data-object-drawing] .pdf-text-layer { pointer-events: none; }

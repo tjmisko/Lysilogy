@@ -16,6 +16,8 @@ use crate::{
     store::write_atomic,
 };
 
+pub mod grades;
+
 pub const OBJECTS_FILE: &str = "objects.json";
 pub const ENRICHMENT_FILE: &str = "objects-enrichment.json";
 pub const SCHEMA_VERSION: u16 = 1;

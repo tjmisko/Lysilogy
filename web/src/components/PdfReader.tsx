@@ -1,6 +1,7 @@
 import { flushSync } from "react-dom";
 import { PdfSourceLineNumbers, PdfSourceMarks } from "./PdfSourceMarks";
 import { usePdfLinkHints } from "./PdfLinkHints";
+import { OBJECT_GRADING_KEY, usePdfObjectGrading } from "./PdfObjectGrading";
 import { usePdfSourceTools, type SourceMark } from "./PdfSourceTools";
 import { sectionPageCrop, type SectionCrop } from "../lib/sectionCrop";
 import { cropTextLayer } from "../lib/cropTextLayer";
@@ -58,6 +59,7 @@ type PdfReaderProps = {
   pageLayouts?: LayoutPage[];
   section?: PaperSection;
   onOpenFullPaper?: (page: number) => void;
+  onOpenPaper?: (id: string) => void;
   onZoom?: (delta: number) => void;
   onReturnToMap?: () => void;
   onGloss?: () => void;
@@ -339,6 +341,7 @@ export function PdfReader({
   pageLayouts,
   section,
   onOpenFullPaper,
+  onOpenPaper,
   onZoom,
   onReturnToMap,
   onGloss,
@@ -405,6 +408,12 @@ export function PdfReader({
   const linkActive = linkHints.active;
   const linkQuit = linkHints.quit;
   const linkOwnsPageJump = linkHints.ownsPageJump;
+  const paperId = useMemo(() => { const match = /^\/api\/papers\/([^/?#]+)\/source(?:[?#]|$)/u.exec(url); return match?.[1] === undefined ? null : decodeURIComponent(match[1]); }, [url]);
+  const grading = usePdfObjectGrading({ paperId, url, page, document: pdfDocument, root: readerRef, enabled: keyboardEnabled && pageSubset === undefined,
+    context: `${flow}:${axis}:${fit}:${visualFit}:${zoom}:${containerWidth}:${containerHeight}`, loadIndex: sourceTools.loadIndex, onPage, onOpenPaper });
+  const gradingKey = grading.onKey;
+  const gradingActive = grading.active;
+  const gradingQuit = grading.quit;
 
   useEffect(() => {
     if (flow !== "continuous") return;
@@ -486,6 +495,10 @@ export function PdfReader({
       }
       const prefixed = pendingG.current !== null;
       clearPendingG();
+      // Grading owns every key while active, including f; otherwise link hints keep first refusal.
+      if ((gradingActive || event.key === OBJECT_GRADING_KEY && !linkActive && !sourceTools.cursorMode && !sourceTools.visualMode && !sourceTools.localMode) && flushSync(() => gradingKey(event))) {
+        event.preventDefault(); event.stopImmediatePropagation(); return;
+      }
       if ((linkActive || event.key === "f" || event.ctrlKey && event.key === "o") && flushSync(() => linkKey(event))) {
         event.preventDefault(); event.stopImmediatePropagation(); return;
       }
@@ -529,7 +542,7 @@ export function PdfReader({
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [availablePages, axis, changeAxis, changeFit, changeFlow, clearPendingG, flow, keyboardEnabled, linkActive, linkKey, onGloss, onPage, page, sourceKey, sourceTools.cursorMode, sourceTools.visualMode, step]);
+  }, [availablePages, axis, changeAxis, changeFit, changeFlow, clearPendingG, flow, gradingActive, gradingKey, keyboardEnabled, linkActive, linkKey, onGloss, onPage, page, sourceKey, sourceTools.cursorMode, sourceTools.localMode, sourceTools.visualMode, step]);
 
   const handleTextLayer = useCallback(
     (pageNumber: number, viewport: PageViewport | null): void => {
@@ -642,6 +655,7 @@ export function PdfReader({
     if (node === null) return;
     const quit = (event: Event) => {
       if (flushSync(linkQuit)) { event.preventDefault(); return; }
+      if (flushSync(gradingQuit)) { event.preventDefault(); return; }
       if (pendingG.current !== null) { clearPendingG(); event.preventDefault(); return; }
       const closed = flushSync(sourceQuit);
       if (closed) { event.preventDefault(); return; }
@@ -649,13 +663,14 @@ export function PdfReader({
     };
     node.addEventListener("source-quit", quit);
     return () => node.removeEventListener("source-quit", quit);
-  }, [clearPendingG, clearSelection, linkQuit, selectionState, sourceQuit]);
+  }, [clearPendingG, clearSelection, gradingQuit, linkQuit, selectionState, sourceQuit]);
 
   return (
     <section ref={readerRef} className="pdf-reader" tabIndex={-1} aria-label={`PDF: ${title}`} data-flow={flow} data-axis={axis} data-fit={fit}
       data-fit-bounds={visualFit ? "visual" : "page"}
-      data-source-local-mode={linkHints.active || sourceTools.localMode || selectionState !== null ? "true" : undefined}
+      data-source-local-mode={linkHints.active || gradingActive || sourceTools.localMode || selectionState !== null ? "true" : undefined}
       data-link-hints={linkHints.active ? "true" : undefined}
+      data-object-grading={gradingActive ? "true" : undefined}
       data-source-visual={keyboardEnabled && sourceTools.visualMode ? "true" : undefined}
       data-source-cursor={keyboardEnabled && sourceTools.cursorMode ? "true" : undefined}
       data-line-numbers={sourceTools.cursorMode ? sourceTools.lineNumberMode : undefined}
@@ -756,6 +771,7 @@ export function PdfReader({
       </div>
       {sourceTools.panel}
       {linkHints.panel}
+      {grading.panel}
       {selectionState !== null && (
         <div
           className="pdf-selection-menu"
