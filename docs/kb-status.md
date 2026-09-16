@@ -4,13 +4,20 @@ One page, kept current. The [phase plan](knowledge-base-phases.md) holds the des
 file ownership; its session log is an archive. Update this file in the same PR as any change it
 describes.
 
-Last updated: 2026-09-15.
+Last updated: 2026-09-16.
+
+## Branch layout (2026-09-16)
+
+`main` is the pre-knowledge-base reader at `ade1486`, the merge of PR #10. Every KB commit from
+the plan (#66) through the grading tool (#139) and home paging (#140) lives on
+`integration/knowledge-base`. Create KB worktrees from that branch and target PRs at it. The
+KB returns to `main` by an ordinary merge when the user asks.
 
 ## Where things stand
 
 | Area | State |
 | --- | --- |
-| Merged | A1 foundations (#19 #20 #24 #34 #63 #68 #69), name/title normalizers (#35 #36), figure/table detector fixes, LaTeX truth releases V1–V5 (11 papers), evaluation harness, 10,951-PDF corpus with native indexes. |
+| Merged (on integration) | Grading tool #137/#139, home paging and preview cache #140, plan decisions #138, A1 foundations (#19 #20 #24 #34 #63 #68 #69), name/title normalizers (#35 #36), figure/table detector fixes, LaTeX truth releases V1–V5 (11 papers), evaluation harness, 10,951-PDF corpus with native indexes. |
 | Scorecard | 1/5 gates (G5), 3/30 objectives (O1 0.99, O2 0.89 on 50 regions; O30). Everything else unavailable. |
 | Branches | #25 bibliography (draft #94, done on its cohort, title accuracy 30/35 tracked in #103); #33 SQLite store (no PR, 16 shallow compile errors, never compiled); #132 formal truth V6 (no PR); #71/#72 provider truth builders (drafts #93/#95). |
 | Environment | crates.io, Crossref and OpenAlex reachable; 111 GiB free. The handoff's network/disk blockers were Codex-sandbox artifacts. |
@@ -36,7 +43,7 @@ Last updated: 2026-09-15.
 
 ## Next actions
 
-1. Finish and merge M0 (branch `feat/object-grading`).
+1. Grade papers with the reader (M0 is merged on the integration branch); run `export`, `measure`, `report`.
 2. Fix the 16 compile errors on `feat/e2.1-kb-store`, add the unavailable-KB startup state, run
    its tests, open the PR.
 3. Merge #25 with #103 as the recorded miss.
