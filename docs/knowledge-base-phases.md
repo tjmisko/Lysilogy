@@ -9,6 +9,10 @@ Tracking: [GitHub project 12](https://github.com/users/tjmisko/projects/12). Epi
 and #67.
 Issue numbers below link sub-issues to their design sections.
 
+Consolidated status, worktree/branch inventory and continuation guide:
+[2026-09-15 KB handoff](kb-handoff/2026-09-15/README.md). It is a dated snapshot;
+the session log below remains the authority for subsequent progress.
+
 ## Working rules for every issue
 
 1. **Orient.** Read the issue, its design section in `knowledge-base-plan.md`, this file's notes for
@@ -7796,3 +7800,39 @@ date, last merged issue, in-flight branches and their state, next action, and op
   The previous detailed strategy checkpoint records exact heads/receipts, proposed scheduling and
   setup scripts. Neither the phase-order change nor three additional host grants is approved.
   The already-approved four-host grants still require terminal-side application and restart.
+
+### 2026-09-16 04:49 UTC — complete Markdown handoff requested (September 15 local)
+
+- User requested a full guide/status dump with worktrees, branches and explicit working/not-working
+  details. Created six linked Markdown files at `docs/kb-handoff/2026-09-15/`, starting with
+  `README.md`: implementation, evaluation/corpus, every issue/PR, every worktree/ref, and operations/
+  resume instructions. Inventory captured 04:34:30 UTC at main4972d63. It includes94issues/41PRs,
+  32closed KB implementation/follow-up issues, five unfinished KB worktrees and drafts93/94/95.
+  Temporary docs branch `docs/kb-handoff-20260915` is being reviewed separately before delivery.
+- No implementation issue merged or follow-up opened during this handoff. PhaseA/A2, last merged
+  implementation131/PR133 at6059dcfc, score1/5gates and3/30objectives O1/O2/O30. Other metrics are
+  unavailable; historical scale misses stay explicit. Main scorecard still citesV4; V5/main and
+  V6/branch measurements are separate retained evidence. No phase/system exit or final report.
+- In-flight source heads remain #25 feat/e1.2-bibliography201c53c/draft94; #33
+  feat/e2.1-kb-store905c341/noPR; #71 feat/e8.4-reference-truthd5e12aa/draft93; #72
+  feat/e8.5-person-labelsc867ec6/draft95 (base is71); #132 feat/e8.3-formal-trancheb4ff5b9/noPR,
+  no upstream. #132 has dirty collector input and two untracked evidence directories; #33 has
+  dirty.gitignore and ignored resume notes. Preserve them. #134/#135 remain proposals with no
+  worktree/code. All paths/full hashes/dirty files are in the handoff.
+- Next implementation action remains separate audit of132collector-v2,117historical comparison,
+  owningCLIafter-check, ordinary latest-main integration, final gates/report/draftPR/review/merge.
+  Implementation remains paused for strategic discussion; no phase-order/coverage change or
+  three additional host grants was adopted. Already-approved four-host access was last checked
+  September14 and remains unverified after terminal-side repair/restart; not re-probed here.
+- New storage observation:12,875,173,888free bytes on/home (11.99GiB), below20GiBfloor. No large
+  build/download started. Active targets total about3.3GiB; retained cache about39GiB contains
+  evidence/data and must not be blanket-deleted. No cleanup performed. Corpus10951PDF/1000source
+  and native audit remain retained externally; no download/index job remained at prior pause.
+  Current process namespace cannot certify all host jobs; no new implementation job started here.
+- Fresh handoff checks: Git/GitHub inventory, file/link consistency, eight132receipt hashes,
+  published release counts and all ten protected preview hashes. No Rust/frontend/model or live
+  app rerun for documentation. Local raw inventory is~/.cache/lysilogy/handoff-20260915/.
+- The requested dark HTML revision exists at~/.cache/lysilogy/artifacts/kb-technical-explanation.html,
+  current SHA256af70e9e4c58707266da871a3819074c8a1ae0252f39288aaec6eb02942fd2b30,
+  superseding the earlier light-artifact hash in the September14entry. Static validation passed;
+  local-browser socket failure still means no rendered-browser verification claim.
