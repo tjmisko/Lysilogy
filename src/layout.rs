@@ -1,3 +1,7 @@
+mod reading;
+
+pub(crate) use reading::parse_pages as parse_reading_bbox_pages;
+
 use crate::{
     Result,
     domain::{
@@ -53,24 +57,7 @@ fn parse_document(input: &str, merge_fragments: bool) -> Result<DocumentLayout> 
 
         let number = u32::try_from(pages.len() + 1).unwrap_or(u32::MAX);
         let parsed = parse_page_tokens(&input[tag_end + 1..close], width, height, merge_fragments)?;
-        let tokens = parsed
-            .into_iter()
-            .enumerate()
-            .map(|(index, token)| LayoutToken {
-                index: u32::try_from(index).unwrap_or(u32::MAX),
-                text: token.text,
-                line: token.line,
-                rects: token.rects,
-            })
-            .collect::<Vec<_>>();
-        let sentences = segment_sentences(number, &tokens);
-        pages.push(LayoutPage {
-            number,
-            width,
-            height,
-            tokens,
-            sentences,
-        });
+        pages.push(make_layout_page(number, width, height, parsed));
         cursor = close + "</page>".len();
     }
 
@@ -83,6 +70,27 @@ fn parse_document(input: &str, merge_fragments: bool) -> Result<DocumentLayout> 
         schema_version: LAYOUT_SCHEMA_VERSION,
         pages,
     })
+}
+
+fn make_layout_page(number: u32, width: f32, height: f32, parsed: Vec<ParsedToken>) -> LayoutPage {
+    let tokens = parsed
+        .into_iter()
+        .enumerate()
+        .map(|(index, token)| LayoutToken {
+            index: u32::try_from(index).unwrap_or(u32::MAX),
+            text: token.text,
+            line: token.line,
+            rects: token.rects,
+        })
+        .collect::<Vec<_>>();
+    let sentences = segment_sentences(number, &tokens);
+    LayoutPage {
+        number,
+        width,
+        height,
+        tokens,
+        sentences,
+    }
 }
 
 fn parse_page_tokens(

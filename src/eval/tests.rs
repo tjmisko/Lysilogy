@@ -197,6 +197,24 @@ fn evidence(dir: &Path, name: &str) -> EvidenceFile {
         version: "fixture-v1".into(),
     }
 }
+#[test]
+fn should_hash_complete_evidence_when_bytes_cross_scratch_boundaries() {
+    use sha2::{Digest, Sha256};
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("child.json");
+    for length in [0_usize, 8191, 8192, 8193, 1_048_577] {
+        let bytes: Vec<u8> = (0..length).map(|index| index.to_le_bytes()[0]).collect();
+        fs::write(&path, &bytes).unwrap();
+        let expected = format!("{:x}", Sha256::digest(&bytes));
+        assert_eq!(measurement::digest(&path).unwrap(), expected);
+        if !bytes.is_empty() {
+            let mut changed = bytes;
+            *changed.last_mut().unwrap() ^= 1;
+            fs::write(&path, &changed).unwrap();
+            assert_ne!(measurement::digest(&path).unwrap(), expected);
+        }
+    }
+}
 fn input(dir: &Path) -> Input {
     let truth = evidence(dir, "truth.json");
     let implementation = evidence(dir, "collector.rs");

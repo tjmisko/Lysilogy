@@ -98,6 +98,7 @@ actual bytes. The first-fetch commit `a975703` and message-only amended integrat
 have identical Git trees. Selection stayed unchanged; the receipt records exact combined source
 hashes and the full bounded log. All 82 combined offline corpus tests pass.
 
-The parent has resumed priority eval-tier PDF/source downloads from that reviewed source.
-Complete K0 downloads and full-tier verification remain outstanding. Ordinary download resume
-preserves the admitted corpus; `recover-selection` must never be run again after artifact admission.
+At this checkpoint the parent resumed priority eval-tier PDF/source downloads from that reviewed
+source. The later [complete K0 verification report](2026-09-13-kb-corpus-complete.md) records the
+finished downloads and full-tier verification. Ordinary download resume preserves the admitted
+corpus; `recover-selection` must never be run again after artifact admission.

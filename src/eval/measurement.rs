@@ -5,6 +5,7 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeMap,
     fs,
+    io::Read,
     path::{Component, Path},
 };
 
@@ -158,8 +159,19 @@ pub fn safe_file(root: &Path, relative: &str) -> Result<std::path::PathBuf> {
 }
 
 pub fn digest(path: &Path) -> Result<String> {
-    let bytes = fs::read(path).map_err(|error| Error::io(path, error))?;
-    Ok(format!("{:x}", Sha256::digest(bytes)))
+    let mut file = fs::File::open(path).map_err(|error| Error::io(path, error))?;
+    let mut hash = Sha256::new();
+    let mut scratch = [0_u8; 8192];
+    loop {
+        let count = file
+            .read(&mut scratch)
+            .map_err(|error| Error::io(path, error))?;
+        if count == 0 {
+            break;
+        }
+        hash.update(&scratch[..count]);
+    }
+    Ok(format!("{:x}", hash.finalize()))
 }
 
 pub fn verify(root: &Path, evidence: &EvidenceFile) -> Result<bool> {

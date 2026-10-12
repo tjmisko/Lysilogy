@@ -1,60 +1,72 @@
 use std::collections::BTreeMap;
 
-use super::{Provenance, SourcePage, SourceWord};
-use crate::{Result, domain::TextRect, layout::parse_verbatim_bbox_layout};
+use super::{IndexGap, Provenance, SourcePage, SourceWord};
+use crate::{Result, domain::TextRect, layout::parse_reading_bbox_pages};
 
-pub(super) fn parse(xml: &str) -> Result<Vec<SourcePage>> {
-    let layout = parse_verbatim_bbox_layout(xml)?;
-    let block_maps = block_maps(xml);
-    Ok(layout
-        .pages
-        .into_iter()
-        .enumerate()
-        .map(|(index, page)| SourcePage {
-            number: page.number,
-            width: page.width,
-            height: page.height,
-            words: page
-                .tokens
-                .into_iter()
-                .filter_map(|token| {
-                    let rect = token.rects.first().copied()?;
-                    Some(SourceWord {
-                        text: token.text,
-                        line: token.line,
-                        block: block_maps
-                            .get(index)
-                            .and_then(|blocks| blocks.get(token.line as usize))
-                            .copied()
-                            .unwrap_or(token.line),
-                        rect,
-                    })
-                })
-                .collect(),
-            provenance: Provenance::Native,
-            confidence: None,
-        })
-        .collect())
+pub(super) struct NativePages {
+    pub pages: Vec<SourcePage>,
+    pub gaps: Vec<IndexGap>,
 }
 
-fn block_maps(xml: &str) -> Vec<Vec<u32>> {
-    xml.split("<page ")
-        .skip(1)
-        .map(|page| {
-            let content = page.split("</page>").next().unwrap_or(page);
-            let mut block = 0_u32;
-            let mut blocks = Vec::new();
-            for tag in content.split('<') {
-                if tag.starts_with("block ") {
-                    block += 1;
-                }
-                if tag.starts_with("line ") {
-                    blocks.push(block);
-                }
+pub(super) fn parse(xml: &str) -> Result<NativePages> {
+    let layout = parse_reading_bbox_pages(xml)?;
+    let mut gaps = Vec::new();
+    let pages = layout
+        .into_iter()
+        .map(|parsed| {
+            let page = parsed.page;
+            let provenance = if let Some(error) = parsed.failure {
+                gaps.push(IndexGap {
+                    page: page.number,
+                    reason: format!(
+                        "Native page extraction failed; entire native page withheld: {error}"
+                    ),
+                });
+                Provenance::Unavailable
+            } else {
+                Provenance::Native
+            };
+            let blocks = block_map(parsed.content);
+            SourcePage {
+                number: page.number,
+                width: page.width,
+                height: page.height,
+                words: page
+                    .tokens
+                    .into_iter()
+                    .filter_map(|token| {
+                        let rect = token.rects.first().copied()?;
+                        Some(SourceWord {
+                            text: token.text,
+                            line: token.line,
+                            block: blocks
+                                .get(token.line as usize)
+                                .copied()
+                                .unwrap_or(token.line),
+                            rect,
+                        })
+                    })
+                    .collect(),
+                provenance,
+                confidence: None,
             }
-            blocks
         })
-        .collect()
+        .collect();
+    Ok(NativePages { pages, gaps })
+}
+
+fn block_map(content: &str) -> Vec<u32> {
+    let mut block = 0_u32;
+    let mut blocks = Vec::new();
+    for tag in content.split('<') {
+        if tag.starts_with("block ") {
+            block += 1;
+        }
+        if tag.starts_with("line ") {
+            blocks.push(block);
+        }
+    }
+    blocks
 }
 
 pub(super) fn usable(page: &SourcePage) -> bool {

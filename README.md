@@ -413,6 +413,36 @@ browser loading is deliberately avoided, so the source site does not need permis
 or byte-range behavior. Private, loopback, link-local, credentialed, and nonstandard-port URLs are
 rejected.
 
+## Grading figures and tables
+
+Detector truth grows by grading what the reader found, not by constructing labels elsewhere.
+Point the server at the corpus data root and open any paper:
+
+```sh
+python3 scripts/eval/graded-objects.py queue --selection ~/Corpora/arxiv/selection.json
+./target/debug/lysilogy --library ~/Corpora/arxiv/pdf --data ~/.cache/lysilogy/arxiv-kb-data \
+  --notes ~/.cache/lysilogy/kb-inspection-notes serve --bind 127.0.0.1:7321 --web web/dist
+```
+
+In the PDF view press `G`, or type `:grade` to open the next paper in the stratified queue. Every
+detected figure and table gets a box; `j`/`k` walk them across pages. `y` confirms the box, `n`
+rejects the object, `e` lets you drag a corrected box, and `a` adds an object the detector missed
+(drag the box, pick figure or table, type the printed number, confirm the caption the reader
+proposes). `c` marks the paper complete once every object has a verdict; `N` saves and opens the
+next paper. Grades autosave to `papers/<id>/objects-grades.json` under the data root.
+
+To turn complete grades into a scored release and see what the detector gets wrong:
+
+```sh
+python3 scripts/eval/graded-objects.py export
+python3 scripts/eval/graded-objects.py measure --build --executable target/debug/examples/object_metrics
+python3 scripts/eval/graded-objects.py report
+```
+
+`measure` republishes O1/O2 in `eval/inputs/objects/figure-table.json`; `report` lists each
+unmatched prediction and missed object by page and label. The format and rules are in
+[`eval/graded-objects-contract.md`](eval/graded-objects-contract.md).
+
 ## Artifacts on disk
 
 Everything generated lives beneath the data root:

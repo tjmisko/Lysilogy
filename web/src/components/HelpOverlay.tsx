@@ -69,6 +69,20 @@ const GROUPS = [
     ],
   },
   {
+    title: "PDF · Grade objects",
+    commands: [
+      ["G · :grade", "Grade the detector's figures and tables here / open the next queued paper"],
+      ["j / k", "Next / previous object, turning pages as needed"],
+      ["y / n / u", "Mark the detector box correct / reject it / clear the verdict"],
+      ["e · drag", "Draw the corrected box for this object"],
+      ["a · drag · f / t · label ↵ · ↵", "Add a missed object: draw, choose kind, type its printed label, confirm the caption (c clears it)"],
+      ["x", "Remove the focused addition"],
+      ["c", "Toggle complete once every object has a verdict"],
+      ["N", "Save, then open the next ungraded paper"],
+      ["? · Esc / q", "Show the key list · leave grading (changes autosave)"],
+    ],
+  },
+  {
     title: "Notes · Vim",
     commands: [
       ["i / a / o · Esc", "Enter Insert mode / return to Normal without closing notes"],

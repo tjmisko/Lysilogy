@@ -123,6 +123,13 @@ resolve. A split mints a new ID and records which observations moved.
 - **Bibliography entries** resolve through DOI/arXiv extraction, then Crossref
   `query.bibliographic`, Semantic Scholar `/paper/search/match`, and OpenAlex search, with a model
   parse only as a last resort.
+- **Bibliography author labels** preserve an explicitly printed institutional or collective
+  first author as a known literal for field extraction. This does not establish a Person or an
+  individual authorship identity. The independently observed institution must not become an
+  unknown field merely because no individual is named. Composed/decomposed accent presentations
+  retain their raw source/native evidence and use the declared Unicode comparison rule. This
+  resolves the manual K1 field-role question without changing O9's target or denominators;
+  see the 2026-09-13 sixth-paper review recorded in the phases session log.
 
 ## Metrics and objectives
 
@@ -340,6 +347,85 @@ invalidate objects when the reading-index generation changes; should serialize e
 anchors.
 
 Blocked by: none
+
+Measured detector refresh decision (#101, 2026-09-13): preserve native schema-6 index bytes,
+UTF-16 anchors, and exact index ETags. Current `ObjectsArtifact::from_reading_index` recomputes
+figure/table predictions from the immutable native input, with separately versioned detector
+metadata and a generation hash binding that version to the native ETag. The objects cache/API
+refreshes old derived generations; the legacy reading-index response retains its historical
+embedded `figures` field. Measurements retain the exact new prediction artifact and hashed native
+basis, without editing frozen K1 labels/indexes or changing O1/O2 matching and denominators.
+Roman captions may be recovered from body/footnote paragraphs with explicit printed separators;
+physical prose continuation is rejected. Diagram/table regions use observed label/cell extents
+and exclude captions/page whitespace. Regions remain candidates, and text-poor graphics may
+remain unavailable or incomplete; real O2 measurement determines the remaining gap.
+
+The first refreshed measurement recovered all15 caption identities but exposed eight raster
+plots with no native-label geometry (O1=1.0/O2=0.0; retained exploratory receipt, not acceptance).
+The authorized second iteration adds optional bounded image placements from the exact source
+PDF through a shared async production/evaluation factory. Graphics provenance/versioning is
+separate from the unchanged native index. Missing/unsupported graphics keep explicit status and
+native fallback; raw trace evidence remains only in the external cache. Exact tool/PDF/native
+hashes, conservative clip/state handling and per-paper limits are specified in
+`eval/object-metrics-contract.md`. The original O1/O2 truth, matching, all15 region denominators
+and .90/.75 targets remain fixed; a new measurement is required before acceptance.
+
+
+Expanded-cohort repair (#106) preserves that boundary with detector version3 and graphics
+version2: only explicitly supported opaque full-page groups and exact rectangular clipping
+paths may expose additional image placements. Image masks remain unavailable in the first
+measured iteration. Repeated numeric columns support below-grid table captions; one numbered
+heading cannot establish a table. The short sentence-continuation caption guard is independent
+of the longer prose barrier that bounds diagram regions. Both immutable K1 cohorts are measured
+separately, with their original matching and complete denominators retained.
+When only raster inserts are supported within an independently enclosing native diagram,
+multiple small nonnumeric labels above and below the inserts retain that native extent.
+This evidence does not infer the contents or bounds of unsupported masks.
+
+The mask follow-up enables the existing `serde_json/float_roundtrip` feature after a
+retained reproduction showed its default binary64 decoder shift valid native transform
+decimals by one ULP. This adds no dependency and retains exact coordinate comparisons;
+full gates and native commitments cover the feature's global JSON-decoding scope.
+
+Mask follow-up (#111) adds optional, separately fingerprinted decoded opacity to graphics
+version3. The XML trace still owns page/state/event framing. A mask may supply a candidate
+envelope only from all its nonzero pixel cells, with an identical attached mask and independently
+opaque base image in the same coordinates. Nested masks, extra cropping, interpolation and
+unknown transparency remain excluded; holes are not declared painted. The fixed local adapter
+and resource wrapper are hashed into graphics cache identity, and raw opacity stays external.
+Both immutable cohorts, native indexes, caption ownership and scoring remain unchanged.
+The detailed resource/provenance protocol and independent adversarial fixtures are recorded in
+`eval/object-metrics-contract.md`. Actual before/after measurement is required before merge.
+
+Contiguous caption ownership follow-up (#125) keeps the native schema and public object
+anchor shape unchanged. Detector5 may extend an uppercase stand-alone table label through
+its immediately adjacent uppercase title only with same-page, centered, single-line native
+geometry and an observed multi-column grid. Source gaps must contain only whitespace;
+heading/list/equation, prose, image and neighboring-caption barriers withhold the join.
+All fully owned caption paragraphs are excluded from body candidates. Unsupported joins
+preserve earlier label-only predictions or absence. Disjoint caption lines interleaved with
+other-column prose remain unresolved; body-member anchors are not caption membership.
+Actual complete v1/v2/v3/v4 measurements are required before merge, with unchanged truth,
+matching and .90/.75 targets. This does not broaden vector/image support.
+
+Vector support follow-up (#123) supplements native figure bodies with complete components
+from bounded final-page renderer pixels, rather than treating path/group/clip bounds as paint.
+Detector6/graphics5 retain native anchors and the existing image/table paths. A separate
+conservative trace gate permits proved rectangular clips, finite Normal groups and exactly
+one first-page-command identity device-colorspace declaration. Images, masks, unknown state
+and resource failures withhold the supplement. The first graphics4 measurement rejected that
+identity preamble and remains retained as a failed integration with unchanged outcomes.
+
+The fixed synthetic policy uses 144-dpi full-page components before any ownership filtering.
+Whole glyphs, complete captions, prose and table grids are barriers; compact component clusters
+must belong to exactly one caption window and cannot bridge barriers. Known native geometry
+gaps withhold this path. Missing native text can still produce a semantic false candidate, so
+the output remains a measured heuristic. Raster bytes, component records and source/tool/native
+bindings are retained within explicit time, memory, output and page-work limits. The complete
+15/23/29/50 cohorts retain every zero and regression; only the motivating t-SNE region improves.
+The detailed protocol and limits are in `eval/object-metrics-contract.md`, with actual evidence
+in [the report](experiment-reports/2026-09-14-kb-vector-regions.md). Truth, matching, targets and
+native indexes remain unchanged; the approximately 500-paper requirement in #97 remains open.
 
 ### E1.2 Backend bibliography extraction and parsing
 
@@ -1210,11 +1296,140 @@ Blocked by: none
 
 ### E8.3 arXiv LaTeX object truth
 
+Bounded release layout (#129, 2026-09-14): future reviewed releases may use a
+small canonical manifest and complete per-paper children, with serial isolated
+replay and collection. Each metric retains its own complete cohort and denominator;
+wholly ineligible selected rows retain their unscored inventory. Child hashes and
+full prediction/process evidence close the active metric input. Publication fails
+as a whole if any selected row fails. The [per-paper contract](../eval/k1-per-paper-contract.md)
+sets finite byte, structural JSON, memory, time and disk limits. The existing
+V1–V4 bytes and replay remain immutable; this mechanism leaves the future V5 pin
+disabled and admits no papers. Synthetic 500-record resource evidence does not
+establish the approximately 500 defensible corpus papers required by #97.
+
+Complete numbered-only construction (#131, 2026-09-14): use a separate explicit
+O3-only format for the frozen seven-equation 2404.17771v2 and 48-equation
+1911.08525v2 inventories. Both complete originals, source/native identity,
+independent full body/number geometry, finite whole-source visibility review and
+distinct final construction review are required. No partial paper denominator is
+published. Native corruption remains nonquote evidence; semantic linear fidelity
+is not inferred from identity. Preserve all other original/source records,
+unknowns and all fourteen candidate/failure dispositions unscored, including the
+explicit unresolved original section endpoint. The legacy O3–O7 overlay remains
+unchanged. Review the unpublished V5 twenty-module inventory before publication,
+preserve V1–V4 bytes/replay and existing paper semantics, and enumerate any new
+source/assembly provenance. This bounded addition does not relax #97's target or
+create an O3 detector score. Positive formal construction follows separately.
+
 Build K1 from the K0 `eval` tier: parse LaTeX sources (resolving `\input`/`\include`, custom
 `\newtheorem` names, `\label`/`\ref`/`\eqref`, `\cite`, `.bbl`/`\bibitem`) into truth objects,
 align them to the PDF by caption and text matching, drop papers whose alignment falls below a
 quality threshold, and record alignment confidence. Include a three-agent panel judging the top
 figures and tables for O11.
+
+K1 records overall per-paper alignment completeness separately from explicit exhaustive metric
+cohorts. A paper can supply complete figure/table truth while its separate bibliography or math
+inventory remains unsupported. Each metric requires its entire independently parsed inventory
+and all relevant links; missing members exclude the paper from that metric, never shorten its
+denominator. Source semantics that might hide an inventory exclude affected cohorts. Cohorts and
+all exclusions are frozen before detector evaluation. This clarifies the truth schema after an
+initial 25-paper pilot found useful complete figure/table inventories alongside unsupported math
+and bibliography forms; it does not lower any gate, objective or the approximately 500-paper
+target. See [the K1 cohort contract](../eval/latex-contract.md). Figure/caption alignment supplies
+no full-region O2 labels; O2 region evidence and the three-agent O11 panel remain independent.
+Before any panel votes or detector ranks are inspected, O11 arithmetic is fixed as mean top-three
+set overlap divided by three against each of three panelists over every frozen paper (denominator
+nine per paper). Only the first three model ranking positions count; duplicates, invalid IDs,
+missing choices and missing paper results keep their denominator and are not backfilled from
+positions four/five. Malformed rankings fail validation. Panel votes require three distinct valid
+source IDs; display-only consensus ordering cannot change this score or its 0.70 target.
+
+Staged publication decision (2026-09-13): after the complete frozen 1,000-paper automatic
+run produced no accepted metric cohorts, independently reviewed source/PDF annotations may
+establish an explicitly versioned limited K1 release covering every E1 object kind. The original
+approximately 500-paper target stays unchanged and unmet; [follow-up #97](https://github.com/tjmisko/Lysilogy/issues/97)
+tracks finite source capability and independently stratified coverage expansion. Both historical
+and current automatic runs, every omitted cohort, per-paper/per-kind denominators, strata and
+manual selection bias remain visible. This is a staged publication deviation, not broad K1 or
+system acceptance. Detector collectors must report the limited release version and cohort sizes.
+Complete reviewed zero-kind papers remain negative examples. Original annotations and automatic
+exclusions remain immutable; only compact independently derived labels are committed.
+
+Coverage expansion compatibility decision (#97, 2026-09-13): retain the twelve exact
+reviewed application modules for `k1-limited-v1` in a bounded, hash-pinned source bundle.
+Historical collectors select that version's isolated verifier, reproduce both original
+payloads from the original evidence, and record verifier/source/evidence fingerprints.
+Current parser improvements cannot silently alter old labels or invalidate replay by
+requiring old and new parser bytes to match. Unknown versions are rejected until their
+own reviewed construction is explicitly selected. This does not change the approximately
+500-paper target, source-semantic guards, or the two-paper release's limited scope.
+
+Bounded tranche decision (#105, 2026-09-13): a second manual protocol may admit
+independently complete kinds after both annotators first inspect the original source,
+native text and full PDF pages. A separate post-freeze source crosswalk and accepted
+review bind their original histories; annotators are never represented as having seen
+later parser output. The first codec supports complete direct figure/table/equation
+inventories and separately verified formal negatives, with typed reference ownership
+and independent body/number geometry. Unsupported positive formal/nested structures
+and bibliography cohorts remain omitted. Automatic exclusions are preserved. The
+three-paper `k1-limited-v2` retains fourteen fixed application modules and its own
+manifest/configuration/output pins, while v1 remains unchanged. The collector explicitly
+selects a version, keeps one active metric owner and archives prior observation/input
+bytes. Any baseline transition between overlapping cohorts requires an evidence-bound
+justification and separate old/new denominators; objective targets are unchanged.
+This bounded release closes #105 only. The approximately 500-paper requirement in #97
+and broad system acceptance remain open.
+
+Visual tranche decision (#115, 2026-09-13): a separate reusable codec validates
+independently reconciled visual inventories and formal negatives from the original
+annotation schemas, grounded producer assignment history and a distinct construction
+review. It preserves native UTF-16 membership, original 96-dpi region precision and
+explicit attached-note ownership without manufacturing empty math supplements.
+The fixed selection adds 2409.03655v1 only: four figures and two tables, twelve local
+references and one unresolved external subsection locator. Bibliography/citation
+evidence remains retained but supplies no new O8–O11 cohort. The separately pinned
+fifteen-module `k1-limited-v3` keeps all three prior compact rows and all v1/v2 files
+unchanged, yielding 29 visual regions across four papers. Its verified singleton
+page/rectangle region encoding is adapted explicitly only for v3 before unchanged
+strict geometry and IoU arithmetic; publication of metric inputs requires the full
+frozen O2 denominator. The original failed 23-value collector attempt is retained.
+This is limited coverage toward #97, whose approximately 500-paper target remains open.
+
+Visual-only pilot decision (#117, 2026-09-14): the separate finite visual codec adds
+O1/O2 only for the five remaining original pilot papers, retaining all original and
+current formal/math/reference/bibliography roles without manufacturing O3–O11
+eligibility. Distinct root construction reviews bind the two original annotators;
+source/release review is a separate role. Immutable sixteen-module `k1-limited-v4`
+preserves all 53 older files and four complete prior rows, yielding nine papers and
+50 visual regions. Its objects payload uses 991,418 of the unchanged 1,048,576-byte
+cap; further growth requires a reviewed layout/cap decision, never omitted records.
+Actual detector4 results are 44 TP / 4 FP / 6 FN, O1 .8979591836734694 and
+O2 .8826424973982893 over all 50 values (eight zeros, no unknowns). Exact old-paper
+outcomes justify the separately reviewed append-only cohort baseline transition;
+the failed unadjusted check remains evidence. Targets .90/.75 and hard gates are
+unchanged. O1 is below target and only 2/30 objectives are at target. #125 tracks
+split table captions and interleaved Figure3 caption ownership; #123 remains the
+separate vector-region follow-up. The historical 6f full1000 diagnostic is reused
+only through verified executed-source continuity, with no new execution claim.
+The [measured report](experiment-reports/2026-09-14-kb-visual-only-pilot.md) binds the
+complete denominator and limitations. #97's approximately 500-paper target stays open.
+
+The bounded #110 source-layout experiment uses an explicitly invoked Linux aarch64
+PDFLaTeX runner with fresh namespaces, a positive syscall filter, fixed read-only
+runtime/source mounts and finitely many writable output inodes. Exact input and
+runtime inventories, isolated source loading, resource/deadline limits and independent
+synthetic/launch review precede deposited-source execution. Fixed inodes make aggregate
+output bounded but intentionally leave arbitrary auxiliary-file and SyncTeX rename
+support unavailable. This tooling publishes no truth. The frozen availability-only ten
+papers produced one build and zero complete documents matching every original page at
+both96/192dpi, below the unchanged exploratory8-build/5-document criteria. No source,
+package or engine repair was attempted. Retained first-pass hashes do not preserve
+mutable bytes overwritten on pass2, and the original baseline CLI was not archived;
+these inspection limits are explicit. A later experiment first needs a separately
+reviewed complete runtime and reproduction measurement on the unchanged selection.
+The [measured report](experiment-reports/2026-09-13-kb-source-layout-probe.md) records
+the no-go, corrected verification wrapper, exact current metrics and durable evidence.
+No K1 coverage, truth-admission or system target is relaxed by this experiment.
 
 Acceptance: truth covers every E1 object kind; alignment quality is reported per paper; the suite
 runs offline from the corpus cache.

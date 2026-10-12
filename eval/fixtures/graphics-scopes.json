@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "purpose": "Independently specified geometric support/regression packet before source implementation or changed measurements; not K1 labels.",
+  "page": {
+    "number": 3,
+    "width": 600,
+    "height": 800
+  },
+  "cases": [
+    {
+      "name": "opaque_normal_group_preserves_page_coordinates",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></group></page></document>",
+      "sha256": "b24efe7cb76403333b86e02ca0c13c0d517c34b70ab2ee4e2920451659bba126",
+      "disposition": "supported",
+      "rects": [
+        {
+          "x_min": 40.0,
+          "y_min": 100.0,
+          "x_max": 140.0,
+          "y_max": 150.0
+        }
+      ],
+      "unsupported_images": 0
+    },
+    {
+      "name": "nested_opaque_group_retains_page_coordinates",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></group></group></page></document>",
+      "sha256": "d0dd18b2ecdf149cec9537655365b72e8ae5d6693eac17a7350232fb5eaabc10",
+      "disposition": "supported",
+      "rects": [
+        {
+          "x_min": 40.0,
+          "y_min": 100.0,
+          "x_max": 140.0,
+          "y_max": 150.0
+        }
+      ],
+      "unsupported_images": 0
+    },
+    {
+      "name": "rectangular_clip_intersects_group_image",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><clip_path winding=\"nonzero\" transform=\"1 0 0 1 0 0\"><moveto x=\"60\" y=\"110\"/><lineto x=\"120\" y=\"110\"/><lineto x=\"120\" y=\"140\"/><lineto x=\"60\" y=\"140\"/><closepath/></clip_path><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/><pop_clip/></group></page></document>",
+      "sha256": "6a95cb7e3530638af041963ca0e83a40333aa477d0bbedad0b0548d45ae8f620",
+      "disposition": "supported",
+      "rects": [
+        {
+          "x_min": 60.0,
+          "y_min": 110.0,
+          "x_max": 120.0,
+          "y_max": 140.0
+        }
+      ],
+      "unsupported_images": 0
+    },
+    {
+      "name": "clip_pop_restores_previous_image_extent",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><clip_path winding=\"nonzero\" transform=\"1 0 0 1 0 0\"><moveto x=\"60\" y=\"110\"/><lineto x=\"120\" y=\"110\"/><lineto x=\"120\" y=\"140\"/><lineto x=\"60\" y=\"140\"/><closepath/></clip_path><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/><pop_clip/><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></group></page></document>",
+      "sha256": "59ecbdbca2158dfeea8a271a2f864b6bb1d0c546c28b560891779649671fb369",
+      "disposition": "supported",
+      "rects": [
+        {
+          "x_min": 60.0,
+          "y_min": 110.0,
+          "x_max": 120.0,
+          "y_max": 140.0
+        },
+        {
+          "x_min": 40.0,
+          "y_min": 100.0,
+          "x_max": 140.0,
+          "y_max": 150.0
+        }
+      ],
+      "unsupported_images": 0
+    },
+    {
+      "name": "nested_known_clips_intersect_without_translation",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><clip_path winding=\"nonzero\" transform=\"1 0 0 1 0 0\"><moveto x=\"60\" y=\"110\"/><lineto x=\"120\" y=\"110\"/><lineto x=\"120\" y=\"140\"/><lineto x=\"60\" y=\"140\"/><closepath/></clip_path><clip_path winding=\"nonzero\" transform=\"1 0 0 1 0 0\"><moveto x=\"60\" y=\"110\"/><lineto x=\"100\" y=\"110\"/><lineto x=\"100\" y=\"140\"/><lineto x=\"60\" y=\"140\"/><closepath/></clip_path><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/><pop_clip/><pop_clip/></group></page></document>",
+      "sha256": "5e12c81859aa0a93c927ad394fcb649f6a79123783622542687048c7d8006876",
+      "disposition": "supported",
+      "rects": [
+        {
+          "x_min": 60.0,
+          "y_min": 110.0,
+          "x_max": 100.0,
+          "y_max": 140.0
+        }
+      ],
+      "unsupported_images": 0
+    },
+    {
+      "name": "actualtext_does_not_change_geometry",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><metatext type=\"actualtext\" txt=\"&lt;fill_image/&gt;\"><fill_text><span><g unicode=\"x\"/></span></fill_text></metatext><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></group></page></document>",
+      "sha256": "96d3fe4f5ae8c778caf9620a068b4f7f777416ed40133b1a25a7aac7edf093d2",
+      "disposition": "supported",
+      "rects": [
+        {
+          "x_min": 40.0,
+          "y_min": 100.0,
+          "x_max": 140.0,
+          "y_max": 150.0
+        }
+      ],
+      "unsupported_images": 0
+    },
+    {
+      "name": "unsupported_group_alpha",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\".5\"><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></group></page></document>",
+      "sha256": "fd01f341ee14001556ef96399ac2ff98ee089dc3abe0e3f4f6f95e4ffc62cbe3",
+      "disposition": "rejected_or_unsupported",
+      "rects": [],
+      "unsupported_images": 1
+    },
+    {
+      "name": "unsupported_group_blend",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Multiply\" alpha=\"1\"><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></group></page></document>",
+      "sha256": "44c134ced3805eaabb75e7ebd2e08d0506a8cb448c00853c3fb4da2e1d2c8e80",
+      "disposition": "rejected_or_unsupported",
+      "rects": [],
+      "unsupported_images": 1
+    },
+    {
+      "name": "unsupported_group_knockout",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"1\" blendmode=\"Normal\" alpha=\"1\"><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></group></page></document>",
+      "sha256": "ee43d5d513f17becefd05ad6b1bee375d704be28da03fdd3c2e0f6ae8c49f48b",
+      "disposition": "rejected_or_unsupported",
+      "rects": [],
+      "unsupported_images": 1
+    },
+    {
+      "name": "unsupported_group_isolation",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"0\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></group></page></document>",
+      "sha256": "182e5b35da70872384ec57b3e2fe75fbb087bc420ef3332f61ed97439b09deca",
+      "disposition": "rejected_or_unsupported",
+      "rects": [],
+      "unsupported_images": 1
+    },
+    {
+      "name": "unsupported_group_bbox",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 700\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></group></page></document>",
+      "sha256": "bbe63fe166697099410b967b8cfc3ba0ad9fce22578402423836558d1de78ab7",
+      "disposition": "rejected_or_unsupported",
+      "rects": [],
+      "unsupported_images": 1
+    },
+    {
+      "name": "group_cannot_consume_parent_clip",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><clip_path winding=\"nonzero\" transform=\"1 0 0 1 0 0\"><moveto x=\"60\" y=\"110\"/><lineto x=\"120\" y=\"110\"/><lineto x=\"120\" y=\"140\"/><lineto x=\"60\" y=\"140\"/><closepath/></clip_path><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><pop_clip/><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></group></page></document>",
+      "sha256": "8242de47f6d7ef83ad7e5034889bec36a7bd9327435565271cdd6d217f79eb12",
+      "disposition": "rejected",
+      "rects": [],
+      "unsupported_images": 0
+    },
+    {
+      "name": "group_cannot_leak_local_clip",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><clip_path winding=\"nonzero\" transform=\"1 0 0 1 0 0\"><moveto x=\"60\" y=\"110\"/><lineto x=\"120\" y=\"110\"/><lineto x=\"120\" y=\"140\"/><lineto x=\"60\" y=\"140\"/><closepath/></clip_path></group><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/><pop_clip/></page></document>",
+      "sha256": "d7772af903de15ad8a64f914616be437ff252530dae170b9ca880eaaece2d473",
+      "disposition": "rejected",
+      "rects": [],
+      "unsupported_images": 0
+    },
+    {
+      "name": "path_payload_cannot_create_group",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><fill_path><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></group></fill_path></page></document>",
+      "sha256": "1210f33ab39d936efd3e7170846982ddffdbbd6c5684fc73ebc31244ee335aa0",
+      "disposition": "rejected",
+      "rects": [],
+      "unsupported_images": 0
+    },
+    {
+      "name": "path_payload_cannot_pop_clip",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><clip_path winding=\"nonzero\" transform=\"1 0 0 1 0 0\"><moveto x=\"60\" y=\"110\"/><lineto x=\"120\" y=\"110\"/><lineto x=\"120\" y=\"140\"/><lineto x=\"60\" y=\"140\"/><closepath/></clip_path><fill_path><pop_clip/></fill_path><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/><pop_clip/></page></document>",
+      "sha256": "15bcc6b3b54a19b02c6c6ace23505f64a11f869175cbd71985a607fc27a0b01e",
+      "disposition": "rejected",
+      "rects": [],
+      "unsupported_images": 0
+    },
+    {
+      "name": "mask_keeps_placement_unknown",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><clip_image_mask transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/><pop_clip/></group></page></document>",
+      "sha256": "00e52466b164290602a4936d99e0fcb3b93fd7c9b54aebfc86cee0a0c11e2bdf",
+      "disposition": "supported_with_exclusions",
+      "rects": [],
+      "unsupported_images": 1
+    },
+    {
+      "name": "nonrectangular_path_keeps_placement_unknown",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><clip_path winding=\"nonzero\" transform=\"1 0 0 1 0 0\"><moveto x=\"60\" y=\"110\"/><lineto x=\"120\" y=\"110\"/><lineto x=\"110\" y=\"130\"/><lineto x=\"60\" y=\"140\"/><closepath/></clip_path><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/><pop_clip/></group></page></document>",
+      "sha256": "5305900cd2d95588a06d06ac3ef7ca841b958112c93d95d3bb4f6aedd03ba7ba",
+      "disposition": "supported_with_exclusions",
+      "rects": [],
+      "unsupported_images": 1
+    },
+    {
+      "name": "metadata_cannot_launder_image_command",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><metatext type=\"actualtext\" txt=\"x\"><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/></metatext></group></page></document>",
+      "sha256": "6833bf0f449daa764e8923da2becfa03eb93d73b871ce393d2c2d4080c394f0f",
+      "disposition": "rejected_or_unsupported",
+      "rects": [],
+      "unsupported_images": 1
+    },
+    {
+      "name": "unsupported_later_state_withholds_earlier_images",
+      "trace": "<?xml version=\"1.0\"?><document filename=\"synthetic.pdf\"><page number=\"3\" mediabox=\"0 0 600 800\"><group bbox=\"0 0 600 800\" isolated=\"1\" knockout=\"0\" blendmode=\"Normal\" alpha=\"1\"><fill_image alpha=\"1\" transform=\"100 0 0 50 40 100\" width=\"20\" height=\"30\"/><unknown_device_state/></group></page></document>",
+      "sha256": "c24973caa79f0152366d6a7703d02bc14c7b3df9319c1f1ba9dba9d805bc0aee",
+      "disposition": "rejected_or_unsupported",
+      "rects": [],
+      "unsupported_images": 1
+    }
+  ]
+}

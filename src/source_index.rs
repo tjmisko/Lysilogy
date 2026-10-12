@@ -4,10 +4,15 @@
 //! Native text is never silently replaced by model output. OCR pages carry provenance.
 
 mod cache;
+mod command;
 mod figures;
+pub mod graphics;
 mod native;
 mod ocr;
 mod paragraphs;
+
+#[cfg(test)]
+mod page_failure_tests;
 
 #[cfg(test)]
 pub(crate) mod test_support;
@@ -15,10 +20,20 @@ pub(crate) mod test_support;
 use std::{path::Path, time::Duration};
 
 use serde::{Deserialize, Serialize};
-use tokio::{io::AsyncReadExt, process::Command};
+use tokio::process::Command;
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::{Error, Result, domain::TextRect};
+use crate::{Result, domain::TextRect};
+
+use command::bounded_command;
+
+#[cfg(test)]
+use crate::Error;
+
+pub use figures::{
+    DETECTOR_VERSION as FIGURE_DETECTOR_VERSION, find as detect_figures,
+    find_with_images as detect_figures_with_images,
+};
 
 pub use cache::{IndexDocument, load_cached, load_or_build, load_or_build_priority};
 
@@ -188,9 +203,11 @@ async fn build(
         ])
         .arg(source)
         .arg("-");
-    let bytes = bounded_command(&mut command, "pdftotext", MAX_COMMAND_BYTES).await?;
-    let mut pages = native::parse(&String::from_utf8_lossy(&bytes))?;
-    let mut gaps = Vec::new();
+    let bytes = command::native_command(&mut command, MAX_COMMAND_BYTES).await?;
+    let native = native::parse(&String::from_utf8_lossy(&bytes))?;
+    let mut pages = native.pages;
+    let native_failures = native.gaps.iter().map(|gap| gap.page).collect::<Vec<_>>();
+    let mut gaps = native.gaps;
     if pages.len() == MAX_PAGES {
         gaps.push(IndexGap {
             page: u32::try_from(MAX_PAGES + 1).unwrap_or(u32::MAX),
@@ -219,39 +236,44 @@ async fn build(
             ocr_count += 1;
             ocr::page(source, directory, page, stamp, priority).await
         };
-        match result {
-            Ok(ocr) if ocr.words.len() > page.words.len() => {
-                if ocr.confidence.is_some_and(|confidence| confidence < 0.75) {
-                    gaps.push(IndexGap {
-                        page: page.number,
-                        reason:
-                            "OCR text has low confidence; verify quotations against the page image."
-                                .into(),
-                    });
-                }
-                *page = ocr;
-            }
-            Ok(_) => {
-                gaps.push(IndexGap { page: page.number, reason: "No additional readable text was detected by OCR; page may be blank, graphical, or unreadable.".into() });
-                if page.words.is_empty() {
-                    page.provenance = Provenance::Unavailable;
-                }
-            }
-            Err(error) => {
-                gaps.push(IndexGap {
-                    page: page.number,
-                    reason: format!("Local OCR unavailable: {error}"),
-                });
-                if page.words.is_empty() {
-                    page.provenance = Provenance::Unavailable;
-                }
-            }
-        }
+        apply_ocr_result(page, result, &mut gaps);
     }
-    let mut index = assemble(&pages);
+    let mut index = assemble_with_native_failures(&pages, &native_failures);
     index.gaps.extend(gaps);
     index.figures = figures::find(&index);
     Ok(index)
+}
+
+// Retain native failure gaps even when locally recognized OCR replaces a page.
+fn apply_ocr_result(page: &mut SourcePage, result: Result<SourcePage>, gaps: &mut Vec<IndexGap>) {
+    match result {
+        Ok(ocr) if ocr.words.len() > page.words.len() => {
+            if ocr.confidence.is_some_and(|confidence| confidence < 0.75) {
+                gaps.push(IndexGap {
+                    page: page.number,
+                    reason:
+                        "OCR text has low confidence; verify quotations against the page image."
+                            .into(),
+                });
+            }
+            *page = ocr;
+        }
+        Ok(_) => {
+            gaps.push(IndexGap { page: page.number, reason: "No additional readable text was detected by OCR; page may be blank, graphical, or unreadable.".into() });
+            if page.words.is_empty() {
+                page.provenance = Provenance::Unavailable;
+            }
+        }
+        Err(error) => {
+            gaps.push(IndexGap {
+                page: page.number,
+                reason: format!("Local OCR unavailable: {error}"),
+            });
+            if page.words.is_empty() {
+                page.provenance = Provenance::Unavailable;
+            }
+        }
+    }
 }
 
 // Background work remains bounded even on platforms without `nice`; priority
@@ -267,78 +289,12 @@ fn extraction_command(program: &str, priority: BuildPriority) -> Command {
     Command::new(program)
 }
 
-/// Hard output/time limits and kill-on-drop also apply if a build task is canceled.
-async fn bounded_command(command: &mut Command, program: &str, limit: usize) -> Result<Vec<u8>> {
-    use std::process::Stdio;
-    let mut child = command
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .kill_on_drop(true)
-        .spawn()
-        .map_err(|error| {
-            if error.kind() == std::io::ErrorKind::NotFound {
-                Error::ProgramUnavailable(program.into())
-            } else {
-                Error::io(program, error)
-            }
-        })?;
-    let stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| Error::Task("Command has no output pipe".into()))?;
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| Error::Task("Command has no error pipe".into()))?;
-    let read = async {
-        let mut bytes = Vec::new();
-        stdout
-            .take(u64::try_from(limit).unwrap_or(u64::MAX) + 1)
-            .read_to_end(&mut bytes)
-            .await
-            .map_err(|error| Error::io(program, error))?;
-        if bytes.len() > limit {
-            return Err(Error::Task(format!(
-                "{program} output exceeded its bounded limit"
-            )));
-        }
-        Ok(bytes)
-    };
-    let errors = async {
-        let mut bytes = Vec::new();
-        stderr
-            .take(65537)
-            .read_to_end(&mut bytes)
-            .await
-            .map_err(|error| Error::io(program, error))?;
-        if bytes.len() > 65536 {
-            return Err(Error::Task(format!(
-                "{program} error output exceeded its bounded limit"
-            )));
-        }
-        Ok(bytes)
-    };
-    tokio::time::timeout(COMMAND_TIMEOUT, async {
-        let (bytes, errors) = tokio::try_join!(read, errors)?;
-        let status = child
-            .wait()
-            .await
-            .map_err(|error| Error::io(program, error))?;
-        if !status.success() {
-            return Err(Error::CommandFailed {
-                program: program.into(),
-                status: status.to_string(),
-                stderr: String::from_utf8_lossy(&errors).trim().to_owned(),
-            });
-        }
-        Ok(bytes)
-    })
-    .await
-    .map_err(|_| Error::Task(format!("{program} timed out after 35 seconds")))?
+#[cfg(test)]
+fn assemble(pages: &[SourcePage]) -> ReadingIndex {
+    assemble_with_native_failures(pages, &[])
 }
 
-fn assemble(pages: &[SourcePage]) -> ReadingIndex {
+fn assemble_with_native_failures(pages: &[SourcePage], native_failures: &[u32]) -> ReadingIndex {
     let mut index = ReadingIndex {
         schema_version: SCHEMA_VERSION,
         text: String::new(),
@@ -370,7 +326,10 @@ fn assemble(pages: &[SourcePage]) -> ReadingIndex {
                     .last()
                     .is_some_and(|previous| previous.kind == "body")
                 && index.pages.last().is_some_and(|previous| {
-                    previous.number + 1 == page.number && previous.end == offset
+                    previous.number + 1 == page.number
+                        && previous.end == offset
+                        && !(native_failures.contains(&previous.number)
+                            && previous.provenance == Provenance::Unavailable)
                 })
                 && paragraph
                     .words

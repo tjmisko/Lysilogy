@@ -1,0 +1,1660 @@
+{
+  "format": "independent-mask-support-fixtures-v1",
+  "issue": 111,
+  "author": "/root/review_ready_prs",
+  "scope": "Synthetic decoded opacity and binding invariants only; no K1 truth, original images, detector outputs, owner source or native execution used.",
+  "coordinate_contract": "row-major u8; a nonzero sample owns its complete pixel cell. Bounds use integer pixel edges then x=a*(column/width)+c*(row/height)+e; y=b*(column/width)+d*(row/height)+f. All values 1..255 count equally for support.",
+  "identity_contract": "samples_sha256 hashes exact row-major u8 bytes. Dimensions, component/alpha semantics, transform, attached-image identity and full ordered device-event provenance must also match; the sample digest alone is insufficient.",
+  "support_claim": "Only tight axis-aligned candidate envelope; holes and disconnected interior are not asserted painted. Any extra crop is unsupported in this iteration.",
+  "variant_encoding": "Apply each isolated variant to its original accepted scene only. value_ieee754 constructs the named nonfinite float in the native test harness; JSON itself remains strict. rehash_attached_mask=true updates sample/attached hash only after the specified valid sample change.",
+  "page_dimensions": [
+    400,
+    300
+  ],
+  "cases": [
+    {
+      "id": "empty_mask",
+      "scene": {
+        "mask": {
+          "width": 4,
+          "height": 3,
+          "samples": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "interpolate": false,
+          "decoded_components": 1,
+          "alpha": true,
+          "samples_sha256": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b"
+        },
+        "image": {
+          "width": 4,
+          "height": 3,
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "alpha": 1,
+          "attached_mask_sha256": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b",
+          "decoded_pixmap_alpha": false,
+          "color_key": null,
+          "decode_effect": null,
+          "interpolate": false
+        },
+        "additional_clips": [],
+        "event_binding": {
+          "mask_event": 0,
+          "image_event": 1,
+          "attached_mask_byte_identity_verified": true,
+          "full_device_sequence_verified": true
+        }
+      },
+      "expected": {
+        "status": "no_image",
+        "nonzero_sample_count": 0,
+        "page_bbox": null
+      },
+      "isolated_variants": []
+    },
+    {
+      "id": "opaque_unit_square",
+      "scene": {
+        "mask": {
+          "width": 4,
+          "height": 3,
+          "samples": [
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "interpolate": false,
+          "decoded_components": 1,
+          "alpha": true,
+          "samples_sha256": "8688d249e9d047b4fc2fb89ce05afe9ec89252ffccdd969de6eef260dd7ffb21"
+        },
+        "image": {
+          "width": 4,
+          "height": 3,
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "alpha": 1,
+          "attached_mask_sha256": "8688d249e9d047b4fc2fb89ce05afe9ec89252ffccdd969de6eef260dd7ffb21",
+          "decoded_pixmap_alpha": false,
+          "color_key": null,
+          "decode_effect": null,
+          "interpolate": false
+        },
+        "additional_clips": [],
+        "event_binding": {
+          "mask_event": 0,
+          "image_event": 1,
+          "attached_mask_byte_identity_verified": true,
+          "full_device_sequence_verified": true
+        }
+      },
+      "expected": {
+        "status": "candidate_bounds",
+        "pixel_edge_bbox": [
+          0,
+          0,
+          4,
+          3
+        ],
+        "page_bbox": [
+          10,
+          20,
+          90,
+          80
+        ],
+        "nonzero_sample_count": 12,
+        "painted_shape_or_solid_rectangle_claim": false
+      },
+      "isolated_variants": []
+    },
+    {
+      "id": "partial_alpha_corner_counts_as_support",
+      "scene": {
+        "mask": {
+          "width": 4,
+          "height": 3,
+          "samples": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "interpolate": false,
+          "decoded_components": 1,
+          "alpha": true,
+          "samples_sha256": "9cbc73d18d70c94fe366e696035c4f2cffdbab7ea6d6c2c039ca185f9c9f2746"
+        },
+        "image": {
+          "width": 4,
+          "height": 3,
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "alpha": 1,
+          "attached_mask_sha256": "9cbc73d18d70c94fe366e696035c4f2cffdbab7ea6d6c2c039ca185f9c9f2746",
+          "decoded_pixmap_alpha": false,
+          "color_key": null,
+          "decode_effect": null,
+          "interpolate": false
+        },
+        "additional_clips": [],
+        "event_binding": {
+          "mask_event": 0,
+          "image_event": 1,
+          "attached_mask_byte_identity_verified": true,
+          "full_device_sequence_verified": true
+        }
+      },
+      "expected": {
+        "status": "candidate_bounds",
+        "pixel_edge_bbox": [
+          3,
+          0,
+          4,
+          1
+        ],
+        "page_bbox": [
+          70,
+          20,
+          90,
+          40
+        ],
+        "nonzero_sample_count": 1,
+        "painted_shape_or_solid_rectangle_claim": false
+      },
+      "isolated_variants": [
+        {
+          "id": "alpha_127_same_bounds",
+          "changes": [
+            {
+              "path": "mask.samples[3]",
+              "value": 127
+            }
+          ],
+          "rehash_attached_mask": true,
+          "expected": {
+            "status": "candidate_bounds",
+            "pixel_edge_bbox": [
+              3,
+              0,
+              4,
+              1
+            ],
+            "page_bbox": [
+              70,
+              20,
+              90,
+              40
+            ],
+            "nonzero_sample_count": 1,
+            "painted_shape_or_solid_rectangle_claim": false
+          }
+        },
+        {
+          "id": "alpha_254_same_bounds",
+          "changes": [
+            {
+              "path": "mask.samples[3]",
+              "value": 254
+            }
+          ],
+          "rehash_attached_mask": true,
+          "expected": {
+            "status": "candidate_bounds",
+            "pixel_edge_bbox": [
+              3,
+              0,
+              4,
+              1
+            ],
+            "page_bbox": [
+              70,
+              20,
+              90,
+              40
+            ],
+            "nonzero_sample_count": 1,
+            "painted_shape_or_solid_rectangle_claim": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "nonrectangular_L_keeps_tight_envelope",
+      "scene": {
+        "mask": {
+          "width": 5,
+          "height": 4,
+          "samples": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            255,
+            0,
+            0,
+            0,
+            0,
+            255,
+            255,
+            255,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "matrix": [
+            100,
+            0,
+            0,
+            80,
+            0,
+            0
+          ],
+          "interpolate": false,
+          "decoded_components": 1,
+          "alpha": true,
+          "samples_sha256": "09c4f8a0fe3210fcc431bb10f5a8a5b78598f34c72bb867268940e441ebc36f7"
+        },
+        "image": {
+          "width": 5,
+          "height": 4,
+          "matrix": [
+            100,
+            0,
+            0,
+            80,
+            0,
+            0
+          ],
+          "alpha": 1,
+          "attached_mask_sha256": "09c4f8a0fe3210fcc431bb10f5a8a5b78598f34c72bb867268940e441ebc36f7",
+          "decoded_pixmap_alpha": false,
+          "color_key": null,
+          "decode_effect": null,
+          "interpolate": false
+        },
+        "additional_clips": [],
+        "event_binding": {
+          "mask_event": 0,
+          "image_event": 1,
+          "attached_mask_byte_identity_verified": true,
+          "full_device_sequence_verified": true
+        }
+      },
+      "expected": {
+        "status": "candidate_bounds",
+        "pixel_edge_bbox": [
+          1,
+          1,
+          4,
+          3
+        ],
+        "page_bbox": [
+          20,
+          20,
+          80,
+          60
+        ],
+        "nonzero_sample_count": 4,
+        "painted_shape_or_solid_rectangle_claim": false
+      },
+      "isolated_variants": []
+    },
+    {
+      "id": "ring_hole_is_not_claimed_painted",
+      "scene": {
+        "mask": {
+          "width": 4,
+          "height": 4,
+          "samples": [
+            255,
+            255,
+            255,
+            255,
+            255,
+            0,
+            0,
+            255,
+            255,
+            0,
+            0,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "matrix": [
+            40,
+            0,
+            0,
+            80,
+            20,
+            30
+          ],
+          "interpolate": false,
+          "decoded_components": 1,
+          "alpha": true,
+          "samples_sha256": "c930fac9f8fc927ddb5546e19e7ac5491c48f355fea58909a629c09d4edcaa67"
+        },
+        "image": {
+          "width": 4,
+          "height": 4,
+          "matrix": [
+            40,
+            0,
+            0,
+            80,
+            20,
+            30
+          ],
+          "alpha": 1,
+          "attached_mask_sha256": "c930fac9f8fc927ddb5546e19e7ac5491c48f355fea58909a629c09d4edcaa67",
+          "decoded_pixmap_alpha": false,
+          "color_key": null,
+          "decode_effect": null,
+          "interpolate": false
+        },
+        "additional_clips": [],
+        "event_binding": {
+          "mask_event": 0,
+          "image_event": 1,
+          "attached_mask_byte_identity_verified": true,
+          "full_device_sequence_verified": true
+        }
+      },
+      "expected": {
+        "status": "candidate_bounds",
+        "pixel_edge_bbox": [
+          0,
+          0,
+          4,
+          4
+        ],
+        "page_bbox": [
+          20,
+          30,
+          60,
+          110
+        ],
+        "nonzero_sample_count": 12,
+        "painted_shape_or_solid_rectangle_claim": false
+      },
+      "isolated_variants": []
+    },
+    {
+      "id": "disjoint_support_extra_crop_trap",
+      "scene": {
+        "mask": {
+          "width": 6,
+          "height": 4,
+          "samples": [
+            255,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            255
+          ],
+          "matrix": [
+            120,
+            0,
+            0,
+            80,
+            200,
+            100
+          ],
+          "interpolate": false,
+          "decoded_components": 1,
+          "alpha": true,
+          "samples_sha256": "d53431234c1d07712989635140f1a6497328ffc93aa360b9d43037cb7993af24"
+        },
+        "image": {
+          "width": 6,
+          "height": 4,
+          "matrix": [
+            120,
+            0,
+            0,
+            80,
+            200,
+            100
+          ],
+          "alpha": 1,
+          "attached_mask_sha256": "d53431234c1d07712989635140f1a6497328ffc93aa360b9d43037cb7993af24",
+          "decoded_pixmap_alpha": false,
+          "color_key": null,
+          "decode_effect": null,
+          "interpolate": false
+        },
+        "additional_clips": [],
+        "event_binding": {
+          "mask_event": 0,
+          "image_event": 1,
+          "attached_mask_byte_identity_verified": true,
+          "full_device_sequence_verified": true
+        }
+      },
+      "expected": {
+        "status": "candidate_bounds",
+        "pixel_edge_bbox": [
+          0,
+          0,
+          6,
+          4
+        ],
+        "page_bbox": [
+          200,
+          100,
+          320,
+          180
+        ],
+        "nonzero_sample_count": 2,
+        "painted_shape_or_solid_rectangle_claim": false
+      },
+      "isolated_variants": [
+        {
+          "id": "center_rect_crop",
+          "changes": [
+            {
+              "path": "additional_clips",
+              "value": [
+                {
+                  "kind": "rectangle",
+                  "bbox": [
+                    240,
+                    120,
+                    280,
+                    160
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Extra crop unsupported: bbox intersection is nonempty but crop meets zero actual supported cells."
+          }
+        },
+        {
+          "id": "center_path_crop",
+          "changes": [
+            {
+              "path": "additional_clips",
+              "value": [
+                {
+                  "kind": "path",
+                  "points": [
+                    [
+                      240,
+                      120
+                    ],
+                    [
+                      280,
+                      120
+                    ],
+                    [
+                      280,
+                      160
+                    ],
+                    [
+                      240,
+                      160
+                    ]
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Extra path crop unsupported; cannot infer pixel intersection from envelope."
+          }
+        },
+        {
+          "id": "nested_mask_crop",
+          "changes": [
+            {
+              "path": "additional_clips",
+              "value": [
+                {
+                  "kind": "mask",
+                  "width": 6,
+                  "height": 4,
+                  "samples": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    255,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    255,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                  ],
+                  "matrix": [
+                    120,
+                    0,
+                    0,
+                    80,
+                    200,
+                    100
+                  ]
+                }
+              ]
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Nested mask support intersection unavailable; do not intersect mask envelopes."
+          }
+        }
+      ]
+    },
+    {
+      "id": "signed_scale_pixel_edges",
+      "scene": {
+        "mask": {
+          "width": 4,
+          "height": 2,
+          "samples": [
+            255,
+            255,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "matrix": [
+            -80,
+            0,
+            0,
+            40,
+            180,
+            30
+          ],
+          "interpolate": false,
+          "decoded_components": 1,
+          "alpha": true,
+          "samples_sha256": "3d73c71ad63f39a8a47bee131c1705f2b8c446a26c36ce5a9b6e6e4162fc9f86"
+        },
+        "image": {
+          "width": 4,
+          "height": 2,
+          "matrix": [
+            -80,
+            0,
+            0,
+            40,
+            180,
+            30
+          ],
+          "alpha": 1,
+          "attached_mask_sha256": "3d73c71ad63f39a8a47bee131c1705f2b8c446a26c36ce5a9b6e6e4162fc9f86",
+          "decoded_pixmap_alpha": false,
+          "color_key": null,
+          "decode_effect": null,
+          "interpolate": false
+        },
+        "additional_clips": [],
+        "event_binding": {
+          "mask_event": 0,
+          "image_event": 1,
+          "attached_mask_byte_identity_verified": true,
+          "full_device_sequence_verified": true
+        }
+      },
+      "expected": {
+        "status": "candidate_bounds",
+        "pixel_edge_bbox": [
+          0,
+          0,
+          2,
+          1
+        ],
+        "page_bbox": [
+          140,
+          30,
+          180,
+          50
+        ],
+        "nonzero_sample_count": 2,
+        "painted_shape_or_solid_rectangle_claim": false
+      },
+      "isolated_variants": []
+    },
+    {
+      "id": "quarter_turn_pixel_edges",
+      "scene": {
+        "mask": {
+          "width": 4,
+          "height": 2,
+          "samples": [
+            0,
+            255,
+            255,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "matrix": [
+            0,
+            80,
+            -40,
+            0,
+            140,
+            20
+          ],
+          "interpolate": false,
+          "decoded_components": 1,
+          "alpha": true,
+          "samples_sha256": "8a211b79eaef76d0aa364f34b2485cfc6b69f7cea75f7bed87565580b46c1ad7"
+        },
+        "image": {
+          "width": 4,
+          "height": 2,
+          "matrix": [
+            0,
+            80,
+            -40,
+            0,
+            140,
+            20
+          ],
+          "alpha": 1,
+          "attached_mask_sha256": "8a211b79eaef76d0aa364f34b2485cfc6b69f7cea75f7bed87565580b46c1ad7",
+          "decoded_pixmap_alpha": false,
+          "color_key": null,
+          "decode_effect": null,
+          "interpolate": false
+        },
+        "additional_clips": [],
+        "event_binding": {
+          "mask_event": 0,
+          "image_event": 1,
+          "attached_mask_byte_identity_verified": true,
+          "full_device_sequence_verified": true
+        }
+      },
+      "expected": {
+        "status": "candidate_bounds",
+        "pixel_edge_bbox": [
+          1,
+          0,
+          3,
+          1
+        ],
+        "page_bbox": [
+          120,
+          40,
+          140,
+          80
+        ],
+        "nonzero_sample_count": 2,
+        "painted_shape_or_solid_rectangle_claim": false
+      },
+      "isolated_variants": []
+    },
+    {
+      "id": "attached_image_registration_is_exact",
+      "scene": {
+        "mask": {
+          "width": 4,
+          "height": 3,
+          "samples": [
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "interpolate": false,
+          "decoded_components": 1,
+          "alpha": true,
+          "samples_sha256": "8688d249e9d047b4fc2fb89ce05afe9ec89252ffccdd969de6eef260dd7ffb21"
+        },
+        "image": {
+          "width": 4,
+          "height": 3,
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "alpha": 1,
+          "attached_mask_sha256": "8688d249e9d047b4fc2fb89ce05afe9ec89252ffccdd969de6eef260dd7ffb21",
+          "decoded_pixmap_alpha": false,
+          "color_key": null,
+          "decode_effect": null,
+          "interpolate": false
+        },
+        "additional_clips": [],
+        "event_binding": {
+          "mask_event": 0,
+          "image_event": 1,
+          "attached_mask_byte_identity_verified": true,
+          "full_device_sequence_verified": true
+        }
+      },
+      "expected": {
+        "status": "candidate_bounds",
+        "pixel_edge_bbox": [
+          0,
+          0,
+          4,
+          3
+        ],
+        "page_bbox": [
+          10,
+          20,
+          90,
+          80
+        ],
+        "nonzero_sample_count": 12,
+        "painted_shape_or_solid_rectangle_claim": false
+      },
+      "isolated_variants": [
+        {
+          "id": "translation_mismatch",
+          "changes": [
+            {
+              "path": "image.matrix",
+              "value": [
+                80,
+                0,
+                0,
+                60,
+                11,
+                20
+              ]
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Mask/image transform differs, even by one point."
+          }
+        },
+        {
+          "id": "scale_mismatch",
+          "changes": [
+            {
+              "path": "image.matrix",
+              "value": [
+                79,
+                0,
+                0,
+                60,
+                10,
+                20
+              ]
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Mask/image transform differs."
+          }
+        },
+        {
+          "id": "dimension_mismatch_same_bytes",
+          "changes": [
+            {
+              "path": "image.width",
+              "value": 3
+            },
+            {
+              "path": "image.height",
+              "value": 4
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Same sample hash is insufficient when decoded dimensions differ."
+          }
+        },
+        {
+          "id": "different_attached_mask",
+          "changes": [
+            {
+              "path": "image.attached_mask_sha256",
+              "value": "0000000000000000000000000000000000000000000000000000000000000000"
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Attached mask is not the active decoded mask."
+          }
+        },
+        {
+          "id": "unverified_attached_bytes",
+          "changes": [
+            {
+              "path": "event_binding.attached_mask_byte_identity_verified",
+              "value": false
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Coordinate or hash declaration alone cannot replace independently verified attached bytes."
+          }
+        }
+      ]
+    },
+    {
+      "id": "strict_decoded_array_and_transform",
+      "scene": {
+        "mask": {
+          "width": 4,
+          "height": 3,
+          "samples": [
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "interpolate": false,
+          "decoded_components": 1,
+          "alpha": true,
+          "samples_sha256": "8688d249e9d047b4fc2fb89ce05afe9ec89252ffccdd969de6eef260dd7ffb21"
+        },
+        "image": {
+          "width": 4,
+          "height": 3,
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "alpha": 1,
+          "attached_mask_sha256": "8688d249e9d047b4fc2fb89ce05afe9ec89252ffccdd969de6eef260dd7ffb21",
+          "decoded_pixmap_alpha": false,
+          "color_key": null,
+          "decode_effect": null,
+          "interpolate": false
+        },
+        "additional_clips": [],
+        "event_binding": {
+          "mask_event": 0,
+          "image_event": 1,
+          "attached_mask_byte_identity_verified": true,
+          "full_device_sequence_verified": true
+        }
+      },
+      "expected": {
+        "status": "candidate_bounds",
+        "pixel_edge_bbox": [
+          0,
+          0,
+          4,
+          3
+        ],
+        "page_bbox": [
+          10,
+          20,
+          90,
+          80
+        ],
+        "nonzero_sample_count": 12,
+        "painted_shape_or_solid_rectangle_claim": false
+      },
+      "isolated_variants": [
+        {
+          "id": "short_array",
+          "changes": [
+            {
+              "path": "mask.samples",
+              "value": [
+                255,
+                255,
+                255,
+                255,
+                255,
+                255,
+                255,
+                255,
+                255,
+                255,
+                255
+              ]
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Length differs from width times height."
+          }
+        },
+        {
+          "id": "zero_dimension",
+          "changes": [
+            {
+              "path": "mask.width",
+              "value": 0
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Positive integer dimensions required."
+          }
+        },
+        {
+          "id": "boolean_dimension",
+          "changes": [
+            {
+              "path": "mask.width",
+              "value": true
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Booleans are not integer dimensions."
+          }
+        },
+        {
+          "id": "out_of_range_sample",
+          "changes": [
+            {
+              "path": "mask.samples[0]",
+              "value": 256
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "u8 samples required."
+          }
+        },
+        {
+          "id": "negative_sample",
+          "changes": [
+            {
+              "path": "mask.samples[0]",
+              "value": -1
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "u8 samples required."
+          }
+        },
+        {
+          "id": "float_sample",
+          "changes": [
+            {
+              "path": "mask.samples[0]",
+              "value": 1.5
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "u8 integer samples required."
+          }
+        },
+        {
+          "id": "boolean_sample",
+          "changes": [
+            {
+              "path": "mask.samples[0]",
+              "value": true
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Boolean is not an opacity byte."
+          }
+        },
+        {
+          "id": "nonfinite_matrix",
+          "changes": [
+            {
+              "path": "mask.matrix[0]",
+              "value_ieee754": "NaN"
+            },
+            {
+              "path": "image.matrix[0]",
+              "value_ieee754": "NaN"
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Both transforms matching NaN does not establish a finite transform."
+          }
+        },
+        {
+          "id": "skew",
+          "changes": [
+            {
+              "path": "mask.matrix",
+              "value": [
+                80,
+                1,
+                0,
+                60,
+                10,
+                20
+              ]
+            },
+            {
+              "path": "image.matrix",
+              "value": [
+                80,
+                1,
+                0,
+                60,
+                10,
+                20
+              ]
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Only signed axis-aligned/quarter-turn transforms supported."
+          }
+        },
+        {
+          "id": "singular_transform",
+          "changes": [
+            {
+              "path": "mask.matrix",
+              "value": [
+                0,
+                0,
+                0,
+                60,
+                10,
+                20
+              ]
+            },
+            {
+              "path": "image.matrix",
+              "value": [
+                0,
+                0,
+                0,
+                60,
+                10,
+                20
+              ]
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Zero scale has no supported placement."
+          }
+        },
+        {
+          "id": "more_than_one_component",
+          "changes": [
+            {
+              "path": "mask.decoded_components",
+              "value": 2
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Raw channels do not identify a single opacity plane."
+          }
+        }
+      ]
+    },
+    {
+      "id": "independent_base_opacity_and_scope",
+      "scene": {
+        "mask": {
+          "width": 4,
+          "height": 3,
+          "samples": [
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "interpolate": false,
+          "decoded_components": 1,
+          "alpha": true,
+          "samples_sha256": "8688d249e9d047b4fc2fb89ce05afe9ec89252ffccdd969de6eef260dd7ffb21"
+        },
+        "image": {
+          "width": 4,
+          "height": 3,
+          "matrix": [
+            80,
+            0,
+            0,
+            60,
+            10,
+            20
+          ],
+          "alpha": 1,
+          "attached_mask_sha256": "8688d249e9d047b4fc2fb89ce05afe9ec89252ffccdd969de6eef260dd7ffb21",
+          "decoded_pixmap_alpha": false,
+          "color_key": null,
+          "decode_effect": null,
+          "interpolate": false
+        },
+        "additional_clips": [],
+        "event_binding": {
+          "mask_event": 0,
+          "image_event": 1,
+          "attached_mask_byte_identity_verified": true,
+          "full_device_sequence_verified": true
+        }
+      },
+      "expected": {
+        "status": "candidate_bounds",
+        "pixel_edge_bbox": [
+          0,
+          0,
+          4,
+          3
+        ],
+        "page_bbox": [
+          10,
+          20,
+          90,
+          80
+        ],
+        "nonzero_sample_count": 12,
+        "painted_shape_or_solid_rectangle_claim": false
+      },
+      "isolated_variants": [
+        {
+          "id": "base_has_alpha",
+          "changes": [
+            {
+              "path": "image.decoded_pixmap_alpha",
+              "value": true
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Mask support alone cannot prove separately transparent base-image support."
+          }
+        },
+        {
+          "id": "base_alpha_unknown",
+          "changes": [
+            {
+              "path": "image.decoded_pixmap_alpha",
+              "value": null
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Base-image opacity evidence absent."
+          }
+        },
+        {
+          "id": "draw_alpha_partial",
+          "changes": [
+            {
+              "path": "image.alpha",
+              "value": 0.5
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Outside frozen alpha1 drawing-state scope."
+          }
+        },
+        {
+          "id": "color_key",
+          "changes": [
+            {
+              "path": "image.color_key",
+              "value": {
+                "low": 0,
+                "high": 0
+              }
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Separate color-key effect unsupported."
+          }
+        },
+        {
+          "id": "decode_effect",
+          "changes": [
+            {
+              "path": "image.decode_effect",
+              "value": [
+                1,
+                0
+              ]
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Nontrivial sample decode effects unsupported."
+          }
+        },
+        {
+          "id": "mask_interpolation",
+          "changes": [
+            {
+              "path": "mask.interpolate",
+              "value": true
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Interpolation can spread support beyond nonzero sample-cell bounds."
+          }
+        },
+        {
+          "id": "base_interpolation",
+          "changes": [
+            {
+              "path": "image.interpolate",
+              "value": true
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Base interpolation outside narrow capability."
+          }
+        },
+        {
+          "id": "missing_sequence_proof",
+          "changes": [
+            {
+              "path": "event_binding.full_device_sequence_verified",
+              "value": false
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "No coordinate-only join across Device/XML events."
+          }
+        }
+      ]
+    },
+    {
+      "id": "neighboring_image_and_raster_table_stay_distinct",
+      "scene_events": [
+        {
+          "mask": {
+            "width": 4,
+            "height": 4,
+            "samples": [
+              255,
+              0,
+              0,
+              0,
+              0,
+              255,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "matrix": [
+              80,
+              0,
+              0,
+              80,
+              20,
+              20
+            ],
+            "interpolate": false,
+            "decoded_components": 1,
+            "alpha": true,
+            "samples_sha256": "6a66f8005f6080bdcc2cdb3a78a86ae395be1cfbc8266fa566ac463340d3af19"
+          },
+          "image": {
+            "width": 4,
+            "height": 4,
+            "matrix": [
+              80,
+              0,
+              0,
+              80,
+              20,
+              20
+            ],
+            "alpha": 1,
+            "attached_mask_sha256": "6a66f8005f6080bdcc2cdb3a78a86ae395be1cfbc8266fa566ac463340d3af19",
+            "decoded_pixmap_alpha": false,
+            "color_key": null,
+            "decode_effect": null,
+            "interpolate": false
+          },
+          "additional_clips": [],
+          "event_binding": {
+            "mask_event": 0,
+            "image_event": 1,
+            "attached_mask_byte_identity_verified": true,
+            "full_device_sequence_verified": true
+          }
+        },
+        {
+          "mask": {
+            "width": 4,
+            "height": 4,
+            "samples": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              255,
+              0,
+              0,
+              0,
+              0,
+              255
+            ],
+            "matrix": [
+              80,
+              0,
+              0,
+              80,
+              220,
+              20
+            ],
+            "interpolate": false,
+            "decoded_components": 1,
+            "alpha": true,
+            "samples_sha256": "cdb4e8d54643dab736fb82686ac98aed8bd70b8d96aacdf08a1bfbd17d32db25"
+          },
+          "image": {
+            "width": 4,
+            "height": 4,
+            "matrix": [
+              80,
+              0,
+              0,
+              80,
+              220,
+              20
+            ],
+            "alpha": 1,
+            "attached_mask_sha256": "cdb4e8d54643dab736fb82686ac98aed8bd70b8d96aacdf08a1bfbd17d32db25",
+            "decoded_pixmap_alpha": false,
+            "color_key": null,
+            "decode_effect": null,
+            "interpolate": false
+          },
+          "additional_clips": [],
+          "event_binding": {
+            "mask_event": 2,
+            "image_event": 3,
+            "attached_mask_byte_identity_verified": true,
+            "full_device_sequence_verified": true
+          }
+        }
+      ],
+      "synthetic_context": "Two separated, independently captioned visual bodies; right body is a raster table. Context is authoring rationale, not decoded device metadata.",
+      "expected": {
+        "status": "two_distinct_candidates",
+        "events": [
+          {
+            "image_event": 1,
+            "status": "candidate_bounds",
+            "pixel_edge_bbox": [
+              0,
+              0,
+              2,
+              2
+            ],
+            "page_bbox": [
+              20,
+              20,
+              60,
+              60
+            ],
+            "nonzero_sample_count": 2,
+            "painted_shape_or_solid_rectangle_claim": false
+          },
+          {
+            "image_event": 3,
+            "status": "candidate_bounds",
+            "pixel_edge_bbox": [
+              2,
+              2,
+              4,
+              4
+            ],
+            "page_bbox": [
+              260,
+              60,
+              300,
+              100
+            ],
+            "nonzero_sample_count": 2,
+            "painted_shape_or_solid_rectangle_claim": false
+          }
+        ],
+        "union_across_events": false
+      },
+      "isolated_variants": [
+        {
+          "id": "swap_attached_masks_between_events",
+          "changes": [
+            {
+              "path": "scene_events[0].image.attached_mask_sha256",
+              "value": "cdb4e8d54643dab736fb82686ac98aed8bd70b8d96aacdf08a1bfbd17d32db25"
+            },
+            {
+              "path": "scene_events[1].image.attached_mask_sha256",
+              "value": "6a66f8005f6080bdcc2cdb3a78a86ae395be1cfbc8266fa566ac463340d3af19"
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Different complete mask samples cannot be associated by location or order alone."
+          }
+        },
+        {
+          "id": "same_coordinates_different_event_identity",
+          "changes": [
+            {
+              "path": "scene_events[1].mask.matrix",
+              "value": [
+                80,
+                0,
+                0,
+                80,
+                20,
+                20
+              ]
+            },
+            {
+              "path": "scene_events[1].image.matrix",
+              "value": [
+                80,
+                0,
+                0,
+                80,
+                20,
+                20
+              ]
+            },
+            {
+              "path": "scene_events[1].event_binding.image_event",
+              "value": 1
+            }
+          ],
+          "expected": {
+            "status": "withhold",
+            "reason": "Duplicate event identity must be rejected even when coordinates match."
+          }
+        }
+      ]
+    }
+  ]
+}

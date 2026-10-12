@@ -19,12 +19,14 @@ import { LibraryRail } from "./components/LibraryRail";
 import { MarkdownReader } from "./components/MarkdownReader";
 import { PaperSwitcher } from "./components/PaperSwitcher";
 import { PdfReader } from "./components/PdfReader";
+import { requestObjectGrading } from "./components/PdfObjectGrading";
 import { QueuePanel } from "./components/QueuePanel";
 import { ReaderToolsPanel } from "./components/ReaderToolsPanel";
 import { SectionAtlas } from "./components/SectionAtlas";
 import { useGlobalKeys } from "./hooks/useGlobalKeys";
 import { useTabPhase } from "./hooks/useTabPhase";
 import { api } from "./lib/api";
+import { gradesApi } from "./lib/objects";
 import type {
   AnalysisProvider,
   Clarification,
@@ -485,6 +487,14 @@ export function App() {
     setView("text");
   }, []);
 
+  const openGradingPaper = useCallback((id: string): void => {
+    requestObjectGrading(id);
+    selectPaper(id);
+    setPdfPage(1);
+    setTextMode("pdf");
+    setView("text");
+  }, [selectPaper]);
+
   const openGlossary = useCallback((): void => {
     setPanel(null);
     setView("glossary");
@@ -664,10 +674,17 @@ export function App() {
       case "help":
         setPanel("help");
         break;
+      case "grade":
+        // The next paper in the grading queue after this one; the reader enters grading on arrival.
+        void gradesApi.next(selectedId ?? undefined).then((next) => {
+          if (next === null) setError("Grading queue exhausted: every queued paper is complete.");
+          else openGradingPaper(next.paper_id);
+        }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Could not find the next paper to grade"));
+        break;
       default:
         setError(`Unknown command :${name}`);
     }
-  }, [analyze, openGlossary, openHome, provider, refreshComponent, refreshQueue, selectedId]);
+  }, [analyze, openGlossary, openGradingPaper, openHome, provider, refreshComponent, refreshQueue, selectedId]);
 
   useTabPhase({
     nativeTab: home,
@@ -940,7 +957,7 @@ export function App() {
       if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target instanceof Element ? event.target : null;
       if (target?.closest(".notes-panel") != null) return;
-      if (document.querySelector('.pdf-reader[data-link-hints="true"]') !== null) return;
+      if (document.querySelector('.pdf-reader[data-link-hints="true"], .pdf-reader[data-object-grading="true"]') !== null) return;
       if (event.key === "/" && !isEditableTarget(event.target) && !home && !readingPdf && panel === null && !commandOpen && !switcherOpen && !queueOpen && !experimentOpen && toolsTab === null && !(compactLayout && libraryOpen) && target?.closest(".library-rail") == null) {
         event.preventDefault(); event.stopImmediatePropagation(); pendingSourceSearch.current = true; setTextMode("pdf"); setView("text"); return;
       }
@@ -1021,10 +1038,9 @@ export function App() {
             if (!event.currentTarget.contains(next) && !(next instanceof Element && next.closest(".notes-panel, .pdf-source-tools, .section-figure-links, .section-figure-view") !== null)) setToolbarPeek(false);
           }}>
           <nav className="workspace-navigation" aria-label="Library navigation">
-            <button type="button" aria-label="Lysilogy home" title="Home" onClick={() => openHome()}>⌂</button>
             <button type="button" aria-label="Toggle library (F1)" title="Library (F1)" onClick={() => setLibraryOpen((value) => !value)}>☰</button>
           </nav>
-          {home ? <span className="home-topbar-label">Your reading library</span> : <div className="view-switch" role="group" aria-label="Reader view">
+          {home ? <span className="home-topbar-label"></span> : <div className="view-switch" role="group" aria-label="Reader view">
             {analysis === null ? <>
               <button type="button" className={textMode === "pdf" ? "is-active" : ""} onClick={() => setTextMode("pdf")}>PDF</button>
               <button type="button" className={textMode === "markdown" ? "is-active" : ""} onClick={() => setTextMode("markdown")}>Text</button>
@@ -1074,16 +1090,10 @@ export function App() {
             </>}
           </div>}
           <div className="topbar-actions">
-            {!home && <button className="queue-button notes-toggle" type="button" aria-pressed={notesOpen} title="Markdown notes (E)" onClick={() => { if (notesOpen) requestNotesClose(); else openNotes(); }}>Notes <kbd>E</kbd></button>}
-            {readingPdf && <button className="queue-button toolbar-pin" type="button" aria-pressed={toolbarPinned} title="Pin reader controls (T)" onClick={() => { setToolbarPinned((value) => !value); setToolbarPeek(false); }}>Pin <kbd>T</kbd></button>}
-
+            {!home && <button className="queue-button notes-toggle" type="button" aria-pressed={notesOpen} title="Markdown notes (E)" onClick={() => { if (notesOpen) requestNotesClose(); else openNotes(); }}>Notes</button>}
             {home ? <>
-              <button className="queue-button" type="button" onClick={scan}>Rescan</button>
-              <button className={`queue-button ${queueHasActive ? "has-work" : ""}`} type="button" onClick={() => { setQueueOpen(true); void refreshQueue(); }}>Queue <kbd>Q</kbd></button>
-            </> : paperView === null ? <span className="current-paper-label">Opening paper…</span> : analysis !== null && currentPaper !== null ? <span className="current-paper-label" title={`${currentPaper.metadata.authors.join(", ")} — ${currentPaper.metadata.year ?? ""} — ${currentPaper.metadata.title}`}>
-              {currentPaper.metadata.authors.length > 2 ? `${currentPaper.metadata.authors[0]} et al.` : currentPaper.metadata.authors.join(" & ")}
-              {currentPaper.metadata.year == null ? "" : ` — ${currentPaper.metadata.year}`} — {currentPaper.metadata.title}
-            </span> : <>
+              <button className={`queue-button ${queueHasActive ? "has-work" : ""}`} type="button" onClick={() => { setQueueOpen(true); void refreshQueue(); }}>Queue</button>
+            </> : paperView === null ? <span className="current-paper-label">Opening paper…</span> : analysis !== null && currentPaper !== null ? <span className="current-paper-label" title={`${currentPaper.metadata.authors.join(", ")} — ${currentPaper.metadata.year ?? ""} — ${currentPaper.metadata.title}`}></span> : <>
             <label className="provider-select">
               <span>Reader</span>
               <select value={provider} onChange={(event) => setProvider(event.target.value as AnalysisProvider)}>
@@ -1178,6 +1188,7 @@ export function App() {
                       spread={pdfSpread}
                       keyboardEnabled={panel === null && sourceQuestion === null && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && !(compactLayout && libraryOpen)}
                       onZoom={(delta) => setPdfZoom((value) => Math.max(.5, Math.min(2.5, value + delta)))}
+                      onOpenPaper={openGradingPaper}
                       onPage={setPdfPage}
                       onPageCount={setPdfPages}
                       onGloss={() => paperView.analysis != null && openGlossary()}
