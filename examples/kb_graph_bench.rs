@@ -117,9 +117,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     transaction.commit()?;
     connection.execute_batch("ANALYZE; PRAGMA wal_checkpoint(PASSIVE);")?;
-    let works: usize = connection.query_row("SELECT count(*) FROM works", [], |row| row.get(0))?;
-    let edges: usize =
-        connection.query_row("SELECT count(*) FROM citations", [], |row| row.get(0))?;
+    let works = connection
+        .query_row("SELECT count(*) FROM works", [], |row| row.get::<_, i64>(0))?
+        as usize;
+    let edges = connection.query_row("SELECT count(*) FROM citations", [], |row| {
+        row.get::<_, i64>(0)
+    })? as usize;
     if works != args.works || edges != args.works * 6 {
         return Err("graph inventory differs from fixture contract".into());
     }

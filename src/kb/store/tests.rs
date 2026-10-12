@@ -117,11 +117,11 @@ fn should_apply_pending_migrations_when_opening_an_older_database() {
     connection.pragma_update(None, "user_version", 1).unwrap();
     drop(connection);
     let store = KbStore::open(directory.path()).unwrap();
-    let version: usize = store
+    let version = store
         .connection()
         .unwrap()
-        .pragma_query_value(None, "user_version", |row| row.get(0))
-        .unwrap();
+        .pragma_query_value(None, "user_version", |row| row.get::<_, i64>(0))
+        .unwrap() as usize;
     assert_eq!(version, MIGRATIONS.len());
     let wal: String = store
         .connection()

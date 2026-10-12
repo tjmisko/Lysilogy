@@ -14,7 +14,7 @@ pub(super) fn apply(connection: &Connection, directory: &Path, record: &Record) 
     match &record.event {
         Event::Allocate { id, kind, origin } => allocate(connection, id, kind, origin),
         Event::Admit { revision } => admit(connection, directory, revision, record.sequence),
-        Event::Decision { decision } => decision(connection, directory, decision),
+        Event::Decision { decision } => decide(connection, directory, decision),
     }
 }
 
@@ -97,7 +97,7 @@ fn admit(connection: &Connection, directory: &Path, revision: &str, sequence: u6
         supplied_id
     };
     let source_entity = admitted.entity.id().to_owned();
-    connection.execute("INSERT INTO observations VALUES(?1,?2,?3,?4,?5,?6) ON CONFLICT(id) DO UPDATE SET revision=excluded.revision,body=excluded.body,admitted_sequence=excluded.admitted_sequence", params![observation.id,id,origin,revision,serde_json::to_string(observation)?,sequence])?;
+    connection.execute("INSERT INTO observations VALUES(?1,?2,?3,?4,?5,?6) ON CONFLICT(id) DO UPDATE SET revision=excluded.revision,body=excluded.body,admitted_sequence=excluded.admitted_sequence", params![observation.id,id,origin,revision,serde_json::to_string(observation)?,sequence as i64])?;
     let kind = match &admitted.entity {
         EntityProjection::Work(_) => "work",
         EntityProjection::Person(_) => "person",
@@ -269,7 +269,7 @@ pub(super) fn resolve(connection: &Connection, id: &str) -> Result<String> {
     Err(StoreError::Invalid("alias cycle".into()))
 }
 
-fn decision(connection: &Connection, directory: &Path, decision: &Decision) -> Result<()> {
+fn decide(connection: &Connection, directory: &Path, decision: &Decision) -> Result<()> {
     journal::validate_token(&decision.id, "decision ID", 128)?;
     journal::validate_token(&decision.rationale, "decision rationale", 16384)?;
     let action = serde_json::to_value(&decision.action)?;
@@ -466,12 +466,12 @@ fn split(
     // observations or inventing new evidence for the split entity.
     for observation in observations {
         let observation = observation.as_str().expect("validated above");
-        let (revision, sequence): (String, u64) = connection.query_row(
+        let (revision, sequence): (String, i64) = connection.query_row(
             "SELECT revision,admitted_sequence FROM observations WHERE id=?1",
             [observation],
             |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
-        admit(connection, directory, &revision, sequence)?;
+        admit(connection, directory, &revision, sequence as u64)?;
     }
     refresh_entity(connection, directory, &original, kind)?;
     refresh_entity(connection, directory, created, kind)?;
@@ -489,7 +489,7 @@ pub(super) fn checkpoint(
     connection.execute(
         "INSERT INTO canonical_records VALUES(?1,?2,?3)",
         params![
-            record.sequence,
+            record.sequence as i64,
             hash,
             std::str::from_utf8(bytes)
                 .map_err(|_| StoreError::Invalid("non-UTF8 canonical JSON".into()))?
@@ -497,7 +497,7 @@ pub(super) fn checkpoint(
     )?;
     connection.execute(
         "UPDATE projection_state SET sequence=?1,journal_bytes=?2,sha256=?3,journal_stamp=?4 WHERE singleton=1",
-        params![record.sequence, length, hash, stamp],
+        params![record.sequence as i64, length as i64, hash, stamp],
     )?;
     Ok(())
 }

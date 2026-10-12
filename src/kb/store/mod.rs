@@ -105,12 +105,12 @@ impl KbStore {
         // Validate the whole canonical chain on every opening. Existing projection
         // rows may be cached, but no altered/truncated journal is silently accepted.
         store.synchronize(true)?;
-        let projected_version: usize = store.connection()?.query_row(
+        let projected_version: i64 = store.connection()?.query_row(
             "SELECT projection_version FROM projection_state WHERE singleton=1",
             [],
             |row| row.get(0),
         )?;
-        if projected_version != MIGRATIONS.len() {
+        if projected_version as usize != MIGRATIONS.len() {
             store.rebuild_locked()?;
         }
         Ok(store)
@@ -252,7 +252,7 @@ impl KbStore {
         let summary = summary(&transaction)?;
         transaction.execute(
             "UPDATE projection_state SET projection_version=?1 WHERE singleton=1",
-            [MIGRATIONS.len()],
+            [MIGRATIONS.len() as i64],
         )?;
         transaction.commit()?;
         Ok(summary)
@@ -293,7 +293,8 @@ impl KbStore {
 }
 
 fn migrate(connection: &mut Connection) -> Result<()> {
-    let version: usize = connection.pragma_query_value(None, "user_version", |row| row.get(0))?;
+    let version =
+        connection.pragma_query_value(None, "user_version", |row| row.get::<_, i64>(0))? as usize;
     if version > MIGRATIONS.len() {
         return Err(StoreError::Invalid(format!(
             "database schema {version} is newer than this program"
@@ -302,7 +303,7 @@ fn migrate(connection: &mut Connection) -> Result<()> {
     let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
     for (index, sql) in MIGRATIONS.iter().enumerate().skip(version) {
         transaction.execute_batch(sql)?;
-        transaction.pragma_update(None, "user_version", index + 1)?;
+        transaction.pragma_update(None, "user_version", (index + 1) as i64)?;
     }
     transaction.commit()?;
     Ok(())
@@ -312,8 +313,8 @@ fn summary(connection: &Connection) -> Result<RebuildSummary> {
     let count = |table: &str| -> Result<u64> {
         Ok(
             connection.query_row(&format!("SELECT count(*) FROM {table}"), [], |row| {
-                row.get(0)
-            })?,
+                row.get::<_, i64>(0)
+            })? as u64,
         )
     };
     Ok(RebuildSummary {

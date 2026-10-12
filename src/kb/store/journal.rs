@@ -181,8 +181,8 @@ pub(super) fn state(connection: &Connection) -> Result<State> {
         [],
         |row| {
             Ok(State {
-                sequence: row.get(0)?,
-                bytes: row.get(1)?,
+                sequence: row.get::<_, i64>(0)? as u64,
+                bytes: row.get::<_, i64>(1)? as u64,
                 sha256: row.get(2)?,
                 stamp: row.get(3)?,
             })
@@ -375,7 +375,7 @@ pub(super) fn replay(connection: &Connection, directory: &Path, full: bool) -> R
             let mirrored: Option<String> = connection
                 .query_row(
                     "SELECT sha256 FROM canonical_records WHERE sequence=?1",
-                    [record.sequence],
+                    [record.sequence as i64],
                     |row| row.get(0),
                 )
                 .optional()?;

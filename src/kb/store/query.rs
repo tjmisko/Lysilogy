@@ -77,7 +77,7 @@ impl KbStore {
         let connection = self.connection()?;
         let mut ids = connection.prepare(
             "SELECT entity_id FROM entity_identifiers WHERE identifier=?1 ORDER BY entity_id LIMIT ?2"
-        )?.query_map(params![key,limit+1], |row| row.get(0))?
+        )?.query_map(params![key,(limit+1) as i64], |row| row.get(0))?
           .collect::<std::result::Result<Vec<_>,_>>()?;
         let truncated = ids.len() > limit;
         ids.truncate(limit);
@@ -154,7 +154,7 @@ impl KbStore {
             "SELECT id FROM {table} WHERE {column} MATCH ?1 ORDER BY id LIMIT ?2"
         ))?;
         let mut ids = statement
-            .query_map(params![query, limit + 1], |row| row.get(0))?
+            .query_map(params![query, (limit + 1) as i64], |row| row.get(0))?
             .collect::<std::result::Result<Vec<_>, _>>()?;
         let truncated = ids.len() > limit;
         ids.truncate(limit);
@@ -188,7 +188,7 @@ fn neighborhood(
         UNION ALL SELECT c.cited,2 FROM first f JOIN citations c ON c.citing=f.id
         UNION ALL SELECT c.citing,2 FROM first f JOIN citations c ON c.cited=f.id
     ) INSERT INTO neighborhood_nodes SELECT id,min(distance) FROM reached GROUP BY id ORDER BY min(distance),id LIMIT ?2";
-    connection.execute(sql, params![root, limits.max_nodes + 1])?;
+    connection.execute(sql, params![root, (limits.max_nodes + 1) as i64])?;
     let mut statement =
         connection.prepare("SELECT id,distance FROM neighborhood_nodes ORDER BY distance,id")?;
     let rows = statement
@@ -218,7 +218,7 @@ fn neighborhood(
     });
     let mut statement=connection.prepare("SELECT c.citing,c.cited FROM neighborhood_nodes n CROSS JOIN citations c ON c.citing=n.id JOIN neighborhood_nodes other ON other.id=c.cited ORDER BY c.citing,c.cited LIMIT ?1")?;
     let rows = statement
-        .query_map([limits.max_edges + 1], |row| {
+        .query_map([(limits.max_edges + 1) as i64], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         })?
         .collect::<std::result::Result<Vec<_>, _>>()?;
