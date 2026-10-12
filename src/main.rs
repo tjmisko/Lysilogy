@@ -53,6 +53,11 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Maintain the rebuildable cross-paper knowledge base.
+    Kb {
+        #[command(subcommand)]
+        command: KbCommand,
+    },
     /// Evaluate cached knowledge-base evidence and the scorecard.
     Eval(lysilogy::eval::EvalArgs),
     /// Serve the API and built frontend.
@@ -179,6 +184,12 @@ enum Command {
     },
 }
 
+#[derive(Debug, Subcommand)]
+enum KbCommand {
+    /// Rebuild SQLite from canonical admitted sources, decisions and lists.
+    Rebuild,
+}
+
 #[tokio::main]
 async fn main() -> ExitCode {
     init_tracing();
@@ -196,6 +207,14 @@ async fn main() -> ExitCode {
 async fn run(cli: Cli) -> Result<()> {
     if let Some(Command::Eval(args)) = &cli.command {
         return lysilogy::eval::run(args);
+    }
+    if let Some(Command::Kb {
+        command: KbCommand::Rebuild,
+    }) = &cli.command
+    {
+        let store = lysilogy::kb::store::KbStore::open(&cli.data)?;
+        println!("{}", serde_json::to_string_pretty(&store.rebuild()?)?);
+        return Ok(());
     }
     let config = lysilogy::config::AppConfig::load(
         cli.config
@@ -216,6 +235,7 @@ async fn run(cli: Cli) -> Result<()> {
         web: PathBuf::from("web/dist"),
     }) {
         Command::Eval(_) => unreachable!("evaluation dispatch precedes library initialization"),
+        Command::Kb { .. } => unreachable!("KB maintenance precedes library initialization"),
         Command::Serve { bind, web } => serve(state, bind, &web).await,
         Command::Scan => {
             let library = state.refresh().await?;

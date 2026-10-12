@@ -4,7 +4,7 @@ One page, kept current. The [phase plan](knowledge-base-phases.md) holds the des
 file ownership; its session log is an archive. Update this file in the same PR as any change it
 describes.
 
-Last updated: 2026-09-15.
+Last updated: 2026-10-12.
 
 ## Where things stand
 
@@ -12,7 +12,7 @@ Last updated: 2026-09-15.
 | --- | --- |
 | Merged | A1 foundations (#19 #20 #24 #34 #63 #68 #69), name/title normalizers (#35 #36), figure/table detector fixes, LaTeX truth releases V1–V5 (11 papers), evaluation harness, 10,951-PDF corpus with native indexes. |
 | Scorecard | 1/5 gates (G5), 3/30 objectives (O1 0.99, O2 0.89 on 50 regions; O30). Everything else unavailable. |
-| Branches | #25 bibliography (draft #94, done on its cohort, title accuracy 30/35 tracked in #103); #33 SQLite store (no PR, 16 shallow compile errors, never compiled); #132 formal truth V6 (no PR); #71/#72 provider truth builders (drafts #93/#95). |
+| Branches | #25 bibliography (draft #94, done on its cohort, title accuracy 30/35 tracked in #103); #33 SQLite store merged into `integration/knowledge-base` (compiles, 26 store tests pass; unavailable-KB startup state, G4 and O28 still open); #132 formal truth V6 (no PR); #71/#72 provider truth builders (drafts #93/#95). |
 | Environment | crates.io, Crossref and OpenAlex reachable; 111 GiB free. The handoff's network/disk blockers were Codex-sandbox artifacts. |
 
 ## Milestones
@@ -36,8 +36,8 @@ Last updated: 2026-09-15.
 
 ## Next actions
 
-1. Finish and merge M0 (branch `feat/object-grading`).
-2. Fix the 16 compile errors on `feat/e2.1-kb-store`, add the unavailable-KB startup state, run
-   its tests, open the PR.
-3. Merge #25 with #103 as the recorded miss.
-4. Commit or branch the PDF-preview changes sitting dirty in the main checkout before M2's UI work.
+1. Add the unavailable-KB startup state to the store (#33) and measure G4 and O28.
+2. Merge #25 with #103 as the recorded miss.
+3. #39 → #38 (exact-key matcher only) → #40 → #42 → #44 to finish M1.
+
+M0 merged in #139; the PDF-preview changes landed in #140.

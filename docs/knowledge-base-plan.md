@@ -569,6 +569,71 @@ Acceptance: deleting the database and rebuilding yields identical entities, IDs,
 migrations run on startup; two-hop neighborhood queries meet a target measured on a 500k-Work
 synthetic graph.
 
+Implementation decisions (E2.1): `src/kb/store/` owns the bundled SQLite projection and versioned
+migrations. `kb rebuild` dispatches before library/config initialization, does not discover PDFs
+or read notes, and replaces projection rows in a transaction in the existing WAL database.
+It never renames a live database or modifies `paper-identities.json`. Startup migrates the store
+after validating the library/data roots.
+
+`kb/decisions.jsonl` is a version-1 envelope journal with sequential records and a SHA-256 chain.
+Its events are allocation (`origin → W…/P…`), admission of a retained observation revision, and
+the existing typed `Decision`. The store allocates opaque random IDs once and fsyncs the journal
+before exposing them or committing SQLite. Stable observation origin/binding is independent of
+payload revision; a split changes the binding, and subsequent source refreshes retain it.
+The database mirrors these records; neither rowids nor mutable titles recreate IDs.
+
+Admission requires a typed projection from the owning adapter and a source payload whose hash
+and content match a regular relative source file. It retains that admitted revision under
+`kb/admitted/<sha256>.json` before journaling its binding. Per-paper artifacts and provider caches
+are mutable or expiring, so this retained version is needed to reproduce prior admissions.
+Rebuild reads these exact admitted per-paper/provider versions and canonical lists/decisions;
+it does not automatically accept every JSON file in an ambient provider cache. Local/provider
+admission policy remains E2.8/E2.9. New decisions use the envelope writer, not raw appended
+`Decision` JSON lines. Invalid chains, missing revisions, invalid relationships or lists fail
+without replacing the preceding database projection.
+
+Schema 3 rebuilds each entity from all current observations bound to its canonical ID, in
+lexicographic observation-ID order. A producer refresh replaces only that observation's
+contribution. Identifiers, versions and local copies are unions; the first known scalar wins.
+Person display name and parsed components come from one observation as a coherent tuple.
+Name variants are unioned by spelling with the maximum supplied count, since producer counts
+may overlap. This deterministic scalar precedence is a storage default pending later resolver
+policy, not a claim of higher evidence quality. Every competing complete assertion, revision
+and raw observation remains queryable through `KbStore::assertions` and the logical snapshot.
+Conflicting records for one version ID or local-copy PaperId fail transactionally before a
+journal append. Admission, merge and both sides of a split use this same aggregation path.
+Absorbed IDs remain aliases after later refreshes.
+
+The nonunique identifier index returns every canonical candidate with an explicit limit and
+truncation flag; shared identifiers never merge entities. Person admission and lookup require
+bare checksum-valid ORCIDs, OpenAlex author tokens `A` plus positive decimal digits, and positive
+decimal Semantic Scholar author IDs. Raw forms remain in source observations. Work identifiers
+use the shared provider parser, with version-pinned arXiv IDs rejected at Work level and retained
+only on WorkVersion. Candidate lookup covers explicit Work-level identifiers only; it does not
+index version-only identifiers or infer a versionless identifier from one. Title keys are recomputed with E2.4's `title_key` on population
+and query, ignoring supplied stale keys. Schema migration retains the canonical log, validates
+its cached hashes, and marks projection upgrade complete only after successful regeneration.
+
+Before incremental journal replay or append, the store compares the open regular file's device,
+inode, length, modification time and change time to the last validated stamp. A changed stamp
+forces full chain and mirrored-prefix validation; writing checks the stamp again. Rebuild checks
+that cached prefix before clearing the projection. Opening always checks the whole chain.
+These checks detect externally edited prefixes without rescanning an unchanged log per allocation.
+
+The FTS5 trigram tables index Work title keys and Person display names. Two-hop queries traverse
+both citation directions and return all directed edges induced by the returned nodes, with
+explicit node/edge truncation flags. Production defaults are 500 nodes/5,000 edges; the O28
+benchmark requests the full 500,000/3,000,000 limits and rejects any truncation. Its 200 queries
+interleave 40 hub roots with 160 deterministic uniform roots, and an independent adjacency BFS
+checks every result outside the timing boundary.
+
+G4 remains unavailable until real K2 Crossref records exist. Its collector creates an isolated
+canonical state through the real allocation/admission APIs from deposited DOI pairs and author
+metadata, exercises a deliberate duplicate of an exact-DOI source to cover aliases, and compares
+transactional and deleted-database rebuilds. No fabricated PDFs or local-copy claims are needed;
+this allows Phase A validation before E2.8's production local ingestion. See
+[`scripts/kb/README.md`](../scripts/kb/README.md) for commands and the K2 adapter contract.
+
 Tests: should produce identical entities when rebuilding from scratch; should apply pending
 migrations when opening an older database; should return a two-hop neighborhood when edges exist in
 both directions.
