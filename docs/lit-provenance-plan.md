@@ -962,8 +962,8 @@ Deviations (smallest sound changes):
 Gate (worktree root, test DB from `scripts/db env`):
 
 - `cargo clippy --workspace --all-targets -- -D warnings`: clean.
-- `cargo test --workspace`: 344 root, 21, 1, 1 (ingest 241, db 110, core 95 in their own
-  binaries) passed, 0 failed; DB tests ran (no "skipping").
+- `cargo test --workspace`: every binary passed, 0 failed (root 344 + 21 + 1 + 1, core 95, db 110,
+  ingest 241); DB tests ran (no "skipping").
 - web: `typecheck`, `lint`, `build` pass; `test:walk` 11, `test:ramp` 10, `test:relevance` 13,
   `test:literature-layout` 31 pass. `test:api` fails identically on the unmodified base
   (`ERR_MODULE_NOT_FOUND` for the extensionless `./relevance` import in `web/src/lib/api.ts`
