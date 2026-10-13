@@ -289,7 +289,7 @@ fn figure_region(
             .min_by(|(_, a), (_, b)| {
                 let distance = |c: &TextRect| {
                     let dx = (c.x_min - rect.x_max).max(rect.x_min - c.x_max).max(0.0);
-                    dx * dx + 4.0 * (c.y_min - rect.y_max).powi(2)
+                    4.0f32.mul_add((c.y_min - rect.y_max).powi(2), dx * dx)
                 };
                 distance(a).total_cmp(&distance(b))
             });
