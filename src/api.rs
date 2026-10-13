@@ -10,6 +10,7 @@ use std::{
 };
 
 mod citation_graph;
+mod labels;
 mod literature;
 mod notes;
 mod reader_tools;
@@ -126,13 +127,8 @@ struct CitationsResponse {
     work: Work,
     outgoing: Vec<Work>,
     incoming: Vec<Work>,
+    edges: Vec<labels::GraphEdge>,
     local_papers: literature::LocalPapers,
-}
-
-#[derive(Debug, Serialize)]
-struct GraphEdge {
-    citing: WorkId,
-    cited: WorkId,
 }
 
 #[derive(Debug, Serialize)]
@@ -140,7 +136,7 @@ struct NeighborsResponse {
     center: WorkId,
     direction: &'static str,
     nodes: Vec<Work>,
-    edges: Vec<GraphEdge>,
+    edges: Vec<labels::GraphEdge>,
     local_papers: literature::LocalPapers,
 }
 
@@ -1949,6 +1945,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(reader_tools::routes())
         .merge(citation_graph::routes())
         .merge(literature::routes())
+        .merge(labels::routes())
         .merge(source_index::routes())
         .merge(notes::routes())
         .merge(vimrc::routes())
@@ -2050,13 +2047,22 @@ async fn get_work_citations(
         Ok(work) => work,
         Err(response) => return *response,
     };
-    let outgoing = match graph.citations.outgoing(work_id).await {
+    let outgoing = match graph.citations.outgoing(work.id).await {
         Ok(works) => works,
         Err(error) => return graph_query_failure(&error),
     };
-    let incoming = match graph.citations.incoming(work_id).await {
+    let incoming = match graph.citations.incoming(work.id).await {
         Ok(works) => works,
         Err(error) => return graph_query_failure(&error),
+    };
+    let pairs: Vec<(WorkId, WorkId)> = outgoing
+        .iter()
+        .map(|cited| (work.id, cited.id))
+        .chain(incoming.iter().map(|citing| (citing.id, work.id)))
+        .collect();
+    let edges = match labels::edge_payloads(&state, &pairs).await {
+        Ok(edges) => edges,
+        Err(response) => return *response,
     };
     let work_ids: Vec<WorkId> = std::iter::once(&work)
         .chain(&outgoing)
@@ -2073,6 +2079,7 @@ async fn get_work_citations(
             work,
             outgoing,
             incoming,
+            edges,
             local_papers,
         }),
     )
@@ -2103,10 +2110,11 @@ async fn get_graph_neighbors(
         Ok(work) => work,
         Err(response) => return *response,
     };
+    let work_id = center.id;
 
     let mut nodes = vec![center];
     let mut seen = HashSet::from([work_id]);
-    let mut edges = Vec::new();
+    let mut pairs = Vec::new();
 
     if matches!(
         direction,
@@ -2121,10 +2129,7 @@ async fn get_graph_neighbors(
             if seen.insert(cited) {
                 nodes.push(neighbor);
             }
-            edges.push(GraphEdge {
-                citing: work_id,
-                cited,
-            });
+            pairs.push((work_id, cited));
         }
     }
     if matches!(
@@ -2140,13 +2145,14 @@ async fn get_graph_neighbors(
             if seen.insert(citing) {
                 nodes.push(neighbor);
             }
-            edges.push(GraphEdge {
-                citing,
-                cited: work_id,
-            });
+            pairs.push((citing, work_id));
         }
     }
 
+    let edges = match labels::edge_payloads(&state, &pairs).await {
+        Ok(edges) => edges,
+        Err(response) => return *response,
+    };
     let work_ids: Vec<WorkId> = nodes.iter().map(|work| work.id).collect();
     let local_papers = match literature::local_papers_for(&state, &work_ids).await {
         Ok(local_papers) => local_papers,
@@ -2188,6 +2194,11 @@ fn parse_work_id(text: &str) -> std::result::Result<WorkId, GraphError> {
 }
 
 async fn fetch_work(graph: &GraphState, work_id: WorkId) -> std::result::Result<Work, GraphError> {
+    let work_id = graph
+        .works
+        .resolve_redirect(work_id)
+        .await
+        .map_err(|error| Box::new(graph_query_failure(&error)))?;
     match graph.works.get(work_id).await {
         Ok(Some(work)) => Ok(work),
         Ok(None) => Err(Box::new(graph_error(

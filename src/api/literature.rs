@@ -9,6 +9,7 @@ use std::{
 
 use axum::{
     Json, Router,
+    body::Bytes,
     extract::{Path as AxumPath, State},
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -16,8 +17,10 @@ use axum::{
 };
 use chrono::{DateTime, Utc};
 use lysilogy_core::{Work, WorkId, WorkLinkMethod};
-use lysilogy_ingest::literature::LiteratureSummary;
-use serde::Serialize;
+use lysilogy_ingest::{
+    labels::LabelOptions, literature::LiteratureSummary, local_evidence::LocalEvidenceSummary,
+};
+use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
 use super::{
@@ -35,10 +38,17 @@ pub(super) struct LocalPaper {
 /// Local papers keyed by Work id. Works without a local paper have no entry.
 pub(super) type LocalPapers = BTreeMap<String, Vec<LocalPaper>>;
 
+/// What a finished job produced.
+#[derive(Clone, Debug)]
+pub struct JobOutcome {
+    summary: LiteratureSummary,
+    local: Option<LocalEvidenceSummary>,
+}
+
 #[derive(Clone, Debug)]
 pub enum LiteratureJobState {
     Running,
-    Succeeded(LiteratureSummary),
+    Succeeded(Box<JobOutcome>),
     Failed(String),
 }
 
@@ -48,7 +58,12 @@ pub struct LiteratureJobs(Arc<Mutex<HashMap<PaperId, LiteratureJobState>>>);
 
 impl LiteratureJobs {
     /// Start the flow unless one is already running. Returns the current state.
-    pub async fn start(&self, state: AppState, id: PaperId) -> LiteratureJobState {
+    pub async fn start(
+        &self,
+        state: AppState,
+        id: PaperId,
+        options: LiteratureOptions,
+    ) -> LiteratureJobState {
         let mut jobs = self.0.lock().await;
         if matches!(jobs.get(&id), Some(LiteratureJobState::Running)) {
             return LiteratureJobState::Running;
@@ -61,10 +76,12 @@ impl LiteratureJobs {
             let worker_state = state.clone();
             let worker_id = id.clone();
             let outcome =
-                tokio::spawn(async move { worker_state.run_literature_flow(&worker_id).await })
+                tokio::spawn(async move { run_job(&worker_state, &worker_id, options).await })
                     .await;
             let finished = match outcome {
-                Ok(Ok(summary)) => LiteratureJobState::Succeeded(summary),
+                Ok(Ok((summary, local))) => {
+                    LiteratureJobState::Succeeded(Box::new(JobOutcome { summary, local }))
+                }
                 Ok(Err(error)) => LiteratureJobState::Failed(error.to_string()),
                 Err(error) => LiteratureJobState::Failed(format!("the job stopped: {error}")),
             };
@@ -76,6 +93,62 @@ impl LiteratureJobs {
     async fn get(&self, id: &PaperId) -> Option<LiteratureJobState> {
         self.0.lock().await.get(id).cloned()
     }
+}
+
+/// The sidecar that writes edge labels.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LabelSidecarChoice {
+    Claude,
+    Codex,
+}
+
+/// What a `lit` job does beyond the provider flow. The default is Ramp A's
+/// behavior: provider references only.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LiteratureOptions {
+    /// Also resolve the paper's own bibliography and mentions.
+    pub local: Option<bool>,
+    /// Also label local edges with this sidecar. Implies `local`.
+    pub labels: Option<LabelSidecarChoice>,
+    /// Most model calls for the label pass.
+    pub label_limit: Option<usize>,
+}
+
+async fn run_job(
+    state: &AppState,
+    id: &PaperId,
+    options: LiteratureOptions,
+) -> crate::Result<(LiteratureSummary, Option<LocalEvidenceSummary>)> {
+    let summary = state.run_literature_flow(id).await?;
+    if !options.local.unwrap_or(false) && options.labels.is_none() {
+        return Ok((summary, None));
+    }
+    let Some(mut local) = state.run_local_evidence(id, &summary).await? else {
+        return Ok((summary, None));
+    };
+    let Some(sidecar) = options.labels else {
+        return Ok((summary, Some(local)));
+    };
+    let provider = match sidecar {
+        LabelSidecarChoice::Claude => crate::domain::AnalysisProvider::Claude,
+        LabelSidecarChoice::Codex => crate::domain::AnalysisProvider::Codex,
+    };
+    let labeler = crate::labeling::SidecarLabeler::new(
+        provider,
+        crate::analysis::LocalCliAnalyzer::default(),
+        state.store.root().join("labels"),
+    )?;
+    let defaults = LabelOptions::default();
+    let label_options = LabelOptions {
+        limit: options.label_limit.unwrap_or(defaults.limit),
+        ..defaults
+    };
+    local.labels = state
+        .label_local_edges(id, &summary, &labeler, label_options)
+        .await?;
+    Ok((summary, Some(local)))
 }
 
 pub(super) fn routes() -> Router<AppState> {
@@ -176,20 +249,25 @@ struct LiteratureStatusResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     summary: Option<LiteratureSummary>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    local: Option<LocalEvidenceSummary>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     message: Option<String>,
 }
 
 impl From<Option<LiteratureJobState>> for LiteratureStatusResponse {
     fn from(job: Option<LiteratureJobState>) -> Self {
-        let (state, summary, message) = match job {
-            None => ("idle", None, None),
-            Some(LiteratureJobState::Running) => ("running", None, None),
-            Some(LiteratureJobState::Succeeded(summary)) => ("succeeded", Some(summary), None),
-            Some(LiteratureJobState::Failed(message)) => ("failed", None, Some(message)),
+        let (state, summary, local, message) = match job {
+            None => ("idle", None, None, None),
+            Some(LiteratureJobState::Running) => ("running", None, None, None),
+            Some(LiteratureJobState::Succeeded(outcome)) => {
+                ("succeeded", Some(outcome.summary), outcome.local, None)
+            }
+            Some(LiteratureJobState::Failed(message)) => ("failed", None, None, Some(message)),
         };
         Self {
             state,
             summary,
+            local,
             message,
         }
     }
@@ -208,6 +286,7 @@ async fn require_paper(state: &AppState, id: &str) -> Result<PaperId, Box<Respon
 async fn start_literature(
     State(state): State<AppState>,
     AxumPath(id): AxumPath<String>,
+    body: Bytes,
 ) -> Response {
     let paper_id = match require_paper(&state, &id).await {
         Ok(paper_id) => paper_id,
@@ -216,8 +295,22 @@ async fn start_literature(
     if let Err(response) = graph_or_unavailable(&state) {
         return *response;
     }
+    let options = if body.iter().all(u8::is_ascii_whitespace) {
+        LiteratureOptions::default()
+    } else {
+        match serde_json::from_slice(&body) {
+            Ok(options) => options,
+            Err(error) => {
+                return super::graph_error(
+                    StatusCode::BAD_REQUEST,
+                    "invalid_body",
+                    &format!("The request body is not valid: {error}"),
+                );
+            }
+        }
+    };
     let jobs = state.literature_jobs.clone();
-    let current = jobs.start(state, paper_id).await;
+    let current = jobs.start(state, paper_id, options).await;
     (
         StatusCode::ACCEPTED,
         Json(LiteratureStatusResponse::from(Some(current))),
@@ -350,6 +443,34 @@ mod tests {
                     .body(Body::empty())
                     .expect("request"),
             )
+            .await
+            .expect("response");
+        let status = response.status();
+        let bytes = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        (
+            status,
+            serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+        )
+    }
+
+    async fn request_with_body(
+        state: &AppState,
+        method: &str,
+        uri: &str,
+        body: Option<Value>,
+    ) -> (StatusCode, Value) {
+        let mut builder = Request::builder().method(method).uri(uri);
+        let body = body.map_or_else(Body::empty, |value| {
+            builder = std::mem::take(&mut builder).header("content-type", "application/json");
+            Body::from(value.to_string())
+        });
+        let response = build_router(state.clone(), None)
+            .oneshot(builder.body(body).expect("request"))
             .await
             .expect("response");
         let status = response.status();
@@ -536,12 +657,9 @@ mod tests {
         .expect("job finished before the timeout")
     }
 
-    #[tokio::test]
-    async fn should_report_running_then_succeeded_when_lit_job_completes() {
-        let Some(graph) = test_graph().await else {
-            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
-            return;
-        };
+    /// A state whose fake `pdftotext` prints a title and DOI that the fake
+    /// provider knows, so `lit` links the paper to a Work.
+    async fn linkable_state(graph: GraphState) -> (AppState, PaperId, std::path::PathBuf, String) {
         let marker = marker();
         let doi = format!("10.5555/{marker}");
         let transport = SlowTransport {
@@ -562,7 +680,8 @@ mod tests {
         let library = tempfile::tempdir().expect("library");
         let data = tempfile::tempdir().expect("data");
         let file_name = format!("Autor - 2013 - The Study of Things {marker}.pdf");
-        std::fs::write(library.path().join(&file_name), b"placeholder").expect("write");
+        let source = library.path().join(&file_name);
+        std::fs::write(&source, format!("placeholder {marker}")).expect("write");
         let state = AppState::with_services(
             library.path(),
             data.path(),
@@ -573,7 +692,19 @@ mod tests {
         .expect("state")
         .with_graph(graph)
         .with_literature_client(crate::literature::LiteratureClient::new(transport));
+        // The temp directories live as long as the test process needs them.
+        std::mem::forget((programs, library, data));
         let paper_id = PaperId::from_relative_path(Path::new(&file_name));
+        (state, paper_id, source, marker)
+    }
+
+    #[tokio::test]
+    async fn should_keep_ramp_a_behavior_when_lit_body_empty() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let (state, paper_id, _, _) = linkable_state(graph).await;
         let uri = format!("/api/papers/{paper_id}/lit");
 
         let (status, json) = request(&state, "GET", &uri).await;
@@ -599,9 +730,67 @@ mod tests {
         assert_eq!(json["state"], "succeeded", "{json}");
         assert_eq!(json["summary"]["status"]["kind"], "linked", "{json}");
         assert!(json.get("message").is_none(), "{json}");
+        assert!(
+            json.get("local").is_none(),
+            "an empty body is Ramp A: {json}"
+        );
 
         let (_, linked) = request(&state, "GET", &format!("/api/papers/{paper_id}/work")).await;
         assert_eq!(linked["link"]["method"], "identifier", "{linked}");
+    }
+
+    #[tokio::test]
+    async fn should_run_local_evidence_when_lit_body_requests_local() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let (state, paper_id, source, marker) = linkable_state(graph).await;
+        crate::source_index::test_support::cache_fixture_with_blocks(
+            &source,
+            &state.store.paper_dir(&paper_id),
+            &[
+                (&format!("The Study of Things {marker}"), "heading", 1),
+                (&format!("DOI: 10.5555/{marker}"), "body", 1),
+                ("Earlier work [1] shows this clearly.", "body", 1),
+                ("References", "heading", 2),
+                (
+                    &format!("[1] Adams. Cited evidence {marker}. 2019."),
+                    "body",
+                    2,
+                ),
+            ],
+        )
+        .await;
+        let uri = format!("/api/papers/{paper_id}/lit");
+        let (status, _) =
+            request_with_body(&state, "POST", &uri, Some(json!({"local": true}))).await;
+        assert_eq!(status, StatusCode::ACCEPTED);
+        let json = poll_until_finished(&state, &uri).await;
+        assert_eq!(json["state"], "succeeded", "{json}");
+        assert_eq!(json["local"]["entries"], 1, "{json}");
+        assert_eq!(json["local"]["mentions"], 1, "{json}");
+        assert_eq!(json["local"]["local_edges"], 1, "{json}");
+        assert!(json["local"]["labels"].is_null(), "{json}");
+    }
+
+    #[tokio::test]
+    async fn should_reject_body_when_lit_options_are_unknown() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let fixture = fixture(Some(graph), |state| state).await;
+        let uri = format!("/api/papers/{}/lit", fixture.paper_id);
+        for body in [
+            json!({"labels": "gpt"}),
+            json!({"label_limit": -1}),
+            json!({"extra": 1}),
+        ] {
+            let (status, json) = request_with_body(&fixture.state, "POST", &uri, Some(body)).await;
+            assert_eq!(status, StatusCode::BAD_REQUEST, "{json}");
+            assert_eq!(json["error"], "invalid_body");
+        }
     }
 
     #[tokio::test]

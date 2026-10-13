@@ -158,7 +158,7 @@ impl RelationshipRepository {
         claim: RelationshipClaimId,
         relation: &str,
         reason: &str,
-        quote: &str,
+        quote: Option<&str>,
     ) -> Result<StoredClaim> {
         let mut transaction = self.pool.begin().await?;
         let old = sqlx::query(
@@ -473,7 +473,7 @@ mod tests {
         let old = insert(&fixture).await;
         let new = fixture
             .repo
-            .supersede_with_user_claim(old, "critiques", "It disputes it.", "prior work")
+            .supersede_with_user_claim(old, "critiques", "It disputes it.", Some("prior work"))
             .await
             .expect("supersede");
         assert_eq!(new.origin, RelationshipOrigin::User);
@@ -495,7 +495,7 @@ mod tests {
 
         let again = fixture
             .repo
-            .supersede_with_user_claim(old, "other", "r", "q")
+            .supersede_with_user_claim(old, "other", "r", Some("q"))
             .await;
         assert!(matches!(again, Err(DbError::Conflict(_))));
     }
@@ -532,7 +532,7 @@ mod tests {
 
         fixture
             .repo
-            .supersede_with_user_claim(old, "other", "reason", "quote")
+            .supersede_with_user_claim(old, "other", "reason", Some("quote"))
             .await
             .expect("supersede");
         let result = fixture

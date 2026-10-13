@@ -34,6 +34,14 @@ pub enum DbError {
     Conflict(String),
 }
 
+impl DbError {
+    /// Whether a query expected a row and found none.
+    #[must_use]
+    pub const fn is_not_found(&self) -> bool {
+        matches!(self, Self::Sqlx(sqlx::Error::RowNotFound))
+    }
+}
+
 /// Result alias for the persistence layer.
 pub type Result<T> = std::result::Result<T, DbError>;
 
