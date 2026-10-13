@@ -1050,3 +1050,82 @@ Live check on the dev DB (`lysilogy lit "Deep Reinforcement Learning from Human 
   then `cached` on the rerun (1.0 s); it recorded 5 `publisher/crossref-v1/explicit` claims
   (title, year, authors `David H Autor, David Dorn, Gordon H Hanson`, venue `American Economic
   Review`, doi). `--publisher` for cited Works was exercised only against fixtures.
+
+## U3 implementation notes
+
+Built as planned: fast-model plumbing, `field_model.rs` (grounding, per-entry cache, batching),
+`SidecarFieldExtractor`, `lit --fields`, `AppState::work_provenance` and the override/review
+wrappers, the provenance API, and `lysilogy provenance show|set|clear`. Commits: `b8859e1` (fast
+model), `7fba890` (`field_model`, `concurrency`, `EvidenceRepository::resolved_entries`),
+`9870ef2` (provenance service and API), `0bd7782` (field extractor, `--fields`, CLI).
+
+Haiku check (manual `claude --print` calls): `--effort low` is accepted with `--model haiku` and
+the call ran on `claude-haiku-5-5`, so `fast` keeps `--effort low`. A second finding changed the
+design: with `--permission-mode plan`, the `haiku` alias is silently replaced by the plan model
+(`modelUsage` showed `claude-sonnet-5-5`), while the full id `claude-haiku-5-5` and plan-free calls
+run on Haiku. Fast calls are tool-free, so `StageProfile.claude_model = Some("haiku")` also
+drops `--permission-mode plan`. Every other call is unchanged (a test asserts no `--model`).
+
+Deviations (smallest sound changes):
+
+- `EvidenceRepository::resolved_entries(version)` (db) lists a version's accepted entries with
+  their Work in ordinal order; the plan put target selection in `local_evidence.rs`, but the
+  selection needs no resolver internals, so it lives in `field_model.rs` and reads that query.
+- `FieldDraftItem.index` is `i64`, so a negative or oversized index is `unknown_index`, not a
+  parse failure. Entries are numbered from 0 in the prompt.
+- Paper fallback runs when any of title, authors, year lacks a non-model `paper` claim (always,
+  since no deterministic year exists) and writes claims only for the fields that lack one.
+- `entries_considered` counts resolved entries other than the paper itself; the weak-field test is
+  `Missing`/`Heuristic` (everything today, A5).
+- `lit --fields` shares `--sidecar` with `--labels`; the CLI prints a `Fields` line and, for the
+  front-matter call, a `Paper` line in the same format. API: `fields`, `fields_limit` (strict
+  parsing; unknown values give `invalid_body`).
+- `ScriptedFieldExtractor` is public in `field_model.rs` like `ScriptedLabeler`.
+
+Gate (worktree root, test DB from `scripts/db env`):
+
+- `cargo clippy --workspace --all-targets -- -D warnings`: clean.
+- `cargo test --workspace --no-fail-fast`: root lib 367, root bin 26 + 1 + 1, core 95, db 110,
+  ingest 286 passed, 0 failed (DB tests ran; the acquisition test that failed in U2 passed).
+- web (no web change in U3): `typecheck`, `lint`, `build` pass; `test:walk` 11, `test:ramp` 10,
+  `test:relevance` 13, `test:literature-layout` 31 pass; `test:api` still fails on the base
+  (`ERR_MODULE_NOT_FOUND` for `./relevance`).
+
+Live check on the dev DB (release build, scratch `--data`/`--notes`, library read from the main
+checkout), `lit "Deep Reinforcement Learning from Human Preferences" --fields --sidecar claude
+--fields-limit 3`:
+
+- Run 1, 37.4 s: `Fields considered 53 · model calls 2 · cached 0 · claims 69 · dropped 0 · failed 0
+  · skipped (higher tier) 21`; `Paper considered 1 · model calls 1 · claims 1`. 32 entries went to
+  the model (batches of 20 and 12, under the limit of 3). Claims: title 22, year 25, author 22
+  (`citing_bibliography/bib-model-v1/model`) plus 1 `paper/frontmatter-model-v1` author list. No
+  omitted entries.
+- Run 2, 1.0 s: `model calls 0 · cached 32 · claims 0`; paper `cached 1`.
+- Grounded samples (cache records): "April: Active preference learning-based reinforcement
+  learning" / 3 authors / 2012; "Mastering the game of Go ..." / 20 authors / 2016; "Concrete
+  problems in AI safety" / 6 authors / 2016; "Asynchronous methods for deep reinforcement
+  learning" / 8 authors / 2016; the paper's own title and 6 authors. A tail fragment ("In
+  International Conference on Intelligent Robots and Systems, ... 2012.") came back with an empty
+  title and authors and year 2012 (empty means absent, not a drop).
+- Dropped samples: none. Haiku copied every value verbatim in this run, so there are no real
+  dropped answers to show; the drop codes are covered by the pure tests.
+- `provenance show` on the paper: title `paper/heuristic` selected with four agreeing OpenAlex /
+  library claims; year 2017 from OpenAlex; DOI from OpenAlex; authors selected from
+  `paper/model` (front matter) and shown as disagreeing with OpenAlex only in order (front-matter
+  text extraction reads the author grid row by row: Christiano, Martic, Leike, ... versus the
+  OpenAlex order Christiano, Leike, Brown, ...). Because `paper` outranks `openalex` whatever the
+  confidence (Decision 12), a model-read author order from a gridded header can beat an explicit
+  OpenAlex list. Candidate follow-up: rank `model` below `explicit`/`heuristic` across origins for
+  authors, or require agreement with a lower tier. Not changed here.
+- Stub `Superintelligence` (OpenAlex + bib-v1 + model): model claims agree on title and authors;
+  year 2014 (bib-v1 and model) disagrees with OpenAlex 2015, which wins.
+- Stub `arXiv preprint arXiv:1603.04467, 2016` (bib-v1 mis-parse): bib-v1 title is the venue
+  string and authors are `Martin Abadi et al. Tensorflow: ...`; the model claims are correct
+  (`Tensorflow: Large-scale machine learning on heterogeneous distributed systems`, `Martin
+  Abadi`) but rank below bib-v1, so the wrong value stays selected. This is Open question 1
+  with data: for entries bib-v1 mis-splits, the model is the better source.
+- `set`/`clear` on that stub: `set title "Scratch Override Title"` selected `user/explicit` and
+  set `display_title`; `clear title` restored `arXiv preprint arXiv:1603.04467, 2016`
+  (`display_title`, `known` checked in `graph.work`); `set year 19999` is refused
+  (`year must be between 1400 and 2200`); `set authors "A. One; B. Two"` then `clear authors`
+  restored the bib-v1 list. Only retracted scratch overrides remain (history is kept, A9).
