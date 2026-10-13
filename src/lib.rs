@@ -10,6 +10,7 @@ pub mod domain;
 pub mod error;
 pub mod expansion;
 pub mod extract;
+pub mod field_extraction;
 mod frontmatter;
 pub mod graph;
 pub mod jobs;

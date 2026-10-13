@@ -17,7 +17,8 @@ use axum::{
 use chrono::{DateTime, Utc};
 use lysilogy_core::{Work, WorkId, WorkLinkMethod};
 use lysilogy_ingest::{
-    labels::LabelOptions, literature::LiteratureSummary, local_evidence::LocalEvidenceSummary,
+    field_model::FieldOptions, labels::LabelOptions, literature::LiteratureSummary,
+    local_evidence::LocalEvidenceSummary,
 };
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
@@ -115,6 +116,11 @@ pub struct LiteratureOptions {
     pub label_limit: Option<usize>,
     /// Also fetch the publisher (Crossref) record of cited Works with a DOI.
     pub publisher: Option<bool>,
+    /// Also read missing authors and years with this sidecar's cheap model.
+    /// Implies `local`.
+    pub fields: Option<LabelSidecarChoice>,
+    /// Most model calls for the field pass.
+    pub fields_limit: Option<usize>,
 }
 
 /// Run the job, then refresh prominence around the linked Work. A refresh
@@ -139,33 +145,53 @@ async fn run_job_steps(
     let summary = state
         .run_literature_flow(id, options.publisher.unwrap_or(false))
         .await?;
-    if !options.local.unwrap_or(false) && options.labels.is_none() {
+    if !options.local.unwrap_or(false) && options.labels.is_none() && options.fields.is_none() {
         return Ok((summary, None));
     }
     let Some(mut local) = state.run_local_evidence(id, &summary).await? else {
         return Ok((summary, None));
     };
-    let Some(sidecar) = options.labels else {
-        return Ok((summary, Some(local)));
-    };
-    let provider = match sidecar {
+    if let Some(sidecar) = options.labels {
+        let labeler = crate::labeling::SidecarLabeler::new(
+            sidecar_provider(sidecar),
+            crate::analysis::LocalCliAnalyzer::default(),
+            state.store.root().join("labels"),
+        )?;
+        let defaults = LabelOptions::default();
+        let label_options = LabelOptions {
+            limit: options.label_limit.unwrap_or(defaults.limit),
+            ..defaults
+        };
+        local.labels = state
+            .label_local_edges(id, &summary, &labeler, label_options)
+            .await?;
+    }
+    if let Some(sidecar) = options.fields {
+        let extractor = crate::field_extraction::SidecarFieldExtractor::new(
+            sidecar_provider(sidecar),
+            crate::analysis::LocalCliAnalyzer::default(),
+            state.store.root().join("fields"),
+        )?;
+        let defaults = FieldOptions::default();
+        let field_options = FieldOptions {
+            limit: options.fields_limit.unwrap_or(defaults.limit),
+            ..defaults
+        };
+        local.fields = state
+            .harvest_entry_fields_with_model(id, &summary, &extractor, field_options)
+            .await?;
+        local.paper_fields = state
+            .harvest_paper_fields_with_model(id, &summary, &extractor)
+            .await?;
+    }
+    Ok((summary, Some(local)))
+}
+
+const fn sidecar_provider(sidecar: LabelSidecarChoice) -> crate::domain::AnalysisProvider {
+    match sidecar {
         LabelSidecarChoice::Claude => crate::domain::AnalysisProvider::Claude,
         LabelSidecarChoice::Codex => crate::domain::AnalysisProvider::Codex,
-    };
-    let labeler = crate::labeling::SidecarLabeler::new(
-        provider,
-        crate::analysis::LocalCliAnalyzer::default(),
-        state.store.root().join("labels"),
-    )?;
-    let defaults = LabelOptions::default();
-    let label_options = LabelOptions {
-        limit: options.label_limit.unwrap_or(defaults.limit),
-        ..defaults
-    };
-    local.labels = state
-        .label_local_edges(id, &summary, &labeler, label_options)
-        .await?;
-    Ok((summary, Some(local)))
+    }
 }
 
 pub(super) fn routes() -> Router<AppState> {
@@ -954,6 +980,8 @@ mod tests {
         for body in [
             json!({"labels": "gpt"}),
             json!({"label_limit": -1}),
+            json!({"fields": "gpt"}),
+            json!({"fields_limit": -1}),
             json!({"publisher": "yes"}),
             json!({"extra": 1}),
         ] {

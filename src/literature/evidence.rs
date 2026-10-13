@@ -8,6 +8,9 @@
 use lysilogy_ingest::bibliography::{
     self, PageRect, SourcePage, SourceParagraph, SourceText, SourceToken, TextSpan,
 };
+use lysilogy_ingest::field_model::{
+    FieldContext, FieldExtractor, FieldHarvestSummary, FieldOptions, harvest_bibliography_fields,
+};
 use lysilogy_ingest::labels::{
     LabelContext, LabelOptions, LabelSummary, RelationshipLabeler, label_edges,
 };
@@ -109,6 +112,38 @@ impl AppState {
         )
         .await?;
         Ok(Some(labels))
+    }
+
+    /// Ask `extractor` for the authors and year of the cited Works behind the
+    /// paper's resolved bibliography entries, and record the grounded answers
+    /// as model claims. Returns `None` (the caller reports
+    /// [`LOCAL_EVIDENCE_REQUIRES_WORK`]) when the paper has no Work. Run
+    /// [`Self::run_local_evidence`] first.
+    pub async fn harvest_entry_fields_with_model(
+        &self,
+        id: &PaperId,
+        summary: &LiteratureSummary,
+        extractor: &dyn FieldExtractor,
+        options: FieldOptions,
+    ) -> Result<Option<FieldHarvestSummary>> {
+        let Some(target) = self.local_evidence_target(id, summary).await? else {
+            return Ok(None);
+        };
+        let graph = self.graph_for_literature()?;
+        let context = FieldContext {
+            claims: &graph.claims,
+            records: &graph.source_records,
+            evidence: &graph.evidence,
+        };
+        let fields = harvest_bibliography_fields(
+            &context,
+            target.citing_work,
+            target.document_version,
+            extractor,
+            options,
+        )
+        .await?;
+        Ok(Some(fields))
     }
 
     /// Persist and resolve the paper's local bibliography, and connect it to

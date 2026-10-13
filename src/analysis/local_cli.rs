@@ -808,6 +808,26 @@ impl LocalCliAnalyzer {
         parse_structured_output(provider, &output.result)
     }
 
+    /// The `claude` command up to the session flags.
+    fn claude_base_command(&self, request: &AgentRequest<'_>) -> Command {
+        let mut command = Command::new(&self.claude_command);
+        command.arg("--print");
+        // Plan mode silently swaps a model alias such as `haiku` for
+        // the plan model, so a pinned model runs without it. Pinned
+        // calls are tool-free, so no permission mode is needed.
+        if request.profile.claude_model.is_none() {
+            command.args(["--permission-mode", "plan"]);
+        }
+        command
+            .arg("--tools")
+            .arg(request.profile.claude_tools)
+            .args(["--effort", request.profile.effort]);
+        if let Some(model) = request.profile.claude_model {
+            command.args(["--model", model]);
+        }
+        command
+    }
+
     async fn run_agent(
         &self,
         provider: AnalysisProvider,
@@ -877,21 +897,7 @@ impl LocalCliAnalyzer {
                 })
             }
             AnalysisProvider::Claude => {
-                let mut command = Command::new(&self.claude_command);
-                command.arg("--print");
-                // Plan mode silently swaps a model alias such as `haiku` for
-                // the plan model, so a pinned model runs without it. Pinned
-                // calls are tool-free, so no permission mode is needed.
-                if request.profile.claude_model.is_none() {
-                    command.args(["--permission-mode", "plan"]);
-                }
-                command
-                    .arg("--tools")
-                    .arg(request.profile.claude_tools)
-                    .args(["--effort", request.profile.effort]);
-                if let Some(model) = request.profile.claude_model {
-                    command.args(["--model", model]);
-                }
+                let mut command = self.claude_base_command(&request);
                 if !request.profile.persist_session {
                     command.arg("--no-session-persistence");
                 }
@@ -1020,7 +1026,7 @@ pub fn structured_fast_model_key(provider: AnalysisProvider) -> String {
 
 /// Fast calls use the orientation profile pinned to the cheap Claude model;
 /// every other call keeps the experiment profile and the CLI's own model.
-fn reader_tool_profile(request: &super::ReaderToolRequest<'_>) -> StageProfile {
+const fn reader_tool_profile(request: &super::ReaderToolRequest<'_>) -> StageProfile {
     if !request.fast {
         return PromptStage::Experiment.profile();
     }

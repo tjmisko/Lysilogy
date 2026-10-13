@@ -12,7 +12,7 @@ use lysilogy::acquisition::{AcquireOptions, AcquireReport};
 use lysilogy::expansion::{ExpandOptions, ExpansionReport, WalkReport};
 use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
 use lysilogy::prominence::ProminenceScope;
-use lysilogy::provenance::ReselectScope;
+use lysilogy::provenance::{ReselectScope, cli_override_value, parse_field, render_provenance};
 use lysilogy::ramps::{RampDetail, RampItemView, RampSummaryView};
 use lysilogy::{
     AppState, Error, Result, build_router,
@@ -21,10 +21,13 @@ use lysilogy::{
         ExperimentStatus, LearningRamp, PaperId, ProcessingStatus, StartExperimentRequest,
     },
 };
-use lysilogy::{analysis::LocalCliAnalyzer, labeling::SidecarLabeler};
+use lysilogy::{
+    analysis::LocalCliAnalyzer, field_extraction::SidecarFieldExtractor, labeling::SidecarLabeler,
+};
 use lysilogy_core::{ExpansionState, RampItemStatus, WALK_EXPANSIONS_MAX, WalkBounds, WorkId};
 use lysilogy_ingest::acquire::AcquisitionOutcome;
 use lysilogy_ingest::crossref::{PublisherFetch, PublisherOutcome};
+use lysilogy_ingest::field_model::{FieldHarvestSummary, FieldOptions};
 use lysilogy_ingest::labels::{LabelOptions, LabelSummary};
 use lysilogy_ingest::literature::{LiteratureStatus, LiteratureSummary};
 use lysilogy_ingest::local_evidence::LocalEvidenceSummary;
@@ -92,6 +95,30 @@ struct LabelRun {
 /// `doi:<doi>`, or `arxiv:<id>`.
 #[derive(Debug, Subcommand)]
 enum ProvenanceCommand {
+    /// Show every claim for a Work's title, year, authors, venue and DOI, and which one is selected.
+    Show {
+        work: String,
+        /// Treat <work> as a paper (path, ID, or title fragment) and use the Work it is linked to.
+        #[arg(long)]
+        paper: bool,
+    },
+    /// Override a field: title, year, authors ("A. One; B. Two"), venue, or doi.
+    Set {
+        work: String,
+        /// Treat <work> as a paper (path, ID, or title fragment) and use the Work it is linked to.
+        #[arg(long)]
+        paper: bool,
+        field: String,
+        value: String,
+    },
+    /// Remove your override of a field, restoring the tiered choice.
+    Clear {
+        work: String,
+        /// Treat <work> as a paper (path, ID, or title fragment) and use the Work it is linked to.
+        #[arg(long)]
+        paper: bool,
+        field: String,
+    },
     /// Recompute the selected title, year and authors from claims.
     #[command(group(
         clap::ArgGroup::new("scope")
@@ -246,6 +273,12 @@ enum Command {
         /// Also fetch the publisher (Crossref) record of every cited Work with a DOI.
         #[arg(long)]
         publisher: bool,
+        /// Read missing authors and years with a cheap model sidecar (implies --local).
+        #[arg(long)]
+        fields: bool,
+        /// Stop the field pass after this many model calls; cached answers do not count.
+        #[arg(long, default_value_t = 10)]
+        fields_limit: usize,
     },
     /// Recompute the relevance (prominence) scores for a paper's neighborhood or every Work (needs `LYSILOGY_DATABASE_URL`).
     #[command(group(
@@ -524,13 +557,31 @@ async fn run(cli: Cli) -> Result<()> {
             sidecar,
             label_limit,
             publisher,
+            fields,
+            fields_limit,
         } => {
             let label_run = labels.then(|| LabelRun {
                 sidecar,
                 limit: label_limit,
                 scratch: cli.data.join("labels"),
             });
-            literature_command(&state, &cli.library, &paper, local, label_run, publisher).await
+            let field_run = fields.then(|| LabelRun {
+                sidecar,
+                limit: fields_limit,
+                scratch: cli.data.join("fields"),
+            });
+            literature_command(
+                &state,
+                &cli.library,
+                &paper,
+                LiteratureRun {
+                    local,
+                    labels: label_run,
+                    fields: field_run,
+                    publisher,
+                },
+            )
+            .await
         }
         Command::Prominence {
             paper,
@@ -1168,22 +1219,32 @@ async fn ingest(
     }
 }
 
+/// What `lit` does beyond the provider flow.
+struct LiteratureRun {
+    local: bool,
+    labels: Option<LabelRun>,
+    /// The field pass; its scratch directory and call limit.
+    fields: Option<LabelRun>,
+    publisher: bool,
+}
+
 async fn literature_command(
     state: &AppState,
     library: &std::path::Path,
     paper: &str,
-    local: bool,
-    label_run: Option<LabelRun>,
-    publisher: bool,
+    run: LiteratureRun,
 ) -> Result<()> {
     let id = resolve_lit_target(state, library, paper).await?;
-    let summary = state.run_literature_flow(&id, publisher).await?;
+    let summary = state.run_literature_flow(&id, run.publisher).await?;
     print!("{}", render_literature_summary(&summary));
-    if local || label_run.is_some() {
+    if run.local || run.labels.is_some() || run.fields.is_some() {
         match state.run_local_evidence(&id, &summary).await? {
             Some(mut evidence) => {
-                if let Some(run) = &label_run {
-                    evidence.labels = label_local_edges(state, &id, &summary, run).await?;
+                if let Some(label_run) = &run.labels {
+                    evidence.labels = label_local_edges(state, &id, &summary, label_run).await?;
+                }
+                if let Some(field_run) = &run.fields {
+                    harvest_fields(state, &id, &summary, field_run, &mut evidence).await?;
                 }
                 print!("{}", render_local_evidence(&evidence));
             }
@@ -1329,6 +1390,31 @@ async fn provenance_command(
     command: ProvenanceCommand,
 ) -> Result<()> {
     match command {
+        ProvenanceCommand::Show { work, paper } => {
+            let work = resolve_ramp_work(state, library, &work, paper).await?;
+            print!("{}", render_provenance(&state.work_provenance(work).await?));
+            Ok(())
+        }
+        ProvenanceCommand::Set {
+            work,
+            paper,
+            field,
+            value,
+        } => {
+            let field = parse_field(&field)?;
+            let value = cli_override_value(field, &value)?;
+            let work = resolve_ramp_work(state, library, &work, paper).await?;
+            let view = state.set_field_override(work, field, &value).await?;
+            print!("{}", render_provenance(&view));
+            Ok(())
+        }
+        ProvenanceCommand::Clear { work, paper, field } => {
+            let field = parse_field(&field)?;
+            let work = resolve_ramp_work(state, library, &work, paper).await?;
+            let view = state.clear_field_override(work, field).await?;
+            print!("{}", render_provenance(&view));
+            Ok(())
+        }
         ProvenanceCommand::Reselect { work, paper, all } => {
             let scope = match (work, all) {
                 (Some(text), false) => {
@@ -1592,6 +1678,31 @@ async fn fetch_cited_by_command(
         totals.record(&report.summary.outcome);
     }
     println!("{}", render_cited_by_totals(&totals));
+    Ok(())
+}
+
+async fn harvest_fields(
+    state: &AppState,
+    id: &PaperId,
+    summary: &LiteratureSummary,
+    run: &LabelRun,
+    evidence: &mut LocalEvidenceSummary,
+) -> Result<()> {
+    let extractor = SidecarFieldExtractor::new(
+        run.sidecar.provider(),
+        LocalCliAnalyzer::default(),
+        run.scratch.clone(),
+    )?;
+    let options = FieldOptions {
+        limit: run.limit,
+        ..FieldOptions::default()
+    };
+    evidence.fields = state
+        .harvest_entry_fields_with_model(id, summary, &extractor, options)
+        .await?;
+    evidence.paper_fields = state
+        .harvest_paper_fields_with_model(id, summary, &extractor)
+        .await?;
     Ok(())
 }
 
@@ -1879,10 +1990,48 @@ fn render_local_evidence(summary: &LocalEvidenceSummary) -> String {
     if let Some(labels) = &summary.labels {
         output.push_str(&render_labels(labels));
     }
+    if let Some(fields) = &summary.fields {
+        output.push_str(&render_fields("Fields    ", fields));
+    }
+    if let Some(fields) = &summary.paper_fields {
+        output.push_str(&render_fields("Paper     ", fields));
+    }
     for warning in &summary.warnings {
         let _ = writeln!(output, "Warnings   {warning}");
     }
     output
+}
+
+fn render_fields(heading: &str, fields: &FieldHarvestSummary) -> String {
+    let mut line = format!(
+        "{heading} considered {} \u{b7} model calls {} \u{b7} cached {} \u{b7} claims {} \u{b7} dropped {}",
+        fields.entries_considered,
+        fields.model_calls,
+        fields.cache_hits,
+        fields.claims_written,
+        fields.dropped_total()
+    );
+    if !fields.dropped.is_empty() {
+        let codes: Vec<String> = fields
+            .dropped
+            .iter()
+            .map(|(code, count)| format!("{code} {count}"))
+            .collect();
+        let _ = write!(line, " ({})", codes.join(", "));
+    }
+    let _ = write!(line, " \u{b7} failed {}", fields.failed);
+    if fields.skipped_higher_tier > 0 {
+        let _ = write!(
+            line,
+            " \u{b7} skipped (higher tier) {}",
+            fields.skipped_higher_tier
+        );
+    }
+    if fields.over_limit > 0 {
+        let _ = write!(line, " \u{b7} over limit {}", fields.over_limit);
+    }
+    line.push('\n');
+    line
 }
 
 fn render_labels(labels: &LabelSummary) -> String {
@@ -2259,6 +2408,108 @@ mod tests {
                 ..
             })
         ));
+    }
+
+    #[test]
+    fn should_accept_fields_flags_when_parsing_lit() {
+        let plain = Cli::try_parse_from(["lysilogy", "lit", "Paper"]).expect("plain");
+        assert!(matches!(
+            plain.command,
+            Some(Command::Lit {
+                fields: false,
+                fields_limit: 10,
+                ..
+            })
+        ));
+        let flagged = Cli::try_parse_from([
+            "lysilogy",
+            "lit",
+            "Paper",
+            "--fields",
+            "--sidecar",
+            "codex",
+            "--fields-limit",
+            "3",
+        ])
+        .expect("flagged");
+        assert!(matches!(
+            flagged.command,
+            Some(Command::Lit {
+                fields: true,
+                fields_limit: 3,
+                sidecar: LabelSidecar::Codex,
+                ..
+            })
+        ));
+        assert!(Cli::try_parse_from(["lysilogy", "lit", "Paper", "--fields-limit", "x"]).is_err());
+    }
+
+    #[test]
+    fn should_parse_provenance_subcommands_when_arguments_valid() {
+        let show =
+            Cli::try_parse_from(["lysilogy", "provenance", "show", "w1", "--paper"]).expect("show");
+        assert!(matches!(
+            show.command,
+            Some(Command::Provenance {
+                command: ProvenanceCommand::Show { paper: true, .. }
+            })
+        ));
+        let set = Cli::try_parse_from([
+            "lysilogy",
+            "provenance",
+            "set",
+            "w1",
+            "authors",
+            "A. One; B. Two",
+        ])
+        .expect("set");
+        match set.command {
+            Some(Command::Provenance {
+                command:
+                    ProvenanceCommand::Set {
+                        work,
+                        paper,
+                        field,
+                        value,
+                    },
+            }) => {
+                assert_eq!(work, "w1");
+                assert!(!paper);
+                assert_eq!(field, "authors");
+                assert_eq!(value, "A. One; B. Two");
+            }
+            other => panic!("unexpected {other:?}"),
+        }
+        let clear =
+            Cli::try_parse_from(["lysilogy", "provenance", "clear", "w1", "--paper", "year"])
+                .expect("clear");
+        assert!(matches!(
+            clear.command,
+            Some(Command::Provenance {
+                command: ProvenanceCommand::Clear { paper: true, .. }
+            })
+        ));
+        assert!(Cli::try_parse_from(["lysilogy", "provenance", "set", "w1", "year"]).is_err());
+        assert!(Cli::try_parse_from(["lysilogy", "provenance", "show"]).is_err());
+    }
+
+    #[test]
+    fn should_render_fields_line_when_fields_present() {
+        let mut fields = FieldHarvestSummary {
+            entries_considered: 31,
+            model_calls: 2,
+            cache_hits: 4,
+            claims_written: 57,
+            failed: 1,
+            ..FieldHarvestSummary::default()
+        };
+        fields.dropped.insert("year_not_in_entry".to_owned(), 3);
+        fields.dropped.insert("author_not_in_entry".to_owned(), 2);
+        let line = render_fields("Fields    ", &fields);
+        assert_eq!(
+            line,
+            "Fields     considered 31 \u{b7} model calls 2 \u{b7} cached 4 \u{b7} claims 57 \u{b7} dropped 5 (author_not_in_entry 2, year_not_in_entry 3) \u{b7} failed 1\n"
+        );
     }
 
     #[test]

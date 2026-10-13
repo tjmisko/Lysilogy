@@ -27,6 +27,7 @@ use crate::Result;
 use crate::bibliography::{
     BibliographicFields, Bibliography, EXTRACTOR_VERSION, FieldConfidence, parse_fields,
 };
+use crate::field_model::FieldHarvestSummary;
 use crate::labels::LabelSummary;
 
 /// Source record kind for the extraction evidence.
@@ -95,6 +96,10 @@ pub struct LocalEvidenceSummary {
     pub warnings: Vec<String>,
     /// Filled by the label pass.
     pub labels: Option<LabelSummary>,
+    /// Filled by the bibliography field pass.
+    pub fields: Option<FieldHarvestSummary>,
+    /// Filled by the paper's own front-matter field pass.
+    pub paper_fields: Option<FieldHarvestSummary>,
 }
 
 /// How one entry came out.
