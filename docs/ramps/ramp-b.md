@@ -1056,3 +1056,68 @@ Edges      local 73 (also provider 51)
 Both reruns create 0 Works. The first run created 13 stubs for the second paper (3175 to 3188).
 The high unresolved count is mostly markers in prose that the extractor cannot tie to a unique
 entry; it is evidence, not an error.
+
+## U5 implementation notes
+
+- `insert_ai_claim` takes a `NewAiClaim` struct instead of seven positional arguments, because the
+  strict clippy config rejects more than seven parameters.
+- `AppState::label_local_edges(id, summary, labeler, options)` also takes the `LiteratureSummary`
+  (for the Work and document), and the CLI sets `LocalEvidenceSummary.labels` from its result.
+  `LocalEvidenceSummary.labels` is now `Option<LabelSummary>`.
+- `structured_model_key` is `pub` inside the private `local_cli` module (`redundant_pub_crate`) and
+  re-exported `pub(crate)` from `analysis`.
+- `SidecarLabeler` maps `InvalidAnalysis` and JSON errors to `LabelerError::Malformed`, and still
+  maps `ProgramUnavailable` to `Unavailable` and everything else to `Failed`. All three count as
+  `failed` in the summary, and none are cached, so a rerun retries them.
+- `edges_considered` counts local edges with at least one mention. `model_calls` is the number of
+  edges sent to the labeler (cache hits excluded). A cache hit is processed even when the call
+  limit is reached.
+- The cache is only consulted for edges with no current claim. A rejected or unreviewed claim is
+  current, so it is not relabeled. To test the cache path the tests delete the claims first.
+- The CLI prints one extra line, `Rejected   <code> <n>, ...`, only when grounding rejected labels.
+- Added `EvidenceRepository::entry(id)`, used to build the cited-work brief (parsed title,
+  authors, and raw entry text).
+- Calls run through a small hand-rolled `join_all` (no `futures` dependency) bounded by a
+  `tokio::sync::Semaphore`. Each raw draft is cached in the job itself, right after the call.
+
+## Live smoke (labels)
+
+Dev DB (`lysilogy`, port 5433), 2026-10-13, library `~/Projects/Lysilogy/local-articles`, data dir
+`~/.cache/lysilogy-ramp-b/data`. Entry, mention, and resolution counts are those of the U4 runs
+(unchanged on these runs, which reused every resolution).
+
+| | Fine-Tuning LMs from Human Preferences | Learning to Summarize from Human Feedback |
+| --- | --- | --- |
+| entries extracted | 47 | 73 |
+| mentions (resolved entries) | 58 | 112 |
+| unresolved mentions | 35 | 51 |
+| resolved by method (first run) | identifier 1, title 31, stub 15 | identifier 15, title 45, stub 13 |
+| local edges | 47 (31 also from provider) | 73 (51 also from provider) |
+| edges with mentions (labelable) | 39 | 73 |
+
+Label runs:
+
+| Run | Result | Wall time |
+| --- | --- | --- |
+| FT-LMs, claude, `--label-limit 15` | calls 15, labeled 15, rejected 0, failed 0, over limit 24 | 50 s |
+| Summarize, claude, `--label-limit 15` | calls 15, labeled 15, rejected 0, failed 0, over limit 58 | 49 s |
+| FT-LMs, claude again (`--label-limit 15`) | already labeled 15, calls 9, labeled 9, over limit 0 | 31 s |
+| FT-LMs, claude, rerun | **calls 0**, cached 0, labeled 0, over limit 0 | 1.7 s |
+| Summarize, codex, `--label-limit 8` | calls 8, labeled 6, rejected 0, failed 2, over limit 50 | 60 s |
+
+- Rejected for grounding, by code: none across 62 model calls (claude: 54 of 54 grounded; codex:
+  6 of 6 returned drafts grounded).
+- Failed: 2 codex calls (`codex failed with status 1` with empty stderr; not diagnosed, and
+  retried on the next run because failures are not cached).
+- Claims in the DB after the runs: 54 `claude:default` and 6 `codex:gpt-5.6-terra`. By relation:
+  background 28, uses_method 14, uses_data 6, supports 5, compares 4, contrasts 2, extends 1.
+  Every stored quote is an exact substring of its mention's passage (checked in SQL).
+- Hand check of 8 claims in `scripts/db psql` (6 claude, 2 codex), all plausible:
+  See et al. pointer-generator `contrasts` ("we did not use any explicit architectural mechanism for
+  copying as in See et al. (2017)"); Christiano et al. `uses_method` ("Following Christiano et al.
+  (2017), we ask human labelers..."); Radford et al. `uses_method` (reward model initialization);
+  Khandelwal et al. `supports` (hallucinated facts); Paulus et al. `supports` (ROUGE with RL is
+  detrimental); Gehrmann et al. `compares` (CNN/DM SOTA); codex on PEGASUS `background` and on GPT
+  pretraining `uses_method`.
+- Observation (U4, not U5): one cited stub's display title is the bibliography tail
+  `arXiv preprint arXiv:1907.06347, 2019`, so its brief relies on the raw entry text.
