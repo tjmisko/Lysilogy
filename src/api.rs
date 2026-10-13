@@ -8,6 +8,7 @@ use std::{
     },
 };
 
+mod acquisition;
 mod citation_graph;
 mod labels;
 mod literature;
@@ -35,6 +36,7 @@ use tokio::{
 };
 use tokio_util::io::ReaderStream;
 
+use self::acquisition::AcquisitionStates;
 use crate::{
     Result,
     analysis::{AnalysisService, validate_citations},
@@ -73,6 +75,7 @@ pub struct AppState {
     pub(crate) graph: Option<GraphState>,
     pub(crate) literature: crate::literature::LiteratureClient,
     literature_jobs: literature::LiteratureJobs,
+    acquisition_jobs: acquisition::AcquisitionJobs,
     pub(crate) acquisition_throttle: Arc<lysilogy_ingest::acquire::HostThrottle>,
     pub(crate) acquisition_fetcher: crate::acquisition::SharedFetcher,
     jobs: JobTracker,
@@ -123,6 +126,7 @@ struct CitationsResponse {
     incoming: Vec<Work>,
     edges: Vec<labels::GraphEdge>,
     local_papers: literature::LocalPapers,
+    acquisitions: AcquisitionStates,
 }
 
 #[derive(Debug, Serialize)]
@@ -132,6 +136,7 @@ struct NeighborsResponse {
     nodes: Vec<Work>,
     edges: Vec<labels::GraphEdge>,
     local_papers: literature::LocalPapers,
+    acquisitions: AcquisitionStates,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -204,6 +209,7 @@ impl AppState {
             graph: None,
             literature: crate::literature::LiteratureClient::from_environment()?,
             literature_jobs: literature::LiteratureJobs::default(),
+            acquisition_jobs: acquisition::AcquisitionJobs::default(),
             acquisition_throttle: Arc::new(lysilogy_ingest::acquire::HostThrottle::polite()),
             acquisition_fetcher: crate::acquisition::SharedFetcher::default(),
             frontend_root: None,
@@ -1868,6 +1874,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(reader_tools::routes())
         .merge(citation_graph::routes())
         .merge(literature::routes())
+        .merge(acquisition::routes())
         .merge(labels::routes())
         .merge(source_index::routes())
         .merge(notes::routes())
@@ -1996,6 +2003,10 @@ async fn get_work_citations(
         Ok(local_papers) => local_papers,
         Err(response) => return *response,
     };
+    let acquisitions = match acquisition::states_for(&state, &work_ids).await {
+        Ok(acquisitions) => acquisitions,
+        Err(response) => return *response,
+    };
     (
         StatusCode::OK,
         Json(CitationsResponse {
@@ -2004,6 +2015,7 @@ async fn get_work_citations(
             incoming,
             edges,
             local_papers,
+            acquisitions,
         }),
     )
         .into_response()
@@ -2081,6 +2093,10 @@ async fn get_graph_neighbors(
         Ok(local_papers) => local_papers,
         Err(response) => return *response,
     };
+    let acquisitions = match acquisition::states_for(&state, &work_ids).await {
+        Ok(acquisitions) => acquisitions,
+        Err(response) => return *response,
+    };
     (
         StatusCode::OK,
         Json(NeighborsResponse {
@@ -2089,6 +2105,7 @@ async fn get_graph_neighbors(
             nodes,
             edges,
             local_papers,
+            acquisitions,
         }),
     )
         .into_response()
