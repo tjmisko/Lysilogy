@@ -36,6 +36,12 @@ pub enum DbError {
 }
 
 impl DbError {
+    /// The error for a row that was expected to exist and does not.
+    #[must_use]
+    pub const fn not_found() -> Self {
+        Self::Sqlx(sqlx::Error::RowNotFound)
+    }
+
     /// Whether a query expected a row and found none.
     #[must_use]
     pub const fn is_not_found(&self) -> bool {
