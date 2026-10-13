@@ -5,6 +5,7 @@
 
 pub mod identify;
 pub mod ingest;
+pub mod literature;
 pub mod openalex;
 pub mod scan;
 pub mod title_match;
