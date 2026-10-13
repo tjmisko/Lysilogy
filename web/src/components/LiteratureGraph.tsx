@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { acquisitionStatusText, canFetch, isRetry, type AcquisitionLike } from "../lib/acquisition";
 import { ApiError, api } from "../lib/api";
 import {
-  HISTOGRAM_LIMIT, HISTOGRAM_NAV_KEYS, LITERATURE_VIEW_STORAGE_KEY, parseLiteratureView, type LiteratureView,
+  HISTOGRAM_LIMIT, citedEdgesByCited, HISTOGRAM_NAV_KEYS, LITERATURE_VIEW_STORAGE_KEY, parseLiteratureView, type LiteratureView,
 } from "../lib/histogramLayout";
 import { LITERATURE_QUIT_EVENT } from "../lib/literatureEvents";
 import {
@@ -368,14 +368,12 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     () => new Set((histogramData?.nodes ?? []).map((node) => node.id).filter((id) => id !== histogramData?.center)).size,
     [histogramData],
   );
+  // The radial fetch is capped at topN; year-view cards beyond it take their edge from the histogram fetch.
   const edgeByCited = useMemo(() => {
-    const map = new Map<string, GraphEdge>();
-    if (graph === null) return map;
-    for (const edge of graph.neighbors.edges) {
-      if (edge.citing === graph.work.id) map.set(edge.cited, edge);
-    }
-    return map;
-  }, [graph]);
+    if (graph === null) return new Map<string, GraphEdge>();
+    const histogramEdges = graphView === "histogram" && histogramData !== null ? histogramData.edges : [];
+    return citedEdgesByCited(graph.work.id, [graph.neighbors.edges, histogramEdges]);
+  }, [graph, graphView, histogramData]);
   const selectedIndex = selectedId === null ? 0 : allPlacements.findIndex((placement) => placement.id === selectedId);
   const activeIndex = Math.max(0, selectedIndex);
   const activePlacement = allPlacements[activeIndex];

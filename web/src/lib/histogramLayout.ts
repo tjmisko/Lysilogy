@@ -1,4 +1,4 @@
-import type { GraphNeighbors, WorkMarkName } from "../types";
+import type { GraphEdge, GraphNeighbors, WorkMarkName } from "../types";
 
 /** Which view of the literature overlay is showing. */
 export type LiteratureView = "radial" | "histogram";
@@ -436,4 +436,19 @@ export function authorLine(authors: readonly string[] | null | undefined, limit:
   if (names.length === 0) return null;
   if (names.length <= limit) return names.join(", ");
   return `${names.slice(0, limit).join(", ")} +${names.length - limit}`;
+}
+
+/**
+ * Edges from the center Work keyed by cited id. Edge lists are ordered by priority: the first
+ * list to mention a cited id wins, so the radial fetch overrides the wider histogram fetch.
+ */
+export function citedEdgesByCited(centerId: string, edgeLists: readonly (readonly GraphEdge[])[]): Map<string, GraphEdge> {
+  const map = new Map<string, GraphEdge>();
+  for (const edges of edgeLists) {
+    for (const edge of edges) {
+      if (edge.citing !== centerId || map.has(edge.cited)) continue;
+      map.set(edge.cited, edge);
+    }
+  }
+  return map;
 }

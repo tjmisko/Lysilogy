@@ -750,3 +750,16 @@ Known gaps:
   case was not exercised live; the 332-reference case was.
 - Author lines stay empty until the provenance branch's `display_authors` is served.
 - The U2 smoke's "j is inert" assertion is obsolete.
+
+## Review fixes
+
+1. Cited-paper context beyond top-N. `edgeByCited` in `LiteratureGraph.tsx` was built only from the
+   radial fetch (limit = topN), and the server scopes edges to returned nodes, so year-view cards
+   outside the top-N had no "Why it is cited" section and no `actionableLabel`. It now merges
+   `histogramData.edges` (citing = center) while the histogram view is active, with the radial edge
+   winning on a clash. The merge is the pure helper `citedEdgesByCited` in `histogramLayout.ts`,
+   covered by a unit test in `histogram-layout.test.mjs`. No browser smoke step was added because
+   `npm run smoke` has no local fixture; the unit test covers the below-top-N case.
+2. Gate note: the shared test DB `lysilogy_test` already has migration 0009 from the provenance
+   track, so this branch's Rust tests were run against a separate `lysilogy_test_histogram` database
+   (344+ tests pass, clippy clean).

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   COLLAPSED_AUTHOR_LIMIT, HISTOGRAM_GEOMETRY, HISTOGRAM_NAV_KEYS, REVEAL_MARGINS, UNKNOWN_COLUMN_KEY,
-  authorLine, buildHistogramGrid, compareHistogramEntries, directionForKey, histogramEntries, initialCursor,
+  authorLine, buildHistogramGrid, citedEdgesByCited, compareHistogramEntries, directionForKey, histogramEntries, initialCursor,
   layoutHistogram, markRank, moveCursor, parseLiteratureView, positionOf, reconcileCursor, rememberCursor,
   scrollToReveal, seedLinkPath, seedLinkTarget, titleKey, workAt,
 } from '../src/lib/histogramLayout.ts';
@@ -322,4 +322,17 @@ test('should parse only histogram as the histogram view when reading storage', (
   for (const value of [null, undefined, '', 'Histogram', 'radial', 'graph']) {
     assert.equal(parseLiteratureView(value), 'radial');
   }
+});
+
+test('should include histogram edges for cards outside the radial top-N when building cited edges', () => {
+  const radial = [{ citing: 'c', cited: 'a', label: 'radial' }];
+  const wide = [
+    { citing: 'c', cited: 'a', label: 'wide' },
+    { citing: 'c', cited: 'z', label: 'wide' },
+    { citing: 'other', cited: 'q', label: 'wide' },
+  ];
+  const map = citedEdgesByCited('c', [radial, wide]);
+  assert.equal(map.get('a').label, 'radial');
+  assert.equal(map.get('z').label, 'wide');
+  assert.equal(map.has('q'), false);
 });
