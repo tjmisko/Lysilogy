@@ -8,6 +8,7 @@ use std::{
 };
 
 use clap::{Parser, Subcommand, ValueEnum};
+use lysilogy::acquisition::{AcquireOptions, AcquireReport};
 use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
 use lysilogy::{
     AppState, Error, Result, build_router,
@@ -17,6 +18,7 @@ use lysilogy::{
     },
 };
 use lysilogy::{analysis::LocalCliAnalyzer, labeling::SidecarLabeler};
+use lysilogy_ingest::acquire::AcquisitionOutcome;
 use lysilogy_ingest::labels::{LabelOptions, LabelSummary};
 use lysilogy_ingest::literature::{LiteratureStatus, LiteratureSummary};
 use lysilogy_ingest::local_evidence::LocalEvidenceSummary;
@@ -155,6 +157,25 @@ enum Command {
         /// Stop after this many model calls; cached answers do not count.
         #[arg(long, default_value_t = 25)]
         label_limit: usize,
+    },
+    /// Fetch open-access copies of Works and map them into the library (needs `LYSILOGY_DATABASE_URL`).
+    Fetch {
+        /// A Work: a w... ID, an `OpenAlex` W... ID, `doi:<doi>`, or `arxiv:<id>`.
+        #[arg(required_unless_present = "cited_by", conflicts_with = "cited_by")]
+        work: Option<String>,
+        /// Instead fetch the Works this paper cites that have no local copy: a PDF
+        /// path inside the library, a paper ID, or an unambiguous title fragment.
+        #[arg(long)]
+        cited_by: Option<String>,
+        /// With --cited-by, try at most this many Works (1 to 100).
+        #[arg(long, default_value_t = 10)]
+        limit: usize,
+        /// Look again at Works recently found unavailable, bypassing cached answers.
+        #[arg(long)]
+        retry_unavailable: bool,
+        /// Let a local model pick the PDF link on publisher landing pages.
+        #[arg(long, value_enum)]
+        model_fallback: Option<LabelSidecar>,
     },
     /// Analyze all papers that are not ready, continuing past individual faults.
     Ingest {
@@ -372,6 +393,27 @@ async fn run(cli: Cli) -> Result<()> {
                 scratch: cli.data.join("labels"),
             });
             literature_command(&state, &cli.library, &paper, local, label_run).await
+        }
+        Command::Fetch {
+            work,
+            cited_by,
+            limit,
+            retry_unavailable,
+            model_fallback,
+        } => {
+            let options = AcquireOptions {
+                retry_unavailable,
+                model_fallback: model_fallback.map(LabelSidecar::provider),
+            };
+            match (work, cited_by) {
+                (Some(work), None) => fetch_work_command(&state, &work, options).await,
+                (None, Some(paper)) => {
+                    fetch_cited_by_command(&state, &cli.library, &paper, limit, options).await
+                }
+                _ => Err(Error::InvalidRequest(
+                    "give exactly one of <work> or --cited-by".to_owned(),
+                )),
+            }
         }
         Command::RefreshStructure {
             query,
@@ -973,23 +1015,7 @@ async fn literature_command(
     local: bool,
     label_run: Option<LabelRun>,
 ) -> Result<()> {
-    let candidate = PathBuf::from(paper);
-    let id = if tokio::fs::metadata(&candidate)
-        .await
-        .is_ok_and(|metadata| metadata.is_file())
-    {
-        let path = tokio::fs::canonicalize(&candidate)
-            .await
-            .map_err(|error| Error::io(&candidate, error))?;
-        let root = tokio::fs::canonicalize(library)
-            .await
-            .map_err(|error| Error::io(library, error))?;
-        let id = PaperId::from_relative_path(&lit_target_relative_path(&root, &path)?);
-        state.paper(&id).await?;
-        id
-    } else {
-        resolve_paper(state, paper).await?
-    };
+    let id = resolve_lit_target(state, library, paper).await?;
     let summary = state.run_literature_flow(&id).await?;
     print!("{}", render_literature_summary(&summary));
     if local || label_run.is_some() {
@@ -1008,6 +1034,62 @@ async fn literature_command(
             "no Work found for {id}: {reason}"
         )));
     }
+    Ok(())
+}
+
+/// A paper from a PDF path inside the library, a paper ID, or a title fragment.
+async fn resolve_lit_target(
+    state: &AppState,
+    library: &std::path::Path,
+    text: &str,
+) -> Result<PaperId> {
+    let candidate = PathBuf::from(text);
+    if tokio::fs::metadata(&candidate)
+        .await
+        .is_ok_and(|metadata| metadata.is_file())
+    {
+        let path = tokio::fs::canonicalize(&candidate)
+            .await
+            .map_err(|error| Error::io(&candidate, error))?;
+        let root = tokio::fs::canonicalize(library)
+            .await
+            .map_err(|error| Error::io(library, error))?;
+        let id = PaperId::from_relative_path(&lit_target_relative_path(&root, &path)?);
+        state.paper(&id).await?;
+        return Ok(id);
+    }
+    resolve_paper(state, text).await
+}
+
+async fn fetch_work_command(state: &AppState, text: &str, options: AcquireOptions) -> Result<()> {
+    let work = state.resolve_work_argument(text).await?;
+    let report = state.acquire_work(work, options).await?;
+    print!("{}", render_acquisition_summary(&report));
+    Ok(())
+}
+
+async fn fetch_cited_by_command(
+    state: &AppState,
+    library: &std::path::Path,
+    text: &str,
+    limit: usize,
+    options: AcquireOptions,
+) -> Result<()> {
+    let paper = resolve_lit_target(state, library, text).await?;
+    let targets = state
+        .acquisition_targets_cited_by(&paper, options.retry_unavailable)
+        .await?;
+    let mut totals = CitedByTotals {
+        skipped: targets.iter().filter(|target| target.skipped).count(),
+        ..CitedByTotals::default()
+    };
+    let limit = limit.clamp(1, MAX_CITED_BY_LIMIT);
+    for target in targets.iter().filter(|target| !target.skipped).take(limit) {
+        let report = state.acquire_work(target.work_id, options).await?;
+        println!("{}", render_cited_by_line(&report));
+        totals.record(&report.summary.outcome);
+    }
+    println!("{}", render_cited_by_totals(&totals));
     Ok(())
 }
 
@@ -1041,6 +1123,161 @@ fn lit_target_relative_path(root: &std::path::Path, path: &std::path::Path) -> R
             root.display()
         ))
     })
+}
+
+/// Most Works one `--cited-by` run will try.
+const MAX_CITED_BY_LIMIT: usize = 100;
+
+/// Outcome tallies for a `--cited-by` run.
+#[derive(Debug, Default, PartialEq, Eq)]
+struct CitedByTotals {
+    fetched: usize,
+    already_local: usize,
+    unavailable: BTreeMap<String, usize>,
+    pending: usize,
+    skipped: usize,
+}
+
+impl CitedByTotals {
+    fn record(&mut self, outcome: &AcquisitionOutcome) {
+        match outcome {
+            AcquisitionOutcome::Mapped => self.fetched += 1,
+            AcquisitionOutcome::AlreadyMapped | AcquisitionOutcome::AlreadyLocal => {
+                self.already_local += 1;
+            }
+            AcquisitionOutcome::Unavailable { reason } => {
+                *self
+                    .unavailable
+                    .entry(reason.as_str().to_owned())
+                    .or_default() += 1;
+            }
+            AcquisitionOutcome::Pending { .. } | AcquisitionOutcome::Busy => self.pending += 1,
+            AcquisitionOutcome::SkippedUnavailable { .. } => self.skipped += 1,
+        }
+    }
+}
+
+fn render_cited_by_totals(totals: &CitedByTotals) -> String {
+    let unavailable: usize = totals.unavailable.values().sum();
+    let mut line = format!(
+        "Fetched {} \u{b7} already local {} \u{b7} unavailable {unavailable}",
+        totals.fetched, totals.already_local
+    );
+    if !totals.unavailable.is_empty() {
+        let reasons: Vec<String> = totals
+            .unavailable
+            .iter()
+            .map(|(reason, count)| format!("{reason} {count}"))
+            .collect();
+        let _ = write!(line, " ({})", reasons.join(", "));
+    }
+    let _ = write!(
+        line,
+        " \u{b7} pending {} \u{b7} skipped {}",
+        totals.pending, totals.skipped
+    );
+    line
+}
+
+fn outcome_label(outcome: &AcquisitionOutcome, source: Option<&str>) -> String {
+    match outcome {
+        AcquisitionOutcome::Mapped => source.map_or_else(
+            || "mapped".to_owned(),
+            |source| format!("mapped (source {source})"),
+        ),
+        AcquisitionOutcome::AlreadyMapped => "already_mapped".to_owned(),
+        AcquisitionOutcome::AlreadyLocal => "already_local".to_owned(),
+        AcquisitionOutcome::Unavailable { reason } => {
+            format!("unavailable ({})", reason.as_str())
+        }
+        AcquisitionOutcome::SkippedUnavailable { reason, checked_at } => format!(
+            "skipped_unavailable ({}, checked {})",
+            reason.as_str(),
+            checked_at.format("%Y-%m-%d")
+        ),
+        AcquisitionOutcome::Pending { error } => format!("pending ({error})"),
+        AcquisitionOutcome::Busy => "busy (another run holds this Work)".to_owned(),
+    }
+}
+
+fn work_title_line(report: &AcquireReport) -> String {
+    let title = report.title.as_deref().unwrap_or("(untitled)");
+    report
+        .year
+        .map_or_else(|| title.to_owned(), |year| format!("{title} ({year})"))
+}
+
+fn format_byte_size(bytes: i64) -> String {
+    const KIB: f64 = 1024.0;
+    // Display only; precision loss above 2^52 bytes is irrelevant.
+    #[allow(clippy::cast_precision_loss)]
+    let value = bytes.max(0) as f64;
+    if value >= KIB * KIB {
+        format!("{:.1} MiB", value / (KIB * KIB))
+    } else {
+        format!("{:.1} KiB", value / KIB)
+    }
+}
+
+fn render_acquisition_summary(report: &AcquireReport) -> String {
+    let summary = &report.summary;
+    let mut output = String::new();
+    let _ = writeln!(
+        output,
+        "Work       {}  {}",
+        summary.work_id,
+        work_title_line(report)
+    );
+    let source = summary.source.map(lysilogy_core::CandidateOrigin::as_str);
+    let _ = writeln!(
+        output,
+        "Outcome    {}",
+        outcome_label(&summary.outcome, source)
+    );
+    if !summary.stages.is_empty() {
+        let stages: Vec<&str> = summary.stages.iter().map(|stage| stage.as_str()).collect();
+        let _ = writeln!(output, "Stages     {}", stages.join(" \u{2192} "));
+    }
+    if let Some(url) = &summary.pdf_url {
+        let detail = match (summary.bytes, &summary.sha256) {
+            (Some(bytes), Some(sha)) => format!(
+                "  ({}, sha256 {}\u{2026})",
+                format_byte_size(bytes),
+                &sha[..sha.len().min(8)]
+            ),
+            _ => String::new(),
+        };
+        let _ = writeln!(output, "PDF        {url}{detail}");
+    }
+    if let (Some(paper), Some(path)) = (&report.paper_id, &summary.relative_path) {
+        let _ = writeln!(output, "Paper      {paper}  {path}");
+    }
+    for warning in &summary.warnings {
+        let _ = writeln!(output, "Warnings   {warning}");
+    }
+    output
+}
+
+fn render_cited_by_line(report: &AcquireReport) -> String {
+    let summary = &report.summary;
+    let kind = match &summary.outcome {
+        AcquisitionOutcome::Mapped => "mapped",
+        AcquisitionOutcome::AlreadyMapped => "already_mapped",
+        AcquisitionOutcome::AlreadyLocal => "already_local",
+        AcquisitionOutcome::Unavailable { .. } => "unavailable",
+        AcquisitionOutcome::SkippedUnavailable { .. } => "skipped",
+        AcquisitionOutcome::Pending { .. } => "pending",
+        AcquisitionOutcome::Busy => "busy",
+    };
+    let detail = match &summary.outcome {
+        AcquisitionOutcome::Unavailable { reason }
+        | AcquisitionOutcome::SkippedUnavailable { reason, .. } => reason.as_str().to_owned(),
+        AcquisitionOutcome::Pending { error } => error.clone(),
+        _ => summary.relative_path.clone().unwrap_or_default(),
+    };
+    format!("{kind} {} {detail}", work_title_line(report))
+        .trim_end()
+        .to_owned()
 }
 
 fn render_literature_summary(summary: &LiteratureSummary) -> String {
@@ -1274,5 +1511,157 @@ mod tests {
         assert!(text.contains("Unmatched  title_too_generic"), "{text}");
         assert!(text.contains("Warnings   title_too_generic"), "{text}");
         assert!(!text.contains("OpenAlex"), "{text}");
+    }
+
+    fn report(outcome: AcquisitionOutcome) -> AcquireReport {
+        use lysilogy_core::{AcquisitionState, CandidateOrigin, WorkId};
+        use lysilogy_ingest::acquire::AcquisitionSummary;
+
+        AcquireReport {
+            summary: AcquisitionSummary {
+                work_id: WorkId::from_uuid(uuid::Uuid::from_u128(7)),
+                outcome,
+                state: AcquisitionState::Mapped,
+                stages: vec![
+                    AcquisitionState::IdentifierFound,
+                    AcquisitionState::LinkFound,
+                    AcquisitionState::Downloaded,
+                    AcquisitionState::Mapped,
+                ],
+                candidates: 1,
+                tried: 1,
+                source: Some(CandidateOrigin::Arxiv),
+                pdf_url: Some("https://arxiv.org/pdf/1606.03137".to_owned()),
+                sha256: Some("3f2a9c4e11223344".to_owned()),
+                bytes: Some(1_300_000),
+                document_id: None,
+                relative_path: Some(
+                    "Fetched/2016 - Cooperative Inverse Reinforcement Learning.pdf".to_owned(),
+                ),
+                warnings: vec!["unpaywall_skipped_no_email".to_owned()],
+            },
+            paper_id: Some(PaperId::from_relative_path(Path::new("Fetched/a.pdf"))),
+            title: Some("Cooperative Inverse Reinforcement Learning".to_owned()),
+            year: Some(2016),
+        }
+    }
+
+    #[test]
+    fn should_render_mapped_summary_when_outcome_is_mapped() {
+        let output = render_acquisition_summary(&report(AcquisitionOutcome::Mapped));
+        let lines: Vec<&str> = output.lines().collect();
+        assert_eq!(lines.len(), 6, "{output}");
+        assert!(lines[0].starts_with("Work       w"), "{}", lines[0]);
+        assert!(
+            lines[0].ends_with("Cooperative Inverse Reinforcement Learning (2016)"),
+            "{}",
+            lines[0]
+        );
+        assert_eq!(lines[1], "Outcome    mapped (source arxiv)");
+        assert_eq!(
+            lines[2],
+            "Stages     identifier_found \u{2192} link_found \u{2192} downloaded \u{2192} mapped"
+        );
+        assert_eq!(
+            lines[3],
+            "PDF        https://arxiv.org/pdf/1606.03137  (1.2 MiB, sha256 3f2a9c4e\u{2026})"
+        );
+        assert!(
+            lines[4].ends_with("Fetched/2016 - Cooperative Inverse Reinforcement Learning.pdf"),
+            "{}",
+            lines[4]
+        );
+        assert_eq!(lines[5], "Warnings   unpaywall_skipped_no_email");
+    }
+
+    #[test]
+    fn should_render_reason_without_paper_when_outcome_is_unavailable() {
+        use lysilogy_core::UnavailableReason;
+
+        let mut unavailable = report(AcquisitionOutcome::Unavailable {
+            reason: UnavailableReason::NoOaLocation,
+        });
+        unavailable.paper_id = None;
+        unavailable.summary.stages = vec![];
+        unavailable.summary.pdf_url = None;
+        unavailable.title = None;
+        unavailable.year = None;
+        let output = render_acquisition_summary(&unavailable);
+        assert!(output.contains("(untitled)"), "{output}");
+        assert!(
+            output.contains("Outcome    unavailable (no_oa_location)"),
+            "{output}"
+        );
+        assert!(!output.contains("Stages"), "{output}");
+        assert!(!output.contains("Paper"), "{output}");
+        assert!(!output.contains("PDF"), "{output}");
+    }
+
+    #[test]
+    fn should_render_totals_by_reason_when_cited_by_finishes() {
+        use lysilogy_core::UnavailableReason;
+
+        let mut totals = CitedByTotals {
+            skipped: 2,
+            ..CitedByTotals::default()
+        };
+        for _ in 0..3 {
+            totals.record(&AcquisitionOutcome::Mapped);
+        }
+        for _ in 0..5 {
+            totals.record(&AcquisitionOutcome::AlreadyLocal);
+        }
+        for _ in 0..3 {
+            totals.record(&AcquisitionOutcome::Unavailable {
+                reason: UnavailableReason::NoOaLocation,
+            });
+        }
+        totals.record(&AcquisitionOutcome::Unavailable {
+            reason: UnavailableReason::AllLinksFailed,
+        });
+        totals.record(&AcquisitionOutcome::Pending {
+            error: "http_503".to_owned(),
+        });
+        assert_eq!(
+            render_cited_by_totals(&totals),
+            "Fetched 3 \u{b7} already local 5 \u{b7} unavailable 4 (all_links_failed 1, no_oa_location 3) \u{b7} pending 1 \u{b7} skipped 2"
+        );
+    }
+
+    #[test]
+    fn should_render_zero_totals_when_nothing_was_attempted() {
+        assert_eq!(
+            render_cited_by_totals(&CitedByTotals::default()),
+            "Fetched 0 \u{b7} already local 0 \u{b7} unavailable 0 \u{b7} pending 0 \u{b7} skipped 0"
+        );
+    }
+
+    #[test]
+    fn should_render_one_line_per_target_when_cited_by_runs() {
+        let line = render_cited_by_line(&report(AcquisitionOutcome::Mapped));
+        assert!(
+            line.starts_with("mapped Cooperative Inverse Reinforcement Learning (2016) Fetched/"),
+            "{line}"
+        );
+        let pending = render_cited_by_line(&report(AcquisitionOutcome::Pending {
+            error: "http_503".to_owned(),
+        }));
+        assert!(pending.starts_with("pending "), "{pending}");
+        assert!(pending.ends_with("http_503"), "{pending}");
+    }
+
+    #[test]
+    fn should_reject_both_or_neither_target_when_parsing_fetch_arguments() {
+        for arguments in [
+            vec!["lysilogy", "fetch"],
+            vec!["lysilogy", "fetch", "doi:10.1/x", "--cited-by", "Paper"],
+        ] {
+            assert!(Cli::try_parse_from(arguments).is_err());
+        }
+        assert!(Cli::try_parse_from(["lysilogy", "fetch", "doi:10.1/x"]).is_ok());
+        assert!(
+            Cli::try_parse_from(["lysilogy", "fetch", "--cited-by", "Paper", "--limit", "5"])
+                .is_ok()
+        );
     }
 }
