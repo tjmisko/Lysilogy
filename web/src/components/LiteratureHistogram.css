@@ -247,3 +247,24 @@
     transition: none;
   }
 }
+
+.literature-histogram-link-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.literature-histogram-link {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 1.5;
+  stroke-opacity: 0.7;
+}
+
+/* The overlay is a grid with an auto column; without this the body grows to the content width. */
+.literature-graph[data-view="histogram"] .literature-body {
+  min-width: 0;
+}
