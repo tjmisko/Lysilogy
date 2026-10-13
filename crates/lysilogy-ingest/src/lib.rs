@@ -4,6 +4,7 @@
 //! citation-provider clients live here.
 
 pub mod identify;
+pub mod openalex;
 pub mod scan;
 
 /// Errors returned by ingestion.

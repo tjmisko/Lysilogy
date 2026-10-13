@@ -13,6 +13,7 @@ use sqlx::PgPool;
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
 pub mod document;
+pub mod source_record;
 pub mod work;
 
 /// Errors raised by the persistence layer.
