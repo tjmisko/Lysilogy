@@ -670,3 +670,87 @@ Server: `LYSILOGY_DATABASE_URL=postgresql://$USER@127.0.0.1:5433/lysilogy lysilo
   ran concurrently; rerun alone it succeeded (50 references). Follow-up: concurrent `lit` runs on two documents that
   resolve to the same new Work race on identifier insertion; `claim`/`add_identifier` should use
   `ON CONFLICT DO NOTHING` or serialize the job registry per Work.
+
+## Report
+
+### What shipped
+
+Ramp A finishes the literature viewer's Work link: `lysilogy lit` resolves a local paper to an OpenAlex-backed Work and
+ingests its references as citation edges. The API exposes `/api/papers/<id>/work`, `POST /api/papers/<id>/lit`,
+`/api/works/<w>/citations` and `/api/graph/neighbors/<w>`, each marking `local_papers`. The web UI gets a
+`LiteratureGraph` overlay with a Work panel.
+
+### How to user-test
+
+- CLI: `lysilogy lit <path to PDF>` or `lysilogy lit "China Syndrome"`. A rerun is idempotent.
+- Server: `lysilogy ... serve --bind 127.0.0.1:7392 --web web/dist`, then open the UI and select a paper.
+- Keys: `L` opens the literature overlay, `r` runs lit when the paper has no Work, clicking a dot opens the Work
+  panel, the panel's open-paper button navigates to a local copy, and `Esc` closes the panel, then the overlay.
+- API: `GET /api/papers/8eb7fdb369c544e0/work`, `POST /api/papers/<id>/lit`,
+  `GET /api/graph/neighbors/<work id>`. A malformed ID returns 400, an unknown ID 404, and a bad direction 400.
+
+### Smoke results (review run)
+
+Run on a fresh scratch DB, `lysilogy_review_smoke`, so every call went to OpenAlex with nothing cached. Migrations ran
+on connect, and the DB was dropped afterwards. One run also used the dev DB.
+
+CLI:
+- `lysilogy lit <Autor 2013 China Syndrome PDF>` on the dev DB was an idempotent rerun: Work
+  wsylZYO4yTdKNNGLstpCYDg, W2097916756, 114 references, 0 new stubs.
+- Fresh DB, `lit "China Syndrome"`: doi:10.1257/aer.103.6.2121 -> W2097916756, 114 references (114 new stubs,
+  106 titled), exit 0.
+- `lit "Concrete Problems in AI Safety"` and `lit "Constitutional AI"` linked only to their arXiv-identified Works.
+  Both warned `provider_title_mismatch` (W2462906003 "Agnostic Learning with Unknown Utilities"; W4311991106
+  "AI-to-AI Code Reviews ...") and `no_candidates`. Neither linked to the wrong Work.
+
+API (`serve` on 127.0.0.1:7392, scratch DB):
+- `/api/papers/8eb7fdb369c544e0/work` returned the Work with link {identifier, doi:10.1257/aer.103.6.2121}.
+- Concurrent POST /lit for Debate, Christiano 2017 and Ziegler 2019: all 202 running, all succeeded, with 3, 31 and
+  45 references. A duplicate POST for the running Debate job returned running. Unknown ID 404, malformed ID 400.
+- `/api/graph/neighbors/<Ziegler work>`: 46 nodes, 45 edges, 42 titled; `local_papers` marked the paper itself and
+  the cited "AI Safety Via Debate". `/api/works/<w>/citations` included `local_papers`. China Syndrome neighbors:
+  115 nodes, 114 edges. A bad Work ID returned 400, as did a bad direction.
+
+UI (scratch Playwright script `~/.cache/lysilogy-review/lit-ui.mjs`, real server and `web/dist`, screenshots in
+`~/.cache/lysilogy-review/shots/`):
+- `L` opened the overlay with 46 nodes, titles, years and 2 local nodes.
+- Clicking the Debate dot opened the Work panel: Local copy "AI Safety Via Debate"; Cited by local papers
+  "Fine-Tuning Language Models from Human Preferences".
+- `Esc` closed the panel; a second `Esc` closed the overlay.
+- The open-paper button closed the overlay and navigated to `#paper=4e1dd3dcea48280e`.
+- For the unlinked Macartney paper, `L` showed the nowork state; `r` ran lit and the overlay moved to the graph phase.
+- No page errors. `L` opened the overlay after Escape, after a corner click and after a centre click. One first
+  script run timed out waiting for the overlay; it was not reproducible after removing an extra Escape and click.
+
+### Known gaps
+
+- Race: `LiteratureJobs::start` (`src/api/literature.rs`) runs jobs on different papers in parallel, and
+  `add_identifier` (`crates/lysilogy-db/src/work.rs:139-145`) has `ON CONFLICT` only on the partial active index.
+  Two runs resolving to the same new Work can hit a unique violation on `(work_id, scheme, value_normalized)`
+  (seen once in the bulk run, AssemblyHands; not reproduced with 3 parallel POSTs). Fix: `ON CONFLICT DO NOTHING` on
+  the full constraint, or serialize per Work.
+- `link_by_identifier` / `link_by_title` (`crates/lysilogy-ingest/src/literature.rs`): when the provider record fails
+  the title check, the Work is created from the front-matter identifier before the title search. If the title match
+  returns an OpenAlex ID already held by another Work (for example a stub), the paper keeps its separate identifier
+  Work with only an `identifier_conflict` warning, and references land on that separate Work, so local availability
+  never converges. This bends the resolution order in plan finding 7 and has no test.
+- `link_by_identifier`: a DOI that 404s (for example a pdftotext-glued junk suffix) still creates and links a Work
+  with that DOI as an active identifier; only a later OpenAlex ID from the title search corrects it.
+- `search_title_cached` (`crates/lysilogy-ingest/src/openalex.rs`): the response is cached before `results` is
+  checked, so a malformed response is cached permanently and returns Malformed (`title_search_failed`) on every
+  rerun. Empty results are also cached permanently, which may be intended.
+- `src/literature.rs:150` and `:176`: `usize::try_from(page.number)` on a u32 adds fallible paths for bounded
+  conversions; project rule says use plain `as` casts.
+- `web/src/components/LiteratureGraph.tsx`: once a paper has a Work, `r` / Run lit is offered only in the nowork and
+  error phases. A paper linked with 0 references (for example Amodei, provider record rejected) shows an empty fanout
+  with no way to re-run lit.
+- `get_paper_work` (`src/api/literature.rs`) calls `ensure_default_workspace`, a write, on a GET. A document linked
+  through legacy `set_work` without provenance reports `work: null`.
+- The diff carries rustfmt reflow churn in untouched code (state.rs tests, api.rs, work.rs, document.rs tests,
+  openalex.rs). Harmless but noisy for review.
+- UI cosmetics: labels overlap near the top and bottom of the fanout ring at 40 or more nodes
+  (`~/.cache/lysilogy-review/shots/panel.png`).
+- External: OpenAlex data quirks (Attention Is All You Need dated 2025, incomplete reference lists such as Ziegler
+  2019 not citing Christiano 2017). OpenAlex mis-merges the arXiv DataCite DOIs for Amodei 2016 and Bai CAI 2022;
+  title search returns 0 results for Concrete Problems in AI Safety within 2015-2017 (confirmed by curl). The flow
+  handles both with `provider_title_mismatch` and `no_candidates` and never links the wrong Work.
