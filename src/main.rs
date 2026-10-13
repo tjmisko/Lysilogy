@@ -9,6 +9,7 @@ use std::{
 
 use clap::{Parser, Subcommand, ValueEnum};
 use lysilogy::acquisition::{AcquireOptions, AcquireReport};
+use lysilogy::expansion::{ExpandOptions, ExpansionReport, WalkReport};
 use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
 use lysilogy::prominence::ProminenceScope;
 use lysilogy::{
@@ -19,6 +20,7 @@ use lysilogy::{
     },
 };
 use lysilogy::{analysis::LocalCliAnalyzer, labeling::SidecarLabeler};
+use lysilogy_core::{ExpansionState, WALK_EXPANSIONS_MAX, WalkBounds, WorkId};
 use lysilogy_ingest::acquire::AcquisitionOutcome;
 use lysilogy_ingest::labels::{LabelOptions, LabelSummary};
 use lysilogy_ingest::literature::{LiteratureStatus, LiteratureSummary};
@@ -195,6 +197,27 @@ enum Command {
         /// Let a local model pick the PDF link on publisher landing pages.
         #[arg(long, value_enum)]
         model_fallback: Option<LabelSidecar>,
+    },
+    /// Make a Work's references known and optionally walk backward from it (needs `LYSILOGY_DATABASE_URL`).
+    Expand {
+        /// A Work: a w... ID, an `OpenAlex` W... ID, `doi:<doi>`, or `arxiv:<id>`.
+        /// With --paper: a PDF path inside the library, a paper ID, or a title fragment.
+        work: String,
+        /// Treat <work> as a paper and expand the Work it is linked to.
+        #[arg(long)]
+        paper: bool,
+        /// How many levels to walk (1 is just this Work).
+        #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..=3))]
+        depth: u8,
+        /// How many children per Work to expand at each further level.
+        #[arg(long, default_value_t = 5, value_parser = clap::value_parser!(u8).range(1..=10))]
+        fanout: u8,
+        /// Rerun the flow even when the references are already known.
+        #[arg(long)]
+        refresh: bool,
+        /// For papers held locally, skip the local bibliography and in-text evidence.
+        #[arg(long)]
+        no_local: bool,
     },
     /// Analyze all papers that are not ready, continuing past individual faults.
     Ingest {
@@ -438,6 +461,21 @@ async fn run(cli: Cli) -> Result<()> {
                     "give exactly one of <work> or --cited-by".to_owned(),
                 )),
             }
+        }
+        Command::Expand {
+            work,
+            paper,
+            depth,
+            fanout,
+            refresh,
+            no_local,
+        } => {
+            let options = ExpandOptions {
+                bounds: WalkBounds { depth, fanout },
+                refresh,
+                local: !no_local,
+            };
+            expand_command(&state, &cli.library, &work, paper, options).await
         }
         Command::RefreshStructure {
             query,
@@ -1144,6 +1182,93 @@ async fn fetch_work_command(state: &AppState, text: &str, options: AcquireOption
     Ok(())
 }
 
+async fn expand_command(
+    state: &AppState,
+    library: &std::path::Path,
+    text: &str,
+    paper: bool,
+    options: ExpandOptions,
+) -> Result<()> {
+    let seed = if paper {
+        let id = resolve_lit_target(state, library, text).await?;
+        state.linked_work(&id).await?
+    } else {
+        state.resolve_work_argument(text).await?
+    };
+    let started = std::time::Instant::now();
+    let report = state.walk_from(seed, options).await?;
+    let works: Vec<WorkId> = report
+        .expansions
+        .iter()
+        .map(|expansion| expansion.work_id)
+        .collect();
+    let titles = state.work_titles(&works).await?;
+    print!(
+        "{}",
+        render_walk_report(&report, &titles, started.elapsed().as_secs_f64())
+    );
+    Ok(())
+}
+
+fn render_expansion_line(report: &ExpansionReport, titles: &BTreeMap<WorkId, String>) -> String {
+    let title = titles
+        .get(&report.work_id)
+        .map_or_else(|| report.work_id.to_string(), Clone::clone);
+    let method = report
+        .method
+        .map_or_else(String::new, |method| method.to_string());
+    let outcome = match (report.state, report.cached) {
+        (ExpansionState::Expanded, true) => {
+            format!("cached ({method}, {} references)", report.references)
+        }
+        (ExpansionState::Expanded, false) => format!(
+            "expanded ({method}, {} references, {} new)",
+            report.references, report.new_works
+        ),
+        (ExpansionState::Unavailable, cached) => {
+            let reason = report
+                .unavailable_reason
+                .map_or_else(|| "unknown".to_owned(), |reason| reason.to_string());
+            if cached {
+                format!("unavailable ({reason}, cached)")
+            } else {
+                format!("unavailable ({reason})")
+            }
+        }
+    };
+    let mut line = format!("{title}: {outcome}");
+    if let Some(paper) = &report.paper_id {
+        let _ = write!(line, " [paper {paper}]");
+    }
+    for warning in &report.warnings {
+        let _ = write!(line, "\n  warning: {warning}");
+    }
+    line
+}
+
+fn render_walk_report(
+    report: &WalkReport,
+    titles: &BTreeMap<WorkId, String>,
+    seconds: f64,
+) -> String {
+    let mut text = String::new();
+    for expansion in &report.expansions {
+        let _ = writeln!(text, "{}", render_expansion_line(expansion, titles));
+    }
+    let truncated = if report.truncated {
+        format!(", truncated at {WALK_EXPANSIONS_MAX} expansions")
+    } else {
+        String::new()
+    };
+    let _ = writeln!(
+        text,
+        "Walked {} levels, {} expansions{truncated} in {seconds:.1} s",
+        report.levels,
+        report.expansions.len()
+    );
+    text
+}
+
 async fn fetch_cited_by_command(
     state: &AppState,
     library: &std::path::Path,
@@ -1776,6 +1901,118 @@ mod tests {
                 fetch_metrics: true
             })
         ));
+    }
+
+    #[test]
+    fn should_reject_depth_and_fanout_out_of_range_when_parsing_expand_command() {
+        for arguments in [
+            vec!["lysilogy", "expand", "w1", "--depth", "0"],
+            vec!["lysilogy", "expand", "w1", "--depth", "4"],
+            vec!["lysilogy", "expand", "w1", "--depth", "-1"],
+            vec!["lysilogy", "expand", "w1", "--depth", "256"],
+            vec!["lysilogy", "expand", "w1", "--fanout", "0"],
+            vec!["lysilogy", "expand", "w1", "--fanout", "11"],
+            vec!["lysilogy", "expand", "w1", "--fanout", "many"],
+            vec!["lysilogy", "expand"],
+        ] {
+            assert!(
+                Cli::try_parse_from(arguments.clone()).is_err(),
+                "{arguments:?}"
+            );
+        }
+        let defaults = Cli::try_parse_from(["lysilogy", "expand", "doi:10.1/x"]).expect("defaults");
+        assert!(matches!(
+            defaults.command,
+            Some(Command::Expand {
+                paper: false,
+                depth: 1,
+                fanout: 5,
+                refresh: false,
+                no_local: false,
+                ..
+            })
+        ));
+        let bounded = Cli::try_parse_from([
+            "lysilogy",
+            "expand",
+            "Title",
+            "--paper",
+            "--depth",
+            "3",
+            "--fanout",
+            "10",
+            "--refresh",
+            "--no-local",
+        ])
+        .expect("bounded");
+        assert!(matches!(
+            bounded.command,
+            Some(Command::Expand {
+                paper: true,
+                depth: 3,
+                fanout: 10,
+                refresh: true,
+                no_local: true,
+                ..
+            })
+        ));
+    }
+
+    fn expansion_report(work_id: WorkId, state: ExpansionState) -> ExpansionReport {
+        ExpansionReport {
+            work_id,
+            cached: false,
+            state,
+            method: None,
+            unavailable_reason: None,
+            references: 0,
+            new_works: 0,
+            paper_id: None,
+            warnings: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn should_render_one_line_per_expansion_and_a_walk_summary_when_walking() {
+        let (first, second, third) = (WorkId::new(), WorkId::new(), WorkId::new());
+        let mut expanded = expansion_report(first, ExpansionState::Expanded);
+        expanded.method = Some(lysilogy_core::ExpansionMethod::Provider);
+        expanded.references = 12;
+        expanded.new_works = 4;
+        expanded.warnings.push("local_flow_unmatched".to_owned());
+        let mut cached = expansion_report(second, ExpansionState::Expanded);
+        cached.cached = true;
+        cached.method = Some(lysilogy_core::ExpansionMethod::Existing);
+        cached.references = 7;
+        let mut unavailable = expansion_report(third, ExpansionState::Unavailable);
+        unavailable.unavailable_reason =
+            Some(lysilogy_core::ExpansionUnavailableReason::ProviderNotFound);
+        let report = WalkReport {
+            seed: first,
+            expansions: vec![expanded, cached, unavailable],
+            levels: 2,
+            truncated: true,
+        };
+        let titles = BTreeMap::from([(first, "First Paper".to_owned())]);
+        let text = render_walk_report(&report, &titles, 1.26);
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(
+            lines[0],
+            "First Paper: expanded (provider, 12 references, 4 new)"
+        );
+        assert_eq!(lines[1], "  warning: local_flow_unmatched");
+        assert_eq!(
+            lines[2],
+            format!("{second}: cached (existing, 7 references)")
+        );
+        assert_eq!(
+            lines[3],
+            format!("{third}: unavailable (provider_not_found)")
+        );
+        assert_eq!(
+            lines[4],
+            "Walked 2 levels, 3 expansions, truncated at 40 expansions in 1.3 s"
+        );
     }
 
     #[test]
