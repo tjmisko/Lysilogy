@@ -22,6 +22,7 @@ import { useRamps } from "../lib/useRamps";
 import { LiteratureRamp } from "./LiteratureRamp";
 import { LiteratureCuration, TAG_INPUT_CLASS } from "./LiteratureCuration";
 import { LiteratureLegend, TAG_KEY_LIMIT } from "./LiteratureLegend";
+import { WorkProvenance } from "./WorkProvenance";
 import "./LiteratureGraph.css";
 
 type LiteratureGraphProps = {
@@ -1297,6 +1298,7 @@ function WorkPanel(props: WorkPanelProps) {
         {work.display_year ?? "year unknown"} · {work.kind}
         {state.kind === "ready" && ` · cites ${state.citations.outgoing.length} · cited by ${state.citations.incoming.length} known`}
       </p>
+      <WorkProvenance work={work} />
       {!props.isCenter && (
         <LiteratureCuration
           key={work.id}
