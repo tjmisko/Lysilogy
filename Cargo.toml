@@ -5,6 +5,24 @@ edition = "2024"
 rust-version = "1.88"
 description = "A keyboard-first atlas and contextual reader for scientific papers"
 
+[workspace]
+members = ["crates/*"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+
+[workspace.dependencies]
+chrono = { version = "0.4.41", features = ["serde"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.143"
+thiserror = "2.0.16"
+tokio = { version = "1.47.1", features = ["fs", "io-util", "macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+tracing = "0.1.41"
+uuid = { version = "1.18.1", features = ["v4", "serde"] }
+
 [dependencies]
 axum = { version = "0.8.4", features = ["json", "macros"] }
 chrono = { version = "0.4.41", features = ["serde"] }
@@ -28,10 +46,13 @@ http-body-util = "0.1.3"
 tempfile = "3.21.0"
 tower = { version = "0.5.2", features = ["util"] }
 
-[lints.rust]
+[lints]
+workspace = true
+
+[workspace.lints.rust]
 unsafe_code = "forbid"
 
-[lints.clippy]
+[workspace.lints.clippy]
 all = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
 nursery = { level = "deny", priority = -1 }
