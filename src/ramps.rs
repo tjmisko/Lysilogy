@@ -762,3 +762,163 @@ impl AppState {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use lysilogy_core::IdentifierScheme;
+
+    use super::*;
+    use crate::expansion::fixtures::{
+        ScriptedTransport, marker, new_work, plain_state, test_graph,
+    };
+
+    async fn titled_ramp(state: &AppState, graph: &GraphState, label: &str, title: &str) -> RampId {
+        let seed = new_work(graph, IdentifierScheme::Doi, &format!("10.9999/{label}")).await;
+        let title = parse_title(title).expect("title");
+        state
+            .create_ramp(seed, Some(title))
+            .await
+            .expect("create")
+            .ramp
+            .id
+    }
+
+    #[tokio::test]
+    async fn should_resolve_ramp_by_unique_title_prefix_and_reject_ambiguous() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let state = plain_state(graph.clone(), ScriptedTransport::serving(Vec::new())).await;
+        let tag = marker();
+        let alpha = titled_ramp(
+            &state,
+            &graph,
+            &format!("{tag}-a"),
+            &format!("Zq{tag} Alpha"),
+        )
+        .await;
+        let beta = titled_ramp(
+            &state,
+            &graph,
+            &format!("{tag}-b"),
+            &format!("Zq{tag} Beta"),
+        )
+        .await;
+        let solo = titled_ramp(&state, &graph, &format!("{tag}-c"), &format!("Solo{tag}")).await;
+
+        assert_eq!(
+            state.ramp_reference(&alpha.to_string()).await.expect("id"),
+            alpha
+        );
+        assert_eq!(
+            state
+                .ramp_reference(&format!("  zq{tag} be"))
+                .await
+                .expect("prefix, case-insensitive"),
+            beta
+        );
+        assert_eq!(
+            state
+                .ramp_reference(&format!("SOLO{}", tag.to_uppercase()))
+                .await
+                .expect("uppercase"),
+            solo
+        );
+
+        let ambiguous = state
+            .ramp_reference(&format!("Zq{tag}"))
+            .await
+            .expect_err("two matches");
+        assert_eq!(ambiguous.code(), "ambiguous_ramp");
+        let message = ambiguous.to_string();
+        assert!(message.contains(&alpha.to_string()), "{message}");
+        assert!(message.contains(&beta.to_string()), "{message}");
+
+        let none = state
+            .ramp_reference(&format!("Nothing{tag}"))
+            .await
+            .expect_err("no match");
+        assert_eq!(none.code(), "ramp_not_found");
+        let blank = state.ramp_reference("   ").await.expect_err("blank");
+        assert_eq!(blank.code(), "ramp_not_found");
+        // A well-formed ID that names no ramp falls through to title matching.
+        let unknown = state
+            .ramp_reference(&RampId::new().to_string())
+            .await
+            .expect_err("unknown id");
+        assert_eq!(unknown.code(), "ramp_not_found");
+
+        for ramp in [alpha, beta, solo] {
+            state.delete_ramp(ramp).await.expect("delete");
+        }
+    }
+
+    #[tokio::test]
+    async fn should_list_at_most_five_matches_when_prefix_is_ambiguous() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let state = plain_state(graph.clone(), ScriptedTransport::serving(Vec::new())).await;
+        let tag = marker();
+        let mut ramps = Vec::new();
+        for index in 0..7 {
+            ramps.push(
+                titled_ramp(
+                    &state,
+                    &graph,
+                    &format!("{tag}-{index}"),
+                    &format!("Many{tag} {index}"),
+                )
+                .await,
+            );
+        }
+        let error = state
+            .ramp_reference(&format!("Many{tag}"))
+            .await
+            .expect_err("ambiguous");
+        let message = error.to_string();
+        assert_eq!(message.matches("(p").count(), 5, "{message}");
+        assert!(message.contains("and 2 more"), "{message}");
+        for ramp in ramps {
+            state.delete_ramp(ramp).await.expect("delete");
+        }
+    }
+
+    #[test]
+    fn should_map_error_codes_when_converting_service_errors() {
+        assert_eq!(
+            RampServiceError::NotFound("item_not_found").code(),
+            "item_not_found"
+        );
+        assert_eq!(RampServiceError::Conflict("seed_item").code(), "seed_item");
+        assert!(matches!(
+            ramp_failure(&DbError::Conflict("ramp_full".to_owned())),
+            RampServiceError::Conflict("ramp_full")
+        ));
+        assert!(matches!(
+            ramp_failure(&DbError::not_found()),
+            RampServiceError::NotFound("ramp_not_found")
+        ));
+        assert!(matches!(
+            ramp_failure(&DbError::Conflict("mystery".to_owned())),
+            RampServiceError::Graph(_)
+        ));
+        assert_eq!(
+            parse_title("").expect_err("empty").code(),
+            "invalid_ramp_title"
+        );
+        assert_eq!(
+            parse_status("done").expect_err("status").code(),
+            "invalid_status"
+        );
+        assert_eq!(
+            parse_note(Some(&"x".repeat(2001)))
+                .expect_err("note")
+                .code(),
+            "invalid_note"
+        );
+        assert_eq!(parse_note(Some("  ")).expect("blank"), None);
+    }
+}
