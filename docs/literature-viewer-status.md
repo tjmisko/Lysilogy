@@ -125,6 +125,8 @@ Worth fixing soon:
 
 - Exact-title-only matching leaves visible duplicate nodes ("Picbreeder" vs its full printed title).
   Fuzzy matching was deliberately deferred.
+- Rerunning `lit` on an already-ingested paper still calls OpenAlex, and a transient provider 5xx
+  fails the whole command with no retry (seen 2026-10-13: HTTP 504 on "China Syndrome", fine on retry).
 - A paper linked with 0 references has no way to re-run lit from the UI.
 - When the identifier and title paths disagree, a paper can keep a separate identifier Work and never
   converge with the provider Work (`crates/lysilogy-ingest/src/literature.rs`).
