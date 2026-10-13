@@ -355,7 +355,7 @@ async fn fetch_provider<T: JsonTransport>(
     }
 }
 
-const fn is_soft(error: &ProviderError) -> bool {
+pub(crate) const fn is_soft(error: &ProviderError) -> bool {
     error.is_not_found() || matches!(error, ProviderError::Malformed)
 }
 

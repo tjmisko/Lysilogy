@@ -5,6 +5,7 @@
 
 pub mod acquire;
 pub mod bibliography;
+pub mod expand;
 pub mod identify;
 pub mod ingest;
 pub mod labels;
