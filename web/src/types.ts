@@ -736,3 +736,59 @@ export type RampDetail = {
 export type RampItemAdd = { work_id: string; via_work_id?: string; note?: string };
 export type RampItemPatch = { status?: RampItemStatus; note?: string | null };
 export type RampOrderRequest = { work_ids: string[] } | { strategy: "foundational_first" };
+
+export type ProvenanceColumnKey =
+  | "user"
+  | "publisher"
+  | "paper"
+  | "openalex"
+  | "library_metadata"
+  | "citing_bibliography";
+
+export type ClaimConfidence = "explicit" | "heuristic" | "model";
+
+export type ProvenanceView = {
+  work_id: string;
+  /** Trust order, highest first. Only the user column is editable. */
+  columns: { key: ProvenanceColumnKey; label: string; editable: boolean }[];
+  /** title, year, authors, venue, doi. */
+  fields: FieldProvenance[];
+};
+
+export type FieldProvenance = {
+  field: "title" | "year" | "authors" | "venue" | "doi";
+  selected: {
+    value: unknown;
+    display: string | null;
+    state: FieldState;
+    claim_id: string | null;
+    origin: ProvenanceColumnKey | null;
+    confidence: ClaimConfidence | null;
+  };
+  /** created_at order. */
+  claims: ClaimView[];
+};
+
+export type ClaimView = {
+  id: string;
+  origin: ProvenanceColumnKey;
+  extractor: string;
+  confidence: ClaimConfidence;
+  value: unknown;
+  /** null when the stored value is unreadable for the field. */
+  display: string | null;
+  review_state: "unreviewed" | "accepted" | "rejected" | "disputed";
+  retracted_at: string | null;
+  agreement: "selected" | "agrees" | "disagrees" | "excluded";
+  excluded_reason: "rejected" | "retracted" | "unreadable" | null;
+  source_record: { id: string; kind: string; source_key: string; retrieved_at: string } | null;
+  locator: string | null;
+  entry: {
+    id: string;
+    entry_key: string;
+    raw_text: string;
+    citing_work_id: string | null;
+    citing_title: string | null;
+  } | null;
+  created_at: string;
+};
