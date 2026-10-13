@@ -875,3 +875,35 @@ mode; live check recorded; dev DB curation rows created by the check removed.
     = 332 - 40. No tags exist in the dev DB yet, so no tag clusters.
   - Response 37,513 bytes; latency 52 ms cold, 12-23 ms warm (target < 300 ms). Without
     `limit`: 219,422 bytes, 20 ms.
+
+## U5 implementation notes
+
+- Web only; no Rust changes, so the cargo gate is unchanged. Web gate: `typecheck`, `lint`,
+  `build`, `test:relevance` (9), `test:literature-layout` (15, 4 new), `test:acquisition` (14).
+- Adjustments to the plan:
+  - Neighbors loading is now one effect keyed on `centerWork`, `topN`, `expanded`, `tagFilter`
+    and a refetch token (the paper-Work lookup is a separate effect). The previous graph stays
+    on screen while a refetch is in flight; a refetch error shows in the legend as a `role=alert`.
+  - Selection is stored by placement id (Work id or `cluster:<key>`), not index. Expanding a
+    cluster selects its first member; if the selected Work leaves the canvas the Work panel closes.
+  - `graphNeighbors(workId, direction, options, signal)` takes `options` before `signal`;
+    `neighborQuery` also accepts `direction` and is the only query builder.
+  - Cluster ids in placements are `cluster:<key>`. Expanded cluster keys are not returned by the
+    server in `clusters`, so the legend keeps the last seen label per key for its removable chips.
+  - Mark overrides are optimistic and cleared when a neighbors refetch lands with no mark
+    request in flight; failure deletes the override (revert) and shows the error in the panel.
+  - Marks are not offered on the center Work. Keys `p`/`d`/`h` reuse the saved note; the buttons
+    send the note draft. `tagFilter` has no setter yet (U6).
+  - `layoutFanout` (year order, no `kind`) is kept for its existing tests; the overlay uses
+    `layoutRankedFanout`.
+- Scratch Playwright pass (`~/.cache/lysilogy-smoke/relevance-smoke.mjs`, mocked `/api`, serves
+  `web/dist`, 180-Work deterministic fanout) passed 20 checks: default `limit=40`; 40 ranked
+  nodes plus cluster nodes; "Showing 40 of 176 · 3 pinned · 4 hidden"; pinned visible, hidden and
+  downplayed absent; `j` cycles every placement and wraps to the center; click and `Enter` expand
+  a cluster (`expand=<key>`, node count grows by the cluster count); `c` collapses; `+` sends
+  `limit=60`, `-` twice `limit=20`; panel signal summary; `p` sends PUT pinned and sets
+  `data-mark`; `p` again sends DELETE; `h` removes the node and shows "Hidden (5) — show";
+  a failing mark reverts and shows an alert; no console errors. Screenshots in the same folder.
+- Known cosmetic gap: with more than 36 items the cluster pills sit on an outer ring and can
+  overlap a few node labels; the mock pass did not enforce the label-overlap assertion planned
+  for U6.

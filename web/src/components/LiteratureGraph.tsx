@@ -3,11 +3,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { acquisitionStatusText, canFetch, isRetry, type AcquisitionLike } from "../lib/acquisition";
 import { ApiError, api } from "../lib/api";
 import { LITERATURE_QUIT_EVENT } from "../lib/literatureEvents";
-import { layoutFanout, type FanoutPlacement } from "../lib/literatureLayout";
+import { layoutRankedFanout, type RankedPlacement } from "../lib/literatureLayout";
+import {
+  DEFAULT_TOP_N, clusterAriaLabel, markAfterToggle, nextTopN, nodeRadius, toggleInSet,
+} from "../lib/relevance";
 import type {
   AcquisitionJobState, AcquisitionStatus, AcquisitionView, EdgeLabel, EdgeLabelEdit, GraphEdge, GraphNeighbors,
-  LocalPaper, Work, WorkCitations,
+  LocalPaper, MarkView, NeighborCluster, ProminenceView, Work, WorkCitations, WorkMarkName,
 } from "../types";
+import { LiteratureCuration } from "./LiteratureCuration";
 import "./LiteratureGraph.css";
 
 type LiteratureGraphProps = {
@@ -48,6 +52,8 @@ type FetchEntry = {
 const RELATIONS = [
   "background", "uses_method", "uses_data", "extends", "supports", "contrasts", "critiques", "compares", "other",
 ] as const;
+
+const MARK_KEYS: Readonly<Record<string, WorkMarkName>> = { p: "pinned", d: "downplayed", h: "hidden" };
 
 const CANVAS = { width: 1000, height: 700 } as const;
 const POLL_MILLISECONDS = 1000;
@@ -112,7 +118,17 @@ function isUnavailable(reason: unknown): boolean {
 export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onOpenPassage }: LiteratureGraphProps) {
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
   const [reloadToken, setReloadToken] = useState(0);
-  const [selected, setSelected] = useState(0);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [centerWork, setCenterWork] = useState<Work | null>(null);
+  const [topN, setTopN] = useState(DEFAULT_TOP_N);
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  // Used by the tag filter in the next unit; the query parameter is wired now.
+  const [tagFilter] = useState<ReadonlySet<string>>(() => new Set());
+  const [neighborsError, setNeighborsError] = useState<string | null>(null);
+  const [markOverrides, setMarkOverrides] = useState<ReadonlyMap<string, MarkView | null>>(() => new Map());
+  const [markError, setMarkError] = useState<string | null>(null);
+  const pendingMarks = useRef(0);
+  const clusterLabels = useRef(new Map<string, string>());
   const [workPanelOpen, setWorkPanelOpen] = useState(false);
   const [citations, setCitations] = useState<CitationsState>({ kind: "loading" });
   const [patches, setPatches] = useState<ReadonlyMap<string, EdgeLabel>>(() => new Map());
@@ -129,12 +145,9 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     void (async () => {
       try {
         const link = await api.paperWork(paperId, controller.signal);
-        if (link.work === null) {
-          setPhase({ kind: "nowork" });
-          return;
-        }
-        const neighbors = await api.graphNeighbors(link.work.id, "references", {}, controller.signal);
-        setPhase({ kind: "graph", work: link.work, neighbors });
+        if (controller.signal.aborted) return;
+        setCenterWork(link.work);
+        if (link.work === null) setPhase({ kind: "nowork" });
       } catch (reason: unknown) {
         if (controller.signal.aborted) return;
         setPhase(isUnavailable(reason)
@@ -144,6 +157,31 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     })();
     return () => controller.abort();
   }, [paperId, reloadToken]);
+
+  // Load the ranked neighbors. Any change to top-N, expansions, or filters refetches;
+  // the previous request is aborted and the graph stays on screen meanwhile.
+  useEffect(() => {
+    if (centerWork === null) return;
+    const controller = new AbortController();
+    api.graphNeighbors(centerWork.id, "references", { limit: topN, expand: expanded, tags: tagFilter }, controller.signal)
+      .then((neighbors) => {
+        for (const cluster of neighbors.clusters ?? []) clusterLabels.current.set(cluster.key, cluster.label);
+        setNeighborsError(null);
+        if (pendingMarks.current === 0) setMarkOverrides(new Map());
+        setPhase((current) => current.kind === "graph" && current.work.id === centerWork.id
+          ? { ...current, neighbors }
+          : { kind: "graph", work: centerWork, neighbors });
+      })
+      .catch((reason: unknown) => {
+        if (controller.signal.aborted) return;
+        setNeighborsError(failureMessage(reason));
+        setPhase((current) => {
+          if (current.kind === "graph") return current;
+          return isUnavailable(reason) ? { kind: "unavailable" } : { kind: "error", message: failureMessage(reason) };
+        });
+      });
+    return () => controller.abort();
+  }, [centerWork, expanded, neighborsToken, tagFilter, topN]);
 
   // Poll the lit job once a second while it runs. The interval dies with the overlay.
   const running = phase.kind === "running";
@@ -163,7 +201,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
           } else if (job.summary?.status.kind === "unmatched") {
             setPhase({ kind: "error", message: `No matching Work found: ${job.summary.status.reason}` });
           } else {
-            setSelected(0);
+            setSelectedId(null);
             setPatches(new Map());
             setEditingId(null);
             setPhase({ kind: "loading" });
@@ -192,14 +230,17 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   }, [paperId]);
 
   const graph = phase.kind === "graph" ? phase : null;
-  const placements = useMemo<FanoutPlacement[]>(() => {
+  const clusters = useMemo<NeighborCluster[]>(() => graph?.neighbors.clusters ?? [], [graph]);
+  const clustersByKey = useMemo(() => new Map(clusters.map((cluster) => [cluster.key, cluster])), [clusters]);
+  const placements = useMemo<RankedPlacement[]>(() => {
     if (graph === null) return [];
-    return layoutFanout(
+    return layoutRankedFanout(
       graph.work.id,
-      graph.neighbors.nodes.map((node) => ({ id: node.id, title: node.display_title, year: node.display_year })),
+      graph.neighbors.nodes.map((node) => node.id),
+      clusters.map((cluster) => cluster.key),
       CANVAS,
     );
-  }, [graph]);
+  }, [clusters, graph]);
   const worksById = useMemo(() => {
     const map = new Map<string, Work>();
     if (graph === null) return map;
@@ -215,9 +256,11 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     }
     return map;
   }, [graph]);
-  const activeIndex = Math.min(selected, Math.max(0, placements.length - 1));
+  const selectedIndex = selectedId === null ? 0 : placements.findIndex((placement) => placement.id === selectedId);
+  const activeIndex = Math.max(0, selectedIndex);
   const activePlacement = placements[activeIndex];
-  const activeWork = activePlacement === undefined ? undefined : worksById.get(activePlacement.id);
+  const activeWork = activePlacement?.kind === "cluster" || activePlacement === undefined
+    ? undefined : worksById.get(activePlacement.id);
   const activeWorkId = workPanelOpen ? activeWork?.id : undefined;
 
   // Fetch the selected Work's citation neighborhood while its panel is open.
@@ -234,16 +277,6 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
 
   const centerId = graph?.work.id;
   const activeFetch = activeWorkId === undefined ? undefined : fetches.get(activeWorkId);
-
-  // Reload the neighbors after a fetch lands, so the node gets its local dot.
-  useEffect(() => {
-    if (neighborsToken === 0 || centerId === undefined) return;
-    const controller = new AbortController();
-    api.graphNeighbors(centerId, "references", {}, controller.signal)
-      .then((neighbors) => setPhase((current) => current.kind === "graph" ? { ...current, neighbors } : current))
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [centerId, neighborsToken]);
 
   const recordFetch = useCallback((workId: string, status: AcquisitionStatus, fresh: boolean): void => {
     setFetches((current) => {
@@ -305,6 +338,30 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
       window.clearInterval(timer);
     };
   }, [pollingWorkId, recordFetch]);
+
+  const markFor = useCallback((workId: string): MarkView | null => {
+    const override = markOverrides.get(workId);
+    if (override !== undefined) return override;
+    return graph?.neighbors.marks?.[workId] ?? null;
+  }, [graph, markOverrides]);
+  const applyMark = useCallback((workId: string, next: WorkMarkName | null, note: string | null): void => {
+    setMarkError(null);
+    setMarkOverrides((current) => new Map(current).set(workId, next === null ? null : { mark: next, note }));
+    pendingMarks.current += 1;
+    const call = next === null ? api.clearWorkMark(workId) : api.setWorkMark(workId, next, note);
+    call.then(() => {
+      pendingMarks.current -= 1;
+      setNeighborsToken((token) => token + 1);
+    }).catch((reason: unknown) => {
+      pendingMarks.current -= 1;
+      setMarkOverrides((current) => {
+        const reverted = new Map(current);
+        reverted.delete(workId);
+        return reverted;
+      });
+      setMarkError(failureMessage(reason));
+    });
+  }, []);
 
   const briefs = graph?.neighbors.acquisitions;
   const activeView: AcquisitionLike | null = activeFetch?.view ?? (activeWork === undefined ? null : briefs?.[activeWork.id] ?? null);
@@ -379,13 +436,30 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     });
   }, [onOpenPassage]);
 
-  const openWorkPanel = useCallback((index: number): void => {
+  const expandCluster = useCallback((cluster: NeighborCluster): void => {
+    setExpanded((current) => new Set(current).add(cluster.key));
+    setSelectedId(cluster.work_ids[0] ?? null);
+  }, []);
+  const toggleExpansion = useCallback((key: string): void => {
+    setExpanded((current) => toggleInSet(current, key));
+  }, []);
+
+  // Enter, click and Space: open a Work's panel, or expand a cluster.
+  const activateIndex = useCallback((index: number): void => {
+    const placement = placements[index];
+    if (placement === undefined) return;
+    if (placement.kind === "cluster") {
+      const cluster = clustersByKey.get(placement.clusterKey ?? "");
+      if (cluster !== undefined) expandCluster(cluster);
+      return;
+    }
     setEditingId(null);
     setLabelError(null);
-    setSelected(index);
+    setMarkError(null);
+    setSelectedId(placement.id);
     setCitations({ kind: "loading" });
     setWorkPanelOpen(true);
-  }, []);
+  }, [clustersByKey, expandCluster, placements]);
 
   // Esc and q reach the App close chain first. It asks us to close the Work panel
   // before it closes the overlay, and cancels the event when we did.
@@ -414,6 +488,14 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
       if (phase.kind !== "graph") return;
       if (workPanelOpen) {
         if (editingId !== null) return;
+        const requestedMark = MARK_KEYS[event.key];
+        if (requestedMark !== undefined) {
+          if (activeWork === undefined || activeWork.id === centerId) return;
+          event.preventDefault();
+          const current = markFor(activeWork.id);
+          applyMark(activeWork.id, markAfterToggle(current?.mark ?? null, requestedMark), current?.note ?? null);
+          return;
+        }
         if (event.key === "f") {
           if (fetchable) { event.preventDefault(); startFetch(); }
           return;
@@ -427,18 +509,34 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
       }
       if (event.key === "j" || event.key === "ArrowDown" || event.key === "l" || event.key === "ArrowRight") {
         event.preventDefault();
-        setSelected((index) => (Math.min(index, placements.length - 1) + 1) % placements.length);
+        setSelectedId(placements[(activeIndex + 1) % placements.length]?.id ?? null);
       } else if (event.key === "k" || event.key === "ArrowUp" || event.key === "h" || event.key === "ArrowLeft") {
         event.preventDefault();
-        setSelected((index) => (Math.min(index, placements.length - 1) + placements.length - 1) % placements.length);
+        setSelectedId(placements[(activeIndex + placements.length - 1) % placements.length]?.id ?? null);
       } else if (event.key === "Enter" || event.key === "o") {
         event.preventDefault();
-        openWorkPanel(activeIndex);
+        activateIndex(activeIndex);
+      } else if (event.key === "c") {
+        event.preventDefault();
+        setExpanded(new Set());
+      } else if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        setTopN((current) => nextTopN(current, 1));
+      } else if (event.key === "-") {
+        event.preventDefault();
+        setTopN((current) => nextTopN(current, -1));
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [actionableLabel, activeIndex, editingId, fetchable, openWorkPanel, phase.kind, placements.length, reviewLabel, runLiterature, showInPaper, startFetch, workPanelOpen]);
+  }, [actionableLabel, activateIndex, activeIndex, activeWork, applyMark, centerId, editingId, fetchable, markFor, phase.kind, placements, reviewLabel, runLiterature, showInPaper, startFetch, workPanelOpen]);
+
+  // A Work that left the canvas (hidden, downplayed, filtered) takes its panel with it.
+  const panelWorkGone = workPanelOpen && graph !== null && selectedId !== null
+    && !placements.some((placement) => placement.id === selectedId);
+  useEffect(() => {
+    if (panelWorkGone) setWorkPanelOpen(false);
+  }, [panelWorkGone]);
 
   const localIds = useMemo(() => {
     if (graph === null) return new Set<string>();
@@ -496,7 +594,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                 <svg viewBox={`0 0 ${CANVAS.width} ${CANVAS.height}`} role="list" preserveAspectRatio="xMidYMid meet">
                   {placements.slice(1).map((placement) => {
                     const center = placements[0];
-                    if (center === undefined) return null;
+                    if (center === undefined || placement.kind !== "work") return null;
                     const edge = edgeByCited.get(placement.id);
                     const labeled = edge?.labels.some((label) => resolveLabel(label, patches).review_state !== "rejected") ?? false;
                     const localOnly = edge !== undefined && edge.sources.includes("local") && !edge.sources.includes("provider");
@@ -504,12 +602,42 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                     return <line key={`edge-${placement.id}`} className={`literature-edge ${kind}`} data-edge-kind={kind === "" ? "provider" : kind.slice(3)} x1={center.x} y1={center.y} x2={placement.x} y2={placement.y} />;
                   })}
                   {placements.map((placement, index) => {
+                    const isActive = index === activeIndex;
+                    const rightSide = placement.x >= CANVAS.width / 2;
+                    if (placement.kind === "cluster") {
+                      const cluster = clustersByKey.get(placement.clusterKey ?? "");
+                      if (cluster === undefined) return null;
+                      const text = `${cluster.label} · ${cluster.count}`;
+                      const width = Math.max(56, text.length * 6.2 + 18);
+                      return (
+                        <g
+                          key={placement.id}
+                          role="listitem"
+                          tabIndex={0}
+                          className={`literature-node literature-cluster ${isActive ? "is-active" : ""}`}
+                          data-cluster-key={cluster.key}
+                          data-cluster-kind={cluster.kind}
+                          data-cluster-count={cluster.count}
+                          aria-label={clusterAriaLabel(cluster)}
+                          transform={`translate(${placement.x} ${placement.y})`}
+                          onClick={() => expandCluster(cluster)}
+                          onFocus={() => setSelectedId(placement.id)}
+                          onKeyDown={(event) => {
+                            if (event.key !== " ") return;
+                            event.preventDefault();
+                            expandCluster(cluster);
+                          }}
+                        >
+                          <title>{cluster.sample_titles.join("\n")}</title>
+                          <rect className="literature-cluster-pill" x={-width / 2} y={-10} width={width} height={20} rx={10} />
+                          <text className="literature-cluster-label" textAnchor="middle" y={3.5}>{text}</text>
+                        </g>
+                      );
+                    }
                     const work = worksById.get(placement.id);
                     if (work === undefined) return null;
-                    const isCenter = placement.ring === 0;
-                    const isActive = index === activeIndex;
+                    const isCenter = placement.kind === "center";
                     const isLocal = localIds.has(work.id);
-                    const rightSide = placement.x >= CANVAS.width / 2;
                     const labelX = isCenter ? 0 : rightSide ? 11 : -11;
                     const labelY = isCenter ? 24 : 3;
                     const anchor = isCenter ? "middle" : rightSide ? "start" : "end";
@@ -517,6 +645,10 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                     const acquisition = nodeFetch?.job === "running"
                       ? "running"
                       : nodeFetch?.view?.state ?? briefs?.[work.id]?.state ?? "none";
+                    const prominence = graph.neighbors.prominence?.[work.id];
+                    const mark = isCenter ? null : markFor(work.id);
+                    const tagIds = graph.neighbors.work_tags?.[work.id] ?? [];
+                    const radius = isCenter ? 8 : prominence !== undefined ? nodeRadius(prominence.score) : isLocal ? 5.5 : 4;
                     return (
                       <g
                         key={placement.id}
@@ -526,18 +658,22 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                         data-node-id={work.id}
                         data-local={isLocal ? "true" : "false"}
                         data-acquisition={acquisition}
-                        aria-label={`${workLabel(work, FULL_LABEL_LIMIT)}${isLocal ? ", held locally" : ""}`}
+                        data-mark={mark?.mark ?? "none"}
+                        data-score={prominence === undefined ? undefined : prominence.score.toFixed(2)}
+                        data-tags={tagIds.join(",")}
+                        aria-label={`${workLabel(work, FULL_LABEL_LIMIT)}${isLocal ? ", held locally" : ""}${mark === null ? "" : `, ${mark.mark}`}`}
                         transform={`translate(${placement.x} ${placement.y})`}
-                        onClick={() => openWorkPanel(index)}
-                        onFocus={() => setSelected(index)}
+                        onClick={() => activateIndex(index)}
+                        onFocus={() => setSelectedId(placement.id)}
                         onKeyDown={(event) => {
                           if (event.key !== " ") return;
                           event.preventDefault();
-                          openWorkPanel(index);
+                          activateIndex(index);
                         }}
                       >
                         <circle className="literature-halo" r={isActive ? 15 : 12} />
-                        <circle className="literature-dot" r={isCenter ? 8 : isLocal ? 5.5 : 4} />
+                        {mark?.mark === "pinned" && <circle className="literature-pin-ring" r={radius + 3} />}
+                        <circle className="literature-dot" r={radius} />
                         <text className="literature-label" x={labelX} y={labelY} textAnchor={anchor}>
                           {workLabel(work, isActive || isCenter ? FULL_LABEL_LIMIT : LABEL_LIMIT)}
                         </text>
@@ -545,19 +681,24 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                     );
                   })}
                 </svg>
-                <p className="literature-legend">
-                  <span><i className="literature-key is-local" /> held locally</span>
-                  <span><i className="literature-key" /> cited work</span>
-                  <span><i className="literature-line is-labeled" /> reason known</span>
-                  <span><i className="literature-line is-local-only" /> found in this paper only</span>
-                  <span>{placements.length - 1} cited</span>
-                  <span><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>↵</kbd> open · <kbd>Esc</kbd> close</span>
-                </p>
+                <LiteratureStatusLine
+                  graph={graph.neighbors}
+                  placementCount={placements.length - 1}
+                  expanded={expanded}
+                  clusterLabels={clusterLabels.current}
+                  onToggleExpansion={toggleExpansion}
+                  error={neighborsError}
+                />
               </section>
 
               {workPanelOpen && activeWork !== undefined && (
                 <WorkPanel
                   work={activeWork}
+                  isCenter={activeWork.id === graph.work.id}
+                  mark={markFor(activeWork.id)}
+                  prominence={graph.neighbors.prominence?.[activeWork.id]}
+                  markError={markError}
+                  onSetMark={(next, note) => applyMark(activeWork.id, next, note)}
                   state={citations}
                   edges={panelEdges}
                   editingId={editingId}
@@ -583,6 +724,43 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   );
 }
 
+function LiteratureStatusLine({ graph, placementCount, expanded, clusterLabels, onToggleExpansion, error }: {
+  graph: GraphNeighbors;
+  placementCount: number;
+  expanded: ReadonlySet<string>;
+  clusterLabels: ReadonlyMap<string, string>;
+  onToggleExpansion: (key: string) => void;
+  error: string | null;
+}) {
+  const ranking = graph.ranking;
+  const visible = ranking?.visible ?? graph.nodes.filter((node) => node.id !== graph.center).length;
+  const total = ranking?.total ?? visible;
+  const hiddenCount = ranking?.hidden ?? 0;
+  const hiddenExpanded = expanded.has("hidden");
+  const expandedKeys = [...expanded].filter((key) => key !== "hidden" || hiddenExpanded);
+  return (
+    <p className="literature-legend">
+      <span><i className="literature-key is-local" /> held locally</span>
+      <span><i className="literature-key" /> cited work</span>
+      <span><i className="literature-line is-labeled" /> reason known</span>
+      <span><i className="literature-line is-local-only" /> found in this paper only</span>
+      <span className="literature-ranking" data-placement-count={placementCount}>
+        Showing {visible} of {total} · {ranking?.pinned ?? 0} pinned · {hiddenCount} hidden
+      </span>
+      {hiddenCount > 0 && !hiddenExpanded && (
+        <button type="button" className="literature-chip" onClick={() => onToggleExpansion("hidden")}>Hidden ({hiddenCount}) — show</button>
+      )}
+      {expandedKeys.map((key) => (
+        <button key={key} type="button" className="literature-chip is-expanded" aria-label={`Collapse ${clusterLabels.get(key) ?? key}`} onClick={() => onToggleExpansion(key)}>
+          {clusterLabels.get(key) ?? key} ×
+        </button>
+      ))}
+      <span><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>↵</kbd> open or expand · <kbd>+</kbd>/<kbd>-</kbd> more/fewer · <kbd>c</kbd> collapse · <kbd>Esc</kbd> close</span>
+      {error !== null && <span className="literature-legend-error" role="alert">{error}</span>}
+    </p>
+  );
+}
+
 function PaperButtons({ papers, onOpenPaper }: { papers: LocalPaper[]; onOpenPaper: (paperId: string) => void }) {
   return (
     <ul className="literature-papers">
@@ -603,6 +781,11 @@ function citationEdges(state: CitationsState): GraphEdge[] {
 
 type WorkPanelProps = {
   work: Work;
+  isCenter: boolean;
+  mark: MarkView | null;
+  prominence: ProminenceView | undefined;
+  markError: string | null;
+  onSetMark: (mark: WorkMarkName | null, note: string | null) => void;
   state: CitationsState;
   edges: PanelEdge[];
   editingId: string | null;
@@ -747,6 +930,15 @@ function WorkPanel(props: WorkPanelProps) {
         {work.display_year ?? "year unknown"} · {work.kind}
         {state.kind === "ready" && ` · cites ${state.citations.outgoing.length} · cited by ${state.citations.incoming.length} known`}
       </p>
+      {!props.isCenter && (
+        <LiteratureCuration
+          key={work.id}
+          mark={props.mark}
+          prominence={props.prominence}
+          error={props.markError}
+          onSetMark={props.onSetMark}
+        />
+      )}
       {edges.map((edge) => <EdgeReasons key={edge.heading} edge={edge} props={props} />)}
       {labelError !== null && <p className="literature-hint literature-label-error" role="alert">{labelError}</p>}
       {state.kind === "loading" && <p className="literature-hint" role="status">Loading citations…</p>}

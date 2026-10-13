@@ -422,3 +422,107 @@
 .literature-fetch-status {
   overflow-wrap: anywhere;
 }
+
+/* Relevance: ranked fanout, clusters, and marks */
+.literature-node[data-mark="pinned"] .literature-dot {
+  stroke: var(--signal);
+  stroke-width: 2;
+}
+
+.literature-pin-ring {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.literature-node[data-mark="downplayed"] {
+  opacity: 0.45;
+}
+
+.literature-node[data-mark="hidden"] .literature-dot {
+  fill: transparent;
+  stroke-dasharray: 2 2;
+}
+
+.literature-node[data-mark="hidden"] .literature-label {
+  text-decoration: line-through;
+}
+
+.literature-cluster-pill {
+  fill: var(--bg-raised);
+  stroke: var(--line-bright);
+  stroke-width: 1;
+}
+
+.literature-cluster-label {
+  fill: var(--ink-soft);
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  pointer-events: none;
+}
+
+.literature-cluster:hover .literature-cluster-pill,
+.literature-cluster.is-active .literature-cluster-pill,
+.literature-cluster:focus-visible .literature-cluster-pill {
+  stroke: var(--signal);
+}
+
+.literature-chip {
+  padding: 1px 8px;
+  border: 1px solid var(--line-bright);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.literature-chip:hover,
+.literature-chip.is-expanded {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.literature-legend-error {
+  color: var(--ink);
+}
+
+.literature-relevance {
+  margin-top: 6px;
+}
+
+.literature-signals {
+  margin: 0 0 8px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.literature-mark-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.literature-mark-buttons button {
+  padding: 5px 10px;
+  border: 1px solid var(--line-bright);
+  background: transparent;
+  color: var(--ink-soft);
+  font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.literature-mark-buttons button[aria-pressed="true"] {
+  border-color: var(--signal);
+  background: var(--signal);
+  color: var(--signal-ink);
+}
+
+.literature-mark-note {
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font: 12px Georgia, serif;
+}
