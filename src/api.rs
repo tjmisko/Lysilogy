@@ -10,6 +10,7 @@ use std::{
 };
 
 mod citation_graph;
+mod literature;
 mod notes;
 mod reader_tools;
 mod source_index;
@@ -78,6 +79,7 @@ pub struct AppState {
     citation_http: crate::citation_graph::GraphHttp,
     pub(crate) graph: Option<GraphState>,
     pub(crate) literature: crate::literature::LiteratureClient,
+    literature_jobs: literature::LiteratureJobs,
     jobs: JobTracker,
     notes: crate::notes::NotesStore,
     vimrc: Arc<PathBuf>,
@@ -124,6 +126,7 @@ struct CitationsResponse {
     work: Work,
     outgoing: Vec<Work>,
     incoming: Vec<Work>,
+    local_papers: literature::LocalPapers,
 }
 
 #[derive(Debug, Serialize)]
@@ -138,6 +141,7 @@ struct NeighborsResponse {
     direction: &'static str,
     nodes: Vec<Work>,
     edges: Vec<GraphEdge>,
+    local_papers: literature::LocalPapers,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -209,6 +213,7 @@ impl AppState {
             reading_indexes: source_index::IndexJobs::default(),
             graph: None,
             literature: crate::literature::LiteratureClient::from_environment()?,
+            literature_jobs: literature::LiteratureJobs::default(),
             frontend_root: None,
         })
     }
@@ -1943,6 +1948,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
     Router::new()
         .merge(reader_tools::routes())
         .merge(citation_graph::routes())
+        .merge(literature::routes())
         .merge(source_index::routes())
         .merge(notes::routes())
         .merge(vimrc::routes())
@@ -2028,7 +2034,10 @@ async fn get_work(State(state): State<AppState>, AxumPath(id): AxumPath<String>)
     }
 }
 
-async fn get_work_citations(State(state): State<AppState>, AxumPath(id): AxumPath<String>) -> Response {
+async fn get_work_citations(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+) -> Response {
     let graph = match graph_or_unavailable(&state) {
         Ok(graph) => graph,
         Err(response) => return *response,
@@ -2049,12 +2058,22 @@ async fn get_work_citations(State(state): State<AppState>, AxumPath(id): AxumPat
         Ok(works) => works,
         Err(error) => return graph_query_failure(&error),
     };
+    let work_ids: Vec<WorkId> = std::iter::once(&work)
+        .chain(&outgoing)
+        .chain(&incoming)
+        .map(|work| work.id)
+        .collect();
+    let local_papers = match literature::local_papers_for(&state, &work_ids).await {
+        Ok(local_papers) => local_papers,
+        Err(response) => return *response,
+    };
     (
         StatusCode::OK,
         Json(CitationsResponse {
             work,
             outgoing,
             incoming,
+            local_papers,
         }),
     )
         .into_response()
@@ -2089,7 +2108,10 @@ async fn get_graph_neighbors(
     let mut seen = HashSet::from([work_id]);
     let mut edges = Vec::new();
 
-    if matches!(direction, NeighborDirection::References | NeighborDirection::Both) {
+    if matches!(
+        direction,
+        NeighborDirection::References | NeighborDirection::Both
+    ) {
         let neighbors = match graph.citations.outgoing(work_id).await {
             Ok(works) => works,
             Err(error) => return graph_query_failure(&error),
@@ -2105,7 +2127,10 @@ async fn get_graph_neighbors(
             });
         }
     }
-    if matches!(direction, NeighborDirection::Citations | NeighborDirection::Both) {
+    if matches!(
+        direction,
+        NeighborDirection::Citations | NeighborDirection::Both
+    ) {
         let neighbors = match graph.citations.incoming(work_id).await {
             Ok(works) => works,
             Err(error) => return graph_query_failure(&error),
@@ -2122,6 +2147,11 @@ async fn get_graph_neighbors(
         }
     }
 
+    let work_ids: Vec<WorkId> = nodes.iter().map(|work| work.id).collect();
+    let local_papers = match literature::local_papers_for(&state, &work_ids).await {
+        Ok(local_papers) => local_papers,
+        Err(response) => return *response,
+    };
     (
         StatusCode::OK,
         Json(NeighborsResponse {
@@ -2129,6 +2159,7 @@ async fn get_graph_neighbors(
             direction: direction.as_str(),
             nodes,
             edges,
+            local_papers,
         }),
     )
         .into_response()
@@ -3208,7 +3239,10 @@ mod tests {
         let response = app
             .oneshot(
                 axum::http::Request::builder()
-                    .uri(format!("/api/graph/neighbors/{}?direction=bogus", center.id))
+                    .uri(format!(
+                        "/api/graph/neighbors/{}?direction=bogus",
+                        center.id
+                    ))
                     .body(Body::empty())
                     .map_err(|error| Error::Task(error.to_string()))?,
             )
