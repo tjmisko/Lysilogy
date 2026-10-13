@@ -802,3 +802,25 @@ mode; live check recorded; dev DB curation rows created by the check removed.
 - Test helpers `new_workspace` and `cite` were added to `test_support` in `lysilogy-db`.
 - The dev Postgres cluster had stopped between runs (root-crate DB tests then fail with
   `PoolTimedOut`); `scripts/db start` fixes it.
+
+## U2 implementation notes
+
+- Added beyond the plan: `AppState::refresh_prominence_alone_quietly(work)` (the acquisition
+  hook refreshes that Work only, with no neighbors and no metrics, per the unit text; the
+  neighborhood variant would have done more), `parse_cited_by_count` (pure, public), and
+  tests `should_not_cache_invalid_or_omitted_counts_when_fetching`,
+  `should_make_no_requests_when_counts_already_cached`,
+  `should_return_empty_summary_when_no_works_given`, and an assertion in the acquisition
+  mapped test that the Work gets a `local_available` row.
+- The `lit` API hook wraps the old job body (`run_job` now calls `run_job_steps`, then
+  `refresh_prominence_quietly(work, true)`), so it runs after local evidence and labels.
+- `RefreshSummary.metrics_fetched` counts Works that have a cited-by count after the fetch
+  step (cached or fetched); `metric_requests` is requests actually made.
+- Live check against the dev DB (library read from the main checkout, data dir under
+  `~/.cache`, no contact email set):
+  - `lysilogy prominence "On the computational complexity" --fetch-metrics`: 333 works,
+    308 with global counts, 7 requests, 2.1 s.
+  - Same command again: 0.4 s, 1 request. The provider omits the 25 Works that have no
+    count and Decision 14 deliberately has no negative cache, so those are retried each time.
+  - `lysilogy prominence --all` (no network): 3,240 works, 308 with global counts, 0.8 s.
+  - `lysilogy prominence` with no scope exits with the clap usage error.
