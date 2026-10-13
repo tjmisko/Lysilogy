@@ -383,9 +383,11 @@ pub struct CitedByFetch {
     pub requests: usize,
 }
 
-/// Fetch cited-by counts for many IDs: cached ones come from Postgres unless
-/// `refresh`, the rest are requested in chunks of [`SUMMARY_BATCH`]. IDs the
-/// provider omits, and items without a valid count, are skipped and not cached.
+/// Fetch cited-by counts for many IDs.
+///
+/// Cached ones come from Postgres unless `refresh`; the rest are requested in
+/// chunks of [`SUMMARY_BATCH`]. IDs the provider omits, and items without a
+/// valid count, are skipped and not cached.
 pub async fn fetch_cited_by_counts_cached<T: JsonTransport>(
     records: &SourceRecordRepository,
     client: &OpenAlexClient<T>,
