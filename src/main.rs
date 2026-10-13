@@ -24,6 +24,7 @@ use lysilogy::{
 use lysilogy::{analysis::LocalCliAnalyzer, labeling::SidecarLabeler};
 use lysilogy_core::{ExpansionState, RampItemStatus, WALK_EXPANSIONS_MAX, WalkBounds, WorkId};
 use lysilogy_ingest::acquire::AcquisitionOutcome;
+use lysilogy_ingest::crossref::{PublisherFetch, PublisherOutcome};
 use lysilogy_ingest::labels::{LabelOptions, LabelSummary};
 use lysilogy_ingest::literature::{LiteratureStatus, LiteratureSummary};
 use lysilogy_ingest::local_evidence::LocalEvidenceSummary;
@@ -242,6 +243,9 @@ enum Command {
         /// Stop after this many model calls; cached answers do not count.
         #[arg(long, default_value_t = 25)]
         label_limit: usize,
+        /// Also fetch the publisher (Crossref) record of every cited Work with a DOI.
+        #[arg(long)]
+        publisher: bool,
     },
     /// Recompute the relevance (prominence) scores for a paper's neighborhood or every Work (needs `LYSILOGY_DATABASE_URL`).
     #[command(group(
@@ -519,13 +523,14 @@ async fn run(cli: Cli) -> Result<()> {
             labels,
             sidecar,
             label_limit,
+            publisher,
         } => {
             let label_run = labels.then(|| LabelRun {
                 sidecar,
                 limit: label_limit,
                 scratch: cli.data.join("labels"),
             });
-            literature_command(&state, &cli.library, &paper, local, label_run).await
+            literature_command(&state, &cli.library, &paper, local, label_run, publisher).await
         }
         Command::Prominence {
             paper,
@@ -1169,9 +1174,10 @@ async fn literature_command(
     paper: &str,
     local: bool,
     label_run: Option<LabelRun>,
+    publisher: bool,
 ) -> Result<()> {
     let id = resolve_lit_target(state, library, paper).await?;
-    let summary = state.run_literature_flow(&id).await?;
+    let summary = state.run_literature_flow(&id, publisher).await?;
     print!("{}", render_literature_summary(&summary));
     if local || label_run.is_some() {
         match state.run_local_evidence(&id, &summary).await? {
@@ -1805,9 +1811,44 @@ fn render_literature_summary(summary: &LiteratureSummary) -> String {
             summary.references, summary.new_stub_works, summary.hydrated_works
         );
     }
+    output.push_str(&render_publisher(&summary.publisher));
     for warning in &summary.warnings {
         let _ = writeln!(output, "Warnings   {warning}");
     }
+    output
+}
+
+/// The paper's own publisher lookup, then the cited ones as counts.
+fn render_publisher(fetches: &[PublisherFetch]) -> String {
+    let mut output = String::new();
+    let label = |outcome: PublisherOutcome| match outcome {
+        PublisherOutcome::Fetched => "fetched",
+        PublisherOutcome::Cached => "cached",
+        PublisherOutcome::NotFound => "not found",
+        PublisherOutcome::Failed => "failed",
+    };
+    for fetch in fetches.iter().filter(|fetch| !fetch.cited) {
+        let _ = writeln!(output, "Publisher  {} {}", fetch.doi, label(fetch.outcome));
+    }
+    let cited: Vec<&PublisherFetch> = fetches.iter().filter(|fetch| fetch.cited).collect();
+    if cited.is_empty() {
+        return output;
+    }
+    let count = |outcome: PublisherOutcome| {
+        cited
+            .iter()
+            .filter(|fetch| fetch.outcome == outcome)
+            .count()
+    };
+    let _ = writeln!(
+        output,
+        "Publisher  cited {} (fetched {}, cached {}, not found {}, failed {})",
+        cited.len(),
+        count(PublisherOutcome::Fetched),
+        count(PublisherOutcome::Cached),
+        count(PublisherOutcome::NotFound),
+        count(PublisherOutcome::Failed)
+    );
     output
 }
 
@@ -1815,8 +1856,8 @@ fn render_local_evidence(summary: &LocalEvidenceSummary) -> String {
     let mut output = String::new();
     let _ = writeln!(
         output,
-        "Local      entries {} \u{b7} mentions {} (unresolved {})",
-        summary.entries, summary.mentions, summary.unresolved_mentions
+        "Local      entries {} \u{b7} mentions {} (unresolved {}) \u{b7} field claims {}",
+        summary.entries, summary.mentions, summary.unresolved_mentions, summary.field_claims
     );
     let counts = &summary.resolutions;
     let _ = writeln!(
@@ -1918,6 +1959,7 @@ mod tests {
             references: 0,
             new_stub_works: 0,
             hydrated_works: 0,
+            publisher: Vec::new(),
             warnings: Vec::new(),
         }
     }
@@ -1955,15 +1997,40 @@ mod tests {
             merged_stubs: 0,
             local_edges: 44,
             edges_also_from_provider: 31,
+            field_claims: 187,
             ..LocalEvidenceSummary::default()
         };
         let text = render_local_evidence(&evidence);
         assert_eq!(
             text,
-            "Local      entries 48 \u{b7} mentions 112 (unresolved 9)\n\
+            "Local      entries 48 \u{b7} mentions 112 (unresolved 9) \u{b7} field claims 187\n\
              Resolved   46 (identifier 5, title 30, stub 11, reused 0) \u{b7} ambiguous 2 \u{b7} merged 0\n\
              Edges      local 44 (also provider 31)\n"
         );
+    }
+
+    #[test]
+    fn should_render_publisher_lines_when_summary_has_fetches() {
+        let fetch = |doi: &str, outcome, cited| PublisherFetch {
+            doi: doi.to_owned(),
+            outcome,
+            cited,
+        };
+        let mut linked = summary(LiteratureStatus::Linked);
+        linked.publisher = vec![
+            fetch("10.1/own", PublisherOutcome::NotFound, false),
+            fetch("10.1/a", PublisherOutcome::Fetched, true),
+            fetch("10.1/b", PublisherOutcome::Cached, true),
+            fetch("10.1/c", PublisherOutcome::Failed, true),
+        ];
+        let text = render_literature_summary(&linked);
+        assert!(text.contains("Publisher  10.1/own not found\n"), "{text}");
+        assert!(
+            text.contains("Publisher  cited 3 (fetched 1, cached 1, not found 0, failed 1)\n"),
+            "{text}"
+        );
+        linked.publisher = vec![fetch("10.1/own", PublisherOutcome::Fetched, false)];
+        assert!(render_literature_summary(&linked).contains("Publisher  10.1/own fetched\n"));
     }
 
     #[test]
@@ -2170,6 +2237,28 @@ mod tests {
             Cli::try_parse_from(["lysilogy", "fetch", "--cited-by", "Paper", "--limit", "5"])
                 .is_ok()
         );
+    }
+
+    #[test]
+    fn should_accept_publisher_flag_when_parsing_lit() {
+        let plain = Cli::try_parse_from(["lysilogy", "lit", "Paper"]).expect("plain");
+        assert!(matches!(
+            plain.command,
+            Some(Command::Lit {
+                publisher: false,
+                ..
+            })
+        ));
+        let flagged = Cli::try_parse_from(["lysilogy", "lit", "Paper", "--local", "--publisher"])
+            .expect("flagged");
+        assert!(matches!(
+            flagged.command,
+            Some(Command::Lit {
+                local: true,
+                publisher: true,
+                ..
+            })
+        ));
     }
 
     #[test]

@@ -300,6 +300,7 @@ mod tests {
             references: 0,
             new_stub_works: 0,
             hydrated_works: 0,
+            publisher: Vec::new(),
             warnings: Vec::new(),
         }
     }

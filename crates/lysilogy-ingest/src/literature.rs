@@ -4,9 +4,9 @@
 
 use lysilogy_core::provenance::FieldValue;
 use lysilogy_core::{
-    ClaimConfidence, ClaimOrigin, DetectedIdentifier, DocumentId, IdentifierScheme,
+    ClaimConfidence, ClaimOrigin, Coverage, DetectedIdentifier, DocumentId, IdentifierScheme,
     IdentifierStatus, ScannedFile, SourceRecordId, Work, WorkId, WorkKind, WorkLinkMethod,
-    extract_identifiers, title_key,
+    extract_identifiers, identifier::normalize, title_key,
 };
 use lysilogy_db::citation::CitationRepository;
 use lysilogy_db::claim::{ClaimRepository, NewClaim};
@@ -14,7 +14,14 @@ use lysilogy_db::document::DocumentRepository;
 use lysilogy_db::source_record::SourceRecordRepository;
 use lysilogy_db::work::WorkRepository;
 use serde::Serialize;
+use serde_json::json;
+use sha2::{Digest, Sha256};
 
+use crate::crossref::{
+    CrossrefOutcome, PUBLISHER_FETCH_MAX, PublisherFetch, PublisherOutcome, fetch_crossref_cached,
+    is_crossref_doi, record_publisher_claims,
+};
+use crate::front_matter::front_matter_fields;
 use crate::identify::{PaperHints, primary_identifier};
 use crate::ingest::{hydrate_stub_works, ingest_openalex_references};
 use crate::openalex::{
@@ -43,7 +50,16 @@ pub struct LiteratureInput<'a> {
     pub file: ScannedFile,
     pub front_matter: &'a str,
     pub hints: PaperHints<'a>,
+    /// Also fetch the publisher record of the cited Works with a DOI
+    /// (at most [`PUBLISHER_FETCH_MAX`] requests).
+    pub publisher_cited: bool,
 }
+
+/// Source record kind for the front-matter evidence of a paper.
+pub const PAPER_FRONT_MATTER_KIND: &str = "paper_front_matter";
+
+/// Extractor recorded on claims read from a paper's own front matter.
+const FRONT_MATTER_EXTRACTOR: &str = "frontmatter-v1";
 
 /// Whether the paper ended up attached to a Work.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -68,6 +84,8 @@ pub struct LiteratureSummary {
     pub new_stub_works: usize,
     /// Stub Works given a title by this run.
     pub hydrated_works: usize,
+    /// Publisher (Crossref) lookups, the paper's own DOI first.
+    pub publisher: Vec<PublisherFetch>,
     /// Stable `snake_case` codes with short context.
     pub warnings: Vec<String>,
 }
@@ -182,6 +200,7 @@ pub async fn run_literature_flow<T: JsonTransport>(
             references: 0,
             new_stub_works: 0,
             hydrated_works: 0,
+            publisher: Vec::new(),
             warnings: flow.warnings,
         });
     };
@@ -194,7 +213,7 @@ pub async fn run_literature_flow<T: JsonTransport>(
             .set_work_link(document.id, work.id, *method, *record, detail)
             .await?;
     }
-    fill_display_fields(context.claims, work.id, &flow, input.hints).await?;
+    fill_display_fields(context, work.id, &flow, &input).await?;
 
     let mut summary = LiteratureSummary {
         status: LiteratureStatus::Linked,
@@ -209,31 +228,64 @@ pub async fn run_literature_flow<T: JsonTransport>(
         references: 0,
         new_stub_works: 0,
         hydrated_works: 0,
+        publisher: Vec::new(),
         warnings: Vec::new(),
     };
+    if let Some(doi) = own_publisher_doi(&flow, &detected)
+        && let Some(fetch) =
+            fetch_publisher(context, work.id, &doi, false, &mut flow.warnings).await?
+    {
+        summary.publisher.push(fetch);
+    }
     if let Some((record, provider)) = &flow.provider {
-        let report = ingest_openalex_references(
-            context.works,
-            context.citations,
-            work.id,
-            provider,
-            *record,
-        )
-        .await?;
-        summary.references = report.edges;
-        summary.new_stub_works = report.new_works;
-        let cited = context.citations.outgoing(work.id).await?;
-        summary.hydrated_works = hydrate_stub_works(
-            context.works,
-            context.claims,
-            context.records,
-            context.client,
-            &cited,
+        ingest_provider_references(
+            context,
+            &work,
+            (*record, provider),
+            input.publisher_cited,
+            &mut summary,
+            &mut flow.warnings,
         )
         .await?;
     }
     summary.warnings = flow.warnings;
     Ok(summary)
+}
+
+/// Steps 7-8: ingest the provider record's references, then record summaries
+/// (titles, years, authors, DOIs) for the cited Works and the paper itself, and
+/// optionally the cited Works' publisher records.
+async fn ingest_provider_references<T: JsonTransport>(
+    context: &LiteratureContext<'_, T>,
+    work: &Work,
+    (record, provider): (SourceRecordId, &OpenAlexWork),
+    publisher_cited: bool,
+    summary: &mut LiteratureSummary,
+    warnings: &mut Vec<String>,
+) -> Result<()> {
+    let report =
+        ingest_openalex_references(context.works, context.citations, work.id, provider, record)
+            .await?;
+    summary.references = report.edges;
+    summary.new_stub_works = report.new_works;
+    let cited = context.citations.outgoing(work.id).await?;
+    let hydrated: Vec<Work> = cited
+        .iter()
+        .cloned()
+        .chain(std::iter::once(work.clone()))
+        .collect();
+    summary.hydrated_works = hydrate_stub_works(
+        context.works,
+        context.claims,
+        context.records,
+        context.client,
+        &hydrated,
+    )
+    .await?;
+    if publisher_cited {
+        fetch_cited_publishers(context, &cited, &mut summary.publisher, warnings).await?;
+    }
+    Ok(())
 }
 
 /// Steps 2-3: resolve the paper's own Work from its front-matter identifier and
@@ -410,15 +462,108 @@ async fn attach_identifier(
     Ok(())
 }
 
-/// Step 6: record title and year claims from the provider record (`openalex`)
-/// and from the paper's own catalog metadata (`library_metadata`). Selection
-/// ranks them; the provider wins over the hints.
-async fn fill_display_fields(
-    claims: &ClaimRepository,
+/// The paper's own DOI for the publisher lookup: the provider's, else the
+/// first detected one that Crossref can hold.
+fn own_publisher_doi(flow: &Flow, detected: &[DetectedIdentifier]) -> Option<String> {
+    let provider = flow
+        .provider
+        .as_ref()
+        .and_then(|(_, provider)| provider.doi.clone());
+    provider
+        .into_iter()
+        .chain(
+            detected
+                .iter()
+                .filter(|identifier| identifier.scheme == IdentifierScheme::Doi)
+                .map(|identifier| identifier.value.clone()),
+        )
+        .filter_map(|doi| normalize(IdentifierScheme::Doi, &doi))
+        .find(|doi| is_crossref_doi(doi))
+}
+
+/// Look one DOI up at Crossref and record its publisher claims on `work`.
+///
+/// Not-found and malformed answers add `publisher_not_found:<doi>`; transport
+/// and server failures add `publisher_fetch_failed:<doi>`. Neither fails the
+/// flow. `None` when Crossref does not hold the DOI at all.
+async fn fetch_publisher<T: JsonTransport>(
+    context: &LiteratureContext<'_, T>,
+    work: WorkId,
+    doi: &str,
+    cited: bool,
+    warnings: &mut Vec<String>,
+) -> Result<Option<PublisherFetch>> {
+    let outcome = match fetch_crossref_cached(context.records, context.client, doi).await {
+        Ok(CrossrefOutcome::Skipped) => return Ok(None),
+        Ok(CrossrefOutcome::Fetched(record, crossref)) => {
+            record_publisher_claims(context.claims, work, record, &crossref).await?;
+            PublisherOutcome::Fetched
+        }
+        Ok(CrossrefOutcome::Cached(record, crossref)) => {
+            record_publisher_claims(context.claims, work, record, &crossref).await?;
+            PublisherOutcome::Cached
+        }
+        Ok(CrossrefOutcome::NotFound { .. }) => PublisherOutcome::NotFound,
+        Err(error) if is_soft(&error) => PublisherOutcome::NotFound,
+        Err(ProviderError::Db(error)) => return Err(error.into()),
+        Err(_) => PublisherOutcome::Failed,
+    };
+    match outcome {
+        PublisherOutcome::NotFound => warnings.push(format!("publisher_not_found:{doi}")),
+        PublisherOutcome::Failed => warnings.push(format!("publisher_fetch_failed:{doi}")),
+        PublisherOutcome::Fetched | PublisherOutcome::Cached => {}
+    }
+    Ok(Some(PublisherFetch {
+        doi: doi.to_owned(),
+        outcome,
+        cited,
+    }))
+}
+
+/// Publisher lookups for the cited Works' active DOIs, sequentially. Stops
+/// after [`PUBLISHER_FETCH_MAX`] requests; cached answers cost none.
+async fn fetch_cited_publishers<T: JsonTransport>(
+    context: &LiteratureContext<'_, T>,
+    cited: &[Work],
+    fetches: &mut Vec<PublisherFetch>,
+    warnings: &mut Vec<String>,
+) -> Result<()> {
+    let mut requests = 0;
+    for work in cited {
+        if requests >= PUBLISHER_FETCH_MAX {
+            warnings.push("publisher_fetch_limit_reached".to_owned());
+            return Ok(());
+        }
+        let identifiers = context.works.active_identifiers(work.id).await?;
+        let Some(doi) = identifiers
+            .iter()
+            .find(|identifier| identifier.scheme == IdentifierScheme::Doi)
+            .map(|identifier| identifier.value_normalized.as_str())
+            .filter(|doi| is_crossref_doi(doi))
+        else {
+            continue;
+        };
+        let Some(fetch) = fetch_publisher(context, work.id, doi, true, warnings).await? else {
+            continue;
+        };
+        if fetch.outcome != PublisherOutcome::Cached {
+            requests += 1;
+        }
+        fetches.push(fetch);
+    }
+    Ok(())
+}
+
+/// Step 6: record claims for the paper's own Work: the provider record
+/// (`openalex`), the catalog metadata (`library_metadata`), and the title and
+/// authors its front matter confirms (`paper`). Selection ranks them.
+async fn fill_display_fields<T: JsonTransport>(
+    context: &LiteratureContext<'_, T>,
     work_id: WorkId,
     flow: &Flow,
-    hints: PaperHints<'_>,
+    input: &LiteratureInput<'_>,
 ) -> Result<()> {
+    let hints = input.hints;
     let provider = flow.provider.as_ref();
     let provider_record = provider.map(|(record, _)| *record);
     let provider_title = provider.and_then(|(_, work)| work.title.clone());
@@ -461,8 +606,48 @@ async fn fill_display_fields(
         entry_id: None,
         locator: None,
     });
-    let new_claims: Vec<NewClaim<'_>> = provider_claims.chain(hint_claims).collect();
-    claims.record(&new_claims).await?;
+
+    let front = front_matter_fields(input.front_matter, hints);
+    let front_record = if front.title.is_some() || !front.authors.is_empty() {
+        let payload = json!({
+            "extractor": FRONT_MATTER_EXTRACTOR,
+            "front_matter_sha256": format!("{:x}", Sha256::digest(input.front_matter.as_bytes())),
+            "title": front.title,
+            "authors": front.authors,
+        });
+        let key = format!("{}|{FRONT_MATTER_EXTRACTOR}", input.file.sha256);
+        Some(
+            context
+                .records
+                .upsert(PAPER_FRONT_MATTER_KIND, &key, Coverage::Complete, &payload)
+                .await?,
+        )
+    } else {
+        None
+    };
+    let front_values: Vec<FieldValue> = front
+        .title
+        .map(FieldValue::Title)
+        .into_iter()
+        .chain((!front.authors.is_empty()).then_some(FieldValue::Authors(front.authors)))
+        .collect();
+    let front_claims = front_values.iter().map(|value| NewClaim {
+        work_id,
+        field: value.field(),
+        value,
+        origin: ClaimOrigin::Paper,
+        extractor: FRONT_MATTER_EXTRACTOR,
+        confidence: ClaimConfidence::Heuristic,
+        source_record_id: front_record,
+        entry_id: None,
+        locator: Some("front_matter"),
+    });
+
+    let new_claims: Vec<NewClaim<'_>> = provider_claims
+        .chain(hint_claims)
+        .chain(front_claims)
+        .collect();
+    context.claims.record(&new_claims).await?;
     Ok(())
 }
 
@@ -566,7 +751,26 @@ mod tests {
 
     fn summary_json(id: &str, title: &str) -> Value {
         json!({"id": format!("https://openalex.org/{id}"), "display_name": title,
-               "publication_year": 2011})
+               "publication_year": 2011, "authorships": []})
+    }
+
+    fn summary_json_with_doi(id: &str, title: &str, doi: &str) -> Value {
+        let mut value = summary_json(id, title);
+        value["doi"] = json!(format!("https://doi.org/{doi}"));
+        value
+    }
+
+    fn crossref_route(doi: &str, title: &str, author: &str) -> (String, Reply) {
+        (
+            format!("api.crossref.org/works/{doi}"),
+            Reply::Json(json!({"message": {
+                "DOI": doi,
+                "title": [title],
+                "author": [{"given": author, "family": "Publisher"}],
+                "container-title": ["Journal of Tests"],
+                "issued": {"date-parts": [[2014]]}
+            }})),
+        )
     }
 
     struct Repos {
@@ -600,6 +804,18 @@ mod tests {
             front_matter: &str,
             hints: PaperHints<'_>,
         ) -> LiteratureSummary {
+            self.run_with(transport, file, front_matter, hints, false)
+                .await
+        }
+
+        async fn run_with(
+            &self,
+            transport: &RoutingTransport,
+            file: ScannedFile,
+            front_matter: &str,
+            hints: PaperHints<'_>,
+            publisher_cited: bool,
+        ) -> LiteratureSummary {
             let client = OpenAlexClient::new(transport.clone());
             let context = LiteratureContext {
                 works: &self.works,
@@ -615,6 +831,7 @@ mod tests {
                     file,
                     front_matter,
                     hints,
+                    publisher_cited,
                 },
             )
             .await
@@ -656,11 +873,16 @@ mod tests {
             format!("{}\nDOI: {}\nAbstract text", self.title, self.doi)
         }
 
+        fn cited_doi(&self, index: usize) -> String {
+            format!("10.6666/ref{index}{}", self.marker)
+        }
+
         fn routes(&self) -> Vec<(String, Reply)> {
             vec![
+                crossref_route(&self.doi, &self.title, "Pat"),
                 batch_route(&json!([
-                    summary_json(&self.refs[0], "First Cited Paper"),
-                    summary_json(&self.refs[1], "Second Cited Paper"),
+                    summary_json_with_doi(&self.refs[0], "First Cited Paper", &self.cited_doi(0)),
+                    summary_json_with_doi(&self.refs[1], "Second Cited Paper", &self.cited_doi(1)),
                 ])),
                 work_route(
                     &work_url(&format!("doi:{}", self.doi)),
@@ -676,6 +898,7 @@ mod tests {
                 title: Some(self.title.as_str()),
                 year: Some(2013),
                 first_author: Some("Autor"),
+                authors: &[],
             }
         }
     }
@@ -712,7 +935,11 @@ mod tests {
         let work_id = summary.work_id.expect("work");
         let work = repos.works.get(work_id).await.expect("get").expect("work");
         assert_eq!(work.display_title.as_deref(), Some(paper.title.as_str()));
-        assert_eq!(work.display_year, Some(2013));
+        assert_eq!(
+            work.display_year,
+            Some(2014),
+            "the publisher year outranks OpenAlex"
+        );
         let by_openalex = repos
             .works
             .find_by_identifier(IdentifierScheme::Openalex, &paper.openalex_id)
@@ -823,6 +1050,7 @@ mod tests {
                     title: Some(title),
                     year: Some(2016),
                     first_author: Some("Amodei"),
+                    authors: &[],
                 },
             )
             .await;
@@ -951,6 +1179,7 @@ mod tests {
                     title: Some("Introduction"),
                     year: None,
                     first_author: None,
+                    authors: &[],
                 },
             )
             .await;
@@ -1172,6 +1401,241 @@ mod tests {
                 .expect("attached");
             assert_eq!(owner.id, work_id);
         }
+    }
+
+    #[tokio::test]
+    async fn should_write_paper_claims_that_outrank_openalex_when_front_matter_matches() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let paper = DoiPaper::new();
+        let authors = vec!["Ada Lovelace".to_owned(), "Grace Hopper".to_owned()];
+        let front = format!(
+            "{}\nAda Lovelace   Grace Hopper\nDOI: {}\nAbstract text",
+            paper.title, paper.doi
+        );
+        let mut routes = paper.routes();
+        // The provider title differs only in case, so it is not a mismatch.
+        routes[0] = work_route(
+            &work_url(&format!("doi:{}", paper.doi)),
+            &paper.openalex_id,
+            &paper.title.to_uppercase(),
+            &paper.refs,
+        );
+        routes.remove(1);
+        routes.push(batch_route(&json!([])));
+        let transport = RoutingTransport::new(routes);
+        let hints = PaperHints {
+            authors: &authors,
+            ..paper.hints()
+        };
+        let summary = repos
+            .run(&transport, file(&paper.marker), &front, hints)
+            .await;
+        let work_id = summary.work_id.expect("work");
+
+        let work = repos.works.get(work_id).await.expect("get").expect("work");
+        assert_eq!(work.display_title.as_deref(), Some(paper.title.as_str()));
+        assert_eq!(work.display_authors, Some(authors.clone()));
+        let claims = repos.claims.claims_for(work_id).await.expect("claims");
+        let openalex_title = claims
+            .iter()
+            .find(|claim| claim.origin == ClaimOrigin::Openalex && claim.field.as_str() == "title")
+            .expect("openalex title claim");
+        assert_eq!(openalex_title.value, json!(paper.title.to_uppercase()));
+        let paper_claims: Vec<_> = claims
+            .iter()
+            .filter(|claim| claim.origin == ClaimOrigin::Paper)
+            .collect();
+        assert_eq!(paper_claims.len(), 2, "title and authors, no year");
+        for claim in paper_claims {
+            assert_eq!(claim.extractor, "frontmatter-v1");
+            assert_eq!(claim.confidence, ClaimConfidence::Heuristic);
+            assert_eq!(claim.locator.as_deref(), Some("front_matter"));
+            assert!(claim.source_record_id.is_some());
+        }
+        let payload = repos
+            .records
+            .get(
+                PAPER_FRONT_MATTER_KIND,
+                &format!("sha-{}|frontmatter-v1", paper.marker),
+            )
+            .await
+            .expect("record")
+            .expect("payload");
+        assert_eq!(payload["extractor"], "frontmatter-v1");
+        assert_eq!(payload["title"], json!(paper.title));
+        assert_eq!(payload["authors"], json!(authors));
+        assert!(payload["front_matter_sha256"].is_string());
+    }
+
+    #[tokio::test]
+    async fn should_fetch_publisher_record_for_own_work_when_doi_known() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let paper = DoiPaper::new();
+        let transport = RoutingTransport::new(paper.routes());
+        let first = repos
+            .run(
+                &transport,
+                file(&paper.marker),
+                &paper.front_matter(),
+                paper.hints(),
+            )
+            .await;
+        assert_eq!(
+            first.publisher,
+            [PublisherFetch {
+                doi: paper.doi.clone(),
+                outcome: PublisherOutcome::Fetched,
+                cited: false,
+            }]
+        );
+        let work_id = first.work_id.expect("work");
+        let claims = repos.claims.claims_for(work_id).await.expect("claims");
+        let publisher: Vec<_> = claims
+            .iter()
+            .filter(|claim| claim.origin == ClaimOrigin::Publisher)
+            .collect();
+        assert_eq!(publisher.len(), 5, "title, year, authors, venue, doi");
+        assert!(
+            publisher
+                .iter()
+                .all(|claim| claim.extractor == "crossref-v1")
+        );
+        let work = repos.works.get(work_id).await.expect("get").expect("work");
+        assert_eq!(work.display_year, Some(2014), "publisher outranks OpenAlex");
+        assert_eq!(work.display_authors, Some(vec!["Pat Publisher".to_owned()]));
+
+        let second = repos
+            .run(
+                &transport,
+                file(&paper.marker),
+                &paper.front_matter(),
+                paper.hints(),
+            )
+            .await;
+        assert_eq!(second.publisher.len(), 1);
+        assert_eq!(second.publisher[0].outcome, PublisherOutcome::Cached);
+        let crossref_requests = transport
+            .urls()
+            .iter()
+            .filter(|url| url.contains("api.crossref.org"))
+            .count();
+        assert_eq!(crossref_requests, 1);
+    }
+
+    #[tokio::test]
+    async fn should_fetch_publisher_for_cited_works_only_when_requested() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let paper = DoiPaper::new();
+        let mut routes = paper.routes();
+        routes.insert(
+            0,
+            crossref_route(&paper.cited_doi(0), "Cited Publisher Title", "Cy"),
+        );
+        let transport = RoutingTransport::new(routes);
+        let without = repos
+            .run(
+                &transport,
+                file(&paper.marker),
+                &paper.front_matter(),
+                paper.hints(),
+            )
+            .await;
+        assert!(without.publisher.iter().all(|fetch| !fetch.cited));
+        assert!(
+            transport
+                .urls()
+                .iter()
+                .all(|url| !url.contains(&format!("ref0{}", paper.marker))),
+            "{:?}",
+            transport.urls()
+        );
+
+        let with = repos
+            .run_with(
+                &transport,
+                file(&paper.marker),
+                &paper.front_matter(),
+                paper.hints(),
+                true,
+            )
+            .await;
+        let cited: Vec<&PublisherFetch> =
+            with.publisher.iter().filter(|fetch| fetch.cited).collect();
+        assert_eq!(cited.len(), 2, "{:?}", with.publisher);
+        let outcome_of = |doi: &str| {
+            cited
+                .iter()
+                .find(|fetch| fetch.doi == doi)
+                .map(|fetch| fetch.outcome)
+        };
+        assert_eq!(
+            outcome_of(&paper.cited_doi(0)),
+            Some(PublisherOutcome::Fetched)
+        );
+        assert_eq!(
+            outcome_of(&paper.cited_doi(1)),
+            Some(PublisherOutcome::NotFound)
+        );
+        assert!(
+            with.warnings
+                .contains(&format!("publisher_not_found:{}", paper.cited_doi(1)))
+        );
+        let first_cited = repos
+            .works
+            .find_by_identifier(IdentifierScheme::Doi, &paper.cited_doi(0))
+            .await
+            .expect("find")
+            .expect("cited work");
+        let cited_work = repos
+            .works
+            .get(first_cited.id)
+            .await
+            .expect("get")
+            .expect("work");
+        assert_eq!(
+            cited_work.display_title.as_deref(),
+            Some("Cited Publisher Title")
+        );
+    }
+
+    #[tokio::test]
+    async fn should_warn_and_continue_when_publisher_fetch_fails_hard() {
+        let Some(repos) = Repos::connect().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let paper = DoiPaper::new();
+        let mut routes = paper.routes();
+        routes[0] = (
+            format!("api.crossref.org/works/{}", paper.doi),
+            Reply::Status(503),
+        );
+        let transport = RoutingTransport::new(routes);
+        let summary = repos
+            .run(
+                &transport,
+                file(&paper.marker),
+                &paper.front_matter(),
+                paper.hints(),
+            )
+            .await;
+        assert_eq!(summary.status, LiteratureStatus::Linked);
+        assert_eq!(summary.references, 2);
+        assert_eq!(summary.publisher.len(), 1);
+        assert_eq!(summary.publisher[0].outcome, PublisherOutcome::Failed);
+        assert_eq!(
+            summary.warnings,
+            [format!("publisher_fetch_failed:{}", paper.doi)]
+        );
     }
 
     #[test]

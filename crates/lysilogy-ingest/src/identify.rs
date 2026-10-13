@@ -8,6 +8,8 @@ pub struct PaperHints<'a> {
     pub title: Option<&'a str>,
     pub year: Option<i32>,
     pub first_author: Option<&'a str>,
+    /// Every author name the paper's metadata lists, in order.
+    pub authors: &'a [String],
 }
 
 /// Prefer a DOI, then an arXiv ID, then whatever was found first.

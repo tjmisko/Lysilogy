@@ -69,8 +69,13 @@ impl LiteratureClient {
 }
 
 impl AppState {
-    /// Link one paper to a Work and ingest what it cites.
-    pub async fn run_literature_flow(&self, id: &PaperId) -> Result<LiteratureSummary> {
+    /// Link one paper to a Work and ingest what it cites. `publisher_cited`
+    /// also fetches the publisher record of the cited Works with a DOI.
+    pub async fn run_literature_flow(
+        &self,
+        id: &PaperId,
+        publisher_cited: bool,
+    ) -> Result<LiteratureSummary> {
         let graph = self.graph.as_ref().ok_or_else(|| {
             Error::InvalidRequest(
                 "the literature graph needs a database; set LYSILOGY_DATABASE_URL".to_owned(),
@@ -104,6 +109,7 @@ impl AppState {
             title: Some(overview.metadata.title.as_str()).filter(|title| !title.trim().is_empty()),
             year: overview.metadata.year.map(i32::from),
             first_author: first_author.as_deref(),
+            authors: &overview.metadata.authors,
         };
         let context = LiteratureContext {
             works: &graph.works,
@@ -119,6 +125,7 @@ impl AppState {
                 file,
                 front_matter: &front_matter,
                 hints,
+                publisher_cited,
             },
         )
         .await?)
@@ -294,7 +301,7 @@ mod tests {
             .await
             .unwrap();
         let id = state.library().await.papers[0].id.clone();
-        let error = state.run_literature_flow(&id).await.unwrap_err();
+        let error = state.run_literature_flow(&id, false).await.unwrap_err();
         assert!(
             matches!(&error, Error::InvalidRequest(message) if message.contains("LYSILOGY_DATABASE_URL")),
             "{error}"

@@ -113,6 +113,8 @@ pub struct LiteratureOptions {
     pub labels: Option<LabelSidecarChoice>,
     /// Most model calls for the label pass.
     pub label_limit: Option<usize>,
+    /// Also fetch the publisher (Crossref) record of cited Works with a DOI.
+    pub publisher: Option<bool>,
 }
 
 /// Run the job, then refresh prominence around the linked Work. A refresh
@@ -134,7 +136,9 @@ async fn run_job_steps(
     id: &PaperId,
     options: LiteratureOptions,
 ) -> crate::Result<(LiteratureSummary, Option<LocalEvidenceSummary>)> {
-    let summary = state.run_literature_flow(id).await?;
+    let summary = state
+        .run_literature_flow(id, options.publisher.unwrap_or(false))
+        .await?;
     if !options.local.unwrap_or(false) && options.labels.is_none() {
         return Ok((summary, None));
     }
@@ -641,7 +645,8 @@ mod tests {
         ) -> ProviderFuture<'a, std::result::Result<Value, ProviderError>> {
             Box::pin(async move {
                 tokio::time::sleep(Duration::from_millis(300)).await;
-                if self.with_metrics && url.contains("filter=openalex:") {
+                let metrics_url = url.contains("cited_by_count");
+                if url.contains("filter=openalex:") && (self.with_metrics || !metrics_url) {
                     let ids = url
                         .split("filter=openalex:")
                         .nth(1)
@@ -653,9 +658,14 @@ mod tests {
                         .map(|id| {
                             if metrics {
                                 json!({"id": format!("https://openalex.org/{id}"), "cited_by_count": 5})
+                            } else if id.eq_ignore_ascii_case(&self.openalex_id) {
+                                json!({"id": format!("https://openalex.org/{id}"),
+                                       "display_name": self.title, "publication_year": 2013,
+                                       "authorships": []})
                             } else {
                                 json!({"id": format!("https://openalex.org/{id}"),
-                                       "display_name": "A Cited Stub", "publication_year": 2001})
+                                       "display_name": "A Cited Stub", "publication_year": 2001,
+                                       "authorships": []})
                             }
                         })
                         .collect();
@@ -944,12 +954,30 @@ mod tests {
         for body in [
             json!({"labels": "gpt"}),
             json!({"label_limit": -1}),
+            json!({"publisher": "yes"}),
             json!({"extra": 1}),
         ] {
             let (status, json) = request_with_body(&fixture.state, "POST", &uri, Some(body)).await;
             assert_eq!(status, StatusCode::BAD_REQUEST, "{json}");
             assert_eq!(json["error"], "invalid_body");
         }
+    }
+
+    #[test]
+    fn should_reject_non_boolean_publisher_when_parsing_lit_options() {
+        for body in [
+            json!({"publisher": "yes"}),
+            json!({"publisher": 1}),
+            json!({"publisher": null, "extra": true}),
+        ] {
+            let parsed = serde_json::from_value::<LiteratureOptions>(body.clone());
+            assert!(parsed.is_err(), "{body}");
+        }
+        let options: LiteratureOptions =
+            serde_json::from_value(json!({"publisher": true})).expect("bool");
+        assert_eq!(options.publisher, Some(true));
+        let unset: LiteratureOptions = serde_json::from_value(json!({})).expect("empty");
+        assert_eq!(unset.publisher, None);
     }
 
     #[tokio::test]
