@@ -801,3 +801,59 @@ Extra tests: `should_expose_stable_error_codes_when_ramp_changes_conflict`,
 `should_keep_first_when_item_listed_twice` (core); CHECK coverage for note/position/status
 bounds and path lengths 0/9/10, the ledger CHECKs for state/method/reason mismatches, and
 `edges_among` with duplicate assertions and repeated input IDs (db).
+
+## U2 implementation notes
+
+Shipped: `lysilogy_ingest::expand` (`ExpandContext`, `ProviderExpansion`, `provider_lookup_key`,
+`expand_from_provider`), `src/walk.rs` (`plan_frontier`), `src/expansion.rs` (`ExpandOptions`,
+`ExpansionReport`, `WalkReport`, `ExpansionView`, `AppState::{expand_work, walk_from,
+expansion_views, held_papers_for}`), `src/api/expansion.rs` (`ExpansionJobs`, `POST
+/api/works/{id}/expand`, `GET /api/works/{id}/expansion`), the additive `expansions` map on
+`GET /api/graph/neighbors/{id}`, `GraphState.{ramps, expansions}`, and `lysilogy expand`. 39 new
+tests (ingest 9, root lib 28, root bin 2); every U2 test named in the plan exists. Gate:
+clippy `-D warnings` clean; `cargo test --workspace` with `LYSILOGY_TEST_DATABASE_URL` set
+(core 77, db 97, ingest 241, root lib 323, bin 16), no network.
+
+Deviations and choices:
+
+- `held_papers_for` is a thin wrapper over a `pub(crate)` `held_papers_with_titles` that keeps
+  the catalog title and document order, so `local_papers_for` (which needs titles) keeps its
+  exact behavior and error mapping (`graph_query_failure`). `held_papers_for` sorts by paper
+  ID; the dispatch takes the first.
+- `ExpansionView.references_count` is `i64` (a `known` view carries the live outgoing count).
+  `expansion_views_raw` returns `DbError` for the neighbors route; `expansion_views` wraps it.
+- Cache hits: `ExpansionJobs::start` finishes inline (no permit) only for `depth = 1` without
+  `refresh` when `AppState::expansion_is_cached` (a ledger row or an outgoing edge). A deeper
+  walk always takes the permit because its children may need the network.
+- Cached report: `new_works = 0`, no warnings for an expanded row, the stored warnings for an
+  unavailable row.
+- `WalkReport.truncated` is true only when the budget cut the plan: `plan_frontier` is run
+  with the remaining budget and unbounded, and the lengths are compared. A fanout cut is not a
+  truncation. The seed always expands even with a zero budget.
+- A body of `[1]` or `null` is refused with `invalid_body` before bounds: serde would otherwise
+  accept an array for a struct, so the body is parsed to a `Value` and required to be an object.
+- `plan_frontier` skips a child an earlier parent already claimed in the same plan, so a Work
+  cited by two parents is expanded once.
+- CLI lines: `<title>: expanded (<method>, <n> references, <k> new)`, `cached (<method>, <n>
+  references)`, `unavailable (<reason>[, cached])`, with `[paper <id>]` for a local run and
+  indented `warning:` lines, then `Walked <levels> levels, <n> expansions[, truncated at 40
+  expansions] in <s> s`. `--paper` uses `AppState::linked_work` (the existing "run
+  `lysilogy lit` first" error for an unlinked paper).
+
+Live check (dev DB, debug build, library read from the main checkout's `local-articles`, data
+and notes under `~/.cache/lysilogy-u2`, no `LYSILOGY_CONTACT_EMAIL` set, so unauthenticated):
+
+1. `lysilogy expand W2612675303` ("A Deep Reinforced Model for Abstractive Summarization", a
+   no-outgoing-edge stub cited by "Fine-Tuning Language Models from Human Preferences") ->
+   `expanded (provider, 39 references, 29 new)`, 1.2 s wall including the network record fetch,
+   stub titling, and the prominence refresh.
+2. Same command again -> `cached (provider, 39 references)`, 0.08 s wall (process start and
+   library scan; the walk itself reports 0.0 s), no network.
+3. `lysilogy expand "Learning to summarize from human feedback" --paper --depth 2 --fanout 2`
+   -> `cached (existing, 93 references)` for the seed, `cached (existing, 66 references)` for
+   "Deep reinforcement learning from human preferences", and `expanded (local, 75 references,
+   53 new) [paper a76cf077fbb9974f]` for "Neural Text Summarization: A Critical Evaluation"
+   (held, local flow plus local evidence, no warnings). `Walked 2 levels, 3 expansions in 3.5 s`.
+
+The migration `0008_ramps.sql` was applied to the dev DB by the first connect. The new stub
+Works, edges, and ledger rows from the check stay: they are canonical graph data.
