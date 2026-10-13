@@ -215,3 +215,105 @@ export function planVisibleLabels(
   }
   return visible;
 }
+
+export const HOP_RADIUS = 96;
+const HOP_SPREAD_RADIANS = Math.PI / 3;
+const VIEWBOX_PADDING = 40;
+
+export type WalkPlacement = RankedPlacement & {
+  kind: "work";
+  /** Hops from the center (2 for a child of a base node). */
+  hop: number;
+  parentId: string;
+};
+
+export type WalkLink = { from: string; to: string };
+
+export type WalkBounds = { minX: number; minY: number; maxX: number; maxY: number };
+
+export type WalkLayout = {
+  placements: WalkPlacement[];
+  walkEdges: WalkLink[];
+  crossLinks: WalkLink[];
+  /** Box around the center, the base placements, and the walk children. */
+  bounds: WalkBounds;
+};
+
+type Point = { x: number; y: number };
+
+function boundsOf(points: readonly Point[], center: Point): WalkBounds {
+  const bounds = { minX: center.x, minY: center.y, maxX: center.x, maxY: center.y };
+  for (const point of points) {
+    bounds.minX = Math.min(bounds.minX, point.x);
+    bounds.minY = Math.min(bounds.minY, point.y);
+    bounds.maxX = Math.max(bounds.maxX, point.x);
+    bounds.maxY = Math.max(bounds.maxY, point.y);
+  }
+  return bounds;
+}
+
+/**
+ * Place each expansion's new children on an arc of `HOP_RADIUS` around their
+ * parent, within sixty degrees either side of the direction pointing away from
+ * the parent's own parent (the center for a base node). Children keep the order
+ * given. A child that is already placed (base, earlier expansion, or the center)
+ * gets a cross link instead of a second dot. An expansion whose parent is not
+ * placed is ignored. The result depends only on the arguments.
+ */
+export function layoutWalk(
+  base: readonly RankedPlacement[],
+  expansions: readonly { parentId: string; childIds: readonly string[]; depth: number }[],
+  centerPoint: Point,
+): WalkLayout {
+  const centerId = base.find((placement) => placement.kind === "center")?.id;
+  const positions = new Map<string, Point & { walkParent: Point }>();
+  for (const placement of base) {
+    if (placement.kind === "cluster") continue;
+    positions.set(placement.id, { x: placement.x, y: placement.y, walkParent: centerPoint });
+  }
+  const placements: WalkPlacement[] = [];
+  const walkEdges: WalkLink[] = [];
+  const crossLinks: WalkLink[] = [];
+
+  for (const expansion of expansions) {
+    const parent = positions.get(expansion.parentId);
+    if (parent === undefined || expansion.parentId === centerId) continue;
+    const away = { x: parent.x - parent.walkParent.x, y: parent.y - parent.walkParent.y };
+    const outward = Math.hypot(away.x, away.y) < 1e-9 ? -Math.PI / 2 : Math.atan2(away.y, away.x);
+    const fresh: string[] = [];
+    for (const childId of expansion.childIds) {
+      if (childId === expansion.parentId) continue;
+      if (positions.has(childId)) {
+        if (!crossLinks.some((link) => link.from === expansion.parentId && link.to === childId)) {
+          crossLinks.push({ from: expansion.parentId, to: childId });
+        }
+        continue;
+      }
+      if (fresh.includes(childId)) continue;
+      fresh.push(childId);
+      positions.set(childId, { x: 0, y: 0, walkParent: parent });
+    }
+    fresh.forEach((childId, index) => {
+      const offset = fresh.length === 1 ? 0 : -HOP_SPREAD_RADIANS + (2 * HOP_SPREAD_RADIANS * index) / (fresh.length - 1);
+      const angle = outward + offset;
+      const point = { x: round(parent.x + HOP_RADIUS * Math.cos(angle)), y: round(parent.y + HOP_RADIUS * Math.sin(angle)) };
+      positions.set(childId, { ...point, walkParent: parent });
+      placements.push({
+        id: childId, ...point, ring: expansion.depth, kind: "work", hop: expansion.depth, parentId: expansion.parentId,
+      });
+      walkEdges.push({ from: expansion.parentId, to: childId });
+    });
+  }
+
+  const baseWorks = base.filter((placement) => placement.kind !== "cluster");
+  return { placements, walkEdges, crossLinks, bounds: boundsOf([...baseWorks, ...placements], centerPoint) };
+}
+
+/** The SVG viewBox: the canvas, grown to hold `bounds`, with padding where it grew. */
+export function walkViewBox(canvas: FanoutSize, bounds: WalkBounds): string {
+  const minX = bounds.minX < 0 ? bounds.minX - VIEWBOX_PADDING : 0;
+  const minY = bounds.minY < 0 ? bounds.minY - VIEWBOX_PADDING : 0;
+  const maxX = bounds.maxX > canvas.width ? bounds.maxX + VIEWBOX_PADDING : canvas.width;
+  const maxY = bounds.maxY > canvas.height ? bounds.maxY + VIEWBOX_PADDING : canvas.height;
+  return `${round(minX)} ${round(minY)} ${round(maxX - minX)} ${round(maxY - minY)}`;
+}

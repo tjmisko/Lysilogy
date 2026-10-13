@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { labelRect, layoutFanout, layoutRankedFanout, MAX_NODES_PER_RING, planVisibleLabels } from '../src/lib/literatureLayout.ts';
+import {
+  HOP_RADIUS, labelRect, layoutFanout, layoutRankedFanout, layoutWalk, MAX_NODES_PER_RING, planVisibleLabels, walkViewBox,
+} from '../src/lib/literatureLayout.ts';
 
 const size = { width: 800, height: 600 };
 const makeNodes = (count) => Array.from({ length: count }, (_, i) => ({
@@ -165,4 +167,116 @@ test('should never show overlapping labels when the ring is crowded', () => {
       assert.ok(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
     }
   }
+});
+
+const walkBase = layoutRankedFanout('c', ['a', 'b', 'd', 'e'], [], size);
+const walkCenter = { x: 400, y: 300 };
+const at = (placements, id) => placements.find((placement) => placement.id === id);
+const kids = (count, prefix = 'k') => Array.from({ length: count }, (_, i) => `${prefix}${i}`);
+const angleBetween = (left, right) => {
+  const dot = left.x * right.x + left.y * right.y;
+  return Math.acos(Math.max(-1, Math.min(1, dot / (Math.hypot(left.x, left.y) * Math.hypot(right.x, right.y)))));
+};
+
+test('should place walk children outward from their parent', () => {
+  const layout = layoutWalk(walkBase, [{ parentId: 'a', childIds: kids(8), depth: 2 }], walkCenter);
+  const parent = at(walkBase, 'a');
+  assert.equal(layout.placements.length, 8);
+  for (const child of layout.placements) {
+    const away = { x: child.x - parent.x, y: child.y - parent.y };
+    const outward = { x: parent.x - walkCenter.x, y: parent.y - walkCenter.y };
+    assert.ok(away.x * outward.x + away.y * outward.y > 0);
+    assert.ok(Math.abs(Math.hypot(away.x, away.y) - HOP_RADIUS) < 0.1);
+    assert.equal(child.hop, 2);
+    assert.equal(child.parentId, 'a');
+  }
+});
+
+test('should spread children within sixty degrees of the outward direction', () => {
+  const layout = layoutWalk(walkBase, [{ parentId: 'a', childIds: kids(8), depth: 2 }], walkCenter);
+  const parent = at(walkBase, 'a');
+  const outward = { x: parent.x - walkCenter.x, y: parent.y - walkCenter.y };
+  for (const child of layout.placements) {
+    assert.ok(angleBetween({ x: child.x - parent.x, y: child.y - parent.y }, outward) <= Math.PI / 3 + 1e-3);
+  }
+  const single = layoutWalk(walkBase, [{ parentId: 'a', childIds: ['k0'], depth: 2 }], walkCenter);
+  assert.ok(angleBetween({ x: single.placements[0].x - parent.x, y: single.placements[0].y - parent.y }, outward) < 1e-3);
+});
+
+test('should keep children in rank order around the arc', () => {
+  const layout = layoutWalk(walkBase, [{ parentId: 'a', childIds: kids(4), depth: 2 }], walkCenter);
+  assert.deepEqual(layout.placements.map((placement) => placement.id), kids(4));
+  assert.deepEqual(layout.walkEdges.map((edge) => edge.to), kids(4));
+});
+
+test('should draw cross link instead of duplicating a placed work', () => {
+  const layout = layoutWalk(walkBase, [{ parentId: 'a', childIds: ['b', 'k0', 'c', 'a'], depth: 2 }], walkCenter);
+  assert.deepEqual(layout.placements.map((placement) => placement.id), ['k0']);
+  assert.deepEqual(layout.crossLinks, [{ from: 'a', to: 'b' }, { from: 'a', to: 'c' }]);
+  assert.deepEqual(layout.walkEdges, [{ from: 'a', to: 'k0' }]);
+});
+
+test('should not duplicate a work two expansions share', () => {
+  const layout = layoutWalk(walkBase, [
+    { parentId: 'a', childIds: ['s', 'k0'], depth: 2 },
+    { parentId: 'b', childIds: ['s', 'k1'], depth: 2 },
+  ], walkCenter);
+  assert.deepEqual(layout.placements.map((placement) => placement.id), ['s', 'k0', 'k1']);
+  assert.deepEqual(layout.crossLinks, [{ from: 'b', to: 's' }]);
+});
+
+test('should place a hop two expansion outward from its walk parent', () => {
+  const first = layoutWalk(walkBase, [{ parentId: 'a', childIds: kids(3), depth: 2 }], walkCenter);
+  const hop1 = at(first.placements, 'k1');
+  const layout = layoutWalk(walkBase, [
+    { parentId: 'a', childIds: kids(3), depth: 2 },
+    { parentId: 'k1', childIds: ['z0', 'z1'], depth: 3 },
+  ], walkCenter);
+  const parent = at(walkBase, 'a');
+  for (const child of layout.placements.filter((placement) => placement.parentId === 'k1')) {
+    assert.equal(child.hop, 3);
+    assert.ok((child.x - hop1.x) * (hop1.x - parent.x) + (child.y - hop1.y) * (hop1.y - parent.y) > 0);
+  }
+});
+
+test('should grow bounds to include walk children', () => {
+  const none = layoutWalk(walkBase, [], walkCenter);
+  const edge = at(walkBase, 'a');
+  const layout = layoutWalk(walkBase, [{ parentId: 'a', childIds: kids(8), depth: 2 }], walkCenter);
+  assert.ok(layout.bounds.minX <= none.bounds.minX && layout.bounds.maxX >= none.bounds.maxX);
+  for (const child of layout.placements) {
+    assert.ok(child.x >= layout.bounds.minX && child.x <= layout.bounds.maxX);
+    assert.ok(child.y >= layout.bounds.minY && child.y <= layout.bounds.maxY);
+  }
+  const far = [{ ...edge, x: 990, y: 350 }];
+  const grown = layoutWalk([walkBase[0], ...far], [{ parentId: 'a', childIds: kids(3), depth: 2 }], walkCenter);
+  assert.ok(grown.bounds.maxX > 1000);
+  assert.notEqual(walkViewBox(size, grown.bounds), `0 0 ${size.width} ${size.height}`);
+});
+
+test('should keep the canvas viewBox when no walk child leaves it', () => {
+  const layout = layoutWalk(walkBase, [], walkCenter);
+  assert.equal(walkViewBox({ width: 800, height: 600 }, layout.bounds), '0 0 800 600');
+});
+
+test('should ignore expansion whose parent is not placed', () => {
+  const layout = layoutWalk(walkBase, [{ parentId: 'ghost', childIds: kids(3), depth: 2 }], walkCenter);
+  assert.deepEqual(layout.placements, []);
+  assert.deepEqual(layout.walkEdges, []);
+  assert.deepEqual(layout.crossLinks, []);
+});
+
+test('should ignore expansion of the center and an expansion with no children', () => {
+  const layout = layoutWalk(walkBase, [
+    { parentId: 'c', childIds: kids(2), depth: 1 }, { parentId: 'a', childIds: [], depth: 2 },
+  ], walkCenter);
+  assert.deepEqual(layout.placements, []);
+});
+
+test('should be deterministic for the same input', () => {
+  const expansions = [
+    { parentId: 'a', childIds: kids(5), depth: 2 },
+    { parentId: 'k2', childIds: kids(3, 'z'), depth: 3 },
+  ];
+  assert.deepEqual(layoutWalk(walkBase, expansions, walkCenter), layoutWalk(walkBase, expansions, walkCenter));
 });
