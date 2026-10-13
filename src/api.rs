@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     path::{Path, PathBuf},
     str::FromStr,
     sync::{
@@ -17,12 +18,13 @@ mod vimrc;
 use axum::{
     Json, Router,
     body::Body,
-    extract::{Path as AxumPath, State},
+    extract::{Path as AxumPath, Query, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{IntoResponse, Response},
     routing::{any, delete, get, post},
 };
 use chrono::Utc;
+use lysilogy_core::{Work, WorkId};
 use percent_encoding::percent_decode_str;
 use reqwest::{
     Url,
@@ -109,6 +111,58 @@ struct ImportPdfResponse {
 pub struct LibraryResponse {
     pub name: String,
     pub papers: Vec<PaperOverview>,
+}
+
+#[derive(Debug, Deserialize)]
+struct NeighborsQuery {
+    direction: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct CitationsResponse {
+    work: Work,
+    outgoing: Vec<Work>,
+    incoming: Vec<Work>,
+}
+
+#[derive(Debug, Serialize)]
+struct GraphEdge {
+    citing: WorkId,
+    cited: WorkId,
+}
+
+#[derive(Debug, Serialize)]
+struct NeighborsResponse {
+    center: WorkId,
+    direction: &'static str,
+    nodes: Vec<Work>,
+    edges: Vec<GraphEdge>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum NeighborDirection {
+    References,
+    Citations,
+    Both,
+}
+
+impl NeighborDirection {
+    fn parse(value: Option<&str>) -> Option<Self> {
+        match value.unwrap_or("references") {
+            "references" => Some(Self::References),
+            "citations" => Some(Self::Citations),
+            "both" => Some(Self::Both),
+            _ => None,
+        }
+    }
+
+    const fn as_str(self) -> &'static str {
+        match self {
+            Self::References => "references",
+            Self::Citations => "citations",
+            Self::Both => "both",
+        }
+    }
 }
 
 impl AppState {
@@ -1890,6 +1944,8 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/queue", get(processing_queue))
         .route("/api/experiments", get(experiment_catalog))
         .route("/api/works/{id}", get(get_work))
+        .route("/api/works/{id}/citations", get(get_work_citations))
+        .route("/api/graph/neighbors/{id}", get(get_graph_neighbors))
         .route("/api/papers/{id}", get(paper))
         .route("/api/papers/{id}/source", get(paper_source))
         .route("/api/papers/{id}/markdown", get(paper_markdown))
@@ -1948,36 +2004,168 @@ async fn library(State(state): State<AppState>) -> Json<LibraryResponse> {
     Json(state.library().await)
 }
 
-async fn get_work(
+async fn get_work(State(state): State<AppState>, AxumPath(id): AxumPath<String>) -> Response {
+    let graph = match graph_or_unavailable(&state) {
+        Ok(graph) => graph,
+        Err(response) => return *response,
+    };
+    let work_id = match parse_work_id(&id) {
+        Ok(work_id) => work_id,
+        Err(response) => return *response,
+    };
+    match fetch_work(graph, work_id).await {
+        Ok(work) => (StatusCode::OK, Json(work)).into_response(),
+        Err(response) => *response,
+    }
+}
+
+async fn get_work_citations(State(state): State<AppState>, AxumPath(id): AxumPath<String>) -> Response {
+    let graph = match graph_or_unavailable(&state) {
+        Ok(graph) => graph,
+        Err(response) => return *response,
+    };
+    let work_id = match parse_work_id(&id) {
+        Ok(work_id) => work_id,
+        Err(response) => return *response,
+    };
+    let work = match fetch_work(graph, work_id).await {
+        Ok(work) => work,
+        Err(response) => return *response,
+    };
+    let outgoing = match graph.citations.outgoing(work_id).await {
+        Ok(works) => works,
+        Err(error) => return graph_query_failure(&error),
+    };
+    let incoming = match graph.citations.incoming(work_id).await {
+        Ok(works) => works,
+        Err(error) => return graph_query_failure(&error),
+    };
+    (
+        StatusCode::OK,
+        Json(CitationsResponse {
+            work,
+            outgoing,
+            incoming,
+        }),
+    )
+        .into_response()
+}
+
+async fn get_graph_neighbors(
     State(state): State<AppState>,
     AxumPath(id): AxumPath<String>,
+    Query(query): Query<NeighborsQuery>,
 ) -> Response {
-    let Some(graph) = state.graph.as_ref() else {
+    let graph = match graph_or_unavailable(&state) {
+        Ok(graph) => graph,
+        Err(response) => return *response,
+    };
+    let work_id = match parse_work_id(&id) {
+        Ok(work_id) => work_id,
+        Err(response) => return *response,
+    };
+    let Some(direction) = NeighborDirection::parse(query.direction.as_deref()) else {
         return graph_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_direction",
+            "direction must be references, citations, or both.",
+        );
+    };
+    let center = match fetch_work(graph, work_id).await {
+        Ok(work) => work,
+        Err(response) => return *response,
+    };
+
+    let mut nodes = vec![center];
+    let mut seen = HashSet::from([work_id]);
+    let mut edges = Vec::new();
+
+    if matches!(direction, NeighborDirection::References | NeighborDirection::Both) {
+        let neighbors = match graph.citations.outgoing(work_id).await {
+            Ok(works) => works,
+            Err(error) => return graph_query_failure(&error),
+        };
+        for neighbor in neighbors {
+            let cited = neighbor.id;
+            if seen.insert(cited) {
+                nodes.push(neighbor);
+            }
+            edges.push(GraphEdge {
+                citing: work_id,
+                cited,
+            });
+        }
+    }
+    if matches!(direction, NeighborDirection::Citations | NeighborDirection::Both) {
+        let neighbors = match graph.citations.incoming(work_id).await {
+            Ok(works) => works,
+            Err(error) => return graph_query_failure(&error),
+        };
+        for neighbor in neighbors {
+            let citing = neighbor.id;
+            if seen.insert(citing) {
+                nodes.push(neighbor);
+            }
+            edges.push(GraphEdge {
+                citing,
+                cited: work_id,
+            });
+        }
+    }
+
+    (
+        StatusCode::OK,
+        Json(NeighborsResponse {
+            center: work_id,
+            direction: direction.as_str(),
+            nodes,
+            edges,
+        }),
+    )
+        .into_response()
+}
+
+type GraphError = Box<Response>;
+
+fn graph_or_unavailable(state: &AppState) -> std::result::Result<&GraphState, GraphError> {
+    state.graph.as_ref().ok_or_else(|| {
+        Box::new(graph_error(
             StatusCode::SERVICE_UNAVAILABLE,
             "graph_unavailable",
             "The literature graph database is not configured or unavailable.",
-        );
-    };
-    let Ok(work_id) = id.parse::<lysilogy_core::WorkId>() else {
-        return graph_error(
+        ))
+    })
+}
+
+fn parse_work_id(text: &str) -> std::result::Result<WorkId, GraphError> {
+    text.parse().map_err(|_| {
+        Box::new(graph_error(
             StatusCode::BAD_REQUEST,
             "invalid_work_id",
             "Work identifiers look like 'w' followed by 22 characters.",
-        );
-    };
+        ))
+    })
+}
+
+async fn fetch_work(graph: &GraphState, work_id: WorkId) -> std::result::Result<Work, GraphError> {
     match graph.works.get(work_id).await {
-        Ok(Some(work)) => (StatusCode::OK, Json(work)).into_response(),
-        Ok(None) => graph_error(StatusCode::NOT_FOUND, "work_not_found", "No such work."),
-        Err(error) => {
-            tracing::error!(%error, "work lookup failed");
-            graph_error(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "graph_error",
-                "The graph query failed.",
-            )
-        }
+        Ok(Some(work)) => Ok(work),
+        Ok(None) => Err(Box::new(graph_error(
+            StatusCode::NOT_FOUND,
+            "work_not_found",
+            "No such work.",
+        ))),
+        Err(error) => Err(Box::new(graph_query_failure(&error))),
     }
+}
+
+fn graph_query_failure(error: &lysilogy_db::DbError) -> Response {
+    tracing::error!(%error, "graph query failed");
+    graph_error(
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "graph_error",
+        "The graph query failed.",
+    )
 }
 
 fn graph_error(status: StatusCode, code: &str, message: &str) -> Response {
@@ -2918,5 +3106,121 @@ mod tests {
         let expected = work.id.to_string();
         assert_eq!(json["id"].as_str(), Some(expected.as_str()));
         Ok(())
+    }
+
+    #[tokio::test]
+    async fn citations_and_neighbors_report_seeded_edges() -> Result<()> {
+        let Some(database_url) = std::env::var("LYSILOGY_TEST_DATABASE_URL")
+            .ok()
+            .filter(|url| !url.is_empty())
+        else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return Ok(());
+        };
+        let graph = crate::graph::GraphState::connect(&database_url)
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?;
+
+        let marker = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|error| Error::Task(error.to_string()))?
+            .as_nanos();
+        let article = lysilogy_core::WorkKind::Article;
+        let private = lysilogy_core::Visibility::Private;
+        let center = graph.works.create(article, private).await.map_err(db)?;
+        let cited_a = graph.works.create(article, private).await.map_err(db)?;
+        let cited_b = graph.works.create(article, private).await.map_err(db)?;
+        let citer = graph.works.create(article, private).await.map_err(db)?;
+        let source = graph
+            .source_records
+            .upsert(
+                "test",
+                &format!("k-{marker}"),
+                lysilogy_core::Coverage::Complete,
+                &serde_json::json!({}),
+            )
+            .await
+            .map_err(db)?;
+        graph
+            .citations
+            .add_assertion(center.id, cited_a.id, Some(source))
+            .await
+            .map_err(db)?;
+        graph
+            .citations
+            .add_assertion(center.id, cited_b.id, Some(source))
+            .await
+            .map_err(db)?;
+        graph
+            .citations
+            .add_assertion(citer.id, center.id, Some(source))
+            .await
+            .map_err(db)?;
+
+        let library = tempdir().map_err(|error| Error::io("library", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let state = AppState::new(library.path(), data.path())
+            .await?
+            .with_graph(graph);
+        let app = build_router(state, None);
+
+        let response = app
+            .clone()
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri(format!("/api/works/{}/citations", center.id))
+                    .body(Body::empty())
+                    .map_err(|error| Error::Task(error.to_string()))?,
+            )
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?;
+        assert_eq!(response.status(), StatusCode::OK);
+        let json = body_json(response).await?;
+        assert_eq!(json["outgoing"].as_array().map(Vec::len), Some(2));
+        assert_eq!(json["incoming"].as_array().map(Vec::len), Some(1));
+
+        let response = app
+            .clone()
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri(format!("/api/graph/neighbors/{}?direction=both", center.id))
+                    .body(Body::empty())
+                    .map_err(|error| Error::Task(error.to_string()))?,
+            )
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?;
+        assert_eq!(response.status(), StatusCode::OK);
+        let json = body_json(response).await?;
+        assert_eq!(json["center"], center.id.to_string());
+        assert_eq!(json["direction"], "both");
+        assert_eq!(json["nodes"].as_array().map(Vec::len), Some(4));
+        assert_eq!(json["edges"].as_array().map(Vec::len), Some(3));
+
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri(format!("/api/graph/neighbors/{}?direction=bogus", center.id))
+                    .body(Body::empty())
+                    .map_err(|error| Error::Task(error.to_string()))?,
+            )
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?;
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        Ok(())
+    }
+
+    #[allow(clippy::needless_pass_by_value)]
+    fn db(error: lysilogy_db::DbError) -> Error {
+        Error::Task(error.to_string())
+    }
+
+    async fn body_json(response: Response) -> Result<serde_json::Value> {
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?
+            .to_bytes();
+        serde_json::from_slice(&body).map_err(Error::from)
     }
 }
