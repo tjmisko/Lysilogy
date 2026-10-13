@@ -927,3 +927,54 @@ smoke recorded; report written.
    bug would then be masked by the model).
 2. Is the "Library file" column (A3) wanted, or should catalog-hint claims be hidden/dropped?
 3. Should `--fields` become the default for `lit --local` once the cost is measured in U3?
+
+## U1 implementation notes
+
+Built as planned: migration 0009, core `provenance` module, `ClaimRepository`, writers rewired,
+`display_authors` on `Work`, `lysilogy provenance reselect`, and the one TS contract line.
+Commits: `802e40e` (core) and `e259189` (migration, db, ingest, root, web). The core commit does
+not build the whole workspace on its own (the `Work` literals elsewhere need the new fields);
+the second commit does.
+
+Deviations (smallest sound changes):
+
+- Migration backfill ordered the entry lookup by `e.ordinal`, which is not a column of
+  `source.bibliography_entry`; it orders by `e.created_at, e.id`. Each backfill `UPDATE` also
+  filters `c.extractor = 'legacy'`, so the block is replay-safe. The backfill test relies on
+  that: it inserts legacy-shaped rows, replays the three statements (sliced out of the
+  migration file) in a transaction and rolls back.
+- `Reselection` has an extra `changed()` helper; `StoredClaim`/`claims_for`/`get` only expose
+  tracked claims (title, year, author, venue, and `identifier` rows whose value scheme is
+  `doi`). `set_override` rejects a value whose field differs from the requested field
+  (`Conflict("override_field_mismatch")`).
+- `title_became_known` is true when the Work had no title and its title state was neither
+  `known` nor `conflicting` (same meaning as the old `fill_display_title_if_unknown` count).
+- `lysilogy provenance reselect` is backed by `AppState::reselect_claims` in the new
+  `src/provenance.rs`; `--paper` requires the positional `<work>`.
+- `fill_display_fields` now takes `&ClaimRepository` instead of `&WorkRepository`.
+- `should_title_stub_works_when_hydrating` is renamed `should_title_stub_from_summary_when_hydrating`
+  and curates the title with `set_override` (selection ignores `set_display_title` once claims
+  exist). `claims_and_identifiers_are_recorded`, the title-key test and the merge test record
+  claims through `ClaimRepository` instead of `add_claim`/`fill_*`. `should_create_titled_stub_when_nothing_matches`
+  additionally asserts origin `citing_bibliography`, extractor `bib-v1`, an `entry_id` and a
+  `bib-v1:` locator.
+
+Gate (worktree root, test DB from `scripts/db env`):
+
+- `cargo clippy --workspace --all-targets -- -D warnings`: clean.
+- `cargo test --workspace`: 344 root, 21, 1, 1 (ingest 241, db 110, core 95 in their own
+  binaries) passed, 0 failed; DB tests ran (no "skipping").
+- web: `typecheck`, `lint`, `build` pass; `test:walk` 11, `test:ramp` 10, `test:relevance` 13,
+  `test:literature-layout` 31 pass. `test:api` fails identically on the unmodified base
+  (`ERR_MODULE_NOT_FOUND` for the extensionless `./relevance` import in `web/src/lib/api.ts`
+  under `--experimental-strip-types`); unrelated to this track.
+
+Dev DB (migrated on connect, then `lysilogy provenance reselect --all`, 3,109 Works, 2.8 s):
+`\d graph.field_claim` shows `origin, extractor, confidence, entry_id, retracted_at`, the
+`field_claim_entry` and `field_claim_active_override` indexes and the retraction constraint.
+Claims by origin/field/extractor/confidence: openalex title 3,011 and year 3,012
+(`openalex/explicit`), citing_bibliography title 105 and year 104 (`bib-v1/heuristic`),
+library_metadata title 106 and year 98 (`catalog-metadata/heuristic`); total 6,436 as before.
+A before/after dump of all 3,461 Works (`display_title`, `display_year`, `title_state`) differs
+in 0 rows: the legacy first-writer-wins picks already equal the tiered selection, and no Work is
+`conflicting` yet (`known` 3,099, `unknown` 362).
