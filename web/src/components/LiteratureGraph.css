@@ -388,3 +388,37 @@
     border-left: 0;
   }
 }
+
+/* Acquisition state on graph nodes */
+.literature-node[data-acquisition="unavailable"]:not(.is-local) .literature-dot {
+  stroke: var(--line-bright);
+  stroke-dasharray: 2 2;
+}
+
+.literature-node[data-acquisition="running"] .literature-halo {
+  stroke: var(--signal);
+  stroke-opacity: 0.7;
+  animation: literature-fetch-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes literature-fetch-pulse {
+  0%,
+  100% {
+    stroke-opacity: 0.25;
+  }
+
+  50% {
+    stroke-opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .literature-node[data-acquisition="running"] .literature-halo {
+    animation: none;
+    stroke-opacity: 0.7;
+  }
+}
+
+.literature-fetch-status {
+  overflow-wrap: anywhere;
+}

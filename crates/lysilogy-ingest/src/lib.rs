@@ -3,6 +3,7 @@
 //! Library scanning, paper object extraction, bibliography extraction, and
 //! citation-provider clients live here.
 
+pub mod acquire;
 pub mod bibliography;
 pub mod identify;
 pub mod ingest;

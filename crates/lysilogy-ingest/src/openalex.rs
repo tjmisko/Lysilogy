@@ -10,6 +10,7 @@ use std::env;
 use std::fmt::Write as _;
 use std::future::Future;
 use std::pin::Pin;
+use std::time::Duration;
 
 use lysilogy_core::{Coverage, SourceRecordId, title_key};
 use lysilogy_db::source_record::SourceRecordRepository;
@@ -379,6 +380,35 @@ pub async fn search_title_cached<T: JsonTransport>(
     Ok(Some((record_id, summaries)))
 }
 
+/// The only host that receives the contact email and API key.
+const OPENALEX_HOST: &str = "api.openalex.org";
+
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Parse `url`, adding `mailto` and `api_key` query parameters only when the host
+/// is `api.openalex.org`, so credentials never reach other providers.
+pub fn decorate_url(
+    url: &str,
+    mailto: Option<&str>,
+    api_key: Option<&str>,
+) -> Result<reqwest::Url, ProviderError> {
+    let mut parsed = reqwest::Url::parse(url).map_err(|_| ProviderError::Malformed)?;
+    if parsed.host_str() != Some(OPENALEX_HOST) || (mailto.is_none() && api_key.is_none()) {
+        return Ok(parsed);
+    }
+    {
+        let mut pairs = parsed.query_pairs_mut();
+        if let Some(mailto) = mailto {
+            pairs.append_pair("mailto", mailto);
+        }
+        if let Some(key) = api_key {
+            pairs.append_pair("api_key", key);
+        }
+    }
+    Ok(parsed)
+}
+
 /// The live HTTP transport, reading credentials from the environment.
 pub struct ReqwestTransport {
     client: reqwest::Client,
@@ -390,6 +420,8 @@ impl ReqwestTransport {
     pub fn from_environment() -> Result<Self, ProviderError> {
         let client = reqwest::Client::builder()
             .user_agent(concat!("Lysilogy/", env!("CARGO_PKG_VERSION")))
+            .connect_timeout(CONNECT_TIMEOUT)
+            .timeout(REQUEST_TIMEOUT)
             .build()
             .map_err(|error| ProviderError::Request(error.to_string()))?;
         Ok(Self {
@@ -403,16 +435,7 @@ impl ReqwestTransport {
 impl JsonTransport for ReqwestTransport {
     fn get_json<'a>(&'a self, url: &'a str) -> ProviderFuture<'a, Result<Value, ProviderError>> {
         Box::pin(async move {
-            let mut parsed = reqwest::Url::parse(url).map_err(|_| ProviderError::Malformed)?;
-            {
-                let mut pairs = parsed.query_pairs_mut();
-                if let Some(mailto) = &self.mailto {
-                    pairs.append_pair("mailto", mailto);
-                }
-                if let Some(key) = &self.api_key {
-                    pairs.append_pair("api_key", key);
-                }
-            }
+            let parsed = decorate_url(url, self.mailto.as_deref(), self.api_key.as_deref())?;
             let response =
                 self.client.get(parsed).send().await.map_err(|_| {
                     ProviderError::Request("request failed or timed out".to_owned())
@@ -708,6 +731,42 @@ mod tests {
         assert_eq!(email.as_deref(), Some("legacy@example.test"));
         assert_eq!(contact_email_from(|_| Some(" \t".to_owned())), None);
         assert_eq!(contact_email_from(|_| None), None);
+    }
+
+    #[test]
+    fn should_append_mailto_only_when_host_is_openalex() {
+        let url = decorate_url(
+            "https://api.openalex.org/works/W1?select=id",
+            Some("ops@example.test"),
+            Some("secret"),
+        )
+        .expect("url");
+        let query = url.query().unwrap_or_default();
+        assert!(query.contains("select=id"), "{query}");
+        assert!(query.contains("mailto=ops%40example.test"), "{query}");
+        assert!(query.contains("api_key=secret"), "{query}");
+        let bare = decorate_url("https://api.openalex.org/works/W1", None, None).expect("url");
+        assert_eq!(bare.query(), None);
+    }
+
+    #[test]
+    fn should_not_leak_api_key_when_url_is_unpaywall() {
+        for host_url in [
+            "https://api.unpaywall.org/v2/10.1/x?email=a%40b.test",
+            "https://api.openalex.org.evil.example/works/W1",
+            "https://evil.example/api.openalex.org",
+            "https://user@api.openalex.org.evil.example/",
+        ] {
+            let url =
+                decorate_url(host_url, Some("ops@example.test"), Some("secret")).expect("url");
+            assert_eq!(url.as_str(), host_url, "unchanged: {host_url}");
+            assert!(!url.as_str().contains("secret"));
+            assert!(!url.as_str().contains("ops%40"));
+        }
+        assert!(matches!(
+            decorate_url("not a url", Some("a"), Some("b")),
+            Err(ProviderError::Malformed)
+        ));
     }
 
     #[test]

@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 pub mod abstracts;
+pub mod acquisition;
 pub mod analysis;
 pub mod api;
 pub mod citation_graph;

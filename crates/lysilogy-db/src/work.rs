@@ -153,6 +153,19 @@ impl WorkRepository {
         row.as_ref().map(identifier_from_row).transpose()
     }
 
+    /// A Work's active identifiers, ordered by scheme then age.
+    pub async fn active_identifiers(&self, work_id: WorkId) -> Result<Vec<WorkIdentifier>> {
+        let rows = sqlx::query(
+            "select id, work_id, scheme, value_normalized, source_record_id, status, created_at \
+             from graph.work_identifier where work_id = $1 and status = 'active' \
+             order by scheme, created_at, id",
+        )
+        .bind(work_id.as_uuid())
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter().map(identifier_from_row).collect()
+    }
+
     /// Set the selected display title and mark the title known.
     pub async fn set_display_title(&self, work_id: WorkId, title: &str) -> Result<()> {
         sqlx::query(
@@ -704,6 +717,56 @@ mod tests {
             .await
             .expect("find");
         assert_eq!(found, Some(first));
+    }
+
+    #[tokio::test]
+    async fn should_list_only_active_identifiers_when_work_has_conflicting_ones() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = WorkRepository::new(pool.clone());
+        let work = test_support::new_work(&pool).await;
+        let doi = random_doi();
+        let arxiv = format!("9999.{}", Uuid::new_v4().as_u128() % 90000 + 10000);
+        let conflicting = random_doi();
+        let retracted = random_doi();
+        for (scheme, value, status) in [
+            (IdentifierScheme::Doi, &doi, IdentifierStatus::Active),
+            (IdentifierScheme::Arxiv, &arxiv, IdentifierStatus::Active),
+            (
+                IdentifierScheme::Doi,
+                &conflicting,
+                IdentifierStatus::Conflicting,
+            ),
+            (
+                IdentifierScheme::Doi,
+                &retracted,
+                IdentifierStatus::Retracted,
+            ),
+        ] {
+            repo.add_identifier(work, scheme, value, None, status)
+                .await
+                .expect("add")
+                .expect("inserted");
+        }
+
+        let identifiers = repo.active_identifiers(work).await.expect("active");
+
+        let found: Vec<(IdentifierScheme, &str)> = identifiers
+            .iter()
+            .map(|identifier| (identifier.scheme, identifier.value_normalized.as_str()))
+            .collect();
+        assert_eq!(
+            found,
+            vec![
+                (IdentifierScheme::Arxiv, arxiv.as_str()),
+                (IdentifierScheme::Doi, doi.as_str())
+            ]
+        );
+        let empty = test_support::new_work(&pool).await;
+        assert!(repo.active_identifiers(empty).await.unwrap().is_empty());
     }
 
     #[tokio::test]

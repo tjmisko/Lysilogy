@@ -8,8 +8,8 @@ use std::collections::{HashMap, HashSet};
 
 use chrono::{DateTime, Utc};
 use lysilogy_core::{
-    Document, DocumentId, DocumentVersionId, ScannedFile, SourceRecordId, WorkId, WorkLinkMethod,
-    WorkspaceId,
+    BlobId, Document, DocumentId, DocumentVersionId, ScannedFile, SourceRecordId, WorkId,
+    WorkLinkMethod, WorkspaceId,
 };
 use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, PgPool, Row};
@@ -222,6 +222,82 @@ impl DocumentRepository {
                 })
             })
             .collect()
+    }
+
+    /// Register a blob by storage key, returning the existing row's ID when the
+    /// key is already known.
+    pub async fn upsert_blob(
+        &self,
+        storage_key: &str,
+        sha256: &str,
+        bytes: i64,
+        media_type: &str,
+    ) -> Result<BlobId> {
+        let id: Uuid = sqlx::query_scalar(
+            "insert into reader.blob (storage_key, sha256, bytes, media_type) \
+             values ($1, $2, $3, $4) \
+             on conflict (storage_key) do update set storage_key = excluded.storage_key \
+             returning id",
+        )
+        .bind(storage_key)
+        .bind(sha256)
+        .bind(bytes)
+        .bind(media_type)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(BlobId::from_uuid(id))
+    }
+
+    /// Point a document version at its stored blob.
+    pub async fn set_version_blob(&self, version: DocumentVersionId, blob: BlobId) -> Result<()> {
+        sqlx::query("update reader.document_version set blob_id = $2 where id = $1")
+            .bind(version.as_uuid())
+            .bind(blob.as_uuid())
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// A present (non-tombstoned) document in the workspace with a version of the
+    /// given content hash: its ID, that version, its path, and its linked Work.
+    /// When several match, the lowest path wins.
+    pub async fn present_document_for_sha(
+        &self,
+        workspace_id: WorkspaceId,
+        sha256: &str,
+    ) -> Result<Option<(DocumentId, DocumentVersionId, String, Option<WorkId>)>> {
+        let row = sqlx::query(
+            "select d.id as document_id, v.id as version_id, d.relative_path, d.work_id \
+             from reader.document d join reader.document_version v on v.document_id = d.id \
+             where d.workspace_id = $1 and v.sha256 = $2 and d.relative_path is not null \
+             order by d.relative_path, d.id, v.id limit 1",
+        )
+        .bind(workspace_id.as_uuid())
+        .bind(sha256)
+        .fetch_optional(&self.pool)
+        .await?;
+        let Some(row) = row else {
+            return Ok(None);
+        };
+        Ok(Some((
+            DocumentId::from_uuid(row.try_get("document_id")?),
+            DocumentVersionId::from_uuid(row.try_get("version_id")?),
+            row.try_get("relative_path")?,
+            row.try_get::<Option<Uuid>, _>("work_id")?
+                .map(WorkId::from_uuid),
+        )))
+    }
+
+    /// `None` when the document does not exist; otherwise its path, which is
+    /// `Some(None)` when the document is tombstoned.
+    pub async fn document_presence(&self, document: DocumentId) -> Result<Option<Option<String>>> {
+        let row = sqlx::query("select relative_path from reader.document where id = $1")
+            .bind(document.as_uuid())
+            .fetch_optional(&self.pool)
+            .await?;
+        row.map(|row| row.try_get("relative_path"))
+            .transpose()
+            .map_err(Into::into)
     }
 
     /// Reconcile a full library scan with stored documents.
@@ -811,5 +887,168 @@ mod tests {
                 .expect("none"),
             None
         );
+    }
+
+    #[tokio::test]
+    async fn should_return_same_blob_id_when_upserting_same_storage_key_twice() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = DocumentRepository::new(pool.clone());
+        let key = format!("sha256/ab/{}.pdf", Uuid::new_v4());
+        let first = repo
+            .upsert_blob(&key, "sha-blob", 42, "application/pdf")
+            .await
+            .expect("first");
+        let second = repo
+            .upsert_blob(&key, "sha-blob", 42, "application/pdf")
+            .await
+            .expect("second");
+        assert_eq!(first, second);
+        let other = repo
+            .upsert_blob(
+                &format!("sha256/ab/{}.pdf", Uuid::new_v4()),
+                "sha-blob",
+                42,
+                "application/pdf",
+            )
+            .await
+            .expect("other");
+        assert_ne!(first, other);
+
+        let version = test_support::new_version(&pool).await;
+        repo.set_version_blob(version, first).await.expect("set");
+        let stored: Option<Uuid> =
+            sqlx::query_scalar("select blob_id from reader.document_version where id = $1")
+                .bind(version.as_uuid())
+                .fetch_one(&pool)
+                .await
+                .expect("blob id");
+        assert_eq!(stored, Some(first.as_uuid()));
+    }
+
+    #[tokio::test]
+    async fn should_find_present_document_when_sha_matches_and_ignore_tombstoned() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let (repo, workspace) = clean_workspace(&pool).await;
+        repo.apply_scan(
+            workspace,
+            &[file("z.pdf", "sha-same"), file("gone.pdf", "sha-gone")],
+        )
+        .await
+        .expect("scan");
+        let twin: Uuid = sqlx::query_scalar(
+            "insert into reader.document (workspace_id, relative_path) \
+             values ($1, 'a.pdf') returning id",
+        )
+        .bind(workspace.as_uuid())
+        .fetch_one(&pool)
+        .await
+        .expect("twin document");
+        sqlx::query(
+            "insert into reader.document_version (document_id, sha256) values ($1, 'sha-same')",
+        )
+        .bind(twin)
+        .execute(&pool)
+        .await
+        .expect("twin version");
+        let work = new_work(&pool).await;
+        let linked = only_document(&repo, workspace, "z.pdf").await;
+        repo.set_work(linked.id, Some(work)).await.expect("link");
+
+        let (document, version, path, linked_work) = repo
+            .present_document_for_sha(workspace, "sha-same")
+            .await
+            .expect("lookup")
+            .expect("present");
+        assert_eq!(path, "a.pdf", "lowest path wins");
+        assert_eq!(linked_work, None);
+        assert_eq!(
+            repo.version_for_sha(document, "sha-same").await.unwrap(),
+            Some(version)
+        );
+        assert_eq!(
+            repo.document_presence(document).await.unwrap(),
+            Some(Some("a.pdf".to_owned()))
+        );
+
+        repo.apply_scan(workspace, &[file("z.pdf", "sha-same")])
+            .await
+            .expect("tombstone");
+        assert_eq!(
+            repo.present_document_for_sha(workspace, "sha-gone")
+                .await
+                .unwrap(),
+            None
+        );
+        let (_, _, path, linked_work) = repo
+            .present_document_for_sha(workspace, "sha-same")
+            .await
+            .unwrap()
+            .expect("z remains");
+        assert_eq!((path.as_str(), linked_work), ("z.pdf", Some(work)));
+        let tombstoned = only_document_id_for_sha(&pool, workspace, "sha-gone").await;
+        assert_eq!(
+            repo.document_presence(tombstoned).await.unwrap(),
+            Some(None)
+        );
+        assert_eq!(
+            repo.document_presence(DocumentId::from_uuid(Uuid::new_v4()))
+                .await
+                .unwrap(),
+            None
+        );
+    }
+
+    async fn only_document_id_for_sha(
+        pool: &PgPool,
+        workspace: WorkspaceId,
+        sha: &str,
+    ) -> DocumentId {
+        let id: Uuid = sqlx::query_scalar(
+            "select d.id from reader.document d join reader.document_version v \
+             on v.document_id = d.id where d.workspace_id = $1 and v.sha256 = $2",
+        )
+        .bind(workspace.as_uuid())
+        .bind(sha)
+        .fetch_one(pool)
+        .await
+        .expect("document");
+        DocumentId::from_uuid(id)
+    }
+
+    #[tokio::test]
+    async fn should_accept_acquisition_link_method_when_setting_work_link() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let (repo, workspace) = clean_workspace(&pool).await;
+        repo.apply_scan(workspace, &[file("a.pdf", "sha-a")])
+            .await
+            .expect("scan");
+        let document = only_document(&repo, workspace, "a.pdf").await;
+        let work = new_work(&pool).await;
+
+        repo.set_work_link(
+            document.id,
+            work,
+            WorkLinkMethod::Acquisition,
+            None,
+            "acquired:arxiv:arxiv.org",
+        )
+        .await
+        .expect("link");
+
+        let link = repo.work_link(document.id).await.unwrap().expect("link");
+        assert_eq!(link.method, WorkLinkMethod::Acquisition);
+        assert_eq!(link.detail.as_deref(), Some("acquired:arxiv:arxiv.org"));
     }
 }

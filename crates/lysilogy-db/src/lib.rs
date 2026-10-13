@@ -14,6 +14,7 @@ pub use sqlx::PgPool;
 /// `_sqlx_migrations` so re-running is a no-op.
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
+pub mod acquisition;
 pub mod citation;
 pub mod document;
 pub mod evidence;
@@ -35,6 +36,12 @@ pub enum DbError {
 }
 
 impl DbError {
+    /// The error for a row that was expected to exist and does not.
+    #[must_use]
+    pub const fn not_found() -> Self {
+        Self::Sqlx(sqlx::Error::RowNotFound)
+    }
+
     /// Whether a query expected a row and found none.
     #[must_use]
     pub const fn is_not_found(&self) -> bool {

@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { acquisitionStatusText, canFetch, isRetry, type AcquisitionLike } from "../lib/acquisition";
 import { ApiError, api } from "../lib/api";
 import { LITERATURE_QUIT_EVENT } from "../lib/literatureEvents";
 import { layoutFanout, type FanoutPlacement } from "../lib/literatureLayout";
-import type { EdgeLabel, EdgeLabelEdit, GraphEdge, GraphNeighbors, LocalPaper, Work, WorkCitations } from "../types";
+import type {
+  AcquisitionJobState, AcquisitionStatus, AcquisitionView, EdgeLabel, EdgeLabelEdit, GraphEdge, GraphNeighbors,
+  LocalPaper, Work, WorkCitations,
+} from "../types";
 import "./LiteratureGraph.css";
 
 type LiteratureGraphProps = {
@@ -30,6 +34,16 @@ type CitationsState =
   | { kind: "loading" }
   | { kind: "error"; message: string }
   | { kind: "ready"; citations: WorkCitations };
+
+/** What the panel knows about one Work's fetch in this session. */
+type FetchEntry = {
+  job: AcquisitionJobState;
+  view: AcquisitionView | null;
+  paperId: string | null;
+  message: string | null;
+  /** True once this session watched the fetch finish with a paper in the library. */
+  fresh: boolean;
+};
 
 const RELATIONS = [
   "background", "uses_method", "uses_data", "extends", "supports", "contrasts", "critiques", "compares", "other",
@@ -104,6 +118,9 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   const [patches, setPatches] = useState<ReadonlyMap<string, EdgeLabel>>(() => new Map());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [labelError, setLabelError] = useState<string | null>(null);
+  const [fetches, setFetches] = useState<ReadonlyMap<string, FetchEntry>>(() => new Map());
+  const [neighborsToken, setNeighborsToken] = useState(0);
+  const [citationsToken, setCitationsToken] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Load the paper's Work and its references. Aborted on unmount or reload.
@@ -213,7 +230,108 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
         if (!controller.signal.aborted) setCitations({ kind: "error", message: failureMessage(reason) });
       });
     return () => controller.abort();
-  }, [activeWorkId]);
+  }, [activeWorkId, citationsToken]);
+
+  const centerId = graph?.work.id;
+  const activeFetch = activeWorkId === undefined ? undefined : fetches.get(activeWorkId);
+
+  // Reload the neighbors after a fetch lands, so the node gets its local dot.
+  useEffect(() => {
+    if (neighborsToken === 0 || centerId === undefined) return;
+    const controller = new AbortController();
+    api.graphNeighbors(centerId, "references", controller.signal)
+      .then((neighbors) => setPhase((current) => current.kind === "graph" ? { ...current, neighbors } : current))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [centerId, neighborsToken]);
+
+  const recordFetch = useCallback((workId: string, status: AcquisitionStatus, fresh: boolean): void => {
+    setFetches((current) => {
+      const previous = current.get(workId);
+      // A status read before the server registered our job must not cancel it.
+      if (previous?.job === "running" && status.job.state === "idle") return current;
+      return new Map(current).set(workId, {
+        job: status.job.state,
+        view: status.acquisition,
+        paperId: status.paper_id,
+        message: status.job.message ?? null,
+        fresh: fresh || (previous?.fresh ?? false),
+      });
+    });
+  }, []);
+
+  // Read the open Work's fetch status once, so a job started earlier shows up.
+  useEffect(() => {
+    if (activeWorkId === undefined) return;
+    const controller = new AbortController();
+    api.workAcquisition(activeWorkId, controller.signal)
+      .then((status) => recordFetch(activeWorkId, status, false))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [activeWorkId, recordFetch]);
+
+  // Poll the fetch once a second while it runs. Closing the panel stops it.
+  const pollingWorkId = activeFetch?.job === "running" ? activeWorkId : undefined;
+  useEffect(() => {
+    if (pollingWorkId === undefined) return;
+    const controller = new AbortController();
+    const timer = window.setInterval(() => {
+      void (async () => {
+        try {
+          const status = await api.workAcquisition(pollingWorkId, controller.signal);
+          if (controller.signal.aborted) return;
+          if (status.job.state === "running") {
+            recordFetch(pollingWorkId, status, false);
+            return;
+          }
+          window.clearInterval(timer);
+          const landed = status.acquisition?.state === "mapped" && status.paper_id !== null;
+          recordFetch(pollingWorkId, status, landed);
+          if (!landed) return;
+          setNeighborsToken((token) => token + 1);
+          setCitationsToken((token) => token + 1);
+        } catch (reason: unknown) {
+          if (controller.signal.aborted) return;
+          window.clearInterval(timer);
+          setFetches((current) => new Map(current).set(pollingWorkId, {
+            job: "failed", view: current.get(pollingWorkId)?.view ?? null, paperId: null,
+            message: failureMessage(reason), fresh: false,
+          }));
+        }
+      })();
+    }, POLL_MILLISECONDS);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+    };
+  }, [pollingWorkId, recordFetch]);
+
+  const briefs = graph?.neighbors.acquisitions;
+  const activeView: AcquisitionLike | null = activeFetch?.view ?? (activeWork === undefined ? null : briefs?.[activeWork.id] ?? null);
+  const allLocalPapers = useMemo(
+    () => ({ ...graph?.neighbors.local_papers, ...(citations.kind === "ready" ? citations.citations.local_papers : {}) }),
+    [citations, graph],
+  );
+  const fetchable = activeWork !== undefined && citations.kind === "ready" && canFetch(
+    activeWork.id,
+    allLocalPapers,
+    briefs ?? {},
+    activeFetch?.job ?? "none",
+  );
+  const startFetch = useCallback((): void => {
+    if (activeWork === undefined) return;
+    const workId = activeWork.id;
+    const retry = isRetry(activeView);
+    setFetches((current) => new Map(current).set(workId, {
+      job: "running", view: current.get(workId)?.view ?? null, paperId: null, message: null, fresh: false,
+    }));
+    api.fetchWork(workId, retry ? { retry_unavailable: true } : undefined).catch((reason: unknown) => {
+      setFetches((current) => new Map(current).set(workId, {
+        job: "failed", view: current.get(workId)?.view ?? null, paperId: null,
+        message: failureMessage(reason), fresh: false,
+      }));
+    });
+  }, [activeView, activeWork]);
 
   // Edges between the center and the open Work, with in-session reviews applied.
   const panelEdges = useMemo(() => {
@@ -295,7 +413,12 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
       }
       if (phase.kind !== "graph") return;
       if (workPanelOpen) {
-        if (editingId !== null || actionableLabel === undefined) return;
+        if (editingId !== null) return;
+        if (event.key === "f") {
+          if (fetchable) { event.preventDefault(); startFetch(); }
+          return;
+        }
+        if (actionableLabel === undefined) return;
         if (event.key === "a") { event.preventDefault(); reviewLabel(actionableLabel, "accept"); }
         else if (event.key === "x") { event.preventDefault(); reviewLabel(actionableLabel, "reject"); }
         else if (event.key === "e") { event.preventDefault(); setLabelError(null); setEditingId(actionableLabel.id); }
@@ -315,7 +438,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [actionableLabel, activeIndex, editingId, openWorkPanel, phase.kind, placements.length, reviewLabel, runLiterature, showInPaper, workPanelOpen]);
+  }, [actionableLabel, activeIndex, editingId, fetchable, openWorkPanel, phase.kind, placements.length, reviewLabel, runLiterature, showInPaper, startFetch, workPanelOpen]);
 
   const localIds = useMemo(() => {
     if (graph === null) return new Set<string>();
@@ -390,6 +513,10 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                     const labelX = isCenter ? 0 : rightSide ? 11 : -11;
                     const labelY = isCenter ? 24 : 3;
                     const anchor = isCenter ? "middle" : rightSide ? "start" : "end";
+                    const nodeFetch = fetches.get(work.id);
+                    const acquisition = nodeFetch?.job === "running"
+                      ? "running"
+                      : nodeFetch?.view?.state ?? briefs?.[work.id]?.state ?? "none";
                     return (
                       <g
                         key={placement.id}
@@ -398,6 +525,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                         className={`literature-node ${isActive ? "is-active" : ""} ${isCenter ? "is-center" : ""} ${isLocal ? "is-local" : ""}`}
                         data-node-id={work.id}
                         data-local={isLocal ? "true" : "false"}
+                        data-acquisition={acquisition}
                         aria-label={`${workLabel(work, FULL_LABEL_LIMIT)}${isLocal ? ", held locally" : ""}`}
                         transform={`translate(${placement.x} ${placement.y})`}
                         onClick={() => openWorkPanel(index)}
@@ -440,6 +568,10 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                   onSaveEdit={saveLabelEdit}
                   onShow={showInPaper}
                   onOpenPaper={onOpenPaper}
+                  fetchEntry={activeFetch}
+                  fetchView={activeView}
+                  canFetch={fetchable}
+                  onFetch={startFetch}
                   onClose={() => setWorkPanelOpen(false)}
                 />
               )}
@@ -481,6 +613,10 @@ type WorkPanelProps = {
   onSaveEdit: (label: EdgeLabel, edit: EdgeLabelEdit) => void;
   onShow: (label: EdgeLabel) => void;
   onOpenPaper: (paperId: string) => void;
+  fetchEntry: FetchEntry | undefined;
+  fetchView: AcquisitionLike | null;
+  canFetch: boolean;
+  onFetch: () => void;
   onClose: () => void;
 };
 
@@ -574,9 +710,28 @@ function EdgeReasons({ edge, props }: { edge: PanelEdge; props: WorkPanelProps }
   );
 }
 
+function FetchControl({ props }: { props: WorkPanelProps }) {
+  const { fetchEntry, fetchView, canFetch: allowed, onFetch } = props;
+  const job = fetchEntry?.job ?? "none";
+  const retry = isRetry(fetchView);
+  return (
+    <>
+      <p className="literature-hint literature-fetch-status" role="status" data-fetch-job={job}>
+        {job !== "running" && "No copy of this work is in the library. "}{acquisitionStatusText(fetchView, job)}
+        {job === "failed" && fetchEntry?.message != null && ` ${fetchEntry.message}`}
+      </p>
+      <button type="button" className="literature-action" disabled={!allowed} onClick={onFetch}>
+        {retry ? "Retry" : "Fetch open-access copy"} <kbd>f</kbd>
+      </button>
+    </>
+  );
+}
+
 function WorkPanel(props: WorkPanelProps) {
-  const { work, state, edges, labelError, onOpenPaper, onClose } = props;
-  const own = state.kind === "ready" ? state.citations.local_papers[work.id] ?? [] : [];
+  const { work, state, edges, labelError, onOpenPaper, onClose, fetchEntry } = props;
+  const freshPaperId = fetchEntry?.fresh === true ? fetchEntry.paperId : null;
+  const own = (state.kind === "ready" ? state.citations.local_papers[work.id] ?? [] : [])
+    .filter((paper) => paper.paper_id !== freshPaperId);
   const citingLocal = state.kind === "ready"
     ? state.citations.incoming
       .map((incoming) => ({ work: incoming, papers: state.citations.local_papers[incoming.id] ?? [] }))
@@ -599,9 +754,14 @@ function WorkPanel(props: WorkPanelProps) {
       {state.kind === "ready" && (
         <>
           <h4>Local copy</h4>
-          {own.length === 0
-            ? <p className="literature-hint">No copy of this work is in the library.</p>
-            : <PaperButtons papers={own} onOpenPaper={onOpenPaper} />}
+          {freshPaperId !== null && (
+            <>
+              <p className="literature-hint literature-fetch-status" role="status">Fetched.</p>
+              <button type="button" className="literature-action" autoFocus onClick={() => onOpenPaper(freshPaperId)}>Open in reader</button>
+            </>
+          )}
+          {own.length > 0 && <PaperButtons papers={own} onOpenPaper={onOpenPaper} />}
+          {own.length === 0 && freshPaperId === null && <FetchControl props={props} />}
           <h4>Cited by local papers</h4>
           {citingLocal.length === 0
             ? <p className="literature-hint">No library paper is known to cite this work.</p>

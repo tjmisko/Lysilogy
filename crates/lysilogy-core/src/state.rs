@@ -232,6 +232,60 @@ string_enum!(
         Identifier => "identifier",
         TitleMatch => "title_match",
         Manual => "manual",
+        Acquisition => "acquisition",
+    }
+);
+
+string_enum!(
+    /// How far open-access acquisition of a Work has progressed.
+    AcquisitionState {
+        Unresolved => "unresolved",
+        IdentifierFound => "identifier_found",
+        LinkFound => "link_found",
+        Downloaded => "downloaded",
+        Mapped => "mapped",
+        Unavailable => "unavailable",
+    }
+);
+
+impl AcquisitionState {
+    /// Stage order for "is past stage" checks: `Unresolved` is 0 through
+    /// `Mapped` at 4; `Unavailable` is a terminal verdict and ranks 5.
+    #[must_use]
+    pub const fn rank(self) -> u8 {
+        match self {
+            Self::Unresolved => 0,
+            Self::IdentifierFound => 1,
+            Self::LinkFound => 2,
+            Self::Downloaded => 3,
+            Self::Mapped => 4,
+            Self::Unavailable => 5,
+        }
+    }
+}
+
+string_enum!(
+    /// Why a Work has no obtainable open-access copy.
+    UnavailableReason {
+        NoIdentifier => "no_identifier",
+        NoOaLocation => "no_oa_location",
+        AllLinksFailed => "all_links_failed",
+    }
+);
+
+string_enum!(
+    /// Where an acquisition candidate link came from.
+    CandidateOrigin {
+        Arxiv => "arxiv",
+        OpenalexBest => "openalex_best",
+        OpenalexOaUrl => "openalex_oa_url",
+        OpenalexLocation => "openalex_location",
+        UnpaywallBest => "unpaywall_best",
+        UnpaywallLocation => "unpaywall_location",
+        OpenalexLanding => "openalex_landing",
+        UnpaywallLanding => "unpaywall_landing",
+        LandingMeta => "landing_meta",
+        Model => "model",
     }
 );
 
@@ -324,6 +378,72 @@ mod tests {
             IdentifierScheme::Isbn,
             IdentifierScheme::Url,
         ]);
+    }
+
+    #[test]
+    fn should_round_trip_acquisition_state_when_parsing_strings() {
+        let states = [
+            AcquisitionState::Unresolved,
+            AcquisitionState::IdentifierFound,
+            AcquisitionState::LinkFound,
+            AcquisitionState::Downloaded,
+            AcquisitionState::Mapped,
+            AcquisitionState::Unavailable,
+        ];
+        for state in states {
+            assert_eq!(state.as_str().parse::<AcquisitionState>().unwrap(), state);
+            assert_eq!(
+                serde_json::from_str::<AcquisitionState>(&format!("\"{state}\"")).unwrap(),
+                state
+            );
+        }
+        for origin in [
+            CandidateOrigin::Arxiv,
+            CandidateOrigin::OpenalexBest,
+            CandidateOrigin::OpenalexOaUrl,
+            CandidateOrigin::OpenalexLocation,
+            CandidateOrigin::UnpaywallBest,
+            CandidateOrigin::UnpaywallLocation,
+            CandidateOrigin::OpenalexLanding,
+            CandidateOrigin::UnpaywallLanding,
+            CandidateOrigin::LandingMeta,
+            CandidateOrigin::Model,
+        ] {
+            assert_eq!(origin.as_str().parse::<CandidateOrigin>().unwrap(), origin);
+        }
+        assert_eq!(
+            "acquisition".parse::<WorkLinkMethod>().unwrap(),
+            WorkLinkMethod::Acquisition
+        );
+    }
+
+    #[test]
+    fn should_order_stage_ranks_when_comparing_states() {
+        let stages = [
+            AcquisitionState::Unresolved,
+            AcquisitionState::IdentifierFound,
+            AcquisitionState::LinkFound,
+            AcquisitionState::Downloaded,
+            AcquisitionState::Mapped,
+        ];
+        for (index, state) in stages.iter().enumerate() {
+            assert_eq!(usize::from(state.rank()), index);
+        }
+        assert_eq!(AcquisitionState::Unavailable.rank(), 5);
+    }
+
+    #[test]
+    fn should_reject_unknown_unavailable_reason_when_parsing() {
+        let error = "paywalled"
+            .parse::<UnavailableReason>()
+            .expect_err("must fail");
+        assert!(error.to_string().contains("UnavailableReason"));
+        assert!("".parse::<UnavailableReason>().is_err());
+        assert!("No_Identifier".parse::<UnavailableReason>().is_err());
+        assert_eq!(
+            "no_oa_location".parse::<UnavailableReason>().unwrap(),
+            UnavailableReason::NoOaLocation
+        );
     }
 
     #[test]
