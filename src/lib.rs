@@ -20,6 +20,7 @@ pub mod markdown;
 pub mod notes;
 pub mod prominence;
 pub mod reader_tools;
+pub mod relevance;
 mod remote;
 pub mod source_index;
 pub mod store;
