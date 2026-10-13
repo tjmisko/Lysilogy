@@ -2,6 +2,7 @@
 //!
 //! Connection pooling, schema migrations, and one repository module per aggregate.
 
+use lysilogy_core::ParseStateError;
 use sqlx::migrate::MigrateError;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
@@ -11,6 +12,8 @@ use sqlx::PgPool;
 /// `_sqlx_migrations` so re-running is a no-op.
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
+pub mod work;
+
 /// Errors raised by the persistence layer.
 #[derive(Debug, thiserror::Error)]
 pub enum DbError {
@@ -18,6 +21,10 @@ pub enum DbError {
     Sqlx(#[from] sqlx::Error),
     #[error("migration error: {0}")]
     Migrate(#[from] MigrateError),
+    #[error("invalid state value: {0}")]
+    State(#[from] ParseStateError),
+    #[error("conflict: {0}")]
+    Conflict(String),
 }
 
 /// Result alias for the persistence layer.
@@ -38,17 +45,40 @@ pub async fn migrate(pool: &PgPool) -> Result<()> {
     Ok(())
 }
 
+/// Shared state for database integration tests.
+///
+/// Integration tests require a real database and run against one shared test
+/// database, so they take a process-wide lock to avoid racing on schema resets.
 #[cfg(test)]
-mod tests {
-    use super::*;
+pub(crate) mod test_support {
+    use super::{connect, migrate, PgPool};
 
-    /// Integration tests require a real database. Set `LYSILOGY_TEST_DATABASE_URL`
-    /// to run them; without it they skip, so offline suites stay green.
-    fn test_url() -> Option<String> {
+    pub static DB_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+    /// Serialize database tests within this test binary.
+    pub async fn lock() -> tokio::sync::MutexGuard<'static, ()> {
+        DB_LOCK.lock().await
+    }
+
+    /// The raw test database URL, if configured.
+    pub fn url() -> Option<String> {
         std::env::var("LYSILOGY_TEST_DATABASE_URL")
             .ok()
             .filter(|url| !url.is_empty())
     }
+
+    /// Connect and migrate, or `None` when `LYSILOGY_TEST_DATABASE_URL` is unset.
+    pub async fn pool() -> Option<PgPool> {
+        let url = url()?;
+        let pool = connect(&url).await.expect("connect to test database");
+        migrate(&pool).await.expect("migrate test database");
+        Some(pool)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
 
     async fn drop_schemas(pool: &PgPool) -> Result<()> {
         sqlx::query("drop schema if exists source, graph, reader, publish, ops cascade")
@@ -72,7 +102,8 @@ mod tests {
 
     #[tokio::test]
     async fn migrations_apply_and_are_idempotent() {
-        let Some(url) = test_url() else {
+        let _guard = test_support::lock().await;
+        let Some(url) = test_support::url() else {
             eprintln!("skipping migrations test: LYSILOGY_TEST_DATABASE_URL not set");
             return;
         };
@@ -86,7 +117,6 @@ mod tests {
             "expected the Ramp A tables, found {after_first}"
         );
 
-        // Every table the slice depends on must exist.
         for table in [
             "graph.work",
             "graph.work_identifier",
@@ -115,7 +145,6 @@ mod tests {
             assert!(exists, "missing table {table}");
         }
 
-        // A second run applies nothing new.
         migrate(&pool).await.expect("second migration run");
         let after_second = table_count(&pool).await.expect("count after second run");
         assert_eq!(after_first, after_second, "second migrate must be a no-op");
