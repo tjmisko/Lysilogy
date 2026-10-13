@@ -9,6 +9,7 @@ pub mod domain;
 pub mod error;
 pub mod extract;
 mod frontmatter;
+pub mod graph;
 pub mod jobs;
 pub mod layout;
 pub mod library;

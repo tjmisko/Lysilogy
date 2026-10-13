@@ -50,6 +50,7 @@ use crate::{
     },
     error::Error,
     extract::PdfExtractor,
+    graph::GraphState,
     jobs::JobTracker,
     library::LibraryCatalog,
     remote::{MAX_PUBLIC_REDIRECTS, public_http_client},
@@ -73,6 +74,7 @@ pub struct AppState {
     extractor: PdfExtractor,
     analysis: AnalysisService,
     citation_http: crate::citation_graph::GraphHttp,
+    graph: Option<GraphState>,
     jobs: JobTracker,
     notes: crate::notes::NotesStore,
     vimrc: Arc<PathBuf>,
@@ -150,8 +152,31 @@ impl AppState {
             tools_write: Arc::new(Mutex::new(())),
             tools_extract: Arc::new(Mutex::new(())),
             reading_indexes: source_index::IndexJobs::default(),
+            graph: None,
             frontend_root: None,
         })
+    }
+
+    #[must_use]
+    pub fn with_graph(mut self, graph: GraphState) -> Self {
+        self.graph = Some(graph);
+        self
+    }
+
+    /// Connect the graph from `LYSILOGY_DATABASE_URL`, if set. A failure leaves
+    /// the reader running without a graph.
+    pub async fn with_graph_from_environment(mut self) -> Self {
+        if let Ok(url) = std::env::var("LYSILOGY_DATABASE_URL")
+            && !url.trim().is_empty()
+        {
+            match GraphState::connect(&url).await {
+                Ok(graph) => self.graph = Some(graph),
+                Err(error) => {
+                    tracing::warn!(%error, "graph database unavailable; reader continues without it");
+                }
+            }
+        }
+        self
     }
 
     #[must_use]
@@ -1864,6 +1889,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/library/import", post(import_pdf))
         .route("/api/queue", get(processing_queue))
         .route("/api/experiments", get(experiment_catalog))
+        .route("/api/works/{id}", get(get_work))
         .route("/api/papers/{id}", get(paper))
         .route("/api/papers/{id}/source", get(paper_source))
         .route("/api/papers/{id}/markdown", get(paper_markdown))
@@ -1920,6 +1946,46 @@ async fn health() -> Json<HealthResponse> {
 
 async fn library(State(state): State<AppState>) -> Json<LibraryResponse> {
     Json(state.library().await)
+}
+
+async fn get_work(
+    State(state): State<AppState>,
+    AxumPath(id): AxumPath<String>,
+) -> Response {
+    let Some(graph) = state.graph.as_ref() else {
+        return graph_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "graph_unavailable",
+            "The literature graph database is not configured or unavailable.",
+        );
+    };
+    let Ok(work_id) = id.parse::<lysilogy_core::WorkId>() else {
+        return graph_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_work_id",
+            "Work identifiers look like 'w' followed by 22 characters.",
+        );
+    };
+    match graph.works.get(work_id).await {
+        Ok(Some(work)) => (StatusCode::OK, Json(work)).into_response(),
+        Ok(None) => graph_error(StatusCode::NOT_FOUND, "work_not_found", "No such work."),
+        Err(error) => {
+            tracing::error!(%error, "work lookup failed");
+            graph_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "graph_error",
+                "The graph query failed.",
+            )
+        }
+    }
+}
+
+fn graph_error(status: StatusCode, code: &str, message: &str) -> Response {
+    (
+        status,
+        Json(serde_json::json!({ "error": code, "message": message })),
+    )
+        .into_response()
 }
 
 async fn scan_library(State(state): State<AppState>) -> Result<Json<LibraryResponse>> {
@@ -2784,5 +2850,73 @@ mod tests {
             ..valid
         };
         assert!(validate_judgment(&invalid).is_err());
+    }
+
+    #[tokio::test]
+    async fn work_endpoint_reports_graph_unavailable_without_a_database() -> Result<()> {
+        let library = tempdir().map_err(|error| Error::io("library", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let state = AppState::new(library.path(), data.path()).await?;
+        let app = build_router(state, None);
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/works/w0000000000000000000000")
+                    .body(Body::empty())
+                    .map_err(|error| Error::Task(error.to_string()))?,
+            )
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?;
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn work_endpoint_returns_a_seeded_work() -> Result<()> {
+        let Some(database_url) = std::env::var("LYSILOGY_TEST_DATABASE_URL")
+            .ok()
+            .filter(|url| !url.is_empty())
+        else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return Ok(());
+        };
+        let graph = crate::graph::GraphState::connect(&database_url)
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?;
+        let work = graph
+            .works
+            .create(
+                lysilogy_core::WorkKind::Article,
+                lysilogy_core::Visibility::Private,
+            )
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?;
+
+        let library = tempdir().map_err(|error| Error::io("library", error))?;
+        let data = tempdir().map_err(|error| Error::io("data", error))?;
+        let state = AppState::new(library.path(), data.path())
+            .await?
+            .with_graph(graph);
+        let app = build_router(state, None);
+        let response = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri(format!("/api/works/{}", work.id))
+                    .body(Body::empty())
+                    .map_err(|error| Error::Task(error.to_string()))?,
+            )
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?;
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .map_err(|error| Error::Task(error.to_string()))?
+            .to_bytes();
+        let json: serde_json::Value = serde_json::from_slice(&body)?;
+        let expected = work.id.to_string();
+        assert_eq!(json["id"].as_str(), Some(expected.as_str()));
+        Ok(())
     }
 }

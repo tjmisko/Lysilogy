@@ -201,6 +201,8 @@ async fn run(cli: Cli) -> Result<()> {
     .await?;
     let state = AppState::new(&cli.library, &cli.data)
         .await?
+        .with_graph_from_environment()
+        .await
         .with_notes_root(&cli.notes)
         .with_vimrc(config.vim.vimrc)
         .with_notes_template(config.notes)?;

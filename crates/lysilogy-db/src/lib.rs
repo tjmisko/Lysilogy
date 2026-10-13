@@ -5,7 +5,9 @@
 use lysilogy_core::ParseStateError;
 use sqlx::migrate::MigrateError;
 use sqlx::postgres::PgPoolOptions;
-use sqlx::PgPool;
+
+/// Re-exported so callers can hold a pool without depending on `sqlx` directly.
+pub use sqlx::PgPool;
 
 /// Embedded migrations, applied in filename order. Adding a migration is just a
 /// new `migrations/NNNN_*.sql` file; the version is recorded in
