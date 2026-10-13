@@ -636,3 +636,31 @@ Acceptance: gate green; smoke passes in mock mode; live check recorded.
 - Gate observed: cargo test --workspace all pass (344/20/1/1/77/98/241 per suite, 0 failed);
   clippy clean; typecheck, lint, build clean; test:histogram-layout 29/29, literature-layout 31,
   walk 11, ramp 10, relevance 13, all passing.
+
+## U2 implementation notes
+
+- Shipped `LiteratureHistogram.tsx` and `.css` (seed band, cluster chips, sticky axis, gridlines,
+  column list boxes, absolutely positioned cards, status lines), the `LiteratureGraph.tsx` edits
+  (view state and persistence, histogram fetch effect, merged payloads, view-aware `activeWork`,
+  `openWorkPanel`, `focusHistogramWork`, `activateHistogramWork`, `toggleGraphView`, `v` key and the
+  `HISTOGRAM_NAV_KEYS` skip, `data-view`, mount), and the legend `view` prop with per-view hints.
+  No new pure helper was needed.
+- Deviation: the seed card shows the year on the kicker line ("This paper" left, year right) rather
+  than a separate line, so title (2-line clamp), authors and year fit the fixed 84 px band.
+- Deviation: the legend's radial hint line also gains `v year view` (as planned); the histogram
+  card count passed to the legend is the number of distinct non-center nodes in `histogramData`.
+- A cluster click in the histogram goes through `toggleExpansion`, so the seed-band chip and the
+  legend's expanded chip both collapse it again. The radial view keeps the expansion set when
+  switching back (so the radial view shows the expanded Works until `c`); this is the shared
+  `expanded` state by design (Decision 9).
+- `c` does nothing while the Work panel is open in the radial view (existing behavior); the smoke
+  closes the panel first.
+- Smoke `~/.cache/lysilogy-smoke/histogram-smoke.mjs` (mock mode, 230 Works): all checks pass, no
+  console errors. It covers `v` toggling and `limit=500`, 224 cards, the unknown lane leftmost,
+  95 Works in the 2010s (91 shown as cards, 4 marked ones clustered), exactly one expanded card, the
+  held focused card's `.paper-preview` (112 px), authors present only on odd-numbered Works, click
+  opening the Work panel, the "Downplayed · 4 — show" chip adding `expand=downplayed` with four
+  dimmed cards at the bottom of their columns, return to radial with the identical top 40 after
+  `c`, and storage persistence. Screenshots `histogram-u2.png`, `histogram-u2-expanded.png`.
+- Gate observed: cargo test --workspace 782 passed, 0 failed; clippy clean; typecheck, lint, build
+  clean; test:histogram-layout 29, literature-layout 31, walk 11, ramp 10, relevance 13, all pass.
