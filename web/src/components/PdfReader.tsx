@@ -1,7 +1,7 @@
 import { flushSync } from "react-dom";
 import { PdfSourceLineNumbers, PdfSourceMarks } from "./PdfSourceMarks";
 import { usePdfLinkHints } from "./PdfLinkHints";
-import { usePdfSourceTools, type SourceMark } from "./PdfSourceTools";
+import { usePdfSourceTools, type SourceFocus, type SourceMark } from "./PdfSourceTools";
 import { sectionPageCrop, type SectionCrop } from "../lib/sectionCrop";
 import { cropTextLayer } from "../lib/cropTextLayer";
 import { visiblePdfPage } from "../lib/pdfViewport";
@@ -63,6 +63,8 @@ type PdfReaderProps = {
   onGloss?: () => void;
   keyboardEnabled?: boolean;
   toolbarVisible?: boolean;
+  /** Land on this stored sentence once the reading index loads. */
+  sourceFocus?: SourceFocus;
 };
 
 type PdfPageCanvasProps = {
@@ -344,6 +346,7 @@ export function PdfReader({
   onGloss,
   keyboardEnabled = true,
   toolbarVisible = true,
+  sourceFocus,
 }: PdfReaderProps) {
   const { document: pdfDocument, loading, error: loadError } = usePdfDocument(url);
   const [error, setError] = useState<string | null>(null);
@@ -395,7 +398,7 @@ export function PdfReader({
   const visiblePages = flow === "continuous" ? availablePages : step === 2 && page < pageCount ? [page, page + 1] : [page];
   const slotWidth = step === 2 ? Math.max(160, (containerWidth - 36) / 2) : containerWidth;
   const lastVisiblePage = visiblePages[visiblePages.length - 1] ?? page;
-  const sourceTools = usePdfSourceTools({ url, page, root: readerRef, pageSubset, crops, markPages: flow === "paged" ? visiblePages : [readingPage - 1, readingPage, readingPage + 1, page], prefetchReady: pdfDocument !== null, onPage, onOpenFullPaper, onClarify: onClarifySelection, onSave: onSaveReference });
+  const sourceTools = usePdfSourceTools({ url, page, root: readerRef, pageSubset, crops, markPages: flow === "paged" ? visiblePages : [readingPage - 1, readingPage, readingPage + 1, page], prefetchReady: pdfDocument !== null, onPage, onOpenFullPaper, onClarify: onClarifySelection, onSave: onSaveReference, focus: sourceFocus });
   const sourceKey = sourceTools.onKey;
   const sourceQuit = sourceTools.quit;
   const linkHints = usePdfLinkHints({ url, page, document: pdfDocument, root: readerRef, enabled: keyboardEnabled,

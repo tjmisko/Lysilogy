@@ -8,7 +8,8 @@ use std::collections::{HashMap, HashSet};
 
 use chrono::{DateTime, Utc};
 use lysilogy_core::{
-    Document, DocumentId, ScannedFile, SourceRecordId, WorkId, WorkLinkMethod, WorkspaceId,
+    Document, DocumentId, DocumentVersionId, ScannedFile, SourceRecordId, WorkId, WorkLinkMethod,
+    WorkspaceId,
 };
 use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, PgPool, Row};
@@ -113,6 +114,22 @@ impl DocumentRepository {
         .fetch_all(&self.pool)
         .await?;
         rows.iter().map(document_from_row).collect()
+    }
+
+    /// The version of a document with the given content hash, if any.
+    pub async fn version_for_sha(
+        &self,
+        document: DocumentId,
+        sha256: &str,
+    ) -> Result<Option<DocumentVersionId>> {
+        let id: Option<Uuid> = sqlx::query_scalar(
+            "select id from reader.document_version where document_id = $1 and sha256 = $2",
+        )
+        .bind(document.as_uuid())
+        .bind(sha256)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(id.map(DocumentVersionId::from_uuid))
     }
 
     /// Link a document to a Work, or clear the link (and its provenance) with `None`.
@@ -766,5 +783,33 @@ mod tests {
             .await
             .expect("lookup");
         assert!(found.is_empty());
+    }
+
+    #[tokio::test]
+    async fn should_find_version_by_sha_when_document_has_it() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = DocumentRepository::new(pool.clone());
+        let version = test_support::new_version(&pool).await;
+        let (document, sha): (Uuid, String) =
+            sqlx::query_as("select document_id, sha256 from reader.document_version where id = $1")
+                .bind(version.as_uuid())
+                .fetch_one(&pool)
+                .await
+                .expect("row");
+        let document = DocumentId::from_uuid(document);
+        assert_eq!(
+            repo.version_for_sha(document, &sha).await.expect("found"),
+            Some(version)
+        );
+        assert_eq!(
+            repo.version_for_sha(document, "missing")
+                .await
+                .expect("none"),
+            None
+        );
     }
 }

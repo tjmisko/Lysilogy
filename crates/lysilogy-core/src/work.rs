@@ -74,7 +74,12 @@ mod tests {
         assert_eq!(json["visibility"], "private");
         assert_eq!(json["title_state"], "known");
         assert_eq!(json["display_year"], 2017);
-        assert!(json["id"].as_str().expect("id is a string").starts_with('w'));
+        assert!(
+            json["id"]
+                .as_str()
+                .expect("id is a string")
+                .starts_with('w')
+        );
 
         let back: Work = serde_json::from_value(json).expect("deserialize");
         assert_eq!(back, work);

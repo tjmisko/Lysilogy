@@ -13,8 +13,11 @@ import type {
   ExperimentCatalog,
   ExperimentJudgment,
   ExperimentView,
+  EdgeLabel,
+  EdgeLabelEdit,
   GraphNeighbors,
   LiteratureJob,
+  LiteratureOptions,
   PaperWork,
   WorkCitations,
 } from "../types";
@@ -107,8 +110,20 @@ export const api = {
     }),
   paperWork: (id: string, signal?: AbortSignal): Promise<PaperWork> =>
     request(`/api/papers/${id}/work`, { signal }),
-  startLiterature: (id: string): Promise<LiteratureJob> =>
-    request(`/api/papers/${id}/lit`, { method: "POST" }),
+  startLiterature: (id: string, options?: LiteratureOptions): Promise<LiteratureJob> =>
+    request(`/api/papers/${id}/lit`, {
+      method: "POST",
+      ...(options === undefined ? {} : { body: JSON.stringify(options) }),
+    }),
+  acceptLabel: (claimId: string): Promise<EdgeLabel> =>
+    request(`/api/relationship-claims/${encodeURIComponent(claimId)}/accept`, { method: "POST" }),
+  rejectLabel: (claimId: string): Promise<EdgeLabel> =>
+    request(`/api/relationship-claims/${encodeURIComponent(claimId)}/reject`, { method: "POST" }),
+  editLabel: (claimId: string, edit: EdgeLabelEdit): Promise<EdgeLabel> =>
+    request(`/api/relationship-claims/${encodeURIComponent(claimId)}`, {
+      method: "PUT",
+      body: JSON.stringify(edit),
+    }),
   literatureJob: (id: string, signal?: AbortSignal): Promise<LiteratureJob> =>
     request(`/api/papers/${id}/lit`, { signal }),
   workCitations: (workId: string, signal?: AbortSignal): Promise<WorkCitations> =>

@@ -21,6 +21,7 @@ import { PaperSwitcher } from "./components/PaperSwitcher";
 import { PdfReader } from "./components/PdfReader";
 import { LiteratureGraph } from "./components/LiteratureGraph";
 import { LITERATURE_QUIT_EVENT } from "./lib/literatureEvents";
+import type { SourceFocus } from "./components/PdfSourceTools";
 import { QueuePanel } from "./components/QueuePanel";
 import { ReaderToolsPanel } from "./components/ReaderToolsPanel";
 import { SectionAtlas } from "./components/SectionAtlas";
@@ -102,6 +103,8 @@ export function App() {
   const [queueOpen, setQueueOpen] = useState(false);
   const [experimentOpen, setExperimentOpen] = useState(false);
   const [literatureOpen, setLiteratureOpen] = useState(false);
+  const [sourceFocus, setSourceFocus] = useState<(SourceFocus & { paperId: string }) | null>(null);
+  const sourceFocusNonce = useRef(0);
   const [toolsTab, setToolsTab] = useState<"supercut" | "references" | null>(null);
   const [referenceSeed, setReferenceSeed] = useState<{ text: string; page: number } | null>(null);
   const [focusQueueFeedback, setFocusQueueFeedback] = useState(false);
@@ -340,6 +343,7 @@ export function App() {
       setQueueOpen(false);
       setExperimentOpen(false);
       setLiteratureOpen(false);
+      setSourceFocus(null);
       setToolsTab(null);
       setClarifySeed("");
       setSourceQuestion(null);
@@ -483,6 +487,18 @@ export function App() {
       animatePages(snapshots, false);
     });
   }, [activeSection, paperMap, sections]);
+
+  const openPassage = useCallback((target: { paperId: string; page: number; start: number; end: number; passage: string }): void => {
+    setLiteratureOpen(false);
+    selectPaper(target.paperId);
+    focusRestore.current = null;
+    setPanel(null);
+    setTextMode("pdf");
+    setView("text");
+    setPdfPage(Math.max(1, target.page));
+    sourceFocusNonce.current += 1;
+    setSourceFocus({ paperId: target.paperId, page: target.page, start: target.start, end: target.end, passage: target.passage, nonce: sourceFocusNonce.current });
+  }, [selectPaper]);
 
   const openPage = useCallback((page: number): void => {
     focusRestore.current = null;
@@ -1195,6 +1211,7 @@ export function App() {
                       onZoom={(delta) => setPdfZoom((value) => Math.max(.5, Math.min(2.5, value + delta)))}
                       onPage={setPdfPage}
                       onPageCount={setPdfPages}
+                      sourceFocus={sourceFocus !== null && sourceFocus.paperId === selectedId ? sourceFocus : undefined}
                       onGloss={() => paperView.analysis != null && openGlossary()}
                       onToggleInk={() => setDarkInk((value) => !value)}
                       onToggleSpread={() => setPdfSpread((spread) => !spread)}
@@ -1271,6 +1288,7 @@ export function App() {
           paperId={selectedId}
           paperTitle={currentPaper?.metadata.title ?? "Paper"}
           onClose={() => setLiteratureOpen(false)}
+          onOpenPassage={openPassage}
           onOpenPaper={(id) => {
             setLiteratureOpen(false);
             selectPaper(id);

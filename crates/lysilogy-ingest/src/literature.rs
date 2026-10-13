@@ -19,7 +19,9 @@ use crate::openalex::{
     JsonTransport, OpenAlexClient, OpenAlexWork, ProviderError, fetch_work_cached_record,
     search_title_cached,
 };
-use crate::title_match::{TitleMatch, TitleQuery, TitleRejection, select_title_match, titles_disagree};
+use crate::title_match::{
+    TitleMatch, TitleQuery, TitleRejection, select_title_match, titles_disagree,
+};
 use crate::{IngestError, Result};
 
 /// The repositories and provider client the flow works through.
@@ -207,9 +209,14 @@ pub async fn run_literature_flow<T: JsonTransport>(
         warnings: Vec::new(),
     };
     if let Some((record, provider)) = &flow.provider {
-        let report =
-            ingest_openalex_references(context.works, context.citations, work.id, provider, *record)
-                .await?;
+        let report = ingest_openalex_references(
+            context.works,
+            context.citations,
+            work.id,
+            provider,
+            *record,
+        )
+        .await?;
         summary.references = report.edges;
         summary.new_stub_works = report.new_works;
         let cited = context.citations.outgoing(work.id).await?;
@@ -244,7 +251,8 @@ async fn link_by_identifier<T: JsonTransport>(
         .provider
         .as_ref()
         .map(|(_, provider)| provider.openalex_id.clone());
-    let Some(work) = resolve_paper_work(context.works, openalex_id.as_deref(), Some(primary)).await?
+    let Some(work) =
+        resolve_paper_work(context.works, openalex_id.as_deref(), Some(primary)).await?
     else {
         return Ok(());
     };
@@ -289,16 +297,16 @@ async fn link_by_title<T: JsonTransport>(
         flow.rejection = Some(TitleRejection::TitleTooGeneric.as_str().to_owned());
         return Ok(());
     }
-    let searched = match search_title_cached(context.records, context.client, title, hints.year).await
-    {
-        Ok(searched) => searched,
-        Err(error) if is_soft(&error) => {
-            flow.warnings.push("title_search_failed".to_owned());
-            flow.rejection = Some("title_search_failed".to_owned());
-            return Ok(());
-        }
-        Err(error) => return Err(error.into()),
-    };
+    let searched =
+        match search_title_cached(context.records, context.client, title, hints.year).await {
+            Ok(searched) => searched,
+            Err(error) if is_soft(&error) => {
+                flow.warnings.push("title_search_failed".to_owned());
+                flow.rejection = Some("title_search_failed".to_owned());
+                return Ok(());
+            }
+            Err(error) => return Err(error.into()),
+        };
     let Some((search_record, candidates)) = searched else {
         flow.rejection = Some("title_has_no_searchable_words".to_owned());
         return Ok(());
@@ -314,7 +322,8 @@ async fn link_by_title<T: JsonTransport>(
             return Ok(());
         }
     };
-    let Some(provider) = fetch_provider(context, &candidate.openalex_id, &mut flow.warnings).await?
+    let Some(provider) =
+        fetch_provider(context, &candidate.openalex_id, &mut flow.warnings).await?
     else {
         flow.rejection = Some("provider_not_found".to_owned());
         return Ok(());
@@ -694,7 +703,10 @@ mod tests {
         assert_eq!(summary.status, LiteratureStatus::Linked);
         assert_eq!(summary.link_method, Some(WorkLinkMethod::Identifier));
         assert_eq!(summary.link_detail, Some(format!("doi:{}", paper.doi)));
-        assert_eq!(summary.openalex_id.as_deref(), Some(paper.openalex_id.as_str()));
+        assert_eq!(
+            summary.openalex_id.as_deref(),
+            Some(paper.openalex_id.as_str())
+        );
         assert_eq!(summary.references, 2);
         assert_eq!(summary.new_stub_works, 2);
         assert_eq!(summary.hydrated_works, 2);
@@ -803,12 +815,7 @@ mod tests {
                 "referenced_works_count": 1,
                 "authorships": [{"author": {"display_name": "Dario Amodei"}}],
             }])),
-            work_route(
-                &work_url(&right_id),
-                &right_id,
-                title,
-                &paper.refs[..1],
-            ),
+            work_route(&work_url(&right_id), &right_id, title, &paper.refs[..1]),
         ]);
         let summary = repos
             .run(
@@ -858,7 +865,12 @@ mod tests {
                 "referenced_works_count": 1,
                 "authorships": [{"author": {"display_name": "David Autor"}}],
             }])),
-            work_route(&work_url(&found_id), &found_id, &paper.title, &paper.refs[..1]),
+            work_route(
+                &work_url(&found_id),
+                &found_id,
+                &paper.title,
+                &paper.refs[..1],
+            ),
             (paper.marker.clone(), Reply::Status(404)),
         ]);
         let summary = repos
@@ -900,7 +912,12 @@ mod tests {
                 "referenced_works_count": 1,
                 "authorships": [{"author": {"display_name": "David Autor"}}],
             }])),
-            work_route(&work_url(&found_id), &found_id, &paper.title, &paper.refs[..1]),
+            work_route(
+                &work_url(&found_id),
+                &found_id,
+                &paper.title,
+                &paper.refs[..1],
+            ),
         ]);
         let summary = repos
             .run(
@@ -949,7 +966,10 @@ mod tests {
         );
         assert_eq!(summary.work_id, None);
         assert_eq!(summary.link_method, None);
-        assert!(transport.urls().is_empty(), "a generic title is never searched");
+        assert!(
+            transport.urls().is_empty(),
+            "a generic title is never searched"
+        );
     }
 
     #[tokio::test]
@@ -1072,7 +1092,10 @@ mod tests {
             .expect("find");
         assert!(reference_owner.is_none());
         assert!(
-            transport.urls().iter().all(|url| !url.contains(&format!("{}ref", paper.marker))),
+            transport
+                .urls()
+                .iter()
+                .all(|url| !url.contains(&format!("{}ref", paper.marker))),
             "{:?}",
             transport.urls()
         );
@@ -1091,7 +1114,9 @@ mod tests {
         };
         let openalex = format!("W5{marker}");
 
-        let none = resolve_paper_work(&repos.works, None, None).await.expect("none");
+        let none = resolve_paper_work(&repos.works, None, None)
+            .await
+            .expect("none");
         assert!(none.is_none());
 
         let created = resolve_paper_work(&repos.works, None, Some(&doi))
@@ -1106,7 +1131,12 @@ mod tests {
 
         let (owner, _) = repos
             .works
-            .resolve_or_create(IdentifierScheme::Openalex, &openalex, WorkKind::Article, None)
+            .resolve_or_create(
+                IdentifierScheme::Openalex,
+                &openalex,
+                WorkKind::Article,
+                None,
+            )
             .await
             .expect("owner");
         let by_openalex = resolve_paper_work(&repos.works, Some(&openalex), Some(&doi))

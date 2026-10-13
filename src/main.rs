@@ -7,7 +7,8 @@ use std::{
     sync::Arc,
 };
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
+use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
 use lysilogy::{
     AppState, Error, Result, build_router,
     domain::{
@@ -15,7 +16,10 @@ use lysilogy::{
         ExperimentStatus, LearningRamp, PaperId, ProcessingStatus, StartExperimentRequest,
     },
 };
+use lysilogy::{analysis::LocalCliAnalyzer, labeling::SidecarLabeler};
+use lysilogy_ingest::labels::{LabelOptions, LabelSummary};
 use lysilogy_ingest::literature::{LiteratureStatus, LiteratureSummary};
+use lysilogy_ingest::local_evidence::LocalEvidenceSummary;
 use tokio::{sync::Semaphore, task::JoinSet};
 use tracing_subscriber::EnvFilter;
 
@@ -50,6 +54,29 @@ struct Cli {
 
     #[command(subcommand)]
     command: Option<Command>,
+}
+
+/// The local model CLI that writes relationship labels.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+enum LabelSidecar {
+    Claude,
+    Codex,
+}
+
+impl LabelSidecar {
+    const fn provider(self) -> AnalysisProvider {
+        match self {
+            Self::Claude => AnalysisProvider::Claude,
+            Self::Codex => AnalysisProvider::Codex,
+        }
+    }
+}
+
+/// How `lit` should label edges, when asked to.
+struct LabelRun {
+    sidecar: LabelSidecar,
+    limit: usize,
+    scratch: PathBuf,
 }
 
 #[derive(Debug, Subcommand)]
@@ -116,6 +143,18 @@ enum Command {
     Lit {
         /// A PDF path inside the library, a paper ID, or an unambiguous title fragment.
         paper: String,
+        /// Also persist and resolve the paper's local bibliography and in-text mentions.
+        #[arg(long)]
+        local: bool,
+        /// Label local citation edges with a model sidecar (implies --local).
+        #[arg(long)]
+        labels: bool,
+        /// Which local CLI writes the labels.
+        #[arg(long, value_enum, default_value = "claude")]
+        sidecar: LabelSidecar,
+        /// Stop after this many model calls; cached answers do not count.
+        #[arg(long, default_value_t = 25)]
+        label_limit: usize,
     },
     /// Analyze all papers that are not ready, continuing past individual faults.
     Ingest {
@@ -320,7 +359,20 @@ async fn run(cli: Cli) -> Result<()> {
             print!("{}", state.markdown(&id).await?);
             Ok(())
         }
-        Command::Lit { paper } => literature_command(&state, &cli.library, &paper).await,
+        Command::Lit {
+            paper,
+            local,
+            labels,
+            sidecar,
+            label_limit,
+        } => {
+            let label_run = labels.then(|| LabelRun {
+                sidecar,
+                limit: label_limit,
+                scratch: cli.data.join("labels"),
+            });
+            literature_command(&state, &cli.library, &paper, local, label_run).await
+        }
         Command::RefreshStructure {
             query,
             provider,
@@ -918,6 +970,8 @@ async fn literature_command(
     state: &AppState,
     library: &std::path::Path,
     paper: &str,
+    local: bool,
+    label_run: Option<LabelRun>,
 ) -> Result<()> {
     let candidate = PathBuf::from(paper);
     let id = if tokio::fs::metadata(&candidate)
@@ -938,18 +992,48 @@ async fn literature_command(
     };
     let summary = state.run_literature_flow(&id).await?;
     print!("{}", render_literature_summary(&summary));
+    if local || label_run.is_some() {
+        match state.run_local_evidence(&id, &summary).await? {
+            Some(mut evidence) => {
+                if let Some(run) = &label_run {
+                    evidence.labels = label_local_edges(state, &id, &summary, run).await?;
+                }
+                print!("{}", render_local_evidence(&evidence));
+            }
+            None => println!("Warnings   {LOCAL_EVIDENCE_REQUIRES_WORK}"),
+        }
+    }
     if let LiteratureStatus::Unmatched { reason } = &summary.status {
-        return Err(Error::Literature(format!("no Work found for {id}: {reason}")));
+        return Err(Error::Literature(format!(
+            "no Work found for {id}: {reason}"
+        )));
     }
     Ok(())
 }
 
+async fn label_local_edges(
+    state: &AppState,
+    id: &PaperId,
+    summary: &LiteratureSummary,
+    run: &LabelRun,
+) -> Result<Option<LabelSummary>> {
+    let labeler = SidecarLabeler::new(
+        run.sidecar.provider(),
+        LocalCliAnalyzer::default(),
+        run.scratch.clone(),
+    )?;
+    let options = LabelOptions {
+        limit: run.limit,
+        ..LabelOptions::default()
+    };
+    state
+        .label_local_edges(id, summary, &labeler, options)
+        .await
+}
+
 /// The library-relative path of `path`, which must lie under `root`. Both
 /// arguments are expected to be canonical, so `..` and symlinks cannot escape.
-fn lit_target_relative_path(
-    root: &std::path::Path,
-    path: &std::path::Path,
-) -> Result<PathBuf> {
+fn lit_target_relative_path(root: &std::path::Path, path: &std::path::Path) -> Result<PathBuf> {
     path.strip_prefix(root).map(PathBuf::from).map_err(|_| {
         Error::InvalidRequest(format!(
             "{} is outside the library {}",
@@ -986,6 +1070,63 @@ fn render_literature_summary(summary: &LiteratureSummary) -> String {
     }
     for warning in &summary.warnings {
         let _ = writeln!(output, "Warnings   {warning}");
+    }
+    output
+}
+
+fn render_local_evidence(summary: &LocalEvidenceSummary) -> String {
+    let mut output = String::new();
+    let _ = writeln!(
+        output,
+        "Local      entries {} \u{b7} mentions {} (unresolved {})",
+        summary.entries, summary.mentions, summary.unresolved_mentions
+    );
+    let counts = &summary.resolutions;
+    let _ = writeln!(
+        output,
+        "Resolved   {} (identifier {}, title {}, stub {}, reused {}) \u{b7} ambiguous {} \u{b7} merged {}",
+        summary.resolved_entries,
+        counts.identifier,
+        counts.title_match,
+        counts.local_stub,
+        counts.reused,
+        summary.ambiguous_entries,
+        summary.merged_stubs
+    );
+    let _ = writeln!(
+        output,
+        "Edges      local {} (also provider {})",
+        summary.local_edges, summary.edges_also_from_provider
+    );
+    if let Some(labels) = &summary.labels {
+        output.push_str(&render_labels(labels));
+    }
+    for warning in &summary.warnings {
+        let _ = writeln!(output, "Warnings   {warning}");
+    }
+    output
+}
+
+fn render_labels(labels: &LabelSummary) -> String {
+    let mut output = String::new();
+    let _ = writeln!(
+        output,
+        "Labels     edges {} \u{b7} calls {} \u{b7} cached {} \u{b7} labeled {} \u{b7} rejected (grounding) {} \u{b7} failed {} \u{b7} over limit {}",
+        labels.edges_considered,
+        labels.model_calls,
+        labels.cache_hits,
+        labels.labeled,
+        labels.rejected_for_grounding,
+        labels.failed,
+        labels.over_limit
+    );
+    if !labels.rejections.is_empty() {
+        let codes: Vec<String> = labels
+            .rejections
+            .iter()
+            .map(|(code, count)| format!("{code} {count}"))
+            .collect();
+        let _ = writeln!(output, "Rejected   {}", codes.join(", "));
     }
     output
 }
@@ -1054,10 +1195,73 @@ mod tests {
     #[test]
     fn should_reject_path_outside_library_when_resolving_lit_target() {
         for outside in ["/elsewhere/a.pdf", "/lib2/a.pdf", "/a.pdf"] {
-            let error = lit_target_relative_path(Path::new("/lib"), Path::new(outside))
-                .expect_err(outside);
+            let error =
+                lit_target_relative_path(Path::new("/lib"), Path::new(outside)).expect_err(outside);
             assert!(matches!(error, Error::InvalidRequest(_)), "{outside}");
         }
+    }
+
+    #[test]
+    fn should_render_three_lines_when_local_evidence_has_no_warnings() {
+        let evidence = LocalEvidenceSummary {
+            entries: 48,
+            mentions: 112,
+            unresolved_mentions: 9,
+            resolved_entries: 46,
+            resolutions: lysilogy_ingest::local_evidence::ResolutionCounts {
+                identifier: 5,
+                title_match: 30,
+                local_stub: 11,
+                reused: 0,
+            },
+            ambiguous_entries: 2,
+            merged_stubs: 0,
+            local_edges: 44,
+            edges_also_from_provider: 31,
+            ..LocalEvidenceSummary::default()
+        };
+        let text = render_local_evidence(&evidence);
+        assert_eq!(
+            text,
+            "Local      entries 48 \u{b7} mentions 112 (unresolved 9)\n\
+             Resolved   46 (identifier 5, title 30, stub 11, reused 0) \u{b7} ambiguous 2 \u{b7} merged 0\n\
+             Edges      local 44 (also provider 31)\n"
+        );
+    }
+
+    #[test]
+    fn should_render_labels_line_when_labels_present() {
+        let mut labels = LabelSummary {
+            edges_considered: 44,
+            model_calls: 20,
+            cache_hits: 0,
+            labeled: 17,
+            rejected_for_grounding: 2,
+            failed: 1,
+            over_limit: 24,
+            ..LabelSummary::default()
+        };
+        labels.rejections.insert("quote_too_short".to_owned(), 2);
+        let evidence = LocalEvidenceSummary {
+            labels: Some(labels),
+            ..LocalEvidenceSummary::default()
+        };
+        let text = render_local_evidence(&evidence);
+        assert!(
+            text.ends_with(
+                "Labels     edges 44 \u{b7} calls 20 \u{b7} cached 0 \u{b7} labeled 17 \u{b7} rejected (grounding) 2 \u{b7} failed 1 \u{b7} over limit 24\n\
+                 Rejected   quote_too_short 2\n"
+            ),
+            "{text}"
+        );
+        let plain = render_local_evidence(&LocalEvidenceSummary::default());
+        assert!(!plain.contains("Labels"), "{plain}");
+    }
+
+    #[test]
+    fn should_map_sidecar_to_provider_when_choosing_label_model() {
+        assert_eq!(LabelSidecar::Claude.provider(), AnalysisProvider::Claude);
+        assert_eq!(LabelSidecar::Codex.provider(), AnalysisProvider::Codex);
     }
 
     #[test]

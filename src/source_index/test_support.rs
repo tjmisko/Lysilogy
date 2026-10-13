@@ -1,6 +1,10 @@
 use std::{fmt::Write, path::Path};
 
-use super::{CachedIndex, Provenance, ReadingPage, SourceStamp, assemble};
+use super::{
+    CachedIndex, Paragraph, Provenance, ReadingIndex, ReadingPage, ReadingToken, SourceStamp,
+    TextRange, assemble,
+};
+use crate::domain::TextRect;
 
 pub fn native_pdf(text: &str) -> Vec<u8> {
     let stream = format!("BT /F1 12 Tf 50 700 Td ({text}) Tj ET");
@@ -94,6 +98,150 @@ pub async fn cache_fixture_with_pages(source: &Path, directory: &Path, pages: &[
         });
     }
     cached.index.text = text;
+    tokio::fs::write(&path, serde_json::to_vec(&cached).unwrap())
+        .await
+        .unwrap();
+}
+
+/// An empty index, as produced for a document with no pages.
+pub fn reading_index_fixture_empty() -> ReadingIndex {
+    assemble(&[])
+}
+
+/// A small hand-built index with an astral character, two pages, a heading,
+/// a paragraph with split member spans, and two sentences.
+pub fn reading_index_fixture() -> ReadingIndex {
+    let mut index = assemble(&[]);
+    // The emoji takes two UTF-16 units, so the next word starts at 3.
+    index.text = "😀 ab [1] cd.\n\nReferences x".into();
+    let rect = |x: f32| TextRect {
+        x_min: x,
+        y_min: 10.0,
+        x_max: x + 5.0,
+        y_max: 22.0,
+    };
+    let token = |start, end, page, text: &str, x| ReadingToken {
+        start,
+        end,
+        page,
+        rects: vec![rect(x)],
+        text: text.into(),
+        provenance: Provenance::Native,
+    };
+    index.tokens = vec![
+        token(0, 2, 1, "😀", 1.0),
+        token(3, 5, 1, "ab", 7.0),
+        token(6, 9, 1, "[1]", 13.0),
+    ];
+    index.pages = vec![page(1, 0, 13), page(2, 15, 25)];
+    index.objects.paragraph = vec![
+        Paragraph {
+            start: 15,
+            end: 25,
+            kind: "heading".into(),
+            spans: vec![],
+        },
+        Paragraph {
+            start: 0,
+            end: 25,
+            kind: "body".into(),
+            spans: vec![
+                TextRange { start: 0, end: 13 },
+                TextRange { start: 20, end: 25 },
+            ],
+        },
+    ];
+    index.objects.sentence = vec![
+        TextRange { start: 0, end: 13 },
+        TextRange { start: 15, end: 25 },
+    ];
+    index
+}
+
+fn page(number: u32, start: usize, end: usize) -> ReadingPage {
+    ReadingPage {
+        number,
+        width: 612.0,
+        height: 792.0,
+        start,
+        end,
+        provenance: Provenance::Native,
+        confidence: None,
+    }
+}
+
+/// Like [`cache_fixture`], with `(text, paragraph kind, page)` blocks laid out
+/// as one paragraph and one sentence each, a token per whitespace-separated
+/// word, and page bounds, so bibliography extraction has what it needs.
+pub async fn cache_fixture_with_blocks(
+    source: &Path,
+    directory: &Path,
+    blocks: &[(&str, &str, u32)],
+) {
+    cache_fixture(source, directory).await;
+    let path = directory.join("reading-index.json");
+    let mut cached: CachedIndex =
+        serde_json::from_slice(&tokio::fs::read(&path).await.unwrap()).unwrap();
+    let index = &mut cached.index;
+    index.text.clear();
+    let mut offset = 0;
+    for (at, (block, kind, number)) in blocks.iter().enumerate() {
+        if !index.text.is_empty() {
+            index.text.push_str("\n\n");
+            offset += 2;
+        }
+        let start = offset;
+        let y = f32::from(u16::try_from(at).unwrap()).mul_add(30.0, 40.0);
+        let mut words = Vec::<(usize, usize, String)>::new();
+        let mut position = 0;
+        let mut open: Option<(usize, String)> = None;
+        for character in block.chars() {
+            if character.is_whitespace() {
+                if let Some((from, text)) = open.take() {
+                    words.push((from, position, text));
+                }
+            } else {
+                open.get_or_insert_with(|| (position, String::new()))
+                    .1
+                    .push(character);
+            }
+            position += character.len_utf16();
+        }
+        if let Some((from, text)) = open {
+            words.push((from, position, text));
+        }
+        for (from, to, text) in words {
+            index.tokens.push(ReadingToken {
+                start: start + from,
+                end: start + to,
+                page: *number,
+                rects: vec![TextRect {
+                    x_min: f32::from(u16::try_from(from).unwrap()).mul_add(6.0, 40.0),
+                    x_max: f32::from(u16::try_from(to).unwrap()).mul_add(6.0, 40.0),
+                    y_min: y,
+                    y_max: y + 12.0,
+                }],
+                text,
+                provenance: Provenance::Native,
+            });
+        }
+        index.text.push_str(block);
+        offset += position;
+        index.objects.paragraph.push(Paragraph {
+            start,
+            end: offset,
+            kind: (*kind).to_owned(),
+            spans: vec![],
+        });
+        index
+            .objects
+            .sentence
+            .push(TextRange { start, end: offset });
+        match index.pages.iter_mut().find(|page| page.number == *number) {
+            Some(existing) => existing.end = offset,
+            None => index.pages.push(page(*number, start, offset)),
+        }
+    }
     tokio::fs::write(&path, serde_json::to_vec(&cached).unwrap())
         .await
         .unwrap();

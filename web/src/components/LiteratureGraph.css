@@ -103,6 +103,16 @@
   stroke-width: 0.6;
 }
 
+.literature-edge.is-labeled {
+  stroke: var(--signal);
+  stroke-width: 1.4;
+}
+
+.literature-edge.is-local-only {
+  stroke: var(--ink-faint);
+  stroke-dasharray: 4 3;
+}
+
 .literature-node {
   cursor: pointer;
   outline: none;
@@ -236,6 +246,134 @@
 .literature-papers button:focus-visible {
   background: var(--panel-bright);
   color: var(--ink);
+}
+
+.literature-line {
+  display: inline-block;
+  width: 16px;
+  margin-right: 4px;
+  border-top: 2px solid var(--line-bright);
+  vertical-align: middle;
+}
+
+.literature-line.is-labeled {
+  border-top-color: var(--signal);
+}
+
+.literature-line.is-local-only {
+  border-top: 2px dashed var(--ink-faint);
+}
+
+.literature-label-card {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--signal);
+  background: var(--panel);
+}
+
+.literature-label-card.is-rejected {
+  border-left-color: var(--line-bright);
+  opacity: 0.6;
+}
+
+.literature-label-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  margin: 0 0 6px;
+  color: var(--ink);
+  font: 13px/1.4 Georgia, serif;
+}
+
+.literature-relation {
+  padding: 1px 7px;
+  border: 1px solid var(--signal);
+  border-radius: 10px;
+  color: var(--signal);
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.literature-label-card blockquote {
+  margin: 6px 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--line-bright);
+  color: var(--ink-soft);
+  font: italic 12px/1.5 Georgia, serif;
+}
+
+.literature-caption {
+  margin: 4px 0 8px;
+  color: var(--ink-faint);
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.literature-label-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.literature-label-actions button {
+  padding: 4px 9px;
+  border: 1px solid var(--line-bright);
+  background: transparent;
+  color: var(--ink-soft);
+  font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.literature-label-actions button:disabled {
+  opacity: 0.45;
+}
+
+.literature-label-actions button:not(:disabled):hover,
+.literature-label-actions button:not(:disabled):focus-visible {
+  border-color: var(--signal);
+  color: var(--ink);
+}
+
+.literature-label-actions kbd {
+  margin-left: 4px;
+  color: var(--ink-faint);
+}
+
+.literature-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.literature-editor label {
+  display: grid;
+  gap: 3px;
+  color: var(--ink-faint);
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.literature-editor textarea,
+.literature-editor input,
+.literature-editor select {
+  padding: 6px 8px;
+  border: 1px solid var(--line-bright);
+  background: var(--bg-raised);
+  color: var(--ink);
+  font: 12px/1.4 Georgia, serif;
+}
+
+.literature-rejected {
+  margin-top: 8px;
+}
+
+.literature-rejected summary {
+  color: var(--ink-faint);
+  cursor: pointer;
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.literature-label-error {
+  color: var(--signal);
 }
 
 @media (max-width: 760px) {

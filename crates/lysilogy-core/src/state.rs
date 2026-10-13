@@ -87,6 +87,25 @@ string_enum!(
 );
 
 string_enum!(
+    /// How in-text citation markers are printed in a paper.
+    CitationStyle {
+        Numeric => "numeric",
+        Superscript => "superscript",
+        AuthorYear => "author_year",
+    }
+);
+
+string_enum!(
+    /// How a bibliography entry was resolved to a Work.
+    ResolutionMethod {
+        Identifier => "identifier",
+        TitleMatch => "title_match",
+        LocalStub => "local_stub",
+        Merge => "merge",
+    }
+);
+
+string_enum!(
     /// Per-field provenance state for a claim.
     FieldState {
         Known => "known",

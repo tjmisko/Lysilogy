@@ -180,8 +180,8 @@ fn openalex_id(value: &str) -> Option<Identifier> {
     })
 }
 fn work(value: &Value) -> GraphResult<Work> {
-    let summary = lysilogy_ingest::openalex::parse_summary(value)
-        .map_err(|_| GraphFailure::malformed())?;
+    let summary =
+        lysilogy_ingest::openalex::parse_summary(value).map_err(|_| GraphFailure::malformed())?;
     let id = openalex_id(&summary.openalex_id).ok_or_else(GraphFailure::malformed)?;
     let mut result = Work::identified(id);
     if let Some(doi) = summary

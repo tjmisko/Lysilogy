@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import type { SectionCrop } from "../lib/sectionCrop";
 import { nearestToken, objectAt, selectionSpans, selectionText, selectionWithinSpan, skipSelectionGap, sourceSpaceAt, tokensInSpan, type ReadingIndex, type SourceSelection, type TextSpan } from "../lib/readingIndex";
 import { loadReadingIndex, peekReadingIndex } from "../lib/readingIndexCache";
+import { locatePassage } from "../lib/passageFocus";
 import type { RegexResult } from "../lib/regexSearch";
 import { inclusiveSourceSpan, moveSourceCursor, moveSourceLine, sourceCursor, sourceGrapheme } from "../lib/sourceMotions";
 import { resolveSourceMarks, type SourceMark } from "../lib/sourceGeometry";
@@ -10,6 +11,8 @@ import { visiblePdfPage } from "../lib/pdfViewport";
 import "./PdfSourceTools.css";
 
 export type { SourceMark } from "../lib/sourceGeometry";
+/** A stored sentence to land on once the reading index loads. A new nonce re-triggers it. */
+export type SourceFocus = { page: number; start: number; end: number; passage: string; nonce: number };
 type Options = {
   url: string;
   page: number;
@@ -22,11 +25,14 @@ type Options = {
   onOpenFullPaper?: (page: number) => void;
   onClarify: (text: string, page: number) => void;
   onSave: (text: string, page: number) => void;
+  focus?: SourceFocus;
 };
 type Resume = { query: string; matches: TextSpan[]; cursor: number; current: number };
 const resumes = new Map<string, Resume>();
+/** Focus requests are consumed once, even if the reader remounts while the request is still held. */
+let lastHandledFocus = 0;
 
-export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPages, prefetchReady, onPage, onOpenFullPaper, onClarify, onSave }: Options) {
+export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPages, prefetchReady, onPage, onOpenFullPaper, onClarify, onSave, focus }: Options) {
   const [resume] = useState(() => resumes.get(url));
   const [index, setIndex] = useState<ReadingIndex | null>(() => peekReadingIndex(url));
   const [searchOpen, setSearchOpen] = useState(false);
@@ -145,6 +151,21 @@ export function usePdfSourceTools({ url, page, root, pageSubset, crops, markPage
     preferredColumn.current = null; setYankPending(false);
     setJump((value) => value + 1);
   }, [cursorMode, inside, onPage]);
+
+  // Land on a stored sentence (for example from an edge label) the way a search match lands.
+  useEffect(() => {
+    if (focus === undefined || focus.nonce <= lastHandledFocus) return;
+    void loadIndex().then((data) => {
+      if (!mounted.current) return;
+      lastHandledFocus = Math.max(lastHandledFocus, focus.nonce);
+      const span = locatePassage(data.text, focus.start, focus.end, focus.passage);
+      if (span === null) { setError("Could not find that sentence in this paper's text."); return; }
+      setError(""); setMessage(""); setVisual(null); setPendingObject(null); setYankPending(false);
+      setMatches([span]); setCurrent(0); land(data, span);
+    }).catch((reason: unknown) => {
+      if (mounted.current) setError(reason instanceof Error ? reason.message : "Source indexing failed");
+    });
+  }, [focus, land, loadIndex]);
 
   const submit = useCallback((pattern: string) => {
     const nextGeneration = ++generation.current;

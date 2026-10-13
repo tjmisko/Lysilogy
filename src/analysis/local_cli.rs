@@ -979,6 +979,17 @@ fn context_model_label(provider: AnalysisProvider) -> String {
     }
 }
 
+/// Identifies the model behind a structured one-shot call, for cache keys and
+/// stored claims. Claude runs on the CLI's configured model, because the
+/// analyzer passes no `--model`.
+pub fn structured_model_key(provider: AnalysisProvider) -> String {
+    match provider {
+        AnalysisProvider::Claude => "claude:default".to_owned(),
+        AnalysisProvider::Codex => format!("codex:{CODEX_PRIMARY_MODEL}"),
+        AnalysisProvider::Heuristic => "heuristic:none".to_owned(),
+    }
+}
+
 fn effective_model(profile: StageProfile) -> String {
     if profile.codex_model == CODEX_CONTEXT_MODEL {
         std::env::var("LYSILOGY_CONTEXT_MODEL")
@@ -1690,6 +1701,18 @@ esac
             .await?;
         assert!(withheld.context_notes.is_empty());
         Ok(())
+    }
+
+    #[test]
+    fn should_name_the_model_when_building_a_structured_model_key() {
+        assert_eq!(
+            structured_model_key(AnalysisProvider::Claude),
+            "claude:default"
+        );
+        assert_eq!(
+            structured_model_key(AnalysisProvider::Codex),
+            format!("codex:{CODEX_PRIMARY_MODEL}")
+        );
     }
 
     #[test]

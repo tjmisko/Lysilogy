@@ -22,6 +22,8 @@ const GROUPS = [
       ["Home / End", "First / last paper in the home grid"],
       ["d", "Open its contextual digest"],
       ["L", "Literature graph: what this paper cites"],
+      ["a / x / e (graph, Work open)", "Accept / reject / edit the reason a work is cited"],
+      ["g (graph, Work open)", "Show the citing sentence in the paper"],
       ["g", "Open the technical glossary (pause after one g)"],
       ["m", "Toggle PDF / requested Markdown reconstruction"],
       ["p", "Toggle overview / source PDF"],
