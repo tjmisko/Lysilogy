@@ -1066,3 +1066,62 @@ Known gaps:
   the ramp is re-read.
 - The live check ran unauthenticated (no contact email); `OpenAlex` accepted it, but a polite-pool
   email is recommended for heavier walks.
+
+### Review addendum
+
+Live smoke against the dev DB: debug build of `lysilogy serve` on 127.0.0.1:7396, library from the
+main checkout, scratch data under `~/.cache/lysilogy-review-e`, no contact email. Seed S is "Deep
+reinforcement learning from human preferences", OpenAlex expanding unauthenticated.
+
+- Create ramp: `POST /api/ramps` 201 with 1 item (the seed), default title is the seed title.
+- Expand S: synchronous, cached, method existing, 66 references.
+- Hop 1: A = GAIL ran the local flow, expanded/local, 21 references, 14 new works.
+- Hop 2: C = "Apprenticeship learning via IRL" ran the provider flow, 14 references, 11 new works;
+  a second CLI expand returned cached instantly.
+- Arxiv-only Work expanded through the provider (24 references). A Work with no identifiers is
+  unavailable (`no_provider_identifier`); the second call was cached.
+- Two-level walk `{depth:2, fanout:2}` from S: 2 levels, 3 expansions, not truncated.
+- Rejected requests: depth 4, fanout 0, unknown fields gave 400 `invalid_depth`, `invalid_fanout`,
+  `invalid_body`.
+- Adding items: C via A before A was in the ramp gave 409 `via_not_in_ramp`; A via S then C via A
+  built S > A > C at depth 2. Duplicate 409 `item_exists`, non-citing via 409 `no_citation_edge`,
+  removing the seed 409 `seed_item`.
+- Status: bad status 400; valid status sets `status_changed_at`. Empty PATCH 400; partial order 400
+  `invalid_order`.
+- Suggested order `foundational_first` put deeper items first and the seed last. Detail included
+  `local_papers`, acquisitions and expansion methods (existing, local, provider).
+- CLI: `ramp list`, `ramp show <title prefix>` and `expand` printed the specified formats.
+- Live UI (Playwright, no mocks): opened the seed paper, `L`, then `w` on A expanded in place with 4
+  new hop-2 nodes. `y` on a hop-2 node sent one POST item via A and showed "Added to ramp."; `w`
+  on it started a provider expand job and drew 8 hop-3 nodes. `R` showed 5 rows with depth, via
+  breadcrumbs, Open on held items, Fetch on the others, expansion badges. No console errors.
+  Screenshots: `~/.cache/lysilogy-review-e/walk.png`, `ramp.png`.
+- Cleanup: smoke ramp deleted (204, then 404); `reader.ramp` and `reader.ramp_item` back to 0 rows.
+  New ledger rows and stub Works stay as canonical graph data.
+
+Known gaps found in review (nonblocking):
+- `src/expansion.rs` `expand_locally` (~line 340): for a held paper the ledger `references_count` is
+  `summary.references`, which counts only OpenAlex references; edges added by local evidence are
+  not counted. Seen live: "Guided Cost Learning" (OpenAlex W2290104316, `referenced_works_count` 0)
+  recorded expanded/local with 0 references while 34 outgoing edges exist. Sidebar badge shows
+  "expanded · 0" and the CLI "0 references". The count should come from `outgoing_counts` after the
+  flow.
+- Suggested order only knows citation edges between Works whose references are loaded. At equal
+  depth prominence decides before year, so "Guided Cost Learning" (2016, 0.67) came before
+  "Apprenticeship learning via IRL" (2004, 0.54). This follows Decision 13 but can look opposite to
+  foundational first. Consider year before prominence as tie-break, or expanding items before
+  ordering.
+- Local-evidence quality (Ramp B, not E): bibliography stubs for Guided Cost Learning include titles
+  like "In International Conference on Machine Learning (ICML), 2004" and "which we summarize in
+  this appendix"; GAIL's references include an unrelated ivermectin paper. Expansion now spreads
+  these stubs into multi-hop walks and ramps.
+- `crates/lysilogy-db/src/work.rs` `move_ramps`: when the merged-away Work is a ramp's seed and the
+  survivor is already a non-seed item, the seed row is deleted and `seed_work_id` moves to the
+  survivor, which becomes the seed with path `[into, ..., into]` and via pointing at itself. No
+  test covers this. Rare.
+- `crates/lysilogy-db/src/ramp.rs` `add_item`: after an intermediate item is removed, adding it
+  back via a descendant writes a path that repeats a Work, such as `[S, X, D, X]`. Allowed but
+  untested.
+- `RampService::summary_view` lists every ramp in the workspace to find one, and `work_titles` runs
+  one query per Work. Fine at current scale.
+- UI: no ramp delete; expansion state does not persist across overlay sessions.
