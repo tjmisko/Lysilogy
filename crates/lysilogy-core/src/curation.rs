@@ -181,7 +181,11 @@ mod tests {
             " #abc",
             "#éé",
         ] {
-            assert_eq!(TagColor::parse(bad), Err(CurationError::InvalidColor), "{bad:?}");
+            assert_eq!(
+                TagColor::parse(bad),
+                Err(CurationError::InvalidColor),
+                "{bad:?}"
+            );
         }
         assert_eq!(CurationError::InvalidColor.code(), "invalid_color");
     }

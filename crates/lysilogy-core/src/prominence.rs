@@ -182,7 +182,10 @@ mod tests {
             },
         ];
         for (index, signals) in better.iter().enumerate() {
-            assert!(score(signals) > before, "signal {index} did not raise the score");
+            assert!(
+                score(signals) > before,
+                "signal {index} did not raise the score"
+            );
         }
     }
 

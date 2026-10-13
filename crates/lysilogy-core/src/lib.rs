@@ -23,15 +23,15 @@ pub use id::{
 };
 pub use identifier::{DetectedIdentifier, extract as extract_identifiers, front_matter};
 pub use names::first_author_family;
-pub use state::{
-    AcquisitionState, AssertionStatus, CandidateOrigin, CitationStyle, Coverage, DecisionKind,
-    DocumentFormat, FieldKind, FieldState, IdentifierScheme, IdentifierStatus, ParseStateError,
-    RelationshipOrigin, ResolutionMethod, ResolutionStatus, ReviewState, UnavailableReason,
-    TagKind, UploadState, VersionKind, Visibility, WorkKind, WorkLinkMethod, WorkMark,
-};
 pub use prominence::{
     PROMINENCE_SIGNALS_VERSION, ProminenceComponents, ProminenceSignals, prominence_components,
     prominence_score,
+};
+pub use state::{
+    AcquisitionState, AssertionStatus, CandidateOrigin, CitationStyle, Coverage, DecisionKind,
+    DocumentFormat, FieldKind, FieldState, IdentifierScheme, IdentifierStatus, ParseStateError,
+    RelationshipOrigin, ResolutionMethod, ResolutionStatus, ReviewState, TagKind,
+    UnavailableReason, UploadState, VersionKind, Visibility, WorkKind, WorkLinkMethod, WorkMark,
 };
 pub use title::{title_key, title_similarity};
 pub use work::{Work, WorkIdentifier, WorkVersion};
