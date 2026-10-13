@@ -857,3 +857,56 @@ and notes under `~/.cache/lysilogy-u2`, no `LYSILOGY_CONTACT_EMAIL` set, so unau
 
 The migration `0008_ramps.sql` was applied to the dev DB by the first connect. The new stub
 Works, edges, and ledger rows from the check stay: they are canonical graph data.
+
+## U3 implementation notes
+
+Shipped: `src/ramps.rs` (`RampServiceError`, `RampDetail`, `RampSummaryView`, `RampItemView`,
+`AppState::{create_ramp, list_ramps, ramp_detail, rename_ramp, delete_ramp, add_ramp_item,
+update_ramp_item, remove_ramp_item, reorder_ramp, suggest_ramp_order, ramp_reference}`),
+`src/api/ramps.rs` (all routes in the API table), `lysilogy ramp new|list|show|add|set|remove|
+order|delete`, and `WorkRepository::get_many`. Every U3 test named in the plan exists. Gate:
+clippy `-D warnings` clean; `cargo test --workspace` with `LYSILOGY_TEST_DATABASE_URL` set
+(core 77, db 98, ingest 241, root lib 344, bin 20), no network.
+
+Deviations and choices:
+
+- Title, note, and status parsing are public helpers in `ramps.rs` (`parse_title`,
+  `parse_note`, `parse_status`) that return `RampServiceError::Invalid`; the API and the CLI
+  call them before the service, so the service takes validated types
+  (`Option<RampTitle>`, `Option<String>` note, `RampItemStatus`). This keeps "body" checks ahead
+  of the graph check.
+- `WorkRepository::get_many` (one query) backs the path-title lookup and the suggested order.
+- `AcquisitionBrief`, `AcquisitionStates`, `LocalPaper`, `LocalPapers`, `states_for`, and
+  `local_papers_for` became `pub` in their private modules and are re-exported from `api`, so
+  `RampDetail` can carry them and the CLI can read them. Their graph-failure `Response` is mapped
+  to `RampServiceError::Graph` (the failure was already logged).
+- `PUT .../order` with neither or both of `work_ids` and `strategy` is `invalid_body`; a
+  malformed ID inside `work_ids` is `invalid_order` (not `invalid_work_id`), so a client sees one
+  code for every bad permutation. Item add checks the ramp (`ramp_not_found`) before the Work
+  (`work_not_found`).
+- `ramp_reference` tries a `p...` ID that exists first, then case-insensitive title prefixes; a
+  single exact title match wins over longer prefix matches. An ambiguous reference is
+  `Invalid("ambiguous_ramp", ...)` listing up to five `title (id)` entries and "and N more".
+- CLI `ramp set` needs `--status`, `--note`, or `--clear-note` (clap `required_unless_present_any`).
+  `ramp show` prints `<ordinal>. [<status>] <title> (<year>) · depth <d> · via <title> ·
+  <held|fetch:<state>|—>` with an indented `note:` line.
+- Extra tests: body shape/unknown-field refusals, ramp-prefix listing cap of five, error-code
+  mapping, `get_many`, and the CLI item-line renderer.
+
+Live check (dev DB, debug build, `lysilogy serve` on 127.0.0.1:7392): `lysilogy ramp new
+doi:10.48550/arxiv.2009.01325` printed the seed line (`held`); that ramp was deleted and the curl
+session started from the seed ID `wyAV7ICFKTpKX1cwQlzqUqQ`:
+
+1. `POST /api/ramps {"seed_work_id": ...}` -> 201, title "Learning to summarize from human
+   feedback", 1 item (depth 0), 1 local paper, 1 expansion view.
+2. `POST /api/ramps/{r}/items {"work_id": <Fine-Tuning Language Models from Human Preferences>,
+   "via_work_id": <seed>}` -> 201, depth 1, ordinal 2, path titles seed then child. A repeat
+   -> 409 `item_exists`.
+3. `PATCH .../items/{work} {"status":"reading","note":"read the intro first"}` -> 200,
+   `status_changed_at` set.
+4. `PUT .../order {"strategy":"foundational_first"}` -> 200, order: Fine-Tuning..., seed.
+5. `GET /api/ramps?seed=...` -> one ramp, `status_counts` 1 unread / 1 reading; `GET` detail
+   showed local papers for both items and expansions `known` + `expanded`.
+6. `DELETE /api/ramps/{r}` -> 204, then `GET` -> 404 `ramp_not_found`.
+
+Afterwards `select count(*) from reader.ramp` and `reader.ramp_item` on the dev DB were both 0.
