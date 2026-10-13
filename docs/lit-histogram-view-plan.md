@@ -621,3 +621,18 @@ Acceptance: gate green; smoke passes in mock mode; live check recorded.
     behavior, unchanged).
 13. The `types.ts` contract line is placed after `year_state` with no comment; if the provenance
     branch places or documents it differently, the merge needs a one-line resolution.
+
+## U1 implementation notes
+
+- Shipped `web/src/lib/histogramLayout.ts` per the API section, `web/scripts/histogram-layout.test.mjs`
+  (29 tests: the 26 required plus an empty-layout size test; two required names are covered by
+  one test each), the `test:histogram-layout` script, and the `display_authors` contract line.
+- Deviation: `seedLinkTarget` adds the viewport box origin (`viewportBox.x`/`y`) to the
+  card-minus-scroll position, so the result is in section coordinates as Decision 18 requires
+  (the scroll container sits below the seed band). The x test and y clamp use the same box.
+  U3 passes the scroll viewport's box relative to the section.
+- `tsconfig` has `noUncheckedIndexedAccess`; column lookups are guarded, with no behavior change.
+- `scrollToReveal` also aligns the left edge when a rect is wider than the visible width.
+- Gate observed: cargo test --workspace all pass (344/20/1/1/77/98/241 per suite, 0 failed);
+  clippy clean; typecheck, lint, build clean; test:histogram-layout 29/29, literature-layout 31,
+  walk 11, ramp 10, relevance 13, all passing.
