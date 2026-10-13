@@ -15,6 +15,7 @@ mod labels;
 mod literature;
 mod neighbors;
 mod notes;
+mod provenance;
 mod ramps;
 mod reader_tools;
 mod source_index;
@@ -1846,6 +1847,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(acquisition::routes())
         .merge(expansion::routes())
         .merge(ramps::routes())
+        .merge(provenance::routes())
         .merge(curation::routes())
         .merge(labels::routes())
         .merge(source_index::routes())
