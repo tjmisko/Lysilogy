@@ -33,3 +33,13 @@ pub struct DocumentVersion {
     pub upload_state: UploadState,
     pub created_at: DateTime<Utc>,
 }
+
+/// One file discovered by a library scan, before it is reconciled with the
+/// database. `relative_path` is relative to the scanned library root.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScannedFile {
+    pub relative_path: String,
+    pub sha256: String,
+    pub bytes: i64,
+    pub format: DocumentFormat,
+}

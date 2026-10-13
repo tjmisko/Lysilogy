@@ -9,7 +9,7 @@ pub mod id;
 pub mod state;
 pub mod work;
 
-pub use document::{Document, DocumentVersion};
+pub use document::{Document, DocumentVersion, ScannedFile};
 pub use entry::BibliographyEntry;
 pub use id::{
     AssertionId, BlobId, DocumentId, DocumentVersionId, EntryId, IdError, IdentifierId, MentionId,
