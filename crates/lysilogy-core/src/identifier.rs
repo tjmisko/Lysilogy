@@ -172,6 +172,45 @@ fn trim_trailing_punctuation(token: &str) -> &str {
     &token[..end]
 }
 
+/// Maximum length of [`front_matter`] output, in characters.
+const FRONT_MATTER_MAX_CHARS: usize = 20_000;
+
+/// Text of the first two pages, cut at a references heading, for identifier detection.
+///
+/// Identifiers in a bibliography belong to cited works, not the document itself, so
+/// the text stops at the first line that is only a references heading (optionally
+/// numbered, optionally followed by a colon). Output is capped on a char boundary.
+#[must_use]
+pub fn front_matter(pages: &[&str]) -> String {
+    let joined = pages.iter().take(2).copied().collect::<Vec<_>>().join("\n");
+    let mut kept = String::new();
+    for line in joined.split('\n') {
+        if is_references_heading(line) {
+            break;
+        }
+        if !kept.is_empty() {
+            kept.push('\n');
+        }
+        kept.push_str(line);
+    }
+    if let Some((end, _)) = kept.char_indices().nth(FRONT_MATTER_MAX_CHARS) {
+        kept.truncate(end);
+    }
+    kept
+}
+
+fn is_references_heading(line: &str) -> bool {
+    let lowered = line.trim().to_lowercase();
+    let without_number = lowered
+        .trim_start_matches(|c: char| c.is_ascii_digit() || c == '.')
+        .trim_start();
+    let heading = without_number.strip_suffix(':').unwrap_or(without_number);
+    matches!(
+        heading,
+        "references" | "bibliography" | "works cited" | "literature cited"
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -249,5 +288,39 @@ mod tests {
             Some("2104.01511".to_owned())
         );
         assert_eq!(normalize(IdentifierScheme::Doi, "not-a-doi"), None);
+    }
+
+    #[test]
+    fn should_stop_front_matter_when_references_heading_appears() {
+        let text = front_matter(&["Title\nDOI 10.1/abc\n  2. References:\n10.9/cited"]);
+        assert_eq!(text, "Title\nDOI 10.1/abc");
+        assert_eq!(front_matter(&["a\nBIBLIOGRAPHY\nb"]), "a");
+        assert_eq!(front_matter(&["a\nWorks Cited\nb"]), "a");
+        assert_eq!(front_matter(&["a\nLiterature cited\nb"]), "a");
+    }
+
+    #[test]
+    fn should_keep_only_first_two_pages_when_given_many() {
+        assert_eq!(front_matter(&["one", "two", "three"]), "one\ntwo");
+    }
+
+    #[test]
+    fn should_ignore_references_word_inside_prose_when_not_a_heading() {
+        let text = "See references below.\nreferences are listed\nend";
+        assert_eq!(front_matter(&[text]), text);
+    }
+
+    #[test]
+    fn should_return_empty_front_matter_when_no_pages() {
+        assert_eq!(front_matter(&[]), "");
+        assert_eq!(front_matter(&["References\nx"]), "");
+    }
+
+    #[test]
+    fn should_truncate_on_char_boundary_when_front_matter_is_huge() {
+        let huge = "é".repeat(30_000);
+        let text = front_matter(&[&huge]);
+        assert_eq!(text.chars().count(), 20_000);
+        assert!(text.chars().all(|c| c == 'é'));
     }
 }
