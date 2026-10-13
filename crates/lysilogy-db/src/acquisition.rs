@@ -290,6 +290,22 @@ impl AcquisitionRepository {
         Ok(())
     }
 
+    /// Keep non-fatal run warnings in `last_error` so they outlive the run.
+    /// Attempts and state are unchanged.
+    pub async fn record_warnings(&self, work: WorkId, warnings: &[String]) -> Result<()> {
+        if warnings.is_empty() {
+            return Ok(());
+        }
+        sqlx::query(
+            "update ops.acquisition set last_error = $2, updated_at = now() where work_id = $1",
+        )
+        .bind(work.as_uuid())
+        .bind(format!("warnings: {}", warnings.join(", ")))
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
     /// Fall back (or move) to a non-terminal state without touching other columns.
     pub async fn set_state(&self, work: WorkId, state: AcquisitionState) -> Result<()> {
         sqlx::query(
@@ -771,8 +787,13 @@ mod tests {
             .cited_targets(citing, workspace, false)
             .await
             .expect("targets");
-        let order: Vec<WorkId> = targets.iter().map(|target| target.work_id).collect();
-        assert_eq!(order[..4], [arxiv_doi, new_doi, old_doi, plain]);
+        let unskipped: Vec<WorkId> = targets
+            .iter()
+            .filter(|target| !target.skipped)
+            .map(|target| target.work_id)
+            .collect();
+        assert_eq!(unskipped, [arxiv_doi, new_doi, old_doi, plain]);
+        assert_eq!(targets.len(), 6);
         let skipped: Vec<WorkId> = targets
             .iter()
             .filter(|target| target.skipped)

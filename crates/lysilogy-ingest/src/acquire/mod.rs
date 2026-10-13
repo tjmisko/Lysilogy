@@ -831,9 +831,16 @@ async fn stage_map<T: JsonTransport>(
     };
     let Some((sha256, bytes, blob)) = stored.filter(|_| blob_ok) else {
         run.warn("blob_missing".to_owned());
-        ctx.acquisitions
-            .set_state(run.work, AcquisitionState::LinkFound)
-            .await?;
+        // Without a stored download and candidate links to retry (a row mapped by
+        // the already-local shortcut never ran those stages), start over
+        // instead of replaying an empty candidate list into a false verdict.
+        if row.sha256.is_none() || row.candidates.is_empty() {
+            ctx.acquisitions.reset_to_unresolved(run.work).await?;
+        } else {
+            ctx.acquisitions
+                .set_state(run.work, AcquisitionState::LinkFound)
+                .await?;
+        }
         return Ok(AcquisitionOutcome::Pending {
             error: "blob_missing".to_owned(),
         });

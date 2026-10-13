@@ -183,6 +183,11 @@ impl AppState {
             summary
                 .warnings
                 .push("title_not_in_front_matter".to_owned());
+            graph
+                .acquisitions
+                .record_warnings(summary.work_id, &summary.warnings)
+                .await
+                .map_err(|error| Error::Acquisition(error.to_string()))?;
         }
         Ok(AcquireReport {
             summary,

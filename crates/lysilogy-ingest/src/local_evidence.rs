@@ -998,11 +998,17 @@ mod tests {
         ]);
         let first = h.run(&bibliography).await;
         let works_before = h
-            .count("select count(*) from graph.work where $1::uuid is not null")
+            .count(
+                "select count(distinct cited_work_id) from graph.citation_assertion \
+                 where citing_work_id = $1",
+            )
             .await;
         let second = h.run(&bibliography).await;
         let works_after = h
-            .count("select count(*) from graph.work where $1::uuid is not null")
+            .count(
+                "select count(distinct cited_work_id) from graph.citation_assertion \
+                 where citing_work_id = $1",
+            )
             .await;
         assert_eq!(works_before, works_after, "no new Works");
         assert_eq!(first.entries, second.entries);

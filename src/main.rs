@@ -1275,9 +1275,13 @@ fn render_cited_by_line(report: &AcquireReport) -> String {
         AcquisitionOutcome::Pending { error } => error.clone(),
         _ => summary.relative_path.clone().unwrap_or_default(),
     };
-    format!("{kind} {} {detail}", work_title_line(report))
+    let mut line = format!("{kind} {} {detail}", work_title_line(report))
         .trim_end()
-        .to_owned()
+        .to_owned();
+    if !summary.warnings.is_empty() {
+        let _ = write!(line, " [warnings: {}]", summary.warnings.join(", "));
+    }
+    line
 }
 
 fn render_literature_summary(summary: &LiteratureSummary) -> String {
@@ -1647,7 +1651,14 @@ mod tests {
             error: "http_503".to_owned(),
         }));
         assert!(pending.starts_with("pending "), "{pending}");
-        assert!(pending.ends_with("http_503"), "{pending}");
+        assert!(pending.contains(" http_503"), "{pending}");
+        let mut warned = report(AcquisitionOutcome::Mapped);
+        warned
+            .summary
+            .warnings
+            .push("title_not_in_front_matter".to_owned());
+        let line = render_cited_by_line(&warned);
+        assert!(line.contains("title_not_in_front_matter]"), "{line}");
     }
 
     #[test]

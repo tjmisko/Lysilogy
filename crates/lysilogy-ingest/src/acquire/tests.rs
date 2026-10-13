@@ -1116,7 +1116,9 @@ async fn should_short_circuit_already_local_when_work_has_present_document() {
     let h = harness!(|_| nothing_offered());
     h.with_doi().await;
     let relative = format!("Local/{}.pdf", h.marker);
-    let document = h.register_document(&relative, b"%PDF-mine").await;
+    let document = h
+        .register_document(&relative, format!("%PDF-local {}", h.marker).as_bytes())
+        .await;
     h.documents
         .set_work_link(document, h.work, WorkLinkMethod::Identifier, None, "test")
         .await
@@ -1295,5 +1297,57 @@ fn should_classify_provider_errors_when_deciding_pending_or_unavailable() {
     assert_eq!(
         classify_provider_error(ProviderError::Malformed).expect("ok"),
         None
+    );
+}
+
+#[tokio::test]
+async fn should_restart_resolution_when_already_local_document_is_tombstoned() {
+    let h = harness!(|_| nothing_offered());
+    h.with_title().await;
+    let url = h.with_arxiv().await;
+    let relative = format!("Local/{}.pdf", h.marker);
+    let document = h
+        .register_document(&relative, format!("%PDF-local {}", h.marker).as_bytes())
+        .await;
+    h.documents
+        .set_work_link(document, h.work, WorkLinkMethod::Identifier, None, "test")
+        .await
+        .expect("link");
+    let fetcher = ScriptedFetcher::new().with(&url, ScriptedResponse::Pdf(h.pdf_bytes()));
+    let first = h.run(&fetcher).await;
+    assert_eq!(first.outcome, AcquisitionOutcome::AlreadyLocal);
+    h.tombstone(document).await;
+
+    let second = h.run(&fetcher).await;
+
+    assert!(matches!(second.outcome, AcquisitionOutcome::Pending { .. }));
+    assert_eq!(second.state, AcquisitionState::Unresolved);
+    assert_eq!(fetcher.calls(), 0);
+
+    let third = h.run(&fetcher).await;
+
+    assert_eq!(third.outcome, AcquisitionOutcome::Mapped, "{third:?}");
+    assert_eq!(fetcher.calls(), 1, "the real candidates were tried");
+}
+
+#[tokio::test]
+async fn should_persist_warnings_when_recording_them_on_the_row() {
+    let h = harness!(|_| nothing_offered());
+    h.with_doi().await;
+    h.acquisitions.claim(h.work).await.expect("claim");
+
+    h.acquisitions
+        .record_warnings(h.work, &[])
+        .await
+        .expect("empty warnings");
+    assert_eq!(h.row().await.last_error, None);
+
+    h.acquisitions
+        .record_warnings(h.work, &["title_not_in_front_matter".to_owned()])
+        .await
+        .expect("warnings");
+    assert_eq!(
+        h.row().await.last_error.as_deref(),
+        Some("warnings: title_not_in_front_matter")
     );
 }
