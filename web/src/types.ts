@@ -443,6 +443,9 @@ export type WorkCitations = {
   edges: GraphEdge[];
   local_papers: LocalPapersByWork;
   acquisitions: AcquisitionsByWork;
+  /** Added in Ramp D; optional so older mocks and servers still parse. */
+  marks?: Record<string, MarkView>;
+  work_tags?: Record<string, string[]>;
 };
 
 /** What the server knows about a Work's open-access acquisition. No paths. */
@@ -514,6 +517,50 @@ export type GraphEdge = {
   labels: EdgeLabel[];
 };
 
+export type ProminenceSignals = {
+  citing_works_count: number;
+  cited_works_count: number;
+  cited_by_global_count: number | null;
+  display_year: number | null;
+  local_available: boolean;
+  mention_count: number;
+  method_citation_count: number;
+  background_citation_count: number;
+};
+
+export type ProminenceView = {
+  score: number;
+  signals: ProminenceSignals;
+};
+
+export type WorkMarkName = "pinned" | "downplayed" | "hidden";
+
+export type MarkView = {
+  mark: WorkMarkName;
+  note: string | null;
+  updated_at?: string;
+};
+
+export type NeighborClusterKind = "tag" | "decade" | "downplayed" | "hidden";
+
+export type NeighborCluster = {
+  key: string;
+  kind: NeighborClusterKind;
+  label: string;
+  count: number;
+  work_ids: string[];
+  sample_titles: string[];
+};
+
+export type NeighborRanking = {
+  limit: number | null;
+  total: number;
+  visible: number;
+  pinned: number;
+  hidden: number;
+  filtered_out: number;
+};
+
 export type GraphNeighbors = {
   center: string;
   direction: "references" | "citations" | "both";
@@ -521,6 +568,12 @@ export type GraphNeighbors = {
   edges: GraphEdge[];
   local_papers: LocalPapersByWork;
   acquisitions: AcquisitionsByWork;
+  /** Ranking fields arrive with Ramp D servers; the UI tolerates their absence. */
+  ranking?: NeighborRanking;
+  prominence?: Record<string, ProminenceView>;
+  marks?: Record<string, MarkView>;
+  work_tags?: Record<string, string[]>;
+  clusters?: NeighborCluster[];
 };
 
 export type WorkLinkMethod = "identifier" | "title_match" | "manual" | "acquisition";

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { layoutFanout, MAX_NODES_PER_RING } from '../src/lib/literatureLayout.ts';
+import { layoutFanout, layoutRankedFanout, MAX_NODES_PER_RING } from '../src/lib/literatureLayout.ts';
 
 const size = { width: 800, height: 600 };
 const makeNodes = (count) => Array.from({ length: count }, (_, i) => ({
@@ -93,4 +93,38 @@ test('should stay finite when the canvas is tiny', () => {
   for (const placement of layoutFanout('c', makeNodes(10), { width: 10, height: 10 })) {
     assert.ok(Number.isFinite(placement.x) && Number.isFinite(placement.y));
   }
+});
+
+const ids = (count) => Array.from({ length: count }, (_, i) => `r${String(count - i).padStart(3, '0')}`);
+
+test('should keep server rank order when laying out ranked fanout', () => {
+  const ranked = ['zeta', 'alpha', 'mid'];
+  const placements = layoutRankedFanout('c', ranked, [], size);
+  assert.deepEqual(placements.map((p) => p.id), ['c', 'zeta', 'alpha', 'mid']);
+  assert.deepEqual(placements.map((p) => p.kind), ['center', 'work', 'work', 'work']);
+  const many = layoutRankedFanout('c', ids(40), [], size);
+  assert.deepEqual(many.slice(1).map((p) => p.ring), [...Array(36).fill(1), ...Array(4).fill(2)]);
+});
+
+test('should place clusters after the last ranked node', () => {
+  const placements = layoutRankedFanout('c', ['a', 'b'], ['decade:2010', 'hidden'], size);
+  assert.deepEqual(placements.map((p) => p.kind), ['center', 'work', 'work', 'cluster', 'cluster']);
+  assert.deepEqual(placements.slice(3).map((p) => p.clusterKey), ['decade:2010', 'hidden']);
+  assert.equal(placements[3].id, 'cluster:decade:2010');
+  assert.equal(placements[1].clusterKey, undefined);
+  assert.equal(new Set(placements.map((p) => p.ring)).size, 2);
+});
+
+test('should open a new ring when clusters overflow the outer ring', () => {
+  const placements = layoutRankedFanout('c', ids(MAX_NODES_PER_RING), ['k1', 'k2'], size);
+  const counts = ringSizes(placements);
+  assert.equal(counts.get(1), MAX_NODES_PER_RING);
+  assert.equal(counts.get(2), 2);
+  assert.ok(placements.filter((p) => p.ring === 2).every((p) => p.kind === 'cluster'));
+});
+
+test('should ignore duplicate and center ids when laying out ranked fanout', () => {
+  const placements = layoutRankedFanout('c', ['a', 'c', 'a', 'b'], ['k', 'k'], size);
+  assert.deepEqual(placements.map((p) => p.id), ['c', 'a', 'b', 'cluster:k']);
+  assert.deepEqual(layoutRankedFanout('c', [], [], size), [{ id: 'c', x: 400, y: 300, ring: 0, kind: 'center' }]);
 });

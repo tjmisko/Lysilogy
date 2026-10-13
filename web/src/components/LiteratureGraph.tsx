@@ -133,7 +133,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
           setPhase({ kind: "nowork" });
           return;
         }
-        const neighbors = await api.graphNeighbors(link.work.id, "references", controller.signal);
+        const neighbors = await api.graphNeighbors(link.work.id, "references", {}, controller.signal);
         setPhase({ kind: "graph", work: link.work, neighbors });
       } catch (reason: unknown) {
         if (controller.signal.aborted) return;
@@ -239,7 +239,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   useEffect(() => {
     if (neighborsToken === 0 || centerId === undefined) return;
     const controller = new AbortController();
-    api.graphNeighbors(centerId, "references", controller.signal)
+    api.graphNeighbors(centerId, "references", {}, controller.signal)
       .then((neighbors) => setPhase((current) => current.kind === "graph" ? { ...current, neighbors } : current))
       .catch(() => undefined);
     return () => controller.abort();

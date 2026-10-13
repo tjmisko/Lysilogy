@@ -83,3 +83,71 @@ export function layoutFanout(
   }
   return placements;
 }
+
+export type RankedPlacement = FanoutPlacement & {
+  kind: "center" | "work" | "cluster";
+  /** Set on cluster placements; their `id` is `cluster:<key>`. */
+  clusterKey?: string;
+};
+
+export const CLUSTER_ID_PREFIX = "cluster:";
+
+type RankedSlot = { id: string; kind: "work" | "cluster"; clusterKey?: string };
+
+/**
+ * Place the center, then the server-ranked Works in the order given (no sorting),
+ * then the cluster nodes, on concentric rings of at most `MAX_NODES_PER_RING`.
+ * Clusters take the slots after the last Work and open a new ring when the
+ * outermost one is full. Duplicate ids and the center id are ignored.
+ */
+export function layoutRankedFanout(
+  centerId: string,
+  rankedIds: readonly string[],
+  clusterKeys: readonly string[],
+  size: FanoutSize,
+): RankedPlacement[] {
+  const centerX = size.width / 2;
+  const centerY = size.height / 2;
+  const placements: RankedPlacement[] = [
+    { id: centerId, x: round(centerX), y: round(centerY), ring: 0, kind: "center" },
+  ];
+
+  const seen = new Set<string>([centerId]);
+  const slots: RankedSlot[] = [];
+  for (const id of rankedIds) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    slots.push({ id, kind: "work" });
+  }
+  const seenClusters = new Set<string>();
+  for (const key of clusterKeys) {
+    if (seenClusters.has(key)) continue;
+    seenClusters.add(key);
+    slots.push({ id: `${CLUSTER_ID_PREFIX}${key}`, kind: "cluster", clusterKey: key });
+  }
+  if (slots.length === 0) return placements;
+
+  const ringCount = Math.ceil(slots.length / MAX_NODES_PER_RING);
+  const outerRadius = Math.max(1, Math.min(size.width, size.height) / 2 - EDGE_MARGIN);
+  const innerRadius = outerRadius * INNER_RADIUS_FRACTION;
+  const radiusStep = (outerRadius - innerRadius) / ringCount;
+
+  for (let ring = 1; ring <= ringCount; ring += 1) {
+    const members = slots.slice((ring - 1) * MAX_NODES_PER_RING, ring * MAX_NODES_PER_RING);
+    const radius = innerRadius + radiusStep * ring;
+    const angleStep = (2 * Math.PI) / members.length;
+    const startAngle = -Math.PI / 2 + (ring % 2 === 0 ? angleStep / 2 : 0);
+    members.forEach((slot, position) => {
+      const angle = startAngle + angleStep * position;
+      placements.push({
+        id: slot.id,
+        x: round(centerX + radius * Math.cos(angle)),
+        y: round(centerY + radius * Math.sin(angle)),
+        ring,
+        kind: slot.kind,
+        ...(slot.clusterKey === undefined ? {} : { clusterKey: slot.clusterKey }),
+      });
+    });
+  }
+  return placements;
+}

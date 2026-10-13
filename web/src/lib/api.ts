@@ -1,3 +1,4 @@
+import { neighborQuery, type NeighborOptions } from "./relevance";
 import type {
   AnalysisProvider,
   Clarification,
@@ -19,6 +20,8 @@ import type {
   AcquisitionStatus,
   FetchWorkOptions,
   GraphNeighbors,
+  MarkView,
+  WorkMarkName,
   LiteratureJob,
   LiteratureOptions,
   PaperWork,
@@ -141,9 +144,23 @@ export const api = {
   graphNeighbors: (
     workId: string,
     direction: GraphNeighbors["direction"] = "references",
+    options: NeighborOptions = {},
     signal?: AbortSignal,
   ): Promise<GraphNeighbors> =>
-    request(`/api/graph/neighbors/${encodeURIComponent(workId)}?direction=${direction}`, { signal }),
+    request(`/api/graph/neighbors/${encodeURIComponent(workId)}?${neighborQuery({ direction, ...options })}`, { signal }),
+  workMark: (workId: string, signal?: AbortSignal): Promise<{ work_id: string; mark: MarkView | null }> =>
+    request(`/api/works/${encodeURIComponent(workId)}/mark`, { signal }),
+  setWorkMark: (workId: string, mark: WorkMarkName, note: string | null): Promise<{ work_id: string; mark: MarkView }> =>
+    request(`/api/works/${encodeURIComponent(workId)}/mark`, {
+      method: "PUT",
+      body: JSON.stringify(note === null || note.trim() === "" ? { mark } : { mark, note }),
+    }),
+  clearWorkMark: async (workId: string): Promise<void> => {
+    const response = await fetch(`/api/works/${encodeURIComponent(workId)}/mark`, {
+      method: "DELETE", headers: { Accept: "application/json" },
+    });
+    if (!response.ok) throw await apiError(response);
+  },
   paper: (id: string): Promise<PaperView> => request(`/api/papers/${id}`),
   paperMap: (id: string, signal?: AbortSignal): Promise<PaperMap> =>
     request(`/api/papers/${id}/map`, { signal }),
