@@ -620,7 +620,8 @@ async fn move_work_content(
     .bind(into_id)
     .execute(&mut *transaction)
     .await?;
-    move_curation(transaction, from_id, into_id).await
+    move_curation(transaction, from_id, into_id).await?;
+    move_ramps(transaction, from_id, into_id).await
 }
 
 /// Move private tags and the mark to the surviving Work (its own mark wins) and
@@ -657,6 +658,67 @@ async fn move_curation(transaction: &mut PgConnection, from_id: Uuid, into_id: U
         .bind(from_id)
         .execute(&mut *transaction)
         .await?;
+    Ok(())
+}
+
+/// Make ramps and the expansion ledger follow the surviving Work. In a ramp that already
+/// holds `into`, the merged Work's item is dropped (the survivor's row wins); otherwise it
+/// is repointed. Every path, `via_work_id`, and ramp seed is repointed, and the merged
+/// Work's expansion row moves only when the survivor has none. Consecutive duplicates a
+/// merge leaves in a path are kept.
+async fn move_ramps(transaction: &mut PgConnection, from_id: Uuid, into_id: Uuid) -> Result<()> {
+    sqlx::query(
+        "delete from reader.ramp_item f where f.work_id = $1 and exists ( \
+             select 1 from reader.ramp_item i where i.ramp_id = f.ramp_id and i.work_id = $2)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query(
+        "update reader.ramp_item set work_id = $2, updated_at = now(), \
+             path_work_ids = array_replace(path_work_ids, $1, $2) \
+         where work_id = $1",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query(
+        "update reader.ramp_item set path_work_ids = array_replace(path_work_ids, $1, $2) \
+         where $1 = any(path_work_ids)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query("update reader.ramp_item set via_work_id = $2 where via_work_id = $1")
+        .bind(from_id)
+        .bind(into_id)
+        .execute(&mut *transaction)
+        .await?;
+    sqlx::query(
+        "update reader.ramp set seed_work_id = $2, updated_at = now() where seed_work_id = $1",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query(
+        "delete from ops.work_expansion f where f.work_id = $1 and exists ( \
+             select 1 from ops.work_expansion i where i.work_id = $2)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query(
+        "update ops.work_expansion set work_id = $2, updated_at = now() where work_id = $1",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
     Ok(())
 }
 

@@ -187,6 +187,58 @@ impl CitationRepository {
         .await?;
         rows.iter().map(work_from_row).collect()
     }
+
+    /// Distinct `(citing, cited)` pairs of live (`asserted` or `accepted`) assertions where
+    /// both Works are in `works`, ordered by pair. Self pairs cannot occur.
+    pub async fn edges_among(&self, works: &[WorkId]) -> Result<Vec<(WorkId, WorkId)>> {
+        if works.len() < 2 {
+            return Ok(Vec::new());
+        }
+        let ids: Vec<Uuid> = works.iter().map(|work| work.as_uuid()).collect();
+        let rows = sqlx::query(
+            "select distinct citing_work_id, cited_work_id from graph.citation_assertion \
+             where citing_work_id = any($1) and cited_work_id = any($1) \
+               and citing_work_id <> cited_work_id and status in ('asserted', 'accepted') \
+             order by citing_work_id, cited_work_id",
+        )
+        .bind(ids)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter()
+            .map(|row| {
+                Ok((
+                    WorkId::from_uuid(row.try_get("citing_work_id")?),
+                    WorkId::from_uuid(row.try_get("cited_work_id")?),
+                ))
+            })
+            .collect()
+    }
+
+    /// How many distinct Works each given Work cites through live assertions. Works that
+    /// cite nothing are absent from the map.
+    pub async fn outgoing_counts(&self, works: &[WorkId]) -> Result<HashMap<WorkId, i64>> {
+        if works.is_empty() {
+            return Ok(HashMap::new());
+        }
+        let ids: Vec<Uuid> = works.iter().map(|work| work.as_uuid()).collect();
+        let rows = sqlx::query(
+            "select citing_work_id, count(distinct cited_work_id) as cited_count \
+             from graph.citation_assertion \
+             where citing_work_id = any($1) and status in ('asserted', 'accepted') \
+             group by citing_work_id",
+        )
+        .bind(ids)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter()
+            .map(|row| {
+                Ok((
+                    WorkId::from_uuid(row.try_get("citing_work_id")?),
+                    row.try_get("cited_count")?,
+                ))
+            })
+            .collect()
+    }
 }
 
 #[cfg(test)]
@@ -405,5 +457,52 @@ mod tests {
             .expect("sources");
         assert_eq!(sources[&(citing, cited_a)].mention_count, 3);
         assert_eq!(sources[&(citing, cited_b)].mention_count, 1);
+    }
+
+    #[tokio::test]
+    async fn should_return_edges_among_set_only_when_querying() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = CitationRepository::new(pool.clone());
+        let a = test_support::new_work(&pool).await;
+        let b = test_support::new_work(&pool).await;
+        let c = test_support::new_work(&pool).await;
+        let outside = test_support::new_work(&pool).await;
+        test_support::cite(&pool, a, b).await;
+        test_support::cite(&pool, a, b).await; // duplicate assertion, one edge
+        repo.add_assertion(b, c, None).await.expect("accepted edge");
+        test_support::cite(&pool, a, outside).await;
+        test_support::cite(&pool, outside, c).await;
+        let rejected = test_support::cite(&pool, c, a).await;
+        sqlx::query("update graph.citation_assertion set status = 'rejected' where id = $1")
+            .bind(rejected)
+            .execute(&pool)
+            .await
+            .expect("reject");
+
+        let mut expected = vec![(a, b), (b, c)];
+        expected.sort();
+        assert_eq!(repo.edges_among(&[a, b, c]).await.expect("edges"), expected);
+        assert!(repo.edges_among(&[a]).await.expect("single").is_empty());
+        assert!(repo.edges_among(&[]).await.expect("empty").is_empty());
+        assert_eq!(
+            repo.edges_among(&[a, b, c, a, b])
+                .await
+                .expect("repeated ids"),
+            expected
+        );
+
+        let counts = repo
+            .outgoing_counts(&[a, b, c, outside])
+            .await
+            .expect("counts");
+        assert_eq!(counts.get(&a), Some(&2));
+        assert_eq!(counts.get(&b), Some(&1));
+        assert_eq!(counts.get(&c), None, "a rejected edge does not count");
+        assert_eq!(counts.get(&outside), Some(&1));
+        assert!(repo.outgoing_counts(&[]).await.expect("none").is_empty());
     }
 }
