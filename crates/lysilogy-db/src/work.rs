@@ -150,6 +150,32 @@ impl WorkRepository {
         row.as_ref().map(identifier_from_row).transpose()
     }
 
+    /// Set the selected display title and mark the title known.
+    pub async fn set_display_title(&self, work_id: WorkId, title: &str) -> Result<()> {
+        sqlx::query(
+            "update graph.work set display_title = $2, title_state = 'known', updated_at = now() \
+             where id = $1",
+        )
+        .bind(work_id.as_uuid())
+        .bind(title)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// Set the selected display year and mark the year known.
+    pub async fn set_display_year(&self, work_id: WorkId, year: i32) -> Result<()> {
+        sqlx::query(
+            "update graph.work set display_year = $2, year_state = 'known', updated_at = now() \
+             where id = $1",
+        )
+        .bind(work_id.as_uuid())
+        .bind(year)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
     /// Record a provenance-bearing claim for a Work field.
     pub async fn add_claim(
         &self,

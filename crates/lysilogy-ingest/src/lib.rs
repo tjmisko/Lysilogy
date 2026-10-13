@@ -3,6 +3,7 @@
 //! Library scanning, paper object extraction, bibliography extraction, and
 //! citation-provider clients live here.
 
+pub mod identify;
 pub mod scan;
 
 /// Errors returned by ingestion.

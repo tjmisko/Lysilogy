@@ -38,6 +38,16 @@ impl DocumentRepository {
         Self { pool }
     }
 
+    /// Create a new workspace with the given name.
+    pub async fn create_workspace(&self, name: &str) -> Result<WorkspaceId> {
+        let id: Uuid =
+            sqlx::query_scalar("insert into reader.workspace (name) values ($1) returning id")
+                .bind(name)
+                .fetch_one(&self.pool)
+                .await?;
+        Ok(WorkspaceId::from_uuid(id))
+    }
+
     /// Return the single local workspace, creating it on first use.
     pub async fn ensure_default_workspace(&self) -> Result<WorkspaceId> {
         let existing: Option<Uuid> =
@@ -82,6 +92,16 @@ impl DocumentRepository {
         .fetch_all(&self.pool)
         .await?;
         rows.iter().map(document_from_row).collect()
+    }
+
+    /// Link a document to a Work, or clear the link with `None`.
+    pub async fn set_work(&self, document_id: DocumentId, work_id: Option<WorkId>) -> Result<()> {
+        sqlx::query("update reader.document set work_id = $2, updated_at = now() where id = $1")
+            .bind(document_id.as_uuid())
+            .bind(work_id.map(WorkId::as_uuid))
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 
     /// Reconcile a full library scan with stored documents.
