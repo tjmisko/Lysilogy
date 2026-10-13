@@ -879,3 +879,15 @@ live; live smoke recorded.
 - `push_trial` caps in a single SQL statement (no `select ... for update`).
 - `present_document_for_sha` test inserts the second same-hash document with raw SQL, because the scanner treats a second path with the same hash as a duplicate rather than a new document.
 - Extra tests beyond the plan list: `should_record_mapping_and_bump_attempts_when_mapped`; the core round-trip test also covers `CandidateOrigin` and `WorkLinkMethod::Acquisition`.
+
+## U2 implementation notes
+
+- Fixture provenance (fetched 2026-10-13, no `mailto`, no API key):
+  `curl -s "https://api.openalex.org/works/W2410842990?select=id,doi,ids,open_access,best_oa_location,locations" | jq .` and the same for `W2097916756`. Trimmed with jq: `source`, `license`, `license_id`, `raw_source_name`, `raw_type` removed from each location, and `locations` cut to the first 8 entries. `unpaywall_*.json` and `landing_*.html` are hand-written from the documented shapes with `example.*` hosts.
+- The arXiv fixture's DataCite DOI landing location (`https://doi.org/10.48550/arxiv...`) and a second `arxiv.org/pdf` landing entry come back from OpenAlex as landing candidates; the latter dedupes into the `arxiv` PDF candidate through `normalize_candidate_url`.
+- `rank_candidates` emits the normalized URL (not the raw one), so `arxiv.org/abs/<id>` becomes `/pdf/<id>`, and `/pdf/<id>.pdf` collapses to `/pdf/<id>`; `www.arxiv.org` is treated as `arxiv.org`.
+- OpenAlex landing candidates come from `best_oa_location` and OA `locations[]` only (non-OA locations are ignored entirely). Unpaywall landing candidates are locations whose `url_for_pdf` is not usable.
+- `IdentifierStatus` has `Conflicting`/`Retracted` (not `Withdrawn`); only `Active` identifiers are used. `W` IDs are upper-cased for the URL; the cache key is lower-cased.
+- `decorate_url` also skips `query_pairs_mut` when there is nothing to add, so URLs without credentials are not given a trailing `?`.
+- Extra tests beyond the plan list: Unpaywall 404 marker, 5xx not cached, no-identifier returns `None`, source-record attachment, alternate-link and unsafe-scheme landing cases, link dedupe/whitespace.
+- Fetchers take the existing `OpenAlexClient<T>` as the generic JSON client for both providers; `ReqwestTransport` decorates only OpenAlex URLs, so Unpaywall requests carry only their own `email` parameter.
