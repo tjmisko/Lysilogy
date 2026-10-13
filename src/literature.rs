@@ -27,7 +27,7 @@ const FRONT_PAGES: u32 = 2;
 
 /// A shareable, type-erased transport so `AppState` stays `Clone`.
 #[derive(Clone)]
-struct SharedTransport(Arc<dyn JsonTransport>);
+pub(crate) struct SharedTransport(Arc<dyn JsonTransport>);
 
 impl JsonTransport for SharedTransport {
     fn get_json<'a>(
@@ -53,6 +53,10 @@ impl LiteratureClient {
     /// A live client; the contact email comes from the environment, if set.
     pub fn from_environment() -> Result<Self> {
         Ok(Self::new(ReqwestTransport::from_environment()?))
+    }
+
+    pub(crate) fn client(&self) -> &OpenAlexClient<SharedTransport> {
+        &self.0
     }
 
     /// A client over any transport, for tests.

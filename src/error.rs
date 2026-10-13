@@ -46,6 +46,8 @@ pub enum Error {
     RemoteImport(String),
     #[error("literature ingestion failed: {0}")]
     Literature(String),
+    #[error("open-access acquisition failed: {0}")]
+    Acquisition(String),
 }
 
 impl From<lysilogy_ingest::IngestError> for Error {
@@ -92,6 +94,7 @@ impl IntoResponse for Error {
             Self::ProgramUnavailable(_) => (StatusCode::SERVICE_UNAVAILABLE, "program_unavailable"),
             Self::RemoteImport(_) => (StatusCode::BAD_GATEWAY, "remote_import_failed"),
             Self::Literature(_) => (StatusCode::BAD_GATEWAY, "literature_failed"),
+            Self::Acquisition(_) => (StatusCode::BAD_GATEWAY, "acquisition_failed"),
             Self::Io { .. }
             | Self::CommandFailed { .. }
             | Self::EmptyExtraction(_)

@@ -5,6 +5,7 @@
 //! state instead.
 
 use lysilogy_db::PgPool;
+use lysilogy_db::acquisition::AcquisitionRepository;
 use lysilogy_db::citation::CitationRepository;
 use lysilogy_db::document::DocumentRepository;
 use lysilogy_db::evidence::EvidenceRepository;
@@ -21,6 +22,7 @@ pub struct GraphState {
     pub source_records: SourceRecordRepository,
     pub evidence: EvidenceRepository,
     pub relationships: RelationshipRepository,
+    pub acquisitions: AcquisitionRepository,
 }
 
 impl std::fmt::Debug for GraphState {
@@ -38,7 +40,8 @@ impl GraphState {
             citations: CitationRepository::new(pool.clone()),
             source_records: SourceRecordRepository::new(pool.clone()),
             evidence: EvidenceRepository::new(pool.clone()),
-            relationships: RelationshipRepository::new(pool),
+            relationships: RelationshipRepository::new(pool.clone()),
+            acquisitions: AcquisitionRepository::new(pool),
         }
     }
 

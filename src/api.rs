@@ -6,7 +6,6 @@ use std::{
         Arc,
         atomic::{AtomicU64, Ordering},
     },
-    time::Duration,
 };
 
 mod citation_graph;
@@ -28,14 +27,10 @@ use axum::{
 use chrono::Utc;
 use lysilogy_core::{Work, WorkId};
 use percent_encoding::percent_decode_str;
-use reqwest::{
-    Url,
-    header::{ACCEPT, CONTENT_LENGTH, LOCATION},
-};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use tokio::{
-    fs::{File, OpenOptions},
-    io::AsyncWriteExt,
+    fs::File,
     sync::{Mutex, RwLock},
 };
 use tokio_util::io::ReaderStream;
@@ -57,23 +52,20 @@ use crate::{
     graph::GraphState,
     jobs::JobTracker,
     library::LibraryCatalog,
-    remote::{MAX_PUBLIC_REDIRECTS, public_http_client},
+    remote::{PublicResource, download_public_resource},
     store::ArtifactStore,
 };
 
 static USER_HIGHLIGHT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 static FEEDBACK_SEQUENCE: AtomicU64 = AtomicU64::new(0);
-static IMPORT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 static EXPERIMENT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 const EXPERIMENT_CATALOG: &str = include_str!("../experiments/catalog.json");
-const REMOTE_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
-const MAX_REMOTE_PDF_BYTES: u64 = 100 * 1024 * 1024;
 const MAX_REMOTE_URL_LENGTH: usize = 4_096;
 
 #[derive(Clone, Debug)]
 pub struct AppState {
     pub(crate) catalog: Arc<RwLock<LibraryCatalog>>,
-    library_root: Arc<PathBuf>,
+    pub(crate) library_root: Arc<PathBuf>,
     pub(crate) store: ArtifactStore,
     pub(crate) extractor: PdfExtractor,
     analysis: AnalysisService,
@@ -81,6 +73,8 @@ pub struct AppState {
     pub(crate) graph: Option<GraphState>,
     pub(crate) literature: crate::literature::LiteratureClient,
     literature_jobs: literature::LiteratureJobs,
+    pub(crate) acquisition_throttle: Arc<lysilogy_ingest::acquire::HostThrottle>,
+    pub(crate) acquisition_fetcher: crate::acquisition::SharedFetcher,
     jobs: JobTracker,
     notes: crate::notes::NotesStore,
     vimrc: Arc<PathBuf>,
@@ -210,6 +204,8 @@ impl AppState {
             graph: None,
             literature: crate::literature::LiteratureClient::from_environment()?,
             literature_jobs: literature::LiteratureJobs::default(),
+            acquisition_throttle: Arc::new(lysilogy_ingest::acquire::HostThrottle::polite()),
+            acquisition_fetcher: crate::acquisition::SharedFetcher::default(),
             frontend_root: None,
         })
     }
@@ -218,6 +214,26 @@ impl AppState {
     #[must_use]
     pub fn with_literature_client(mut self, client: crate::literature::LiteratureClient) -> Self {
         self.literature = client;
+        self
+    }
+
+    /// Replace the acquisition fetcher (for tests).
+    #[must_use]
+    pub fn with_acquisition_fetcher(
+        mut self,
+        fetcher: Arc<dyn lysilogy_ingest::acquire::PdfFetcher>,
+    ) -> Self {
+        self.acquisition_fetcher = crate::acquisition::SharedFetcher(fetcher);
+        self
+    }
+
+    /// Replace the acquisition host throttle (for tests).
+    #[must_use]
+    pub fn with_acquisition_throttle(
+        mut self,
+        throttle: lysilogy_ingest::acquire::HostThrottle,
+    ) -> Self {
+        self.acquisition_throttle = Arc::new(throttle);
         self
     }
 
@@ -289,18 +305,28 @@ impl AppState {
     async fn import_remote_pdf(&self, value: &str) -> Result<ImportPdfResponse> {
         let original = parse_remote_pdf_url(value)?;
         let import_guard = self.import_write.lock().await;
-        let temporary_path = self.library_root.join(format!(
-            ".lysilogy-import-{}-{}.tmp",
-            std::process::id(),
-            IMPORT_SEQUENCE.fetch_add(1, Ordering::Relaxed)
-        ));
-        let download = download_remote_pdf(&original, &temporary_path).await;
-        let (final_url, byte_length) = match download {
-            Ok(download) => download,
-            Err(error) => {
-                remove_temporary_import(&temporary_path).await;
-                return Err(error);
+        let download = download_public_resource(&original, &self.library_root, false)
+            .await
+            .map_err(crate::remote::DownloadError::into_error);
+        let (final_url, byte_length, temporary_path) = match download {
+            Ok(PublicResource::Pdf {
+                final_url,
+                temp_path,
+                bytes,
+                ..
+            }) => match Url::parse(&final_url) {
+                Ok(parsed) => (parsed, bytes, temp_path),
+                Err(error) => {
+                    remove_temporary_import(&temp_path).await;
+                    return Err(Error::RemoteImport(format!("invalid final URL: {error}")));
+                }
+            },
+            Ok(PublicResource::Html { .. }) => {
+                return Err(Error::InvalidRequest(
+                    "the downloaded resource is not a PDF".to_owned(),
+                ));
             }
+            Err(error) => return Err(error),
         };
         let imported = self
             .finish_remote_import(&original, &final_url, byte_length, &temporary_path)
@@ -1747,109 +1773,6 @@ fn parse_remote_pdf_url(value: &str) -> Result<Url> {
     Ok(url)
 }
 
-async fn download_remote_pdf(original: &Url, path: &Path) -> Result<(Url, u64)> {
-    let mut current = original.clone();
-    for redirect_count in 0..=MAX_PUBLIC_REDIRECTS {
-        let client = public_http_client(&current, REMOTE_REQUEST_TIMEOUT).await?;
-        let mut response = client
-            .get(current.clone())
-            .header(ACCEPT, "application/pdf,application/octet-stream;q=0.8")
-            .send()
-            .await
-            .map_err(|error| Error::RemoteImport(format!("request failed: {error}")))?;
-
-        if response.status().is_redirection() {
-            if redirect_count == MAX_PUBLIC_REDIRECTS {
-                return Err(Error::RemoteImport(format!(
-                    "remote server exceeded {MAX_PUBLIC_REDIRECTS} redirects"
-                )));
-            }
-            let location = response
-                .headers()
-                .get(LOCATION)
-                .ok_or_else(|| Error::RemoteImport("redirect omitted its destination".to_owned()))?
-                .to_str()
-                .map_err(|_| Error::RemoteImport("redirect destination was not text".to_owned()))?;
-            current = current
-                .join(location)
-                .map_err(|error| Error::RemoteImport(format!("invalid redirect: {error}")))?;
-            current.set_fragment(None);
-            continue;
-        }
-        if !response.status().is_success() {
-            return Err(Error::RemoteImport(format!(
-                "remote server returned HTTP {}",
-                response.status()
-            )));
-        }
-        if response
-            .headers()
-            .get(CONTENT_LENGTH)
-            .and_then(|value| value.to_str().ok())
-            .and_then(|value| value.parse::<u64>().ok())
-            .is_some_and(|length| length > MAX_REMOTE_PDF_BYTES)
-        {
-            return Err(Error::InvalidRequest(format!(
-                "remote PDFs are limited to {} MiB",
-                MAX_REMOTE_PDF_BYTES / (1024 * 1024)
-            )));
-        }
-
-        let mut output = OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(path)
-            .await
-            .map_err(|error| Error::io(path, error))?;
-        let mut byte_length = 0_u64;
-        let mut prefix = Vec::with_capacity(1_024);
-        while let Some(chunk) = response
-            .chunk()
-            .await
-            .map_err(|error| Error::RemoteImport(format!("download failed: {error}")))?
-        {
-            byte_length = byte_length
-                .checked_add(u64::try_from(chunk.len()).unwrap_or(u64::MAX))
-                .ok_or_else(|| Error::InvalidRequest("remote PDF is too large".to_owned()))?;
-            if byte_length > MAX_REMOTE_PDF_BYTES {
-                return Err(Error::InvalidRequest(format!(
-                    "remote PDFs are limited to {} MiB",
-                    MAX_REMOTE_PDF_BYTES / (1024 * 1024)
-                )));
-            }
-            if prefix.len() < 1_024 {
-                let remaining = 1_024 - prefix.len();
-                prefix.extend_from_slice(&chunk[..chunk.len().min(remaining)]);
-            }
-            output
-                .write_all(&chunk)
-                .await
-                .map_err(|error| Error::io(path, error))?;
-        }
-        output
-            .flush()
-            .await
-            .map_err(|error| Error::io(path, error))?;
-        output
-            .sync_all()
-            .await
-            .map_err(|error| Error::io(path, error))?;
-        if !contains_pdf_header(&prefix) {
-            return Err(Error::InvalidRequest(
-                "the downloaded resource is not a PDF".to_owned(),
-            ));
-        }
-        return Ok((current, byte_length));
-    }
-    Err(Error::RemoteImport(
-        "remote redirect handling ended unexpectedly".to_owned(),
-    ))
-}
-
-fn contains_pdf_header(prefix: &[u8]) -> bool {
-    prefix.windows(5).any(|window| window == b"%PDF-")
-}
-
 fn remote_pdf_filename(url: &Url) -> String {
     let candidate = url
         .path_segments()
@@ -2749,9 +2672,31 @@ mod tests {
     }
 
     #[test]
+    fn should_keep_import_behavior_when_download_moves_to_remote() {
+        use crate::remote::reject_content_class;
+        use lysilogy_ingest::acquire::classify_content_type;
+
+        let html = classify_content_type(Some("text/html; charset=utf-8"));
+        let rejection = reject_content_class(&html, false).expect("HTML is rejected for import");
+        assert!(!rejection.transient);
+        assert!(
+            matches!(
+                rejection.into_error(),
+                Error::InvalidRequest(message) if message == "the downloaded resource is not a PDF"
+            ),
+            "import keeps its not-a-PDF message"
+        );
+        let pdf = classify_content_type(Some("application/pdf"));
+        assert!(reject_content_class(&pdf, false).is_none());
+        assert!(reject_content_class(&html, true).is_none());
+    }
+
+    #[test]
     fn validates_pdf_headers_and_portable_import_names() {
-        assert!(contains_pdf_header(b"preamble\n%PDF-1.7\n"));
-        assert!(!contains_pdf_header(b"<!doctype html>"));
+        use lysilogy_ingest::acquire::has_pdf_magic;
+
+        assert!(has_pdf_magic(b"preamble\n%PDF-1.7\n"));
+        assert!(!has_pdf_magic(b"<!doctype html>"));
         assert_eq!(sanitize_import_filename("../paper:name"), "_paper_name.pdf");
         assert_eq!(sanitize_import_filename("article.PDF"), "article.PDF");
 
