@@ -154,6 +154,7 @@ mod tests {
             title: Some(title.to_owned()),
             year: Some(year),
             first_author: Some(author.to_owned()),
+            authors: Vec::new(),
             referenced_works_count: Some(refs),
         }
     }

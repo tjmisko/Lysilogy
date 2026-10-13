@@ -211,7 +211,8 @@ mod tests {
             .split('|')
             .map(|id| {
                 json!({"id": format!("https://openalex.org/{id}"),
-                       "display_name": format!("Title of {id}"), "publication_year": 2010})
+                       "display_name": format!("Title of {id}"), "publication_year": 2010,
+                       "authorships": []})
             })
             .collect();
         json!({ "results": results })

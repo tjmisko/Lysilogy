@@ -74,6 +74,8 @@ pub struct OpenAlexWork {
     pub doi: Option<String>,
     pub title: Option<String>,
     pub year: Option<i32>,
+    /// Ordered author display names; empty when `authorships` is absent.
+    pub authors: Vec<String>,
     pub referenced_works: Vec<String>,
 }
 
@@ -86,7 +88,28 @@ pub struct OpenAlexSummary {
     pub title: Option<String>,
     pub year: Option<i32>,
     pub first_author: Option<String>,
+    /// Ordered author display names; empty when `authorships` is absent.
+    pub authors: Vec<String>,
     pub referenced_works_count: Option<u32>,
+}
+
+/// Ordered `authorships[].author.display_name`, trimmed, empties skipped. A
+/// missing or non-array `authorships` gives an empty list.
+fn parse_authors(value: &Value) -> Vec<String> {
+    let Some(authorships) = value.get("authorships").and_then(Value::as_array) else {
+        return Vec::new();
+    };
+    authorships
+        .iter()
+        .filter_map(|authorship| {
+            authorship
+                .pointer("/author/display_name")
+                .and_then(Value::as_str)
+        })
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .map(str::to_owned)
+        .collect()
 }
 
 /// Parse a summary. Only a missing `id` is an error; any other missing or
@@ -128,6 +151,7 @@ pub fn parse_summary(value: &Value) -> Result<OpenAlexSummary, ProviderError> {
         title,
         year,
         first_author,
+        authors: parse_authors(value),
         referenced_works_count,
     })
 }
@@ -168,6 +192,7 @@ pub fn parse_work(value: &Value) -> Result<OpenAlexWork, ProviderError> {
         doi,
         title,
         year,
+        authors: parse_authors(value),
         referenced_works,
     })
 }
@@ -181,7 +206,7 @@ pub fn work_url(id: &str) -> String {
     let encoded = utf8_percent_encode(&target, NON_ALPHANUMERIC);
     format!(
         "https://api.openalex.org/works/{encoded}\
-         ?select=id,doi,display_name,publication_year,referenced_works"
+         ?select=id,doi,display_name,publication_year,referenced_works,authorships"
     )
 }
 
@@ -191,7 +216,7 @@ pub fn works_batch_url(ids: &[&str]) -> String {
     debug_assert!(ids.len() <= SUMMARY_BATCH, "batch exceeds {SUMMARY_BATCH}");
     format!(
         "https://api.openalex.org/works?filter=openalex:{}&per_page={}\
-         &select=id,doi,display_name,publication_year",
+         &select=id,doi,display_name,publication_year,authorships",
         ids.join("|"),
         ids.len()
     )
@@ -344,7 +369,9 @@ pub async fn fetch_summaries_cached<T: JsonTransport>(
         if key.is_empty() || !seen.insert(key.clone()) {
             continue;
         }
+        // A payload cached before `authorships` was selected is stale: refetch once.
         if let Some((record_id, payload)) = records.find(OPENALEX_SUMMARY_KIND, &key).await?
+            && payload.get("authorships").is_some()
             && let Ok(summary) = parse_summary(&payload)
         {
             found.push((record_id, summary));
@@ -711,6 +738,7 @@ mod tests {
             "doi": null,
             "display_name": title,
             "publication_year": 2020,
+            "authorships": [],
         })
     }
 
@@ -1035,5 +1063,41 @@ mod tests {
                 .expect("find");
             assert!(found.is_none(), "{id} must not be cached");
         }
+    }
+
+    #[test]
+    fn should_select_authorships_when_building_work_and_batch_urls() {
+        let work = work_url("W1");
+        assert!(work.ends_with("referenced_works,authorships"), "{work}");
+        let batch = works_batch_url(&["W1", "W2"]);
+        assert!(batch.ends_with("publication_year,authorships"), "{batch}");
+    }
+
+    #[test]
+    fn should_parse_ordered_authors_when_authorships_present() {
+        let item = serde_json::json!({
+            "id": "https://openalex.org/W1",
+            "authorships": [
+                {"author": {"display_name": " Second Author "}},
+                {"author": {"display_name": "   "}},
+                {"author": {}},
+                {},
+                {"author": {"display_name": "Third Author"}},
+            ],
+        });
+        let expected = ["Second Author", "Third Author"];
+        assert_eq!(parse_summary(&item).expect("summary").authors, expected);
+        assert_eq!(parse_work(&item).expect("work").authors, expected);
+        for garbage in [
+            serde_json::json!("nope"),
+            serde_json::json!({"author": 1}),
+            serde_json::Value::Null,
+        ] {
+            let item = serde_json::json!({"id": "https://openalex.org/W1", "authorships": garbage});
+            assert!(parse_summary(&item).expect("summary").authors.is_empty());
+            assert!(parse_work(&item).expect("work").authors.is_empty());
+        }
+        let absent = serde_json::json!({"id": "https://openalex.org/W1"});
+        assert!(parse_work(&absent).expect("work").authors.is_empty());
     }
 }
