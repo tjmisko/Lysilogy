@@ -824,3 +824,29 @@ mode; live check recorded; dev DB curation rows created by the check removed.
     count and Decision 14 deliberately has no negative cache, so those are retried each time.
   - `lysilogy prominence --all` (no network): 3,240 works, 308 with global counts, 0.8 s.
   - `lysilogy prominence` with no scope exits with the clap usage error.
+
+## U3 implementation notes
+
+- `src/api/curation.rs` holds all routes. Bodies are parsed to a `serde_json::Value` first and
+  must be an object (otherwise a sequence such as `["x"]` would deserialize into a struct), then
+  into the `deny_unknown_fields` structs. `SetMarkBody.mark` stays a raw `Value` so a wrong value
+  or type is `invalid_mark` while a missing field is `invalid_body`. An invalid `kind` is
+  `invalid_body` (serde rejects the enum).
+- `PATCH /api/tags/{tag}` computes `work_count` with a `list_tags` lookup (no repository
+  method for a single count); fine at personal-library tag counts.
+- `GET /api/works/{id}/tags` reports each tag's global `work_count`, same as `GET /api/tags`.
+- `curation::curation_for(state, work_ids)` returns the `marks` and `work_tags` maps and is what
+  U4 should reuse for neighbors.
+- Tests: 18 in `api::curation::tests` (the 17 listed plus
+  `should_check_path_ids_and_body_before_graph_when_graph_unavailable`). The palette test
+  accepts the palette color for any tag count in `before..=before+2`, since other DB tests
+  create tags in the shared default workspace concurrently.
+- Live check against the dev DB (`lysilogy serve --bind 127.0.0.1:7391`, library/data/notes
+  under `~/.cache`), on an existing Work, all rows removed afterwards:
+  - `POST /api/tags {"name":"u3 curl check"}` -> 201, color `#4e79a7` (first palette color).
+  - `PUT /api/works/{w}/tags/{t}` -> 204; `GET .../tags` -> 200 with the tag, `work_count` 1.
+  - `PUT .../mark {"mark":"pinned","note":"curl check"}` -> 200; `GET .../mark` -> same.
+  - `PUT .../mark {"mark":"loud"}` -> 400 `invalid_mark`.
+  - `GET /api/works/{w}/citations` -> `marks` and `work_tags` carry both entries.
+  - `DELETE .../mark` -> 204, `DELETE /api/tags/{t}` -> 204, `GET /api/tags` -> `{"tags":[]}`,
+    `GET .../mark` -> `mark: null`. `reader.tag`, `work_tag`, `work_mark` counts are 0 after.
