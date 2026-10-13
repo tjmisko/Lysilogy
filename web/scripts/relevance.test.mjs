@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   DEFAULT_TOP_N, TOP_N_MAX, TOP_N_MIN, clusterAriaLabel, markAfterToggle, neighborQuery, nextTopN,
-  nodeRadius, signalSummary, toggleInSet,
+  nodeRadius, signalSummary, toggleInSet, TAG_PALETTE, normalizeTagColor, nextTagColor, findTagByName,
 } from '../src/lib/relevance.ts';
 
 const signals = (overrides = {}) => ({
@@ -78,4 +78,36 @@ test('should add then remove a value when toggling in a set without mutating it'
   assert.deepEqual([...added].sort(), ['a', 'b']);
   assert.deepEqual([...original], ['a']);
   assert.deepEqual([...toggleInSet(added, 'a')], ['b']);
+});
+
+test('should normalize short hex and reject invalid colors', () => {
+  assert.equal(normalizeTagColor('#ABC'), '#aabbcc');
+  assert.equal(normalizeTagColor(' #4E79A7 '), '#4e79a7');
+  for (const bad of ['red', '#12345', '#ggg', 'rgb(1,2,3)', '', '4e79a7', '#1234567']) {
+    assert.equal(normalizeTagColor(bad), null, bad);
+  }
+});
+
+test('should choose the first unused palette color then wrap', () => {
+  assert.equal(nextTagColor([]), TAG_PALETTE[0]);
+  assert.equal(nextTagColor([{ color: '#4E79A7' }, { color: '#59a14f' }]), TAG_PALETTE[1]);
+  const all = TAG_PALETTE.map((color) => ({ color }));
+  assert.equal(nextTagColor(all), TAG_PALETTE[0]);
+  assert.equal(nextTagColor([...all, { color: '#000000' }]), TAG_PALETTE[1]);
+});
+
+test('should match existing tag names case-insensitively after trimming', () => {
+  const tags = [{ id: 't1', name: 'Core  Idea' }, { id: 't2', name: 'method' }];
+  assert.equal(findTagByName(tags, '  core idea ')?.id, 't1');
+  assert.equal(findTagByName(tags, 'METHOD')?.id, 't2');
+  assert.equal(findTagByName(tags, 'methods'), undefined);
+  assert.equal(findTagByName(tags, '   '), undefined);
+});
+
+test('should toggle tag filter membership', () => {
+  const on = toggleInSet(new Set(), 't1');
+  assert.deepEqual([...on], ['t1']);
+  assert.deepEqual([...toggleInSet(on, 't2')].sort(), ['t1', 't2']);
+  assert.equal(toggleInSet(on, 't1').size, 0);
+  assert.equal(on.size, 1);
 });

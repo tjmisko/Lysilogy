@@ -21,6 +21,7 @@ import type {
   FetchWorkOptions,
   GraphNeighbors,
   MarkView,
+  TagView,
   WorkMarkName,
   LiteratureJob,
   LiteratureOptions,
@@ -79,6 +80,11 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw httpError(response, payload);
   }
   return payload as T;
+}
+
+async function sendWithoutBody(path: string, method: "PUT" | "DELETE"): Promise<void> {
+  const response = await fetch(path, { method, headers: { Accept: "application/json" } });
+  if (!response.ok) throw await apiError(response);
 }
 
 export const api = {
@@ -161,6 +167,18 @@ export const api = {
     });
     if (!response.ok) throw await apiError(response);
   },
+  listTags: (signal?: AbortSignal): Promise<{ tags: TagView[] }> => request("/api/tags", { signal }),
+  createTag: (name: string, color: string): Promise<TagView> =>
+    request("/api/tags", { method: "POST", body: JSON.stringify({ name, color }) }),
+  updateTag: (tagId: string, patch: { name?: string; color?: string }): Promise<TagView> =>
+    request(`/api/tags/${encodeURIComponent(tagId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  deleteTag: (tagId: string): Promise<void> => sendWithoutBody(`/api/tags/${encodeURIComponent(tagId)}`, "DELETE"),
+  workTags: (workId: string, signal?: AbortSignal): Promise<{ work_id: string; tags: TagView[] }> =>
+    request(`/api/works/${encodeURIComponent(workId)}/tags`, { signal }),
+  assignTag: (workId: string, tagId: string): Promise<void> =>
+    sendWithoutBody(`/api/works/${encodeURIComponent(workId)}/tags/${encodeURIComponent(tagId)}`, "PUT"),
+  unassignTag: (workId: string, tagId: string): Promise<void> =>
+    sendWithoutBody(`/api/works/${encodeURIComponent(workId)}/tags/${encodeURIComponent(tagId)}`, "DELETE"),
   paper: (id: string): Promise<PaperView> => request(`/api/papers/${id}`),
   paperMap: (id: string, signal?: AbortSignal): Promise<PaperMap> =>
     request(`/api/papers/${id}/map`, { signal }),

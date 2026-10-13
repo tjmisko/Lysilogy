@@ -1,4 +1,4 @@
-import type { NeighborCluster, ProminenceView, WorkMarkName } from "../types";
+import type { NeighborCluster, ProminenceView, TagView, WorkMarkName } from "../types";
 
 export const DEFAULT_TOP_N = 40;
 export const TOP_N_STEP = 20;
@@ -78,4 +78,37 @@ export function toggleInSet<T>(set: ReadonlySet<T>, value: T): Set<T> {
   const next = new Set(set);
   if (!next.delete(value)) next.add(value);
   return next;
+}
+
+/** Mirrors `TAG_PALETTE` in lysilogy-core. */
+export const TAG_PALETTE: readonly string[] = [
+  "#4e79a7", "#f28e2b", "#59a14f", "#e15759", "#76b7b2", "#edc948", "#b07aa1", "#9c755f",
+];
+
+/** `#rgb` or `#rrggbb` (any case, surrounding space ignored) as lower-case `#rrggbb`; else `null`. */
+export function normalizeTagColor(text: string): string | null {
+  const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/iu.exec(text.trim());
+  if (match === null) return null;
+  const digits = (match[1] ?? "").toLowerCase();
+  const full = digits.length === 3 ? digits.replace(/./gu, "$&$&") : digits;
+  return `#${full}`;
+}
+
+/** The first palette color no tag uses; once all are used, wrap by tag count like the server. */
+export function nextTagColor(tags: ReadonlyArray<Pick<TagView, "color">>): string {
+  const used = new Set(tags.map((tag) => normalizeTagColor(tag.color) ?? tag.color.toLowerCase()));
+  const unused = TAG_PALETTE.find((color) => !used.has(color));
+  return unused ?? TAG_PALETTE[tags.length % TAG_PALETTE.length] ?? "#4e79a7";
+}
+
+/** Trim and collapse whitespace runs, as the server does for tag names. */
+export function normalizeTagName(name: string): string {
+  return name.trim().replace(/\s+/gu, " ");
+}
+
+/** The tag whose name matches `name` ignoring case, outer space and repeated inner space. */
+export function findTagByName<T extends Pick<TagView, "name">>(tags: readonly T[], name: string): T | undefined {
+  const wanted = normalizeTagName(name).toLowerCase();
+  if (wanted === "") return undefined;
+  return tags.find((tag) => normalizeTagName(tag.name).toLowerCase() === wanted);
 }

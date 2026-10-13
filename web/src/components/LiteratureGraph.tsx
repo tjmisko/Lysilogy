@@ -5,13 +5,14 @@ import { ApiError, api } from "../lib/api";
 import { LITERATURE_QUIT_EVENT } from "../lib/literatureEvents";
 import { layoutRankedFanout, type RankedPlacement } from "../lib/literatureLayout";
 import {
-  DEFAULT_TOP_N, clusterAriaLabel, markAfterToggle, nextTopN, nodeRadius, toggleInSet,
+  DEFAULT_TOP_N, clusterAriaLabel, findTagByName, markAfterToggle, nextTopN, nodeRadius, toggleInSet,
 } from "../lib/relevance";
 import type {
   AcquisitionJobState, AcquisitionStatus, AcquisitionView, EdgeLabel, EdgeLabelEdit, GraphEdge, GraphNeighbors,
-  LocalPaper, MarkView, NeighborCluster, ProminenceView, Work, WorkCitations, WorkMarkName,
+  LocalPaper, MarkView, NeighborCluster, ProminenceView, TagView, Work, WorkCitations, WorkMarkName,
 } from "../types";
-import { LiteratureCuration } from "./LiteratureCuration";
+import { LiteratureCuration, TAG_INPUT_CLASS } from "./LiteratureCuration";
+import { LiteratureLegend, TAG_KEY_LIMIT } from "./LiteratureLegend";
 import "./LiteratureGraph.css";
 
 type LiteratureGraphProps = {
@@ -57,6 +58,8 @@ const MARK_KEYS: Readonly<Record<string, WorkMarkName>> = { p: "pinned", d: "dow
 
 const CANVAS = { width: 1000, height: 700 } as const;
 const POLL_MILLISECONDS = 1000;
+const MAX_NODE_TICKS = 3;
+const FALLBACK_TAG_COLOR = "#888888";
 const LABEL_LIMIT = 30;
 const FULL_LABEL_LIMIT = 90;
 
@@ -122,8 +125,10 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   const [centerWork, setCenterWork] = useState<Work | null>(null);
   const [topN, setTopN] = useState(DEFAULT_TOP_N);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
-  // Used by the tag filter in the next unit; the query parameter is wired now.
-  const [tagFilter] = useState<ReadonlySet<string>>(() => new Set());
+  const [tagFilter, setTagFilter] = useState<ReadonlySet<string>>(() => new Set());
+  const [tags, setTags] = useState<TagView[]>([]);
+  const [tagsToken, setTagsToken] = useState(0);
+  const [tagError, setTagError] = useState<string | null>(null);
   const [neighborsError, setNeighborsError] = useState<string | null>(null);
   const [markOverrides, setMarkOverrides] = useState<ReadonlyMap<string, MarkView | null>>(() => new Map());
   const [markError, setMarkError] = useState<string | null>(null);
@@ -157,6 +162,17 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     })();
     return () => controller.abort();
   }, [paperId, reloadToken]);
+
+  // Load the tag list once per overlay and again after every tag mutation.
+  useEffect(() => {
+    const controller = new AbortController();
+    api.listTags(controller.signal)
+      .then((loaded) => setTags(loaded.tags))
+      .catch((reason: unknown) => {
+        if (!controller.signal.aborted && !isUnavailable(reason)) setTagError(failureMessage(reason));
+      });
+    return () => controller.abort();
+  }, [tagsToken]);
 
   // Load the ranked neighbors. Any change to top-N, expansions, or filters refetches;
   // the previous request is aborted and the graph stays on screen meanwhile.
@@ -363,6 +379,45 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     });
   }, []);
 
+  const tagsById = useMemo(() => new Map(tags.map((tag) => [tag.id, tag])), [tags]);
+  const afterTagMutation = useCallback((): void => {
+    setTagsToken((token) => token + 1);
+    setNeighborsToken((token) => token + 1);
+  }, []);
+  const assignTagByName = useCallback((workId: string, name: string, color: string): void => {
+    setTagError(null);
+    const fail = (reason: unknown): void => setTagError(failureMessage(reason));
+    const assign = (tag: TagView): Promise<void> => api.assignTag(workId, tag.id);
+    const known = findTagByName(tags, name);
+    if (known !== undefined) {
+      assign(known).then(afterTagMutation).catch(fail);
+      return;
+    }
+    api.createTag(name.trim(), color)
+      .catch(async (reason: unknown) => {
+        // Another session may have created the same name; reuse it instead of failing.
+        if (!(reason instanceof ApiError) || reason.status !== 409) throw reason;
+        const refreshed = (await api.listTags()).tags;
+        const match = findTagByName(refreshed, name);
+        if (match === undefined) throw reason;
+        return match;
+      })
+      .then(assign)
+      .then(afterTagMutation)
+      .catch((reason: unknown) => {
+        fail(reason);
+        setTagsToken((token) => token + 1);
+      });
+  }, [afterTagMutation, tags]);
+  const unassignTag = useCallback((workId: string, tag: TagView): void => {
+    setTagError(null);
+    api.unassignTag(workId, tag.id).then(afterTagMutation).catch((reason: unknown) => setTagError(failureMessage(reason)));
+  }, [afterTagMutation]);
+  const toggleTagFilter = useCallback((tagId: string): void => {
+    setTagFilter((current) => toggleInSet(current, tagId));
+  }, []);
+  const clearTagFilter = useCallback((): void => setTagFilter(new Set()), []);
+
   const briefs = graph?.neighbors.acquisitions;
   const activeView: AcquisitionLike | null = activeFetch?.view ?? (activeWork === undefined ? null : briefs?.[activeWork.id] ?? null);
   const allLocalPapers = useMemo(
@@ -456,6 +511,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     setEditingId(null);
     setLabelError(null);
     setMarkError(null);
+    setTagError(null);
     setSelectedId(placement.id);
     setCitations({ kind: "loading" });
     setWorkPanelOpen(true);
@@ -469,8 +525,10 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     const onQuit = (event: Event): void => {
       if (!workPanelOpen) return;
       event.preventDefault();
-      // One layer per press: the label editor first, then the panel.
-      if (editingId !== null) setEditingId(null);
+      // One layer per press: a focused tag input, the label editor, then the panel.
+      const focused = document.activeElement;
+      if (focused instanceof HTMLInputElement && focused.classList.contains(TAG_INPUT_CLASS)) focused.blur();
+      else if (editingId !== null) setEditingId(null);
       else setWorkPanelOpen(false);
     };
     root.addEventListener(LITERATURE_QUIT_EVENT, onQuit);
@@ -496,6 +554,14 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
           applyMark(activeWork.id, markAfterToggle(current?.mark ?? null, requestedMark), current?.note ?? null);
           return;
         }
+        if (event.key === "t") {
+          if (activeWork === undefined || activeWork.id === centerId) return;
+          const input = rootRef.current?.querySelector<HTMLInputElement>(`.${TAG_INPUT_CLASS}`);
+          if (input === null || input === undefined) return;
+          event.preventDefault();
+          input.focus();
+          return;
+        }
         if (event.key === "f") {
           if (fetchable) { event.preventDefault(); startFetch(); }
           return;
@@ -505,6 +571,18 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
         else if (event.key === "x") { event.preventDefault(); reviewLabel(actionableLabel, "reject"); }
         else if (event.key === "e") { event.preventDefault(); setLabelError(null); setEditingId(actionableLabel.id); }
         else if (event.key === "g" && canShowInPaper(actionableLabel)) { event.preventDefault(); showInPaper(actionableLabel); }
+        return;
+      }
+      if (event.key === "0") {
+        event.preventDefault();
+        setTagFilter(new Set());
+        return;
+      }
+      if (event.key >= "1" && event.key <= "9") {
+        const tag = tags[Number(event.key) - 1];
+        if (Number(event.key) > TAG_KEY_LIMIT || tag === undefined) return;
+        event.preventDefault();
+        toggleTagFilter(tag.id);
         return;
       }
       if (event.key === "j" || event.key === "ArrowDown" || event.key === "l" || event.key === "ArrowRight") {
@@ -529,7 +607,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [actionableLabel, activateIndex, activeIndex, activeWork, applyMark, centerId, editingId, fetchable, markFor, phase.kind, placements, reviewLabel, runLiterature, showInPaper, startFetch, workPanelOpen]);
+  }, [actionableLabel, activateIndex, activeIndex, activeWork, applyMark, centerId, editingId, fetchable, markFor, phase.kind, placements, reviewLabel, runLiterature, showInPaper, startFetch, tags, toggleTagFilter, workPanelOpen]);
 
   // A Work that left the canvas (hidden, downplayed, filtered) takes its panel with it.
   const panelWorkGone = workPanelOpen && graph !== null && selectedId !== null
@@ -674,6 +752,24 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                         <circle className="literature-halo" r={isActive ? 15 : 12} />
                         {mark?.mark === "pinned" && <circle className="literature-pin-ring" r={radius + 3} />}
                         <circle className="literature-dot" r={radius} />
+                        {!isCenter && tagIds.length > 0 && (
+                          <g className="literature-ticks" data-tick-count={tagIds.length}>
+                            {tagIds.slice(0, MAX_NODE_TICKS).map((tagId, tickIndex, shown) => (
+                              <circle
+                                key={tagId}
+                                className="literature-tick"
+                                data-tag-id={tagId}
+                                r={2.6}
+                                cx={(tickIndex - (shown.length - 1) / 2) * 6.5}
+                                cy={-(radius + 5)}
+                                fill={tagsById.get(tagId)?.color ?? FALLBACK_TAG_COLOR}
+                              />
+                            ))}
+                            {tagIds.length > MAX_NODE_TICKS && (
+                              <text className="literature-tick-more" x={(MAX_NODE_TICKS / 2) * 6.5 + 1} y={-(radius + 2.5)}>+{tagIds.length - MAX_NODE_TICKS}</text>
+                            )}
+                          </g>
+                        )}
                         <text className="literature-label" x={labelX} y={labelY} textAnchor={anchor}>
                           {workLabel(work, isActive || isCenter ? FULL_LABEL_LIMIT : LABEL_LIMIT)}
                         </text>
@@ -681,12 +777,16 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                     );
                   })}
                 </svg>
-                <LiteratureStatusLine
+                <LiteratureLegend
                   graph={graph.neighbors}
                   placementCount={placements.length - 1}
                   expanded={expanded}
                   clusterLabels={clusterLabels.current}
                   onToggleExpansion={toggleExpansion}
+                  tags={tags}
+                  tagFilter={tagFilter}
+                  onToggleTag={toggleTagFilter}
+                  onClearTagFilter={clearTagFilter}
                   error={neighborsError}
                 />
               </section>
@@ -699,6 +799,11 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                   prominence={graph.neighbors.prominence?.[activeWork.id]}
                   markError={markError}
                   onSetMark={(next, note) => applyMark(activeWork.id, next, note)}
+                  tags={tags}
+                  assignedTagIds={graph.neighbors.work_tags?.[activeWork.id] ?? []}
+                  tagError={tagError}
+                  onAssignTag={(name, color) => assignTagByName(activeWork.id, name, color)}
+                  onUnassignTag={(tag) => unassignTag(activeWork.id, tag)}
                   state={citations}
                   edges={panelEdges}
                   editingId={editingId}
@@ -721,43 +826,6 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
         </div>
       </div>
     </div>
-  );
-}
-
-function LiteratureStatusLine({ graph, placementCount, expanded, clusterLabels, onToggleExpansion, error }: {
-  graph: GraphNeighbors;
-  placementCount: number;
-  expanded: ReadonlySet<string>;
-  clusterLabels: ReadonlyMap<string, string>;
-  onToggleExpansion: (key: string) => void;
-  error: string | null;
-}) {
-  const ranking = graph.ranking;
-  const visible = ranking?.visible ?? graph.nodes.filter((node) => node.id !== graph.center).length;
-  const total = ranking?.total ?? visible;
-  const hiddenCount = ranking?.hidden ?? 0;
-  const hiddenExpanded = expanded.has("hidden");
-  const expandedKeys = [...expanded].filter((key) => key !== "hidden" || hiddenExpanded);
-  return (
-    <p className="literature-legend">
-      <span><i className="literature-key is-local" /> held locally</span>
-      <span><i className="literature-key" /> cited work</span>
-      <span><i className="literature-line is-labeled" /> reason known</span>
-      <span><i className="literature-line is-local-only" /> found in this paper only</span>
-      <span className="literature-ranking" data-placement-count={placementCount}>
-        Showing {visible} of {total} · {ranking?.pinned ?? 0} pinned · {hiddenCount} hidden
-      </span>
-      {hiddenCount > 0 && !hiddenExpanded && (
-        <button type="button" className="literature-chip" onClick={() => onToggleExpansion("hidden")}>Hidden ({hiddenCount}) — show</button>
-      )}
-      {expandedKeys.map((key) => (
-        <button key={key} type="button" className="literature-chip is-expanded" aria-label={`Collapse ${clusterLabels.get(key) ?? key}`} onClick={() => onToggleExpansion(key)}>
-          {clusterLabels.get(key) ?? key} ×
-        </button>
-      ))}
-      <span><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>↵</kbd> open or expand · <kbd>+</kbd>/<kbd>-</kbd> more/fewer · <kbd>c</kbd> collapse · <kbd>Esc</kbd> close</span>
-      {error !== null && <span className="literature-legend-error" role="alert">{error}</span>}
-    </p>
   );
 }
 
@@ -786,6 +854,11 @@ type WorkPanelProps = {
   prominence: ProminenceView | undefined;
   markError: string | null;
   onSetMark: (mark: WorkMarkName | null, note: string | null) => void;
+  tags: readonly TagView[];
+  assignedTagIds: readonly string[];
+  tagError: string | null;
+  onAssignTag: (name: string, color: string) => void;
+  onUnassignTag: (tag: TagView) => void;
   state: CitationsState;
   edges: PanelEdge[];
   editingId: string | null;
@@ -937,6 +1010,11 @@ function WorkPanel(props: WorkPanelProps) {
           prominence={props.prominence}
           error={props.markError}
           onSetMark={props.onSetMark}
+          tags={props.tags}
+          assignedTagIds={props.assignedTagIds}
+          tagError={props.tagError}
+          onAssignTag={props.onAssignTag}
+          onUnassignTag={props.onUnassignTag}
         />
       )}
       {edges.map((edge) => <EdgeReasons key={edge.heading} edge={edge} props={props} />)}

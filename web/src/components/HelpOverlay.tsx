@@ -27,6 +27,8 @@ const GROUPS = [
       ["c (graph)", "Collapse every expanded cluster"],
       ["+ / - (graph)", "Show 20 more / fewer ranked works (10 to 200)"],
       ["p / d / h (graph, Work open)", "Pin / downplay / hide the work; press again to clear"],
+      ["t (graph, Work open)", "Focus the tag input; Enter assigns or creates a tag; Esc leaves it"],
+      ["1-9 / 0 (graph)", "Filter the graph by the nth tag in the legend / clear tag filters"],
       ["a / x / e (graph, Work open)", "Accept / reject / edit the reason a work is cited"],
       ["g (graph, Work open)", "Show the citing sentence in the paper"],
       ["f (graph, Work open)", "Fetch an open-access copy of the selected work"],

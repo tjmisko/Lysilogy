@@ -541,6 +541,16 @@ export type MarkView = {
   updated_at?: string;
 };
 
+export type TagView = {
+  id: string;
+  name: string;
+  color: string;
+  kind: string;
+  work_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type NeighborClusterKind = "tag" | "decade" | "downplayed" | "hidden";
 
 export type NeighborCluster = {
