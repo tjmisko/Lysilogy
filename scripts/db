@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# Dev Postgres control for Lysilogy.
+#
+# Runs a self-contained userspace cluster using the system PostgreSQL binaries on
+# port 5433, so it never collides with a system service on 5432 and needs no root.
+set -euo pipefail
+
+PGDATA="${LYSILOGY_PGDATA:-$HOME/.local/share/lysilogy/pgdata}"
+PGSOCKET="${LYSILOGY_PGSOCKET:-$HOME/.local/share/lysilogy/run}"
+PGLOG="${LYSILOGY_PGLOG:-$HOME/.local/share/lysilogy/pg.log}"
+PGPORT="${LYSILOGY_PGPORT:-5433}"
+
+export PGHOST="$PGSOCKET"
+export PGPORT
+
+usage() {
+  cat <<'EOF'
+usage: scripts/db <command> [args]
+
+  start              start the cluster and wait until it accepts connections
+  stop               stop the cluster
+  restart            stop then start
+  status             report whether the cluster is accepting connections
+  psql [args...]     open psql against the dev database (default: lysilogy)
+  test-psql [args]   open psql against lysilogy_test
+  createdb <name>    create a database
+  dropdb <name>      drop a database
+  list               list databases
+  env                print the exported connection environment
+  init               initialize the cluster if it does not exist yet
+EOF
+}
+
+init_cluster() {
+  if [ -d "$PGDATA" ]; then
+    echo "cluster already initialized at $PGDATA"
+    return 0
+  fi
+  mkdir -p "$PGSOCKET"
+  initdb -D "$PGDATA" -U "$USER" --auth=trust --encoding=UTF8 --locale=C
+  cat >> "$PGDATA/postgresql.conf" <<EOF
+
+# --- lysilogy dev overrides ---
+port = $PGPORT
+listen_addresses = '127.0.0.1'
+unix_socket_directories = '$PGSOCKET'
+EOF
+  echo "cluster initialized at $PGDATA (port $PGPORT)"
+}
+
+case "${1:-}" in
+  init)
+    init_cluster
+    ;;
+  start)
+    mkdir -p "$PGSOCKET"
+    pg_ctl -D "$PGDATA" -l "$PGLOG" -w start
+    pg_isready
+    ;;
+  stop)
+    pg_ctl -D "$PGDATA" -m fast -w stop
+    ;;
+  restart)
+    "$0" stop
+    "$0" start
+    ;;
+  status)
+    pg_isready
+    ;;
+  psql)
+    shift
+    psql -d lysilogy "$@"
+    ;;
+  test-psql)
+    shift
+    psql -d lysilogy_test "$@"
+    ;;
+  createdb)
+    shift
+    createdb "$1"
+    ;;
+  dropdb)
+    shift
+    dropdb "$1"
+    ;;
+  list)
+    psql -d postgres -tAc "select datname from pg_database order by 1;"
+    ;;
+  env)
+    echo "export PGHOST=$PGSOCKET"
+    echo "export PGPORT=$PGPORT"
+    echo "export LYSILOGY_DATABASE_URL=postgresql://$USER@/lysilogy?host=$PGSOCKET&port=$PGPORT"
+    echo "export LYSILOGY_TEST_DATABASE_URL=postgresql://$USER@/lysilogy_test?host=$PGSOCKET&port=$PGPORT"
+    ;;
+  *)
+    usage
+    exit 2
+    ;;
+esac
