@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { acquisitionStatusText, canFetch, isRetry, type AcquisitionLike } from "../lib/acquisition";
 import { ApiError, api } from "../lib/api";
+import {
+  HISTOGRAM_LIMIT, HISTOGRAM_NAV_KEYS, LITERATURE_VIEW_STORAGE_KEY, parseLiteratureView, type LiteratureView,
+} from "../lib/histogramLayout";
 import { LITERATURE_QUIT_EVENT } from "../lib/literatureEvents";
 import {
   layoutRankedFanout, layoutWalk, planVisibleLabels, walkViewBox,
@@ -21,6 +24,7 @@ import {
 import { useRamps } from "../lib/useRamps";
 import { LiteratureRamp } from "./LiteratureRamp";
 import { LiteratureCuration, TAG_INPUT_CLASS } from "./LiteratureCuration";
+import { LiteratureHistogram } from "./LiteratureHistogram";
 import { LiteratureLegend, TAG_KEY_LIMIT } from "./LiteratureLegend";
 import "./LiteratureGraph.css";
 
@@ -144,6 +148,14 @@ function canShowInPaper(label: EdgeLabel): boolean {
     && mention.passage_start !== null && mention.passage_end !== null;
 }
 
+function storedLiteratureView(): LiteratureView {
+  try {
+    return parseLiteratureView(window.localStorage.getItem(LITERATURE_VIEW_STORAGE_KEY));
+  } catch {
+    return "radial";
+  }
+}
+
 function isUnavailable(reason: unknown): boolean {
   return reason instanceof ApiError && reason.status === 503;
 }
@@ -178,6 +190,9 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   const [walkNotice, setWalkNotice] = useState<string | null>(null);
   const [rampOpen, setRampOpen] = useState(false);
   const [viewOverrides, setViewOverrides] = useState<ReadonlyMap<string, ExpansionView>>(() => new Map());
+  const [graphView, setGraphView] = useState<LiteratureView>(storedLiteratureView);
+  const [histogramData, setHistogramData] = useState<GraphNeighbors | null>(null);
+  const [histogramError, setHistogramError] = useState<string | null>(null);
   const expandingRef = useRef<ReadonlyMap<string, ExpandingEntry>>(new Map());
   const walkAbort = useRef<AbortController | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -244,6 +259,23 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     return () => controller.abort();
   }, [centerWork, expanded, neighborsToken, tagFilter, topN]);
 
+  // The year view fetches every reference (up to the server cap) with the same expansions and filters.
+  // The previous payload stays on screen while a refetch runs.
+  useEffect(() => {
+    if (centerWork === null || graphView !== "histogram") return;
+    const controller = new AbortController();
+    api.graphNeighbors(centerWork.id, "references", { limit: HISTOGRAM_LIMIT, expand: expanded, tags: tagFilter }, controller.signal)
+      .then((neighbors) => {
+        for (const cluster of neighbors.clusters ?? []) clusterLabels.current.set(cluster.key, cluster.label);
+        setHistogramError(null);
+        setHistogramData(neighbors);
+      })
+      .catch((reason: unknown) => {
+        if (!controller.signal.aborted) setHistogramError(failureMessage(reason));
+      });
+    return () => controller.abort();
+  }, [centerWork, expanded, neighborsToken, tagFilter, graphView]);
+
   // Poll the lit job once a second while it runs. The interval dies with the overlay.
   const running = phase.kind === "running";
   useEffect(() => {
@@ -309,7 +341,8 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   const viewBox = useMemo(() => walkViewBox(CANVAS, walkLayout.bounds), [walkLayout]);
   // Child payloads join the base graph's lookups; the base graph wins on a clash.
   const merged = useMemo(() => {
-    const payloads = [...walkData.values(), ...(graph === null ? [] : [graph.neighbors])];
+    const histogramPayloads = graphView === "histogram" && histogramData !== null ? [histogramData] : [];
+    const payloads = [...walkData.values(), ...histogramPayloads, ...(graph === null ? [] : [graph.neighbors])];
     const works = new Map<string, Work>();
     const localPapers: GraphNeighbors["local_papers"] = {};
     const acquisitions: GraphNeighbors["acquisitions"] = {};
@@ -329,8 +362,12 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     }
     if (graph !== null) works.set(graph.work.id, graph.work);
     return { works, localPapers, acquisitions, prominence, marks, workTags, expansions };
-  }, [graph, viewOverrides, walkData]);
+  }, [graph, graphView, histogramData, viewOverrides, walkData]);
   const worksById = merged.works;
+  const histogramCardCount = useMemo(
+    () => new Set((histogramData?.nodes ?? []).map((node) => node.id).filter((id) => id !== histogramData?.center)).size,
+    [histogramData],
+  );
   const edgeByCited = useMemo(() => {
     const map = new Map<string, GraphEdge>();
     if (graph === null) return map;
@@ -342,8 +379,12 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   const selectedIndex = selectedId === null ? 0 : allPlacements.findIndex((placement) => placement.id === selectedId);
   const activeIndex = Math.max(0, selectedIndex);
   const activePlacement = allPlacements[activeIndex];
-  const activeWork = activePlacement?.kind === "cluster" || activePlacement === undefined
+  const radialActiveWork = activePlacement?.kind === "cluster" || activePlacement === undefined
     ? undefined : worksById.get(activePlacement.id);
+  const histogramFocusId = selectedId === null || selectedId === graph?.work.id ? null : selectedId;
+  const activeWork = graphView === "histogram"
+    ? (histogramFocusId === null ? undefined : worksById.get(histogramFocusId))
+    : radialActiveWork;
   const activeWorkId = workPanelOpen ? activeWork?.id : undefined;
 
   // Fetch the selected Work's citation neighborhood while its panel is open.
@@ -738,6 +779,16 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   // A notice belongs to the selection it was raised on.
   useEffect(() => setWalkNotice(null), [selectedId]);
 
+  const openWorkPanel = useCallback((workId: string): void => {
+    setEditingId(null);
+    setLabelError(null);
+    setMarkError(null);
+    setTagError(null);
+    setSelectedId(workId);
+    setCitations({ kind: "loading" });
+    setWorkPanelOpen(true);
+  }, []);
+
   // Enter, click and Space: open a Work's panel, or expand a cluster.
   const activateIndex = useCallback((index: number): void => {
     const placement = allPlacements[index];
@@ -747,14 +798,33 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
       if (cluster !== undefined) expandCluster(cluster);
       return;
     }
+    openWorkPanel(placement.id);
+  }, [allPlacements, clustersByKey, expandCluster, openWorkPanel]);
+
+  // The year view: moving the cursor retargets an open panel; activating opens it.
+  const focusHistogramWork = useCallback((workId: string): void => {
+    if (workId === selectedId) return;
+    setSelectedId(workId);
+    if (!workPanelOpen) return;
     setEditingId(null);
     setLabelError(null);
     setMarkError(null);
     setTagError(null);
-    setSelectedId(placement.id);
     setCitations({ kind: "loading" });
-    setWorkPanelOpen(true);
-  }, [allPlacements, clustersByKey, expandCluster]);
+  }, [selectedId, workPanelOpen]);
+  const activateHistogramWork = openWorkPanel;
+
+  const toggleGraphView = useCallback((): void => {
+    const next: LiteratureView = graphView === "radial" ? "histogram" : "radial";
+    setGraphView(next);
+    try {
+      window.localStorage.setItem(LITERATURE_VIEW_STORAGE_KEY, next);
+    } catch {
+      // The choice simply does not persist.
+    }
+    setWalkNotice(null);
+    if (next === "histogram") setRampOpen(false);
+  }, [graphView]);
 
   // Esc and q reach the App close chain first. It asks us to close the Work panel
   // before it closes the overlay, and cancels the event when we did.
@@ -784,6 +854,13 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
         return;
       }
       if (phase.kind !== "graph") return;
+      if (event.key === "v") {
+        event.preventDefault();
+        toggleGraphView();
+        return;
+      }
+      // The year view's own keys arrive with its listener; radial cycling must not run against its grid.
+      if (graphView === "histogram" && HISTOGRAM_NAV_KEYS.has(event.key)) return;
       if (event.key === "w") {
         if (editingId !== null || activeWork === undefined) return;
         event.preventDefault();
@@ -864,10 +941,10 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [actionableLabel, activateIndex, addToRamp, activeIndex, activeWork, applyMark, centerId, editingId, fetchable, markFor, phase.kind, allPlacements, reviewLabel, runLiterature, showInPaper, startFetch, tags, toggleTagFilter, toggleWalk, workPanelOpen]);
+  }, [actionableLabel, activateIndex, addToRamp, activeIndex, activeWork, applyMark, centerId, editingId, fetchable, graphView, markFor, phase.kind, allPlacements, reviewLabel, runLiterature, showInPaper, startFetch, tags, toggleGraphView, toggleTagFilter, toggleWalk, workPanelOpen]);
 
   // A Work that left the canvas (hidden, downplayed, filtered) takes its panel with it.
-  const panelWorkGone = workPanelOpen && graph !== null && selectedId !== null
+  const panelWorkGone = graphView === "radial" && workPanelOpen && graph !== null && selectedId !== null
     && !allPlacements.some((placement) => placement.id === selectedId);
   useEffect(() => {
     if (panelWorkGone) setWorkPanelOpen(false);
@@ -889,6 +966,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
         data-work-open={workPanelOpen ? "true" : "false"}
         data-ramp-open={rampOpen ? "true" : "false"}
         data-phase={phase.kind}
+        data-view={graphView}
       >
         <header>
           <div>
@@ -924,6 +1002,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
           {graph !== null && (
             <>
               <section className="literature-canvas" aria-label="Works cited by this paper">
+                {graphView === "radial" && (
                 <svg viewBox={viewBox} role="list" preserveAspectRatio="xMidYMid meet">
                   {placements.slice(1).map((placement) => {
                     const center = placements[0];
@@ -1054,10 +1133,28 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                     );
                   })}
                 </svg>
+                )}
+                {graphView === "histogram" && (
+                  <LiteratureHistogram
+                    centerWork={graph.work}
+                    neighbors={histogramData}
+                    error={histogramError}
+                    focusedWorkId={selectedId}
+                    markFor={markFor}
+                    prominence={merged.prominence}
+                    localPapers={merged.localPapers}
+                    acquisitions={merged.acquisitions}
+                    expandedClusters={expanded}
+                    onToggleCluster={toggleExpansion}
+                    onFocusWork={focusHistogramWork}
+                    onActivateWork={activateHistogramWork}
+                  />
+                )}
                 {walkNotice !== null && <p className="literature-walk-notice" role="status" data-walk-notice="true">{walkNotice}</p>}
                 <LiteratureLegend
-                  graph={graph.neighbors}
-                  placementCount={placements.length - 1}
+                  graph={graphView === "histogram" ? histogramData ?? graph.neighbors : graph.neighbors}
+                  placementCount={graphView === "histogram" ? histogramCardCount : placements.length - 1}
+                  view={graphView}
                   expanded={expanded}
                   clusterLabels={clusterLabels.current}
                   onToggleExpansion={toggleExpansion}
