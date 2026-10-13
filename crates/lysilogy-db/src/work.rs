@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{DbError, Result};
 
-const WORK_COLUMNS: &str = "w.id, w.kind, w.visibility, w.display_title, w.title_state, \
+pub(crate) const WORK_COLUMNS: &str = "w.id, w.kind, w.visibility, w.display_title, w.title_state, \
                             w.display_year, w.year_state, w.created_at, w.updated_at";
 
 /// Reads and writes Works and their supporting claims.
@@ -210,7 +210,7 @@ where
     Ok(value.parse()?)
 }
 
-fn work_from_row(row: &PgRow) -> Result<Work> {
+pub(crate) fn work_from_row(row: &PgRow) -> Result<Work> {
     Ok(Work {
         id: WorkId::from_uuid(row.try_get("id")?),
         kind: parse_state(&row.try_get::<String, _>("kind")?)?,
