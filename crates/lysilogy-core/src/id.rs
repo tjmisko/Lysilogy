@@ -8,7 +8,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use uuid::Uuid;
 
 /// base64url alphabet (RFC 4648 §5) without padding.
@@ -218,6 +218,11 @@ id_type!(
     /// Identifies an in-text citation occurrence.
     MentionId,
     'm'
+);
+id_type!(
+    /// Identifies a relationship claim (a label on a citation edge).
+    RelationshipClaimId,
+    'r'
 );
 
 #[cfg(test)]

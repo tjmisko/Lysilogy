@@ -983,3 +983,20 @@ against mocks and against the live server, and the live smoke is recorded in thi
 - `source_text_from_index` is `pub` inside the private `evidence` module, since the strict
   `redundant_pub_crate` lint rejects `pub(crate)` there. It carries `allow(dead_code)` until U4.
 - `source_index::test_support` gained `reading_index_fixture` and `reading_index_fixture_empty`.
+
+## U3 implementation notes
+
+- `insert_entries` re-selects IDs by `(version, entry_key)` ordered by ordinal rather than by
+  ordinal alone, so a pre-existing row with a different `source_record_id` is still returned.
+- `merge_work` goes slightly beyond decision 8: it also refuses when `into` already
+  redirects, moves `graph.work_version` rows with the field claims, repoints older
+  `work_redirect` rows from `from` to `into` (keeps chains short), and folds an assertion that
+  would collide on `citation_assertion_source_key` / `_entry_key` into the surviving one
+  (mentions and relationship claims move, then the duplicate is deleted).
+- `is_auto_mergeable_stub` is literal: a Work with no accepted resolution at all (a provider
+  stub) is vacuously mergeable. U4 only calls it for Works reached through a `local_stub`
+  resolution.
+- `edge_sources` omits pairs that have no live (`asserted`/`accepted`) assertion.
+- Mention SHA-256 is computed in Postgres (`sha256(convert_to(...))`), so no hashing crate
+  was added to `lysilogy-db`.
+- `backfill_title_keys` paginates by id so titles whose key is empty (stay NULL) cannot loop.

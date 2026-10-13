@@ -16,7 +16,7 @@ pub use document::{Document, DocumentVersion, ScannedFile};
 pub use entry::BibliographyEntry;
 pub use id::{
     AssertionId, BlobId, DocumentId, DocumentVersionId, EntryId, IdError, IdentifierId, MentionId,
-    SourceRecordId, WorkId, WorkVersionId, WorkspaceId,
+    RelationshipClaimId, SourceRecordId, WorkId, WorkVersionId, WorkspaceId,
 };
 pub use identifier::{DetectedIdentifier, extract as extract_identifiers, front_matter};
 pub use names::first_author_family;
