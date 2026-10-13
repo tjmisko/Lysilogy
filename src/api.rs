@@ -10,6 +10,7 @@ use std::{
 
 mod acquisition;
 mod citation_graph;
+mod curation;
 mod labels;
 mod literature;
 mod notes;
@@ -127,6 +128,8 @@ struct CitationsResponse {
     edges: Vec<labels::GraphEdge>,
     local_papers: literature::LocalPapers,
     acquisitions: AcquisitionStates,
+    marks: curation::Marks,
+    work_tags: curation::WorkTagIds,
 }
 
 #[derive(Debug, Serialize)]
@@ -1875,6 +1878,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(citation_graph::routes())
         .merge(literature::routes())
         .merge(acquisition::routes())
+        .merge(curation::routes())
         .merge(labels::routes())
         .merge(source_index::routes())
         .merge(notes::routes())
@@ -2007,6 +2011,10 @@ async fn get_work_citations(
         Ok(acquisitions) => acquisitions,
         Err(response) => return *response,
     };
+    let (marks, work_tags) = match curation::curation_for(&state, &work_ids).await {
+        Ok(curation) => curation,
+        Err(response) => return *response,
+    };
     (
         StatusCode::OK,
         Json(CitationsResponse {
@@ -2016,6 +2024,8 @@ async fn get_work_citations(
             edges,
             local_papers,
             acquisitions,
+            marks,
+            work_tags,
         }),
     )
         .into_response()
