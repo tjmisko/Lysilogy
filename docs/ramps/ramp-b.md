@@ -1121,3 +1121,74 @@ Label runs:
   pretraining `uses_method`.
 - Observation (U4, not U5): one cited stub's display title is the bibliography tail
   `arXiv preprint arXiv:1907.06347, 2019`, so its brief relies on the raw entry text.
+
+## Result
+
+### U6 implementation notes
+
+- `edge_payloads(state, pairs)` builds `GraphEdge` from `edge_sources` and `current_claims_for_edges`, and serves both
+  `/api/graph/neighbors/{id}` and the additive `edges` of `/api/works/{id}/citations`. `mention.paper_id` is set only
+  when the document's `relative_path` maps to a catalog paper; no path is exposed.
+- Label routes live in `src/api/labels.rs`: `POST /api/relationship-claims/{id}/accept|reject`, and
+  `PUT /api/relationship-claims/{id}` (edit validates with `ground_quote` against the claim's mention passage, then the
+  relation and reason checks, 422 with the code). Errors: 400 `invalid_claim_id`, 404, 409 `claim_superseded`, 503
+  `graph_unavailable`.
+- `POST /api/papers/{id}/lit` takes an optional JSON body. An empty body keeps the Ramp A behavior; `Succeeded` carries
+  `local`. `fetch_work` follows `resolve_redirect`.
+- Web: `locatePassage` in `web/src/lib/passageFocus.ts` (8 node tests) feeds a new `focus` option in
+  `usePdfSourceTools`. It lands the passage as the single search match, so it renders as the existing `current` mark.
+  Keys in the Work panel: `g` Show in paper, `a` Accept, `x` Reject, `e` Edit (Enter saves, Esc cancels one layer).
+- Plan deviation: none of substance. The review-state buttons reflect the server response, not an optimistic guess.
+
+### Verification
+
+- Rust: `LYSILOGY_TEST_DATABASE_URL=postgresql://$USER@127.0.0.1:5433/lysilogy_test cargo test --workspace` passes
+  (220 + 6 + 1 + 1 root, 41 core, 39 db, 128 ingest = 436; DB tests ran) and
+  `cargo clippy --workspace --all-targets -- -D warnings` is clean.
+- Web: `typecheck`, `lint`, `build` clean. `test:passage-focus` 8 pass, `test:literature-layout` 11 pass,
+  `smoke:paragraph-selection` passes (Cursor-mode `L` still cycles line numbers).
+- Scratch Playwright `~/.cache/lysilogy-smoke/labels-smoke.mjs mock` (not committed) passes: labeled edges solid,
+  reason and quote in the panel, `a` accepts, `x` moves the label under "Rejected", `e` + Enter PUTs and shows "Edited",
+  Esc closes edit, then panel, then overlay, and Show in paper (exact and drifted offsets) lands a
+  `.pdf-source-mark.is-current`.
+
+### Live smoke (2026-10-13, dev DB, `serve` on 127.0.0.1:7393)
+
+- Ziegler Work `wdbODRzEbQjOIemEvDy74tg`: neighbors return 39 edges with labels, each `sources: ["provider","local"]`
+  where applicable, with `mention_count` and `labels[].mention.paper_id` (the catalog id of the citing paper).
+- `POST .../rzvk2SoGmSr2QOAEB7SdM9A/accept` returned `accepted`; `/reject` then returned 200, and a re-GET of the
+  neighbors showed `rejected` (persisted). A malformed id returns 400 `invalid_claim_id`. Another claim was already
+  accepted and one rejected from an earlier pass.
+- `labels-smoke.mjs live`: Show in paper on a `background` label opened the citing paper at p. 12 with 6 current mark
+  rects inside the passage offsets. Screenshot: `~/.cache/lysilogy-smoke/shots/labels-live-highlight.png`.
+
+## Report
+
+### What shipped
+
+Ramp B adds local evidence to the graph and says why papers cite each other. `lysilogy lit <paper> --local` extracts
+the PDF bibliography and in-text mentions, resolves entries to Works (identifier, exact title, or stub, with merges),
+and records local citation edges. `--labels` asks claude or codex for a relation, reason and verbatim quote for each
+edge; quotes are grounded against the passage and cached. The API and the `L` overlay now show those labels, let you
+accept, reject or edit them (edits supersede, never destroy), and jump to the citing sentence in the PDF.
+
+### How to user-test
+
+- CLI: `lysilogy lit "Fine-Tuning Language Models from Human Preferences" --labels --sidecar claude --label-limit 15`.
+  A rerun makes 0 model calls.
+- Server: `lysilogy ... serve --bind 127.0.0.1:7393 --web web/dist`, open the paper, press `L`, click a dot, then use
+  `g`, `a`, `x`, `e` on the "Why it is cited" card. Esc closes the edit, then the panel, then the overlay.
+- API: `GET /api/graph/neighbors/<work id>`, `POST /api/relationship-claims/<id>/accept`.
+
+### Known gaps
+
+- Provider-only edges have no passage, so they are never labeled. Labels exist only for papers whose local evidence has
+  been run.
+- Many mentions stay unresolved (35 of 93 and 51 of 163 on the two smoke papers); they are kept as evidence but have no
+  edge or label.
+- The edit form validates the quote only on the server, so a bad quote shows the 422 message after Enter.
+- Codex failed 2 of 8 calls with an undiagnosed `status 1` (not cached, retried on rerun).
+- `ApiError` has only a status, so the UI treats any 503 from these endpoints as `graph_unavailable`.
+- `npm run smoke` remains broken locally (missing fixture); verification uses the scratch Playwright scripts.
+- A stub whose display title is a bibliography tail (`arXiv preprint arXiv:1907.06347, 2019`) shows a poor title.
+- Carried over from Ramp A: concurrent `lit` runs that resolve to the same new Work can race on identifier insertion.
