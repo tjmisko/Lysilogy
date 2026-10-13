@@ -9,6 +9,7 @@
 
 mod entries;
 mod fields;
+mod mentions;
 mod source;
 
 use lysilogy_core::CitationStyle;
@@ -135,17 +136,21 @@ pub struct Bibliography {
     pub unresolved: Vec<UnresolvedMention>,
 }
 
-/// Extract bibliography evidence from reading text; no I/O, no environment.
-///
-/// Mention detection is not part of this stage, so `mentions` and
-/// `unresolved` are empty.
+/// Extract bibliography evidence and in-text mentions from reading text; no
+/// I/O, no environment. Without entries there is nothing to cite, so no
+/// mentions are reported.
 #[must_use]
 pub fn extract(text: &SourceText) -> Bibliography {
     let source = source::Source::new(text);
+    let (entries, region) = entries::extract_entries(&source);
+    if entries.is_empty() {
+        return Bibliography::default();
+    }
+    let (mentions, unresolved) = mentions::resolve_mentions(&source, region, &entries);
     Bibliography {
-        entries: entries::extract_entries(&source),
-        mentions: vec![],
-        unresolved: vec![],
+        entries,
+        mentions,
+        unresolved,
     }
 }
 
@@ -218,6 +223,35 @@ pub(crate) mod tests {
             .collect()
     }
 
+    /// Every entry has exactly one resolved mention.
+    fn assert_each_entry_cited_once(result: &Bibliography) {
+        for entry in &result.entries {
+            let count = result
+                .mentions
+                .iter()
+                .filter(|mention| mention.entry_ordinal == entry.ordinal)
+                .count();
+            assert_eq!(count, 1, "entry {}", entry.ordinal);
+        }
+    }
+
+    fn mentions_of(result: &Bibliography, ordinal: usize) -> Vec<&ExtractedMention> {
+        result
+            .mentions
+            .iter()
+            .filter(|mention| mention.entry_ordinal == ordinal)
+            .collect()
+    }
+
+    fn rect_after(before: PageRect) -> PageRect {
+        PageRect {
+            x_min: before.x_max + 1.0,
+            x_max: before.x_max + 5.0,
+            y_min: before.y_min - 3.0,
+            y_max: before.y_max - 5.0,
+        }
+    }
+
     #[test]
     fn should_split_numbered_entries_when_keys_are_bracketed() {
         let index = fixture(&[
@@ -241,8 +275,16 @@ pub(crate) mod tests {
             assert_eq!(entry.fields.printed_key.value, Some((at + 1).to_string()));
             assert_eq!(entry.ordinal, at);
         }
-        assert!(result.mentions.is_empty());
+        assert_each_entry_cited_once(&result);
+        assert!(result.mentions.iter().all(|mention| mention.page == 1));
+        assert!(
+            result
+                .mentions
+                .iter()
+                .all(|mention| !mention.rects.is_empty())
+        );
         assert!(result.unresolved.is_empty());
+        assert_eq!(slice(&index, mentions_of(&result, 1)[0].marker), "(2)");
     }
 
     #[test]
@@ -258,6 +300,7 @@ pub(crate) mod tests {
         ]);
         let result = extract(&index);
         assert_eq!(result.entries.len(), 3);
+        assert_each_entry_cited_once(&result);
         assert_eq!(
             result.entries[2].fields.printed_key.value.as_deref(),
             Some("AB20")
@@ -284,6 +327,7 @@ pub(crate) mod tests {
         ]);
         let result = extract(&index);
         assert_eq!(result.entries.len(), 5);
+        assert_each_entry_cited_once(&result);
         assert_eq!(
             result.entries[0].fields.title.value.as_deref(),
             Some("First study")
@@ -460,6 +504,7 @@ pub(crate) mod tests {
         ]);
         let result = extract(&index);
         assert_eq!(result.entries.len(), 2);
+        assert_each_entry_cited_once(&result);
         let first = &result.entries[0];
         assert_eq!(member_pages(&index, first), [2, 3]);
         assert_eq!(first.fields.title.value.as_deref(), Some("A long title"));
@@ -485,6 +530,9 @@ pub(crate) mod tests {
         ]);
         let result = extract(&index);
         assert_eq!(result.entries.len(), 2);
+        assert_each_entry_cited_once(&result);
+        assert_eq!(slice(&index, result.mentions[0].marker), "Smith (2020)");
+        assert_eq!(slice(&index, result.mentions[1].marker), "Jones (2021)");
         let first = &result.entries[0];
         let second = &result.entries[1];
         assert_eq!(first.fields.title.value.as_deref(), Some("A long title"));
@@ -506,6 +554,7 @@ pub(crate) mod tests {
         ]);
         let result = extract(&index);
         assert_eq!(result.entries.len(), 2);
+        assert_each_entry_cited_once(&result);
         let first = &result.entries[0];
         assert_eq!(first.member_spans.len(), 3);
         assert_eq!(
@@ -552,6 +601,8 @@ pub(crate) mod tests {
         }
         let result = extract(&index);
         assert_eq!(result.entries.len(), 2);
+        assert_each_entry_cited_once(&result);
+        assert!(result.unresolved.is_empty());
         assert_eq!(
             result.entries[0].fields.printed_key.value.as_deref(),
             Some("1")
@@ -596,6 +647,7 @@ pub(crate) mod tests {
             }
             let result = extract(&index);
             assert_eq!(result.entries.len(), 1, "variant {variant}");
+            assert_each_entry_cited_once(&result);
             assert_eq!(
                 result.entries[0].fields.printed_key.value.as_deref(),
                 Some("1")
@@ -636,6 +688,7 @@ pub(crate) mod tests {
         index.pages.push(third);
         let result = extract(&index);
         assert_eq!(result.entries.len(), 2);
+        assert_each_entry_cited_once(&result);
         assert_eq!(result.entries[1].page, 3);
         assert_eq!(result.entries[1].span.start, boundary);
         assert!(result.entries[1].region.is_none());
@@ -652,6 +705,7 @@ pub(crate) mod tests {
         ]);
         let result = extract(&index);
         assert_eq!(result.entries.len(), 2);
+        assert_each_entry_cited_once(&result);
         assert_eq!(
             result.entries[0].fields.title.value.as_deref(),
             Some("A complete title")
@@ -675,6 +729,7 @@ pub(crate) mod tests {
         ]);
         let result = extract(&index);
         assert_eq!(result.entries.len(), 3);
+        assert_each_entry_cited_once(&result);
         assert_eq!(
             result.entries[1].fields.printed_key.value.as_deref(),
             Some("1800")
@@ -724,6 +779,7 @@ pub(crate) mod tests {
         ]);
         let result = extract(&index);
         assert_eq!(result.entries.len(), 2);
+        assert_each_entry_cited_once(&result);
         assert_eq!(result.entries[0].member_spans.len(), 2);
         assert!(result.entries[0].raw_text.contains("Journal of Results"));
         assert_eq!(result.entries[1].fields.printed_key.value, None);
@@ -753,6 +809,7 @@ pub(crate) mod tests {
             }
             let result = extract(&fixture(&blocks));
             assert_eq!(result.entries.len(), 2, "grouped {grouped}");
+            assert_each_entry_cited_once(&result);
             assert_eq!(
                 result.entries[0].fields.printed_key.value.as_deref(),
                 Some("2020")
@@ -803,6 +860,7 @@ pub(crate) mod tests {
             ]);
             let result = extract(&index);
             assert_eq!(result.entries.len(), 1);
+            assert_each_entry_cited_once(&result);
             assert_eq!(result.entries[0].raw_text, raw);
             assert_eq!(
                 result.entries[0].fields.doi.value.as_deref(),
@@ -929,5 +987,448 @@ pub(crate) mod tests {
         let second_block_y = index.tokens.last().unwrap().rects[0].y_min;
         assert!(region.y_min <= first_block.rects[0].y_min);
         assert!(region.y_max < second_block_y);
+    }
+
+    #[test]
+    fn should_leave_a_marker_unresolved_when_two_entries_match() {
+        let index = fixture(&[
+            ("Smith (2020) and [3] are ambiguous.", "body", 1),
+            ("References", "heading", 2),
+            ("[3] Smith, A. (2020). First study.", "body", 2),
+            ("[3] Smith, B. (2020). Different study.", "body", 2),
+        ]);
+        let result = extract(&index);
+        assert!(result.mentions.is_empty());
+        assert_eq!(result.unresolved.len(), 2);
+        assert!(result.unresolved.iter().all(|item| {
+            item.reason == UnresolvedReason::AmbiguousTarget && item.candidate_ordinals == [0, 1]
+        }));
+    }
+
+    #[test]
+    fn should_resolve_the_correct_suffixed_entry_when_smith_et_al_2020a_is_cited() {
+        let index = fixture(&[
+            (
+                "Smith et al. 2020a explains this; Smith (2020b, 2021) agrees.",
+                "body",
+                1,
+            ),
+            ("References", "heading", 2),
+            ("Smith, A. (2020a). First study.", "body", 2),
+            ("Smith, A. (2020b). Second study.", "body", 2),
+            ("Smith, A. (2021). Followup.", "body", 2),
+        ]);
+        let result = extract(&index);
+        assert_eq!(
+            slice(&index, mentions_of(&result, 0)[0].marker),
+            "Smith et al. 2020a"
+        );
+        assert_each_entry_cited_once(&result);
+    }
+
+    #[test]
+    fn should_preserve_each_occurrence_when_citations_share_a_sentence_with_astral_text() {
+        let body = "😀 𝛼 evidence [1] agrees with [1].";
+        let index = fixture(&[
+            (body, "body", 1),
+            ("References", "heading", 2),
+            ("[1] Smith. A study. 2020.", "body", 2),
+        ]);
+        let result = extract(&index);
+        let mentions = mentions_of(&result, 0);
+        assert_eq!(mentions.len(), 2);
+        assert_ne!(mentions[0].marker.start, mentions[1].marker.start);
+        assert_ne!(mentions[0].rects, mentions[1].rects);
+        for mention in mentions {
+            assert_eq!(slice(&index, mention.marker), "[1]");
+            assert_eq!(mention.marker_text, "[1]");
+            assert_eq!(slice(&index, mention.passage), body);
+            assert_eq!(mention.passage_text, body);
+            assert_eq!(mention.rects.len(), 1);
+        }
+    }
+
+    #[test]
+    fn should_require_raised_geometry_when_a_bare_number_is_used_as_a_citation() {
+        let mut index = fixture(&[
+            ("Evidence 1 and 2 are useful.", "body", 1),
+            ("References", "heading", 2),
+            ("1. First study.", "body", 2),
+            ("2. Second study.", "body", 2),
+        ]);
+        let before = index.tokens[0].rects[0];
+        index.tokens[1].rects[0] = rect_after(before);
+        let result = extract(&index);
+        assert_eq!(mentions_of(&result, 0).len(), 1);
+        assert!(mentions_of(&result, 1).is_empty());
+        assert_eq!(slice(&index, mentions_of(&result, 0)[0].marker), "1");
+        assert_eq!(mentions_of(&result, 0)[0].style, CitationStyle::Superscript);
+    }
+
+    #[test]
+    fn should_resolve_appendix_mentions_when_the_appendix_follows_the_bibliography() {
+        let index = fixture(&[
+            ("References", "heading", 1),
+            ("[1] Smith, A. (2020). Study.", "body", 1),
+            ("Appendix A", "heading", 2),
+            ("We reuse [1]. Smith (2020) discusses this.", "body", 2),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 1);
+        assert_eq!(mentions_of(&result, 0).len(), 2);
+        assert!(result.mentions.iter().all(|mention| mention.page == 2));
+    }
+
+    #[test]
+    fn should_withhold_links_when_no_bibliography_or_a_range_is_unsupported() {
+        let none = extract(&fixture(&[
+            ("See [1], (2) and Smith (2020).", "body", 1),
+            ("1. A list step.", "body", 1),
+        ]));
+        assert!(none.entries.is_empty() && none.mentions.is_empty() && none.unresolved.is_empty());
+        let result = extract(&fixture(&[
+            ("See [1–1000000] and [9–1].", "body", 1),
+            ("References", "heading", 2),
+            ("[1] Smith. Work.", "body", 2),
+        ]));
+        assert!(result.mentions.is_empty());
+        assert!(
+            result
+                .unresolved
+                .iter()
+                .all(|item| item.reason == UnresolvedReason::UnsupportedRange)
+        );
+        assert_eq!(result.unresolved.len(), 2);
+    }
+
+    #[test]
+    fn should_preserve_family_particles_when_name_parsing_agrees_on_the_printed_family() {
+        let index = fixture(&[
+            (
+                "van der Waals (1910) agrees with Serre (1955) and de la Cruz (2020).",
+                "body",
+                1,
+            ),
+            ("References", "heading", 2),
+            ("van der Waals, J. D. (1910). A study.", "body", 2),
+            ("J.-P. Serre. A theorem. 1955.", "body", 2),
+            ("de la Cruz, A. (2020). A study.", "body", 2),
+        ]);
+        let result = extract(&index);
+        assert_each_entry_cited_once(&result);
+        assert_eq!(
+            slice(&index, mentions_of(&result, 0)[0].marker),
+            "van der Waals (1910)"
+        );
+    }
+
+    #[test]
+    fn should_keep_sentence_context_when_an_abbreviation_crosses_segmenter_boundaries() {
+        let body = "Smith et al. 2020a supports this observation.";
+        let mut index = fixture(&[
+            (body, "body", 1),
+            ("References", "heading", 2),
+            ("Smith, A. (2020a). A study.", "body", 2),
+        ]);
+        index.sentences = vec![
+            TextSpan { start: 0, end: 12 },
+            TextSpan {
+                start: 13,
+                end: body.len(),
+            },
+        ];
+        let result = extract(&index);
+        let mention = &result.mentions[0];
+        assert_eq!(slice(&index, mention.marker), "Smith et al. 2020a");
+        assert_eq!(slice(&index, mention.passage), body);
+    }
+
+    #[test]
+    fn should_resolve_each_printed_marker_once_when_keys_resemble_author_year_citations() {
+        let index = fixture(&[
+            ("See [Smith2020] and [Smith 2020].", "body", 1),
+            ("References", "heading", 2),
+            ("[Smith2020] Smith, A. (2020). A study.", "body", 2),
+        ]);
+        let result = extract(&index);
+        let mentions = mentions_of(&result, 0);
+        assert_eq!(mentions.len(), 2);
+        assert_eq!(slice(&index, mentions[0].marker), "[Smith2020]");
+        assert_eq!(slice(&index, mentions[1].marker), "Smith 2020");
+    }
+
+    #[test]
+    fn should_withhold_incompatible_number_markers_when_brackets_establish_the_citation_convention()
+    {
+        let mut index = fixture(&[
+            (
+                "Evidence [7]. See [7] and (8). See (8). Evidence [7] confirms (8). The cases are (7) first and (8) second. Equation (7).",
+                "body",
+                1,
+            ),
+            ("A footnote 7 and an index 8 are printed here.", "body", 1),
+            ("References", "heading", 2),
+            ("[7] Example, A. (2020). Earlier work.", "body", 2),
+            ("[8] Sample, B. (2021). Next work.", "body", 2),
+        ]);
+        for at in 1..index.tokens.len() {
+            if matches!(index.tokens[at].text.as_str(), "7" | "8") {
+                let before = index.tokens[at - 1].rects[0];
+                index.tokens[at].rects[0] = rect_after(before);
+            }
+        }
+        let result = extract(&index);
+        assert_eq!(mentions_of(&result, 0).len(), 3);
+        assert_eq!(mentions_of(&result, 1).len(), 1);
+        assert_eq!(slice(&index, mentions_of(&result, 1)[0].marker), "(8)");
+        assert_eq!(result.unresolved.len(), 6);
+        assert!(result.unresolved.iter().all(|item| {
+            item.reason == UnresolvedReason::AmbiguousMarker && item.candidate_ordinals.len() == 1
+        }));
+        assert_eq!(
+            result
+                .unresolved
+                .iter()
+                .filter(|item| item.style == CitationStyle::Superscript)
+                .count(),
+            2
+        );
+        assert!(
+            result
+                .unresolved
+                .iter()
+                .all(|item| slice(&index, item.marker) == item.text)
+        );
+    }
+
+    #[test]
+    fn should_resolve_a_pure_superscript_citation_when_no_competing_delimited_convention_exists() {
+        let mut index = fixture(&[
+            ("Evidence 7 supports the result.", "body", 1),
+            ("References", "heading", 2),
+            ("[7] Example, A. (2020). Earlier work.", "body", 2),
+        ]);
+        let before = index.tokens[0].rects[0];
+        index.tokens[1].rects[0] = rect_after(before);
+        let result = extract(&index);
+        assert_eq!(mentions_of(&result, 0).len(), 1);
+        assert_eq!(slice(&index, mentions_of(&result, 0)[0].marker), "7");
+        assert!(result.unresolved.is_empty());
+    }
+
+    fn numbered_references(count: usize) -> Vec<String> {
+        (1..=count)
+            .map(|number| format!("[{number}] Author{number}. Title {number}. 2020."))
+            .collect()
+    }
+
+    #[test]
+    fn should_expand_numeric_range_when_marker_is_bracketed_range() {
+        let entries = numbered_references(5).join("\n");
+        let index = fixture(&[
+            ("Prior work [3-5] is relevant.", "body", 1),
+            ("References", "heading", 2),
+            (&entries, "body", 2),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 5);
+        assert_eq!(result.mentions.len(), 3);
+        let ordinals: Vec<_> = result.mentions.iter().map(|m| m.entry_ordinal).collect();
+        assert_eq!(ordinals, [2, 3, 4]);
+        assert!(
+            result
+                .mentions
+                .iter()
+                .all(|m| m.marker_text == "[3-5]" && m.style == CitationStyle::Numeric)
+        );
+        assert!(result.unresolved.is_empty());
+    }
+
+    #[test]
+    fn should_resolve_author_year_when_et_al_and_comma_year() {
+        let index = fixture(&[
+            ("As shown by Smith et al., 2020, this holds.", "body", 1),
+            ("References", "heading", 2),
+            ("Smith, A., Jones, B. (2020). A study.", "body", 2),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.mentions.len(), 1);
+        assert_eq!(result.mentions[0].style, CitationStyle::AuthorYear);
+        assert_eq!(result.mentions[0].marker_text, "Smith et al., 2020");
+    }
+
+    #[test]
+    fn should_resolve_given_family_entries_when_bibliography_prints_full_names() {
+        let index = fixture(&[
+            (
+                "The Transformer (Vaswani et al. (2017)) is used.",
+                "body",
+                1,
+            ),
+            ("References", "heading", 2),
+            (
+                "Ashish Vaswani, Noam Shazeer, Niki Parmar. Attention is all you need. 2017.",
+                "body",
+                2,
+            ),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 1);
+        assert_eq!(result.mentions.len(), 1, "{:?}", result.unresolved);
+        assert_eq!(result.mentions[0].marker_text, "Vaswani et al. (2017)");
+    }
+
+    #[test]
+    fn should_clip_passage_when_sentence_context_exceeds_limit() {
+        let filler = "word ".repeat(400);
+        let body = format!("{filler}evidence [1] agrees. {filler}");
+        let index = fixture(&[
+            (&body, "body", 1),
+            ("References", "heading", 2),
+            ("[1] Smith. A study. 2020.", "body", 2),
+        ]);
+        let result = extract(&index);
+        let mention = &result.mentions[0];
+        let marker = mention.marker;
+        assert!(mention.passage.start <= marker.start && marker.end <= mention.passage.end);
+        assert!(marker.start - mention.passage.start <= 600);
+        assert!(mention.passage.end - marker.end <= 600);
+        assert!(mention.passage.start > 0 && mention.passage.end < body.len());
+        let clipped = slice(&index, mention.passage);
+        assert!(clipped.starts_with("word") && clipped.ends_with("word"));
+        assert!(mention.passage_text.contains("evidence [1] agrees."));
+    }
+
+    #[test]
+    fn should_keep_the_whole_sentence_when_context_is_within_limit() {
+        let body = "Short evidence [1] stays whole.";
+        let index = fixture(&[
+            (body, "body", 1),
+            ("References", "heading", 2),
+            ("[1] Smith. A study. 2020.", "body", 2),
+        ]);
+        let source = source::Source::new(&index);
+        let marker = TextSpan { start: 15, end: 18 };
+        let passage = TextSpan { start: 0, end: 31 };
+        assert_eq!(mentions::clip_passage(&source, marker, passage), passage);
+    }
+
+    #[test]
+    fn should_collapse_whitespace_when_building_passage_text() {
+        let index = fixture(&[
+            ("Evidence   shows\n  this\t result [1].", "body", 1),
+            ("References", "heading", 2),
+            ("[1] Smith. A study. 2020.", "body", 2),
+        ]);
+        let result = extract(&index);
+        assert_eq!(
+            result.mentions[0].passage_text,
+            "Evidence shows this result [1]."
+        );
+    }
+
+    #[test]
+    fn should_ignore_markers_inside_the_bibliography_when_entries_cite_each_other() {
+        let index = fixture(&[
+            ("Only [1] is cited in the body.", "body", 1),
+            ("References", "heading", 2),
+            ("[1] Adams. See also [2]. 2020.", "body", 2),
+            (
+                "[2] Baker. Builds on [1] and Adams (2020). 2021.",
+                "body",
+                2,
+            ),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 2);
+        assert_eq!(result.mentions.len(), 1);
+        assert_eq!(result.mentions[0].entry_ordinal, 0);
+        assert!(result.unresolved.is_empty());
+    }
+
+    #[test]
+    fn should_not_treat_equation_or_figure_numbers_as_citations_when_prefixed_by_eq_or_fig() {
+        let index = fixture(&[
+            (
+                "By Eq. (1) and Equation (2), see Fig. [3] and Table (1).",
+                "body",
+                1,
+            ),
+            ("References", "heading", 2),
+            (
+                "[1] Adams. One. 2020.\n[2] Baker. Two. 2021.\n[3] Chen. Three. 2022.",
+                "body",
+                2,
+            ),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 3);
+        assert!(result.mentions.is_empty());
+        assert!(result.unresolved.is_empty());
+    }
+
+    #[test]
+    fn should_return_no_mentions_when_bibliography_is_empty() {
+        let index = fixture(&[
+            ("Cited [1] and Smith (2020).", "body", 1),
+            ("References", "heading", 2),
+        ]);
+        let result = extract(&index);
+        assert!(result.entries.is_empty());
+        assert!(result.mentions.is_empty());
+        assert!(result.unresolved.is_empty());
+    }
+
+    #[test]
+    fn should_emit_one_mention_per_page_when_a_marker_crosses_a_page_break() {
+        let mut index = fixture(&[
+            ("Cited [1, 2] here.", "body", 1),
+            ("References", "heading", 2),
+            ("[1] Smith. A study. 2020.", "body", 2),
+        ]);
+        index.tokens[2].page = 2;
+        let result = extract(&index);
+        let pages: Vec<_> = mentions_of(&result, 0).iter().map(|m| m.page).collect();
+        assert_eq!(pages, [1, 2]);
+        assert_eq!(result.unresolved.len(), 2);
+        assert!(result.unresolved.iter().all(|item| item.key == "2"));
+    }
+
+    #[test]
+    fn should_split_given_family_paragraphs_when_each_entry_ends_in_its_year() {
+        let index = fixture(&[
+            (
+                "Ash et al. (2019) and Bahdanau et al. (2018) agree.",
+                "body",
+                1,
+            ),
+            ("References", "heading", 2),
+            (
+                "Jordan Ash, Chicheng Zhang, and Alekh Agarwal. Deep batch active learning. arXiv preprint, 2019.",
+                "body",
+                2,
+            ),
+            (
+                "Dzmitry Bahdanau, Felix Hill, and Jan Leike. Learning to understand",
+                "body",
+                2,
+            ),
+            (
+                "goal specifications. arXiv preprint arXiv:1806.01946,",
+                "body",
+                3,
+            ),
+            ("2018.", "list", 3),
+            (
+                "Paul Christiano, Jan Leike, and Dario Amodei. Deep reinforcement learning. 2017.",
+                "body",
+                3,
+            ),
+        ]);
+        let result = extract(&index);
+        assert_eq!(result.entries.len(), 3);
+        assert_eq!(result.entries[1].fields.year.value.as_deref(), Some("2018"));
+        assert_eq!(result.mentions.len(), 2);
+        assert!(result.unresolved.is_empty());
     }
 }

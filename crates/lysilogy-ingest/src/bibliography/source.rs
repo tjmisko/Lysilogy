@@ -44,6 +44,11 @@ impl<'a> Source<'a> {
         self.text
     }
 
+    /// All tokens ordered by start offset.
+    pub(super) fn sorted_tokens(&self) -> &[&'a SourceToken] {
+        &self.tokens
+    }
+
     /// Length of the source text in UTF-16 code units.
     pub(super) const fn len_utf16(&self) -> usize {
         self.bytes.len() - 1
@@ -110,7 +115,6 @@ pub(super) fn trimmed(value: &str) -> Option<String> {
     (!value.is_empty()).then_some(value)
 }
 
-#[allow(dead_code, reason = "used by mention detection in the next unit")]
 pub(super) fn key(value: &str) -> String {
     value
         .nfkc()

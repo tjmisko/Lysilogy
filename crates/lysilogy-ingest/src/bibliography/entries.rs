@@ -24,7 +24,8 @@ struct Entry {
 }
 
 /// Locate the reference list and split it into entries; no I/O.
-pub(super) fn extract_entries(source: &Source<'_>) -> Vec<ExtractedEntry> {
+/// Entries plus the span of the bibliography region (heading end to region end).
+pub(super) fn extract_entries(source: &Source<'_>) -> (Vec<ExtractedEntry>, TextSpan) {
     let mut blocks: Vec<_> = source
         .source_text()
         .paragraphs
@@ -54,8 +55,9 @@ pub(super) fn extract_entries(source: &Source<'_>) -> Vec<ExtractedEntry> {
         pattern!(r"(?i)^(?:(?:\d+|[IVXLCDM]+)[.\s]+)?(?:references(?: and notes| cited)?|bibliography|literature cited|works cited)\s*[:.]?$")
             .is_match(source.text(block.span).unwrap_or_default().trim())
     }) else {
-        return vec![];
+        return (vec![], TextSpan { start: 0, end: 0 });
     };
+    let start = blocks[heading].span.end;
     let end = blocks[heading + 1..]
         .iter()
         .find(|block| {
@@ -64,7 +66,7 @@ pub(super) fn extract_entries(source: &Source<'_>) -> Vec<ExtractedEntry> {
                     .is_match(source.text(block.span).unwrap_or_default().trim())
         })
         .map_or_else(|| source.len_utf16(), |block| block.span.start);
-    split_entries(
+    let entries = split_entries(
         source,
         blocks[heading + 1..]
             .iter()
@@ -73,7 +75,8 @@ pub(super) fn extract_entries(source: &Source<'_>) -> Vec<ExtractedEntry> {
     .into_iter()
     .enumerate()
     .map(|(ordinal, entry)| extracted_entry(source, entry, ordinal))
-    .collect()
+    .collect();
+    (entries, TextSpan { start, end })
 }
 
 struct EntryLabel {
@@ -268,7 +271,9 @@ fn split_entries<'a>(source: &Source<'_>, blocks: impl Iterator<Item = &'a Block
                 }
                 if pair[0] == 0
                     && author_year_prefix(segment).is_none()
-                    && let Some(previous) = entries.last_mut()
+                    && let Some(previous) = entries
+                        .last_mut()
+                        .filter(|previous| !starts_after_complete_entry(source, previous, segment))
                 {
                     previous.spans.push(span);
                 } else {
@@ -305,6 +310,15 @@ fn entry_text(source: &Source<'_>, entry: &Entry) -> String {
         .map(str::trim)
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+/// Full-name bibliographies print `Given Family, Given Family. Title. Venue,
+/// 2019.` with no surname-first prefix. A paragraph that opens with a capital
+/// right after an entry that already ends in its publication year begins the
+/// next entry; a wrapped line (lowercase, or after an unfinished entry) does not.
+fn starts_after_complete_entry(source: &Source<'_>, previous: &Entry, segment: &str) -> bool {
+    pattern!(r"\A\p{Lu}").is_match(segment.trim_start())
+        && pattern!(r"(?:18|19|20)\d{2}[a-z]?\.?\)?\s*\z").is_match(&entry_text(source, previous))
 }
 
 fn starts_mixed_unnumbered_entry(source: &Source<'_>, previous: &Entry, text: &str) -> bool {

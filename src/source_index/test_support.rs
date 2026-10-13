@@ -1,6 +1,10 @@
 use std::{fmt::Write, path::Path};
 
-use super::{CachedIndex, Provenance, ReadingPage, SourceStamp, assemble};
+use super::{
+    CachedIndex, Paragraph, Provenance, ReadingIndex, ReadingPage, ReadingToken, SourceStamp,
+    TextRange, assemble,
+};
+use crate::domain::TextRect;
 
 pub fn native_pdf(text: &str) -> Vec<u8> {
     let stream = format!("BT /F1 12 Tf 50 700 Td ({text}) Tj ET");
@@ -97,4 +101,71 @@ pub async fn cache_fixture_with_pages(source: &Path, directory: &Path, pages: &[
     tokio::fs::write(&path, serde_json::to_vec(&cached).unwrap())
         .await
         .unwrap();
+}
+
+/// An empty index, as produced for a document with no pages.
+pub fn reading_index_fixture_empty() -> ReadingIndex {
+    assemble(&[])
+}
+
+/// A small hand-built index with an astral character, two pages, a heading,
+/// a paragraph with split member spans, and two sentences.
+pub fn reading_index_fixture() -> ReadingIndex {
+    let mut index = assemble(&[]);
+    // The emoji takes two UTF-16 units, so the next word starts at 3.
+    index.text = "😀 ab [1] cd.\n\nReferences x".into();
+    let rect = |x: f32| TextRect {
+        x_min: x,
+        y_min: 10.0,
+        x_max: x + 5.0,
+        y_max: 22.0,
+    };
+    let token = |start, end, page, text: &str, x| ReadingToken {
+        start,
+        end,
+        page,
+        rects: vec![rect(x)],
+        text: text.into(),
+        provenance: Provenance::Native,
+    };
+    index.tokens = vec![
+        token(0, 2, 1, "😀", 1.0),
+        token(3, 5, 1, "ab", 7.0),
+        token(6, 9, 1, "[1]", 13.0),
+    ];
+    index.pages = vec![page(1, 0, 13), page(2, 15, 25)];
+    index.objects.paragraph = vec![
+        Paragraph {
+            start: 15,
+            end: 25,
+            kind: "heading".into(),
+            spans: vec![],
+        },
+        Paragraph {
+            start: 0,
+            end: 25,
+            kind: "body".into(),
+            spans: vec![
+                TextRange { start: 0, end: 13 },
+                TextRange { start: 20, end: 25 },
+            ],
+        },
+    ];
+    index.objects.sentence = vec![
+        TextRange { start: 0, end: 13 },
+        TextRange { start: 15, end: 25 },
+    ];
+    index
+}
+
+fn page(number: u32, start: usize, end: usize) -> ReadingPage {
+    ReadingPage {
+        number,
+        width: 612.0,
+        height: 792.0,
+        start,
+        end,
+        provenance: Provenance::Native,
+        confidence: None,
+    }
 }

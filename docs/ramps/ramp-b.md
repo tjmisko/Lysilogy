@@ -969,3 +969,17 @@ against mocks and against the live server, and the live smoke is recorded in thi
   until U2 uses it.
 - `bibliography::tests::fixture` is `pub` inside a `#[cfg(test)] pub(crate)` module so U4 can
   reuse it.
+
+## U2 implementation notes
+
+- `extract` returns no mentions or unresolved markers when no entries were found, even if a
+  References heading exists, so an empty bibliography cannot produce a flood of
+  `MissingTarget` evidence.
+- Probe finding: full-name author-year bibliographies (`Jordan Ash, ... and Alekh Agarwal.
+  Title. 2019.`) were merged into one giant entry, because only a surname-first prefix started a
+  new unnumbered entry (Ziegler 2019 gave 3 entries). `starts_after_complete_entry` now starts a
+  new entry when a paragraph opens with a capital right after an entry that already ends in a
+  publication year (47 entries). Wrapped lines stay joined because the previous entry has no year yet.
+- `source_text_from_index` is `pub` inside the private `evidence` module, since the strict
+  `redundant_pub_crate` lint rejects `pub(crate)` there. It carries `allow(dead_code)` until U4.
+- `source_index::test_support` gained `reading_index_fixture` and `reading_index_fixture_empty`.

@@ -3,6 +3,8 @@
 //!
 //! Nothing here writes file artifacts.
 
+mod evidence;
+
 use std::{fmt, path::Path, sync::Arc};
 
 use lysilogy_core::{DocumentFormat, ScannedFile, first_author_family, front_matter};
