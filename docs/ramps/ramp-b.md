@@ -1000,3 +1000,59 @@ against mocks and against the live server, and the live smoke is recorded in thi
 - Mention SHA-256 is computed in Postgres (`sha256(convert_to(...))`), so no hashing crate
   was added to `lysilogy-db`.
 - `backfill_title_keys` paginates by id so titles whose key is empty (stay NULL) cannot loop.
+
+## U4 implementation notes
+
+- `LocalEvidenceSummary.labels` is `Option<serde_json::Value>` until U5 replaces it with
+  `LabelSummary`.
+- `resolve_entry` also takes the `local_bibliography` record (for stub titling and identifier
+  attachment) and a warnings sink. Entry numbers in warning codes are 1-based and match the
+  `entry_key` (`self_reference:3` is `bib-v1:3`). `merge_refused:<n>:conflict` carries no finer
+  reason, since `DbError::Conflict` is free text.
+- `mentions` counts mentions of resolved entries, stored now or on an earlier run, so it is stable
+  across reruns. `unresolved_mentions` adds the extractor's unresolved markers to mentions whose
+  entry was ambiguous or a self reference.
+- A reused accepted resolution with method `merge` is kept like `identifier` and `title_match`.
+  A merged stub is counted under the method that found the target (`identifier` or `title`), and
+  also in `merged`.
+- Beyond the plan: if the stored `local_bibliography` payload has a different `index_text_sha256`
+  than the one in hand, evidence is not mutated and mentions are skipped with the warning
+  `index_text_changed` (offsets would no longer match). A bibliography with no entries returns
+  early with `no_bibliography_entries`.
+- When a paper has no Work, `AppState::run_local_evidence` returns `None` and the CLI prints
+  `Warnings   local_evidence_requires_work` (the constant lives in `literature::evidence`). On an
+  unmatched paper the command still exits with the Ramp A error afterwards.
+- Root test support gained `cache_fixture_with_blocks`, which lays out paragraph, sentence and
+  token data so a cached index supports bibliography extraction.
+
+Live check on the dev DB (`lysilogy`, port 5433), 2026-10-13:
+
+```
+$ lysilogy lit "Fine-Tuning Language Models from Human Preferences" --local     # run 1
+Work       wdbODRzEbQjOIemEvDy74tg  (title_match: title_key=fine tuning language models from human preferences;candidates=1)
+OpenAlex   W2973379954
+References 45 (new stub works: 0, titled: 0)
+Local      entries 47 · mentions 58 (unresolved 35)
+Resolved   47 (identifier 1, title 31, stub 15, reused 0) · ambiguous 0 · merged 0
+Edges      local 47 (also provider 31)
+$ ... (rerun: graph.work 3175 -> 3175)
+Local      entries 47 · mentions 58 (unresolved 35)
+Resolved   47 (identifier 0, title 0, stub 0, reused 47) · ambiguous 0 · merged 0
+Edges      local 47 (also provider 31)
+
+$ lysilogy lit "Learning to Summarize from Human Feedback" --local               # run 1
+Work       wyAV7ICFKTpKX1cwQlzqUqQ  (identifier: arxiv:2009.01325)
+OpenAlex   W3082115681
+References 71 (new stub works: 0, titled: 0)
+Local      entries 73 · mentions 112 (unresolved 51)
+Resolved   73 (identifier 15, title 45, stub 13, reused 0) · ambiguous 0 · merged 0
+Edges      local 73 (also provider 51)
+$ ... (rerun: graph.work 3188 -> 3188)
+Local      entries 73 · mentions 112 (unresolved 51)
+Resolved   73 (identifier 0, title 0, stub 0, reused 73) · ambiguous 0 · merged 0
+Edges      local 73 (also provider 51)
+```
+
+Both reruns create 0 Works. The first run created 13 stubs for the second paper (3175 to 3188).
+The high unresolved count is mostly markers in prose that the extractor cannot tie to a unique
+entry; it is evidence, not an error.

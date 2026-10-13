@@ -7,6 +7,7 @@
 use lysilogy_db::PgPool;
 use lysilogy_db::citation::CitationRepository;
 use lysilogy_db::document::DocumentRepository;
+use lysilogy_db::evidence::EvidenceRepository;
 use lysilogy_db::source_record::SourceRecordRepository;
 use lysilogy_db::work::WorkRepository;
 
@@ -17,6 +18,7 @@ pub struct GraphState {
     pub documents: DocumentRepository,
     pub citations: CitationRepository,
     pub source_records: SourceRecordRepository,
+    pub evidence: EvidenceRepository,
 }
 
 impl std::fmt::Debug for GraphState {
@@ -32,7 +34,8 @@ impl GraphState {
             works: WorkRepository::new(pool.clone()),
             documents: DocumentRepository::new(pool.clone()),
             citations: CitationRepository::new(pool.clone()),
-            source_records: SourceRecordRepository::new(pool),
+            source_records: SourceRecordRepository::new(pool.clone()),
+            evidence: EvidenceRepository::new(pool),
         }
     }
 

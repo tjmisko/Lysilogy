@@ -3,7 +3,7 @@
 //!
 //! Nothing here writes file artifacts.
 
-mod evidence;
+pub mod evidence;
 
 use std::{fmt, path::Path, sync::Arc};
 

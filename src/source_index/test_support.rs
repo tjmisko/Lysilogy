@@ -169,3 +169,71 @@ fn page(number: u32, start: usize, end: usize) -> ReadingPage {
         confidence: None,
     }
 }
+
+/// Like [`cache_fixture`], with `(text, paragraph kind, page)` blocks laid out
+/// as one paragraph and one sentence each, a token per whitespace-separated
+/// word, and page bounds, so bibliography extraction has what it needs.
+pub async fn cache_fixture_with_blocks(source: &Path, directory: &Path, blocks: &[(&str, &str, u32)]) {
+    cache_fixture(source, directory).await;
+    let path = directory.join("reading-index.json");
+    let mut cached: CachedIndex =
+        serde_json::from_slice(&tokio::fs::read(&path).await.unwrap()).unwrap();
+    let index = &mut cached.index;
+    index.text.clear();
+    let mut offset = 0;
+    for (at, (block, kind, number)) in blocks.iter().enumerate() {
+        if !index.text.is_empty() {
+            index.text.push_str("\n\n");
+            offset += 2;
+        }
+        let start = offset;
+        let y = f32::from(u16::try_from(at).unwrap()).mul_add(30.0, 40.0);
+        let mut words = Vec::<(usize, usize, String)>::new();
+        let mut position = 0;
+        let mut open: Option<(usize, String)> = None;
+        for character in block.chars() {
+            if character.is_whitespace() {
+                if let Some((from, text)) = open.take() {
+                    words.push((from, position, text));
+                }
+            } else {
+                open.get_or_insert_with(|| (position, String::new())).1.push(character);
+            }
+            position += character.len_utf16();
+        }
+        if let Some((from, text)) = open {
+            words.push((from, position, text));
+        }
+        for (from, to, text) in words {
+            index.tokens.push(ReadingToken {
+                start: start + from,
+                end: start + to,
+                page: *number,
+                rects: vec![TextRect {
+                    x_min: f32::from(u16::try_from(from).unwrap()).mul_add(6.0, 40.0),
+                    x_max: f32::from(u16::try_from(to).unwrap()).mul_add(6.0, 40.0),
+                    y_min: y,
+                    y_max: y + 12.0,
+                }],
+                text,
+                provenance: Provenance::Native,
+            });
+        }
+        index.text.push_str(block);
+        offset += position;
+        index.objects.paragraph.push(Paragraph {
+            start,
+            end: offset,
+            kind: (*kind).to_owned(),
+            spans: vec![],
+        });
+        index.objects.sentence.push(TextRange { start, end: offset });
+        match index.pages.iter_mut().find(|page| page.number == *number) {
+            Some(existing) => existing.end = offset,
+            None => index.pages.push(page(*number, start, offset)),
+        }
+    }
+    tokio::fs::write(&path, serde_json::to_vec(&cached).unwrap())
+        .await
+        .unwrap();
+}

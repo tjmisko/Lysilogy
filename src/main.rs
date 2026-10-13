@@ -15,7 +15,9 @@ use lysilogy::{
         ExperimentStatus, LearningRamp, PaperId, ProcessingStatus, StartExperimentRequest,
     },
 };
+use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
 use lysilogy_ingest::literature::{LiteratureStatus, LiteratureSummary};
+use lysilogy_ingest::local_evidence::LocalEvidenceSummary;
 use tokio::{sync::Semaphore, task::JoinSet};
 use tracing_subscriber::EnvFilter;
 
@@ -116,6 +118,9 @@ enum Command {
     Lit {
         /// A PDF path inside the library, a paper ID, or an unambiguous title fragment.
         paper: String,
+        /// Also persist and resolve the paper's local bibliography and in-text mentions.
+        #[arg(long)]
+        local: bool,
     },
     /// Analyze all papers that are not ready, continuing past individual faults.
     Ingest {
@@ -320,7 +325,9 @@ async fn run(cli: Cli) -> Result<()> {
             print!("{}", state.markdown(&id).await?);
             Ok(())
         }
-        Command::Lit { paper } => literature_command(&state, &cli.library, &paper).await,
+        Command::Lit { paper, local } => {
+            literature_command(&state, &cli.library, &paper, local).await
+        }
         Command::RefreshStructure {
             query,
             provider,
@@ -918,6 +925,7 @@ async fn literature_command(
     state: &AppState,
     library: &std::path::Path,
     paper: &str,
+    local: bool,
 ) -> Result<()> {
     let candidate = PathBuf::from(paper);
     let id = if tokio::fs::metadata(&candidate)
@@ -938,6 +946,12 @@ async fn literature_command(
     };
     let summary = state.run_literature_flow(&id).await?;
     print!("{}", render_literature_summary(&summary));
+    if local {
+        match state.run_local_evidence(&id, &summary).await? {
+            Some(evidence) => print!("{}", render_local_evidence(&evidence)),
+            None => println!("Warnings   {LOCAL_EVIDENCE_REQUIRES_WORK}"),
+        }
+    }
     if let LiteratureStatus::Unmatched { reason } = &summary.status {
         return Err(Error::Literature(format!("no Work found for {id}: {reason}")));
     }
@@ -984,6 +998,36 @@ fn render_literature_summary(summary: &LiteratureSummary) -> String {
             summary.references, summary.new_stub_works, summary.hydrated_works
         );
     }
+    for warning in &summary.warnings {
+        let _ = writeln!(output, "Warnings   {warning}");
+    }
+    output
+}
+
+fn render_local_evidence(summary: &LocalEvidenceSummary) -> String {
+    let mut output = String::new();
+    let _ = writeln!(
+        output,
+        "Local      entries {} \u{b7} mentions {} (unresolved {})",
+        summary.entries, summary.mentions, summary.unresolved_mentions
+    );
+    let counts = &summary.resolutions;
+    let _ = writeln!(
+        output,
+        "Resolved   {} (identifier {}, title {}, stub {}, reused {}) \u{b7} ambiguous {} \u{b7} merged {}",
+        summary.resolved_entries,
+        counts.identifier,
+        counts.title_match,
+        counts.local_stub,
+        counts.reused,
+        summary.ambiguous_entries,
+        summary.merged_stubs
+    );
+    let _ = writeln!(
+        output,
+        "Edges      local {} (also provider {})",
+        summary.local_edges, summary.edges_also_from_provider
+    );
     for warning in &summary.warnings {
         let _ = writeln!(output, "Warnings   {warning}");
     }
@@ -1058,6 +1102,34 @@ mod tests {
                 .expect_err(outside);
             assert!(matches!(error, Error::InvalidRequest(_)), "{outside}");
         }
+    }
+
+    #[test]
+    fn should_render_three_lines_when_local_evidence_has_no_warnings() {
+        let evidence = LocalEvidenceSummary {
+            entries: 48,
+            mentions: 112,
+            unresolved_mentions: 9,
+            resolved_entries: 46,
+            resolutions: lysilogy_ingest::local_evidence::ResolutionCounts {
+                identifier: 5,
+                title_match: 30,
+                local_stub: 11,
+                reused: 0,
+            },
+            ambiguous_entries: 2,
+            merged_stubs: 0,
+            local_edges: 44,
+            edges_also_from_provider: 31,
+            ..LocalEvidenceSummary::default()
+        };
+        let text = render_local_evidence(&evidence);
+        assert_eq!(
+            text,
+            "Local      entries 48 \u{b7} mentions 112 (unresolved 9)\n\
+             Resolved   46 (identifier 5, title 30, stub 11, reused 0) \u{b7} ambiguous 2 \u{b7} merged 0\n\
+             Edges      local 44 (also provider 31)\n"
+        );
     }
 
     #[test]
