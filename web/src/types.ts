@@ -428,12 +428,49 @@ export type WorkCitations = {
   work: Work;
   outgoing: Work[];
   incoming: Work[];
+  edges: GraphEdge[];
   local_papers: LocalPapersByWork;
+};
+
+export type EdgeLabelMention = {
+  id: string;
+  /** The citing paper, only when it is in the library. */
+  paper_id: string | null;
+  page: number | null;
+  passage_start: number | null;
+  passage_end: number | null;
+  marker_start: number | null;
+  marker_end: number | null;
+  passage: string | null;
+};
+
+export type EdgeLabelOrigin = "ai" | "user" | "imported";
+export type EdgeLabelReviewState = "unreviewed" | "accepted" | "rejected" | "disputed";
+
+export type EdgeLabel = {
+  id: string;
+  relation: string;
+  reason: string;
+  quote: string | null;
+  origin: EdgeLabelOrigin;
+  review_state: EdgeLabelReviewState;
+  model: string | null;
+  created_at: string;
+  mention: EdgeLabelMention | null;
+};
+
+export type EdgeLabelEdit = {
+  reason: string;
+  relation?: string;
+  quote?: string;
 };
 
 export type GraphEdge = {
   citing: string;
   cited: string;
+  sources: ("provider" | "local")[];
+  mention_count: number;
+  labels: EdgeLabel[];
 };
 
 export type GraphNeighbors = {
@@ -473,8 +510,29 @@ export type LiteratureSummary = {
   warnings: string[];
 };
 
+export type LiteratureOptions = {
+  local?: boolean;
+  labels?: "claude" | "codex";
+  label_limit?: number;
+};
+
+/** The counts the server reports for a local-evidence run. */
+export type LocalEvidenceSummary = {
+  entries: number;
+  mentions: number;
+  unresolved_mentions: number;
+  resolved_entries: number;
+  ambiguous_entries: number;
+  merged_stubs: number;
+  local_edges: number;
+  edges_also_from_provider: number;
+  warnings: string[];
+  labels: Record<string, unknown> | null;
+};
+
 export type LiteratureJob = {
   state: "idle" | "running" | "succeeded" | "failed";
   summary?: LiteratureSummary;
+  local?: LocalEvidenceSummary;
   message?: string;
 };
