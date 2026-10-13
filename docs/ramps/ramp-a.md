@@ -582,3 +582,14 @@ passes, and the live smoke is recorded in this doc.
 - `add_claim_once` returns `bool` (inserted or not); `openalex_ids_for` also returns early
   for empty input.
 - `work_link` returns `None` unless `work_id`, method, and `work_linked_at` are all set.
+
+## U3 implementation notes
+
+- `WorkRepository::openalex_ids_for` already existed from U2, so U3 only adds callers.
+- `fetch_summaries_cached` takes `&[String]` and caches each result under its lowercased
+  short ID. `hydrate_stub_works` uppercases stored IDs before requesting them.
+- Tie-break by "smallest OpenAlex ID" orders by `(length, string)` so `W3` precedes `W20`.
+- `referenced_works_count` saturates at `u32::MAX` via `try_from(..).unwrap_or(..)`,
+  because workspace clippy denies a bare `as u32` here.
+- The old `citation_graph::openalex::work` now lowercases DOIs through the shared
+  `normalize_doi`; its tests are unchanged and pass.
