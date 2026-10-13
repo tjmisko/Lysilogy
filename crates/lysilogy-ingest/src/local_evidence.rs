@@ -85,6 +85,8 @@ pub struct LocalEvidenceSummary {
     pub resolutions: ResolutionCounts,
     pub ambiguous_entries: usize,
     pub merged_stubs: usize,
+    /// Field claim rows inserted from the bibliography entries on this run.
+    pub field_claims: usize,
     /// Distinct cited Works asserted from the local bibliography.
     pub local_edges: usize,
     /// Local edges that the provider also asserts.
@@ -200,6 +202,8 @@ pub async fn run_local_evidence(
                     .await?;
                 assertions.insert((extracted.ordinal, entry.id), assertion);
                 cited_works.insert(work);
+                summary.field_claims +=
+                    record_entry_claims(ctx, work, entry, &fields, record).await?;
             }
         }
     }
@@ -458,7 +462,7 @@ async fn resolve_entry(
             })
         }
         Lookup::Nothing => {
-            let work = create_stub(ctx, entry, fields, record).await?;
+            let work = create_stub(ctx, fields, record).await?;
             ctx.evidence
                 .record_resolution(
                     entry.id,
@@ -696,11 +700,77 @@ const fn entry_claim<'a>(
     }
 }
 
-/// Create a stub Work for the entry and record its title and year as
-/// `citing_bibliography` claims from this entry.
+/// Record the entry's parsed fields as `citing_bibliography` claims on the
+/// Work it resolved to. Fields that bib-v1 left `Missing` write nothing.
+/// Returns how many claim rows were inserted (already-recorded ones do not
+/// count).
+async fn record_entry_claims(
+    ctx: &LocalEvidenceContext<'_>,
+    work: WorkId,
+    entry: &StoredEntry,
+    fields: &BibliographicFields,
+    record: SourceRecordId,
+) -> Result<usize> {
+    let present = |confidence: FieldConfidence| confidence != FieldConfidence::Missing;
+    let title = fields
+        .title
+        .value
+        .as_deref()
+        .map(str::trim)
+        .filter(|title| !title.is_empty() && present(fields.title.confidence))
+        .map(|title| FieldValue::Title(title.to_owned()));
+    let year = entry_year(fields).filter(|_| present(fields.year.confidence));
+    let year = year.map(FieldValue::Year);
+    let authors = fields
+        .authors
+        .value
+        .as_ref()
+        .filter(|authors| !authors.is_empty() && present(fields.authors.confidence))
+        .map(|authors| FieldValue::Authors(authors.clone()));
+    let venue = fields
+        .venue
+        .value
+        .as_deref()
+        .map(str::trim)
+        .filter(|venue| !venue.is_empty() && present(fields.venue.confidence))
+        .map(|venue| FieldValue::Venue(venue.to_owned()));
+    let doi = fields
+        .doi
+        .value
+        .as_deref()
+        .filter(|_| present(fields.doi.confidence))
+        .and_then(|doi| normalize(IdentifierScheme::Doi, doi))
+        .map(FieldValue::Doi);
+    let confidences = [
+        fields.title.confidence,
+        fields.year.confidence,
+        fields.authors.confidence,
+        fields.venue.confidence,
+        fields.doi.confidence,
+    ];
+    let new_claims: Vec<NewClaim<'_>> = [&title, &year, &authors, &venue, &doi]
+        .into_iter()
+        .zip(confidences)
+        .filter_map(|(value, confidence)| {
+            Some(entry_claim(
+                work,
+                entry,
+                record,
+                value.as_ref()?,
+                confidence,
+            ))
+        })
+        .collect();
+    if new_claims.is_empty() {
+        return Ok(0);
+    }
+    Ok(ctx.claims.record(&new_claims).await?.inserted)
+}
+
+/// Create a stub Work for the entry. Its claims are recorded by
+/// [`record_entry_claims`] like those of every other resolved entry.
 async fn create_stub(
     ctx: &LocalEvidenceContext<'_>,
-    entry: &StoredEntry,
     fields: &BibliographicFields,
     record: SourceRecordId,
 ) -> Result<WorkId> {
@@ -717,23 +787,6 @@ async fn create_stub(
                 .await?
         }
     };
-    let title = fields
-        .title
-        .value
-        .as_deref()
-        .map(str::trim)
-        .filter(|title| !title.is_empty())
-        .map(|title| FieldValue::Title(title.to_owned()));
-    let year = entry_year(fields).map(FieldValue::Year);
-    let new_claims: Vec<NewClaim<'_>> = title
-        .iter()
-        .map(|value| entry_claim(work.id, entry, record, value, fields.title.confidence))
-        .chain(
-            year.iter()
-                .map(|value| entry_claim(work.id, entry, record, value, fields.year.confidence)),
-        )
-        .collect();
-    ctx.claims.record(&new_claims).await?;
     Ok(work.id)
 }
 
@@ -1376,5 +1429,312 @@ mod tests {
         let summary = h.run(&Bibliography::default()).await;
         assert_eq!(summary.entries, 0);
         assert_eq!(summary.warnings, vec!["no_bibliography_entries".to_owned()]);
+    }
+
+    use lysilogy_core::ProvenanceField;
+    use lysilogy_db::claim::StoredClaim;
+
+    async fn bib_claims(h: &Harness, work: WorkId) -> Vec<StoredClaim> {
+        h.claims
+            .claims_for(work)
+            .await
+            .expect("claims")
+            .into_iter()
+            .filter(|claim| claim.origin == ClaimOrigin::CitingBibliography)
+            .collect()
+    }
+
+    fn claim_of(claims: &[StoredClaim], field: ProvenanceField) -> &StoredClaim {
+        claims
+            .iter()
+            .find(|claim| claim.field == field)
+            .unwrap_or_else(|| panic!("no {field:?} claim in {claims:?}"))
+    }
+
+    fn filler(h: &Harness) -> String {
+        entry(
+            2,
+            &format!("Baker. {}. 2021.", h.title("Filler second paper")),
+        )
+    }
+
+    #[tokio::test]
+    async fn should_write_claims_when_entry_resolves_to_existing_work_by_identifier() {
+        let (_guard, h) = harness!();
+        let doi = format!("10.5557/{}", h.marker);
+        let (existing, _) = h
+            .works
+            .resolve_or_create(IdentifierScheme::Doi, &doi, WorkKind::Article, None)
+            .await
+            .expect("existing");
+        let title = h.title("Identifier keyed claims paper");
+        let bibliography = numbered(&[
+            entry(1, &format!("Adams. {title}. 2020. doi:{doi}")),
+            filler(&h),
+        ]);
+        let summary = h.run(&bibliography).await;
+        assert_eq!(summary.resolutions.identifier, 1, "{summary:?}");
+        assert!(summary.field_claims >= 3, "{summary:?}");
+        let claims = bib_claims(&h, existing.id).await;
+        assert_eq!(
+            claim_of(&claims, ProvenanceField::Title).value,
+            json!(title)
+        );
+        assert_eq!(claim_of(&claims, ProvenanceField::Year).value, json!(2020));
+        let selected = h.works.get(existing.id).await.expect("get").expect("work");
+        assert_eq!(selected.display_title.as_deref(), Some(title.as_str()));
+    }
+
+    #[tokio::test]
+    async fn should_write_claims_when_entry_resolves_to_existing_work_by_title() {
+        let (_guard, h) = harness!();
+        let title = h.title("Title keyed claims paper");
+        let existing = h.work_with_title(&title, Some(2020)).await;
+        let bibliography = numbered(&[entry(1, &format!("Adams. {title}. 2020.")), filler(&h)]);
+        let summary = h.run(&bibliography).await;
+        assert_eq!(summary.resolutions.title_match, 1, "{summary:?}");
+        let claims = bib_claims(&h, existing.id).await;
+        assert_eq!(
+            claim_of(&claims, ProvenanceField::Title).value,
+            json!(title)
+        );
+        assert_eq!(claim_of(&claims, ProvenanceField::Year).value, json!(2020));
+    }
+
+    #[tokio::test]
+    async fn should_write_claims_when_entry_reuses_accepted_resolution() {
+        let (_guard, h) = harness!();
+        let title = h.title("Reused resolution claims paper");
+        let bibliography = numbered(&[entry(1, &format!("Adams. {title}. 2020.")), filler(&h)]);
+        let first = h.run(&bibliography).await;
+        assert!(first.field_claims > 0, "{first:?}");
+        sqlx::query(
+            "delete from graph.field_claim where entry_id in \
+             (select id from source.bibliography_entry where citing_version_id = $1)",
+        )
+        .bind(h.version.as_uuid())
+        .execute(&h.pool)
+        .await
+        .expect("delete claims");
+
+        let second = h.run(&bibliography).await;
+        assert_eq!(
+            second.resolutions.reused, second.resolved_entries,
+            "{second:?}"
+        );
+        assert_eq!(second.field_claims, first.field_claims, "{second:?}");
+        let stub = h
+            .outgoing()
+            .await
+            .into_iter()
+            .find(|work| work.display_title.as_deref() == Some(title.as_str()));
+        assert!(stub.is_some(), "the claims restored the stub's title");
+    }
+
+    #[tokio::test]
+    async fn should_write_author_venue_and_doi_claims_with_entry_and_locator_when_fields_present() {
+        let (_guard, h) = harness!();
+        let doi = format!("10.5558/{}", h.marker);
+        let title = h.title("Fully described claims paper");
+        let text = format!("Adams, J. and Baker, K. {title}. Journal of Tests, 2020. doi:{doi}");
+        let bibliography = numbered(&[entry(1, &text), filler(&h)]);
+        h.run(&bibliography).await;
+        let (existing, _) = h
+            .works
+            .resolve_or_create(IdentifierScheme::Doi, &doi, WorkKind::Article, None)
+            .await
+            .expect("work");
+        let claims = bib_claims(&h, existing.id).await;
+        for field in [
+            ProvenanceField::Title,
+            ProvenanceField::Year,
+            ProvenanceField::Authors,
+            ProvenanceField::Venue,
+            ProvenanceField::Doi,
+        ] {
+            let claim = claim_of(&claims, field);
+            assert_eq!(claim.extractor, "bib-v1");
+            assert_eq!(claim.locator.as_deref(), Some("bib-v1:1"));
+            assert!(claim.entry_id.is_some() && claim.source_record_id.is_some());
+        }
+        assert_eq!(
+            claim_of(&claims, ProvenanceField::Doi).value,
+            json!({"scheme": "doi", "value": doi})
+        );
+        let authors = claim_of(&claims, ProvenanceField::Authors);
+        assert!(
+            authors
+                .value
+                .as_array()
+                .is_some_and(|names| names.len() >= 2),
+            "{authors:?}"
+        );
+        assert!(
+            claim_of(&claims, ProvenanceField::Venue)
+                .value
+                .as_str()
+                .is_some_and(|venue| venue.contains("Journal of Tests"))
+        );
+    }
+
+    #[tokio::test]
+    async fn should_use_explicit_confidence_for_doi_and_heuristic_for_authors_when_recording_entry_claims()
+     {
+        let (_guard, h) = harness!();
+        let doi = format!("10.5559/{}", h.marker);
+        let text = format!(
+            "Adams, J. and Baker, K. {}. Journal of Tests, 2020. doi:{doi}",
+            h.title("Confidence tiers claims paper")
+        );
+        let bibliography = numbered(&[entry(1, &text), filler(&h)]);
+        h.run(&bibliography).await;
+        let (existing, _) = h
+            .works
+            .resolve_or_create(IdentifierScheme::Doi, &doi, WorkKind::Article, None)
+            .await
+            .expect("work");
+        let claims = bib_claims(&h, existing.id).await;
+        assert_eq!(
+            claim_of(&claims, ProvenanceField::Doi).confidence,
+            ClaimConfidence::Explicit
+        );
+        assert_eq!(
+            claim_of(&claims, ProvenanceField::Authors).confidence,
+            ClaimConfidence::Heuristic
+        );
+        assert_eq!(
+            claim_of(&claims, ProvenanceField::Title).confidence,
+            ClaimConfidence::Heuristic
+        );
+    }
+
+    #[tokio::test]
+    async fn should_write_no_claims_when_entry_is_ambiguous_or_self_reference() {
+        let (_guard, h) = harness!();
+        let shared = h.title("Ambiguous claims shared paper");
+        h.work_with_title(&shared, Some(2020)).await;
+        h.work_with_title(&shared, Some(2020)).await;
+        let doi = format!("10.5560/{}", h.marker);
+        h.works
+            .add_identifier(
+                h.citing.id,
+                IdentifierScheme::Doi,
+                &doi,
+                None,
+                IdentifierStatus::Active,
+            )
+            .await
+            .expect("identifier");
+        let bibliography = numbered(&[
+            entry(1, &format!("Adams. {shared}. 2020.")),
+            entry(
+                2,
+                &format!(
+                    "Baker. {}. 2021. doi:{doi}",
+                    h.title("Self citing claims paper")
+                ),
+            ),
+        ]);
+        let summary = h.run(&bibliography).await;
+        assert_eq!(summary.ambiguous_entries, 1, "{summary:?}");
+        assert!(summary.warnings.contains(&"self_reference:2".to_owned()));
+        assert_eq!(summary.field_claims, 0, "{summary:?}");
+        let written: i64 = sqlx::query_scalar(
+            "select count(*) from graph.field_claim c \
+             join source.bibliography_entry e on e.id = c.entry_id \
+             where e.citing_version_id = $1",
+        )
+        .bind(h.version.as_uuid())
+        .fetch_one(&h.pool)
+        .await
+        .expect("count");
+        assert_eq!(written, 0);
+    }
+
+    #[tokio::test]
+    async fn should_not_duplicate_claims_when_local_evidence_reruns() {
+        let (_guard, h) = harness!();
+        let bibliography = numbered(&[
+            entry(
+                1,
+                &format!(
+                    "Adams, J. and Baker, K. {}. Journal of Tests, 2020.",
+                    h.title("Rerun claims first paper")
+                ),
+            ),
+            filler(&h),
+        ]);
+        let first = h.run(&bibliography).await;
+        assert!(first.field_claims > 0, "{first:?}");
+        let count = || async {
+            sqlx::query_scalar::<_, i64>(
+                "select count(*) from graph.field_claim c \
+                 join source.bibliography_entry e on e.id = c.entry_id \
+                 where e.citing_version_id = $1",
+            )
+            .bind(h.version.as_uuid())
+            .fetch_one(&h.pool)
+            .await
+            .expect("count")
+        };
+        let before = count().await;
+        assert_eq!(usize::try_from(before).ok(), Some(first.field_claims));
+        let second = h.run(&bibliography).await;
+        assert_eq!(second.field_claims, 0, "{second:?}");
+        assert_eq!(count().await, before);
+    }
+
+    #[tokio::test]
+    async fn should_keep_openalex_title_when_bibliography_disagrees() {
+        let (_guard, h) = harness!();
+        let doi = format!("10.5561/{}", h.marker);
+        let (existing, _) = h
+            .works
+            .resolve_or_create(IdentifierScheme::Doi, &doi, WorkKind::Article, None)
+            .await
+            .expect("existing");
+        let record = h
+            .records
+            .upsert(
+                "openalex_work_summary",
+                &format!("w-{}", h.marker),
+                Coverage::Complete,
+                &json!({}),
+            )
+            .await
+            .expect("record");
+        let openalex_title = FieldValue::Title(h.title("The authoritative provider title"));
+        h.claims
+            .record(&[NewClaim {
+                work_id: existing.id,
+                field: ProvenanceField::Title,
+                value: &openalex_title,
+                origin: ClaimOrigin::Openalex,
+                extractor: "openalex",
+                confidence: ClaimConfidence::Explicit,
+                source_record_id: Some(record),
+                entry_id: None,
+                locator: None,
+            }])
+            .await
+            .expect("openalex claim");
+        let bibliography = numbered(&[
+            entry(
+                1,
+                &format!(
+                    "Adams. {}. 2020. doi:{doi}",
+                    h.title("A sloppy citation of that paper")
+                ),
+            ),
+            filler(&h),
+        ]);
+        h.run(&bibliography).await;
+        let selected = h.works.get(existing.id).await.expect("get").expect("work");
+        assert_eq!(selected.display_title, Some(openalex_title.display()));
+        assert_eq!(selected.title_state, FieldState::Known);
+        assert_eq!(
+            claim_of(&bib_claims(&h, existing.id).await, ProvenanceField::Title).value,
+            json!(h.title("A sloppy citation of that paper"))
+        );
     }
 }
