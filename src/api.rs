@@ -1,5 +1,4 @@
 use std::{
-    collections::HashSet,
     path::{Path, PathBuf},
     str::FromStr,
     sync::{
@@ -13,6 +12,7 @@ mod citation_graph;
 mod curation;
 mod labels;
 mod literature;
+mod neighbors;
 mod notes;
 mod reader_tools;
 mod source_index;
@@ -21,7 +21,7 @@ mod vimrc;
 use axum::{
     Json, Router,
     body::Body,
-    extract::{Path as AxumPath, Query, State},
+    extract::{Path as AxumPath, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{IntoResponse, Response},
     routing::{any, delete, get, post},
@@ -115,11 +115,6 @@ pub struct LibraryResponse {
     pub papers: Vec<PaperOverview>,
 }
 
-#[derive(Debug, Deserialize)]
-struct NeighborsQuery {
-    direction: Option<String>,
-}
-
 #[derive(Debug, Serialize)]
 struct CitationsResponse {
     work: Work,
@@ -130,42 +125,6 @@ struct CitationsResponse {
     acquisitions: AcquisitionStates,
     marks: curation::Marks,
     work_tags: curation::WorkTagIds,
-}
-
-#[derive(Debug, Serialize)]
-struct NeighborsResponse {
-    center: WorkId,
-    direction: &'static str,
-    nodes: Vec<Work>,
-    edges: Vec<labels::GraphEdge>,
-    local_papers: literature::LocalPapers,
-    acquisitions: AcquisitionStates,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum NeighborDirection {
-    References,
-    Citations,
-    Both,
-}
-
-impl NeighborDirection {
-    fn parse(value: Option<&str>) -> Option<Self> {
-        match value.unwrap_or("references") {
-            "references" => Some(Self::References),
-            "citations" => Some(Self::Citations),
-            "both" => Some(Self::Both),
-            _ => None,
-        }
-    }
-
-    const fn as_str(self) -> &'static str {
-        match self {
-            Self::References => "references",
-            Self::Citations => "citations",
-            Self::Both => "both",
-        }
-    }
 }
 
 impl AppState {
@@ -1891,7 +1850,10 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .route("/api/experiments", get(experiment_catalog))
         .route("/api/works/{id}", get(get_work))
         .route("/api/works/{id}/citations", get(get_work_citations))
-        .route("/api/graph/neighbors/{id}", get(get_graph_neighbors))
+        .route(
+            "/api/graph/neighbors/{id}",
+            get(neighbors::get_graph_neighbors),
+        )
         .route("/api/papers/{id}", get(paper))
         .route("/api/papers/{id}/source", get(paper_source))
         .route("/api/papers/{id}/markdown", get(paper_markdown))
@@ -2026,96 +1988,6 @@ async fn get_work_citations(
             acquisitions,
             marks,
             work_tags,
-        }),
-    )
-        .into_response()
-}
-
-async fn get_graph_neighbors(
-    State(state): State<AppState>,
-    AxumPath(id): AxumPath<String>,
-    Query(query): Query<NeighborsQuery>,
-) -> Response {
-    let graph = match graph_or_unavailable(&state) {
-        Ok(graph) => graph,
-        Err(response) => return *response,
-    };
-    let work_id = match parse_work_id(&id) {
-        Ok(work_id) => work_id,
-        Err(response) => return *response,
-    };
-    let Some(direction) = NeighborDirection::parse(query.direction.as_deref()) else {
-        return graph_error(
-            StatusCode::BAD_REQUEST,
-            "invalid_direction",
-            "direction must be references, citations, or both.",
-        );
-    };
-    let center = match fetch_work(graph, work_id).await {
-        Ok(work) => work,
-        Err(response) => return *response,
-    };
-    let work_id = center.id;
-
-    let mut nodes = vec![center];
-    let mut seen = HashSet::from([work_id]);
-    let mut pairs = Vec::new();
-
-    if matches!(
-        direction,
-        NeighborDirection::References | NeighborDirection::Both
-    ) {
-        let neighbors = match graph.citations.outgoing(work_id).await {
-            Ok(works) => works,
-            Err(error) => return graph_query_failure(&error),
-        };
-        for neighbor in neighbors {
-            let cited = neighbor.id;
-            if seen.insert(cited) {
-                nodes.push(neighbor);
-            }
-            pairs.push((work_id, cited));
-        }
-    }
-    if matches!(
-        direction,
-        NeighborDirection::Citations | NeighborDirection::Both
-    ) {
-        let neighbors = match graph.citations.incoming(work_id).await {
-            Ok(works) => works,
-            Err(error) => return graph_query_failure(&error),
-        };
-        for neighbor in neighbors {
-            let citing = neighbor.id;
-            if seen.insert(citing) {
-                nodes.push(neighbor);
-            }
-            pairs.push((citing, work_id));
-        }
-    }
-
-    let edges = match labels::edge_payloads(&state, &pairs).await {
-        Ok(edges) => edges,
-        Err(response) => return *response,
-    };
-    let work_ids: Vec<WorkId> = nodes.iter().map(|work| work.id).collect();
-    let local_papers = match literature::local_papers_for(&state, &work_ids).await {
-        Ok(local_papers) => local_papers,
-        Err(response) => return *response,
-    };
-    let acquisitions = match acquisition::states_for(&state, &work_ids).await {
-        Ok(acquisitions) => acquisitions,
-        Err(response) => return *response,
-    };
-    (
-        StatusCode::OK,
-        Json(NeighborsResponse {
-            center: work_id,
-            direction: direction.as_str(),
-            nodes,
-            edges,
-            local_papers,
-            acquisitions,
         }),
     )
         .into_response()
