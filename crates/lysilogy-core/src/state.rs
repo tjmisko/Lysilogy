@@ -321,6 +321,38 @@ string_enum!(
 );
 
 string_enum!(
+    /// Who a field claim comes from. Trust order lives in `provenance::selection_rank`.
+    ClaimOrigin {
+        User => "user",
+        Publisher => "publisher",
+        Paper => "paper",
+        Openalex => "openalex",
+        LibraryMetadata => "library_metadata",
+        CitingBibliography => "citing_bibliography",
+    }
+);
+
+string_enum!(
+    /// How reliably a claim's extractor read its value.
+    ClaimConfidence {
+        Explicit => "explicit",
+        Heuristic => "heuristic",
+        Model => "model",
+    }
+);
+
+string_enum!(
+    /// A bibliographic field with tracked provenance (API spelling).
+    ProvenanceField {
+        Title => "title",
+        Year => "year",
+        Authors => "authors",
+        Venue => "venue",
+        Doi => "doi",
+    }
+);
+
+string_enum!(
     /// How far a reader has got with an item on a reading ramp.
     RampItemStatus {
         Unread => "unread",

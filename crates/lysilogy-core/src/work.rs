@@ -22,6 +22,9 @@ pub struct Work {
     pub title_state: FieldState,
     pub display_year: Option<i32>,
     pub year_state: FieldState,
+    /// Selected printed author strings in order; see `provenance::select_field`.
+    pub display_authors: Option<Vec<String>>,
+    pub authors_state: FieldState,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -66,6 +69,8 @@ mod tests {
             title_state: FieldState::Known,
             display_year: Some(2017),
             year_state: FieldState::Known,
+            display_authors: Some(vec!["Ashish Vaswani".to_owned()]),
+            authors_state: FieldState::Known,
             created_at: now,
             updated_at: now,
         };
@@ -96,6 +101,8 @@ mod tests {
             title_state: FieldState::Unknown,
             display_year: None,
             year_state: FieldState::Unknown,
+            display_authors: None,
+            authors_state: FieldState::Unknown,
             created_at: now,
             updated_at: now,
         };
