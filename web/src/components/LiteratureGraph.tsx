@@ -814,9 +814,20 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   }, [selectedId, workPanelOpen]);
   const activateHistogramWork = openWorkPanel;
 
+  // Entering the year view opens the panel for the focused card, once focus is a Work in the payload.
+  const pendingPanelOpen = useRef(false);
+  useEffect(() => {
+    if (!pendingPanelOpen.current || graphView !== "histogram" || histogramData === null) return;
+    if (selectedId === null || selectedId === histogramData.center) return;
+    if (!histogramData.nodes.some((node) => node.id === selectedId)) return;
+    pendingPanelOpen.current = false;
+    openWorkPanel(selectedId);
+  }, [graphView, histogramData, openWorkPanel, selectedId]);
+
   const toggleGraphView = useCallback((): void => {
     const next: LiteratureView = graphView === "radial" ? "histogram" : "radial";
     setGraphView(next);
+    pendingPanelOpen.current = next === "histogram";
     try {
       window.localStorage.setItem(LITERATURE_VIEW_STORAGE_KEY, next);
     } catch {
@@ -861,6 +872,16 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
       }
       // The year view's own keys arrive with its listener; radial cycling must not run against its grid.
       if (graphView === "histogram" && HISTOGRAM_NAV_KEYS.has(event.key)) return;
+      if (graphView === "histogram" && (event.key === "w" || event.key === "y" || event.key === "R")) {
+        event.preventDefault();
+        setWalkNotice("Expansion and reading ramps live in the radial view — press v to switch.");
+        return;
+      }
+      if (graphView === "histogram" && (event.key === "+" || event.key === "=" || event.key === "-")) {
+        event.preventDefault();
+        setWalkNotice("The year view shows every reference; top-N applies to the radial view.");
+        return;
+      }
       if (event.key === "w") {
         if (editingId !== null || activeWork === undefined) return;
         event.preventDefault();
