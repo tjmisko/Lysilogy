@@ -871,3 +871,11 @@ live; live smoke recorded.
 2. Unavailable recheck window: 30 days. Shorter?
 3. Crossref `link[]` (publisher TDM URLs) is left out because most need tokens; worth a
    follow-up?
+
+## U1 implementation notes
+
+- `record_failure` also sets `checked_at`, per the closing note under Flow.
+- `set_state` clears `unavailable_reason` for any non-terminal target so the table CHECK holds; setting `unavailable` through it is rejected by the CHECK (use `mark_unavailable`).
+- `push_trial` caps in a single SQL statement (no `select ... for update`).
+- `present_document_for_sha` test inserts the second same-hash document with raw SQL, because the scanner treats a second path with the same hash as a duplicate rather than a new document.
+- Extra tests beyond the plan list: `should_record_mapping_and_bump_attempts_when_mapped`; the core round-trip test also covers `CandidateOrigin` and `WorkLinkMethod::Acquisition`.

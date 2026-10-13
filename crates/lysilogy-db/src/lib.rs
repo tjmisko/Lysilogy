@@ -14,6 +14,7 @@ pub use sqlx::PgPool;
 /// `_sqlx_migrations` so re-running is a no-op.
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
+pub mod acquisition;
 pub mod citation;
 pub mod document;
 pub mod evidence;

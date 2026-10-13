@@ -21,9 +21,10 @@ pub use id::{
 pub use identifier::{DetectedIdentifier, extract as extract_identifiers, front_matter};
 pub use names::first_author_family;
 pub use state::{
-    AssertionStatus, CitationStyle, Coverage, DecisionKind, DocumentFormat, FieldKind, FieldState,
-    IdentifierScheme, IdentifierStatus, ParseStateError, RelationshipOrigin, ResolutionMethod,
-    ResolutionStatus, ReviewState, UploadState, VersionKind, Visibility, WorkKind, WorkLinkMethod,
+    AcquisitionState, AssertionStatus, CandidateOrigin, CitationStyle, Coverage, DecisionKind,
+    DocumentFormat, FieldKind, FieldState, IdentifierScheme, IdentifierStatus, ParseStateError,
+    RelationshipOrigin, ResolutionMethod, ResolutionStatus, ReviewState, UnavailableReason,
+    UploadState, VersionKind, Visibility, WorkKind, WorkLinkMethod,
 };
 pub use title::{title_key, title_similarity};
 pub use work::{Work, WorkIdentifier, WorkVersion};
