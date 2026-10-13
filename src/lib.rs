@@ -8,6 +8,7 @@ pub mod citation_graph;
 pub mod config;
 pub mod domain;
 pub mod error;
+pub mod expansion;
 pub mod extract;
 mod frontmatter;
 pub mod graph;
@@ -24,6 +25,7 @@ pub mod relevance;
 mod remote;
 pub mod source_index;
 pub mod store;
+pub mod walk;
 
 pub use api::{AppState, build_router};
 pub use error::{Error, Result};

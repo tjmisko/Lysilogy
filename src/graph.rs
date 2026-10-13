@@ -10,7 +10,9 @@ use lysilogy_db::citation::CitationRepository;
 use lysilogy_db::curation::CurationRepository;
 use lysilogy_db::document::DocumentRepository;
 use lysilogy_db::evidence::EvidenceRepository;
+use lysilogy_db::expansion::ExpansionRepository;
 use lysilogy_db::prominence::ProminenceRepository;
+use lysilogy_db::ramp::RampRepository;
 use lysilogy_db::relationship::RelationshipRepository;
 use lysilogy_db::source_record::SourceRecordRepository;
 use lysilogy_db::work::WorkRepository;
@@ -27,6 +29,8 @@ pub struct GraphState {
     pub acquisitions: AcquisitionRepository,
     pub curation: CurationRepository,
     pub prominence: ProminenceRepository,
+    pub ramps: RampRepository,
+    pub expansions: ExpansionRepository,
 }
 
 impl std::fmt::Debug for GraphState {
@@ -47,7 +51,9 @@ impl GraphState {
             relationships: RelationshipRepository::new(pool.clone()),
             acquisitions: AcquisitionRepository::new(pool.clone()),
             curation: CurationRepository::new(pool.clone()),
-            prominence: ProminenceRepository::new(pool),
+            prominence: ProminenceRepository::new(pool.clone()),
+            ramps: RampRepository::new(pool.clone()),
+            expansions: ExpansionRepository::new(pool),
         }
     }
 

@@ -143,7 +143,11 @@ impl AppState {
         .await?)
     }
 
-    async fn linked_work_of(&self, graph: &GraphState, paper: &PaperId) -> Result<WorkId> {
+    pub(crate) async fn linked_work_of(
+        &self,
+        graph: &GraphState,
+        paper: &PaperId,
+    ) -> Result<WorkId> {
         let relative_path = self
             .catalog
             .read()

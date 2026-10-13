@@ -3,7 +3,6 @@
 
 use std::{
     collections::{BTreeMap, HashMap},
-    path::Path,
     sync::Arc,
 };
 
@@ -352,38 +351,29 @@ pub(super) async fn local_papers_for(
     work_ids: &[WorkId],
 ) -> Result<LocalPapers, GraphError> {
     let graph = graph_or_unavailable(state)?;
-    let documents = async {
-        let workspace = graph.documents.ensure_default_workspace().await?;
-        graph
-            .documents
-            .local_documents_for_works(workspace, work_ids)
-            .await
-    }
-    .await
-    .map_err(|error| Box::new(graph_query_failure(&error)))?;
-
+    let held = state
+        .held_papers_with_titles(graph, work_ids)
+        .await
+        .map_err(|error| Box::new(graph_query_failure(&error)))?;
     let mut local_papers = LocalPapers::new();
-    let catalog = state.catalog.read().await;
-    for document in documents {
-        let paper_id = PaperId::from_relative_path(Path::new(&document.relative_path));
-        let Some(entry) = catalog.get(&paper_id) else {
-            continue;
-        };
-        local_papers
-            .entry(document.work_id.to_string())
-            .or_default()
-            .push(LocalPaper {
-                paper_id,
-                title: entry.overview.metadata.title.clone(),
-            });
+    for (work_id, papers) in held {
+        local_papers.insert(
+            work_id.to_string(),
+            papers
+                .into_iter()
+                .map(|paper| LocalPaper {
+                    paper_id: paper.paper_id,
+                    title: paper.title,
+                })
+                .collect(),
+        );
     }
-    drop(catalog);
     Ok(local_papers)
 }
 
 #[cfg(test)]
 mod tests {
-    use std::{os::unix::fs::PermissionsExt, time::Duration};
+    use std::{os::unix::fs::PermissionsExt, path::Path, time::Duration};
 
     use axum::{body::Body, http::Request};
     use http_body_util::BodyExt;
