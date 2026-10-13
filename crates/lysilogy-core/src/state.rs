@@ -208,6 +208,15 @@ string_enum!(
 );
 
 string_enum!(
+    /// How a document came to be linked to a Work.
+    WorkLinkMethod {
+        Identifier => "identifier",
+        TitleMatch => "title_match",
+        Manual => "manual",
+    }
+);
+
+string_enum!(
     /// Which bibliographic field a claim populates.
     FieldKind {
         Title => "title",
@@ -228,12 +237,18 @@ mod tests {
     #[test]
     fn serde_and_as_str_agree() {
         let cases = [
-            (serde_json::to_string(&FieldState::NotChecked).unwrap(), "not_checked"),
+            (
+                serde_json::to_string(&FieldState::NotChecked).unwrap(),
+                "not_checked",
+            ),
             (
                 serde_json::to_string(&IdentifierScheme::SemanticScholar).unwrap(),
                 "semantic_scholar",
             ),
-            (serde_json::to_string(&DecisionKind::Correction).unwrap(), "correction"),
+            (
+                serde_json::to_string(&DecisionKind::Correction).unwrap(),
+                "correction",
+            ),
         ];
         for (json, text) in cases {
             assert_eq!(json, format!("\"{text}\""));

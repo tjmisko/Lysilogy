@@ -113,9 +113,12 @@ impl WorkRepository {
 
         if inserted.is_none() {
             transaction.rollback().await?;
-            let existing = self.find_by_identifier(scheme, value).await?.ok_or_else(|| {
-                DbError::Conflict("identifier conflict without a surviving Work".into())
-            })?;
+            let existing = self
+                .find_by_identifier(scheme, value)
+                .await?
+                .ok_or_else(|| {
+                    DbError::Conflict("identifier conflict without a surviving Work".into())
+                })?;
             return Ok((existing, false));
         }
 
@@ -200,6 +203,94 @@ impl WorkRepository {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    /// Record a claim unless an identical one (same Work, field, value, and
+    /// source record) already exists. Returns whether a row was inserted.
+    pub async fn add_claim_once(
+        &self,
+        work_id: WorkId,
+        field: FieldKind,
+        value: &Value,
+        state: FieldState,
+        source_record_id: Option<SourceRecordId>,
+        locator: Option<&str>,
+    ) -> Result<bool> {
+        let result = sqlx::query(
+            "insert into graph.field_claim \
+                 (work_id, field, value, state, source_record_id, locator) \
+             select $1, $2, $3, $4, $5, $6 \
+             where not exists ( \
+                 select 1 from graph.field_claim \
+                 where work_id = $1 and field = $2 and value = $3 \
+                   and source_record_id is not distinct from $5)",
+        )
+        .bind(work_id.as_uuid())
+        .bind(field.as_str())
+        .bind(value)
+        .bind(state.as_str())
+        .bind(source_record_id.map(SourceRecordId::as_uuid))
+        .bind(locator)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Set the display title only while the title state is not yet known.
+    /// Returns whether the Work changed.
+    pub async fn fill_display_title_if_unknown(
+        &self,
+        work_id: WorkId,
+        title: &str,
+    ) -> Result<bool> {
+        let result = sqlx::query(
+            "update graph.work set display_title = $2, title_state = 'known', updated_at = now() \
+             where id = $1 and title_state <> 'known'",
+        )
+        .bind(work_id.as_uuid())
+        .bind(title)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Set the display year only while the year state is not yet known.
+    /// Returns whether the Work changed.
+    pub async fn fill_display_year_if_unknown(&self, work_id: WorkId, year: i32) -> Result<bool> {
+        let result = sqlx::query(
+            "update graph.work set display_year = $2, year_state = 'known', updated_at = now() \
+             where id = $1 and year_state <> 'known'",
+        )
+        .bind(work_id.as_uuid())
+        .bind(year)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Active `OpenAlex` identifiers for the given Works.
+    pub async fn openalex_ids_for(&self, work_ids: &[WorkId]) -> Result<Vec<(WorkId, String)>> {
+        if work_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let ids: Vec<Uuid> = work_ids.iter().map(|id| id.as_uuid()).collect();
+        let rows = sqlx::query(
+            "select work_id, value_normalized from graph.work_identifier \
+             where work_id = any($1) and scheme = $2 and status = 'active' \
+             order by value_normalized",
+        )
+        .bind(&ids)
+        .bind(IdentifierScheme::Openalex.as_str())
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter()
+            .map(|row| {
+                Ok((
+                    WorkId::from_uuid(row.try_get("work_id")?),
+                    row.try_get("value_normalized")?,
+                ))
+            })
+            .collect()
     }
 }
 
@@ -357,5 +448,148 @@ mod tests {
                 .await
                 .expect("count claims");
         assert_eq!(claims, 1);
+    }
+
+    #[tokio::test]
+    async fn should_not_duplicate_claim_when_added_twice() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = WorkRepository::new(pool.clone());
+        let work = repo
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("create");
+        let value = serde_json::json!("Same Title");
+
+        let first = repo
+            .add_claim_once(
+                work.id,
+                FieldKind::Title,
+                &value,
+                FieldState::Known,
+                None,
+                None,
+            )
+            .await
+            .expect("first");
+        let second = repo
+            .add_claim_once(
+                work.id,
+                FieldKind::Title,
+                &value,
+                FieldState::Known,
+                None,
+                None,
+            )
+            .await
+            .expect("second");
+        let other = repo
+            .add_claim_once(
+                work.id,
+                FieldKind::Title,
+                &serde_json::json!("Other Title"),
+                FieldState::Known,
+                None,
+                None,
+            )
+            .await
+            .expect("other");
+        assert_eq!((first, second, other), (true, false, true));
+
+        let claims: i64 =
+            sqlx::query_scalar("select count(*) from graph.field_claim where work_id = $1")
+                .bind(work.id.as_uuid())
+                .fetch_one(&pool)
+                .await
+                .expect("count");
+        assert_eq!(claims, 2);
+    }
+
+    #[tokio::test]
+    async fn should_not_overwrite_known_title_when_filling_display_title() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = WorkRepository::new(pool);
+        let work = repo
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("create");
+
+        assert!(
+            repo.fill_display_title_if_unknown(work.id, "First")
+                .await
+                .expect("fill")
+        );
+        assert!(
+            !repo
+                .fill_display_title_if_unknown(work.id, "Second")
+                .await
+                .expect("fill")
+        );
+        assert!(
+            repo.fill_display_year_if_unknown(work.id, 2013)
+                .await
+                .expect("fill")
+        );
+        assert!(
+            !repo
+                .fill_display_year_if_unknown(work.id, 1999)
+                .await
+                .expect("fill")
+        );
+
+        let fetched = repo.get(work.id).await.expect("get").expect("present");
+        assert_eq!(fetched.display_title.as_deref(), Some("First"));
+        assert_eq!(fetched.display_year, Some(2013));
+    }
+
+    #[tokio::test]
+    async fn should_return_openalex_ids_when_works_have_them() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = WorkRepository::new(pool);
+        let with_id = repo
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("create");
+        let without_id = repo
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("create");
+        let openalex = format!("W{}", Uuid::new_v4().simple());
+        repo.add_identifier(
+            with_id.id,
+            IdentifierScheme::Openalex,
+            &openalex,
+            None,
+            IdentifierStatus::Active,
+        )
+        .await
+        .expect("identifier");
+        repo.add_identifier(
+            without_id.id,
+            IdentifierScheme::Doi,
+            &random_doi(),
+            None,
+            IdentifierStatus::Active,
+        )
+        .await
+        .expect("identifier");
+
+        let found = repo
+            .openalex_ids_for(&[with_id.id, without_id.id])
+            .await
+            .expect("lookup");
+        assert_eq!(found, vec![(with_id.id, openalex)]);
+        assert!(repo.openalex_ids_for(&[]).await.expect("empty").is_empty());
     }
 }

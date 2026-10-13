@@ -574,3 +574,11 @@ Files: `web/src/types.ts`, `web/src/lib/api.ts`, `web/src/lib/literatureLayout.t
 
 Acceptance: all frontend checks and the Rust gate are green, the Playwright script
 passes, and the live smoke is recorded in this doc.
+
+### U2 implementation notes
+
+- `fill_display_year_if_unknown` guards on `year_state <> 'known'` (the plan text said
+  `title_state`, which was a typo).
+- `add_claim_once` returns `bool` (inserted or not); `openalex_ids_for` also returns early
+  for empty input.
+- `work_link` returns `None` unless `work_id`, method, and `work_linked_at` are all set.
