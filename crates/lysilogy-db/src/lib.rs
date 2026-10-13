@@ -17,6 +17,7 @@ pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 pub mod citation;
 pub mod document;
 pub mod evidence;
+pub mod relationship;
 pub mod source_record;
 pub mod work;
 
@@ -239,6 +240,8 @@ mod tests {
         for column in [
             "graph.work.title_key",
             "source.bibliography_entry.ordinal",
+            "graph.relationship_claim.superseded_by",
+            "graph.relationship_claim.source_record_id",
             "source.bibliography_entry.fields",
             "graph.citation_mention.entry_id",
             "graph.citation_mention.marker_start",
