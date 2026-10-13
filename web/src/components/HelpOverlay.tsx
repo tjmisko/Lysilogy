@@ -32,6 +32,7 @@ const GROUPS = [
       ["a / x / e (graph, Work open)", "Accept / reject / edit the reason a work is cited"],
       ["g (graph, Work open)", "Show the citing sentence in the paper"],
       ["f (graph, Work open)", "Fetch an open-access copy of the selected work"],
+      ["w / double-click (graph)", "Expand / collapse the selected work's references in place (up to 3 hops, 6 expansions)"],
       ["g", "Open the technical glossary (pause after one g)"],
       ["m", "Toggle PDF / requested Markdown reconstruction"],
       ["p", "Toggle overview / source PDF"],

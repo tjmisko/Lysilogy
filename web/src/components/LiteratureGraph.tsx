@@ -4,15 +4,20 @@ import { acquisitionStatusText, canFetch, isRetry, type AcquisitionLike } from "
 import { ApiError, api } from "../lib/api";
 import { LITERATURE_QUIT_EVENT } from "../lib/literatureEvents";
 import {
-  layoutRankedFanout, planVisibleLabels, type LabelRect, type LabelRequest, type RankedPlacement,
+  layoutRankedFanout, layoutWalk, planVisibleLabels, walkViewBox,
+  type LabelRect, type LabelRequest, type RankedPlacement, type WalkPlacement,
 } from "../lib/literatureLayout";
 import {
   DEFAULT_TOP_N, clusterAriaLabel, findTagByName, markAfterToggle, nextTopN, nodeRadius, normalizeTagName, toggleInSet,
 } from "../lib/relevance";
 import type {
-  AcquisitionJobState, AcquisitionStatus, AcquisitionView, EdgeLabel, EdgeLabelEdit, GraphEdge, GraphNeighbors,
-  LocalPaper, MarkView, NeighborCluster, ProminenceView, TagView, Work, WorkCitations, WorkMarkName,
+  AcquisitionJobState, AcquisitionStatus, AcquisitionView, EdgeLabel, EdgeLabelEdit, ExpansionView, GraphEdge,
+  GraphNeighbors, LocalPaper, MarkView, NeighborCluster, ProminenceView, TagView, Work, WorkCitations, WorkMarkName,
 } from "../types";
+import {
+  EXPANSION_TOP_N, MAX_UI_DEPTH, MAX_UI_EXPANSIONS, addExpansion, canExpand, collapseExpansion, fanoutKnown,
+  type WalkExpansion,
+} from "../lib/walk";
 import { LiteratureCuration, TAG_INPUT_CLASS } from "./LiteratureCuration";
 import { LiteratureLegend, TAG_KEY_LIMIT } from "./LiteratureLegend";
 import "./LiteratureGraph.css";
@@ -52,6 +57,16 @@ type FetchEntry = {
   fresh: boolean;
 };
 
+/** A node being expanded: waiting on the server's expand job, or fetching its children. */
+type ExpandingEntry = { phase: "job" | "fetch"; parentDepth: number };
+
+type PlacedNode = RankedPlacement | WalkPlacement;
+
+function hopOf(placement: PlacedNode): number {
+  if ("hop" in placement) return placement.hop;
+  return placement.kind === "center" ? 0 : 1;
+}
+
 const RELATIONS = [
   "background", "uses_method", "uses_data", "extends", "supports", "contrasts", "critiques", "compares", "other",
 ] as const;
@@ -86,6 +101,13 @@ function workTitle(work: Work): string {
 function workLabel(work: Work, limit: number): string {
   const title = truncate(workTitle(work), limit);
   return work.display_year === null ? title : `${title} · ${work.display_year}`;
+}
+
+/** Walk children label away from their parent; base nodes label away from the canvas middle. */
+function labelOnRight(placement: PlacedNode, positions: ReadonlyMap<string, PlacedNode>): boolean {
+  if (!("parentId" in placement)) return placement.x >= CANVAS.width / 2;
+  const parent = positions.get(placement.parentId);
+  return placement.x >= (parent?.x ?? CANVAS.width / 2);
 }
 
 function failureMessage(reason: unknown): string {
@@ -148,7 +170,21 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   const [fetches, setFetches] = useState<ReadonlyMap<string, FetchEntry>>(() => new Map());
   const [neighborsToken, setNeighborsToken] = useState(0);
   const [citationsToken, setCitationsToken] = useState(0);
+  const [walk, setWalk] = useState<readonly WalkExpansion[]>([]);
+  const [walkData, setWalkData] = useState<ReadonlyMap<string, GraphNeighbors>>(() => new Map());
+  const [expanding, setExpanding] = useState<ReadonlyMap<string, ExpandingEntry>>(() => new Map());
+  const [walkNotice, setWalkNotice] = useState<string | null>(null);
+  const [viewOverrides, setViewOverrides] = useState<ReadonlyMap<string, ExpansionView>>(() => new Map());
+  const expandingRef = useRef<ReadonlyMap<string, ExpandingEntry>>(new Map());
+  const walkAbort = useRef<AbortController | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // Everything in flight for the walk dies with the overlay.
+  useEffect(() => {
+    const controller = new AbortController();
+    walkAbort.current = controller;
+    return () => controller.abort();
+  }, []);
 
   // Load the paper's Work and its references. Aborted on unmount or reload.
   useEffect(() => {
@@ -263,13 +299,35 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
       CANVAS,
     );
   }, [clusters, graph]);
-  const worksById = useMemo(() => {
-    const map = new Map<string, Work>();
-    if (graph === null) return map;
-    map.set(graph.work.id, graph.work);
-    for (const node of graph.neighbors.nodes) map.set(node.id, node);
-    return map;
-  }, [graph]);
+  const centerPoint = useMemo(() => ({ x: CANVAS.width / 2, y: CANVAS.height / 2 }), []);
+  const walkLayout = useMemo(() => layoutWalk(placements, walk, centerPoint), [centerPoint, placements, walk]);
+  const allPlacements = useMemo<PlacedNode[]>(() => [...placements, ...walkLayout.placements], [placements, walkLayout]);
+  const positions = useMemo(() => new Map(allPlacements.map((placement) => [placement.id, placement])), [allPlacements]);
+  const viewBox = useMemo(() => walkViewBox(CANVAS, walkLayout.bounds), [walkLayout]);
+  // Child payloads join the base graph's lookups; the base graph wins on a clash.
+  const merged = useMemo(() => {
+    const payloads = [...walkData.values(), ...(graph === null ? [] : [graph.neighbors])];
+    const works = new Map<string, Work>();
+    const localPapers: GraphNeighbors["local_papers"] = {};
+    const acquisitions: GraphNeighbors["acquisitions"] = {};
+    const prominence: Record<string, ProminenceView> = {};
+    const marks: Record<string, MarkView> = {};
+    const workTags: Record<string, string[]> = {};
+    const expansions: Record<string, ExpansionView> = {};
+    for (const [workId, view] of viewOverrides) expansions[workId] = view;
+    for (const payload of payloads) {
+      for (const node of payload.nodes) works.set(node.id, node);
+      Object.assign(localPapers, payload.local_papers);
+      Object.assign(acquisitions, payload.acquisitions);
+      Object.assign(prominence, payload.prominence);
+      Object.assign(marks, payload.marks);
+      Object.assign(workTags, payload.work_tags);
+      Object.assign(expansions, payload.expansions);
+    }
+    if (graph !== null) works.set(graph.work.id, graph.work);
+    return { works, localPapers, acquisitions, prominence, marks, workTags, expansions };
+  }, [graph, viewOverrides, walkData]);
+  const worksById = merged.works;
   const edgeByCited = useMemo(() => {
     const map = new Map<string, GraphEdge>();
     if (graph === null) return map;
@@ -278,9 +336,9 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     }
     return map;
   }, [graph]);
-  const selectedIndex = selectedId === null ? 0 : placements.findIndex((placement) => placement.id === selectedId);
+  const selectedIndex = selectedId === null ? 0 : allPlacements.findIndex((placement) => placement.id === selectedId);
   const activeIndex = Math.max(0, selectedIndex);
-  const activePlacement = placements[activeIndex];
+  const activePlacement = allPlacements[activeIndex];
   const activeWork = activePlacement?.kind === "cluster" || activePlacement === undefined
     ? undefined : worksById.get(activePlacement.id);
   const activeWorkId = workPanelOpen ? activeWork?.id : undefined;
@@ -364,8 +422,8 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   const markFor = useCallback((workId: string): MarkView | null => {
     const override = markOverrides.get(workId);
     if (override !== undefined) return override;
-    return graph?.neighbors.marks?.[workId] ?? null;
-  }, [graph, markOverrides]);
+    return merged.marks[workId] ?? null;
+  }, [merged, markOverrides]);
   const applyMark = useCallback((workId: string, next: WorkMarkName | null, note: string | null): void => {
     setMarkError(null);
     setMarkOverrides((current) => new Map(current).set(workId, next === null ? null : { mark: next, note }));
@@ -428,8 +486,9 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   const visibleLabels = useMemo(() => {
     const requests: LabelRequest[] = [];
     const pinnedRequests: LabelRequest[] = [];
+    const deepRequests: LabelRequest[] = [];
     const reserved: LabelRect[] = [];
-    placements.forEach((placement, index) => {
+    allPlacements.forEach((placement, index) => {
       if (placement.kind === "cluster") {
         const cluster = clustersByKey.get(placement.clusterKey ?? "");
         if (cluster === undefined) return;
@@ -442,31 +501,32 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
       const isCenter = placement.kind === "center";
       const isActive = index === activeIndex;
       const pinned = markFor(work.id)?.mark === "pinned";
-      (pinned ? pinnedRequests : requests).push({
+      const deep = hopOf(placement) >= 2;
+      (pinned ? pinnedRequests : deep ? deepRequests : requests).push({
         id: placement.id,
         x: placement.x,
         y: placement.y,
         length: workLabel(work, isActive || isCenter ? FULL_LABEL_LIMIT : LABEL_LIMIT).length,
-        anchor: isCenter ? "middle" : placement.x >= CANVAS.width / 2 ? "start" : "end",
+        anchor: isCenter ? "middle" : labelOnRight(placement, positions) ? "start" : "end",
         fontSize: isActive || isCenter ? 12 : 10,
         offsetY: isCenter ? 24 : 3,
         forced: isCenter || isActive,
       });
     });
-    // Pinned Works claim label space before the rest, which follow rank order.
-    return planVisibleLabels([...pinnedRequests, ...requests], reserved);
-  }, [activeIndex, clustersByKey, markFor, placements, worksById]);
+    // Pinned Works claim label space first, then hop one in rank order, then deeper hops.
+    return planVisibleLabels([...pinnedRequests, ...requests, ...deepRequests], reserved);
+  }, [activeIndex, allPlacements, clustersByKey, markFor, positions, worksById]);
 
-  const briefs = graph?.neighbors.acquisitions;
-  const activeView: AcquisitionLike | null = activeFetch?.view ?? (activeWork === undefined ? null : briefs?.[activeWork.id] ?? null);
+  const briefs = merged.acquisitions;
+  const activeView: AcquisitionLike | null = activeFetch?.view ?? (activeWork === undefined ? null : briefs[activeWork.id] ?? null);
   const allLocalPapers = useMemo(
-    () => ({ ...graph?.neighbors.local_papers, ...(citations.kind === "ready" ? citations.citations.local_papers : {}) }),
-    [citations, graph],
+    () => ({ ...merged.localPapers, ...(citations.kind === "ready" ? citations.citations.local_papers : {}) }),
+    [citations, merged],
   );
   const fetchable = activeWork !== undefined && citations.kind === "ready" && canFetch(
     activeWork.id,
     allLocalPapers,
-    briefs ?? {},
+    briefs,
     activeFetch?.job ?? "none",
   );
   const startFetch = useCallback((): void => {
@@ -538,9 +598,134 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     setExpanded((current) => toggleInSet(current, key));
   }, []);
 
+  // Expansion in place. A node with known fanout is fetched at once; otherwise the
+  // server expands it first and we poll its job.
+  const finishExpanding = useCallback((workId: string): void => {
+    setExpanding((current) => {
+      const next = new Map(current);
+      next.delete(workId);
+      return next;
+    });
+  }, []);
+  const failExpanding = useCallback((workId: string, message: string): void => {
+    finishExpanding(workId);
+    setWalkNotice(message);
+  }, [finishExpanding]);
+  const loadChildren = useCallback((workId: string, parentDepth: number): void => {
+    const signal = walkAbort.current?.signal;
+    setExpanding((current) => new Map(current).set(workId, { phase: "fetch", parentDepth }));
+    api.graphNeighbors(workId, "references", { limit: EXPANSION_TOP_N }, signal)
+      .then((neighbors) => {
+        if (signal?.aborted) return;
+        const view = neighbors.expansions?.[workId];
+        if (view !== undefined) setViewOverrides((current) => new Map(current).set(workId, view));
+        const childIds = neighbors.nodes.map((node) => node.id).filter((id) => id !== workId);
+        if (childIds.length === 0) {
+          const reason = view?.state === "unavailable" ? `References are unavailable${view.unavailable_reason === null ? "" : ` (${relationName(view.unavailable_reason)})`}.` : "No references are known for this work.";
+          failExpanding(workId, reason);
+          return;
+        }
+        setWalkData((current) => new Map(current).set(workId, neighbors));
+        setWalk((current) => addExpansion(current, workId, childIds, parentDepth));
+        finishExpanding(workId);
+      })
+      .catch((reason: unknown) => {
+        if (!signal?.aborted) failExpanding(workId, failureMessage(reason));
+      });
+  }, [failExpanding, finishExpanding]);
+
+  const toggleWalk = useCallback((workId: string): void => {
+    if (graph === null) return;
+    setWalkNotice(null);
+    if (workId === graph.work.id) {
+      setWalkNotice("These are already the references of this paper.");
+      return;
+    }
+    const placement = positions.get(workId);
+    if (placement === undefined || placement.kind === "cluster") return;
+    if (expandingRef.current.has(workId)) return;
+    const verdict = canExpand(walk, workId, (id) => {
+      const known = positions.get(id);
+      return known === undefined ? 1 : hopOf(known);
+    });
+    if (verdict === "too_deep") {
+      setWalkNotice(`Expansion stops ${MAX_UI_DEPTH} hops from the center.`);
+      return;
+    }
+    if (verdict === "too_many") {
+      setWalkNotice(`At most ${MAX_UI_EXPANSIONS} works can be expanded at once. Collapse one first.`);
+      return;
+    }
+    if (walk.some((expansion) => expansion.parentId === workId)) {
+      const remaining = collapseExpansion(walk, workId);
+      const kept = new Set(remaining.map((expansion) => expansion.parentId));
+      setWalk(remaining);
+      setWalkData((current) => new Map([...current].filter(([parentId]) => kept.has(parentId))));
+      return;
+    }
+    const parentDepth = hopOf(placement);
+    if (fanoutKnown(merged.expansions[workId], merged.prominence[workId])) {
+      loadChildren(workId, parentDepth);
+      return;
+    }
+    setExpanding((current) => new Map(current).set(workId, { phase: "job", parentDepth }));
+    api.expandWork(workId)
+      .then((job) => {
+        if (walkAbort.current?.signal.aborted) return;
+        if (job.state === "succeeded") loadChildren(workId, parentDepth);
+        else if (job.state === "failed") failExpanding(workId, job.message ?? "Expanding this work failed.");
+        else if (job.state === "idle") failExpanding(workId, "The expansion did not start. Try again.");
+      })
+      .catch((reason: unknown) => {
+        if (!walkAbort.current?.signal.aborted) failExpanding(workId, failureMessage(reason));
+      });
+  }, [failExpanding, graph, loadChildren, merged, positions, walk]);
+
+  expandingRef.current = expanding;
+  const jobKey = [...expanding].filter(([, entry]) => entry.phase === "job").map(([workId]) => workId).sort().join(",");
+  // Poll expansion jobs once a second. The interval dies with the overlay.
+  useEffect(() => {
+    if (jobKey === "") return;
+    const controller = new AbortController();
+    const timer = window.setInterval(() => {
+      for (const workId of jobKey.split(",")) {
+        void (async () => {
+          try {
+            const status = await api.expansionStatus(workId, controller.signal);
+            const entry = expandingRef.current.get(workId);
+            if (controller.signal.aborted || entry?.phase !== "job" || status.job.state === "running") return;
+            if (status.job.state === "failed") failExpanding(workId, status.job.message ?? "Expanding this work failed.");
+            else if (status.job.state === "idle") failExpanding(workId, "The expansion is no longer running. Try again.");
+            else loadChildren(workId, entry.parentDepth);
+          } catch (reason: unknown) {
+            if (!controller.signal.aborted) failExpanding(workId, failureMessage(reason));
+          }
+        })();
+      }
+    }, POLL_MILLISECONDS);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+    };
+  }, [failExpanding, jobKey, loadChildren]);
+
+  // Keep expansions whose parent is still on the canvas; drop the rest with their subtrees.
+  useEffect(() => {
+    if (graph === null) return;
+    const orphans = walk.filter((expansion) => !positions.has(expansion.parentId));
+    if (orphans.length === 0) return;
+    const remaining = orphans.reduce((list, orphan) => collapseExpansion(list, orphan.parentId), walk);
+    const kept = new Set(remaining.map((expansion) => expansion.parentId));
+    setWalk(remaining);
+    setWalkData((current) => new Map([...current].filter(([parentId]) => kept.has(parentId))));
+  }, [graph, positions, walk]);
+
+  // A notice belongs to the selection it was raised on.
+  useEffect(() => setWalkNotice(null), [selectedId]);
+
   // Enter, click and Space: open a Work's panel, or expand a cluster.
   const activateIndex = useCallback((index: number): void => {
-    const placement = placements[index];
+    const placement = allPlacements[index];
     if (placement === undefined) return;
     if (placement.kind === "cluster") {
       const cluster = clustersByKey.get(placement.clusterKey ?? "");
@@ -554,7 +739,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     setSelectedId(placement.id);
     setCitations({ kind: "loading" });
     setWorkPanelOpen(true);
-  }, [clustersByKey, expandCluster, placements]);
+  }, [allPlacements, clustersByKey, expandCluster]);
 
   // Esc and q reach the App close chain first. It asks us to close the Work panel
   // before it closes the overlay, and cancels the event when we did.
@@ -583,6 +768,12 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
         return;
       }
       if (phase.kind !== "graph") return;
+      if (event.key === "w") {
+        if (editingId !== null || activeWork === undefined) return;
+        event.preventDefault();
+        toggleWalk(activeWork.id);
+        return;
+      }
       if (workPanelOpen) {
         if (editingId !== null) return;
         const requestedMark = MARK_KEYS[event.key];
@@ -626,10 +817,10 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
       }
       if (event.key === "j" || event.key === "ArrowDown" || event.key === "l" || event.key === "ArrowRight") {
         event.preventDefault();
-        setSelectedId(placements[(activeIndex + 1) % placements.length]?.id ?? null);
+        setSelectedId(allPlacements[(activeIndex + 1) % allPlacements.length]?.id ?? null);
       } else if (event.key === "k" || event.key === "ArrowUp" || event.key === "h" || event.key === "ArrowLeft") {
         event.preventDefault();
-        setSelectedId(placements[(activeIndex + placements.length - 1) % placements.length]?.id ?? null);
+        setSelectedId(allPlacements[(activeIndex + allPlacements.length - 1) % allPlacements.length]?.id ?? null);
       } else if (event.key === "Enter" || event.key === "o") {
         event.preventDefault();
         activateIndex(activeIndex);
@@ -646,23 +837,20 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [actionableLabel, activateIndex, activeIndex, activeWork, applyMark, centerId, editingId, fetchable, markFor, phase.kind, placements, reviewLabel, runLiterature, showInPaper, startFetch, tags, toggleTagFilter, workPanelOpen]);
+  }, [actionableLabel, activateIndex, activeIndex, activeWork, applyMark, centerId, editingId, fetchable, markFor, phase.kind, allPlacements, reviewLabel, runLiterature, showInPaper, startFetch, tags, toggleTagFilter, toggleWalk, workPanelOpen]);
 
   // A Work that left the canvas (hidden, downplayed, filtered) takes its panel with it.
   const panelWorkGone = workPanelOpen && graph !== null && selectedId !== null
-    && !placements.some((placement) => placement.id === selectedId);
+    && !allPlacements.some((placement) => placement.id === selectedId);
   useEffect(() => {
     if (panelWorkGone) setWorkPanelOpen(false);
   }, [panelWorkGone]);
 
-  const localIds = useMemo(() => {
-    if (graph === null) return new Set<string>();
-    return new Set(
-      Object.entries(graph.neighbors.local_papers)
-        .filter(([, papers]) => papers.length > 0)
-        .map(([workId]) => workId),
-    );
-  }, [graph]);
+  const localIds = useMemo(() => new Set(
+    Object.entries(merged.localPapers)
+      .filter(([, papers]) => papers.length > 0)
+      .map(([workId]) => workId),
+  ), [merged]);
 
   return (
     <div className="literature-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -708,7 +896,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
           {graph !== null && (
             <>
               <section className="literature-canvas" aria-label="Works cited by this paper">
-                <svg viewBox={`0 0 ${CANVAS.width} ${CANVAS.height}`} role="list" preserveAspectRatio="xMidYMid meet">
+                <svg viewBox={viewBox} role="list" preserveAspectRatio="xMidYMid meet">
                   {placements.slice(1).map((placement) => {
                     const center = placements[0];
                     if (center === undefined || placement.kind !== "work") return null;
@@ -718,9 +906,21 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                     const kind = labeled ? "is-labeled" : localOnly ? "is-local-only" : "";
                     return <line key={`edge-${placement.id}`} className={`literature-edge ${kind}`} data-edge-kind={kind === "" ? "provider" : kind.slice(3)} x1={center.x} y1={center.y} x2={placement.x} y2={placement.y} />;
                   })}
-                  {placements.map((placement, index) => {
+                  {walkLayout.walkEdges.map((edge) => {
+                    const from = positions.get(edge.from);
+                    const to = positions.get(edge.to);
+                    if (from === undefined || to === undefined) return null;
+                    return <line key={`walk-${edge.from}-${edge.to}`} className="literature-walk-edge" data-walk-edge={`${edge.from}>${edge.to}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} />;
+                  })}
+                  {walkLayout.crossLinks.map((link) => {
+                    const from = positions.get(link.from);
+                    const to = positions.get(link.to);
+                    if (from === undefined || to === undefined) return null;
+                    return <line key={`cross-${link.from}-${link.to}`} className="literature-cross-link" data-cross-link={`${link.from}>${link.to}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} />;
+                  })}
+                  {allPlacements.map((placement, index) => {
                     const isActive = index === activeIndex;
-                    const rightSide = placement.x >= CANVAS.width / 2;
+                    const rightSide = labelOnRight(placement, positions);
                     if (placement.kind === "cluster") {
                       const cluster = clustersByKey.get(placement.clusterKey ?? "");
                       if (cluster === undefined) return null;
@@ -761,10 +961,12 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                     const nodeFetch = fetches.get(work.id);
                     const acquisition = nodeFetch?.job === "running"
                       ? "running"
-                      : nodeFetch?.view?.state ?? briefs?.[work.id]?.state ?? "none";
-                    const prominence = graph.neighbors.prominence?.[work.id];
+                      : nodeFetch?.view?.state ?? briefs[work.id]?.state ?? "none";
+                    const prominence = merged.prominence[work.id];
                     const mark = isCenter ? null : markFor(work.id);
-                    const tagIds = graph.neighbors.work_tags?.[work.id] ?? [];
+                    const tagIds = merged.workTags[work.id] ?? [];
+                    const isExpanded = walk.some((expansion) => expansion.parentId === work.id);
+                    const isRunning = expanding.has(work.id);
                     const radius = isCenter ? 8 : prominence !== undefined ? nodeRadius(prominence.score) : isLocal ? 5.5 : 4;
                     return (
                       <g
@@ -776,11 +978,15 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                         data-local={isLocal ? "true" : "false"}
                         data-acquisition={acquisition}
                         data-mark={mark?.mark ?? "none"}
+                        data-hop={hopOf(placement)}
+                        data-expanded={isExpanded ? "true" : undefined}
+                        data-expansion={isRunning ? "running" : undefined}
                         data-score={prominence === undefined ? undefined : prominence.score.toFixed(2)}
                         data-tags={tagIds.join(",")}
                         aria-label={`${workLabel(work, FULL_LABEL_LIMIT)}${isLocal ? ", held locally" : ""}${mark === null ? "" : `, ${mark.mark}`}`}
                         transform={`translate(${placement.x} ${placement.y})`}
                         onClick={() => activateIndex(index)}
+                        onDoubleClick={() => toggleWalk(placement.id)}
                         onFocus={() => setSelectedId(placement.id)}
                         onKeyDown={(event) => {
                           if (event.key !== " ") return;
@@ -820,6 +1026,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                     );
                   })}
                 </svg>
+                {walkNotice !== null && <p className="literature-walk-notice" role="status" data-walk-notice="true">{walkNotice}</p>}
                 <LiteratureLegend
                   graph={graph.neighbors}
                   placementCount={placements.length - 1}
@@ -839,11 +1046,15 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                   work={activeWork}
                   isCenter={activeWork.id === graph.work.id}
                   mark={markFor(activeWork.id)}
-                  prominence={graph.neighbors.prominence?.[activeWork.id]}
+                  prominence={merged.prominence[activeWork.id]}
                   markError={markError}
                   onSetMark={(next, note) => applyMark(activeWork.id, next, note)}
                   tags={tags}
-                  assignedTagIds={graph.neighbors.work_tags?.[activeWork.id] ?? []}
+                  assignedTagIds={merged.workTags[activeWork.id] ?? []}
+                  expansionView={merged.expansions[activeWork.id]}
+                  isExpanded={walk.some((expansion) => expansion.parentId === activeWork.id)}
+                  isExpanding={expanding.has(activeWork.id)}
+                  onToggleExpansion={() => toggleWalk(activeWork.id)}
                   tagError={tagError}
                   onAssignTag={(name, color) => assignTagByName(activeWork.id, name, color)}
                   onUnassignTag={(tag) => unassignTag(activeWork.id, tag)}
@@ -916,6 +1127,10 @@ type WorkPanelProps = {
   fetchView: AcquisitionLike | null;
   canFetch: boolean;
   onFetch: () => void;
+  expansionView: ExpansionView | undefined;
+  isExpanded: boolean;
+  isExpanding: boolean;
+  onToggleExpansion: () => void;
   onClose: () => void;
 };
 
@@ -1059,6 +1274,18 @@ function WorkPanel(props: WorkPanelProps) {
           onAssignTag={props.onAssignTag}
           onUnassignTag={props.onUnassignTag}
         />
+      )}
+      {!props.isCenter && (
+        <section className="literature-expansion" aria-label="References">
+          <button type="button" className="literature-action" disabled={props.isExpanding} onClick={props.onToggleExpansion}>
+            {props.isExpanding ? "Expanding…" : props.isExpanded ? "Collapse references" : "Expand references"} <kbd>w</kbd>
+          </button>
+          {props.expansionView?.state === "unavailable" && (
+            <p className="literature-hint" role="status">
+              References are unavailable{props.expansionView.unavailable_reason === null ? "" : `: ${relationName(props.expansionView.unavailable_reason)}`}.
+            </p>
+          )}
+        </section>
       )}
       {edges.map((edge) => <EdgeReasons key={edge.heading} edge={edge} props={props} />)}
       {labelError !== null && <p className="literature-hint literature-label-error" role="alert">{labelError}</p>}

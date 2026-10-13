@@ -631,3 +631,47 @@
   border: 1px solid var(--line);
   background: transparent;
 }
+
+/* In-place multi-hop expansion */
+.literature-walk-edge {
+  stroke: var(--ink-faint);
+  stroke-width: 0.9;
+}
+
+.literature-cross-link {
+  stroke: var(--ink-faint);
+  stroke-width: 0.9;
+  stroke-dasharray: 4 3;
+  stroke-opacity: 0.8;
+}
+
+.literature-node[data-expanded="true"] .literature-dot {
+  stroke: var(--signal);
+  stroke-width: 2;
+}
+
+.literature-node[data-expansion="running"] .literature-halo {
+  stroke: var(--signal);
+  stroke-opacity: 0.7;
+  animation: literature-fetch-pulse 1.4s ease-in-out infinite;
+}
+
+.literature-node[data-hop="2"] .literature-dot,
+.literature-node[data-hop="3"] .literature-dot {
+  stroke-width: 1.1;
+}
+
+.literature-walk-notice {
+  margin: 0;
+  padding: 6px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft, var(--ink));
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .literature-node[data-expansion="running"] .literature-halo {
+    animation: none;
+    stroke-opacity: 0.7;
+  }
+}
