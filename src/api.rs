@@ -10,6 +10,7 @@ use std::{
 mod acquisition;
 mod citation_graph;
 mod curation;
+mod expansion;
 mod labels;
 mod literature;
 mod neighbors;
@@ -77,6 +78,7 @@ pub struct AppState {
     pub(crate) literature: crate::literature::LiteratureClient,
     literature_jobs: literature::LiteratureJobs,
     acquisition_jobs: acquisition::AcquisitionJobs,
+    expansion_jobs: expansion::ExpansionJobs,
     pub(crate) acquisition_throttle: Arc<lysilogy_ingest::acquire::HostThrottle>,
     pub(crate) acquisition_fetcher: crate::acquisition::SharedFetcher,
     jobs: JobTracker,
@@ -172,6 +174,7 @@ impl AppState {
             literature: crate::literature::LiteratureClient::from_environment()?,
             literature_jobs: literature::LiteratureJobs::default(),
             acquisition_jobs: acquisition::AcquisitionJobs::default(),
+            expansion_jobs: expansion::ExpansionJobs::default(),
             acquisition_throttle: Arc::new(lysilogy_ingest::acquire::HostThrottle::polite()),
             acquisition_fetcher: crate::acquisition::SharedFetcher::default(),
             frontend_root: None,
@@ -1837,6 +1840,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(citation_graph::routes())
         .merge(literature::routes())
         .merge(acquisition::routes())
+        .merge(expansion::routes())
         .merge(curation::routes())
         .merge(labels::routes())
         .merge(source_index::routes())
