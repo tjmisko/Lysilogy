@@ -151,3 +151,67 @@ export function layoutRankedFanout(
   }
   return placements;
 }
+
+export type LabelRequest = {
+  id: string;
+  x: number;
+  y: number;
+  /** Characters in the rendered label. */
+  length: number;
+  /** Which way the text runs from the dot, as the SVG `text-anchor`. */
+  anchor: "start" | "end" | "middle";
+  /** Font size in SVG units. */
+  fontSize: number;
+  /** Vertical offset of the text from the dot. */
+  offsetY: number;
+  /** Always shown (center, active, pinned); never hidden by a collision. */
+  forced: boolean;
+};
+
+export type LabelRect = { left: number; top: number; right: number; bottom: number };
+
+const LABEL_CHAR_WIDTH = 0.58;
+const LABEL_DOT_GAP = 11;
+const LABEL_PADDING = 2;
+
+/** Estimated box of a label, slightly generous so real text stays inside it. */
+export function labelRect(request: LabelRequest): LabelRect {
+  const width = request.length * request.fontSize * LABEL_CHAR_WIDTH + 2 * LABEL_PADDING;
+  const height = request.fontSize * 1.3 + 2 * LABEL_PADDING;
+  const centerY = request.y + request.offsetY - request.fontSize * 0.3;
+  const left = request.anchor === "start"
+    ? request.x + LABEL_DOT_GAP
+    : request.anchor === "end" ? request.x - LABEL_DOT_GAP - width : request.x - width / 2;
+  return { left, top: centerY - height / 2, right: left + width, bottom: centerY + height / 2 };
+}
+
+function overlaps(left: LabelRect, right: LabelRect): boolean {
+  return left.left < right.right && right.left < left.right && left.top < right.bottom && right.top < left.bottom;
+}
+
+/**
+ * Decide which labels to draw so that none overlap. Forced labels and the
+ * reserved rectangles (cluster pills) go first; the rest are taken in the
+ * order given (rank order) and skipped when they would collide with one
+ * already kept. A skipped Work keeps its dot, aria label, and tooltip.
+ */
+export function planVisibleLabels(
+  requests: readonly LabelRequest[],
+  reserved: readonly LabelRect[],
+): Set<string> {
+  const visible = new Set<string>();
+  const taken: LabelRect[] = [...reserved];
+  for (const request of requests) {
+    if (!request.forced) continue;
+    visible.add(request.id);
+    taken.push(labelRect(request));
+  }
+  for (const request of requests) {
+    if (request.forced) continue;
+    const rect = labelRect(request);
+    if (taken.some((other) => overlaps(rect, other))) continue;
+    visible.add(request.id);
+    taken.push(rect);
+  }
+  return visible;
+}

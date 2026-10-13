@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { layoutFanout, layoutRankedFanout, MAX_NODES_PER_RING } from '../src/lib/literatureLayout.ts';
+import { labelRect, layoutFanout, layoutRankedFanout, MAX_NODES_PER_RING, planVisibleLabels } from '../src/lib/literatureLayout.ts';
 
 const size = { width: 800, height: 600 };
 const makeNodes = (count) => Array.from({ length: count }, (_, i) => ({
@@ -127,4 +127,42 @@ test('should ignore duplicate and center ids when laying out ranked fanout', () 
   const placements = layoutRankedFanout('c', ['a', 'c', 'a', 'b'], ['k', 'k'], size);
   assert.deepEqual(placements.map((p) => p.id), ['c', 'a', 'b', 'cluster:k']);
   assert.deepEqual(layoutRankedFanout('c', [], [], size), [{ id: 'c', x: 400, y: 300, ring: 0, kind: 'center' }]);
+});
+
+const labelAt = (id, x, y, overrides = {}) => ({
+  id, x, y, length: 20, anchor: 'start', fontSize: 10, offsetY: 3, forced: false, ...overrides,
+});
+
+test('should hide a label when it would overlap one already kept', () => {
+  const visible = planVisibleLabels([labelAt('a', 100, 100), labelAt('b', 100, 104), labelAt('c', 100, 140)], []);
+  assert.deepEqual([...visible].sort(), ['a', 'c']);
+});
+
+test('should keep forced labels and let them displace ranked ones', () => {
+  const visible = planVisibleLabels([labelAt('a', 100, 100), labelAt('b', 100, 104, { forced: true })], []);
+  assert.deepEqual([...visible], ['b']);
+});
+
+test('should hide labels that collide with reserved rectangles', () => {
+  const reserved = [{ left: 90, top: 90, right: 300, bottom: 115 }];
+  assert.deepEqual([...planVisibleLabels([labelAt('a', 100, 100), labelAt('far', 100, 300)], reserved)], ['far']);
+});
+
+test('should keep labels on opposite sides of a dot when they do not collide', () => {
+  const visible = planVisibleLabels([labelAt('r', 200, 100), labelAt('l', 200, 100, { anchor: 'end' })], []);
+  assert.deepEqual([...visible].sort(), ['l', 'r']);
+});
+
+test('should never show overlapping labels when the ring is crowded', () => {
+  const placements = layoutRankedFanout('c', ids(36), [], size).slice(1);
+  const requests = placements.map((p) => labelAt(p.id, p.x, p.y, { anchor: p.x >= size.width / 2 ? 'start' : 'end', length: 36 }));
+  const visible = planVisibleLabels(requests, []);
+  const rects = requests.filter((r) => visible.has(r.id)).map(labelRect);
+  assert.ok(rects.length > 0);
+  for (let i = 0; i < rects.length; i += 1) {
+    for (let j = i + 1; j < rects.length; j += 1) {
+      const a = rects[i]; const b = rects[j];
+      assert.ok(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
+    }
+  }
 });

@@ -3,9 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { acquisitionStatusText, canFetch, isRetry, type AcquisitionLike } from "../lib/acquisition";
 import { ApiError, api } from "../lib/api";
 import { LITERATURE_QUIT_EVENT } from "../lib/literatureEvents";
-import { layoutRankedFanout, type RankedPlacement } from "../lib/literatureLayout";
 import {
-  DEFAULT_TOP_N, clusterAriaLabel, findTagByName, markAfterToggle, nextTopN, nodeRadius, toggleInSet,
+  layoutRankedFanout, planVisibleLabels, type LabelRect, type LabelRequest, type RankedPlacement,
+} from "../lib/literatureLayout";
+import {
+  DEFAULT_TOP_N, clusterAriaLabel, findTagByName, markAfterToggle, nextTopN, nodeRadius, normalizeTagName, toggleInSet,
 } from "../lib/relevance";
 import type {
   AcquisitionJobState, AcquisitionStatus, AcquisitionView, EdgeLabel, EdgeLabelEdit, GraphEdge, GraphNeighbors,
@@ -62,6 +64,10 @@ const MAX_NODE_TICKS = 3;
 const FALLBACK_TAG_COLOR = "#888888";
 const LABEL_LIMIT = 30;
 const FULL_LABEL_LIMIT = 90;
+
+function clusterPillWidth(cluster: NeighborCluster): number {
+  return Math.max(56, `${cluster.label} · ${cluster.count}`.length * 6.2 + 18);
+}
 
 function isEditable(target: EventTarget | null): boolean {
   return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
@@ -393,7 +399,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
       assign(known).then(afterTagMutation).catch(fail);
       return;
     }
-    api.createTag(name.trim(), color)
+    api.createTag(normalizeTagName(name), color)
       .catch(async (reason: unknown) => {
         // Another session may have created the same name; reuse it instead of failing.
         if (!(reason instanceof ApiError) || reason.status !== 409) throw reason;
@@ -417,6 +423,39 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     setTagFilter((current) => toggleInSet(current, tagId));
   }, []);
   const clearTagFilter = useCallback((): void => setTagFilter(new Set()), []);
+
+  // Draw only labels that do not collide. The center and active Work always keep theirs; pinned Works choose first.
+  const visibleLabels = useMemo(() => {
+    const requests: LabelRequest[] = [];
+    const pinnedRequests: LabelRequest[] = [];
+    const reserved: LabelRect[] = [];
+    placements.forEach((placement, index) => {
+      if (placement.kind === "cluster") {
+        const cluster = clustersByKey.get(placement.clusterKey ?? "");
+        if (cluster === undefined) return;
+        const width = clusterPillWidth(cluster);
+        reserved.push({ left: placement.x - width / 2, right: placement.x + width / 2, top: placement.y - 12, bottom: placement.y + 12 });
+        return;
+      }
+      const work = worksById.get(placement.id);
+      if (work === undefined) return;
+      const isCenter = placement.kind === "center";
+      const isActive = index === activeIndex;
+      const pinned = markFor(work.id)?.mark === "pinned";
+      (pinned ? pinnedRequests : requests).push({
+        id: placement.id,
+        x: placement.x,
+        y: placement.y,
+        length: workLabel(work, isActive || isCenter ? FULL_LABEL_LIMIT : LABEL_LIMIT).length,
+        anchor: isCenter ? "middle" : placement.x >= CANVAS.width / 2 ? "start" : "end",
+        fontSize: isActive || isCenter ? 12 : 10,
+        offsetY: isCenter ? 24 : 3,
+        forced: isCenter || isActive,
+      });
+    });
+    // Pinned Works claim label space before the rest, which follow rank order.
+    return planVisibleLabels([...pinnedRequests, ...requests], reserved);
+  }, [activeIndex, clustersByKey, markFor, placements, worksById]);
 
   const briefs = graph?.neighbors.acquisitions;
   const activeView: AcquisitionLike | null = activeFetch?.view ?? (activeWork === undefined ? null : briefs?.[activeWork.id] ?? null);
@@ -686,7 +725,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                       const cluster = clustersByKey.get(placement.clusterKey ?? "");
                       if (cluster === undefined) return null;
                       const text = `${cluster.label} · ${cluster.count}`;
-                      const width = Math.max(56, text.length * 6.2 + 18);
+                      const width = clusterPillWidth(cluster);
                       return (
                         <g
                           key={placement.id}
@@ -770,9 +809,13 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                             )}
                           </g>
                         )}
-                        <text className="literature-label" x={labelX} y={labelY} textAnchor={anchor}>
-                          {workLabel(work, isActive || isCenter ? FULL_LABEL_LIMIT : LABEL_LIMIT)}
-                        </text>
+                        {visibleLabels.has(placement.id)
+                          ? (
+                            <text className="literature-label" x={labelX} y={labelY} textAnchor={anchor}>
+                              {workLabel(work, isActive || isCenter ? FULL_LABEL_LIMIT : LABEL_LIMIT)}
+                            </text>
+                          )
+                          : <title>{workLabel(work, FULL_LABEL_LIMIT)}</title>}
                       </g>
                     );
                   })}
