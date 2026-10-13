@@ -664,3 +664,89 @@ Acceptance: gate green; smoke passes in mock mode; live check recorded.
   `c`, and storage persistence. Screenshots `histogram-u2.png`, `histogram-u2-expanded.png`.
 - Gate observed: cargo test --workspace 782 passed, 0 failed; clippy clean; typecheck, lint, build
   clean; test:histogram-layout 29, literature-layout 31, walk 11, ramp 10, relevance 13, all pass.
+
+## U3 implementation notes
+
+- Shipped in `LiteratureHistogram.tsx`: a window `keydown` listener (bubble phase; ignores
+  defaultPrevented, input/textarea/select targets and meta/ctrl/alt) that moves the cursor with
+  `moveCursor` and activates with Enter/`o`; hover on `pointermove`; the reveal `useLayoutEffect`
+  (`scrollToReveal`, smooth unless reduced motion); and a `SeedLink` child that draws the single
+  `path.literature-histogram-link`. In `LiteratureGraph.tsx`: auto-open of the panel on entering
+  the year view (`pendingPanelOpen` ref), inert `w`/`y`/`R` and `+`/`=`/`-` with the planned hints,
+  and `focusHistogramWork` (already retargeting the panel from U2). `HelpOverlay.tsx` rows per plan.
+  No new pure helper.
+- Deviation 1: `SeedLink` is its own component that owns the scroll offset, the viewport box and
+  the seed anchor (passive scroll listener coalesced by `requestAnimationFrame`, `ResizeObserver` on
+  section, scroll container and seed card), so scrolling re-renders only the overlay, not 200+
+  cards. It reads its refs in a passive `useEffect`: a parent's ref attaches after a child's layout
+  effect runs, so a layout effect saw a null section.
+- Deviation 2: `pendingPanelOpen` is consumed by an effect on `[graphView, histogramData,
+  selectedId]` rather than inside `focusHistogramWork`, because a selection that is already a card
+  never triggers a `focusHistogramWork` call. It opens once `selectedId` is a non-center node of the
+  histogram payload (immediately when that is already true, otherwise after reconciliation moves
+  focus).
+- Deviation 3 (found by the narrow-viewport smoke): the overlay is a grid with an auto column, so
+  the histogram's 13,000 px content made `.literature-body` as wide as the content and the scroll
+  container never scrolled. `LiteratureHistogram.css` adds
+  `.literature-graph[data-view="histogram"] .literature-body { min-width: 0 }` (no edit to
+  `LiteratureGraph.css`).
+- Deviation 4: a `ResizeObserver` on the scroll container re-reveals the focused card (instant, not
+  smooth) when the container resizes. Opening the Work panel on entry narrows the container after
+  the first reveal, and a smooth scroll still in flight otherwise ends on a stale target.
+- Deviation 5: hover ignores `pointermove` events whose client coordinates match the previous one,
+  so a scroll or a layout shift under a still pointer does not steal focus. Enter/`o` is not
+  hijacked when the event target is a button or link (the panel's Hide button still works on Enter).
+- Deviation 6: the U2 smoke asserted that `j` is inert in the histogram; that is now intentionally
+  false. The U3 smoke is `~/.cache/lysilogy-smoke/histogram-u3-smoke.mjs` (separate file; the U2 one
+  is kept for its rendering checks).
+- Environment: the shared dev and test Postgres databases had migration 9 applied by the
+  provenance track, so this branch's binary and `cargo test` failed with `VersionMissing(9)`. I used
+  a private test database (`lysilogy_test_histogram`, same server) for the gate and a throwaway
+  clone of the dev database with the version 9 row deleted for the live check (dropped afterwards).
+  The shared databases were not modified. The live server used `--library` pointing at the main
+  checkout's `local-articles` (read) with scratch `--data` and `--notes` directories.
+- Live check (release build, `lysilogy serve --bind 127.0.0.1:7396 --web web/dist`, dev DB clone):
+  - "On the computational complexity of ethics": 332 cards = `ranking.total` 332 (0 pinned, 0
+    hidden), 68 columns (including the unknown lane), densest bucket "Year unknown" with 27, densest
+    known year 2006 with 16, first render about 100-190 ms after `v`, 0 long tasks (>50 ms
+    PerformanceObserver) over 75 `l`/`j`/`h` presses at 60 ms spacing, no console errors.
+  - "Learning to summarize from human feedback": the dev DB holds 93 references, not the 215 the plan
+    cites. 93 cards = `ranking.total` 93, 19 columns, densest 2019 with 21, first render 64-107 ms,
+    0 long tasks, no console errors.
+  - Screenshot `~/.cache/lysilogy-smoke/live-histogram.png`. No marks were changed.
+- Gate observed: `cargo test --workspace` 344/20/1/1/77/98/241 passed, 0 failed (private test
+  database); clippy clean; typecheck, lint, build clean; test:histogram-layout 29, literature-layout
+  31, walk 11, ramp 10, relevance 13, all passing.
+
+## Result
+
+U3 done. The year view is fully interactive: keys, hover, panel follow, keep-in-view, one seed link,
+inert radial-only keys with hints, and help text. Mock smoke (35 checks) and live check pass.
+
+## Report
+
+What shipped:
+- `v` toggles radial and year views (persisted). Entering the year view opens the Work panel for the
+  focused card. `h`/`l`/arrows move between occupied years, `j`/`k` within a year; hover moves the
+  cursor too; the open panel follows every move. Enter/`o`/click opens the panel. Esc closes the
+  panel, then the overlay.
+- The focused card scrolls into view on keyboard moves (never on hover). One curve links the seed
+  card to the focused card. `w`/`y`/`R` and `+`/`-` show a hint instead of acting.
+
+How to user-test: open a paper with `L`, press `v`. Press `l` and `j` repeatedly across a dense
+decade and watch the panel title and the curve follow. Hover another card (the panel retargets, no
+scroll). Press `p` to pin (card jumps to the top of its year, focus stays), use the panel Hide
+button (focus lands on the neighbour at the same row). Press `w` or `+` to see the hints. Narrow the
+window to see horizontal scrolling inside the overlay. `?` shows the help rows.
+
+Smoke results (`histogram-u3-smoke.mjs`, mock data, 230 Works): all 35 checks pass, no console
+errors; screenshots `histogram-focus.png`, `histogram-narrow.png`, plus `live-histogram.png`.
+
+Known gaps:
+- Hovering sends one citations request per hovered card (no debounce), as flagged in Assumption 11.
+- The seed curve draws over cards between the seed and the focused card (pointer-events none, so it
+  never blocks input).
+- The live "Learning to summarize" neighborhood has 93 references in this DB, so the 215-reference
+  case was not exercised live; the 332-reference case was.
+- Author lines stay empty until the provenance branch's `display_authors` is served.
+- The U2 smoke's "j is inert" assertion is obsolete.
