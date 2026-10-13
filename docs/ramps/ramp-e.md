@@ -910,3 +910,46 @@ session started from the seed ID `wyAV7ICFKTpKX1cwQlzqUqQ`:
 6. `DELETE /api/ramps/{r}` -> 204, then `GET` -> 404 `ramp_not_found`.
 
 Afterwards `select count(*) from reader.ramp` and `reader.ramp_item` on the dev DB were both 0.
+
+## U4 implementation notes
+
+Shipped: `ExpansionView`, `ExpansionReport`, `WalkReport`, `ExpansionJob`, `ExpansionStatus`,
+`ExpandWorkOptions` and `GraphNeighbors.expansions?` (`web/src/types.ts`); `api.expandWork` and
+`api.expansionStatus`; pure `web/src/lib/walk.ts`; `layoutWalk`, `walkViewBox` and `HOP_RADIUS`
+in `literatureLayout.ts`; in-place expansion in `LiteratureGraph` (`w` with the panel open or
+closed, double-click, an "Expand references" panel button); help overlay row. Tests: `test:walk`
+11, `test:literature-layout` 31 (12 new), relevance 13, acquisition 14. Web gate (typecheck, lint,
+build) green; the cargo gate is unchanged by this unit.
+
+Choices and small adjustments:
+
+- Hop numbering: the center is hop 0, base nodes hop 1, their expansion children hop 2.
+  `WalkExpansion.depth` is the hop of the children, and `canExpand` refuses a node whose
+  children would be hop 4 (`too_deep`), so a hop-3 node is the one that shows the 4th-hop notice.
+  Already-expanded nodes always pass `canExpand`, so a full or deep list can still collapse.
+- `walkPathTo` returns `[center, work]` for a base node and `[center]` for the center. An
+  optional fourth argument `baseIds` stops the walk at base nodes, so a cross-linked base node
+  is not routed through an expansion that merely lists it.
+- `collapseExpansion` follows child expansions exactly one hop deeper whose parent is a listed
+  child, so a cross-linked node's own expansion is not removed with the other parent.
+- `layoutWalk` bounds cover the center, base works and walk children (`walkViewBox` pads only
+  the sides that grew past the canvas). Expansion of the center is ignored by the layout; `w`
+  on the center shows "These are already the references of this paper." and sends nothing.
+- A fetch that returns no children (or `unavailable`) adds no expansion; the panel shows the
+  reason from the server's `expansions` view, kept in a per-session override map. `unavailable`
+  is not "fanout known", so `w` again posts `/expand`, which the server answers from its cache.
+- Fanout known (client): the `expansions` view is `expanded`/`known`, or, with no view, the
+  prominence `cited_works_count > 0`. Base payload wins over child payloads in merged lookups.
+- A node being expanded ignores further `w` presses until it settles.
+- Known limitation: double-click on a node while the Work panel is closed also opens the panel
+  between the two clicks, which shrinks the canvas, so the second click can miss the node. It
+  works when the panel is already open; `w` is the dependable key.
+
+Mock Playwright pass (`~/.cache/lysilogy-smoke/walk-smoke.mjs`, not committed; serves `web/dist`,
+mocks `/api/*`): 31 checks, no console errors. `w` on an unexpanded node posts `/expand`, polls
+`/expansion`, then requests `limit=8`; 8 children render outward at radius 96 with solid walk
+edges; a child that is also a base node becomes a dashed cross-link with no duplicate; a hop-2
+expansion works; attempting a 4th hop shows the notice and sends nothing; a known-fanout node
+skips `POST /expand`; the panel button and double-click (panel open) expand; a seventh expansion
+is refused; collapsing a hop-1 node removes its subtree and walk edges; `j` visits base
+placements and then walk children. Screenshot `~/.cache/lysilogy-smoke/walk-expanded.png`.
