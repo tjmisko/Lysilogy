@@ -21,6 +21,7 @@ const GROUPS = [
       ["↵ or o", "Open the selected paper or focused section"],
       ["Home / End", "First / last paper in the home grid"],
       ["d", "Open its contextual digest"],
+      ["L", "Literature graph: what this paper cites"],
       ["g", "Open the technical glossary (pause after one g)"],
       ["m", "Toggle PDF / requested Markdown reconstruction"],
       ["p", "Toggle overview / source PDF"],
