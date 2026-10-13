@@ -966,3 +966,48 @@ Known gaps:
 - Label thinning uses a character-width estimate, so a skipped label can occasionally have fit.
 - The legend can grow tall with many tags (wraps; no scrolling or search).
 - Score weights (Decision 7) are untuned; `npm run smoke` is still broken locally.
+
+### Review addendum
+
+Live check (release build of HEAD, `lysilogy serve` on 127.0.0.1:7398, dev DB, 332-reference paper
+"On the computational complexity of ethics", work `wljxcf8pFSVqbR2cflclvkg`):
+- API: `limit=40` returns 41 nodes and 14 decade clusters summing to 292; without `limit` all 332
+  neighbors return (Ramp A-C compatible). Bad `limit` (0, 501, +5, abc) gives `invalid_limit`; bogus
+  tags `invalid_tag_id`; 65-char expand key `invalid_expand`; unknown direction `invalid_direction`.
+- Tag CRUD: names and colors are normalized (`'  rampd   review  '` to `rampd review`, `#ABC` to
+  `#aabbcc`); case-insensitive duplicate gives 409; `red` gives `invalid_color`; control characters
+  `invalid_tag_name`; `[1]` or non-JSON `invalid_body`; assigning twice returns 204 both times.
+- Marks: notes trimmed, empty note stored as null; `Pinned` gives `invalid_mark`; unknown field
+  `invalid_body`. With pinned rank 150, hidden rank 1, downplayed rank 200, tagged rank 100: the
+  pinned Work is node 1, hidden and downplayed are absent; ranking total 331, pinned 1, hidden 1;
+  clusters ordered tag, decades, unknown, downplayed, hidden. `tags=<id>` returns only the tagged Work
+  (`filtered_out` 331); `expand=hidden,downplayed,bogus:key,,` shows both marked Works and ignores
+  the unknown key; `/citations` carries the `marks` and `work_tags` maps.
+- UI (`~/.cache/lysilogy-rampd-review/live.mjs`): 27 of 27 checks, no console errors. 40 Work nodes plus
+  17 cluster pills, "Showing 40 of 331 · 1 pinned · 1 hidden"; `j` visits all 58 placements and wraps;
+  all inside the canvas; no label pair overlaps more than 30%; `↵`/`c` expand/collapse a cluster;
+  `+` gives 60 nodes, `-` clamps at 10; the "Hidden (1) - show" chip reveals the node; `h` sends
+  DELETE and `d` PUT downplayed, after which the node leaves the canvas; legend tag key filters and
+  `0` clears. All curation rows removed afterwards. Screenshots in `~/.cache/lysilogy-rampd-review/shots/`.
+- Mocked 180-Work fanout (`~/.cache/lysilogy-smoke/relevance-smoke.mjs`): 40 of 40 checks, worst label
+  overlap 0%, no console errors; the only 404 is the expected unmocked `/source` route.
+
+Known gaps found in review (nonblocking):
+- `prominence`, `marks` and `work_tags` in `src/api/neighbors.rs` cover only neighbor IDs, so the
+  center Work has no entry; this contradicts Decision 13 ("visible nodes only (plus the center)").
+  The UI does not read them for the center today.
+- `move_curation` (`crates/lysilogy-db/src/work.rs`): a merge deletes the merged Work's prominence row,
+  but the survivor's and its neighbors' rows keep old signals until the next lit or recompute, so a
+  citing count can be under-reported meanwhile.
+- `refresh_prominence_for` sets `refresh_metrics: false` and the CLI has no flag, so a cached
+  `openalex_metrics` `cited_by_count` is never refetched and goes stale. Works the provider omits are
+  refetched on every lit (by design, no negative cache).
+- The cached score's recency component depends on `Utc::now().year()`; rows are not recomputed on a
+  year change because only `signals_version` triggers recompute on read.
+- `LiteratureLegend.tsx` `tagCounts` counts visible Works only: a tag whose Works are all collapsed
+  shows "name · 0" and is dimmed while a `tag:<id>` cluster with count 1 is on the canvas.
+- `planVisibleLabels` checks labels against labels and cluster pills but not node dots; in the live
+  332-node render some dots sit on labels and only 21 of 58 placements keep a label. Cosmetic.
+- Works with no year omit the recency component (Decision 7); "A theory of justice" (no year, 24,776
+  global cites) ranks #2. Weights remain untuned.
+- Tag rename/recolor/delete have API client functions but no UI.
