@@ -765,3 +765,39 @@ mock mode; the live 2-hop smoke recorded; ramp rows created by the check removed
    only the provider flow?
 4. "Foundational first" ignores reading status — should `read` items sink to the end?
 5. Should the seed be removable from its ramp (chosen: no)?
+
+## U1 implementation notes
+
+Shipped: migration `0008_ramps.sql` (Design SQL verbatim), `RampId` (`p`), the four state
+enums, `lysilogy_core::{ramp, expansion}`, `RampRepository`, `ExpansionRepository`,
+`CitationRepository::{edges_among, outgoing_counts}`, and `move_ramps` called from
+`move_work_content`. Core has 77 tests, `lysilogy-db` 97 (all DB-gated tests ran against
+`lysilogy_test`); every test named in U1 exists.
+
+Deviations and choices:
+
+- `should_conflict_when_ramp_is_full` bulk-inserts 498 rows (not 499): the seed item already
+  counts, so 499 items exist, the API add makes the 500th, the next conflicts.
+- `RampTitle::parse` rejects any control character, including tab and newline, like `TagName`.
+  `default_ramp_title` is more forgiving, since provider titles may contain them: it drops
+  non-whitespace control characters, collapses whitespace, truncates, trims, and falls back.
+- `add_item` check order: ramp exists (else `DbError::not_found`), `item_exists`, via checks
+  (`via_not_in_ramp`, `no_citation_edge`, `ramp_too_deep`), then `ramp_full`. An empty `note`
+  is stored as NULL; `update_item` treats `Some(Some(""))` as a clear too.
+- `reorder` takes a `for update` lock on the ramp row and refuses a list that is not exactly
+  the ramp's items (`Conflict("invalid_order")`, rolled back) as a backstop; the service layer
+  still validates first.
+- `remove_item` on a missing ramp returns `NotFound`; the seed is detected by comparing with
+  `ramp.seed_work_id`, which `move_ramps` keeps in step across merges.
+- `move_ramps` drops `from`'s item when `into` is in the ramp, so `from`'s status and note are
+  lost (survivor wins, Decision 14). If the dropped item was the seed item, the survivor's
+  item becomes the seed in name but keeps its own path (documented duplicate-path case).
+- `NewExpansion`/`ExpansionRow` use `i32` counts and `Vec<String>` warnings to avoid
+  conversions at the repository boundary.
+- `suggest_order` ignores citation pairs that involve the seed (it is always last), keeps the
+  first of duplicate items, and uses `f64::total_cmp` for scores.
+
+Extra tests: `should_expose_stable_error_codes_when_ramp_changes_conflict`,
+`should_keep_first_when_item_listed_twice` (core); CHECK coverage for note/position/status
+bounds and path lengths 0/9/10, the ledger CHECKs for state/method/reason mismatches, and
+`edges_among` with duplicate assertions and repeated input IDs (db).
