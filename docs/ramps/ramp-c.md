@@ -938,3 +938,61 @@ Files written under `local-articles/Fetched/` (remove with the matching `reader.
 - `2019 - Finding Generalizable Evidence by Learning to Convince Q&A Models.pdf`
 - `2019 - Learning from Dialogue after Deployment Feed Yourself, Chatbot!.pdf`
 - `2019 - Neural Text Summarization A Critical Evaluation.pdf`
+
+## U5 implementation notes
+
+- `src/api/acquisition.rs` holds the routes, `AcquisitionJobs` (job map plus an `Arc<Semaphore>` of 2, permit acquired inside the job) and the additive `acquisitions` helper (`states_for`) used by neighbors and citations. The `fetch` body is parsed by hand like `lit`, so an empty body is the default and anything else must match `FetchOptions` (`deny_unknown_fields`); wrong types or non-objects are 400 `invalid_body`. Order of checks: 400 `invalid_work_id`, 400 `invalid_body`, 503 `graph_unavailable`, 404 `work_not_found`. Jobs are keyed by the Work after `resolve_redirect`.
+- `AcquisitionView` serializes the row's state, reason, `checked_at`, attempts, `last_error`, source, `pdf_url`, bytes and `updated_at`; `final_url`, `sha256`, blob and document IDs stay server side. `paper_id` is set only for a `mapped` row whose document has a path that is in the catalog.
+- Observed live: the first poll after `POST` can show `acquisition.state = mapped` with `job.state = running` and `paper_id = null` (the row is written before the catalog refresh). The UI keeps polling until the job leaves `running`, then reloads.
+- Plan adjustment (UI): `canFetch(workId, localPapers, acquisitions, jobState)` is false only for a local paper or a running job; unavailable and half-finished rows stay fetchable (the former as Retry). The status text prefixes "No copy of this work is in the library." only when no fetch is running. `Open in reader` replaces the fetch control after a fetch the panel watched finish; the Work's other local papers still list below it. `f` only acts once the Work's citations have loaded (the same moment the button appears).
+- Reading `GET /acquisition` once when the panel opens (not only while running) lets a job started earlier, or from the CLI, show its status. A read that says `idle` never overwrites an optimistic `running`.
+- Tests: 10 API tests in `src/api/acquisition.rs` (9 need the database, all ran), 14 node tests in `web/scripts/acquisition.test.mjs`. Gate: `cargo clippy --workspace --all-targets -- -D warnings` clean; `cargo test --workspace` green with `LYSILOGY_TEST_DATABASE_URL` set (root 244 passed, no "skipping" lines); web `typecheck`, `lint`, `build`, `test:acquisition` (14), `test:literature-layout` (11), `test:passage-focus` (8), `test:api` (6) and `smoke:paragraph-selection` pass.
+
+## Result
+
+- `POST /api/works/{id}/fetch` starts a bounded background acquisition (202 `{state: "running"}`; a second post while one runs returns the current state and starts nothing). `GET /api/works/{id}/acquisition` returns job state, the durable row view, and `paper_id`. Neighbors and citations responses carry `acquisitions` for every Work with a row.
+- The `L` overlay's Work panel fetches an open-access copy with `f` (or the button), shows live status, reloads the graph so the node gains its local dot, and offers a focused **Open in reader**. Unavailable Works show the reason and check date and offer **Retry** (`retry_unavailable: true`). Nodes carry `data-acquisition`; unavailable ones get a dashed muted outline and running ones a pulsing ring (static under `prefers-reduced-motion`). The help overlay lists `f`.
+- Verification (2026-10-13): scratch Playwright `~/.cache/lysilogy-smoke/acquire-smoke.mjs` passes in mock mode and live mode (not committed).
+  - Mock: the button shows for a non-local node and not for a local one (and `f` there does not POST); `f` POSTs exactly once and a second `f` while running does not; the status reads Resolving identifiers, Looking for an open-access copy, Downloading, Saving to the library, Fetched; on mapped the neighbors reload and the node's `data-local` becomes true; **Open in reader** is focused and sets `#paper=<id>`; an unavailable node shows the reason and date and **Retry** POSTs `{"retry_unavailable":true}`; `f` opens no link hints; Esc closes the panel, then the overlay; polling stops within the next 2.6 s after the panel closes.
+  - Live (`lysilogy serve --bind 127.0.0.1:7394 --web web/dist`, dev DB, real library): `POST /api/works/wNqTb4OrZSb64jRLZbBMzcQ/fetch` (Generative Adversarial Imitation Learning, `10.48550/arxiv.1606.03476`, cited by the Christiano 2017 paper) polled to `mapped` in about 1 s with `paper_id be6869e76887b857`; `GET /api/papers/be6869e76887b857/work` returned that Work with link method `acquisition` (`acquired:arxiv:arxiv.org`); `/api/papers/be6869e76887b857` and `/source` returned 200 (`application/pdf`). Error paths: malformed id 400, unknown field 400.
+  - Live UI: the Playwright script opened the Christiano paper, pressed `L`, selected "Guided Cost Learning: Deep Inverse Optimal Control" (`w8fyuJlPLQfWiBhIKZNcXIA`), pressed `f`, saw Resolving identifiers, Downloading, Fetched, pressed Open in reader, and the hash became `#paper=79e33f62917c4df0` with the PDF's first page rendered. Screenshots: `~/.cache/lysilogy-smoke/live-graph-panel.png`, `live-opened-paper.png`.
+
+## Report
+
+### What shipped
+
+Ramp C turns cited-but-missing Works into library papers. A deterministic locator (arXiv, OpenAlex locations, Unpaywall with a contact email, landing-page `citation_pdf_url`) finds an open-access PDF; a polite, SSRF-guarded downloader stores it content-addressed, copies it under `<library>/Fetched/`, maps it as a document and links it to the Work with method `acquisition`. A resumable state machine records progress in `ops.acquisition`; an optional model fallback (`claude`/`codex`, off by default) picks a PDF link from a landing page and is grounded to the offered links. `lysilogy fetch` runs it from the CLI, and the API plus the `L` overlay run it from the browser.
+
+### How to user-test
+
+- CLI: `lysilogy fetch arxiv:1606.03137`, then again (no network, `already_mapped`); `lysilogy fetch --cited-by "Fine-Tuning Language Models from Human Preferences" --limit 5`.
+- Server: `lysilogy serve --bind 127.0.0.1:7394 --web web/dist` with `LYSILOGY_DATABASE_URL`, `LYSILOGY_LIBRARY`, `LYSILOGY_DATA` set. Open a paper that has been through `lit`, press `L`, move to a dot without a filled centre (`j`/`k`), press `↵`, then `f`. When it says Fetched, press `↵` on **Open in reader**. A closed Work (for example `doi:10.1257/aer.104.6.1597`) ends as Unavailable with the reason; `f` again retries.
+- API: `curl -X POST /api/works/<id>/fetch`, then `curl /api/works/<id>/acquisition` until `job.state` is `succeeded`.
+
+### Smoke results
+
+See U4's live CLI smoke and this unit's Result section: arXiv, NBER (OpenAlex `best_oa_location`), `no_oa_location` and `all_links_failed` outcomes through the CLI; arXiv through the API and the browser; mock Playwright covering progress, retry, key handling and polling.
+
+### Known gaps
+
+- Only open-access sources. Publisher pages that answer 403 to automated clients (for example the AEA) end as `all_links_failed` even though a human could download the PDF.
+- Crossref `link[]`, Semantic Scholar `openAccessPdf`, EPUB/HTML full text and bulk scheduled acquisition are not implemented.
+- The title sanity check is a warning only (`title_not_in_front_matter`), visible in the CLI summary and the job `summary.warnings`, not in the panel.
+- Job state is in memory: after a server restart `GET /acquisition` reports `idle` plus the durable row; a lease from a killed run blocks that Work for up to 10 minutes.
+- The panel shows the failure message of a failed job but not the row's `last_error` for a pending run beyond "The fetch did not finish. Try again."
+- A fetched PDF is a copy in the library; deleting it from `Fetched/` tombstones the document on the next scan and the next fetch remaps it from the stored blob.
+- `npm run smoke` remains broken locally (missing fixture).
+
+### Files written to the library
+
+`~/Projects/Lysilogy/local-articles/Fetched/` (blobs are under `~/Projects/Lysilogy/.lysilogy/blobs/sha256/`):
+
+- `2010 - Recent Findings on Trade and Inequality.pdf`
+- `2016 - Cooperative Inverse Reinforcement Learning.pdf`
+- `2016 - Generative Adversarial Imitation Learning.pdf` (U5 API smoke)
+- `2016 - Guided Cost Learning Deep Inverse Optimal Control via Policy Optimization.pdf` (U5 UI smoke)
+- `2019 - Deep Batch Active Learning by Diverse, Uncertain Gradient Lower Bounds.pdf`
+- `2019 - Discriminative Active Learning.pdf`
+- `2019 - Finding Generalizable Evidence by Learning to Convince Q&A Models.pdf`
+- `2019 - Learning from Dialogue after Deployment Feed Yourself, Chatbot!.pdf`
+- `2019 - Neural Text Summarization A Critical Evaluation.pdf`
