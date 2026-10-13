@@ -424,12 +424,53 @@ export type LocalPaper = {
 /** Local papers keyed by Work id. Works without a local paper have no entry. */
 export type LocalPapersByWork = Record<string, LocalPaper[]>;
 
+export type AcquisitionState =
+  | "unresolved" | "identifier_found" | "link_found" | "downloaded" | "mapped" | "unavailable";
+
+/** Acquisition state of a Work as shown on graph nodes. */
+export type AcquisitionBrief = {
+  state: AcquisitionState;
+  unavailable_reason: string | null;
+};
+
+/** Brief acquisition states keyed by Work id. Works without a row have no entry. */
+export type AcquisitionsByWork = Record<string, AcquisitionBrief>;
+
 export type WorkCitations = {
   work: Work;
   outgoing: Work[];
   incoming: Work[];
   edges: GraphEdge[];
   local_papers: LocalPapersByWork;
+  acquisitions: AcquisitionsByWork;
+};
+
+/** What the server knows about a Work's open-access acquisition. No paths. */
+export type AcquisitionView = {
+  state: AcquisitionState;
+  unavailable_reason: string | null;
+  checked_at: string | null;
+  attempts: number;
+  last_error: string | null;
+  source: string | null;
+  pdf_url: string | null;
+  bytes: number | null;
+  updated_at: string;
+};
+
+export type AcquisitionJobState = "idle" | "running" | "succeeded" | "failed";
+
+export type AcquisitionStatus = {
+  work_id: string;
+  job: { state: AcquisitionJobState; summary?: unknown; message?: string };
+  acquisition: AcquisitionView | null;
+  /** The library paper holding the copy, once it is in the catalog. */
+  paper_id: string | null;
+};
+
+export type FetchWorkOptions = {
+  retry_unavailable?: boolean;
+  model_fallback?: "claude" | "codex";
 };
 
 export type EdgeLabelMention = {
@@ -479,9 +520,10 @@ export type GraphNeighbors = {
   nodes: Work[];
   edges: GraphEdge[];
   local_papers: LocalPapersByWork;
+  acquisitions: AcquisitionsByWork;
 };
 
-export type WorkLinkMethod = "identifier" | "title_match" | "manual";
+export type WorkLinkMethod = "identifier" | "title_match" | "manual" | "acquisition";
 
 export type PaperWork = {
   paper_id: string;

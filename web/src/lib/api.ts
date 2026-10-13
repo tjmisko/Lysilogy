@@ -15,6 +15,9 @@ import type {
   ExperimentView,
   EdgeLabel,
   EdgeLabelEdit,
+  AcquisitionJobState,
+  AcquisitionStatus,
+  FetchWorkOptions,
   GraphNeighbors,
   LiteratureJob,
   LiteratureOptions,
@@ -128,6 +131,13 @@ export const api = {
     request(`/api/papers/${id}/lit`, { signal }),
   workCitations: (workId: string, signal?: AbortSignal): Promise<WorkCitations> =>
     request(`/api/works/${encodeURIComponent(workId)}/citations`, { signal }),
+  fetchWork: (workId: string, options?: FetchWorkOptions): Promise<{ state: AcquisitionJobState }> =>
+    request(`/api/works/${encodeURIComponent(workId)}/fetch`, {
+      method: "POST",
+      ...(options === undefined ? {} : { body: JSON.stringify(options) }),
+    }),
+  workAcquisition: (workId: string, signal?: AbortSignal): Promise<AcquisitionStatus> =>
+    request(`/api/works/${encodeURIComponent(workId)}/acquisition`, { signal }),
   graphNeighbors: (
     workId: string,
     direction: GraphNeighbors["direction"] = "references",
