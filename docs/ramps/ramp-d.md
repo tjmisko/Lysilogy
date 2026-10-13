@@ -795,3 +795,10 @@ mode; live check recorded; dev DB curation rows created by the check removed.
 4. Should downplayed Works still count in `ranking.total` (chosen: yes) and hidden ones not
    (chosen)?
 5. Score weights (Decision 7) are a first guess; tune after using the 332-node fanout.
+
+## U1 implementation notes
+
+- No deviations from the plan. Extra DB tests: `should_chunk_and_page_when_many_works_participate`.
+- Test helpers `new_workspace` and `cite` were added to `test_support` in `lysilogy-db`.
+- The dev Postgres cluster had stopped between runs (root-crate DB tests then fail with
+  `PoolTimedOut`); `scripts/db start` fixes it.
