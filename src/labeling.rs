@@ -79,6 +79,7 @@ impl RelationshipLabeler for SidecarLabeler {
                         schema: LABEL_SCHEMA,
                         prompt: &prompt,
                         live_web: false,
+                        fast: false,
                     },
                 )
                 .await

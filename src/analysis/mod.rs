@@ -24,7 +24,7 @@ use crate::{
 
 pub use heuristic::HeuristicAnalyzer;
 pub use local_cli::LocalCliAnalyzer;
-pub(crate) use local_cli::structured_model_key;
+pub(crate) use local_cli::{structured_fast_model_key, structured_model_key};
 
 pub const ANALYSIS_SCHEMA: &str = include_str!("../../prompts/paper-analysis.schema.json");
 pub const CLARIFICATION_SCHEMA: &str = include_str!("../../prompts/clarification.schema.json");
@@ -56,6 +56,8 @@ pub(crate) struct ReaderToolRequest<'a> {
     pub schema: &'a str,
     pub prompt: &'a str,
     pub live_web: bool,
+    /// Run on the cheap model (Haiku for Claude, the codex fast model).
+    pub fast: bool,
 }
 
 impl AnalysisService {
