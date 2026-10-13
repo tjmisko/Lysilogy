@@ -22,8 +22,8 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::Result;
-use crate::labels::LabelSummary;
 use crate::bibliography::{BibliographicFields, Bibliography, EXTRACTOR_VERSION, parse_fields};
+use crate::labels::LabelSummary;
 
 /// Source record kind for the extraction evidence.
 pub const LOCAL_BIBLIOGRAPHY_KIND: &str = "local_bibliography";
@@ -145,7 +145,9 @@ pub async fn run_local_evidence(
         };
         let fields = serde_json::from_value::<BibliographicFields>(entry.fields.clone())
             .unwrap_or_else(|_| {
-                summary.warnings.push(format!("entry_fields_unreadable:{number}"));
+                summary
+                    .warnings
+                    .push(format!("entry_fields_unreadable:{number}"));
                 parse_fields(&entry.raw_text, entry.printed_key.clone())
             });
         let outcome = resolve_entry(
@@ -250,7 +252,11 @@ async fn persist_extraction(
     input: &LocalEvidenceInput<'_>,
 ) -> Result<(SourceRecordId, bool)> {
     let source_key = format!("{}|{EXTRACTOR_VERSION}", input.document_sha256);
-    if let Some((record, payload)) = ctx.records.find(LOCAL_BIBLIOGRAPHY_KIND, &source_key).await? {
+    if let Some((record, payload)) = ctx
+        .records
+        .find(LOCAL_BIBLIOGRAPHY_KIND, &source_key)
+        .await?
+    {
         let stored_hash = payload.get("index_text_sha256").and_then(Value::as_str);
         return Ok((record, stored_hash != Some(input.index_text_sha256)));
     }
@@ -263,7 +269,12 @@ async fn persist_extraction(
     });
     let record = ctx
         .records
-        .upsert(LOCAL_BIBLIOGRAPHY_KIND, &source_key, Coverage::Complete, &payload)
+        .upsert(
+            LOCAL_BIBLIOGRAPHY_KIND,
+            &source_key,
+            Coverage::Complete,
+            &payload,
+        )
         .await?;
     Ok((record, false))
 }
@@ -419,7 +430,13 @@ async fn resolve_entry(
             confidence,
         } => {
             ctx.evidence
-                .record_resolution(entry.id, work, ResolutionStatus::Accepted, method, Some(confidence))
+                .record_resolution(
+                    entry.id,
+                    work,
+                    ResolutionStatus::Accepted,
+                    method,
+                    Some(confidence),
+                )
                 .await?;
             if method == ResolutionMethod::TitleMatch {
                 attach_identifiers(ctx, work, fields, record, number, warnings).await?;
@@ -677,7 +694,9 @@ async fn create_stub(
                 None,
             )
             .await?;
-        ctx.works.fill_display_title_if_unknown(work.id, title).await?;
+        ctx.works
+            .fill_display_title_if_unknown(work.id, title)
+            .await?;
     }
     if let Some(year) = entry_year(fields) {
         ctx.works
@@ -690,7 +709,9 @@ async fn create_stub(
                 None,
             )
             .await?;
-        ctx.works.fill_display_year_if_unknown(work.id, year).await?;
+        ctx.works
+            .fill_display_year_if_unknown(work.id, year)
+            .await?;
     }
     Ok(work.id)
 }
@@ -699,7 +720,7 @@ async fn create_stub(
 mod tests {
     use super::*;
     use crate::bibliography::{extract, tests::fixture};
-        use sqlx::PgPool;
+    use sqlx::PgPool;
     use std::sync::atomic::{AtomicU64, Ordering};
     use tokio::sync::Mutex;
 
@@ -809,9 +830,15 @@ mod tests {
                 .create(WorkKind::Article, Visibility::Private)
                 .await
                 .expect("work");
-            self.works.set_display_title(work.id, title).await.expect("title");
+            self.works
+                .set_display_title(work.id, title)
+                .await
+                .expect("title");
             if let Some(year) = year {
-                self.works.set_display_year(work.id, year).await.expect("year");
+                self.works
+                    .set_display_year(work.id, year)
+                    .await
+                    .expect("year");
             }
             self.works.get(work.id).await.expect("get").expect("exists")
         }
@@ -825,7 +852,10 @@ mod tests {
         }
 
         async fn outgoing(&self) -> Vec<Work> {
-            self.citations.outgoing(self.citing.id).await.expect("outgoing")
+            self.citations
+                .outgoing(self.citing.id)
+                .await
+                .expect("outgoing")
         }
     }
 
@@ -917,8 +947,14 @@ mod tests {
     async fn should_create_entries_mentions_and_local_edges_when_paper_has_numbered_bibliography() {
         let (_guard, h) = harness!();
         let bibliography = numbered(&[
-            entry(1, &format!("Adams. {}. 2020.", h.title("First numbered result"))),
-            entry(2, &format!("Baker. {}. 2021.", h.title("Second numbered result"))),
+            entry(
+                1,
+                &format!("Adams. {}. 2020.", h.title("First numbered result")),
+            ),
+            entry(
+                2,
+                &format!("Baker. {}. 2021.", h.title("Second numbered result")),
+            ),
         ]);
         let summary = h.run(&bibliography).await;
         assert_eq!(summary.entries, 2, "{summary:?}");
@@ -951,18 +987,31 @@ mod tests {
     async fn should_be_idempotent_when_local_evidence_runs_twice() {
         let (_guard, h) = harness!();
         let bibliography = numbered(&[
-            entry(1, &format!("Adams. {}. 2020.", h.title("Idempotent first study"))),
-            entry(2, &format!("Baker. {}. 2021.", h.title("Idempotent second study"))),
+            entry(
+                1,
+                &format!("Adams. {}. 2020.", h.title("Idempotent first study")),
+            ),
+            entry(
+                2,
+                &format!("Baker. {}. 2021.", h.title("Idempotent second study")),
+            ),
         ]);
         let first = h.run(&bibliography).await;
-        let works_before = h.count("select count(*) from graph.work where $1::uuid is not null").await;
+        let works_before = h
+            .count("select count(*) from graph.work where $1::uuid is not null")
+            .await;
         let second = h.run(&bibliography).await;
-        let works_after = h.count("select count(*) from graph.work where $1::uuid is not null").await;
+        let works_after = h
+            .count("select count(*) from graph.work where $1::uuid is not null")
+            .await;
         assert_eq!(works_before, works_after, "no new Works");
         assert_eq!(first.entries, second.entries);
         assert_eq!(first.mentions, second.mentions);
         assert_eq!(first.local_edges, second.local_edges);
-        assert_eq!(second.resolutions.reused, second.resolved_entries, "{second:?}");
+        assert_eq!(
+            second.resolutions.reused, second.resolved_entries,
+            "{second:?}"
+        );
         assert_eq!(second.resolutions.local_stub, 0);
         assert_eq!(second.merged_stubs, 0);
         assert_eq!(
@@ -993,8 +1042,14 @@ mod tests {
             .await
             .expect("existing");
         let bibliography = numbered(&[
-            entry(1, &format!("Adams. {}. 2020. doi:{doi}", h.title("Doi keyed study"))),
-            entry(2, &format!("Baker. {}. 2021.", h.title("Another keyed study"))),
+            entry(
+                1,
+                &format!("Adams. {}. 2020. doi:{doi}", h.title("Doi keyed study")),
+            ),
+            entry(
+                2,
+                &format!("Baker. {}. 2021.", h.title("Another keyed study")),
+            ),
         ]);
         let summary = h.run(&bibliography).await;
         assert_eq!(summary.resolutions.identifier, 1, "{summary:?}");
@@ -1008,7 +1063,12 @@ mod tests {
         let provider = h.work_with_title(&title, Some(2020)).await;
         let record = h
             .records
-            .upsert("openalex_work", &format!("prov-{}", h.marker), Coverage::Complete, &json!({}))
+            .upsert(
+                "openalex_work",
+                &format!("prov-{}", h.marker),
+                Coverage::Complete,
+                &json!({}),
+            )
             .await
             .expect("record");
         h.citations
@@ -1017,7 +1077,10 @@ mod tests {
             .expect("provider edge");
         let bibliography = numbered(&[
             entry(1, &format!("Adams. {title}. 2020.")),
-            entry(2, &format!("Baker. {}. 2021.", h.title("Unrelated second paper"))),
+            entry(
+                2,
+                &format!("Baker. {}. 2021.", h.title("Unrelated second paper")),
+            ),
         ]);
         let summary = h.run(&bibliography).await;
         assert_eq!(summary.resolutions.title_match, 1, "{summary:?}");
@@ -1025,7 +1088,11 @@ mod tests {
         assert_eq!(summary.edges_also_from_provider, 1);
         let outgoing = h.outgoing().await;
         assert!(outgoing.iter().any(|work| work.id == provider.id));
-        assert_eq!(outgoing.len(), 2, "the provider stub was reused, not duplicated");
+        assert_eq!(
+            outgoing.len(),
+            2,
+            "the provider stub was reused, not duplicated"
+        );
     }
 
     #[tokio::test]
@@ -1036,13 +1103,20 @@ mod tests {
         let second = h.work_with_title(&title, Some(2020)).await;
         let bibliography = numbered(&[
             entry(1, &format!("Adams. {title}. 2020.")),
-            entry(2, &format!("Baker. {}. 2021.", h.title("Plain second paper"))),
+            entry(
+                2,
+                &format!("Baker. {}. 2021.", h.title("Plain second paper")),
+            ),
         ]);
         let summary = h.run(&bibliography).await;
         assert_eq!(summary.ambiguous_entries, 1, "{summary:?}");
         assert_eq!(summary.resolved_entries, 1);
         let outgoing = h.outgoing().await;
-        assert!(outgoing.iter().all(|work| work.id != first.id && work.id != second.id));
+        assert!(
+            outgoing
+                .iter()
+                .all(|work| work.id != first.id && work.id != second.id)
+        );
         let ambiguous: i64 = sqlx::query_scalar(
             "select count(*) from graph.entry_resolution \
              where status = 'ambiguous' and candidate_work_id = any($1)",
@@ -1052,7 +1126,10 @@ mod tests {
         .await
         .expect("count");
         assert_eq!(ambiguous, 2);
-        assert_eq!(summary.mentions, 1, "only the resolved entry keeps its mention");
+        assert_eq!(
+            summary.mentions, 1,
+            "only the resolved entry keeps its mention"
+        );
         assert_eq!(summary.unresolved_mentions, 2);
     }
 
@@ -1063,7 +1140,10 @@ mod tests {
         let old = h.work_with_title(&title, Some(2010)).await;
         let bibliography = numbered(&[
             entry(1, &format!("Adams. {title}. 2020.")),
-            entry(2, &format!("Baker. {}. 2021.", h.title("Filler second paper"))),
+            entry(
+                2,
+                &format!("Baker. {}. 2021.", h.title("Filler second paper")),
+            ),
         ]);
         let summary = h.run(&bibliography).await;
         assert_eq!(summary.resolutions.title_match, 0, "{summary:?}");
@@ -1077,7 +1157,10 @@ mod tests {
         let title = h.title("Brand new stub paper");
         let bibliography = numbered(&[
             entry(1, &format!("Adams. {title}. 2020.")),
-            entry(2, &format!("Baker. {}. 2021.", h.title("Another new stub paper"))),
+            entry(
+                2,
+                &format!("Baker. {}. 2021.", h.title("Another new stub paper")),
+            ),
         ]);
         let summary = h.run(&bibliography).await;
         assert_eq!(summary.resolutions.local_stub, 2, "{summary:?}");
@@ -1104,7 +1187,10 @@ mod tests {
         let title = h.title("Later provider appearance paper");
         let bibliography = numbered(&[
             entry(1, &format!("Adams. {title}. 2020.")),
-            entry(2, &format!("Baker. {}. 2021.", h.title("Stable second paper"))),
+            entry(
+                2,
+                &format!("Baker. {}. 2021.", h.title("Stable second paper")),
+            ),
         ]);
         let first = h.run(&bibliography).await;
         assert_eq!(first.resolutions.local_stub, 2, "{first:?}");
@@ -1118,7 +1204,12 @@ mod tests {
         let provider = h.work_with_title(&title, Some(2020)).await;
         let record = h
             .records
-            .upsert("openalex_work", &format!("late-{}", h.marker), Coverage::Complete, &json!({}))
+            .upsert(
+                "openalex_work",
+                &format!("late-{}", h.marker),
+                Coverage::Complete,
+                &json!({}),
+            )
             .await
             .expect("record");
         h.citations
@@ -1157,7 +1248,10 @@ mod tests {
         assert_eq!(entry_edges, 2, "local assertion repointed, not duplicated");
         let third = h.run(&bibliography).await;
         assert_eq!(third.merged_stubs, 0);
-        assert_eq!(third.resolutions.reused, third.resolved_entries, "{third:?}");
+        assert_eq!(
+            third.resolutions.reused, third.resolved_entries,
+            "{third:?}"
+        );
     }
 
     #[tokio::test]
@@ -1165,12 +1259,24 @@ mod tests {
         let (_guard, h) = harness!();
         let doi = format!("10.5556/{}", h.marker);
         h.works
-            .add_identifier(h.citing.id, IdentifierScheme::Doi, &doi, None, IdentifierStatus::Active)
+            .add_identifier(
+                h.citing.id,
+                IdentifierScheme::Doi,
+                &doi,
+                None,
+                IdentifierStatus::Active,
+            )
             .await
             .expect("identifier");
         let bibliography = numbered(&[
-            entry(1, &format!("Adams. {}. 2020. doi:{doi}", h.title("Citing itself paper"))),
-            entry(2, &format!("Baker. {}. 2021.", h.title("Honest second paper"))),
+            entry(
+                1,
+                &format!("Adams. {}. 2020. doi:{doi}", h.title("Citing itself paper")),
+            ),
+            entry(
+                2,
+                &format!("Baker. {}. 2021.", h.title("Honest second paper")),
+            ),
         ]);
         let summary = h.run(&bibliography).await;
         assert!(

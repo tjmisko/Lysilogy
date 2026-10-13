@@ -173,7 +173,11 @@ fn page(number: u32, start: usize, end: usize) -> ReadingPage {
 /// Like [`cache_fixture`], with `(text, paragraph kind, page)` blocks laid out
 /// as one paragraph and one sentence each, a token per whitespace-separated
 /// word, and page bounds, so bibliography extraction has what it needs.
-pub async fn cache_fixture_with_blocks(source: &Path, directory: &Path, blocks: &[(&str, &str, u32)]) {
+pub async fn cache_fixture_with_blocks(
+    source: &Path,
+    directory: &Path,
+    blocks: &[(&str, &str, u32)],
+) {
     cache_fixture(source, directory).await;
     let path = directory.join("reading-index.json");
     let mut cached: CachedIndex =
@@ -197,7 +201,9 @@ pub async fn cache_fixture_with_blocks(source: &Path, directory: &Path, blocks: 
                     words.push((from, position, text));
                 }
             } else {
-                open.get_or_insert_with(|| (position, String::new())).1.push(character);
+                open.get_or_insert_with(|| (position, String::new()))
+                    .1
+                    .push(character);
             }
             position += character.len_utf16();
         }
@@ -227,7 +233,10 @@ pub async fn cache_fixture_with_blocks(source: &Path, directory: &Path, blocks: 
             kind: (*kind).to_owned(),
             spans: vec![],
         });
-        index.objects.sentence.push(TextRange { start, end: offset });
+        index
+            .objects
+            .sentence
+            .push(TextRange { start, end: offset });
         match index.pages.iter_mut().find(|page| page.number == *number) {
             Some(existing) => existing.end = offset,
             None => index.pages.push(page(*number, start, offset)),

@@ -78,15 +78,21 @@ fn doi_has_shape(slice: &str) -> bool {
 
 fn normalize_doi(raw: &str) -> Option<String> {
     let trimmed = raw.trim().trim_start_matches('(').trim_start_matches('<');
-    let stripped = ["https://doi.org/", "http://doi.org/", "https://dx.doi.org/", "http://dx.doi.org/", "doi:"]
-        .iter()
-        .find_map(|prefix| {
-            trimmed
-                .to_ascii_lowercase()
-                .strip_prefix(prefix)
-                .map(str::to_owned)
-        })
-        .unwrap_or_else(|| trimmed.to_owned());
+    let stripped = [
+        "https://doi.org/",
+        "http://doi.org/",
+        "https://dx.doi.org/",
+        "http://dx.doi.org/",
+        "doi:",
+    ]
+    .iter()
+    .find_map(|prefix| {
+        trimmed
+            .to_ascii_lowercase()
+            .strip_prefix(prefix)
+            .map(str::to_owned)
+    })
+    .unwrap_or_else(|| trimmed.to_owned());
     let value = trim_trailing_punctuation(stripped.trim()).to_ascii_lowercase();
     if value.starts_with("10.") && value.contains('/') {
         Some(value)

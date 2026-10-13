@@ -8,6 +8,7 @@ use std::{
 };
 
 use clap::{Parser, Subcommand, ValueEnum};
+use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
 use lysilogy::{
     AppState, Error, Result, build_router,
     domain::{
@@ -16,7 +17,6 @@ use lysilogy::{
     },
 };
 use lysilogy::{analysis::LocalCliAnalyzer, labeling::SidecarLabeler};
-use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
 use lysilogy_ingest::labels::{LabelOptions, LabelSummary};
 use lysilogy_ingest::literature::{LiteratureStatus, LiteratureSummary};
 use lysilogy_ingest::local_evidence::LocalEvidenceSummary;
@@ -1004,7 +1004,9 @@ async fn literature_command(
         }
     }
     if let LiteratureStatus::Unmatched { reason } = &summary.status {
-        return Err(Error::Literature(format!("no Work found for {id}: {reason}")));
+        return Err(Error::Literature(format!(
+            "no Work found for {id}: {reason}"
+        )));
     }
     Ok(())
 }
@@ -1024,15 +1026,14 @@ async fn label_local_edges(
         limit: run.limit,
         ..LabelOptions::default()
     };
-    state.label_local_edges(id, summary, &labeler, options).await
+    state
+        .label_local_edges(id, summary, &labeler, options)
+        .await
 }
 
 /// The library-relative path of `path`, which must lie under `root`. Both
 /// arguments are expected to be canonical, so `..` and symlinks cannot escape.
-fn lit_target_relative_path(
-    root: &std::path::Path,
-    path: &std::path::Path,
-) -> Result<PathBuf> {
+fn lit_target_relative_path(root: &std::path::Path, path: &std::path::Path) -> Result<PathBuf> {
     path.strip_prefix(root).map(PathBuf::from).map_err(|_| {
         Error::InvalidRequest(format!(
             "{} is outside the library {}",
@@ -1194,8 +1195,8 @@ mod tests {
     #[test]
     fn should_reject_path_outside_library_when_resolving_lit_target() {
         for outside in ["/elsewhere/a.pdf", "/lib2/a.pdf", "/a.pdf"] {
-            let error = lit_target_relative_path(Path::new("/lib"), Path::new(outside))
-                .expect_err(outside);
+            let error =
+                lit_target_relative_path(Path::new("/lib"), Path::new(outside)).expect_err(outside);
             assert!(matches!(error, Error::InvalidRequest(_)), "{outside}");
         }
     }

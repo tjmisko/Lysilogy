@@ -69,7 +69,9 @@ impl AppState {
             .await
             .map_err(lysilogy_ingest::IngestError::from)?
             .ok_or_else(|| {
-                Error::Literature(format!("no document version recorded for {id}; run lit first"))
+                Error::Literature(format!(
+                    "no document version recorded for {id}; run lit first"
+                ))
             })?;
         Ok(Some(LocalEvidenceTarget {
             citing_work,
@@ -262,9 +264,7 @@ mod tests {
     }
 
     use crate::source_index::test_support::cache_fixture_with_blocks;
-    use lysilogy_core::{
-        DocumentFormat, ScannedFile, Visibility, WorkKind, WorkLinkMethod,
-    };
+    use lysilogy_core::{DocumentFormat, ScannedFile, Visibility, WorkKind, WorkLinkMethod};
     use lysilogy_ingest::literature::LiteratureStatus;
 
     fn unique() -> String {
@@ -278,7 +278,11 @@ mod tests {
         let url = std::env::var("LYSILOGY_TEST_DATABASE_URL")
             .ok()
             .filter(|url| !url.is_empty())?;
-        Some(crate::graph::GraphState::connect(&url).await.expect("connect"))
+        Some(
+            crate::graph::GraphState::connect(&url)
+                .await
+                .expect("connect"),
+        )
     }
 
     fn linked_summary(
@@ -314,13 +318,20 @@ mod tests {
         let source = library.join(&file_name);
         std::fs::write(&source, format!("not really a pdf {marker}")).unwrap();
 
-        let state = AppState::new(&library, &data).await.unwrap().with_graph(graph);
+        let state = AppState::new(&library, &data)
+            .await
+            .unwrap()
+            .with_graph(graph);
         let id = state.library().await.papers[0].id.clone();
         cache_fixture_with_blocks(
             &source,
             &state.store.paper_dir(&id),
             &[
-                ("Earlier work [1] shows this. Later work [2] agrees.", "body", 1),
+                (
+                    "Earlier work [1] shows this. Later work [2] agrees.",
+                    "body",
+                    1,
+                ),
                 ("References", "heading", 2),
                 (
                     &format!(

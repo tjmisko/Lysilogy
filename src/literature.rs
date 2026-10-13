@@ -12,9 +12,7 @@ use lysilogy_ingest::identify::PaperHints;
 use lysilogy_ingest::literature::{
     LiteratureContext, LiteratureInput, LiteratureSummary, run_literature_flow,
 };
-use lysilogy_ingest::openalex::{
-    JsonTransport, OpenAlexClient, ProviderFuture, ReqwestTransport,
-};
+use lysilogy_ingest::openalex::{JsonTransport, OpenAlexClient, ProviderFuture, ReqwestTransport};
 use lysilogy_ingest::scan::hash_file;
 use serde_json::Value;
 
@@ -161,7 +159,10 @@ impl AppState {
                 return Ok(pages.to_vec());
             }
         }
-        let text = self.extractor.extract_front_text(source, FRONT_PAGES).await?;
+        let text = self
+            .extractor
+            .extract_front_text(source, FRONT_PAGES)
+            .await?;
         Ok(vec![text])
     }
 }
@@ -269,7 +270,11 @@ mod tests {
         let text = state.front_matter_text(&id).await.unwrap();
         assert!(text.contains("arXiv:1606.06565v2"), "{text}");
         assert!(
-            !state.store.paper_dir(&id).join("reading-index.json").exists(),
+            !state
+                .store
+                .paper_dir(&id)
+                .join("reading-index.json")
+                .exists(),
             "front matter sourcing must not write artifacts"
         );
     }

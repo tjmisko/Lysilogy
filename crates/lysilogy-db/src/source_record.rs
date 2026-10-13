@@ -46,11 +46,13 @@ impl SourceRecordRepository {
 
     /// Fetch a stored payload by key.
     pub async fn get(&self, kind: &str, source_key: &str) -> Result<Option<Value>> {
-        let row = sqlx::query("select payload from source.source_record where kind = $1 and source_key = $2")
-            .bind(kind)
-            .bind(source_key)
-            .fetch_optional(&self.pool)
-            .await?;
+        let row = sqlx::query(
+            "select payload from source.source_record where kind = $1 and source_key = $2",
+        )
+        .bind(kind)
+        .bind(source_key)
+        .fetch_optional(&self.pool)
+        .await?;
         let Some(row) = row else {
             return Ok(None);
         };
@@ -58,7 +60,11 @@ impl SourceRecordRepository {
     }
 
     /// Fetch a stored payload together with its record ID.
-    pub async fn find(&self, kind: &str, source_key: &str) -> Result<Option<(SourceRecordId, Value)>> {
+    pub async fn find(
+        &self,
+        kind: &str,
+        source_key: &str,
+    ) -> Result<Option<(SourceRecordId, Value)>> {
         let row = sqlx::query(
             "select id, payload from source.source_record where kind = $1 and source_key = $2",
         )
@@ -93,16 +99,30 @@ mod tests {
         let key = format!("doi:10.9999/{}", uuid::Uuid::new_v4());
 
         let first = repo
-            .upsert("openalex_work", &key, Coverage::Complete, &serde_json::json!({"v": 1}))
+            .upsert(
+                "openalex_work",
+                &key,
+                Coverage::Complete,
+                &serde_json::json!({"v": 1}),
+            )
             .await
             .expect("first");
         let second = repo
-            .upsert("openalex_work", &key, Coverage::Complete, &serde_json::json!({"v": 2}))
+            .upsert(
+                "openalex_work",
+                &key,
+                Coverage::Complete,
+                &serde_json::json!({"v": 2}),
+            )
             .await
             .expect("second");
         assert_eq!(first, second, "same key reuses the record");
 
-        let stored = repo.get("openalex_work", &key).await.expect("get").expect("present");
+        let stored = repo
+            .get("openalex_work", &key)
+            .await
+            .expect("get")
+            .expect("present");
         assert_eq!(stored, serde_json::json!({"v": 2}));
     }
 }
