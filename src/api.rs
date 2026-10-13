@@ -15,6 +15,7 @@ mod labels;
 mod literature;
 mod neighbors;
 mod notes;
+mod ramps;
 mod reader_tools;
 mod source_index;
 mod vimrc;
@@ -38,7 +39,10 @@ use tokio::{
 };
 use tokio_util::io::ReaderStream;
 
-use self::acquisition::AcquisitionStates;
+pub(crate) use self::acquisition::states_for;
+pub use self::acquisition::{AcquisitionBrief, AcquisitionStates};
+pub(crate) use self::literature::local_papers_for;
+pub use self::literature::{LocalPaper, LocalPapers};
 use crate::{
     Result,
     analysis::{AnalysisService, validate_citations},
@@ -1841,6 +1845,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(literature::routes())
         .merge(acquisition::routes())
         .merge(expansion::routes())
+        .merge(ramps::routes())
         .merge(curation::routes())
         .merge(labels::routes())
         .merge(source_index::routes())

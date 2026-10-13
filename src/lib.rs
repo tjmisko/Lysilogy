@@ -20,6 +20,7 @@ pub mod literature;
 pub mod markdown;
 pub mod notes;
 pub mod prominence;
+pub mod ramps;
 pub mod reader_tools;
 pub mod relevance;
 mod remote;

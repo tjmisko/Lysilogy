@@ -37,6 +37,21 @@ impl WorkRepository {
         row.as_ref().map(work_from_row).transpose()
     }
 
+    /// Fetch several Works in one query. Unknown IDs are omitted; order is unspecified.
+    pub async fn get_many(&self, ids: &[WorkId]) -> Result<Vec<Work>> {
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let uuids: Vec<uuid::Uuid> = ids.iter().map(|id| id.as_uuid()).collect();
+        let rows = sqlx::query(&format!(
+            "select {WORK_COLUMNS} from graph.work w where w.id = any($1)"
+        ))
+        .bind(&uuids)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter().map(work_from_row).collect()
+    }
+
     /// Find the Work that currently owns an active identifier.
     pub async fn find_by_identifier(
         &self,
@@ -766,6 +781,34 @@ mod tests {
 
     fn random_doi() -> String {
         format!("10.9999/{}", Uuid::new_v4())
+    }
+
+    #[tokio::test]
+    async fn should_return_known_works_only_when_getting_many() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = WorkRepository::new(pool);
+        let first = repo
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("first");
+        let second = repo
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("second");
+        let found = repo
+            .get_many(&[first.id, second.id, WorkId::new(), first.id])
+            .await
+            .expect("get many");
+        let mut ids: Vec<WorkId> = found.iter().map(|work| work.id).collect();
+        ids.sort_unstable();
+        let mut expected = vec![first.id, second.id];
+        expected.sort_unstable();
+        assert_eq!(ids, expected);
+        assert!(repo.get_many(&[]).await.expect("empty").is_empty());
     }
 
     #[tokio::test]

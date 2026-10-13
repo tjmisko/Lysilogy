@@ -314,16 +314,16 @@ async fn mapped_paper_id(
 
 /// Acquisition state of a Work as shown on graph nodes.
 #[derive(Debug, Serialize)]
-pub(super) struct AcquisitionBrief {
-    state: AcquisitionState,
-    unavailable_reason: Option<String>,
+pub struct AcquisitionBrief {
+    pub state: AcquisitionState,
+    pub unavailable_reason: Option<String>,
 }
 
 /// Brief acquisition states keyed by Work id. Works without a row have no entry.
-pub(super) type AcquisitionStates = BTreeMap<String, AcquisitionBrief>;
+pub type AcquisitionStates = BTreeMap<String, AcquisitionBrief>;
 
 /// Acquisition states for the given Works.
-pub(super) async fn states_for(
+pub async fn states_for(
     state: &AppState,
     work_ids: &[WorkId],
 ) -> Result<AcquisitionStates, Box<Response>> {

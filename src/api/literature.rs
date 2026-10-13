@@ -29,13 +29,13 @@ use crate::domain::PaperId;
 
 /// A paper held locally, as shown next to a Work. Never carries a path.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-pub(super) struct LocalPaper {
+pub struct LocalPaper {
     pub paper_id: PaperId,
     pub title: String,
 }
 
 /// Local papers keyed by Work id. Works without a local paper have no entry.
-pub(super) type LocalPapers = BTreeMap<String, Vec<LocalPaper>>;
+pub type LocalPapers = BTreeMap<String, Vec<LocalPaper>>;
 
 /// What a finished job produced.
 #[derive(Clone, Debug)]
@@ -346,7 +346,7 @@ async fn literature_status(
 /// Present local papers for the given Works, keyed by Work id.
 ///
 /// Documents missing from the catalog are skipped.
-pub(super) async fn local_papers_for(
+pub async fn local_papers_for(
     state: &AppState,
     work_ids: &[WorkId],
 ) -> Result<LocalPapers, GraphError> {
