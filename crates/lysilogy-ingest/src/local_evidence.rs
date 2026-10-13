@@ -22,6 +22,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::Result;
+use crate::labels::LabelSummary;
 use crate::bibliography::{BibliographicFields, Bibliography, EXTRACTOR_VERSION, parse_fields};
 
 /// Source record kind for the extraction evidence.
@@ -83,7 +84,7 @@ pub struct LocalEvidenceSummary {
     /// Stable `snake_case` codes, some with `:<entry number>` context.
     pub warnings: Vec<String>,
     /// Filled by the label pass.
-    pub labels: Option<Value>,
+    pub labels: Option<LabelSummary>,
 }
 
 /// How one entry came out.

@@ -6,6 +6,7 @@
 pub mod bibliography;
 pub mod identify;
 pub mod ingest;
+pub mod labels;
 pub mod literature;
 pub mod local_evidence;
 pub mod openalex;

@@ -153,6 +153,17 @@ impl EvidenceRepository {
         Ok(ids.into_iter().map(EntryId::from_uuid).collect())
     }
 
+    /// One stored entry by ID.
+    pub async fn entry(&self, entry: EntryId) -> Result<Option<StoredEntry>> {
+        let row = sqlx::query(&format!(
+            "select {ENTRY_COLUMNS} from source.bibliography_entry where id = $1"
+        ))
+        .bind(entry.as_uuid())
+        .fetch_optional(&self.pool)
+        .await?;
+        row.as_ref().map(entry_from_row).transpose()
+    }
+
     /// Entries extracted by one source record, in ordinal order.
     pub async fn entries_for_record(&self, record: SourceRecordId) -> Result<Vec<StoredEntry>> {
         let rows = sqlx::query(&format!(
