@@ -17,6 +17,9 @@ import type {
   EdgeLabel,
   EdgeLabelEdit,
   AcquisitionJobState,
+  ExpandWorkOptions,
+  ExpansionJob,
+  ExpansionStatus,
   AcquisitionStatus,
   FetchWorkOptions,
   GraphNeighbors,
@@ -147,6 +150,13 @@ export const api = {
     }),
   workAcquisition: (workId: string, signal?: AbortSignal): Promise<AcquisitionStatus> =>
     request(`/api/works/${encodeURIComponent(workId)}/acquisition`, { signal }),
+  expandWork: (workId: string, body?: ExpandWorkOptions): Promise<ExpansionJob> =>
+    request(`/api/works/${encodeURIComponent(workId)}/expand`, {
+      method: "POST",
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    }),
+  expansionStatus: (workId: string, signal?: AbortSignal): Promise<ExpansionStatus> =>
+    request(`/api/works/${encodeURIComponent(workId)}/expansion`, { signal }),
   graphNeighbors: (
     workId: string,
     direction: GraphNeighbors["direction"] = "references",

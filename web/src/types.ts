@@ -584,6 +584,56 @@ export type GraphNeighbors = {
   marks?: Record<string, MarkView>;
   work_tags?: Record<string, string[]>;
   clusters?: NeighborCluster[];
+  /** Expansion state per Work (Ramp E servers); the UI tolerates its absence. */
+  expansions?: Record<string, ExpansionView>;
+};
+
+export type ExpansionViewState = "expanded" | "unavailable" | "known";
+
+export type ExpansionView = {
+  state: ExpansionViewState;
+  method: "provider" | "local" | "existing" | null;
+  references_count: number;
+  unavailable_reason: string | null;
+  expanded_at: string | null;
+};
+
+export type ExpansionReport = {
+  work_id: string;
+  cached: boolean;
+  state: "expanded" | "unavailable";
+  method: "provider" | "local" | "existing" | null;
+  unavailable_reason: string | null;
+  references: number;
+  new_works: number;
+  paper_id: string | null;
+  warnings: string[];
+};
+
+export type WalkReport = {
+  seed: string;
+  expansions: ExpansionReport[];
+  levels: number;
+  truncated: boolean;
+};
+
+export type ExpansionJob = {
+  state: AcquisitionJobState;
+  report?: WalkReport;
+  message?: string;
+};
+
+export type ExpansionStatus = {
+  work_id: string;
+  job: ExpansionJob;
+  expansion: ExpansionView | null;
+};
+
+export type ExpandWorkOptions = {
+  depth?: number;
+  fanout?: number;
+  refresh?: boolean;
+  local?: boolean;
 };
 
 export type WorkLinkMethod = "identifier" | "title_match" | "manual" | "acquisition";
