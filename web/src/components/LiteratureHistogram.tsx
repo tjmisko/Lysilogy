@@ -157,6 +157,8 @@ export function LiteratureHistogram({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const seedRef = useRef<HTMLElement | null>(null);
   const revealPending = useRef(true);
+  // Resize-driven reveals jump: a smooth scroll still in flight would otherwise finish on a stale target.
+  const revealInstant = useRef(false);
   const lastPointer = useRef<{ x: number; y: number } | null>(null);
 
   // Keep the cursor on a real card: remember it while it is valid, reconcile when it vanishes.
@@ -181,6 +183,7 @@ export function LiteratureHistogram({
     if (scroller === null) return;
     const observer = new ResizeObserver(() => {
       revealPending.current = true;
+      revealInstant.current = true;
       setScrollSize({ width: scroller.clientWidth, height: scroller.clientHeight });
     });
     observer.observe(scroller);
@@ -192,13 +195,15 @@ export function LiteratureHistogram({
     const card = layout.cards.find((candidate) => candidate.id === effectiveFocus);
     if (scroller === null || card === undefined) return;
     revealPending.current = false;
+    const instant = revealInstant.current;
+    revealInstant.current = false;
     const target = scrollToReveal(card, {
       left: scroller.scrollLeft, top: scroller.scrollTop,
       width: scroller.clientWidth, height: scroller.clientHeight,
     });
-    if (target.left === scroller.scrollLeft && target.top === scroller.scrollTop) return;
+    if (!instant && target.left === scroller.scrollLeft && target.top === scroller.scrollTop) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    scroller.scrollTo({ left: target.left, top: target.top, behavior: reduceMotion ? "auto" : "smooth" });
+    scroller.scrollTo({ left: target.left, top: target.top, behavior: reduceMotion || instant ? "auto" : "smooth" });
   }, [effectiveFocus, layout, scrollSize]);
 
   // The year view's keys. LiteratureGraph skips these so they move the cursor even with the panel open.
