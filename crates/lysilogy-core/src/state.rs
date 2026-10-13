@@ -66,6 +66,23 @@ macro_rules! string_enum {
 }
 
 string_enum!(
+    /// A reader's private curation mark on a Work.
+    WorkMark {
+        Pinned => "pinned",
+        Downplayed => "downplayed",
+        Hidden => "hidden",
+    }
+);
+
+string_enum!(
+    /// How a tag is grouped in the legend.
+    TagKind {
+        Topic => "topic",
+        Status => "status",
+    }
+);
+
+string_enum!(
     /// The broad bibliographic class of a Work.
     WorkKind {
         Article => "article",

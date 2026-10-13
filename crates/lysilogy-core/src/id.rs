@@ -224,6 +224,11 @@ id_type!(
     RelationshipClaimId,
     'r'
 );
+id_type!(
+    /// Identifies a private workspace tag.
+    TagId,
+    't'
+);
 
 #[cfg(test)]
 mod tests {
@@ -285,5 +290,17 @@ mod tests {
         assert_eq!(json, format!("\"{id}\""));
         let back: EntryId = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(back, id);
+    }
+
+    #[test]
+    fn should_round_trip_tag_id_when_formatting_and_parsing() {
+        let id = TagId::new();
+        let text = id.to_string();
+        assert_eq!(text.chars().next(), Some('t'));
+        assert_eq!(text.parse::<TagId>().expect("parse"), id);
+        let mut other = text;
+        other.replace_range(0..1, "w");
+        assert!(matches!(other.parse::<TagId>(), Err(IdError::Prefix)));
+        assert!(WorkId::new().to_string().parse::<TagId>().is_err());
     }
 }
