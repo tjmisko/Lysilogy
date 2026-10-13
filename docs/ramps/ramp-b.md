@@ -1175,20 +1175,66 @@ accept, reject or edit them (edits supersede, never destroy), and jump to the ci
 ### How to user-test
 
 - CLI: `lysilogy lit "Fine-Tuning Language Models from Human Preferences" --labels --sidecar claude --label-limit 15`.
-  A rerun makes 0 model calls.
+  A rerun makes 0 model calls. `--sidecar codex` works the same way.
 - Server: `lysilogy ... serve --bind 127.0.0.1:7393 --web web/dist`, open the paper, press `L`, click a dot, then use
   `g`, `a`, `x`, `e` on the "Why it is cited" card. Esc closes the edit, then the panel, then the overlay.
 - API: `GET /api/graph/neighbors/<work id>`, `POST /api/relationship-claims/<id>/accept`.
+
+### Smoke results
+
+CLI, on a paper the implementer's smoke did not use ("Deep Reinforcement Learning from Human Preferences", dev DB on
+port 5433): `lit --labels --sidecar claude --label-limit 6` matched the Work by arxiv:1706.03741 and took 20 s.
+
+- Extraction: 53 entries extracted, 53 resolved (identifier 1, title 21, stub 31), 0 ambiguous, 53 mentions stored,
+  60 unresolved markers, 53 local edges (18 also from the provider), 35 labelable edges.
+- Labeling: 6 calls, 6 labeled, 0 rejected for grounding, 0 failed.
+- Rerun: 0 Works created (3219 before and after), 53 resolutions reused, 0 model calls.
+- Codex (`--sidecar codex --label-limit 2`): 2 calls, 2 labeled, 0 failed.
+- SQL check over every AI claim in the dev DB: claude 60/60 and codex 8/8 have a quote that is an exact substring of
+  the linked mention passage; none lack a mention.
+- Hand check of the 6 claude labels: all plausible (Wilson et al. uses_method, APRIL uses_method, ALE uses_data,
+  Pilarski contrasts, AlphaGo background).
+- API on a fresh serve: neighbors returned 66 edges, 6 labeled, with sources, mention_count and mention.paper_id.
+  `/citations` includes `edges`.
+- Error paths: PUT with a quote not in the passage gives 422 `quote_not_in_passage`; a bad relation gives 422
+  `invalid_relation`; a blank reason gives 422 `empty_reason`; a missing reason gives 422; an unknown id gives 404; a
+  malformed id gives 400. Accept and reject returned the new review_state (that one claim was reset to unreviewed).
+- UI: the scratch Playwright script `~/.cache/lysilogy-smoke/labels-smoke.mjs` passed in mock mode (edges, panel,
+  accept, reject, edit, Esc layering, show in paper with exact and drifted offsets) and in live mode against the built
+  `web/dist`. Live, pressing `g` on the Pilarski "contrasts" label opened the citing paper on p.3 and highlighted
+  exactly the cited sentence. Screenshots: `~/.cache/lysilogy-smoke/review-shots/`.
+- Dev DB side effects: 6 claude claims and 2 codex claims added for this paper, plus its local evidence.
 
 ### Known gaps
 
 - Provider-only edges have no passage, so they are never labeled. Labels exist only for papers whose local evidence has
   been run.
-- Many mentions stay unresolved (35 of 93 and 51 of 163 on the two smoke papers); they are kept as evidence but have no
-  edge or label.
+- Many mentions stay unresolved (35 of 93 and 51 of 163 on the first two smoke papers; 60 markers on the third); they
+  are kept as evidence but have no edge or label.
 - The edit form validates the quote only on the server, so a bad quote shows the 422 message after Enter.
 - Codex failed 2 of 8 calls with an undiagnosed `status 1` (not cached, retried on rerun).
 - `ApiError` has only a status, so the UI treats any 503 from these endpoints as `graph_unavailable`.
 - `npm run smoke` remains broken locally (missing fixture); verification uses the scratch Playwright scripts.
-- A stub whose display title is a bibliography tail (`arXiv preprint arXiv:1907.06347, 2019`) shows a poor title.
 - Carried over from Ramp A: concurrent `lit` runs that resolve to the same new Work can race on identifier insertion.
+- Author lists ending in "et al." are never treated as the boundary between authors and title
+  (`crates/lysilogy-ingest/src/bibliography/fields.rs:78-88`), so the parsed title becomes the venue tail. Example:
+  "Martin Abadi et al. Tensorflow: ... arXiv preprint arXiv:1603.04467, 2016" gets the title
+  "arXiv preprint arXiv:1603.04467, 2016"; the Wirth et al. entry gets "In AAAI, pages 2222-2228, 2016". In the dev DB,
+  6 of the 10 entries containing "et al." and 11 of 173 entries overall have a venue-tail title. These become oddly
+  titled stubs and miss the exact title match against existing provider stubs (TensorFlow, Model-Free Preference-Based
+  RL), so the graph shows duplicate nodes. The old branch behaved the same, so the port is faithful.
+- Titles are matched by exact key only, so visible duplicate nodes remain where provider and printed titles differ
+  ("Picbreeder" vs "Picbreeder: Evolving pictures collaboratively online"; "Interactively shaping agents via human
+  reinforcement" with and without ": The TAMER framework"). Fuzzy matching is out of scope by plan decision.
+- `labels.rs` `label_edges` checks `has_current_claim` per assertion, not per (citing, cited) edge. When two
+  bibliography entries resolve to the same Work, the edge can end up with two AI claims and two model calls.
+- `relationship.rs` `current_claims_for_edges` does not filter on assertion status, so claims on withdrawn or rejected
+  assertions still show on the edge.
+- `local_evidence.rs` `stored_entries`/`run_local_evidence`: when `index_text_changed`, old stored entries are paired
+  with the new extraction's ordinals; if the new extraction has more entries, `insert_entries` appends them to the old
+  record. Mentions are skipped correctly; only this rare drift path is loose.
+- `src/api/labels.rs` `edit_label`: a body of `quote: ""` clears the quote and stores an accepted user claim with no
+  quote, even when a mention passage exists. The plan does not address this.
+- `src/api/literature.rs`: `label_limit` in the POST /lit body has no upper bound (local-only server, so minor).
+- The label cache key includes the cited Work's display title, so hydrating or merging that Work invalidates the cache
+  for edges that are still unlabeled. The cost is a few cents of recomputation.
