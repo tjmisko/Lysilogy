@@ -691,3 +691,47 @@ export type LiteratureJob = {
   local?: LocalEvidenceSummary;
   message?: string;
 };
+
+export type RampItemStatus = "unread" | "reading" | "read";
+
+export type RampStatusCounts = Record<RampItemStatus, number>;
+
+export type RampSummaryView = {
+  id: string;
+  title: string;
+  seed_work_id: string;
+  seed_title: string | null;
+  item_count: number;
+  status_counts: RampStatusCounts;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RampPathStep = { work_id: string; title: string | null };
+
+export type RampItemView = {
+  work: Work;
+  /** Dense position, counting from 1. */
+  ordinal: number;
+  depth: number;
+  via_work_id: string | null;
+  /** The walk from the seed to this Work, both included. */
+  path: RampPathStep[];
+  status: RampItemStatus;
+  note: string | null;
+  added_at: string;
+  updated_at: string;
+  status_changed_at: string | null;
+};
+
+export type RampDetail = {
+  ramp: RampSummaryView;
+  items: RampItemView[];
+  local_papers: LocalPapersByWork;
+  acquisitions: AcquisitionsByWork;
+  expansions: Record<string, ExpansionView>;
+};
+
+export type RampItemAdd = { work_id: string; via_work_id?: string; note?: string };
+export type RampItemPatch = { status?: RampItemStatus; note?: string | null };
+export type RampOrderRequest = { work_ids: string[] } | { strategy: "foundational_first" };
