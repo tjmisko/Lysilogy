@@ -906,3 +906,35 @@ live; live smoke recorded.
 - On resume from `downloaded`, the source record for the link is looked up by `pdf_url` among stored candidates; a landing hop (`landing_meta`/`model`) loses its record link in that case. In a single run the winning candidate's record is used.
 - `already_local` marks the row `mapped` with the present document (no version recorded); a later tombstone sends it back through `downloaded`, which reuses a stored blob if there is one.
 - Tests: 32 runner tests in `acquire/tests.rs`, plus pure tests in `fetch.rs`, `store.rs`, `picker.rs`, `verify.rs` (extra: throttle slot spacing, scripted fetcher sequence, unfinished-copy cleanup, picker error not cached, 5xx/429 provider classification, outcome JSON shape).
+
+## U4 implementation notes
+
+- `download_public_resource(url, temp_dir, accept_html)` returns `Result<PublicResource, DownloadError>`; `DownloadError { error, reason, transient }` keeps the import's exact `Error` values (`into_error()`), while the fetcher uses the short `reason` (`http_503`, `request_failed`, `body_failed`, `non_public_address`, `not_pdf`, `content_type:<type>`, `too_large`, `bad_redirect`, `io`). The temp file is `.lysilogy-download-<uuid>.part` in `temp_dir`; for `/api/import` that is the library root, as before (dot-prefixed, removed on any error). Content-Type is now classified before the body for import too, so a non-PDF/non-HTML type is rejected without streaming; the message is unchanged. The import's `User-Agent` is now `Lysilogy/<version>[ (mailto:…)]`; connect timeout is 15 s (was 120 s), whole PDF request 120 s, HTML body read 30 s. Content-type rejection is a pure `reject_content_class`, so the "HTML still rejected for import" test needs no network.
+- `polite_user_agent` drops a contact email that is blank or has characters unsafe in a header.
+- Plan adjustment: `CitedTarget { work_id, skipped }` and `AcquisitionRepository::cited_targets(citing, workspace, retry_unavailable)` return every candidate target with a `skipped` flag (mapped, or unavailable inside the window unless retrying), so the CLI can count skipped Works without charging them to `--limit`. `acquisition_targets_cited_by(paper, retry_unavailable)` wraps it.
+- Plan adjustment: `arxiv:<id>` in `resolve_work_argument` falls back to the DataCite DOI `10.48550/arxiv.<id>`, because most arXiv-only Works in the graph carry only that DOI.
+- `HostThrottle` gained a `Debug` impl; `AppState` gained `with_acquisition_throttle` (tests) next to `with_acquisition_fetcher`. `LiteratureClient::client()` exposes the shared OpenAlex client to the acquisition module.
+- `--cited-by` stops at the first run error (DB/IO); unavailable and pending results never fail the command. `--limit` is clamped to 1..=100.
+- Tests added: 6 pure + 1 DB in `src/acquisition.rs`/`src/api.rs`, 4 in `src/remote.rs`, 4 in `src/acquisition/picker.rs`, 7 in `src/main.rs`, 1 DB in `lysilogy-db` (`cited_targets` ordering and skip flags). Gate: `cargo clippy --workspace --all-targets -- -D warnings` clean, `cargo test --workspace` green with `LYSILOGY_TEST_DATABASE_URL` set (no "skipping" lines).
+
+### Live smoke (2026-10-13)
+
+Dev DB `lysilogy`, library `~/Projects/Lysilogy/local-articles`, data `~/Projects/Lysilogy/.lysilogy`, `LYSILOGY_CONTACT_EMAIL` unset unless noted.
+
+- `fetch arxiv:1606.03137` (the Work only has the DataCite DOI): `mapped (source arxiv)`, stages `identifier_found → link_found → downloaded → mapped`, 581.8 KiB, `Fetched/2016 - Cooperative Inverse Reinforcement Learning.pdf`, warning `unpaywall_skipped_no_email`. 1.9 s.
+- Rerun (`fetch doi:10.48550/arxiv.1606.03137`): `already_mapped`, 0.6 s; `RUST_LOG=debug` shows only SQL, no HTTP.
+- `lit "Cooperative Inverse"`: `Work wpFXM6gy4QeqHe5tuX0WpPA (identifier: arxiv:1606.03137)`, the same Work as the fetch (identity converges). It also ingested 25 references (21 new stub Works).
+- `fetch --cited-by "Fine-Tuning Language Models from Human Preferences" --limit 5`: five arXiv-sourced papers mapped (13.6 s, the 3 s arXiv spacing is visible); totals `Fetched 5 · already local 0 · unavailable 0 · pending 0 · skipped 0`.
+- OpenAlex-locations DOI case: `fetch doi:10.3386/w16425` (NBER working paper): `mapped (source openalex_best)` via `https://doi.org/10.3386/w16425` redirecting to the NBER PDF, 337.7 KiB.
+- `no_oa_location`: `fetch doi:10.1257/aer.104.6.1597` (AER, closed): `unavailable (no_oa_location)`. `all_links_failed`: `fetch doi:10.1257/jep.21.3.131`: the AEA PDF and landing page both answer 403, `unavailable (all_links_failed)`; a rerun inside the window prints `skipped_unavailable (all_links_failed, checked 2026-10-13)`.
+- Contact email: without it every run that reached Unpaywall's step prints `Warnings   unpaywall_skipped_no_email`. With `LYSILOGY_CONTACT_EMAIL=smoke-test@example.org` set only in the shell, the warning is gone and the closed Works stay `no_oa_location` / `all_links_failed` (Unpaywall found nothing more). No address is committed.
+
+Files written under `local-articles/Fetched/` (remove with the matching `reader.document` tombstoning on the next scan; blobs are in `~/Projects/Lysilogy/.lysilogy/blobs/sha256/`):
+
+- `2010 - Recent Findings on Trade and Inequality.pdf`
+- `2016 - Cooperative Inverse Reinforcement Learning.pdf`
+- `2019 - Deep Batch Active Learning by Diverse, Uncertain Gradient Lower Bounds.pdf`
+- `2019 - Discriminative Active Learning.pdf`
+- `2019 - Finding Generalizable Evidence by Learning to Convince Q&A Models.pdf`
+- `2019 - Learning from Dialogue after Deployment Feed Yourself, Chatbot!.pdf`
+- `2019 - Neural Text Summarization A Critical Evaluation.pdf`
