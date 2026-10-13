@@ -143,6 +143,12 @@ pub struct HostThrottle {
     next_slot: Mutex<HashMap<String, Instant>>,
 }
 
+impl std::fmt::Debug for HostThrottle {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("HostThrottle")
+    }
+}
+
 impl HostThrottle {
     #[must_use]
     pub fn new(default_interval: Duration, overrides: &[(&str, Duration)]) -> Self {

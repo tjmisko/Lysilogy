@@ -6,7 +6,7 @@
 use chrono::{DateTime, Utc};
 use lysilogy_core::{
     AcquisitionState, BlobId, CandidateOrigin, DocumentId, DocumentVersionId, SourceRecordId,
-    UnavailableReason, WorkId,
+    UnavailableReason, WorkId, WorkspaceId,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -72,6 +72,17 @@ pub struct AcquisitionRow {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+/// A Work cited by a paper, with whether acquisition would skip it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CitedTarget {
+    pub work_id: WorkId,
+    /// Already mapped, or marked unavailable inside the recheck window.
+    pub skipped: bool,
+}
+
+/// How long an `unavailable` verdict is trusted, in days (mirrors the runner).
+const RECHECK_DAYS: i32 = 30;
 
 /// Reads and writes acquisition rows.
 #[derive(Clone)]
@@ -302,6 +313,55 @@ impl AcquisitionRepository {
              where work_id = $1",
         )
         .await
+    }
+
+    /// Works cited by `citing` that have no present document in the workspace,
+    /// best candidates first: an arXiv identifier (direct or a `DataCite`
+    /// `10.48550/arxiv.*` DOI), then any DOI, then newest year (unknown last),
+    /// then title. `skipped` marks Works that are already mapped or, unless
+    /// `retry_unavailable`, unavailable within the recheck window.
+    pub async fn cited_targets(
+        &self,
+        citing: WorkId,
+        workspace: WorkspaceId,
+        retry_unavailable: bool,
+    ) -> Result<Vec<CitedTarget>> {
+        let rows = sqlx::query(
+            "select w.id, \
+                 coalesce(a.state = 'mapped' or (a.state = 'unavailable' and not $3 \
+                     and a.checked_at > now() - make_interval(days => $4)), false) as skipped \
+             from graph.work w \
+             left join ops.acquisition a on a.work_id = w.id \
+             where w.id in (select cited_work_id from graph.citation_assertion \
+                            where citing_work_id = $1 and status in ('asserted', 'accepted')) \
+               and w.id <> $1 \
+               and not exists (select 1 from reader.document d \
+                               where d.workspace_id = $2 and d.work_id = w.id \
+                                 and d.relative_path is not null) \
+             order by \
+                 exists (select 1 from graph.work_identifier i \
+                         where i.work_id = w.id and i.status = 'active' \
+                           and (i.scheme = 'arxiv' or (i.scheme = 'doi' \
+                                and i.value_normalized like '10.48550/arxiv.%'))) desc, \
+                 exists (select 1 from graph.work_identifier i \
+                         where i.work_id = w.id and i.status = 'active' \
+                           and i.scheme = 'doi') desc, \
+                 w.display_year desc nulls last, w.display_title nulls last, w.id",
+        )
+        .bind(citing.as_uuid())
+        .bind(workspace.as_uuid())
+        .bind(retry_unavailable)
+        .bind(RECHECK_DAYS)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter()
+            .map(|row| {
+                Ok(CitedTarget {
+                    work_id: WorkId::from_uuid(row.try_get("id")?),
+                    skipped: row.try_get("skipped")?,
+                })
+            })
+            .collect()
     }
 
     async fn execute_for(&self, work: WorkId, sql: &str) -> Result<()> {
@@ -640,5 +700,96 @@ mod tests {
             repo.get(work).await.unwrap().unwrap().state,
             AcquisitionState::Downloaded
         );
+    }
+
+    #[tokio::test]
+    async fn should_order_cited_targets_and_flag_skips_when_listing_for_citing_work() {
+        use crate::citation::CitationRepository;
+        use crate::work::WorkRepository;
+        use lysilogy_core::IdentifierScheme;
+
+        let (_guard, pool) = db!();
+        let repo = AcquisitionRepository::new(pool.clone());
+        let works = WorkRepository::new(pool.clone());
+        let citations = CitationRepository::new(pool.clone());
+        let documents = DocumentRepository::new(pool.clone());
+        let workspace = documents
+            .create_workspace(&format!("cited-{}", Uuid::new_v4()))
+            .await
+            .expect("workspace");
+        let citing = test_support::new_work(&pool).await;
+        let marker = Uuid::new_v4().simple().to_string();
+
+        let plain = test_support::new_work(&pool).await;
+        let old_doi = test_support::new_work(&pool).await;
+        let new_doi = test_support::new_work(&pool).await;
+        let arxiv_doi = test_support::new_work(&pool).await;
+        let mapped = test_support::new_work(&pool).await;
+        let unavailable = test_support::new_work(&pool).await;
+        for (work, year) in [(old_doi, 2010), (new_doi, 2020), (arxiv_doi, 2001)] {
+            works.set_display_year(work, year).await.expect("year");
+        }
+        for (work, doi) in [
+            (old_doi, format!("10.1000/old-{marker}")),
+            (new_doi, format!("10.1000/new-{marker}")),
+            (arxiv_doi, format!("10.48550/arxiv.{marker}")),
+        ] {
+            works
+                .add_identifier(
+                    work,
+                    IdentifierScheme::Doi,
+                    &doi,
+                    None,
+                    lysilogy_core::IdentifierStatus::Active,
+                )
+                .await
+                .expect("doi");
+        }
+        for work in [plain, old_doi, new_doi, arxiv_doi, mapped, unavailable] {
+            citations
+                .add_assertion(citing, work, None)
+                .await
+                .expect("assertion");
+        }
+        repo.claim(mapped).await.expect("claim");
+        let version = test_support::new_version(&pool).await;
+        let document: Uuid =
+            sqlx::query_scalar("select document_id from reader.document_version where id = $1")
+                .bind(version.as_uuid())
+                .fetch_one(&pool)
+                .await
+                .expect("document");
+        repo.mark_mapped(mapped, DocumentId::from_uuid(document), None)
+            .await
+            .expect("mapped");
+        repo.claim(unavailable).await.expect("claim");
+        repo.mark_unavailable(unavailable, UnavailableReason::NoOaLocation)
+            .await
+            .expect("unavailable");
+
+        let targets = repo
+            .cited_targets(citing, workspace, false)
+            .await
+            .expect("targets");
+        let order: Vec<WorkId> = targets.iter().map(|target| target.work_id).collect();
+        assert_eq!(order[..4], [arxiv_doi, new_doi, old_doi, plain]);
+        let skipped: Vec<WorkId> = targets
+            .iter()
+            .filter(|target| target.skipped)
+            .map(|target| target.work_id)
+            .collect();
+        assert_eq!(skipped.len(), 2);
+        assert!(skipped.contains(&mapped) && skipped.contains(&unavailable));
+
+        let retrying = repo
+            .cited_targets(citing, workspace, true)
+            .await
+            .expect("targets");
+        let still_skipped: Vec<WorkId> = retrying
+            .iter()
+            .filter(|target| target.skipped)
+            .map(|target| target.work_id)
+            .collect();
+        assert_eq!(still_skipped, vec![mapped]);
     }
 }
