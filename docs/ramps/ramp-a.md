@@ -593,3 +593,21 @@ passes, and the live smoke is recorded in this doc.
   because workspace clippy denies a bare `as u32` here.
 - The old `citation_graph::openalex::work` now lowercases DOIs through the shared
   `normalize_doi`; its tests are unchanged and pass.
+
+## U4 implementation notes
+
+- The cached reading index supplies front matter by slicing `index.text` with the pages' UTF-16
+  bounds (pages 1-2), not by joining tokens. Joined tokens lose paragraph breaks, so the
+  References heading would never sit on its own line and the cut would fail.
+- `AppState` fields `catalog`, `store`, `extractor`, `graph` are `pub(crate)` so `src/literature.rs`
+  (a sibling module) can use them. The client is a type-erased `LiteratureClient` so `AppState`
+  stays `Clone`; tests inject a transport with `with_literature_client`.
+- New `Error::Literature` (HTTP 502 `literature_failed`) carries mapped `IngestError`/`ProviderError`.
+- An identifier link is kept even when the provider record is rejected or missing: the paper's own
+  front-matter DOI/arXiv still names its Work, and a later title match only attaches the OpenAlex ID.
+  A title match creates the link only when no identifier Work exists.
+- Live check (2026-10-12): `lit "China Syndrome"` (the title fragment `China Syndrome - Local` does
+  not match the catalog title) gives W2097916756 with 114 edges (new stubs 114, titled 106); the
+  rerun gives 0 new stubs and 0 hydrated. `Concrete Problems in AI Safety` links only to an
+  arXiv-identified Work with `provider_title_mismatch` for W2462906003 ("Agnostic Learning with
+  Unknown Utilities") and `no_candidates` from the title search; no OpenAlex ID is attached.

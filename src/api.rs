@@ -70,13 +70,14 @@ const MAX_REMOTE_URL_LENGTH: usize = 4_096;
 
 #[derive(Clone, Debug)]
 pub struct AppState {
-    catalog: Arc<RwLock<LibraryCatalog>>,
+    pub(crate) catalog: Arc<RwLock<LibraryCatalog>>,
     library_root: Arc<PathBuf>,
-    store: ArtifactStore,
-    extractor: PdfExtractor,
+    pub(crate) store: ArtifactStore,
+    pub(crate) extractor: PdfExtractor,
     analysis: AnalysisService,
     citation_http: crate::citation_graph::GraphHttp,
-    graph: Option<GraphState>,
+    pub(crate) graph: Option<GraphState>,
+    pub(crate) literature: crate::literature::LiteratureClient,
     jobs: JobTracker,
     notes: crate::notes::NotesStore,
     vimrc: Arc<PathBuf>,
@@ -207,8 +208,16 @@ impl AppState {
             tools_extract: Arc::new(Mutex::new(())),
             reading_indexes: source_index::IndexJobs::default(),
             graph: None,
+            literature: crate::literature::LiteratureClient::from_environment()?,
             frontend_root: None,
         })
+    }
+
+    /// Replace the `OpenAlex` client used by the literature flow (for tests).
+    #[must_use]
+    pub fn with_literature_client(mut self, client: crate::literature::LiteratureClient) -> Self {
+        self.literature = client;
+        self
     }
 
     #[must_use]

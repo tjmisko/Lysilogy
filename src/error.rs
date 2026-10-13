@@ -44,6 +44,20 @@ pub enum Error {
     Task(String),
     #[error("could not import remote PDF: {0}")]
     RemoteImport(String),
+    #[error("literature ingestion failed: {0}")]
+    Literature(String),
+}
+
+impl From<lysilogy_ingest::IngestError> for Error {
+    fn from(error: lysilogy_ingest::IngestError) -> Self {
+        Self::Literature(error.to_string())
+    }
+}
+
+impl From<lysilogy_ingest::openalex::ProviderError> for Error {
+    fn from(error: lysilogy_ingest::openalex::ProviderError) -> Self {
+        Self::Literature(error.to_string())
+    }
 }
 
 impl Error {
@@ -77,6 +91,7 @@ impl IntoResponse for Error {
             Self::AlreadyProcessing(_) => (StatusCode::CONFLICT, "already_processing"),
             Self::ProgramUnavailable(_) => (StatusCode::SERVICE_UNAVAILABLE, "program_unavailable"),
             Self::RemoteImport(_) => (StatusCode::BAD_GATEWAY, "remote_import_failed"),
+            Self::Literature(_) => (StatusCode::BAD_GATEWAY, "literature_failed"),
             Self::Io { .. }
             | Self::CommandFailed { .. }
             | Self::EmptyExtraction(_)

@@ -1,6 +1,6 @@
 use std::{fmt::Write, path::Path};
 
-use super::{CachedIndex, SourceStamp, assemble};
+use super::{CachedIndex, Provenance, ReadingPage, SourceStamp, assemble};
 
 pub fn native_pdf(text: &str) -> Vec<u8> {
     let stream = format!("BT /F1 12 Tf 50 700 Td ({text}) Tj ET");
@@ -63,4 +63,38 @@ pub async fn cache_fixture(source: &Path, directory: &Path) {
     )
     .await
     .unwrap();
+}
+
+/// Like [`cache_fixture`], with the given `(page number, text)` pages laid out
+/// the way `assemble` does: paragraphs separated by a blank line, page bounds
+/// in UTF-16 units.
+pub async fn cache_fixture_with_pages(source: &Path, directory: &Path, pages: &[(u32, &str)]) {
+    cache_fixture(source, directory).await;
+    let path = directory.join("reading-index.json");
+    let mut cached: CachedIndex =
+        serde_json::from_slice(&tokio::fs::read(&path).await.unwrap()).unwrap();
+    let mut text = String::new();
+    let mut offset = 0;
+    for (number, page_text) in pages {
+        if !text.is_empty() {
+            text.push_str("\n\n");
+            offset += 2;
+        }
+        let start = offset;
+        text.push_str(page_text);
+        offset += page_text.encode_utf16().count();
+        cached.index.pages.push(ReadingPage {
+            number: *number,
+            width: 612.0,
+            height: 792.0,
+            start,
+            end: offset,
+            provenance: Provenance::Native,
+            confidence: None,
+        });
+    }
+    cached.index.text = text;
+    tokio::fs::write(&path, serde_json::to_vec(&cached).unwrap())
+        .await
+        .unwrap();
 }
