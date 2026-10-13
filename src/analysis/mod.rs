@@ -24,6 +24,7 @@ use crate::{
 
 pub use heuristic::HeuristicAnalyzer;
 pub use local_cli::LocalCliAnalyzer;
+pub(crate) use local_cli::structured_model_key;
 
 pub const ANALYSIS_SCHEMA: &str = include_str!("../../prompts/paper-analysis.schema.json");
 pub const CLARIFICATION_SCHEMA: &str = include_str!("../../prompts/clarification.schema.json");

@@ -8,6 +8,9 @@
 use lysilogy_ingest::bibliography::{
     self, PageRect, SourcePage, SourceParagraph, SourceText, SourceToken, TextSpan,
 };
+use lysilogy_ingest::labels::{
+    LabelContext, LabelOptions, LabelSummary, RelationshipLabeler, label_edges,
+};
 use lysilogy_ingest::literature::LiteratureSummary;
 use lysilogy_ingest::local_evidence::{
     LocalEvidenceContext, LocalEvidenceInput, LocalEvidenceSummary, run_local_evidence,
@@ -24,26 +27,32 @@ use crate::{
 /// The warning reported when a paper has no Work to hang local evidence on.
 pub const LOCAL_EVIDENCE_REQUIRES_WORK: &str = "local_evidence_requires_work";
 
+/// Everything needed to find a paper's local evidence in the graph.
+struct LocalEvidenceTarget {
+    citing_work: lysilogy_core::WorkId,
+    document_sha256: String,
+    document_version: lysilogy_core::DocumentVersionId,
+}
+
 impl AppState {
-    /// Persist and resolve the paper's local bibliography, and connect it to
-    /// its in-text mentions. Returns `None` (the caller reports
-    /// [`LOCAL_EVIDENCE_REQUIRES_WORK`]) when the paper has no Work.
-    ///
-    /// Builds the reading index if it is not cached; that index is a
-    /// rebuildable cache artifact.
-    pub async fn run_local_evidence(
-        &self,
-        id: &PaperId,
-        summary: &LiteratureSummary,
-    ) -> Result<Option<LocalEvidenceSummary>> {
-        let Some(citing_work) = summary.work_id else {
-            return Ok(None);
-        };
-        let graph = self.graph.as_ref().ok_or_else(|| {
+    fn graph_for_literature(&self) -> Result<&crate::graph::GraphState> {
+        self.graph.as_ref().ok_or_else(|| {
             Error::InvalidRequest(
                 "the literature graph needs a database; set LYSILOGY_DATABASE_URL".to_owned(),
             )
-        })?;
+        })
+    }
+
+    /// The paper's Work and current document version, or `None` without a Work.
+    async fn local_evidence_target(
+        &self,
+        id: &PaperId,
+        summary: &LiteratureSummary,
+    ) -> Result<Option<LocalEvidenceTarget>> {
+        let Some(citing_work) = summary.work_id else {
+            return Ok(None);
+        };
+        let graph = self.graph_for_literature()?;
         let source = self
             .catalog
             .read()
@@ -62,7 +71,64 @@ impl AppState {
             .ok_or_else(|| {
                 Error::Literature(format!("no document version recorded for {id}; run lit first"))
             })?;
+        Ok(Some(LocalEvidenceTarget {
+            citing_work,
+            document_sha256,
+            document_version,
+        }))
+    }
 
+    /// Label the paper's local citation edges with `labeler`. Returns `None`
+    /// (the caller reports [`LOCAL_EVIDENCE_REQUIRES_WORK`]) when the paper
+    /// has no Work. Run [`Self::run_local_evidence`] first.
+    pub async fn label_local_edges(
+        &self,
+        id: &PaperId,
+        summary: &LiteratureSummary,
+        labeler: &dyn RelationshipLabeler,
+        options: LabelOptions,
+    ) -> Result<Option<LabelSummary>> {
+        let Some(target) = self.local_evidence_target(id, summary).await? else {
+            return Ok(None);
+        };
+        let graph = self.graph_for_literature()?;
+        let context = LabelContext {
+            works: &graph.works,
+            records: &graph.source_records,
+            evidence: &graph.evidence,
+            relationships: &graph.relationships,
+        };
+        let labels = label_edges(
+            &context,
+            target.citing_work,
+            target.document_version,
+            labeler,
+            options,
+        )
+        .await?;
+        Ok(Some(labels))
+    }
+
+    /// Persist and resolve the paper's local bibliography, and connect it to
+    /// its in-text mentions. Returns `None` (the caller reports
+    /// [`LOCAL_EVIDENCE_REQUIRES_WORK`]) when the paper has no Work.
+    ///
+    /// Builds the reading index if it is not cached; that index is a
+    /// rebuildable cache artifact.
+    pub async fn run_local_evidence(
+        &self,
+        id: &PaperId,
+        summary: &LiteratureSummary,
+    ) -> Result<Option<LocalEvidenceSummary>> {
+        let Some(target) = self.local_evidence_target(id, summary).await? else {
+            return Ok(None);
+        };
+        let LocalEvidenceTarget {
+            citing_work,
+            document_sha256,
+            document_version,
+        } = target;
+        let graph = self.graph_for_literature()?;
         let index = self.reading_index(id, false).await?;
         let index_text_sha256 = format!("{:x}", Sha256::digest(index.text.as_bytes()));
         let index_schema_version = index.schema_version;
