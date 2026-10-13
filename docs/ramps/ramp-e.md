@@ -953,3 +953,116 @@ expansion works; attempting a 4th hop shows the notice and sends nothing; a know
 skips `POST /expand`; the panel button and double-click (panel open) expand; a seventh expansion
 is refused; collapsing a hop-1 node removes its subtree and walk edges; `j` visits base
 placements and then walk children. Screenshot `~/.cache/lysilogy-smoke/walk-expanded.png`.
+
+## U5 implementation notes
+
+Shipped: `RampSummaryView`, `RampDetail`, `RampItemView`, `RampItemStatus` and friends in
+`web/src/types.ts`; `api.{listRamps, createRamp, ramp, renameRamp, deleteRamp, addRampItem,
+updateRampItem, removeRampItem, orderRamp}`; pure `web/src/lib/ramp.ts` (`nextStatus`,
+`missingAncestors`, `swapOrder`, `pathBreadcrumb`, `pickCurrentRamp`, `rampStorageKey`);
+`web/src/lib/useRamps.ts` (ramp state and every mutation, one change at a time); the
+`LiteratureRamp` sidebar; `R` and `y` in `LiteratureGraph`; help overlay rows. Tests:
+`test:ramp` 10, `test:walk` 11, `test:literature-layout` 31, `test:relevance` 13,
+`test:acquisition` 14. Web gate (typecheck, lint, build) green. Cargo gate unchanged and green
+with `LYSILOGY_TEST_DATABASE_URL` set (core 77, db 98, ingest 241, root lib 344, bin 20).
+
+Choices and small adjustments:
+
+- Ramp state lives in a hook (`useRamps`) owned by `LiteratureGraph`, not in the sidebar, so `y`
+  works while the sidebar is closed. The list and the current ramp load when the overlay opens;
+  a server without ramps only shows its error once the sidebar is opened.
+- `missingAncestors(items, path)` never lists the last path element; the center is the seed and
+  is always in an existing ramp. Each added ancestor goes `via` its predecessor in the path.
+- `y` on the center with no ramp starts the ramp and says so; with a ramp it says "Already in
+  ramp". Results and errors of `y` show in the canvas notice line; errors also land in the
+  sidebar's `role="alert"` line.
+- Status, note, rename and reorder responses replace local state (status counts recomputed from
+  items); add and remove re-read the ramp for dense ordinals and expansion views.
+- The note and title inputs save on Enter and cancel on Esc or blur. Esc is routed through the
+  existing overlay quit event, so one press cancels an input, then closes the Work panel, then
+  closes the sidebar, then the overlay (`data-ramp-open` joins `data-work-open` in `App.tsx`).
+- Fetch from a ramp row posts `/api/works/{id}/fetch`, polls `/acquisition` once a second while
+  the row's job runs, and re-reads the ramp when it finishes. An unavailable row offers "Retry".
+- Layout: 320 px sidebar in the body row; 720 to 760 px stacks under the canvas like the Work
+  panel; below 720 px it overlays the canvas (absolute, `min(320px, 100%)`, no horizontal scroll).
+- The UI has no ramp delete; `api.deleteRamp` exists and the CLI deletes (out of the U5 spec).
+
+Mock Playwright pass (`~/.cache/lysilogy-smoke/ramp-smoke.mjs`, not committed; mocks the ramp
+routes in miniature): 37 checks, no console errors. `R` opens the empty sidebar; `y` on a hop-2
+node with no ramp sends `POST /api/ramps`, then `POST items` for the ancestor (`via` center) and
+the node (`via` ancestor), nothing more; three rows with depth indent and the via breadcrumb;
+`y` again says "Already in ramp" and sends nothing; the status button names the next state and
+sends `PATCH {"status":"reading"}`; a note saves on Enter and Esc cancels with no request;
+"Suggest order" sends `{"strategy":"foundational_first"}` and the list follows the response; a
+held item shows "Open" (overlay closes, `/api/papers/<id>` requested); a non-held item shows
+"Fetch" and posts the fetch; move-down sends the swapped permutation; remove sends `DELETE`; the
+seed has no remove button; clicking a row selects the Work on the canvas; Esc closes the sidebar
+before the overlay; at 390 px the sidebar overlays with no horizontal scroll. Screenshots
+`~/.cache/lysilogy-smoke/ramp-sidebar.png` and `ramp-narrow.png`.
+
+Live 2-hop smoke (dev DB, release build, `lysilogy serve --bind 127.0.0.1:7395 --web web/dist`,
+library from the main checkout, data and notes under `~/.cache/lysilogy-u5`, no
+`LYSILOGY_CONTACT_EMAIL` set):
+
+1. Seed paper `cb45ee3d268ffbf9` -> seed Work `S` ("Learning to summarize from human feedback").
+2. `POST /api/ramps` -> ramp with 1 item (the seed).
+3. `POST /api/works/S/expand` -> `cached`, method `existing`, 93 references, 7 ms.
+4. A = "Fine-Tuning Language Models from Human Preferences" added `via S` (depth 1). Its expand ->
+   `cached` (`existing`, 61 references): already linked by an earlier ramp, so no local flow ran.
+5. B = "Attention Is All You Need" (top-ranked non-held child of A with no expansion): expand ->
+   `expanded (provider, 28 references, 21 new works)`, no warnings; added `via A` (depth 2).
+6. C = "A Deep Reinforced Model for Abstractive Summarization" (child of B, already provider-expanded
+   by the U2 check) added `via B` (depth 3). `PUT order {"strategy":"foundational_first"}` ->
+   C, B, A, S (seed last). The detail showed local papers for A and S only; B and C had no
+   acquisition row (UI shows "Not fetched yet." and Fetch); expansions: S and A `existing`, B and C
+   `provider`.
+7. Expanding B again -> `cached` (`provider`, 28 references, 0 new), 8 ms, synchronously, with no
+   provider flow (the cached path never reaches the provider).
+8. UI pass (`~/.cache/lysilogy-smoke/live-e.mjs`): open the seed paper, `L`, `w` on A, `w` on B,
+   `R`: the sidebar listed the four rows in the step 6 order with depth, via breadcrumbs, Open on
+   A and S, Fetch on B and C, and expansion badges; no console errors. Screenshots
+   `live-e-walk.png`, `live-e-ramp.png` in `~/.cache/lysilogy-smoke/`. B is also a direct
+   reference of the seed (hop 1 on the canvas) although the ramp reached it through A, so most of
+   A's expansion was drawn as cross-links to existing nodes.
+9. `DELETE /api/ramps/R` -> 204, a later `GET` -> 404; `reader.ramp` and `reader.ramp_item` both 0
+   rows. The ledger row for B, its 21 new stub Works and the edges stay (canonical graph data).
+
+## Result
+
+U5 is done. Acceptance met: web typecheck, lint, build, `test:ramp`, `test:walk`,
+`test:literature-layout`, `test:relevance`, `test:acquisition` pass; the cargo gate passes; the
+mock Playwright pass asserts everything listed in U5 with no console errors; the live 2-hop smoke
+is recorded above; the check's ramp rows are deleted. Ramp E units U1 to U5 are complete.
+
+## Report
+
+What shipped (Ramp E): the `0008` schema (ramps, items, expansion ledger); bounded backward
+expansion with local, provider and cached dispatch; expansion jobs and routes; ramp service, API
+and CLI with a deterministic "foundational first" order; in-place multi-hop expansion in the
+literature graph (`w`); the reading ramp sidebar (`R`) and add-to-ramp (`y`).
+
+How to user-test:
+
+1. `scripts/db start`, `export LYSILOGY_DATABASE_URL=...`, `cargo run --release -- serve`, build
+   `web` (`npm run build`), open a linked paper and press `L`.
+2. Select a cited work, press `w` to expand its references in place (twice for 2 hops). A work
+   with unknown references triggers an expand job; a second press collapses it.
+3. Press `y` on a deep node: a ramp seeded at the paper is created and the works leading to the
+   node are added first. Press `R` to see the ramp: click the circle to cycle unread, reading,
+   read; click "Add a note" (Enter saves, Esc cancels); use the arrows to reorder; "Suggest
+   order" puts foundations first with the seed last; `Open` reads a held paper; `Fetch` gets an
+   open-access copy.
+4. CLI equivalents: `lysilogy expand <work> --depth 2`, `lysilogy ramp show <ramp>`.
+
+Known gaps:
+
+- No ramp delete, rename of the picker entries aside, in the UI; only the CLI and API delete.
+- One ramp shown per seed paper at a time; switching uses the picker. No cross-seed view.
+- Expansion state in the overlay is per session; the ramp itself persists.
+- Double-click expand while the Work panel is closed can miss the node (U4 note); `w` is reliable.
+- `y` on a cross-linked node uses the path through its base placement, which may differ from the
+  path of the expansion that also lists it.
+- A node expanded on the canvas is not necessarily expanded on the server for the ramp badge until
+  the ramp is re-read.
+- The live check ran unauthenticated (no contact email); `OpenAlex` accepted it, but a polite-pool
+  email is recommended for heavier walks.
