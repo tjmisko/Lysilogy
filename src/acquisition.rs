@@ -277,11 +277,25 @@ impl AppState {
         let database = |error: lysilogy_db::DbError| Error::Acquisition(error.to_string());
         let found = match parse_work_reference(text)? {
             WorkReference::Id(id) => graph.works.get(id).await.map_err(database)?,
-            WorkReference::Identifier(scheme, value) => graph
-                .works
-                .find_by_identifier(scheme, &value)
-                .await
-                .map_err(database)?,
+            WorkReference::Identifier(scheme, value) => {
+                let direct = graph
+                    .works
+                    .find_by_identifier(scheme, &value)
+                    .await
+                    .map_err(database)?;
+                // Many arXiv preprints are known only by their DataCite DOI.
+                match (direct, scheme) {
+                    (None, IdentifierScheme::Arxiv) => graph
+                        .works
+                        .find_by_identifier(
+                            IdentifierScheme::Doi,
+                            &format!("10.48550/arxiv.{value}"),
+                        )
+                        .await
+                        .map_err(database)?,
+                    (direct, _) => direct,
+                }
+            }
         };
         let work = found.ok_or_else(unknown)?;
         graph
@@ -529,6 +543,35 @@ mod tests {
                 "{text}"
             );
         }
+        let datacite = graph
+            .works
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("work")
+            .id;
+        let datacite_arxiv = format!(
+            "2{:03}.{:05}",
+            token.len() % 7,
+            uuid::Uuid::new_v4().as_u128() % 100_000
+        );
+        graph
+            .works
+            .add_identifier(
+                datacite,
+                IdentifierScheme::Doi,
+                &format!("10.48550/arxiv.{datacite_arxiv}"),
+                None,
+                IdentifierStatus::Active,
+            )
+            .await
+            .expect("datacite doi");
+        assert_eq!(
+            state
+                .resolve_work_argument(&format!("arxiv:{datacite_arxiv}"))
+                .await
+                .expect("arxiv via datacite doi"),
+            datacite
+        );
         let unknown = state
             .resolve_work_argument("doi:10.1000/never-seen-this")
             .await
