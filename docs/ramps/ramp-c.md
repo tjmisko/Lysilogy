@@ -996,3 +996,39 @@ See U4's live CLI smoke and this unit's Result section: arXiv, NBER (OpenAlex `b
 - `2019 - Finding Generalizable Evidence by Learning to Convince Q&A Models.pdf`
 - `2019 - Learning from Dialogue after Deployment Feed Yourself, Chatbot!.pdf`
 - `2019 - Neural Text Summarization A Critical Evaluation.pdf`
+
+## Report
+
+Review smoke ran isolated from the main checkout: scratch database `lysilogy_review_c` on the 5433 cluster, scratch library and data dir under `~/.cache/lysilogy-ramp-c-review`. No `LYSILOGY_CONTACT_EMAIL` was set unless stated.
+
+### What shipped
+
+Open-access acquisition of cited Works: CLI `lysilogy fetch` (single identifier or `--cited-by`), an async API (`POST /api/works/<id>/fetch`, `GET /api/works/<id>/acquisition`), `acquisitions` and `local_papers` on neighbors and citations, and a Fetch control in the literature graph with Retry and Open in reader. Fetched PDFs are copied into the library and stored as blobs; the Work is linked to the document with method `acquisition`.
+
+### How to user-test
+
+- CLI: `lysilogy lit "Fine-Tuning Language"`, then `lysilogy fetch --cited-by "Fine-Tuning Language" --limit 4`. Re-run `lysilogy fetch arxiv:1906.03671` to see `already_mapped`. Use `--retry-unavailable` to re-check unavailable Works.
+- Server: `lysilogy serve --bind 127.0.0.1:7394 --web web/dist` with `LYSILOGY_DATABASE_URL`, `LYSILOGY_LIBRARY`, `LYSILOGY_DATA` set. Open a paper that has been through `lit`, press `L`, move with `j`/`k` to a node without a filled centre, press Enter, then `f`. When it says Fetched, press Enter on Open in reader.
+- API: `curl -X POST /api/works/<id>/fetch`, then poll `curl /api/works/<id>/acquisition` until `job.state` is `succeeded`.
+
+### Smoke results
+
+1. Setup: `lit "Fine-Tuning Language"` (Ziegler 2019) ingested 45 OpenAlex references.
+2. `fetch --cited-by "Fine-Tuning Language" --limit 4` fetched and mapped 4 arXiv works in 9.6 s, consistent with the 3 s per-request arXiv throttle. Summary: fetched 4, unavailable 0, pending 0. Each row: state=mapped, source=arxiv, attempts=1, work_link_method=acquisition (detail `acquired:arxiv:arxiv.org`), document_version.blob_id set. Library copy SHA-256 matches `data/blobs/sha256/xx/<sha>.pdf`. Each run warned `unpaywall_skipped_no_email` and degraded gracefully.
+3. Resume: re-running `fetch arxiv:1906.03671` gives `already_mapped` with no network use.
+4. Non-arXiv: `doi:10.18653/v1/d19-1051` (aclweb PDF) and `doi:10.1007/s10791-019-09367-8` (Springer PDF) mapped via `openalex_best`.
+5. Unavailable: `doi:10.1145/2766462.2767755` and `W2964263543` returned `unavailable(no_oa_location)`; rerun gives `skipped_unavailable` with the checked date. With a placeholder `LYSILOGY_CONTACT_EMAIL` and `--retry-unavailable`, Unpaywall was queried and cached as an `unpaywall` source_record (is_oa false); result stayed unavailable.
+6. API: POST fetch returns 202 running (duplicate POST also running); polling reached succeeded/mapped with paper_id; `/api/papers/<id>` returns the paper; `/source` serves application/pdf (1,315,239 bytes); neighbors and citations include `acquisitions` and `local_papers`; bad body (unknown field or bad model_fallback) gives 400 `invalid_body`; unknown work gives `work_not_found`.
+7. UI (scratch Playwright against the live server): `L` draws 46 nodes with data-acquisition (37 none, 2 unavailable, 7 mapped). An unavailable node shows "Unavailable: no open-access copy was found (checked 2026-10-13)" and Retry. On "Get To The Point", `f` showed "Resolving identifiers…", then "Fetched." with Open in reader; the node became data-local=true / mapped. Open in reader opened `#paper=922f2496a481a8d5` with the PDF rendered. No console errors.
+
+### Known gaps (review, nonblocking)
+
+- `src/remote.rs` `download_public_resource` (used by `/api/import` with accept_html=false) now checks Content-Type before reading the body and refuses types outside the PdfLike/HTML lists (text/plain, application/x-download, application/binary). The old `download_remote_pdf` ignored Content-Type and sniffed `%PDF-`. Plan decision 5 says `/api/import` keeps its behavior; a real PDF with an unusual type now fails import and yields `all_links_failed` in acquisition. Suggested fix: fall back to sniffing the first KiB for `%PDF-`.
+- `src/main.rs` `fetch_cited_by_command`: `acquire_work(...).await?` in the loop means one hard error (DB, I/O, library copy) aborts the batch and skips the totals line instead of counting it and continuing.
+- `--limit` is silently clamped to 1..=100 (0 runs one Work, 500 runs 100) with no message.
+- `crates/lysilogy-db/src/acquisition.rs` `claim()`: fixed 10-minute lease with no renewal; a worst case run (6 candidates x 120 s timeout plus hops and throttling) can outlast it, so a second runner could claim the same Work. `release()` is not owner-checked.
+- `crates/lysilogy-ingest/src/acquire/mod.rs` `stage_links`: `used_network()` and `throttle.wait()` run before cached provider lookups, so a rerun answered fully from the source_record cache still bumps `attempts` and waits on the throttle.
+- `HostThrottle` covers only the candidate URL host; redirect hops inside `download_public_resource` (e.g. doi.org to publisher) are not throttled per host.
+- Web `LiteratureGraph` FetchControl: when a row is mapped to a document already linked to another Work (warning `document_linked_elsewhere`), the panel shows "Fetched." beside an enabled "Fetch open-access copy" button because `local_papers` stays empty. Cosmetic.
+- The implementer's own smoke wrote 9 PDFs into the real library (`~/Projects/Lysilogy/local-articles/Fetched/`, listed above) and blobs into `~/Projects/Lysilogy/.lysilogy`; keep or remove as desired.
+- Review scratch left behind: database `lysilogy_review_c`, `~/.cache/lysilogy-ramp-c-review`, `~/.cache/lysilogy-ramp-c-review-scripts/ui.mjs`. Remove with `scripts/db dropdb lysilogy_review_c` and by deleting those directories.
