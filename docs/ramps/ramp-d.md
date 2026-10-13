@@ -850,3 +850,28 @@ mode; live check recorded; dev DB curation rows created by the check removed.
   - `GET /api/works/{w}/citations` -> `marks` and `work_tags` carry both entries.
   - `DELETE .../mark` -> 204, `DELETE /api/tags/{t}` -> 204, `GET /api/tags` -> `{"tags":[]}`,
     `GET .../mark` -> `mark: null`. `reader.tag`, `work_tag`, `work_mark` counts are 0 after.
+
+## U4 implementation notes
+
+- `src/relevance.rs` is pure (`rank_neighborhood`, `Cluster`, `ClusterKind`, `RankedNeighborhood`);
+  the handler lives in `src/api/neighbors.rs`. Parameter errors (`invalid_limit`,
+  `invalid_expand`, `invalid_tag_id`, `invalid_direction`) are returned before the graph is
+  consulted.
+- `curation::curation_rows` loads stored marks and tags once; `curation_for` and the neighbors
+  handler both shape payloads from it (`marks_payload`, `work_tags_payload`).
+- Adjustment: `should_create_tag_with_palette_color_when_color_omitted` now asserts the color is
+  a palette color, not a specific palette index. The new tag-filter test creates tags in the
+  shared default workspace concurrently, so the index window from U3 was racy.
+- Test DB hygiene: DB tests leave workspaces behind, and `ensure_default_workspace` picks the
+  oldest, so a long-lived `lysilogy_test` can make
+  `should_report_mapped_acquisition_and_paper_id_when_job_finished` fail. Fix by
+  `scripts/db dropdb lysilogy_test && scripts/db createdb lysilogy_test`.
+- Live check against the dev DB (`lysilogy serve --bind 127.0.0.1:7391`, release build, scratch
+  library/data/notes under `~/.cache`), Work of "On the computational complexity of ethics",
+  `direction=both&limit=40`:
+  - 40 visible neighbors (41 nodes with the center), `ranking.total` 332, pinned 0, hidden 0.
+  - 14 clusters, all decades (2020s 19, 2010s 65, 2000s 78, 1990s 43, 1980s 25, 1970s 15,
+    1960s 3, 1950s 8, 1940s 2, 1930s 5, 1920s 1, 1850s 1, 1780s 1, unknown 26); they sum to 292
+    = 332 - 40. No tags exist in the dev DB yet, so no tag clusters.
+  - Response 37,513 bytes; latency 52 ms cold, 12-23 ms warm (target < 300 ms). Without
+    `limit`: 219,422 bytes, 20 ms.
