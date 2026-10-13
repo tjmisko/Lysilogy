@@ -1536,7 +1536,8 @@ mod tests {
         let (_guard, h) = harness!();
         let doi = format!("10.5558/{}", h.marker);
         let title = h.title("Fully described claims paper");
-        let text = format!("Adams, J. and Baker, K. {title}. Journal of Tests, 2020. doi:{doi}");
+        let text =
+            format!("Example, A., and Sample, B. (2020). {title}. Journal of Results. doi:{doi}");
         let bibliography = numbered(&[entry(1, &text), filler(&h)]);
         h.run(&bibliography).await;
         let (existing, _) = h
@@ -1573,7 +1574,7 @@ mod tests {
             claim_of(&claims, ProvenanceField::Venue)
                 .value
                 .as_str()
-                .is_some_and(|venue| venue.contains("Journal of Tests"))
+                .is_some_and(|venue| venue.contains("Journal of Results"))
         );
     }
 
@@ -1583,7 +1584,7 @@ mod tests {
         let (_guard, h) = harness!();
         let doi = format!("10.5559/{}", h.marker);
         let text = format!(
-            "Adams, J. and Baker, K. {}. Journal of Tests, 2020. doi:{doi}",
+            "Example, A., and Sample, B. (2020). {}. Journal of Results. doi:{doi}",
             h.title("Confidence tiers claims paper")
         );
         let bibliography = numbered(&[entry(1, &text), filler(&h)]);
@@ -1658,7 +1659,7 @@ mod tests {
             entry(
                 1,
                 &format!(
-                    "Adams, J. and Baker, K. {}. Journal of Tests, 2020.",
+                    "Example, A., and Sample, B. (2020). {}. Journal of Results.",
                     h.title("Rerun claims first paper")
                 ),
             ),

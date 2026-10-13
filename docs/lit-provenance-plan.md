@@ -978,3 +978,75 @@ library_metadata title 106 and year 98 (`catalog-metadata/heuristic`); total 6,4
 A before/after dump of all 3,461 Works (`display_title`, `display_year`, `title_state`) differs
 in 0 rows: the legacy first-writer-wins picks already equal the tiered selection, and no Work is
 `conflicting` yet (`known` 3,099, `unknown` 362).
+
+## U2 implementation notes
+
+Built as planned: bib-v1 claims for every resolved entry, OpenAlex authorships, Crossref publisher
+claims, deterministic front-matter claims, and the `--publisher` / `publisher` plumbing.
+Commits: `d44bd00` (entry claims), `54d8050` (OpenAlex authorships and hydration over every
+Work), `d501261` (Crossref, front matter, root plumbing). Intermediate commits build; the root
+tests only fully pass from `d501261`.
+
+Deviations (smallest sound changes):
+
+- `fetch_crossref_cached` returns a `CrossrefOutcome` (`Fetched | Cached | NotFound{cached} |
+  Skipped`) instead of `Option<(SourceRecordId, CrossrefWork)>`. The flow needs
+  fetched/cached/not-found to fill `PublisherFetch`, and a cached positive record is re-recorded
+  as claims (deduplicated), which keeps a new Work with the same DOI correct. A `Failed` outcome
+  is produced by the flow, not the fetcher.
+- `PublisherFetch` has a third field `cited: bool` so the CLI can print the paper's own lookup
+  and summarize the cited ones. Skipped (arXiv) DOIs produce no entry.
+- `PUBLISHER_FETCH_MAX` bounds requests, not DOIs seen: cached answers cost nothing, so a rerun
+  keeps making progress through a long reference list. The cap adds warning
+  `publisher_fetch_limit_reached`.
+- The own DOI for the lookup is the first of provider DOI, then detected DOIs, that Crossref can
+  hold (a provider DOI that is a `10.48550/` DataCite DOI no longer hides a real detected DOI).
+- `CrossrefWork.doi` is `Option<String>` (the record's normalized `DOI`).
+- Crossref URLs keep `/ - . _ ~` readable and percent-encode everything else.
+- `run_literature_flow` (root `AppState`) takes `publisher_cited: bool`; expansion passes `false`.
+- `Local` line in the CLI gains ` · field claims N` (no separate line).
+- Test fixtures: summaries in `openalex.rs`, `ingest.rs`, `expand.rs`, `src/expansion.rs`,
+  `src/api/literature.rs` carry `"authorships": []`. The expansion `ScriptedTransport::serving`
+  answers Crossref with an empty message, and the API `SlowTransport` now answers summary batches
+  (including for the paper's own Work, titled consistently) because the own Work is always
+  hydrated now.
+
+Gate (worktree root, test DB from `scripts/db env`):
+
+- `cargo clippy --workspace --all-targets -- -D warnings`: clean.
+- `cargo test --workspace --no-fail-fast`: ingest 268 passed (stable over 4 reruns; DB tests ran,
+  no "skipping"), core 95, db 110, root bin 23 + 1 + 1 passed. Root lib: 344 passed, 1 failed:
+  `api::acquisition::tests::should_report_mapped_acquisition_and_paper_id_when_job_finished`
+  (the Work's cached prominence row has `local_available: false`). It fails identically on the
+  unmodified U1 head `1628049` (checked with `git stash -u`), so U2 did not cause it. Likely
+  cause: the shared test database accumulates workspaces from harnesses that never clean up
+  (`labels-test` 25 rows, `local-evidence-test`, ...), and `ensure_default_workspace` returns the
+  oldest one; I did not clear the shared test DB to confirm.
+- web (no web change in U2): `typecheck`, `lint`, `build` pass; `test:walk` 11, `test:ramp` 10,
+  `test:relevance` 13, `test:literature-layout` 31 pass; `test:api` fails as in U1 (unrelated,
+  `ERR_MODULE_NOT_FOUND` on the base).
+
+Live check on the dev DB (`lysilogy lit "Deep Reinforcement Learning from Human Preferences"
+--local`, debug build, scratch `--data`/`--notes`, library read from the main checkout):
+
+- Run 1 (the first `lit` after U1, so the one-time upgrade): `field claims 140`, 2.7 s. Requests
+  to OpenAlex: 1 summary batch (32 stale summaries, 31 cited + the paper, refetched and upserted;
+  the work record was cached) plus the prominence refresh's cited-by batch (21 counts). Crossref:
+  none, see below.
+- Run 2: `field claims 0`, 1.7 s, 0 OpenAlex requests (no `source_record` row was retrieved
+  after run 1).
+- Author claims for the paper's neighborhood (the paper and its provider-cited Works):
+  `citing_bibliography/bib-v1/heuristic` 53, `openalex/openalex/explicit` 31 (30 cited Works
+  plus the paper).
+- The paper's own claims: openalex title/year and author list (`Paul F. Christiano, Jan Leike,
+  Brown, Tom B., Miljan Martic, Shane Legg, Dario Amodei`), a `paper/frontmatter-v1/heuristic`
+  title claim (locator `front_matter`), and `library_metadata` title/year. No `paper` author claim:
+  the catalog author hints did not all occur in the first pages. The second run linked via
+  `title_match` instead of `identifier` because the cached reading index's front pages lack the
+  arXiv stamp (existing behavior, not changed here).
+- Crossref outcome: the paper's only DOI is `10.48550/arxiv.1706.03741` (DataCite), so it is
+  skipped and no `Publisher` line is printed. As a real-DOI check, `lit "The China Syndrome"`
+  (DOI `10.1257/aer.103.6.2121`) printed `Publisher  10.1257/aer.103.6.2121 fetched` (2.4 s),
+  then `cached` on the rerun (1.0 s); it recorded 5 `publisher/crossref-v1/explicit` claims
+  (title, year, authors `David H Autor, David Dorn, Gordon H Hanson`, venue `American Economic
+  Review`, doi). `--publisher` for cited Works was exercised only against fixtures.
