@@ -411,6 +411,7 @@ export type Work = {
   title_state: FieldState;
   display_year: number | null;
   year_state: FieldState;
+  display_authors?: string[] | null;
   created_at: string;
   updated_at: string;
 };
