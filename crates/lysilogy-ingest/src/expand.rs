@@ -9,6 +9,7 @@ use lysilogy_core::{
     SourceRecordId, WorkId, WorkIdentifier,
 };
 use lysilogy_db::citation::CitationRepository;
+use lysilogy_db::claim::ClaimRepository;
 use lysilogy_db::source_record::SourceRecordRepository;
 use lysilogy_db::work::WorkRepository;
 
@@ -21,6 +22,7 @@ use crate::openalex::{JsonTransport, OpenAlexClient, fetch_work_cached_record};
 pub struct ExpandContext<'a, T: JsonTransport> {
     pub works: &'a WorkRepository,
     pub citations: &'a CitationRepository,
+    pub claims: &'a ClaimRepository,
     pub records: &'a SourceRecordRepository,
     pub client: &'a OpenAlexClient<T>,
 }
@@ -112,8 +114,14 @@ pub async fn expand_from_provider<T: JsonTransport>(
         ingest_openalex_references(context.works, context.citations, work, &provider, record)
             .await?;
     let outgoing = context.citations.outgoing(work).await?;
-    let hydrated =
-        hydrate_stub_works(context.works, context.records, context.client, &outgoing).await?;
+    let hydrated = hydrate_stub_works(
+        context.works,
+        context.claims,
+        context.records,
+        context.client,
+        &outgoing,
+    )
+    .await?;
     Ok(ProviderExpansion::Expanded {
         provider_key: key,
         source_record: record,
@@ -225,6 +233,7 @@ mod tests {
     struct Repos {
         works: WorkRepository,
         citations: CitationRepository,
+        claims: ClaimRepository,
         records: SourceRecordRepository,
     }
 
@@ -238,6 +247,7 @@ mod tests {
             Some(Self {
                 works: WorkRepository::new(pool.clone()),
                 citations: CitationRepository::new(pool.clone()),
+                claims: ClaimRepository::new(pool.clone()),
                 records: SourceRecordRepository::new(pool),
             })
         }
@@ -251,6 +261,7 @@ mod tests {
             let context = ExpandContext {
                 works: &self.works,
                 citations: &self.citations,
+                claims: &self.claims,
                 records: &self.records,
                 client: &client,
             };

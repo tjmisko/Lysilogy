@@ -109,6 +109,7 @@ impl AppState {
             works: &graph.works,
             documents: &graph.documents,
             citations: &graph.citations,
+            claims: &graph.claims,
             records: &graph.source_records,
             client: &self.literature.0,
         };

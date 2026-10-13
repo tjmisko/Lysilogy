@@ -16,6 +16,7 @@ pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
 pub mod acquisition;
 pub mod citation;
+pub mod claim;
 pub mod curation;
 pub mod document;
 pub mod evidence;

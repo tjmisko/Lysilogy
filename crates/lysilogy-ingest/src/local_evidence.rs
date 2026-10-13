@@ -8,13 +8,15 @@
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 
+use lysilogy_core::provenance::FieldValue;
 use lysilogy_core::{
-    Coverage, DocumentVersionId, FieldKind, FieldState, IdentifierScheme, IdentifierStatus,
+    ClaimConfidence, ClaimOrigin, Coverage, DocumentVersionId, IdentifierScheme, IdentifierStatus,
     ResolutionMethod, ResolutionStatus, SourceRecordId, Visibility, Work, WorkId, WorkKind,
     identifier::normalize, title_key,
 };
 use lysilogy_db::DbError;
 use lysilogy_db::citation::CitationRepository;
+use lysilogy_db::claim::{ClaimRepository, NewClaim};
 use lysilogy_db::evidence::{EvidenceRepository, NewEntry, NewMention, StoredEntry};
 use lysilogy_db::source_record::SourceRecordRepository;
 use lysilogy_db::work::WorkRepository;
@@ -22,11 +24,16 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::Result;
-use crate::bibliography::{BibliographicFields, Bibliography, EXTRACTOR_VERSION, parse_fields};
+use crate::bibliography::{
+    BibliographicFields, Bibliography, EXTRACTOR_VERSION, FieldConfidence, parse_fields,
+};
 use crate::labels::LabelSummary;
 
 /// Source record kind for the extraction evidence.
 pub const LOCAL_BIBLIOGRAPHY_KIND: &str = "local_bibliography";
+
+/// Extractor recorded on claims parsed from a printed bibliography entry.
+const BIB_EXTRACTOR: &str = "bib-v1";
 
 /// Actor recorded on automatic merges.
 const MERGE_ACTOR: &str = "lit:auto";
@@ -41,6 +48,7 @@ const MIN_TITLE_KEY_WORDS: usize = 3;
 pub struct LocalEvidenceContext<'a> {
     pub works: &'a WorkRepository,
     pub citations: &'a CitationRepository,
+    pub claims: &'a ClaimRepository,
     pub records: &'a SourceRecordRepository,
     pub evidence: &'a EvidenceRepository,
 }
@@ -450,7 +458,7 @@ async fn resolve_entry(
             })
         }
         Lookup::Nothing => {
-            let work = create_stub(ctx, fields, record).await?;
+            let work = create_stub(ctx, entry, fields, record).await?;
             ctx.evidence
                 .record_resolution(
                     entry.id,
@@ -658,9 +666,41 @@ async fn attach_identifiers(
     Ok(())
 }
 
-/// Create a stub Work for the entry, titled from its parsed fields.
+/// Map a bib-v1 field confidence to a claim confidence; a present value never
+/// has `Missing`, so that case falls back to the weakest parser tier.
+const fn claim_confidence(confidence: FieldConfidence) -> ClaimConfidence {
+    match confidence {
+        FieldConfidence::Explicit => ClaimConfidence::Explicit,
+        FieldConfidence::Heuristic | FieldConfidence::Missing => ClaimConfidence::Heuristic,
+    }
+}
+
+/// A `citing_bibliography` claim parsed from one stored entry.
+const fn entry_claim<'a>(
+    work_id: WorkId,
+    entry: &'a StoredEntry,
+    record: SourceRecordId,
+    value: &'a FieldValue,
+    confidence: FieldConfidence,
+) -> NewClaim<'a> {
+    NewClaim {
+        work_id,
+        field: value.field(),
+        value,
+        origin: ClaimOrigin::CitingBibliography,
+        extractor: BIB_EXTRACTOR,
+        confidence: claim_confidence(confidence),
+        source_record_id: Some(record),
+        entry_id: Some(entry.id),
+        locator: Some(entry.entry_key.as_str()),
+    }
+}
+
+/// Create a stub Work for the entry and record its title and year as
+/// `citing_bibliography` claims from this entry.
 async fn create_stub(
     ctx: &LocalEvidenceContext<'_>,
+    entry: &StoredEntry,
     fields: &BibliographicFields,
     record: SourceRecordId,
 ) -> Result<WorkId> {
@@ -677,42 +717,23 @@ async fn create_stub(
                 .await?
         }
     };
-    if let Some(title) = fields
+    let title = fields
         .title
         .value
         .as_deref()
         .map(str::trim)
         .filter(|title| !title.is_empty())
-    {
-        ctx.works
-            .add_claim_once(
-                work.id,
-                FieldKind::Title,
-                &json!(title),
-                FieldState::Known,
-                Some(record),
-                None,
-            )
-            .await?;
-        ctx.works
-            .fill_display_title_if_unknown(work.id, title)
-            .await?;
-    }
-    if let Some(year) = entry_year(fields) {
-        ctx.works
-            .add_claim_once(
-                work.id,
-                FieldKind::Year,
-                &json!(year),
-                FieldState::Known,
-                Some(record),
-                None,
-            )
-            .await?;
-        ctx.works
-            .fill_display_year_if_unknown(work.id, year)
-            .await?;
-    }
+        .map(|title| FieldValue::Title(title.to_owned()));
+    let year = entry_year(fields).map(FieldValue::Year);
+    let new_claims: Vec<NewClaim<'_>> = title
+        .iter()
+        .map(|value| entry_claim(work.id, entry, record, value, fields.title.confidence))
+        .chain(
+            year.iter()
+                .map(|value| entry_claim(work.id, entry, record, value, fields.year.confidence)),
+        )
+        .collect();
+    ctx.claims.record(&new_claims).await?;
     Ok(work.id)
 }
 
@@ -720,6 +741,7 @@ async fn create_stub(
 mod tests {
     use super::*;
     use crate::bibliography::{extract, tests::fixture};
+    use lysilogy_core::FieldState;
     use sqlx::PgPool;
     use std::sync::atomic::{AtomicU64, Ordering};
     use tokio::sync::Mutex;
@@ -739,6 +761,7 @@ mod tests {
         pool: PgPool,
         works: WorkRepository,
         citations: CitationRepository,
+        claims: ClaimRepository,
         records: SourceRecordRepository,
         evidence: EvidenceRepository,
         marker: String,
@@ -786,6 +809,7 @@ mod tests {
             Some(Self {
                 works,
                 citations: CitationRepository::new(pool.clone()),
+                claims: ClaimRepository::new(pool.clone()),
                 records: SourceRecordRepository::new(pool.clone()),
                 evidence: EvidenceRepository::new(pool.clone()),
                 pool,
@@ -800,6 +824,7 @@ mod tests {
             let context = LocalEvidenceContext {
                 works: &self.works,
                 citations: &self.citations,
+                claims: &self.claims,
                 records: &self.records,
                 evidence: &self.evidence,
             };
@@ -895,6 +920,8 @@ mod tests {
             title_state: FieldState::Known,
             display_year: year,
             year_state: FieldState::Known,
+            display_authors: None,
+            authors_state: FieldState::Unknown,
             created_at: chrono_now(),
             updated_at: chrono_now(),
         };
@@ -919,6 +946,8 @@ mod tests {
             title_state: FieldState::Known,
             display_year: Some(1990),
             year_state: FieldState::Known,
+            display_authors: None,
+            authors_state: FieldState::Unknown,
             created_at: chrono_now(),
             updated_at: chrono_now(),
         };
@@ -1185,6 +1214,24 @@ mod tests {
         .await
         .expect("claims");
         assert_eq!(claims, 1);
+        let provenance: (String, String, String, bool, Option<String>) = sqlx::query_as(
+            "select origin, extractor, confidence, entry_id is not null, locator \
+             from graph.field_claim where work_id = $1 and field = 'title'",
+        )
+        .bind(stub.id.as_uuid())
+        .fetch_one(&h.pool)
+        .await
+        .expect("provenance");
+        assert_eq!(
+            (provenance.0.as_str(), provenance.1.as_str(), provenance.3),
+            ("citing_bibliography", "bib-v1", true)
+        );
+        assert_eq!(provenance.2, "heuristic");
+        assert!(
+            provenance
+                .4
+                .is_some_and(|locator| locator.starts_with("bib-v1:"))
+        );
     }
 
     #[tokio::test]

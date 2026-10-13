@@ -143,6 +143,7 @@ impl AppState {
         let context = LocalEvidenceContext {
             works: &graph.works,
             citations: &graph.citations,
+            claims: &graph.claims,
             records: &graph.source_records,
             evidence: &graph.evidence,
         };

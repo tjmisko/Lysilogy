@@ -7,6 +7,7 @@
 use lysilogy_db::PgPool;
 use lysilogy_db::acquisition::AcquisitionRepository;
 use lysilogy_db::citation::CitationRepository;
+use lysilogy_db::claim::ClaimRepository;
 use lysilogy_db::curation::CurationRepository;
 use lysilogy_db::document::DocumentRepository;
 use lysilogy_db::evidence::EvidenceRepository;
@@ -23,6 +24,7 @@ pub struct GraphState {
     pub works: WorkRepository,
     pub documents: DocumentRepository,
     pub citations: CitationRepository,
+    pub claims: ClaimRepository,
     pub source_records: SourceRecordRepository,
     pub evidence: EvidenceRepository,
     pub relationships: RelationshipRepository,
@@ -46,6 +48,7 @@ impl GraphState {
             works: WorkRepository::new(pool.clone()),
             documents: DocumentRepository::new(pool.clone()),
             citations: CitationRepository::new(pool.clone()),
+            claims: ClaimRepository::new(pool.clone()),
             source_records: SourceRecordRepository::new(pool.clone()),
             evidence: EvidenceRepository::new(pool.clone()),
             relationships: RelationshipRepository::new(pool.clone()),

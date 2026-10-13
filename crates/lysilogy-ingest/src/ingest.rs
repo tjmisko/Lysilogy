@@ -2,11 +2,13 @@
 
 use std::collections::HashMap;
 
+use lysilogy_core::provenance::FieldValue;
 use lysilogy_core::{
-    FieldKind, FieldState, IdentifierScheme, IdentifierStatus, SourceRecordId, Work, WorkId,
-    WorkKind,
+    ClaimConfidence, ClaimOrigin, FieldState, IdentifierScheme, IdentifierStatus, SourceRecordId,
+    Work, WorkId, WorkKind,
 };
 use lysilogy_db::citation::CitationRepository;
+use lysilogy_db::claim::{ClaimRepository, NewClaim};
 use lysilogy_db::source_record::SourceRecordRepository;
 use lysilogy_db::work::WorkRepository;
 
@@ -81,12 +83,33 @@ pub async fn ingest_openalex_references(
     Ok(ReferenceIngestReport { edges, new_works })
 }
 
+/// An `OpenAlex` summary value as a claim from the summary's source record.
+const fn openalex_claim(
+    work_id: WorkId,
+    record: SourceRecordId,
+    value: &FieldValue,
+) -> NewClaim<'_> {
+    NewClaim {
+        work_id,
+        field: value.field(),
+        value,
+        origin: ClaimOrigin::Openalex,
+        extractor: "openalex",
+        confidence: ClaimConfidence::Explicit,
+        source_record_id: Some(record),
+        entry_id: None,
+        locator: None,
+    }
+}
+
 /// Give untitled Works their title and year from batched `OpenAlex` summaries.
 ///
-/// Only Works whose title is not yet known are considered. Returns how many
-/// were given a title.
+/// Only Works whose title is not yet known are considered. Summaries are
+/// recorded as `openalex` claims and selection decides what each Work displays.
+/// Returns how many Works gained a title.
 pub async fn hydrate_stub_works<T: JsonTransport>(
     works: &WorkRepository,
+    claims: &ClaimRepository,
     records: &SourceRecordRepository,
     client: &OpenAlexClient<T>,
     cited: &[Work],
@@ -120,19 +143,6 @@ pub async fn hydrate_stub_works<T: JsonTransport>(
         let Some((record_id, summary)) = summaries.get(&openalex_id.to_ascii_lowercase()) else {
             continue;
         };
-        if let Some(year) = summary.year {
-            works
-                .add_claim_once(
-                    *work_id,
-                    FieldKind::Year,
-                    &serde_json::json!(year),
-                    FieldState::Known,
-                    Some(*record_id),
-                    None,
-                )
-                .await?;
-            works.fill_display_year_if_unknown(*work_id, year).await?;
-        }
         if let Some(doi) = &summary.doi {
             // A conflicting active DOI is not an error here.
             works
@@ -145,20 +155,22 @@ pub async fn hydrate_stub_works<T: JsonTransport>(
                 )
                 .await?;
         }
-        let Some(title) = &summary.title else {
+        let year = summary.year.map(FieldValue::Year);
+        let title = summary.title.clone().map(FieldValue::Title);
+        let new_claims: Vec<NewClaim<'_>> = year
+            .iter()
+            .chain(title.iter())
+            .map(|value| openalex_claim(*work_id, *record_id, value))
+            .collect();
+        if new_claims.is_empty() {
             continue;
-        };
-        works
-            .add_claim_once(
-                *work_id,
-                FieldKind::Title,
-                &serde_json::json!(title),
-                FieldState::Known,
-                Some(*record_id),
-                None,
-            )
-            .await?;
-        if works.fill_display_title_if_unknown(*work_id, title).await? {
+        }
+        let outcome = claims.record(&new_claims).await?;
+        if outcome
+            .reselected
+            .get(work_id)
+            .is_some_and(|reselection| reselection.title_became_known)
+        {
             titled += 1;
         }
     }
@@ -169,7 +181,7 @@ pub async fn hydrate_stub_works<T: JsonTransport>(
 mod tests {
     use super::*;
     use crate::openalex::fake::RecordingTransport;
-    use lysilogy_core::Coverage;
+    use lysilogy_core::{Coverage, ProvenanceField};
     use lysilogy_db::source_record::SourceRecordRepository;
     use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -312,12 +324,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_title_stub_works_when_hydrating() {
+    async fn should_title_stub_from_summary_when_hydrating() {
         let Some(pool) = pool().await else {
             eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
             return;
         };
         let works = WorkRepository::new(pool.clone());
+        let claims = ClaimRepository::new(pool.clone());
         let records = SourceRecordRepository::new(pool);
         let marker = unique();
         let titled_id = format!("W1{marker}");
@@ -331,8 +344,13 @@ mod tests {
                 .expect("stub");
             stubs.push(work);
         }
-        works
-            .set_display_title(stubs[0].id, "Curated Title")
+        // A curator override is the only way to keep a title against provider claims.
+        claims
+            .set_override(
+                stubs[0].id,
+                ProvenanceField::Title,
+                &FieldValue::Title("Curated Title".to_owned()),
+            )
             .await
             .expect("curate");
         let stubs: Vec<Work> = {
@@ -354,7 +372,7 @@ mod tests {
         });
         let client = OpenAlexClient::new(transport.clone());
 
-        let count = hydrate_stub_works(&works, &records, &client, &stubs)
+        let count = hydrate_stub_works(&works, &claims, &records, &client, &stubs)
             .await
             .expect("hydrate");
         assert_eq!(
@@ -375,7 +393,7 @@ mod tests {
         let skipped = works.get(stubs[2].id).await.expect("get").expect("exists");
         assert_eq!(skipped.display_title, None);
 
-        let again = hydrate_stub_works(&works, &records, &client, &stubs)
+        let again = hydrate_stub_works(&works, &claims, &records, &client, &stubs)
             .await
             .expect("rehydrate");
         assert_eq!(again, 0, "stale Work snapshot must not double count");

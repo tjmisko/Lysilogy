@@ -1,10 +1,9 @@
 //! Persistence for bibliographic [`Work`]s, their identifiers, and field claims.
 
 use lysilogy_core::{
-    FieldKind, FieldState, IdentifierId, IdentifierScheme, IdentifierStatus, ParseStateError,
-    SourceRecordId, Visibility, Work, WorkId, WorkIdentifier, WorkKind, title_key,
+    IdentifierId, IdentifierScheme, IdentifierStatus, ParseStateError, SourceRecordId, Visibility,
+    Work, WorkId, WorkIdentifier, WorkKind, title_key,
 };
-use serde_json::Value;
 use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;
@@ -12,7 +11,8 @@ use uuid::Uuid;
 use crate::{DbError, Result};
 
 pub(crate) const WORK_COLUMNS: &str = "w.id, w.kind, w.visibility, w.display_title, w.title_state, \
-                            w.display_year, w.year_state, w.created_at, w.updated_at";
+                            w.display_year, w.year_state, w.display_authors, w.authors_state, \
+                            w.created_at, w.updated_at";
 
 /// Reads and writes Works and their supporting claims.
 #[derive(Clone)]
@@ -76,7 +76,7 @@ impl WorkRepository {
         let row = sqlx::query(
             "insert into graph.work (kind, visibility) values ($1, $2) \
              returning id, kind, visibility, display_title, title_state, display_year, \
-                       year_state, created_at, updated_at",
+                       year_state, display_authors, authors_state, created_at, updated_at",
         )
         .bind(kind.as_str())
         .bind(visibility.as_str())
@@ -105,7 +105,7 @@ impl WorkRepository {
         let row = sqlx::query(
             "insert into graph.work (kind) values ($1) \
              returning id, kind, visibility, display_title, title_state, display_year, \
-                       year_state, created_at, updated_at",
+                       year_state, display_authors, authors_state, created_at, updated_at",
         )
         .bind(kind.as_str())
         .fetch_one(&mut *transaction)
@@ -182,6 +182,9 @@ impl WorkRepository {
     }
 
     /// Set the selected display title and mark the title known.
+    ///
+    /// Fixture-only: this bypasses claim selection, so a later reselect over the
+    /// Work's claims may replace it. Production writers record claims instead.
     pub async fn set_display_title(&self, work_id: WorkId, title: &str) -> Result<()> {
         sqlx::query(
             "update graph.work set display_title = $2, title_state = 'known', \
@@ -197,6 +200,8 @@ impl WorkRepository {
     }
 
     /// Set the selected display year and mark the year known.
+    ///
+    /// Fixture-only: this bypasses claim selection, like [`Self::set_display_title`].
     pub async fn set_display_year(&self, work_id: WorkId, year: i32) -> Result<()> {
         sqlx::query(
             "update graph.work set display_year = $2, year_state = 'known', updated_at = now() \
@@ -207,97 +212,6 @@ impl WorkRepository {
         .execute(&self.pool)
         .await?;
         Ok(())
-    }
-
-    /// Record a provenance-bearing claim for a Work field.
-    pub async fn add_claim(
-        &self,
-        work_id: WorkId,
-        field: FieldKind,
-        value: &Value,
-        state: FieldState,
-        source_record_id: Option<SourceRecordId>,
-        locator: Option<&str>,
-    ) -> Result<()> {
-        sqlx::query(
-            "insert into graph.field_claim \
-                 (work_id, field, value, state, source_record_id, locator) \
-             values ($1, $2, $3, $4, $5, $6)",
-        )
-        .bind(work_id.as_uuid())
-        .bind(field.as_str())
-        .bind(value)
-        .bind(state.as_str())
-        .bind(source_record_id.map(SourceRecordId::as_uuid))
-        .bind(locator)
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    /// Record a claim unless an identical one (same Work, field, value, and
-    /// source record) already exists. Returns whether a row was inserted.
-    pub async fn add_claim_once(
-        &self,
-        work_id: WorkId,
-        field: FieldKind,
-        value: &Value,
-        state: FieldState,
-        source_record_id: Option<SourceRecordId>,
-        locator: Option<&str>,
-    ) -> Result<bool> {
-        let result = sqlx::query(
-            "insert into graph.field_claim \
-                 (work_id, field, value, state, source_record_id, locator) \
-             select $1, $2, $3, $4, $5, $6 \
-             where not exists ( \
-                 select 1 from graph.field_claim \
-                 where work_id = $1 and field = $2 and value = $3 \
-                   and source_record_id is not distinct from $5)",
-        )
-        .bind(work_id.as_uuid())
-        .bind(field.as_str())
-        .bind(value)
-        .bind(state.as_str())
-        .bind(source_record_id.map(SourceRecordId::as_uuid))
-        .bind(locator)
-        .execute(&self.pool)
-        .await?;
-        Ok(result.rows_affected() > 0)
-    }
-
-    /// Set the display title only while the title state is not yet known.
-    /// Returns whether the Work changed.
-    pub async fn fill_display_title_if_unknown(
-        &self,
-        work_id: WorkId,
-        title: &str,
-    ) -> Result<bool> {
-        let result = sqlx::query(
-            "update graph.work set display_title = $2, title_state = 'known', \
-                 title_key = nullif($3, ''), updated_at = now() \
-             where id = $1 and title_state <> 'known'",
-        )
-        .bind(work_id.as_uuid())
-        .bind(title)
-        .bind(title_key(title))
-        .execute(&self.pool)
-        .await?;
-        Ok(result.rows_affected() > 0)
-    }
-
-    /// Set the display year only while the year state is not yet known.
-    /// Returns whether the Work changed.
-    pub async fn fill_display_year_if_unknown(&self, work_id: WorkId, year: i32) -> Result<bool> {
-        let result = sqlx::query(
-            "update graph.work set display_year = $2, year_state = 'known', updated_at = now() \
-             where id = $1 and year_state <> 'known'",
-        )
-        .bind(work_id.as_uuid())
-        .bind(year)
-        .execute(&self.pool)
-        .await?;
-        Ok(result.rows_affected() > 0)
     }
 
     /// Works whose title key equals `key`, excluding redirected Works and,
@@ -481,7 +395,9 @@ impl WorkRepository {
         .await?;
 
         repoint_assertions(&mut transaction, from_id, into_id).await?;
+        retract_colliding_overrides(&mut transaction, from_id, into_id).await?;
         move_work_content(&mut transaction, from_id, into_id).await?;
+        crate::claim::reselect_in(&mut transaction, into).await?;
 
         transaction.commit().await?;
         Ok(())
@@ -577,6 +493,29 @@ async fn repoint_assertions(
         .execute(&mut *transaction)
         .await?;
     }
+    Ok(())
+}
+
+/// Retract `from`'s active override for every field where `into` also has one,
+/// so the survivor's override wins and the moved claims keep the one-active
+/// override index.
+async fn retract_colliding_overrides(
+    transaction: &mut PgConnection,
+    from_id: Uuid,
+    into_id: Uuid,
+) -> Result<()> {
+    sqlx::query(
+        "update graph.field_claim f set retracted_at = now() \
+         where f.work_id = $1 and f.origin = 'user' and f.retracted_at is null \
+           and exists ( \
+               select 1 from graph.field_claim i \
+               where i.work_id = $2 and i.field = f.field \
+                 and i.origin = 'user' and i.retracted_at is null)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
     Ok(())
 }
 
@@ -753,6 +692,8 @@ pub(crate) fn work_from_row(row: &PgRow) -> Result<Work> {
         title_state: parse_state(&row.try_get::<String, _>("title_state")?)?,
         display_year: row.try_get("display_year")?,
         year_state: parse_state(&row.try_get::<String, _>("year_state")?)?,
+        display_authors: row.try_get("display_authors")?,
+        authors_state: parse_state(&row.try_get::<String, _>("authors_state")?)?,
         created_at: row.try_get("created_at")?,
         updated_at: row.try_get("updated_at")?,
     })
@@ -775,9 +716,33 @@ fn identifier_from_row(row: &PgRow) -> Result<WorkIdentifier> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::claim::{ClaimRepository, NewClaim};
     use crate::test_support;
-    use lysilogy_core::{ResolutionMethod, ResolutionStatus};
+    use lysilogy_core::provenance::FieldValue;
+    use lysilogy_core::{
+        ClaimConfidence, ClaimOrigin, FieldState, ProvenanceField, ResolutionMethod,
+        ResolutionStatus,
+    };
     use uuid::Uuid;
+
+    /// Record one openalex title claim, which selects it as the Work's title.
+    async fn record_title(pool: &PgPool, work: WorkId, title: &str) {
+        let value = FieldValue::Title(title.to_owned());
+        ClaimRepository::new(pool.clone())
+            .record(&[NewClaim {
+                work_id: work,
+                field: ProvenanceField::Title,
+                value: &value,
+                origin: ClaimOrigin::Openalex,
+                extractor: "openalex",
+                confidence: ClaimConfidence::Explicit,
+                source_record_id: None,
+                entry_id: None,
+                locator: None,
+            }])
+            .await
+            .expect("record title");
+    }
 
     fn random_doi() -> String {
         format!("10.9999/{}", Uuid::new_v4())
@@ -939,16 +904,7 @@ mod tests {
             .await
             .expect("create");
 
-        repo.add_claim(
-            work.id,
-            FieldKind::Title,
-            &serde_json::json!("A Title"),
-            FieldState::Known,
-            None,
-            None,
-        )
-        .await
-        .expect("claim");
+        record_title(&pool, work.id, "A Title").await;
 
         let identifier = repo
             .add_identifier(
@@ -970,105 +926,6 @@ mod tests {
                 .await
                 .expect("count claims");
         assert_eq!(claims, 1);
-    }
-
-    #[tokio::test]
-    async fn should_not_duplicate_claim_when_added_twice() {
-        let _guard = test_support::lock().await;
-        let Some(pool) = test_support::pool().await else {
-            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
-            return;
-        };
-        let repo = WorkRepository::new(pool.clone());
-        let work = repo
-            .create(WorkKind::Article, Visibility::Private)
-            .await
-            .expect("create");
-        let value = serde_json::json!("Same Title");
-
-        let first = repo
-            .add_claim_once(
-                work.id,
-                FieldKind::Title,
-                &value,
-                FieldState::Known,
-                None,
-                None,
-            )
-            .await
-            .expect("first");
-        let second = repo
-            .add_claim_once(
-                work.id,
-                FieldKind::Title,
-                &value,
-                FieldState::Known,
-                None,
-                None,
-            )
-            .await
-            .expect("second");
-        let other = repo
-            .add_claim_once(
-                work.id,
-                FieldKind::Title,
-                &serde_json::json!("Other Title"),
-                FieldState::Known,
-                None,
-                None,
-            )
-            .await
-            .expect("other");
-        assert_eq!((first, second, other), (true, false, true));
-
-        let claims: i64 =
-            sqlx::query_scalar("select count(*) from graph.field_claim where work_id = $1")
-                .bind(work.id.as_uuid())
-                .fetch_one(&pool)
-                .await
-                .expect("count");
-        assert_eq!(claims, 2);
-    }
-
-    #[tokio::test]
-    async fn should_not_overwrite_known_title_when_filling_display_title() {
-        let _guard = test_support::lock().await;
-        let Some(pool) = test_support::pool().await else {
-            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
-            return;
-        };
-        let repo = WorkRepository::new(pool);
-        let work = repo
-            .create(WorkKind::Article, Visibility::Private)
-            .await
-            .expect("create");
-
-        assert!(
-            repo.fill_display_title_if_unknown(work.id, "First")
-                .await
-                .expect("fill")
-        );
-        assert!(
-            !repo
-                .fill_display_title_if_unknown(work.id, "Second")
-                .await
-                .expect("fill")
-        );
-        assert!(
-            repo.fill_display_year_if_unknown(work.id, 2013)
-                .await
-                .expect("fill")
-        );
-        assert!(
-            !repo
-                .fill_display_year_if_unknown(work.id, 1999)
-                .await
-                .expect("fill")
-        );
-
-        let fetched = repo.get(work.id).await.expect("get").expect("present");
-        assert_eq!(fetched.display_title.as_deref(), Some("First"));
-        assert_eq!(fetched.display_year, Some(2013));
     }
 
     #[tokio::test]
@@ -1156,18 +1013,7 @@ mod tests {
             .await
             .expect("create")
             .id;
-        assert!(
-            repo.fill_display_title_if_unknown(filled, &title)
-                .await
-                .expect("fill")
-        );
-        assert_eq!(stored_key(&pool, filled).await, Some(title_key(&title)));
-        assert!(
-            !repo
-                .fill_display_title_if_unknown(filled, "Other")
-                .await
-                .expect("no-op")
-        );
+        record_title(&pool, filled, &title).await;
         assert_eq!(stored_key(&pool, filled).await, Some(title_key(&title)));
 
         let blank = titled_work(&repo, "   ").await;
@@ -1328,17 +1174,7 @@ mod tests {
             )
             .await
             .expect("shared");
-        works
-            .add_claim(
-                stub,
-                FieldKind::Title,
-                &serde_json::json!("Stub title"),
-                FieldState::Known,
-                None,
-                None,
-            )
-            .await
-            .expect("claim");
+        record_title(&pool, stub, "Stub title").await;
         let document: Uuid = sqlx::query_scalar(
             "insert into reader.document (workspace_id, work_id) \
              select id, $1 from reader.workspace limit 1 returning id",

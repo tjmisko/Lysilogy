@@ -12,6 +12,7 @@ use lysilogy::acquisition::{AcquireOptions, AcquireReport};
 use lysilogy::expansion::{ExpandOptions, ExpansionReport, WalkReport};
 use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
 use lysilogy::prominence::ProminenceScope;
+use lysilogy::provenance::ReselectScope;
 use lysilogy::ramps::{RampDetail, RampItemView, RampSummaryView};
 use lysilogy::{
     AppState, Error, Result, build_router,
@@ -84,6 +85,28 @@ struct LabelRun {
     sidecar: LabelSidecar,
     limit: usize,
     scratch: PathBuf,
+}
+
+/// Field provenance subcommands. `<work>` is a `w...` ID, an `OpenAlex` `W...` ID,
+/// `doi:<doi>`, or `arxiv:<id>`.
+#[derive(Debug, Subcommand)]
+enum ProvenanceCommand {
+    /// Recompute the selected title, year and authors from claims.
+    #[command(group(
+        clap::ArgGroup::new("scope")
+            .required(true)
+            .multiple(false)
+            .args(["work", "all"])
+    ))]
+    Reselect {
+        work: Option<String>,
+        /// Treat <work> as a paper (path, ID, or title fragment) and use the Work it is linked to.
+        #[arg(long, requires = "work")]
+        paper: bool,
+        /// Reselect every Work that has a claim.
+        #[arg(long)]
+        all: bool,
+    },
 }
 
 /// Reading-ramp subcommands. `<ramp>` is a `p...` ID or a unique title prefix; `<work>`
@@ -276,6 +299,11 @@ enum Command {
         /// For papers held locally, skip the local bibliography and in-text evidence.
         #[arg(long)]
         no_local: bool,
+    },
+    /// Inspect and recompute where each Work's title, year and authors come from (needs `LYSILOGY_DATABASE_URL`).
+    Provenance {
+        #[command(subcommand)]
+        command: ProvenanceCommand,
     },
     /// Build and manage reading ramps: ordered paths backward through a seed's references (needs `LYSILOGY_DATABASE_URL`).
     Ramp {
@@ -540,6 +568,7 @@ async fn run(cli: Cli) -> Result<()> {
             };
             expand_command(&state, &cli.library, &work, paper, options).await
         }
+        Command::Provenance { command } => provenance_command(&state, &cli.library, command).await,
         Command::Ramp { command } => ramp_command(&state, &cli.library, command).await,
         Command::RefreshStructure {
             query,
@@ -1286,6 +1315,31 @@ async fn resolve_ramp_work(
         return state.linked_work(&id).await;
     }
     state.resolve_work_argument(text).await
+}
+
+async fn provenance_command(
+    state: &AppState,
+    library: &std::path::Path,
+    command: ProvenanceCommand,
+) -> Result<()> {
+    match command {
+        ProvenanceCommand::Reselect { work, paper, all } => {
+            let scope = match (work, all) {
+                (Some(text), false) => {
+                    ReselectScope::Work(resolve_ramp_work(state, library, &text, paper).await?)
+                }
+                (None, true) => ReselectScope::All,
+                _ => {
+                    return Err(Error::InvalidRequest(
+                        "give exactly one of <work> or --all".to_owned(),
+                    ));
+                }
+            };
+            let reselected = state.reselect_claims(scope).await?;
+            println!("Reselected {reselected} works");
+            Ok(())
+        }
+    }
 }
 
 async fn ramp_command(
@@ -2119,6 +2173,39 @@ mod tests {
     }
 
     #[test]
+    fn should_reject_reselect_without_work_or_all() {
+        assert!(Cli::try_parse_from(["lysilogy", "provenance", "reselect"]).is_err());
+        assert!(
+            Cli::try_parse_from(["lysilogy", "provenance", "reselect", "w1", "--all"]).is_err()
+        );
+        assert!(Cli::try_parse_from(["lysilogy", "provenance", "reselect", "--paper"]).is_err());
+        let one = Cli::try_parse_from(["lysilogy", "provenance", "reselect", "w1", "--paper"])
+            .expect("work");
+        assert!(matches!(
+            one.command,
+            Some(Command::Provenance {
+                command: ProvenanceCommand::Reselect {
+                    work: Some(_),
+                    paper: true,
+                    all: false
+                }
+            })
+        ));
+        let all =
+            Cli::try_parse_from(["lysilogy", "provenance", "reselect", "--all"]).expect("all");
+        assert!(matches!(
+            all.command,
+            Some(Command::Provenance {
+                command: ProvenanceCommand::Reselect {
+                    work: None,
+                    paper: false,
+                    all: true
+                }
+            })
+        ));
+    }
+
+    #[test]
     fn should_require_exactly_one_scope_when_parsing_prominence_command() {
         assert!(Cli::try_parse_from(["lysilogy", "prominence"]).is_err());
         assert!(Cli::try_parse_from(["lysilogy", "prominence", "Paper", "--all"]).is_err());
@@ -2272,6 +2359,8 @@ mod tests {
                 title_state: FieldState::Known,
                 display_year: Some(2019),
                 year_state: FieldState::Known,
+                display_authors: None,
+                authors_state: FieldState::Unknown,
                 created_at: now,
                 updated_at: now,
             },

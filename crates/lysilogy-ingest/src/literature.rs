@@ -2,12 +2,14 @@
 //! Work, fetch its `OpenAlex` record, ingest its references, and title the
 //! stub Works those references created.
 
+use lysilogy_core::provenance::FieldValue;
 use lysilogy_core::{
-    DetectedIdentifier, DocumentId, FieldKind, FieldState, IdentifierScheme, IdentifierStatus,
-    ScannedFile, SourceRecordId, Work, WorkId, WorkKind, WorkLinkMethod, extract_identifiers,
-    title_key,
+    ClaimConfidence, ClaimOrigin, DetectedIdentifier, DocumentId, IdentifierScheme,
+    IdentifierStatus, ScannedFile, SourceRecordId, Work, WorkId, WorkKind, WorkLinkMethod,
+    extract_identifiers, title_key,
 };
 use lysilogy_db::citation::CitationRepository;
+use lysilogy_db::claim::{ClaimRepository, NewClaim};
 use lysilogy_db::document::DocumentRepository;
 use lysilogy_db::source_record::SourceRecordRepository;
 use lysilogy_db::work::WorkRepository;
@@ -29,6 +31,7 @@ pub struct LiteratureContext<'a, T: JsonTransport> {
     pub works: &'a WorkRepository,
     pub documents: &'a DocumentRepository,
     pub citations: &'a CitationRepository,
+    pub claims: &'a ClaimRepository,
     pub records: &'a SourceRecordRepository,
     pub client: &'a OpenAlexClient<T>,
 }
@@ -191,7 +194,7 @@ pub async fn run_literature_flow<T: JsonTransport>(
             .set_work_link(document.id, work.id, *method, *record, detail)
             .await?;
     }
-    fill_display_fields(context.works, work.id, &flow, input.hints).await?;
+    fill_display_fields(context.claims, work.id, &flow, input.hints).await?;
 
     let mut summary = LiteratureSummary {
         status: LiteratureStatus::Linked,
@@ -220,8 +223,14 @@ pub async fn run_literature_flow<T: JsonTransport>(
         summary.references = report.edges;
         summary.new_stub_works = report.new_works;
         let cited = context.citations.outgoing(work.id).await?;
-        summary.hydrated_works =
-            hydrate_stub_works(context.works, context.records, context.client, &cited).await?;
+        summary.hydrated_works = hydrate_stub_works(
+            context.works,
+            context.claims,
+            context.records,
+            context.client,
+            &cited,
+        )
+        .await?;
     }
     summary.warnings = flow.warnings;
     Ok(summary)
@@ -401,74 +410,59 @@ async fn attach_identifier(
     Ok(())
 }
 
-/// Step 6: record title and year claims and fill the display fields when the
-/// Work has none yet, preferring the provider over the paper's own metadata.
+/// Step 6: record title and year claims from the provider record (`openalex`)
+/// and from the paper's own catalog metadata (`library_metadata`). Selection
+/// ranks them; the provider wins over the hints.
 async fn fill_display_fields(
-    works: &WorkRepository,
+    claims: &ClaimRepository,
     work_id: WorkId,
     flow: &Flow,
     hints: PaperHints<'_>,
 ) -> Result<()> {
     let provider = flow.provider.as_ref();
     let provider_record = provider.map(|(record, _)| *record);
-    let provider_title = provider.and_then(|(_, work)| work.title.as_deref());
+    let provider_title = provider.and_then(|(_, work)| work.title.clone());
     let provider_year = provider.and_then(|(_, work)| work.year);
-    let hint_title = hints.title.map(str::trim).filter(|title| !title.is_empty());
+    let hint_title = hints
+        .title
+        .map(str::trim)
+        .filter(|title| !title.is_empty())
+        .map(str::to_owned);
 
-    if let Some(title) = provider_title {
-        works
-            .add_claim_once(
-                work_id,
-                FieldKind::Title,
-                &serde_json::json!(title),
-                FieldState::Known,
-                provider_record,
-                None,
-            )
-            .await?;
-    }
-    if let Some(title) = hint_title {
-        works
-            .add_claim_once(
-                work_id,
-                FieldKind::Title,
-                &serde_json::json!(title),
-                FieldState::Known,
-                None,
-                None,
-            )
-            .await?;
-    }
-    if let Some(title) = provider_title.or(hint_title) {
-        works.fill_display_title_if_unknown(work_id, title).await?;
-    }
-    if let Some(year) = provider_year {
-        works
-            .add_claim_once(
-                work_id,
-                FieldKind::Year,
-                &serde_json::json!(year),
-                FieldState::Known,
-                provider_record,
-                None,
-            )
-            .await?;
-    }
-    if let Some(year) = hints.year {
-        works
-            .add_claim_once(
-                work_id,
-                FieldKind::Year,
-                &serde_json::json!(year),
-                FieldState::Known,
-                None,
-                None,
-            )
-            .await?;
-    }
-    if let Some(year) = provider_year.or(hints.year) {
-        works.fill_display_year_if_unknown(work_id, year).await?;
-    }
+    let provider_values: Vec<FieldValue> = provider_title
+        .map(FieldValue::Title)
+        .into_iter()
+        .chain(provider_year.map(FieldValue::Year))
+        .collect();
+    let hint_values: Vec<FieldValue> = hint_title
+        .map(FieldValue::Title)
+        .into_iter()
+        .chain(hints.year.map(FieldValue::Year))
+        .collect();
+    let provider_claims = provider_values.iter().map(|value| NewClaim {
+        work_id,
+        field: value.field(),
+        value,
+        origin: ClaimOrigin::Openalex,
+        extractor: "openalex",
+        confidence: ClaimConfidence::Explicit,
+        source_record_id: provider_record,
+        entry_id: None,
+        locator: None,
+    });
+    let hint_claims = hint_values.iter().map(|value| NewClaim {
+        work_id,
+        field: value.field(),
+        value,
+        origin: ClaimOrigin::LibraryMetadata,
+        extractor: "catalog-metadata",
+        confidence: ClaimConfidence::Heuristic,
+        source_record_id: None,
+        entry_id: None,
+        locator: None,
+    });
+    let new_claims: Vec<NewClaim<'_>> = provider_claims.chain(hint_claims).collect();
+    claims.record(&new_claims).await?;
     Ok(())
 }
 
@@ -579,6 +573,7 @@ mod tests {
         works: WorkRepository,
         documents: DocumentRepository,
         citations: CitationRepository,
+        claims: ClaimRepository,
         records: SourceRecordRepository,
     }
 
@@ -593,6 +588,7 @@ mod tests {
                 works: WorkRepository::new(pool.clone()),
                 documents: DocumentRepository::new(pool.clone()),
                 citations: CitationRepository::new(pool.clone()),
+                claims: ClaimRepository::new(pool.clone()),
                 records: SourceRecordRepository::new(pool),
             })
         }
@@ -609,6 +605,7 @@ mod tests {
                 works: &self.works,
                 documents: &self.documents,
                 citations: &self.citations,
+                claims: &self.claims,
                 records: &self.records,
                 client: &client,
             };

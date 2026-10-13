@@ -404,6 +404,7 @@ impl AppState {
         let context = ExpandContext {
             works: &graph.works,
             citations: &graph.citations,
+            claims: &graph.claims,
             records: &graph.source_records,
             client: self.literature.client(),
         };
