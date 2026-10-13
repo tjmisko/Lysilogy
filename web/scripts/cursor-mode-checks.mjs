@@ -27,6 +27,8 @@ export async function checkCursorMode(page,index) {
   await page.waitForFunction(()=>Array.from(document.querySelectorAll('.pdf-source-line-number')).every(node=>node.textContent===node.dataset.lineNumber));
   await page.keyboard.press('L');await page.waitForFunction(()=>document.querySelectorAll('.pdf-source-line-number').length===0);
   await page.keyboard.press('L');assert.equal(await reader.getAttribute('data-line-numbers'),'relative');
+  // L belongs to Cursor mode here; it must not open the literature overlay.
+  assert.equal(await page.locator('.literature-graph').count(),0);
   await page.keyboard.press('0');await page.keyboard.press('l');
   await page.waitForFunction(start=>Number(document.querySelector('.pdf-source-mark.is-cursor')?.dataset.sourceOffset)===start+1,index.text.indexOf('We compare'));
   await page.keyboard.press('l');

@@ -65,7 +65,7 @@ impl GraphHttp {
             openalex_key: std::env::var("LYSILOGY_OPENALEX_API_KEY").ok(),
             semantic_key: std::env::var("LYSILOGY_SEMANTIC_SCHOLAR_API_KEY").ok(),
             opencitations_token: std::env::var("LYSILOGY_OPENCITATIONS_TOKEN").ok(),
-            mailto: std::env::var("LYSILOGY_CITATION_MAILTO").ok(),
+            mailto: lysilogy_ingest::openalex::contact_email_from_environment(),
         })
     }
 

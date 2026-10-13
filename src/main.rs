@@ -15,6 +15,7 @@ use lysilogy::{
         ExperimentStatus, LearningRamp, PaperId, ProcessingStatus, StartExperimentRequest,
     },
 };
+use lysilogy_ingest::literature::{LiteratureStatus, LiteratureSummary};
 use tokio::{sync::Semaphore, task::JoinSet};
 use tracing_subscriber::EnvFilter;
 
@@ -110,6 +111,11 @@ enum Command {
     Convert {
         /// Paper ID or an unambiguous title fragment.
         query: String,
+    },
+    /// Link one paper to its Work and ingest what it cites (needs `LYSILOGY_DATABASE_URL`).
+    Lit {
+        /// A PDF path inside the library, a paper ID, or an unambiguous title fragment.
+        paper: String,
     },
     /// Analyze all papers that are not ready, continuing past individual faults.
     Ingest {
@@ -314,6 +320,7 @@ async fn run(cli: Cli) -> Result<()> {
             print!("{}", state.markdown(&id).await?);
             Ok(())
         }
+        Command::Lit { paper } => literature_command(&state, &cli.library, &paper).await,
         Command::RefreshStructure {
             query,
             provider,
@@ -907,6 +914,82 @@ async fn ingest(
     }
 }
 
+async fn literature_command(
+    state: &AppState,
+    library: &std::path::Path,
+    paper: &str,
+) -> Result<()> {
+    let candidate = PathBuf::from(paper);
+    let id = if tokio::fs::metadata(&candidate)
+        .await
+        .is_ok_and(|metadata| metadata.is_file())
+    {
+        let path = tokio::fs::canonicalize(&candidate)
+            .await
+            .map_err(|error| Error::io(&candidate, error))?;
+        let root = tokio::fs::canonicalize(library)
+            .await
+            .map_err(|error| Error::io(library, error))?;
+        let id = PaperId::from_relative_path(&lit_target_relative_path(&root, &path)?);
+        state.paper(&id).await?;
+        id
+    } else {
+        resolve_paper(state, paper).await?
+    };
+    let summary = state.run_literature_flow(&id).await?;
+    print!("{}", render_literature_summary(&summary));
+    if let LiteratureStatus::Unmatched { reason } = &summary.status {
+        return Err(Error::Literature(format!("no Work found for {id}: {reason}")));
+    }
+    Ok(())
+}
+
+/// The library-relative path of `path`, which must lie under `root`. Both
+/// arguments are expected to be canonical, so `..` and symlinks cannot escape.
+fn lit_target_relative_path(
+    root: &std::path::Path,
+    path: &std::path::Path,
+) -> Result<PathBuf> {
+    path.strip_prefix(root).map(PathBuf::from).map_err(|_| {
+        Error::InvalidRequest(format!(
+            "{} is outside the library {}",
+            path.display(),
+            root.display()
+        ))
+    })
+}
+
+fn render_literature_summary(summary: &LiteratureSummary) -> String {
+    let mut output = String::new();
+    match (&summary.status, summary.work_id) {
+        (LiteratureStatus::Linked, Some(work_id)) => {
+            let how = match (summary.link_method, &summary.link_detail) {
+                (Some(method), Some(detail)) => format!("  ({method}: {detail})"),
+                _ => String::new(),
+            };
+            let _ = writeln!(output, "Work       {work_id}{how}");
+        }
+        (LiteratureStatus::Linked, None) => {
+            let _ = writeln!(output, "Work       linked without a Work ID");
+        }
+        (LiteratureStatus::Unmatched { reason }, _) => {
+            let _ = writeln!(output, "Unmatched  {reason}");
+        }
+    }
+    if let Some(openalex_id) = &summary.openalex_id {
+        let _ = writeln!(output, "OpenAlex   {openalex_id}");
+        let _ = writeln!(
+            output,
+            "References {} (new stub works: {}, titled: {})",
+            summary.references, summary.new_stub_works, summary.hydrated_works
+        );
+    }
+    for warning in &summary.warnings {
+        let _ = writeln!(output, "Warnings   {warning}");
+    }
+    output
+}
+
 async fn resolve_paper(state: &AppState, query: &str) -> Result<PaperId> {
     if let Ok(id) = query.parse::<PaperId>()
         && state.paper(&id).await.is_ok()
@@ -939,4 +1022,53 @@ fn init_tracing() {
 
 async fn shutdown_signal() {
     let _ = tokio::signal::ctrl_c().await;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    fn summary(status: LiteratureStatus) -> LiteratureSummary {
+        LiteratureSummary {
+            status,
+            document_id: lysilogy_core::DocumentId::new(),
+            work_id: None,
+            link_method: None,
+            link_detail: None,
+            openalex_id: None,
+            references: 0,
+            new_stub_works: 0,
+            hydrated_works: 0,
+            warnings: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn should_return_relative_path_when_target_is_inside_library() {
+        let relative =
+            lit_target_relative_path(Path::new("/lib"), Path::new("/lib/sub/a.pdf")).unwrap();
+        assert_eq!(relative, Path::new("sub/a.pdf"));
+    }
+
+    #[test]
+    fn should_reject_path_outside_library_when_resolving_lit_target() {
+        for outside in ["/elsewhere/a.pdf", "/lib2/a.pdf", "/a.pdf"] {
+            let error = lit_target_relative_path(Path::new("/lib"), Path::new(outside))
+                .expect_err(outside);
+            assert!(matches!(error, Error::InvalidRequest(_)), "{outside}");
+        }
+    }
+
+    #[test]
+    fn should_print_unmatched_reason_and_warnings_when_no_work_found() {
+        let mut result = summary(LiteratureStatus::Unmatched {
+            reason: "title_too_generic".to_owned(),
+        });
+        result.warnings.push("title_too_generic".to_owned());
+        let text = render_literature_summary(&result);
+        assert!(text.contains("Unmatched  title_too_generic"), "{text}");
+        assert!(text.contains("Warnings   title_too_generic"), "{text}");
+        assert!(!text.contains("OpenAlex"), "{text}");
+    }
 }

@@ -12,6 +12,7 @@ type GlobalKeyOptions = {
   onDigest: () => void;
   onGloss: () => void;
   onHelp: () => void;
+  onLiterature: () => void;
   onSearch: () => void;
   onToggleLibrary: () => void;
   onToggleView: () => void;
@@ -161,6 +162,12 @@ export function useGlobalKeys(options: GlobalKeyOptions): void {
         case "?":
           event.preventDefault();
           current.onHelp();
+          break;
+        case "L":
+          // PDF Cursor mode consumes its own L (line numbers) in a capture
+          // listener and stops propagation, so this only runs outside it.
+          event.preventDefault();
+          current.onLiterature();
           break;
         case "/":
           event.preventDefault();

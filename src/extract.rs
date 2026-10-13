@@ -10,6 +10,8 @@ use crate::{
 };
 
 const DEFAULT_MAX_EXTRACTED_BYTES: usize = 64 * 1024 * 1024;
+const FRONT_TEXT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+const MAX_FRONT_TEXT_BYTES: usize = 4 * 1024 * 1024;
 
 #[derive(Clone, Debug)]
 pub struct PdfExtractor {
@@ -86,6 +88,35 @@ impl PdfExtractor {
             pages,
             layout,
         })
+    }
+
+    /// Text of pages `1..=last_page`, for identifier detection. Bounded in time
+    /// and size, and never writes artifacts.
+    pub async fn extract_front_text(&self, source: &Path, last_page: u32) -> Result<String> {
+        let mut command = Command::new(&self.pdftotext);
+        command
+            .args(["-f", "1", "-l"])
+            .arg(last_page.to_string())
+            .args(["-enc", "UTF-8"])
+            .arg(source)
+            .arg("-")
+            .kill_on_drop(true);
+        let output = tokio::time::timeout(FRONT_TEXT_TIMEOUT, command.output())
+            .await
+            .map_err(|_| {
+                Error::Task(format!(
+                    "pdftotext timed out after {} seconds for {}",
+                    FRONT_TEXT_TIMEOUT.as_secs(),
+                    source.display()
+                ))
+            })?
+            .map_err(|error| command_io_error(&self.pdftotext, error))?;
+        ensure_success(&self.pdftotext, &output)?;
+        let bounded = &output.stdout[..output.stdout.len().min(MAX_FRONT_TEXT_BYTES)];
+        Ok(String::from_utf8_lossy(bounded)
+            .replace('\0', "")
+            .replace("\r\n", "\n")
+            .replace('\r', "\n"))
     }
 
     async fn extract_text(&self, source: &Path) -> Result<String> {
@@ -434,5 +465,63 @@ mod tests {
         };
         merge_pdf_metadata(&mut target, &extracted);
         assert_eq!(target.title, "GOTO Statements Considered Harmful");
+    }
+
+    fn fake_program(directory: &Path, name: &str, body: &str) -> std::path::PathBuf {
+        use std::os::unix::fs::PermissionsExt;
+        let path = directory.join(name);
+        std::fs::write(&path, format!("#!/bin/sh\n{body}\n")).unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        path
+    }
+
+    #[tokio::test]
+    async fn should_request_only_front_pages_when_extracting_front_text() {
+        let directory = tempfile::tempdir().unwrap();
+        let program = fake_program(directory.path(), "pdftotext", "echo \"$@\"");
+        let extractor = PdfExtractor::with_programs(program, "pdfinfo");
+        let text = extractor
+            .extract_front_text(Path::new("paper.pdf"), 2)
+            .await
+            .unwrap();
+        assert_eq!(text.trim(), "-f 1 -l 2 -enc UTF-8 paper.pdf -");
+    }
+
+    #[tokio::test]
+    async fn should_report_unavailable_when_front_text_program_is_missing() {
+        let extractor = PdfExtractor::with_programs("/nonexistent/pdftotext", "pdfinfo");
+        let error = extractor
+            .extract_front_text(Path::new("paper.pdf"), 2)
+            .await
+            .unwrap_err();
+        assert!(matches!(error, Error::ProgramUnavailable(_)), "{error}");
+    }
+
+    #[tokio::test]
+    async fn should_fail_when_front_text_program_exits_nonzero() {
+        let directory = tempfile::tempdir().unwrap();
+        let program = fake_program(directory.path(), "pdftotext", "echo broken >&2; exit 1");
+        let extractor = PdfExtractor::with_programs(program, "pdfinfo");
+        let error = extractor
+            .extract_front_text(Path::new("paper.pdf"), 2)
+            .await
+            .unwrap_err();
+        assert!(matches!(error, Error::CommandFailed { .. }), "{error}");
+    }
+
+    #[tokio::test]
+    async fn should_truncate_output_when_front_text_exceeds_bound() {
+        let directory = tempfile::tempdir().unwrap();
+        let program = fake_program(
+            directory.path(),
+            "pdftotext",
+            "head -c 5000000 /dev/zero | tr '\\0' 'a'",
+        );
+        let extractor = PdfExtractor::with_programs(program, "pdfinfo");
+        let text = extractor
+            .extract_front_text(Path::new("paper.pdf"), 2)
+            .await
+            .unwrap();
+        assert_eq!(text.len(), MAX_FRONT_TEXT_BYTES);
     }
 }

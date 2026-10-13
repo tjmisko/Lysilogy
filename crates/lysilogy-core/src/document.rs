@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::id::{BlobId, DocumentId, DocumentVersionId, WorkId, WorkspaceId};
-use crate::state::{DocumentFormat, UploadState};
+use crate::state::{DocumentFormat, UploadState, WorkLinkMethod};
 
 /// A workspace-owned document with a stable identity, independent of its path
 /// or file contents. Its `work_id` link is optional: a document may be unlinked,
@@ -14,6 +14,8 @@ pub struct Document {
     pub id: DocumentId,
     pub workspace_id: WorkspaceId,
     pub work_id: Option<WorkId>,
+    pub work_link_method: Option<WorkLinkMethod>,
+    pub work_link_detail: Option<String>,
     pub relative_path: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

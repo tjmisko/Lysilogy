@@ -13,6 +13,10 @@ import type {
   ExperimentCatalog,
   ExperimentJudgment,
   ExperimentView,
+  GraphNeighbors,
+  LiteratureJob,
+  PaperWork,
+  WorkCitations,
 } from "../types";
 
 export class ApiError extends Error {
@@ -101,6 +105,20 @@ export const api = {
       method: "POST",
       body: JSON.stringify(judgment),
     }),
+  paperWork: (id: string, signal?: AbortSignal): Promise<PaperWork> =>
+    request(`/api/papers/${id}/work`, { signal }),
+  startLiterature: (id: string): Promise<LiteratureJob> =>
+    request(`/api/papers/${id}/lit`, { method: "POST" }),
+  literatureJob: (id: string, signal?: AbortSignal): Promise<LiteratureJob> =>
+    request(`/api/papers/${id}/lit`, { signal }),
+  workCitations: (workId: string, signal?: AbortSignal): Promise<WorkCitations> =>
+    request(`/api/works/${encodeURIComponent(workId)}/citations`, { signal }),
+  graphNeighbors: (
+    workId: string,
+    direction: GraphNeighbors["direction"] = "references",
+    signal?: AbortSignal,
+  ): Promise<GraphNeighbors> =>
+    request(`/api/graph/neighbors/${encodeURIComponent(workId)}?direction=${direction}`, { signal }),
   paper: (id: string): Promise<PaperView> => request(`/api/papers/${id}`),
   paperMap: (id: string, signal?: AbortSignal): Promise<PaperMap> =>
     request(`/api/papers/${id}/map`, { signal }),

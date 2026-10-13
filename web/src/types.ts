@@ -398,3 +398,83 @@ export type ExperimentArmScore = {
   hard_reject: boolean;
   failure_tags: string[];
 };
+
+export type FieldState = "known" | "unknown" | "not_checked" | "conflicting" | "not_applicable";
+export type WorkKind = "article" | "book" | "chapter" | "thesis" | "report" | "dataset" | "other";
+
+/** A bibliographic Work as served by the graph API. */
+export type Work = {
+  id: string;
+  kind: WorkKind;
+  visibility: "private" | "public";
+  display_title: string | null;
+  title_state: FieldState;
+  display_year: number | null;
+  year_state: FieldState;
+  created_at: string;
+  updated_at: string;
+};
+
+/** A paper held in the local library that corresponds to a Work. */
+export type LocalPaper = {
+  paper_id: string;
+  title: string;
+};
+
+/** Local papers keyed by Work id. Works without a local paper have no entry. */
+export type LocalPapersByWork = Record<string, LocalPaper[]>;
+
+export type WorkCitations = {
+  work: Work;
+  outgoing: Work[];
+  incoming: Work[];
+  local_papers: LocalPapersByWork;
+};
+
+export type GraphEdge = {
+  citing: string;
+  cited: string;
+};
+
+export type GraphNeighbors = {
+  center: string;
+  direction: "references" | "citations" | "both";
+  nodes: Work[];
+  edges: GraphEdge[];
+  local_papers: LocalPapersByWork;
+};
+
+export type WorkLinkMethod = "identifier" | "title_match" | "manual";
+
+export type PaperWork = {
+  paper_id: string;
+  work: Work | null;
+  link: {
+    method: WorkLinkMethod;
+    detail: string | null;
+    linked_at: string;
+  } | null;
+};
+
+export type LiteratureStatus =
+  | { kind: "linked" }
+  | { kind: "unmatched"; reason: string };
+
+export type LiteratureSummary = {
+  status: LiteratureStatus;
+  document_id: string;
+  work_id: string | null;
+  link_method: WorkLinkMethod | null;
+  link_detail: string | null;
+  openalex_id: string | null;
+  references: number;
+  new_stub_works: number;
+  hydrated_works: number;
+  warnings: string[];
+};
+
+export type LiteratureJob = {
+  state: "idle" | "running" | "succeeded" | "failed";
+  summary?: LiteratureSummary;
+  message?: string;
+};

@@ -1,6 +1,6 @@
 use super::{
     CitationEdge, CitationProvider, Coverage, Direction, GraphFailure, GraphFuture, GraphResult,
-    Identifier, Provider, ProviderReport, Request, Transport, Work, array, text, year,
+    Identifier, Provider, ProviderReport, Request, Transport, Work, array, text,
 };
 use serde_json::Value;
 
@@ -173,24 +173,25 @@ fn request(segments: &[&str]) -> Request {
     Request::new(Provider::Openalex, "https://api.openalex.org/", segments)
 }
 fn openalex_id(value: &str) -> Option<Identifier> {
-    let value = value.strip_prefix("https://openalex.org/").unwrap_or(value);
+    let value = lysilogy_ingest::openalex::short_openalex_id(value);
     value.starts_with('W').then(|| Identifier {
         scheme: "openalex".to_owned(),
-        value: value.to_owned(),
+        value,
     })
 }
 fn work(value: &Value) -> GraphResult<Work> {
-    let id = value
-        .get("id")
-        .and_then(Value::as_str)
-        .and_then(openalex_id)
-        .ok_or_else(GraphFailure::malformed)?;
+    let summary = lysilogy_ingest::openalex::parse_summary(value)
+        .map_err(|_| GraphFailure::malformed())?;
+    let id = openalex_id(&summary.openalex_id).ok_or_else(GraphFailure::malformed)?;
     let mut result = Work::identified(id);
-    if let Some(doi) = text(value, "doi").and_then(|doi| Identifier::parse(&doi).ok()) {
+    if let Some(doi) = summary
+        .doi
+        .and_then(|doi| Identifier::parse(&format!("doi:{doi}")).ok())
+    {
         result.identifiers.push(doi);
     }
-    result.title = text(value, "display_name").or_else(|| text(value, "title"));
-    result.year = year(&value["publication_year"]);
+    result.title = summary.title.or_else(|| text(value, "title"));
+    result.year = summary.year.and_then(|year| u16::try_from(year).ok());
     result.authors = value["authorships"]
         .as_array()
         .map_or_else(Vec::new, |authors| {

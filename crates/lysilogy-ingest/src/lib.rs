@@ -5,8 +5,10 @@
 
 pub mod identify;
 pub mod ingest;
+pub mod literature;
 pub mod openalex;
 pub mod scan;
+pub mod title_match;
 
 /// Errors returned by ingestion.
 #[derive(Debug, thiserror::Error)]
@@ -15,6 +17,8 @@ pub enum IngestError {
     Io(#[from] std::io::Error),
     #[error("database error: {0}")]
     Db(#[from] lysilogy_db::DbError),
+    #[error(transparent)]
+    Provider(#[from] crate::openalex::ProviderError),
 }
 
 /// Result alias for ingestion.
