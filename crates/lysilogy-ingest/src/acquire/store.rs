@@ -198,7 +198,11 @@ mod tests {
 
         let wide = "é".repeat(400);
         let name = fetched_filename(Some(&wide), None, WorkId::new());
-        assert_eq!(name.len(), MAX_NAME_BYTES + 4, "truncates on the byte budget");
+        assert_eq!(
+            name.len(),
+            MAX_NAME_BYTES + 4,
+            "truncates on the byte budget"
+        );
     }
 
     #[tokio::test]

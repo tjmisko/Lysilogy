@@ -10,6 +10,7 @@ use std::{
 use clap::{Parser, Subcommand, ValueEnum};
 use lysilogy::acquisition::{AcquireOptions, AcquireReport};
 use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
+use lysilogy::prominence::ProminenceScope;
 use lysilogy::{
     AppState, Error, Result, build_router,
     domain::{
@@ -22,6 +23,7 @@ use lysilogy_ingest::acquire::AcquisitionOutcome;
 use lysilogy_ingest::labels::{LabelOptions, LabelSummary};
 use lysilogy_ingest::literature::{LiteratureStatus, LiteratureSummary};
 use lysilogy_ingest::local_evidence::LocalEvidenceSummary;
+use lysilogy_ingest::prominence::RefreshSummary;
 use tokio::{sync::Semaphore, task::JoinSet};
 use tracing_subscriber::EnvFilter;
 
@@ -157,6 +159,23 @@ enum Command {
         /// Stop after this many model calls; cached answers do not count.
         #[arg(long, default_value_t = 25)]
         label_limit: usize,
+    },
+    /// Recompute the relevance (prominence) scores for a paper's neighborhood or every Work (needs `LYSILOGY_DATABASE_URL`).
+    #[command(group(
+        clap::ArgGroup::new("scope")
+            .required(true)
+            .multiple(false)
+            .args(["paper", "all"])
+    ))]
+    Prominence {
+        /// A PDF path inside the library, a paper ID, or an unambiguous title fragment.
+        paper: Option<String>,
+        /// Recompute every Work that is in a citation or has a document.
+        #[arg(long)]
+        all: bool,
+        /// Also fetch cited-by counts from `OpenAlex` (cached counts are reused).
+        #[arg(long)]
+        fetch_metrics: bool,
     },
     /// Fetch open-access copies of Works and map them into the library (needs `LYSILOGY_DATABASE_URL`).
     Fetch {
@@ -394,6 +413,11 @@ async fn run(cli: Cli) -> Result<()> {
             });
             literature_command(&state, &cli.library, &paper, local, label_run).await
         }
+        Command::Prominence {
+            paper,
+            all,
+            fetch_metrics,
+        } => prominence_command(&state, &cli.library, paper.as_deref(), all, fetch_metrics).await,
         Command::Fetch {
             work,
             cited_by,
@@ -1029,12 +1053,64 @@ async fn literature_command(
             None => println!("Warnings   {LOCAL_EVIDENCE_REQUIRES_WORK}"),
         }
     }
+    if let Some(work) = summary.work_id {
+        state.refresh_prominence_quietly(work, true).await;
+    }
     if let LiteratureStatus::Unmatched { reason } = &summary.status {
         return Err(Error::Literature(format!(
             "no Work found for {id}: {reason}"
         )));
     }
     Ok(())
+}
+
+async fn prominence_command(
+    state: &AppState,
+    library: &std::path::Path,
+    paper: Option<&str>,
+    all: bool,
+    fetch_metrics: bool,
+) -> Result<()> {
+    let scope = match (paper, all) {
+        (Some(text), false) => {
+            ProminenceScope::Paper(resolve_lit_target(state, library, text).await?)
+        }
+        (None, true) => ProminenceScope::All,
+        _ => {
+            return Err(Error::InvalidRequest(
+                "give exactly one of a paper or --all".to_owned(),
+            ));
+        }
+    };
+    let started = std::time::Instant::now();
+    let summary = state.recompute_prominence(scope, fetch_metrics).await?;
+    print!(
+        "{}",
+        render_prominence_summary(&summary, fetch_metrics, started.elapsed().as_secs_f64())
+    );
+    Ok(())
+}
+
+fn render_prominence_summary(
+    summary: &RefreshSummary,
+    fetch_metrics: bool,
+    seconds: f64,
+) -> String {
+    let mut text = format!(
+        "Recomputed {} works ({} with global counts) in {seconds:.1} s\n",
+        summary.works, summary.with_global_count
+    );
+    if fetch_metrics {
+        let _ = writeln!(
+            text,
+            "Fetched cited-by counts for {} works ({} requests)",
+            summary.metrics_fetched, summary.metric_requests
+        );
+    }
+    for warning in &summary.warnings {
+        let _ = writeln!(text, "Warnings   {warning}");
+    }
+    text
 }
 
 /// A paper from a PDF path inside the library, a paper ID, or a title fragment.
@@ -1674,5 +1750,57 @@ mod tests {
             Cli::try_parse_from(["lysilogy", "fetch", "--cited-by", "Paper", "--limit", "5"])
                 .is_ok()
         );
+    }
+
+    #[test]
+    fn should_require_exactly_one_scope_when_parsing_prominence_command() {
+        assert!(Cli::try_parse_from(["lysilogy", "prominence"]).is_err());
+        assert!(Cli::try_parse_from(["lysilogy", "prominence", "Paper", "--all"]).is_err());
+        assert!(Cli::try_parse_from(["lysilogy", "prominence", "--fetch-metrics"]).is_err());
+        let paper = Cli::try_parse_from(["lysilogy", "prominence", "Paper"]).expect("paper");
+        assert!(matches!(
+            paper.command,
+            Some(Command::Prominence {
+                paper: Some(_),
+                all: false,
+                fetch_metrics: false
+            })
+        ));
+        let all = Cli::try_parse_from(["lysilogy", "prominence", "--all", "--fetch-metrics"])
+            .expect("all");
+        assert!(matches!(
+            all.command,
+            Some(Command::Prominence {
+                paper: None,
+                all: true,
+                fetch_metrics: true
+            })
+        ));
+    }
+
+    #[test]
+    fn should_render_counts_and_warnings_when_summarizing_prominence() {
+        let summary = RefreshSummary {
+            works: 12,
+            with_global_count: 9,
+            metrics_fetched: 9,
+            metric_requests: 1,
+            warnings: vec!["prominence_metrics_failed:boom".to_owned()],
+        };
+        let text = render_prominence_summary(&summary, true, 1.26);
+        assert!(
+            text.starts_with("Recomputed 12 works (9 with global counts) in 1.3 s\n"),
+            "{text}"
+        );
+        assert!(
+            text.contains("Fetched cited-by counts for 9 works (1 requests)"),
+            "{text}"
+        );
+        assert!(
+            text.contains("Warnings   prominence_metrics_failed:boom"),
+            "{text}"
+        );
+        let quiet = render_prominence_summary(&summary, false, 0.0);
+        assert!(!quiet.contains("Fetched"), "{quiet}");
     }
 }

@@ -26,6 +26,9 @@ pub const OPENALEX_SUMMARY_KIND: &str = "openalex_work_summary";
 /// The `source_record.kind` used for cached `OpenAlex` title searches.
 pub const OPENALEX_TITLE_SEARCH_KIND: &str = "openalex_title_search";
 
+/// The `source_record.kind` used for cached `OpenAlex` cited-by counts.
+pub const OPENALEX_METRICS_KIND: &str = "openalex_metrics";
+
 /// The most IDs sent in one `filter=openalex:` request.
 pub const SUMMARY_BATCH: usize = 50;
 
@@ -194,6 +197,33 @@ pub fn works_batch_url(ids: &[&str]) -> String {
     )
 }
 
+/// The request URL for a batch of at most [`SUMMARY_BATCH`] cited-by counts.
+#[must_use]
+pub fn works_metrics_url(ids: &[&str]) -> String {
+    debug_assert!(ids.len() <= SUMMARY_BATCH, "batch exceeds {SUMMARY_BATCH}");
+    format!(
+        "https://api.openalex.org/works?filter=openalex:{}&per_page={}\
+         &select=id,cited_by_count",
+        ids.join("|"),
+        ids.len()
+    )
+}
+
+/// Read `(lower-case short id, cited_by_count)` from a metrics batch item.
+/// `None` when the id is missing or the count is not a non-negative integer.
+#[must_use]
+pub fn parse_cited_by_count(item: &Value) -> Option<(String, i64)> {
+    let id = source_key(&short_openalex_id(item.get("id")?.as_str()?));
+    if id.is_empty() {
+        return None;
+    }
+    let count = item
+        .get("cited_by_count")?
+        .as_i64()
+        .filter(|count| *count >= 0)?;
+    Some((id, count))
+}
+
 /// The request URL for a title search, or `None` without searchable words.
 ///
 /// Only alphanumeric words of the normalized title reach the
@@ -342,6 +372,65 @@ pub async fn fetch_summaries_cached<T: JsonTransport>(
         }
     }
     Ok(found)
+}
+
+/// Cited-by counts fetched for a set of Works.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CitedByFetch {
+    /// `(lower-case OpenAlex id, count)` for every ID that has a count.
+    pub counts: Vec<(String, i64)>,
+    /// Provider requests made.
+    pub requests: usize,
+}
+
+/// Fetch cited-by counts for many IDs.
+///
+/// Cached ones come from Postgres unless `refresh`; the rest are requested in
+/// chunks of [`SUMMARY_BATCH`]. IDs the provider omits, and items without a
+/// valid count, are skipped and not cached.
+pub async fn fetch_cited_by_counts_cached<T: JsonTransport>(
+    records: &SourceRecordRepository,
+    client: &OpenAlexClient<T>,
+    ids: &[String],
+    refresh: bool,
+) -> Result<CitedByFetch, ProviderError> {
+    let mut seen = HashSet::new();
+    let mut fetch = CitedByFetch::default();
+    let mut missing: Vec<&str> = Vec::new();
+    for id in ids {
+        let key = source_key(id);
+        if key.is_empty() || !seen.insert(key.clone()) {
+            continue;
+        }
+        if !refresh
+            && let Some((_, payload)) = records.find(OPENALEX_METRICS_KIND, &key).await?
+            && let Some((_, count)) = parse_cited_by_count(&payload)
+        {
+            fetch.counts.push((key, count));
+            continue;
+        }
+        missing.push(id.trim());
+    }
+    for chunk in missing.chunks(SUMMARY_BATCH) {
+        let page = client.fetch_json(&works_metrics_url(chunk)).await?;
+        fetch.requests += 1;
+        let Some(results) = page.get("results").and_then(Value::as_array) else {
+            return Err(ProviderError::Malformed);
+        };
+        for item in results {
+            let Some((key, count)) = parse_cited_by_count(item) else {
+                continue;
+            };
+            if !seen.contains(&key) {
+                continue;
+            }
+            records
+                .upsert(OPENALEX_METRICS_KIND, &key, Coverage::Complete, item)
+                .await?;
+            fetch.counts.push((key, count));
+        }
+    }
+    Ok(fetch)
 }
 
 /// Search works by title, caching the raw response. `None` when the title has
@@ -828,5 +917,123 @@ mod tests {
         assert!(urls[1].contains("per_page=50"));
         assert!(urls[3].contains("per_page=11"), "{}", urls[3]);
         assert_eq!(all.len(), 9 + 49 + 49 + 10);
+    }
+
+    #[test]
+    fn should_join_ids_and_select_cited_by_count_when_building_metrics_url() {
+        let url = works_metrics_url(&["W1", "W2"]);
+        assert!(url.contains("filter=openalex:W1|W2"), "{url}");
+        assert!(url.contains("per_page=2"), "{url}");
+        assert!(url.ends_with("select=id,cited_by_count"), "{url}");
+    }
+
+    #[test]
+    fn should_skip_non_integer_and_negative_counts_when_parsing_metrics_batch() {
+        let ok = serde_json::json!({"id": "https://openalex.org/W9", "cited_by_count": 12});
+        assert_eq!(parse_cited_by_count(&ok), Some(("w9".to_owned(), 12)));
+        for bad in [
+            serde_json::json!({"id": "W1", "cited_by_count": -1}),
+            serde_json::json!({"id": "W1", "cited_by_count": 1.5}),
+            serde_json::json!({"id": "W1", "cited_by_count": "7"}),
+            serde_json::json!({"id": "W1", "cited_by_count": null}),
+            serde_json::json!({"id": "W1", "cited_by_count": u64::MAX}),
+            serde_json::json!({"id": "W1"}),
+            serde_json::json!({"id": "", "cited_by_count": 3}),
+            serde_json::json!({"id": 4, "cited_by_count": 3}),
+            serde_json::json!({"cited_by_count": 3}),
+        ] {
+            assert_eq!(parse_cited_by_count(&bad), None, "{bad}");
+        }
+    }
+
+    fn metrics_responder(url: &str) -> Value {
+        let filter = url
+            .split("filter=openalex:")
+            .nth(1)
+            .and_then(|rest| rest.split('&').next())
+            .unwrap_or_default();
+        let results: Vec<Value> = filter
+            .split('|')
+            .map(|id| serde_json::json!({"id": format!("https://openalex.org/{id}"), "cited_by_count": 7}))
+            .collect();
+        serde_json::json!({ "results": results })
+    }
+
+    #[tokio::test]
+    async fn should_batch_uncached_ids_and_reuse_cache_when_fetching_counts() {
+        let Some(pool) = pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let records = SourceRecordRepository::new(pool);
+        let marker = std::process::id();
+        let ids: Vec<String> = (0..60).map(|n| format!("W88{marker}{n:03}")).collect();
+        let transport = fake::RecordingTransport::new(metrics_responder);
+        let client = OpenAlexClient::new(transport.clone());
+        let first = fetch_cited_by_counts_cached(&records, &client, &ids, false)
+            .await
+            .expect("first");
+        assert_eq!(first.requests, 2);
+        assert_eq!(first.counts.len(), 60);
+        assert!(first.counts.iter().all(|(_, count)| *count == 7));
+        let second = fetch_cited_by_counts_cached(&records, &client, &ids, false)
+            .await
+            .expect("second");
+        assert_eq!(second.requests, 0);
+        assert_eq!(second.counts.len(), 60);
+        assert_eq!(transport.urls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn should_refetch_when_refresh_requested() {
+        let Some(pool) = pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let records = SourceRecordRepository::new(pool);
+        let marker = std::process::id();
+        let ids: Vec<String> = (0..3).map(|n| format!("W89{marker}{n:03}")).collect();
+        let client = OpenAlexClient::new(fake::RecordingTransport::new(metrics_responder));
+        fetch_cited_by_counts_cached(&records, &client, &ids, false)
+            .await
+            .expect("prime");
+        let again = fetch_cited_by_counts_cached(&records, &client, &ids, true)
+            .await
+            .expect("refresh");
+        assert_eq!(again.requests, 1);
+        assert_eq!(again.counts.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn should_not_cache_invalid_or_omitted_counts_when_fetching() {
+        let Some(pool) = pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let records = SourceRecordRepository::new(pool);
+        let marker = std::process::id();
+        let good = format!("W90{marker}001");
+        let negative = format!("W90{marker}002");
+        let omitted = format!("W90{marker}003");
+        let (good_c, negative_c) = (good.clone(), negative.clone());
+        let client = OpenAlexClient::new(fake::RecordingTransport::new(move |_| {
+            serde_json::json!({"results": [
+                {"id": good_c, "cited_by_count": 4},
+                {"id": negative_c, "cited_by_count": -3},
+                {"id": "W1", "cited_by_count": 9},
+            ]})
+        }));
+        let ids = [good.clone(), negative.clone(), omitted.clone()];
+        let fetched = fetch_cited_by_counts_cached(&records, &client, &ids, false)
+            .await
+            .expect("fetch");
+        assert_eq!(fetched.counts, vec![(good.to_ascii_lowercase(), 4)]);
+        for id in [&negative, &omitted] {
+            let found = records
+                .find(OPENALEX_METRICS_KIND, &source_key(id))
+                .await
+                .expect("find");
+            assert!(found.is_none(), "{id} must not be cached");
+        }
     }
 }

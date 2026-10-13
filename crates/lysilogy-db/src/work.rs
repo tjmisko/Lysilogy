@@ -620,6 +620,43 @@ async fn move_work_content(
     .bind(into_id)
     .execute(&mut *transaction)
     .await?;
+    move_curation(transaction, from_id, into_id).await
+}
+
+/// Move private tags and the mark to the surviving Work (its own mark wins) and
+/// drop the merged Work's derived prominence rows.
+async fn move_curation(transaction: &mut PgConnection, from_id: Uuid, into_id: Uuid) -> Result<()> {
+    sqlx::query(
+        "insert into reader.work_tag (workspace_id, work_id, tag_id, created_at) \
+         select workspace_id, $2, tag_id, created_at from reader.work_tag where work_id = $1 \
+         on conflict do nothing",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query("delete from reader.work_tag where work_id = $1")
+        .bind(from_id)
+        .execute(&mut *transaction)
+        .await?;
+    sqlx::query(
+        "update reader.work_mark m set work_id = $2 \
+         where m.work_id = $1 and not exists ( \
+             select 1 from reader.work_mark k \
+             where k.workspace_id = m.workspace_id and k.work_id = $2)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query("delete from reader.work_mark where work_id = $1")
+        .bind(from_id)
+        .execute(&mut *transaction)
+        .await?;
+    sqlx::query("delete from reader.work_prominence where work_id = $1")
+        .bind(from_id)
+        .execute(&mut *transaction)
+        .await?;
     Ok(())
 }
 
@@ -1527,5 +1564,164 @@ mod tests {
         .await
         .expect("target");
         assert_eq!(target, newest.as_uuid());
+    }
+
+    async fn tag_names(
+        curation: &crate::curation::CurationRepository,
+        workspace: lysilogy_core::WorkspaceId,
+        work: WorkId,
+    ) -> Vec<String> {
+        curation
+            .tags_for_works(workspace, &[work])
+            .await
+            .expect("tags")
+            .into_iter()
+            .map(|(_, tag)| tag.name)
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn should_move_tags_and_keep_target_mark_when_merging_works() {
+        use crate::curation::CurationRepository;
+        use lysilogy_core::{TagColor, TagKind, TagName, WorkMark};
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = WorkRepository::new(pool.clone());
+        let curation = CurationRepository::new(pool.clone());
+        let workspace = test_support::new_workspace(&pool).await;
+        let other_workspace = test_support::new_workspace(&pool).await;
+        let from = test_support::new_work(&pool).await;
+        let into = test_support::new_work(&pool).await;
+        let color = TagColor::parse("#123456").expect("color");
+        let mut tags = Vec::new();
+        for name in ["shared", "only-from", "only-into"] {
+            let name = TagName::parse(name).expect("name");
+            tags.push(
+                curation
+                    .create_tag(workspace, &name, &color, TagKind::Topic)
+                    .await
+                    .expect("tag")
+                    .id,
+            );
+        }
+        let foreign = curation
+            .create_tag(
+                other_workspace,
+                &TagName::parse("foreign").expect("name"),
+                &color,
+                TagKind::Topic,
+            )
+            .await
+            .expect("foreign");
+        curation
+            .assign_tag(workspace, from, tags[0])
+            .await
+            .expect("assign");
+        curation
+            .assign_tag(workspace, from, tags[1])
+            .await
+            .expect("assign");
+        curation
+            .assign_tag(workspace, into, tags[0])
+            .await
+            .expect("assign");
+        curation
+            .assign_tag(workspace, into, tags[2])
+            .await
+            .expect("assign");
+        curation
+            .assign_tag(other_workspace, from, foreign.id)
+            .await
+            .expect("assign");
+        curation
+            .set_mark(workspace, from, WorkMark::Hidden, Some("from note"))
+            .await
+            .expect("mark");
+        curation
+            .set_mark(workspace, into, WorkMark::Pinned, Some("into note"))
+            .await
+            .expect("mark");
+
+        repo.merge_work(from, into, "same paper", "test")
+            .await
+            .expect("merge");
+
+        assert_eq!(
+            tag_names(&curation, workspace, into).await,
+            vec!["only-from", "only-into", "shared"]
+        );
+        assert!(tag_names(&curation, workspace, from).await.is_empty());
+        assert_eq!(
+            tag_names(&curation, other_workspace, into).await,
+            vec!["foreign"],
+            "other workspaces' tags move too"
+        );
+        let marks = curation
+            .marks_for_works(workspace, &[from, into])
+            .await
+            .expect("marks");
+        assert_eq!(marks.len(), 1);
+        assert_eq!(marks[0].0, into);
+        assert_eq!(marks[0].1.mark, WorkMark::Pinned);
+        assert_eq!(marks[0].1.note.as_deref(), Some("into note"));
+    }
+
+    #[tokio::test]
+    async fn should_move_mark_when_target_has_none_and_drop_prominence_when_merging() {
+        use crate::curation::CurationRepository;
+        use crate::prominence::ProminenceRepository;
+        use lysilogy_core::WorkMark;
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = WorkRepository::new(pool.clone());
+        let curation = CurationRepository::new(pool.clone());
+        let prominence = ProminenceRepository::new(pool.clone());
+        let workspace = test_support::new_workspace(&pool).await;
+        let from = test_support::new_work(&pool).await;
+        let into = test_support::new_work(&pool).await;
+        curation
+            .set_mark(workspace, from, WorkMark::Downplayed, Some("carry me"))
+            .await
+            .expect("mark");
+        prominence
+            .prominence_for(workspace, &[from, into], 2026)
+            .await
+            .expect("prominence");
+        assert_eq!(
+            prominence
+                .cached(workspace, &[from, into])
+                .await
+                .expect("warm")
+                .len(),
+            2
+        );
+
+        repo.merge_work(from, into, "same paper", "test")
+            .await
+            .expect("merge");
+
+        let marks = curation
+            .marks_for_works(workspace, &[from, into])
+            .await
+            .expect("marks");
+        assert_eq!(marks.len(), 1);
+        assert_eq!(marks[0].0, into);
+        assert_eq!(marks[0].1.mark, WorkMark::Downplayed);
+        assert_eq!(marks[0].1.note.as_deref(), Some("carry me"));
+        let cached = prominence
+            .cached(workspace, &[from, into])
+            .await
+            .expect("cold");
+        assert_eq!(
+            cached.iter().map(|row| row.work_id).collect::<Vec<_>>(),
+            vec![into],
+            "the merged Work's row is gone; the survivor's is kept"
+        );
     }
 }
