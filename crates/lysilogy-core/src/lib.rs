@@ -6,10 +6,12 @@
 pub mod curation;
 pub mod document;
 pub mod entry;
+pub mod expansion;
 pub mod id;
 pub mod identifier;
 pub mod names;
 pub mod prominence;
+pub mod ramp;
 pub mod state;
 pub mod title;
 pub mod work;
@@ -17,9 +19,12 @@ pub mod work;
 pub use curation::{CurationError, TAG_PALETTE, TagColor, TagName, parse_mark_note};
 pub use document::{Document, DocumentVersion, ScannedFile};
 pub use entry::BibliographyEntry;
+pub use expansion::{
+    WALK_DEPTH_MAX, WALK_EXPANSIONS_MAX, WALK_FANOUT_MAX, WalkBounds, WalkBoundsError,
+};
 pub use id::{
     AssertionId, BlobId, DocumentId, DocumentVersionId, EntryId, IdError, IdentifierId, MentionId,
-    RelationshipClaimId, SourceRecordId, TagId, WorkId, WorkVersionId, WorkspaceId,
+    RampId, RelationshipClaimId, SourceRecordId, TagId, WorkId, WorkVersionId, WorkspaceId,
 };
 pub use identifier::{DetectedIdentifier, extract as extract_identifiers, front_matter};
 pub use names::first_author_family;
@@ -27,9 +32,14 @@ pub use prominence::{
     PROMINENCE_SIGNALS_VERSION, ProminenceComponents, ProminenceSignals, prominence_components,
     prominence_score,
 };
+pub use ramp::{
+    RAMP_ITEMS_MAX, RAMP_PATH_MAX, RAMP_TITLE_FALLBACK, RAMP_TITLE_MAX_CHARS, RampError,
+    RampOrderItem, RampTitle, default_ramp_title, suggest_order,
+};
 pub use state::{
     AcquisitionState, AssertionStatus, CandidateOrigin, CitationStyle, Coverage, DecisionKind,
-    DocumentFormat, FieldKind, FieldState, IdentifierScheme, IdentifierStatus, ParseStateError,
+    DocumentFormat, ExpansionMethod, ExpansionState, ExpansionUnavailableReason, FieldKind,
+    FieldState, IdentifierScheme, IdentifierStatus, ParseStateError, RampItemStatus,
     RelationshipOrigin, ResolutionMethod, ResolutionStatus, ReviewState, TagKind,
     UnavailableReason, UploadState, VersionKind, Visibility, WorkKind, WorkLinkMethod, WorkMark,
 };

@@ -320,6 +320,41 @@ string_enum!(
     }
 );
 
+string_enum!(
+    /// How far a reader has got with an item on a reading ramp.
+    RampItemStatus {
+        Unread => "unread",
+        Reading => "reading",
+        Read => "read",
+    }
+);
+
+string_enum!(
+    /// Whether a Work's outgoing fanout was made known.
+    ExpansionState {
+        Expanded => "expanded",
+        Unavailable => "unavailable",
+    }
+);
+
+string_enum!(
+    /// How a Work's fanout was made known.
+    ExpansionMethod {
+        Provider => "provider",
+        Local => "local",
+        Existing => "existing",
+    }
+);
+
+string_enum!(
+    /// Why a Work's fanout could not be made known.
+    ExpansionUnavailableReason {
+        NoProviderIdentifier => "no_provider_identifier",
+        ProviderNotFound => "provider_not_found",
+        IdentifierConflict => "identifier_conflict",
+    }
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -468,5 +503,47 @@ mod tests {
         let error = "bogus".parse::<FieldState>().expect_err("must fail");
         assert!(error.to_string().contains("FieldState"));
         assert!(error.to_string().contains("bogus"));
+    }
+
+    #[test]
+    fn should_round_trip_status_and_expansion_enums_when_parsing_strings() {
+        for status in [
+            RampItemStatus::Unread,
+            RampItemStatus::Reading,
+            RampItemStatus::Read,
+        ] {
+            assert_eq!(status.as_str().parse::<RampItemStatus>().unwrap(), status);
+        }
+        for state in [ExpansionState::Expanded, ExpansionState::Unavailable] {
+            assert_eq!(state.to_string().parse::<ExpansionState>().unwrap(), state);
+        }
+        for method in [
+            ExpansionMethod::Provider,
+            ExpansionMethod::Local,
+            ExpansionMethod::Existing,
+        ] {
+            assert_eq!(method.as_str().parse::<ExpansionMethod>().unwrap(), method);
+        }
+        for reason in [
+            ExpansionUnavailableReason::NoProviderIdentifier,
+            ExpansionUnavailableReason::ProviderNotFound,
+            ExpansionUnavailableReason::IdentifierConflict,
+        ] {
+            assert_eq!(
+                reason
+                    .as_str()
+                    .parse::<ExpansionUnavailableReason>()
+                    .unwrap(),
+                reason
+            );
+        }
+        assert!("Unread".parse::<RampItemStatus>().is_err());
+        assert!("".parse::<ExpansionState>().is_err());
+        assert!("cached".parse::<ExpansionMethod>().is_err());
+        assert!("none".parse::<ExpansionUnavailableReason>().is_err());
+        assert_eq!(
+            serde_json::to_string(&ExpansionUnavailableReason::ProviderNotFound).unwrap(),
+            "\"provider_not_found\""
+        );
     }
 }
