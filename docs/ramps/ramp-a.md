@@ -611,3 +611,62 @@ passes, and the live smoke is recorded in this doc.
   rerun gives 0 new stubs and 0 hydrated. `Concrete Problems in AI Safety` links only to an
   arXiv-identified Work with `provider_title_mismatch` for W2462906003 ("Agnostic Learning with
   Unknown Utilities") and `no_candidates` from the title search; no OpenAlex ID is attached.
+
+## Result
+
+### U6 implementation notes
+
+- `ApiError` carries only the HTTP status and message, so the overlay treats HTTP 503 as `graph_unavailable`
+  (the only 503 these endpoints return).
+- The App Esc chain asks the overlay to close its Work panel through a cancelable `literature-quit` DOM
+  event (same pattern as `quitLocal`); the overlay cancels the event when it closed a panel, so one press closes
+  one layer.
+- Node labels are `pointer-events: none` so a neighbor's label cannot swallow clicks on a dot; click the dot.
+- `web/scripts/cursor-mode-checks.mjs` now asserts `.literature-graph` stays absent after the Cursor-mode `L`
+  presses. `L` in Cursor mode still wins because `PdfReader`'s capture listener handles it with
+  `stopImmediatePropagation` before `useGlobalKeys` (bubble) sees it. `PdfReader` is also disabled while
+  the overlay is open.
+
+### Verification
+
+- Rust: `LYSILOGY_TEST_DATABASE_URL=postgresql://$USER@127.0.0.1:5433/lysilogy_test cargo test --workspace`
+  passes (197 root, 44 + 36 + 16 + 3 + 1 + 1 crate tests; DB tests ran) and
+  `cargo clippy --workspace --all-targets -- -D warnings` is clean.
+- Web: `npm run typecheck`, `npm run lint`, `npm run build` are clean. `npm run test:literature-layout` passes 11
+  tests (0, 1, 37, 120 nodes, untitled, duplicates, order independence, tiny canvas).
+  `npm run smoke:paragraph-selection` still passes, including Cursor-mode `L` line-number cycling.
+- Scratch Playwright (`~/.cache/lysilogy-smoke/literature-smoke.mjs`, not committed; screenshots in
+  `~/.cache/lysilogy-smoke/shots/`) against `web/dist` with mocked routes: `L` opens the overlay; 45 nodes render
+  titles and years (untitled shows `Untitled (wuntit00…)`); exactly one `data-local="true"` node with a
+  `--signal` fill; `j`/`k` cycle; clicking the local node lists its `Local copy` and `Cited by local papers`
+  buttons; choosing one closes the overlay and sets `#paper=<id>`; Esc closes the Work panel, then the overlay;
+  the no-Work state offers `Run lit`, `r` POSTs once, polling flips to the graph (mock flips after the POST); a 503
+  shows the unavailable message; closing mid-run stops polling.
+
+### Live smoke (2026-10-13, dev DB)
+
+Server: `LYSILOGY_DATABASE_URL=postgresql://$USER@127.0.0.1:5433/lysilogy lysilogy --library
+~/Projects/Lysilogy/local-articles --data ~/Projects/Lysilogy/.lysilogy serve --bind 127.0.0.1:7391 --web web/dist`
+(no `LYSILOGY_CONTACT_EMAIL` set).
+
+- China Syndrome (`8eb7fdb369c544e0`): `/work` gives `wsylZYO4yTdKNNGLstpCYDg` (identifier `doi:10.1257/aer.103.6.2121`).
+  `/api/graph/neighbors/<w>` gives 115 nodes (center + 114), 114 edges, 107 titled; `/citations` gives 114 outgoing.
+  `local_papers` holds the paper itself.
+- Harrison 2018 Macartney (`26a6c7cf820476ad`, DOI 10.1093/ehr/cey066): `POST /lit` reached `succeeded`, linked by
+  identifier to W2789960012 with 0 references (OpenAlex lists none for it).
+- Negative smokes: Amodei 2016 linked only to its arXiv-identified Work with `provider_title_mismatch` for W2462906003
+  ("Agnostic Learning with Unknown Utilities") and `no_candidates`; no OpenAlex ID attached. Bai CAI (arXiv 2212.08073)
+  likewise rejected W4311991106 ("AI-to-AI Code Reviews of GitHub Pull Requests"), no OpenAlex ID. Bai HH-RLHF
+  (arXiv 2204.05862) linked correctly to W4223908421.
+- `local_papers` observed live. After running lit over the whole library (124 papers, 4 at a time:
+  101 linked, 21 unmatched, 2 failed), 10 papers' reference graphs contain other local papers, for example the Debate
+  paper's graph marks "Supervising Strong Learners by Amplifying Weak Experts" and "Fine-Tuning Language Models
+  from Human Preferences" as local. In the browser, opening Fine-Tuning Language Models from Human Preferences'
+  Work panel listed the local copy and "Learning to Summarize from Human Feedback" under Cited by local papers
+  (`live.png`).
+- Failures in the bulk run: `The Library of Babel` (`pdftotext`: "Document stream is empty", unreadable PDF), and
+  one `duplicate key value violates unique constraint "work_identifier_work_id_scheme_value_normalized_key"` for
+  `AssemblyHands ... arXiv Version`. That paper shares its Work with the published AssemblyHands PDF, and the two
+  ran concurrently; rerun alone it succeeded (50 references). Follow-up: concurrent `lit` runs on two documents that
+  resolve to the same new Work race on identifier insertion; `claim`/`add_identifier` should use
+  `ON CONFLICT DO NOTHING` or serialize the job registry per Work.
