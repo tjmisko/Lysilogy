@@ -116,7 +116,21 @@ pub struct LiteratureOptions {
     pub label_limit: Option<usize>,
 }
 
+/// Run the job, then refresh prominence around the linked Work. A refresh
+/// problem is logged and never fails the job.
 async fn run_job(
+    state: &AppState,
+    id: &PaperId,
+    options: LiteratureOptions,
+) -> crate::Result<(LiteratureSummary, Option<LocalEvidenceSummary>)> {
+    let outcome = run_job_steps(state, id, options).await?;
+    if let Some(work) = outcome.0.work_id {
+        state.refresh_prominence_quietly(work, true).await;
+    }
+    Ok(outcome)
+}
+
+async fn run_job_steps(
     state: &AppState,
     id: &PaperId,
     options: LiteratureOptions,
@@ -620,6 +634,14 @@ mod tests {
         doi: String,
         openalex_id: String,
         title: String,
+        /// Also cites one stub Work and answers batch and metrics requests.
+        with_metrics: bool,
+    }
+
+    impl SlowTransport {
+        fn stub_id(&self) -> String {
+            format!("{}S", self.openalex_id)
+        }
     }
 
     impl JsonTransport for SlowTransport {
@@ -629,6 +651,26 @@ mod tests {
         ) -> ProviderFuture<'a, std::result::Result<Value, ProviderError>> {
             Box::pin(async move {
                 tokio::time::sleep(Duration::from_millis(300)).await;
+                if self.with_metrics && url.contains("filter=openalex:") {
+                    let ids = url
+                        .split("filter=openalex:")
+                        .nth(1)
+                        .and_then(|rest| rest.split('&').next())
+                        .unwrap_or_default();
+                    let metrics = url.contains("cited_by_count");
+                    let results: Vec<Value> = ids
+                        .split('|')
+                        .map(|id| {
+                            if metrics {
+                                json!({"id": format!("https://openalex.org/{id}"), "cited_by_count": 5})
+                            } else {
+                                json!({"id": format!("https://openalex.org/{id}"),
+                                       "display_name": "A Cited Stub", "publication_year": 2001})
+                            }
+                        })
+                        .collect();
+                    return Ok(json!({ "results": results }));
+                }
                 if url != work_url(&format!("doi:{}", self.doi)) {
                     return Err(ProviderError::Status(404));
                 }
@@ -636,7 +678,11 @@ mod tests {
                     "id": format!("https://openalex.org/{}", self.openalex_id),
                     "display_name": self.title,
                     "publication_year": 2013,
-                    "referenced_works": [],
+                    "referenced_works": if self.with_metrics {
+                        vec![format!("https://openalex.org/{}", self.stub_id())]
+                    } else {
+                        Vec::new()
+                    },
                 }))
             })
         }
@@ -660,12 +706,20 @@ mod tests {
     /// A state whose fake `pdftotext` prints a title and DOI that the fake
     /// provider knows, so `lit` links the paper to a Work.
     async fn linkable_state(graph: GraphState) -> (AppState, PaperId, std::path::PathBuf, String) {
+        linkable_state_with(graph, false).await
+    }
+
+    async fn linkable_state_with(
+        graph: GraphState,
+        with_metrics: bool,
+    ) -> (AppState, PaperId, std::path::PathBuf, String) {
         let marker = marker();
         let doi = format!("10.5555/{marker}");
         let transport = SlowTransport {
             doi: doi.clone(),
             openalex_id: format!("W9{marker}"),
             title: format!("The Study of Things {marker}"),
+            with_metrics,
         };
         let programs = tempfile::tempdir().expect("programs");
         let pdftotext = programs.path().join("pdftotext");
@@ -696,6 +750,121 @@ mod tests {
         std::mem::forget((programs, library, data));
         let paper_id = PaperId::from_relative_path(Path::new(&file_name));
         (state, paper_id, source, marker)
+    }
+
+    async fn linked_work_of(state: &AppState, paper_id: &PaperId) -> WorkId {
+        let (_, linked) = request(state, "GET", &format!("/api/papers/{paper_id}/work")).await;
+        linked["work"]["id"]
+            .as_str()
+            .expect("linked work id")
+            .parse()
+            .expect("work id")
+    }
+
+    #[tokio::test]
+    async fn should_refresh_prominence_after_lit_job_succeeds() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let (state, paper_id, _, _) = linkable_state_with(graph.clone(), true).await;
+        let uri = format!("/api/papers/{paper_id}/lit");
+        request(&state, "POST", &uri).await;
+        let json = poll_until_finished(&state, &uri).await;
+        assert_eq!(json["state"], "succeeded", "{json}");
+
+        let work = linked_work_of(&state, &paper_id).await;
+        let stubs = graph.citations.outgoing(work).await.expect("outgoing");
+        assert_eq!(stubs.len(), 1);
+        let workspace = graph
+            .documents
+            .ensure_default_workspace()
+            .await
+            .expect("workspace");
+        let rows = graph
+            .prominence
+            .cached(workspace, &[work, stubs[0].id])
+            .await
+            .expect("cached");
+        assert_eq!(rows.len(), 2, "linked Work and cited stub get rows");
+        for row in &rows {
+            assert_eq!(row.signals.cited_by_global_count, Some(5), "{row:?}");
+        }
+    }
+
+    #[tokio::test]
+    async fn should_not_fail_lit_job_when_prominence_refresh_fails() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        // This transport answers 404 to the metrics request.
+        let (state, paper_id, _, _) = linkable_state(graph.clone()).await;
+        let uri = format!("/api/papers/{paper_id}/lit");
+        request(&state, "POST", &uri).await;
+        let json = poll_until_finished(&state, &uri).await;
+        assert_eq!(json["state"], "succeeded", "{json}");
+        assert!(json.get("message").is_none(), "{json}");
+
+        let work = linked_work_of(&state, &paper_id).await;
+        let workspace = graph
+            .documents
+            .ensure_default_workspace()
+            .await
+            .expect("workspace");
+        let rows = graph
+            .prominence
+            .cached(workspace, &[work])
+            .await
+            .expect("cached");
+        assert_eq!(rows.len(), 1, "refresh continued without metrics");
+        assert_eq!(rows[0].signals.cited_by_global_count, None);
+    }
+
+    #[tokio::test]
+    async fn should_recompute_all_participating_works_when_scope_is_all() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let citing = graph
+            .works
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("citing");
+        let cited = graph
+            .works
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("cited");
+        graph
+            .citations
+            .add_assertion(citing.id, cited.id, None)
+            .await
+            .expect("assertion");
+        let fixture = fixture(Some(graph.clone()), |state| state).await;
+        let summary = fixture
+            .state
+            .recompute_prominence(crate::prominence::ProminenceScope::All, false)
+            .await
+            .expect("recompute");
+        assert!(summary.works >= 2, "{summary:?}");
+        assert_eq!(summary.metric_requests, 0);
+        let workspace = graph
+            .documents
+            .ensure_default_workspace()
+            .await
+            .expect("workspace");
+        let rows = graph
+            .prominence
+            .cached(workspace, &[citing.id, cited.id])
+            .await
+            .expect("cached");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(
+            rows[0].signals.citing_works_count + rows[1].signals.citing_works_count,
+            1
+        );
     }
 
     #[tokio::test]

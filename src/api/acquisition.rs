@@ -18,7 +18,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use lysilogy_core::{AcquisitionState, WorkId};
 use lysilogy_db::acquisition::AcquisitionRow;
-use lysilogy_ingest::acquire::AcquisitionSummary;
+use lysilogy_ingest::acquire::{AcquisitionOutcome, AcquisitionSummary};
 use serde::{Deserialize, Serialize};
 use tokio::sync::{Mutex, Semaphore};
 
@@ -110,7 +110,17 @@ impl AcquisitionJobs {
                     .acquire_owned()
                     .await
                     .map_err(|error| crate::Error::Acquisition(error.to_string()))?;
-                state.acquire_work(work, options.acquire_options()).await
+                let report = state.acquire_work(work, options.acquire_options()).await?;
+                if matches!(
+                    report.summary.outcome,
+                    AcquisitionOutcome::Mapped | AcquisitionOutcome::AlreadyLocal
+                ) {
+                    // Only this Work's local availability changed.
+                    state
+                        .refresh_prominence_alone_quietly(report.summary.work_id)
+                        .await;
+                }
+                Ok::<_, crate::Error>(report)
             })
             .await;
             let finished = match worker {
@@ -667,7 +677,7 @@ mod tests {
         body.extend_from_slice(marker().as_bytes());
         let url = format!("https://arxiv.org/pdf/{arxiv}");
         let fetcher = Arc::new(ScriptedFetcher::new().with(&url, ScriptedResponse::Pdf(body)));
-        let fixture = fixture(Some(graph), fetcher).await;
+        let fixture = fixture(Some(graph.clone()), fetcher).await;
         let (status, _) = request(
             &fixture.state,
             "POST",
@@ -699,6 +709,18 @@ mod tests {
         assert!(done["acquisition"].get("final_url").is_none(), "{done}");
         assert!(done["acquisition"].get("blob_id").is_none(), "{done}");
         assert!(fixture.library.path().join("Fetched").is_dir());
+        let workspace = graph
+            .documents
+            .ensure_default_workspace()
+            .await
+            .expect("workspace");
+        let rows = graph
+            .prominence
+            .cached(workspace, &[work])
+            .await
+            .expect("cached");
+        assert_eq!(rows.len(), 1, "mapping refreshes that Work");
+        assert!(rows[0].signals.local_available, "{:?}", rows[0]);
     }
 
     #[tokio::test]

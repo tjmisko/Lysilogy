@@ -91,6 +91,19 @@ impl AppState {
         }
     }
 
+    /// Recompute prominence for one Work only (no neighbors, no metrics),
+    /// logging instead of failing. For changes that touch only its own signals.
+    pub async fn refresh_prominence_alone_quietly(&self, work: WorkId) {
+        let refreshed = async {
+            let graph = self.prominence_graph()?;
+            self.refresh_prominence_for(graph, &[work], false).await
+        }
+        .await;
+        if let Err(error) = refreshed {
+            tracing::warn!(%work, %error, "prominence refresh failed");
+        }
+    }
+
     fn prominence_graph(&self) -> Result<&GraphState> {
         self.graph.as_ref().ok_or_else(|| {
             Error::InvalidRequest(
