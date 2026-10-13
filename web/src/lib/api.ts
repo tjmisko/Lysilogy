@@ -17,6 +17,9 @@ import type {
   EdgeLabel,
   EdgeLabelEdit,
   AcquisitionJobState,
+  ExpandWorkOptions,
+  ExpansionJob,
+  ExpansionStatus,
   AcquisitionStatus,
   FetchWorkOptions,
   GraphNeighbors,
@@ -26,6 +29,12 @@ import type {
   LiteratureJob,
   LiteratureOptions,
   PaperWork,
+  RampDetail,
+  RampItemAdd,
+  RampItemPatch,
+  RampItemView,
+  RampOrderRequest,
+  RampSummaryView,
   WorkCitations,
 } from "../types";
 
@@ -147,6 +156,36 @@ export const api = {
     }),
   workAcquisition: (workId: string, signal?: AbortSignal): Promise<AcquisitionStatus> =>
     request(`/api/works/${encodeURIComponent(workId)}/acquisition`, { signal }),
+  expandWork: (workId: string, body?: ExpandWorkOptions): Promise<ExpansionJob> =>
+    request(`/api/works/${encodeURIComponent(workId)}/expand`, {
+      method: "POST",
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    }),
+  expansionStatus: (workId: string, signal?: AbortSignal): Promise<ExpansionStatus> =>
+    request(`/api/works/${encodeURIComponent(workId)}/expansion`, { signal }),
+  listRamps: (seed?: string, signal?: AbortSignal): Promise<{ ramps: RampSummaryView[] }> =>
+    request(seed === undefined ? "/api/ramps" : `/api/ramps?seed=${encodeURIComponent(seed)}`, { signal }),
+  createRamp: (seedWorkId: string, title?: string): Promise<RampDetail> =>
+    request("/api/ramps", {
+      method: "POST",
+      body: JSON.stringify(title === undefined ? { seed_work_id: seedWorkId } : { seed_work_id: seedWorkId, title }),
+    }),
+  ramp: (rampId: string, signal?: AbortSignal): Promise<RampDetail> =>
+    request(`/api/ramps/${encodeURIComponent(rampId)}`, { signal }),
+  renameRamp: (rampId: string, title: string): Promise<RampSummaryView> =>
+    request(`/api/ramps/${encodeURIComponent(rampId)}`, { method: "PATCH", body: JSON.stringify({ title }) }),
+  deleteRamp: (rampId: string): Promise<void> => sendWithoutBody(`/api/ramps/${encodeURIComponent(rampId)}`, "DELETE"),
+  addRampItem: (rampId: string, item: RampItemAdd): Promise<RampItemView> =>
+    request(`/api/ramps/${encodeURIComponent(rampId)}/items`, { method: "POST", body: JSON.stringify(item) }),
+  updateRampItem: (rampId: string, workId: string, patch: RampItemPatch): Promise<RampItemView> =>
+    request(`/api/ramps/${encodeURIComponent(rampId)}/items/${encodeURIComponent(workId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
+  removeRampItem: (rampId: string, workId: string): Promise<void> =>
+    sendWithoutBody(`/api/ramps/${encodeURIComponent(rampId)}/items/${encodeURIComponent(workId)}`, "DELETE"),
+  orderRamp: (rampId: string, order: RampOrderRequest): Promise<RampDetail> =>
+    request(`/api/ramps/${encodeURIComponent(rampId)}/order`, { method: "PUT", body: JSON.stringify(order) }),
   graphNeighbors: (
     workId: string,
     direction: GraphNeighbors["direction"] = "references",

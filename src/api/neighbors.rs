@@ -19,6 +19,7 @@ use super::{
     fetch_work, graph_error, graph_or_unavailable, graph_query_failure, labels, literature,
     parse_work_id,
 };
+use crate::expansion::ExpansionView;
 use crate::graph::GraphState;
 use crate::relevance::{Cluster, NeighborCandidate, RankingRequest, TagRef, rank_neighborhood};
 
@@ -68,6 +69,7 @@ struct NeighborsResponse {
     marks: Marks,
     work_tags: WorkTagIds,
     clusters: Vec<Cluster>,
+    expansions: BTreeMap<String, ExpansionView>,
 }
 
 #[allow(clippy::unnecessary_box_returns)]
@@ -241,6 +243,17 @@ pub(super) async fn get_graph_neighbors(
     }
 }
 
+async fn expansions_for(
+    state: &AppState,
+    graph: &GraphState,
+    works: &[WorkId],
+) -> Result<BTreeMap<String, ExpansionView>, GraphError> {
+    state
+        .expansion_views_raw(graph, works)
+        .await
+        .map_err(|error| Box::new(graph_query_failure(&error)))
+}
+
 async fn neighbors_response(
     state: &AppState,
     id: &str,
@@ -311,6 +324,7 @@ async fn neighbors_response(
     let edges = labels::edge_payloads(state, &shown_pairs).await?;
     let local_papers = literature::local_papers_for(state, &shown_ids).await?;
     let acquisitions = acquisition::states_for(state, &shown_ids).await?;
+    let expansions = expansions_for(state, graph, &shown_ids).await?;
     let prominence_payload = shown_ids
         .iter()
         .filter_map(|id| {
@@ -343,6 +357,7 @@ async fn neighbors_response(
         marks: rows.marks_payload(&shown_ids),
         work_tags: rows.work_tags_payload(&shown_ids),
         clusters: ranked.clusters,
+        expansions,
     };
     Ok(Box::new((StatusCode::OK, Json(body)).into_response()))
 }
@@ -352,8 +367,10 @@ mod tests {
     use axum::{body::Body, http::Request};
     use http_body_util::BodyExt;
     use lysilogy_core::{
-        Coverage, TagColor, TagKind, TagName, Visibility, WorkKind, WorkMark, WorkspaceId,
+        Coverage, ExpansionMethod, ExpansionState, ExpansionUnavailableReason, TagColor, TagKind,
+        TagName, Visibility, WorkKind, WorkMark, WorkspaceId,
     };
+    use lysilogy_db::expansion::NewExpansion;
     use serde_json::Value;
     use tower::ServiceExt;
 
@@ -493,6 +510,116 @@ mod tests {
             .iter()
             .map(|cluster| cluster["count"].as_u64().expect("count"))
             .sum()
+    }
+
+    fn ledger(work_id: WorkId, state: ExpansionState) -> NewExpansion {
+        NewExpansion {
+            work_id,
+            state,
+            method: (state == ExpansionState::Expanded).then_some(ExpansionMethod::Provider),
+            unavailable_reason: (state == ExpansionState::Unavailable)
+                .then_some(ExpansionUnavailableReason::ProviderNotFound),
+            provider_key: None,
+            source_record_id: None,
+            references_count: if state == ExpansionState::Expanded {
+                7
+            } else {
+                0
+            },
+            new_works: 0,
+            warnings: Vec::new(),
+        }
+    }
+
+    #[tokio::test]
+    async fn should_include_expansions_for_center_and_visible_nodes_when_reading_neighbors() {
+        let Some(graph) = test_graph().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let seeded = seed(graph, 4, |n| [0.9, 0.8, 0.7, 0.6][n]).await;
+        let graph = &seeded.graph;
+        let [expanded, unavailable, known, unknown] = [
+            seeded.cited[0],
+            seeded.cited[1],
+            seeded.cited[2],
+            seeded.cited[3],
+        ];
+        graph
+            .expansions
+            .record(ledger(seeded.center, ExpansionState::Expanded))
+            .await
+            .expect("center row");
+        graph
+            .expansions
+            .record(ledger(expanded, ExpansionState::Expanded))
+            .await
+            .expect("expanded row");
+        graph
+            .expansions
+            .record(ledger(unavailable, ExpansionState::Unavailable))
+            .await
+            .expect("unavailable row");
+        let grandchild = graph
+            .works
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("grandchild")
+            .id;
+        graph
+            .citations
+            .add_assertion(known, grandchild, None)
+            .await
+            .expect("known fanout");
+
+        let fixture = fixture(Some(seeded.graph.clone())).await;
+        let (status, json) = get(
+            &fixture.state,
+            &format!("/api/graph/neighbors/{}", seeded.center),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        let views = &json["expansions"];
+        assert_eq!(
+            views[seeded.center.to_string()]["state"],
+            "expanded",
+            "{json}"
+        );
+        let view = &views[expanded.to_string()];
+        assert_eq!(view["state"], "expanded");
+        assert_eq!(view["method"], "provider");
+        assert_eq!(view["references_count"], 7);
+        assert!(view["expanded_at"].is_string(), "{view}");
+        let view = &views[unavailable.to_string()];
+        assert_eq!(view["state"], "unavailable");
+        assert_eq!(view["unavailable_reason"], "provider_not_found");
+        assert!(view["method"].is_null());
+        let view = &views[known.to_string()];
+        assert_eq!(view["state"], "known");
+        assert_eq!(view["references_count"], 1);
+        assert!(
+            view["method"].is_null() && view["expanded_at"].is_null(),
+            "{view}"
+        );
+        assert!(
+            views.get(unknown.to_string()).is_none(),
+            "unknown fanout has no entry: {views}"
+        );
+
+        let (_, limited) = get(
+            &fixture.state,
+            &format!("/api/graph/neighbors/{}?limit=1", seeded.center),
+        )
+        .await;
+        let keys: Vec<&String> = limited["expansions"]
+            .as_object()
+            .expect("map")
+            .keys()
+            .collect();
+        assert!(
+            keys.iter().all(|key| { node_ids(&limited).contains(key) }),
+            "only visible nodes carry entries: {limited}"
+        );
     }
 
     #[tokio::test]

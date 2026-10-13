@@ -10,10 +10,12 @@ use std::{
 mod acquisition;
 mod citation_graph;
 mod curation;
+mod expansion;
 mod labels;
 mod literature;
 mod neighbors;
 mod notes;
+mod ramps;
 mod reader_tools;
 mod source_index;
 mod vimrc;
@@ -37,7 +39,10 @@ use tokio::{
 };
 use tokio_util::io::ReaderStream;
 
-use self::acquisition::AcquisitionStates;
+pub(crate) use self::acquisition::states_for;
+pub use self::acquisition::{AcquisitionBrief, AcquisitionStates};
+pub(crate) use self::literature::local_papers_for;
+pub use self::literature::{LocalPaper, LocalPapers};
 use crate::{
     Result,
     analysis::{AnalysisService, validate_citations},
@@ -77,6 +82,7 @@ pub struct AppState {
     pub(crate) literature: crate::literature::LiteratureClient,
     literature_jobs: literature::LiteratureJobs,
     acquisition_jobs: acquisition::AcquisitionJobs,
+    expansion_jobs: expansion::ExpansionJobs,
     pub(crate) acquisition_throttle: Arc<lysilogy_ingest::acquire::HostThrottle>,
     pub(crate) acquisition_fetcher: crate::acquisition::SharedFetcher,
     jobs: JobTracker,
@@ -172,6 +178,7 @@ impl AppState {
             literature: crate::literature::LiteratureClient::from_environment()?,
             literature_jobs: literature::LiteratureJobs::default(),
             acquisition_jobs: acquisition::AcquisitionJobs::default(),
+            expansion_jobs: expansion::ExpansionJobs::default(),
             acquisition_throttle: Arc::new(lysilogy_ingest::acquire::HostThrottle::polite()),
             acquisition_fetcher: crate::acquisition::SharedFetcher::default(),
             frontend_root: None,
@@ -1837,6 +1844,8 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(citation_graph::routes())
         .merge(literature::routes())
         .merge(acquisition::routes())
+        .merge(expansion::routes())
+        .merge(ramps::routes())
         .merge(curation::routes())
         .merge(labels::routes())
         .merge(source_index::routes())

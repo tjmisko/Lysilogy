@@ -9,8 +9,10 @@ use std::{
 
 use clap::{Parser, Subcommand, ValueEnum};
 use lysilogy::acquisition::{AcquireOptions, AcquireReport};
+use lysilogy::expansion::{ExpandOptions, ExpansionReport, WalkReport};
 use lysilogy::literature::evidence::LOCAL_EVIDENCE_REQUIRES_WORK;
 use lysilogy::prominence::ProminenceScope;
+use lysilogy::ramps::{RampDetail, RampItemView, RampSummaryView};
 use lysilogy::{
     AppState, Error, Result, build_router,
     domain::{
@@ -19,6 +21,7 @@ use lysilogy::{
     },
 };
 use lysilogy::{analysis::LocalCliAnalyzer, labeling::SidecarLabeler};
+use lysilogy_core::{ExpansionState, RampItemStatus, WALK_EXPANSIONS_MAX, WalkBounds, WorkId};
 use lysilogy_ingest::acquire::AcquisitionOutcome;
 use lysilogy_ingest::labels::{LabelOptions, LabelSummary};
 use lysilogy_ingest::literature::{LiteratureStatus, LiteratureSummary};
@@ -81,6 +84,63 @@ struct LabelRun {
     sidecar: LabelSidecar,
     limit: usize,
     scratch: PathBuf,
+}
+
+/// Reading-ramp subcommands. `<ramp>` is a `p...` ID or a unique title prefix; `<work>`
+/// is a `w...` ID, an `OpenAlex` `W...` ID, `doi:<doi>`, or `arxiv:<id>`.
+#[derive(Debug, Subcommand)]
+enum RampCommand {
+    /// Create a ramp seeded at a Work.
+    New {
+        work: String,
+        /// Treat <work> as a paper (path, ID, or title fragment) and use the Work it is linked to.
+        #[arg(long)]
+        paper: bool,
+        /// Ramp title; defaults to the seed's title.
+        #[arg(long)]
+        title: Option<String>,
+    },
+    /// List ramps, most recently updated first.
+    List,
+    /// Print a ramp's items in order.
+    Show { ramp: String },
+    /// Add a Work, optionally reached from an item that cites it.
+    Add {
+        ramp: String,
+        work: String,
+        /// The ramp item this Work was reached from.
+        #[arg(long)]
+        via: Option<String>,
+        #[arg(long)]
+        note: Option<String>,
+    },
+    /// Change an item's status or note.
+    Set {
+        ramp: String,
+        work: String,
+        #[arg(
+            long,
+            value_parser = lysilogy::ramps::parse_status,
+            required_unless_present_any = ["note", "clear_note"]
+        )]
+        status: Option<RampItemStatus>,
+        #[arg(long, conflicts_with = "clear_note")]
+        note: Option<String>,
+        #[arg(long)]
+        clear_note: bool,
+    },
+    /// Remove an item (not the seed).
+    Remove { ramp: String, work: String },
+    /// Reorder a ramp: suggest "foundational first", or list every item once.
+    Order {
+        ramp: String,
+        #[arg(long, conflicts_with = "works")]
+        suggest: bool,
+        #[arg(required_unless_present = "suggest")]
+        works: Vec<String>,
+    },
+    /// Delete a ramp and its items.
+    Delete { ramp: String },
 }
 
 #[derive(Debug, Subcommand)]
@@ -195,6 +255,32 @@ enum Command {
         /// Let a local model pick the PDF link on publisher landing pages.
         #[arg(long, value_enum)]
         model_fallback: Option<LabelSidecar>,
+    },
+    /// Make a Work's references known and optionally walk backward from it (needs `LYSILOGY_DATABASE_URL`).
+    Expand {
+        /// A Work: a w... ID, an `OpenAlex` W... ID, `doi:<doi>`, or `arxiv:<id>`.
+        /// With --paper: a PDF path inside the library, a paper ID, or a title fragment.
+        work: String,
+        /// Treat <work> as a paper and expand the Work it is linked to.
+        #[arg(long)]
+        paper: bool,
+        /// How many levels to walk (1 is just this Work).
+        #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..=3))]
+        depth: u8,
+        /// How many children per Work to expand at each further level.
+        #[arg(long, default_value_t = 5, value_parser = clap::value_parser!(u8).range(1..=10))]
+        fanout: u8,
+        /// Rerun the flow even when the references are already known.
+        #[arg(long)]
+        refresh: bool,
+        /// For papers held locally, skip the local bibliography and in-text evidence.
+        #[arg(long)]
+        no_local: bool,
+    },
+    /// Build and manage reading ramps: ordered paths backward through a seed's references (needs `LYSILOGY_DATABASE_URL`).
+    Ramp {
+        #[command(subcommand)]
+        command: RampCommand,
     },
     /// Analyze all papers that are not ready, continuing past individual faults.
     Ingest {
@@ -439,6 +525,22 @@ async fn run(cli: Cli) -> Result<()> {
                 )),
             }
         }
+        Command::Expand {
+            work,
+            paper,
+            depth,
+            fanout,
+            refresh,
+            no_local,
+        } => {
+            let options = ExpandOptions {
+                bounds: WalkBounds { depth, fanout },
+                refresh,
+                local: !no_local,
+            };
+            expand_command(&state, &cli.library, &work, paper, options).await
+        }
+        Command::Ramp { command } => ramp_command(&state, &cli.library, command).await,
         Command::RefreshStructure {
             query,
             provider,
@@ -1144,6 +1246,270 @@ async fn fetch_work_command(state: &AppState, text: &str, options: AcquireOption
     Ok(())
 }
 
+async fn expand_command(
+    state: &AppState,
+    library: &std::path::Path,
+    text: &str,
+    paper: bool,
+    options: ExpandOptions,
+) -> Result<()> {
+    let seed = if paper {
+        let id = resolve_lit_target(state, library, text).await?;
+        state.linked_work(&id).await?
+    } else {
+        state.resolve_work_argument(text).await?
+    };
+    let started = std::time::Instant::now();
+    let report = state.walk_from(seed, options).await?;
+    let works: Vec<WorkId> = report
+        .expansions
+        .iter()
+        .map(|expansion| expansion.work_id)
+        .collect();
+    let titles = state.work_titles(&works).await?;
+    print!(
+        "{}",
+        render_walk_report(&report, &titles, started.elapsed().as_secs_f64())
+    );
+    Ok(())
+}
+
+/// A Work for a ramp command: a Work reference, or with `paper` the Work a paper is linked to.
+async fn resolve_ramp_work(
+    state: &AppState,
+    library: &std::path::Path,
+    text: &str,
+    paper: bool,
+) -> Result<WorkId> {
+    if paper {
+        let id = resolve_lit_target(state, library, text).await?;
+        return state.linked_work(&id).await;
+    }
+    state.resolve_work_argument(text).await
+}
+
+async fn ramp_command(
+    state: &AppState,
+    library: &std::path::Path,
+    command: RampCommand,
+) -> Result<()> {
+    match command {
+        RampCommand::New { work, paper, title } => {
+            let seed = resolve_ramp_work(state, library, &work, paper).await?;
+            let title = title
+                .as_deref()
+                .map(lysilogy::ramps::parse_title)
+                .transpose()?;
+            let detail = state.create_ramp(seed, title).await?;
+            print!("{}", render_ramp_detail(&detail));
+        }
+        RampCommand::List => {
+            let ramps = state.list_ramps(None).await?;
+            print!("{}", render_ramp_list(&ramps));
+        }
+        RampCommand::Show { ramp } => {
+            let ramp = state.ramp_reference(&ramp).await?;
+            print!("{}", render_ramp_detail(&state.ramp_detail(ramp).await?));
+        }
+        RampCommand::Add {
+            ramp,
+            work,
+            via,
+            note,
+        } => {
+            let ramp = state.ramp_reference(&ramp).await?;
+            let work = state.resolve_work_argument(&work).await?;
+            let via = match via {
+                Some(via) => Some(state.resolve_work_argument(&via).await?),
+                None => None,
+            };
+            let note = lysilogy::ramps::parse_note(note.as_deref())?;
+            let item = state.add_ramp_item(ramp, work, via, note).await?;
+            println!("Added: {}", render_ramp_item_line(&item, None));
+        }
+        RampCommand::Set {
+            ramp,
+            work,
+            status,
+            note,
+            clear_note,
+        } => {
+            let ramp = state.ramp_reference(&ramp).await?;
+            let work = state.resolve_work_argument(&work).await?;
+            let note = if clear_note {
+                Some(None)
+            } else {
+                note.map(|note| lysilogy::ramps::parse_note(Some(&note)))
+                    .transpose()?
+            };
+            let item = state.update_ramp_item(ramp, work, status, note).await?;
+            println!("Updated: {}", render_ramp_item_line(&item, None));
+        }
+        RampCommand::Remove { ramp, work } => {
+            let ramp = state.ramp_reference(&ramp).await?;
+            let work = state.resolve_work_argument(&work).await?;
+            state.remove_ramp_item(ramp, work).await?;
+            println!("Removed.");
+        }
+        RampCommand::Order {
+            ramp,
+            suggest,
+            works,
+        } => {
+            let ramp = state.ramp_reference(&ramp).await?;
+            let detail = if suggest {
+                state.suggest_ramp_order(ramp).await?
+            } else {
+                let mut order = Vec::with_capacity(works.len());
+                for work in &works {
+                    order.push(state.resolve_work_argument(work).await?);
+                }
+                state.reorder_ramp(ramp, &order).await?
+            };
+            print!("{}", render_ramp_detail(&detail));
+        }
+        RampCommand::Delete { ramp } => {
+            let ramp = state.ramp_reference(&ramp).await?;
+            state.delete_ramp(ramp).await?;
+            println!("Deleted.");
+        }
+    }
+    Ok(())
+}
+
+fn render_ramp_list(ramps: &[RampSummaryView]) -> String {
+    if ramps.is_empty() {
+        return "No ramps.\n".to_owned();
+    }
+    let mut text = String::new();
+    for ramp in ramps {
+        let _ = writeln!(
+            text,
+            "{}  {} ({} items: {} unread, {} reading, {} read)",
+            ramp.id,
+            ramp.title,
+            ramp.item_count,
+            ramp.status_counts.unread,
+            ramp.status_counts.reading,
+            ramp.status_counts.read
+        );
+    }
+    text
+}
+
+/// One item: `<ordinal>. [<status>] <title> (<year>) · depth <d> · via <title> · <local>`.
+/// `local` is `held`, `fetch:<state>`, or a dash; it is left off when `None`.
+fn render_ramp_item_line(item: &RampItemView, local: Option<&str>) -> String {
+    let title = item
+        .work
+        .display_title
+        .clone()
+        .unwrap_or_else(|| item.work.id.to_string());
+    let year = item
+        .work
+        .display_year
+        .map_or_else(|| "n.d.".to_owned(), |year| year.to_string());
+    let mut line = format!(
+        "{}. [{}] {title} ({year}) · depth {}",
+        item.ordinal, item.status, item.depth
+    );
+    if let Some(via) = item.via_work_id {
+        let via_title = item
+            .path
+            .iter()
+            .find(|step| step.work_id == via)
+            .and_then(|step| step.title.clone())
+            .unwrap_or_else(|| via.to_string());
+        let _ = write!(line, " · via {via_title}");
+    }
+    if let Some(local) = local {
+        let _ = write!(line, " · {local}");
+    }
+    line
+}
+
+fn render_ramp_detail(detail: &RampDetail) -> String {
+    let mut text = format!(
+        "{} ({}) · {} items\n",
+        detail.ramp.title, detail.ramp.id, detail.ramp.item_count
+    );
+    for item in &detail.items {
+        let key = item.work.id.to_string();
+        let local = if detail.local_papers.contains_key(&key) {
+            "held".to_owned()
+        } else {
+            detail
+                .acquisitions
+                .get(&key)
+                .map_or_else(|| "—".to_owned(), |brief| format!("fetch:{}", brief.state))
+        };
+        let _ = writeln!(text, "{}", render_ramp_item_line(item, Some(&local)));
+        if let Some(note) = &item.note {
+            let _ = writeln!(text, "    note: {note}");
+        }
+    }
+    text
+}
+
+fn render_expansion_line(report: &ExpansionReport, titles: &BTreeMap<WorkId, String>) -> String {
+    let title = titles
+        .get(&report.work_id)
+        .map_or_else(|| report.work_id.to_string(), Clone::clone);
+    let method = report
+        .method
+        .map_or_else(String::new, |method| method.to_string());
+    let outcome = match (report.state, report.cached) {
+        (ExpansionState::Expanded, true) => {
+            format!("cached ({method}, {} references)", report.references)
+        }
+        (ExpansionState::Expanded, false) => format!(
+            "expanded ({method}, {} references, {} new)",
+            report.references, report.new_works
+        ),
+        (ExpansionState::Unavailable, cached) => {
+            let reason = report
+                .unavailable_reason
+                .map_or_else(|| "unknown".to_owned(), |reason| reason.to_string());
+            if cached {
+                format!("unavailable ({reason}, cached)")
+            } else {
+                format!("unavailable ({reason})")
+            }
+        }
+    };
+    let mut line = format!("{title}: {outcome}");
+    if let Some(paper) = &report.paper_id {
+        let _ = write!(line, " [paper {paper}]");
+    }
+    for warning in &report.warnings {
+        let _ = write!(line, "\n  warning: {warning}");
+    }
+    line
+}
+
+fn render_walk_report(
+    report: &WalkReport,
+    titles: &BTreeMap<WorkId, String>,
+    seconds: f64,
+) -> String {
+    let mut text = String::new();
+    for expansion in &report.expansions {
+        let _ = writeln!(text, "{}", render_expansion_line(expansion, titles));
+    }
+    let truncated = if report.truncated {
+        format!(", truncated at {WALK_EXPANSIONS_MAX} expansions")
+    } else {
+        String::new()
+    };
+    let _ = writeln!(
+        text,
+        "Walked {} levels, {} expansions{truncated} in {seconds:.1} s",
+        report.levels,
+        report.expansions.len()
+    );
+    text
+}
+
 async fn fetch_cited_by_command(
     state: &AppState,
     library: &std::path::Path,
@@ -1776,6 +2142,278 @@ mod tests {
                 fetch_metrics: true
             })
         ));
+    }
+
+    fn ramp_command_of(arguments: &[&str]) -> Option<RampCommand> {
+        let mut full = vec!["lysilogy", "ramp"];
+        full.extend_from_slice(arguments);
+        match Cli::try_parse_from(full).ok()?.command {
+            Some(Command::Ramp { command }) => Some(command),
+            _ => None,
+        }
+    }
+
+    #[test]
+    fn should_parse_ramp_subcommands_when_arguments_valid() {
+        assert!(matches!(
+            ramp_command_of(&["new", "doi:10.1/x", "--title", "T"]),
+            Some(RampCommand::New {
+                paper: false,
+                title: Some(_),
+                ..
+            })
+        ));
+        assert!(matches!(
+            ramp_command_of(&["new", "Some title", "--paper"]),
+            Some(RampCommand::New {
+                paper: true,
+                title: None,
+                ..
+            })
+        ));
+        assert!(matches!(
+            ramp_command_of(&["list"]),
+            Some(RampCommand::List)
+        ));
+        assert!(matches!(
+            ramp_command_of(&["show", "Learning"]),
+            Some(RampCommand::Show { .. })
+        ));
+        assert!(matches!(
+            ramp_command_of(&["add", "p1", "w1", "--via", "w2", "--note", "n"]),
+            Some(RampCommand::Add {
+                via: Some(_),
+                note: Some(_),
+                ..
+            })
+        ));
+        assert!(matches!(
+            ramp_command_of(&["set", "p1", "w1", "--status", "reading"]),
+            Some(RampCommand::Set {
+                status: Some(RampItemStatus::Reading),
+                clear_note: false,
+                ..
+            })
+        ));
+        assert!(matches!(
+            ramp_command_of(&["set", "p1", "w1", "--clear-note"]),
+            Some(RampCommand::Set {
+                status: None,
+                clear_note: true,
+                ..
+            })
+        ));
+        assert!(matches!(
+            ramp_command_of(&["remove", "p1", "w1"]),
+            Some(RampCommand::Remove { .. })
+        ));
+        assert!(matches!(
+            ramp_command_of(&["order", "p1", "--suggest"]),
+            Some(RampCommand::Order {
+                suggest: true,
+                works,
+                ..
+            }) if works.is_empty()
+        ));
+        assert!(matches!(
+            ramp_command_of(&["order", "p1", "w1", "w2", "w3"]),
+            Some(RampCommand::Order {
+                suggest: false,
+                works,
+                ..
+            }) if works.len() == 3
+        ));
+        assert!(matches!(
+            ramp_command_of(&["delete", "p1"]),
+            Some(RampCommand::Delete { .. })
+        ));
+        for arguments in [
+            vec!["lysilogy", "ramp"],
+            vec!["lysilogy", "ramp", "show"],
+            vec!["lysilogy", "ramp", "add", "p1"],
+            vec!["lysilogy", "ramp", "set", "p1", "w1", "--status", "done"],
+            vec!["lysilogy", "ramp", "frobnicate"],
+        ] {
+            assert!(
+                Cli::try_parse_from(arguments.clone()).is_err(),
+                "{arguments:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn should_reject_order_without_suggest_or_works_when_parsing() {
+        assert!(ramp_command_of(&["order", "p1"]).is_none());
+        assert!(ramp_command_of(&["order", "p1", "--suggest", "w1"]).is_none());
+    }
+
+    #[test]
+    fn should_reject_note_with_clear_note_when_parsing_set() {
+        assert!(ramp_command_of(&["set", "p1", "w1", "--note", "n", "--clear-note"]).is_none());
+        assert!(
+            ramp_command_of(&["set", "p1", "w1"]).is_none(),
+            "set needs something to change"
+        );
+        assert!(ramp_command_of(&["set", "p1", "w1", "--note", "n"]).is_some());
+    }
+
+    #[test]
+    fn should_render_ramp_item_line_with_via_and_local_state() {
+        use lysilogy::ramps::PathStep;
+        use lysilogy_core::{FieldState, Visibility, WorkKind};
+        let (seed, child) = (WorkId::new(), WorkId::new());
+        let now = chrono::Utc::now();
+        let item = RampItemView {
+            work: lysilogy_core::Work {
+                id: child,
+                kind: WorkKind::Article,
+                visibility: Visibility::Private,
+                display_title: Some("Child".to_owned()),
+                title_state: FieldState::Known,
+                display_year: Some(2019),
+                year_state: FieldState::Known,
+                created_at: now,
+                updated_at: now,
+            },
+            ordinal: 2,
+            depth: 1,
+            via_work_id: Some(seed),
+            path: vec![
+                PathStep {
+                    work_id: seed,
+                    title: Some("Seed".to_owned()),
+                },
+                PathStep {
+                    work_id: child,
+                    title: Some("Child".to_owned()),
+                },
+            ],
+            status: RampItemStatus::Reading,
+            note: None,
+            added_at: now,
+            updated_at: now,
+            status_changed_at: None,
+        };
+        assert_eq!(
+            render_ramp_item_line(&item, Some("held")),
+            "2. [reading] Child (2019) · depth 1 · via Seed · held"
+        );
+        assert_eq!(
+            render_ramp_item_line(&item, None),
+            "2. [reading] Child (2019) · depth 1 · via Seed"
+        );
+    }
+
+    #[test]
+    fn should_reject_depth_and_fanout_out_of_range_when_parsing_expand_command() {
+        for arguments in [
+            vec!["lysilogy", "expand", "w1", "--depth", "0"],
+            vec!["lysilogy", "expand", "w1", "--depth", "4"],
+            vec!["lysilogy", "expand", "w1", "--depth", "-1"],
+            vec!["lysilogy", "expand", "w1", "--depth", "256"],
+            vec!["lysilogy", "expand", "w1", "--fanout", "0"],
+            vec!["lysilogy", "expand", "w1", "--fanout", "11"],
+            vec!["lysilogy", "expand", "w1", "--fanout", "many"],
+            vec!["lysilogy", "expand"],
+        ] {
+            assert!(
+                Cli::try_parse_from(arguments.clone()).is_err(),
+                "{arguments:?}"
+            );
+        }
+        let defaults = Cli::try_parse_from(["lysilogy", "expand", "doi:10.1/x"]).expect("defaults");
+        assert!(matches!(
+            defaults.command,
+            Some(Command::Expand {
+                paper: false,
+                depth: 1,
+                fanout: 5,
+                refresh: false,
+                no_local: false,
+                ..
+            })
+        ));
+        let bounded = Cli::try_parse_from([
+            "lysilogy",
+            "expand",
+            "Title",
+            "--paper",
+            "--depth",
+            "3",
+            "--fanout",
+            "10",
+            "--refresh",
+            "--no-local",
+        ])
+        .expect("bounded");
+        assert!(matches!(
+            bounded.command,
+            Some(Command::Expand {
+                paper: true,
+                depth: 3,
+                fanout: 10,
+                refresh: true,
+                no_local: true,
+                ..
+            })
+        ));
+    }
+
+    fn expansion_report(work_id: WorkId, state: ExpansionState) -> ExpansionReport {
+        ExpansionReport {
+            work_id,
+            cached: false,
+            state,
+            method: None,
+            unavailable_reason: None,
+            references: 0,
+            new_works: 0,
+            paper_id: None,
+            warnings: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn should_render_one_line_per_expansion_and_a_walk_summary_when_walking() {
+        let (first, second, third) = (WorkId::new(), WorkId::new(), WorkId::new());
+        let mut expanded = expansion_report(first, ExpansionState::Expanded);
+        expanded.method = Some(lysilogy_core::ExpansionMethod::Provider);
+        expanded.references = 12;
+        expanded.new_works = 4;
+        expanded.warnings.push("local_flow_unmatched".to_owned());
+        let mut cached = expansion_report(second, ExpansionState::Expanded);
+        cached.cached = true;
+        cached.method = Some(lysilogy_core::ExpansionMethod::Existing);
+        cached.references = 7;
+        let mut unavailable = expansion_report(third, ExpansionState::Unavailable);
+        unavailable.unavailable_reason =
+            Some(lysilogy_core::ExpansionUnavailableReason::ProviderNotFound);
+        let report = WalkReport {
+            seed: first,
+            expansions: vec![expanded, cached, unavailable],
+            levels: 2,
+            truncated: true,
+        };
+        let titles = BTreeMap::from([(first, "First Paper".to_owned())]);
+        let text = render_walk_report(&report, &titles, 1.26);
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(
+            lines[0],
+            "First Paper: expanded (provider, 12 references, 4 new)"
+        );
+        assert_eq!(lines[1], "  warning: local_flow_unmatched");
+        assert_eq!(
+            lines[2],
+            format!("{second}: cached (existing, 7 references)")
+        );
+        assert_eq!(
+            lines[3],
+            format!("{third}: unavailable (provider_not_found)")
+        );
+        assert_eq!(
+            lines[4],
+            "Walked 2 levels, 3 expansions, truncated at 40 expansions in 1.3 s"
+        );
     }
 
     #[test]

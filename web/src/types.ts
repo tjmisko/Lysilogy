@@ -584,6 +584,56 @@ export type GraphNeighbors = {
   marks?: Record<string, MarkView>;
   work_tags?: Record<string, string[]>;
   clusters?: NeighborCluster[];
+  /** Expansion state per Work (Ramp E servers); the UI tolerates its absence. */
+  expansions?: Record<string, ExpansionView>;
+};
+
+export type ExpansionViewState = "expanded" | "unavailable" | "known";
+
+export type ExpansionView = {
+  state: ExpansionViewState;
+  method: "provider" | "local" | "existing" | null;
+  references_count: number;
+  unavailable_reason: string | null;
+  expanded_at: string | null;
+};
+
+export type ExpansionReport = {
+  work_id: string;
+  cached: boolean;
+  state: "expanded" | "unavailable";
+  method: "provider" | "local" | "existing" | null;
+  unavailable_reason: string | null;
+  references: number;
+  new_works: number;
+  paper_id: string | null;
+  warnings: string[];
+};
+
+export type WalkReport = {
+  seed: string;
+  expansions: ExpansionReport[];
+  levels: number;
+  truncated: boolean;
+};
+
+export type ExpansionJob = {
+  state: AcquisitionJobState;
+  report?: WalkReport;
+  message?: string;
+};
+
+export type ExpansionStatus = {
+  work_id: string;
+  job: ExpansionJob;
+  expansion: ExpansionView | null;
+};
+
+export type ExpandWorkOptions = {
+  depth?: number;
+  fanout?: number;
+  refresh?: boolean;
+  local?: boolean;
 };
 
 export type WorkLinkMethod = "identifier" | "title_match" | "manual" | "acquisition";
@@ -641,3 +691,47 @@ export type LiteratureJob = {
   local?: LocalEvidenceSummary;
   message?: string;
 };
+
+export type RampItemStatus = "unread" | "reading" | "read";
+
+export type RampStatusCounts = Record<RampItemStatus, number>;
+
+export type RampSummaryView = {
+  id: string;
+  title: string;
+  seed_work_id: string;
+  seed_title: string | null;
+  item_count: number;
+  status_counts: RampStatusCounts;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RampPathStep = { work_id: string; title: string | null };
+
+export type RampItemView = {
+  work: Work;
+  /** Dense position, counting from 1. */
+  ordinal: number;
+  depth: number;
+  via_work_id: string | null;
+  /** The walk from the seed to this Work, both included. */
+  path: RampPathStep[];
+  status: RampItemStatus;
+  note: string | null;
+  added_at: string;
+  updated_at: string;
+  status_changed_at: string | null;
+};
+
+export type RampDetail = {
+  ramp: RampSummaryView;
+  items: RampItemView[];
+  local_papers: LocalPapersByWork;
+  acquisitions: AcquisitionsByWork;
+  expansions: Record<string, ExpansionView>;
+};
+
+export type RampItemAdd = { work_id: string; via_work_id?: string; note?: string };
+export type RampItemPatch = { status?: RampItemStatus; note?: string | null };
+export type RampOrderRequest = { work_ids: string[] } | { strategy: "foundational_first" };

@@ -37,6 +37,21 @@ impl WorkRepository {
         row.as_ref().map(work_from_row).transpose()
     }
 
+    /// Fetch several Works in one query. Unknown IDs are omitted; order is unspecified.
+    pub async fn get_many(&self, ids: &[WorkId]) -> Result<Vec<Work>> {
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let uuids: Vec<uuid::Uuid> = ids.iter().map(|id| id.as_uuid()).collect();
+        let rows = sqlx::query(&format!(
+            "select {WORK_COLUMNS} from graph.work w where w.id = any($1)"
+        ))
+        .bind(&uuids)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter().map(work_from_row).collect()
+    }
+
     /// Find the Work that currently owns an active identifier.
     pub async fn find_by_identifier(
         &self,
@@ -620,7 +635,8 @@ async fn move_work_content(
     .bind(into_id)
     .execute(&mut *transaction)
     .await?;
-    move_curation(transaction, from_id, into_id).await
+    move_curation(transaction, from_id, into_id).await?;
+    move_ramps(transaction, from_id, into_id).await
 }
 
 /// Move private tags and the mark to the surviving Work (its own mark wins) and
@@ -657,6 +673,67 @@ async fn move_curation(transaction: &mut PgConnection, from_id: Uuid, into_id: U
         .bind(from_id)
         .execute(&mut *transaction)
         .await?;
+    Ok(())
+}
+
+/// Make ramps and the expansion ledger follow the surviving Work. In a ramp that already
+/// holds `into`, the merged Work's item is dropped (the survivor's row wins); otherwise it
+/// is repointed. Every path, `via_work_id`, and ramp seed is repointed, and the merged
+/// Work's expansion row moves only when the survivor has none. Consecutive duplicates a
+/// merge leaves in a path are kept.
+async fn move_ramps(transaction: &mut PgConnection, from_id: Uuid, into_id: Uuid) -> Result<()> {
+    sqlx::query(
+        "delete from reader.ramp_item f where f.work_id = $1 and exists ( \
+             select 1 from reader.ramp_item i where i.ramp_id = f.ramp_id and i.work_id = $2)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query(
+        "update reader.ramp_item set work_id = $2, updated_at = now(), \
+             path_work_ids = array_replace(path_work_ids, $1, $2) \
+         where work_id = $1",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query(
+        "update reader.ramp_item set path_work_ids = array_replace(path_work_ids, $1, $2) \
+         where $1 = any(path_work_ids)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query("update reader.ramp_item set via_work_id = $2 where via_work_id = $1")
+        .bind(from_id)
+        .bind(into_id)
+        .execute(&mut *transaction)
+        .await?;
+    sqlx::query(
+        "update reader.ramp set seed_work_id = $2, updated_at = now() where seed_work_id = $1",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query(
+        "delete from ops.work_expansion f where f.work_id = $1 and exists ( \
+             select 1 from ops.work_expansion i where i.work_id = $2)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
+    sqlx::query(
+        "update ops.work_expansion set work_id = $2, updated_at = now() where work_id = $1",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
     Ok(())
 }
 
@@ -704,6 +781,34 @@ mod tests {
 
     fn random_doi() -> String {
         format!("10.9999/{}", Uuid::new_v4())
+    }
+
+    #[tokio::test]
+    async fn should_return_known_works_only_when_getting_many() {
+        let _guard = test_support::lock().await;
+        let Some(pool) = test_support::pool().await else {
+            eprintln!("skipping: LYSILOGY_TEST_DATABASE_URL not set");
+            return;
+        };
+        let repo = WorkRepository::new(pool);
+        let first = repo
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("first");
+        let second = repo
+            .create(WorkKind::Article, Visibility::Private)
+            .await
+            .expect("second");
+        let found = repo
+            .get_many(&[first.id, second.id, WorkId::new(), first.id])
+            .await
+            .expect("get many");
+        let mut ids: Vec<WorkId> = found.iter().map(|work| work.id).collect();
+        ids.sort_unstable();
+        let mut expected = vec![first.id, second.id];
+        expected.sort_unstable();
+        assert_eq!(ids, expected);
+        assert!(repo.get_many(&[]).await.expect("empty").is_empty());
     }
 
     #[tokio::test]
