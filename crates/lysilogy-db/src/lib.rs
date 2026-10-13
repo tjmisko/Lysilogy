@@ -16,8 +16,10 @@ pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
 pub mod acquisition;
 pub mod citation;
+pub mod curation;
 pub mod document;
 pub mod evidence;
+pub mod prominence;
 pub mod relationship;
 pub mod source_record;
 pub mod work;
@@ -99,6 +101,31 @@ pub(crate) mod test_support {
             .await
             .expect("work")
             .id
+    }
+
+    /// A fresh, empty workspace.
+    pub async fn new_workspace(pool: &PgPool) -> lysilogy_core::WorkspaceId {
+        crate::document::DocumentRepository::new(pool.clone())
+            .create_workspace(&format!("test-{}", uuid::Uuid::new_v4()))
+            .await
+            .expect("workspace")
+    }
+
+    /// Record an `asserted` citation `citing → cited` and return the assertion.
+    pub async fn cite(
+        pool: &PgPool,
+        citing: lysilogy_core::WorkId,
+        cited: lysilogy_core::WorkId,
+    ) -> uuid::Uuid {
+        sqlx::query_scalar(
+            "insert into graph.citation_assertion (citing_work_id, cited_work_id) \
+             values ($1, $2) returning id",
+        )
+        .bind(citing.as_uuid())
+        .bind(cited.as_uuid())
+        .fetch_one(pool)
+        .await
+        .expect("assertion")
     }
 
     /// A fresh document version in its own workspace.
