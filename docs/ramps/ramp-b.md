@@ -957,3 +957,15 @@ Verification:
 
 Acceptance: the Rust gate and frontend checks are green, the Playwright script passes
 against mocks and against the live server, and the live smoke is recorded in this doc.
+
+## U1 implementation notes
+
+- `looks_like_person_name(author)` is true when `citation_family` yields a family and the text
+  has no `:` or `/` (URLs and venue fragments). This replaces the old `parse_name` check in the
+  dotted-sequence test.
+- `member_anchors` became `member_spans` (no per-member page). Tests recover a member's page
+  from the first token in the span.
+- `extract` currently returns entries only; `Source::key` is kept with an `allow(dead_code)`
+  until U2 uses it.
+- `bibliography::tests::fixture` is `pub` inside a `#[cfg(test)] pub(crate)` module so U4 can
+  reuse it.
