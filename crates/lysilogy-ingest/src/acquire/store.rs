@@ -13,6 +13,10 @@ pub const FETCHED_DIR: &str = "Fetched";
 /// Longest file name stem, in characters (the `.pdf` suffix is extra).
 const MAX_NAME_CHARS: usize = 150;
 
+/// Longest file name stem, in UTF-8 bytes. Leaves room under the 255-byte
+/// `NAME_MAX` for a collision suffix, `.pdf` and `.part`.
+const MAX_NAME_BYTES: usize = 200;
+
 /// Most collision suffixes tried before giving up.
 const MAX_COLLISION_SUFFIX: u32 = 1000;
 
@@ -51,7 +55,7 @@ pub async fn store_blob(blob_root: &Path, temp_path: &Path, sha256: &str) -> io:
 /// `<year> - <title>.pdf`, else
 /// `<title>.pdf`, else `<work id>.pdf`. Path separators, reserved characters and
 /// control characters are removed, whitespace is collapsed, and the stem is
-/// at most 150 characters.
+/// at most 150 characters and 200 bytes.
 #[must_use]
 pub fn fetched_filename(title: Option<&str>, year: Option<i32>, work_id: WorkId) -> String {
     let title = title.map(sanitize_name_part).unwrap_or_default();
@@ -80,7 +84,14 @@ fn sanitize_name_part(text: &str) -> String {
 }
 
 fn truncate_chars(text: &str, limit: usize) -> String {
-    text.chars().take(limit).collect()
+    let mut kept = String::new();
+    for character in text.chars().take(limit) {
+        if kept.len() + character.len_utf8() > MAX_NAME_BYTES {
+            break;
+        }
+        kept.push(character);
+    }
+    kept
 }
 
 /// Put a real copy of the blob into `<library>/Fetched/` and return its
@@ -187,7 +198,23 @@ mod tests {
 
         let wide = "é".repeat(400);
         let name = fetched_filename(Some(&wide), None, WorkId::new());
-        assert_eq!(name.chars().count(), 150 + 4, "truncates on characters");
+        assert_eq!(name.len(), MAX_NAME_BYTES + 4, "truncates on the byte budget");
+    }
+
+    #[tokio::test]
+    async fn should_place_library_copy_when_title_is_long_non_ascii() {
+        let library = tempfile::tempdir().expect("library");
+        let blob = library.path().join("blob.pdf");
+        std::fs::write(&blob, b"%PDF-body").expect("blob");
+        let hash = sha(b"%PDF-body");
+        for title in ["漢".repeat(100), "😀".repeat(300)] {
+            let name = fetched_filename(Some(&title), Some(2017), WorkId::new());
+            assert!(name.len() <= MAX_NAME_BYTES + 4, "{}", name.len());
+            let relative = place_library_copy(library.path(), &blob, &name, &hash)
+                .await
+                .expect("place");
+            assert!(library.path().join(relative).exists());
+        }
     }
 
     #[test]
