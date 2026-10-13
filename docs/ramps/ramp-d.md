@@ -907,3 +907,62 @@ mode; live check recorded; dev DB curation rows created by the check removed.
 - Known cosmetic gap: with more than 36 items the cluster pills sit on an outer ring and can
   overlap a few node labels; the mock pass did not enforce the label-overlap assertion planned
   for U6.
+
+## U6 implementation notes
+
+- Web only; no Rust changes. Gate: cargo clippy `-D warnings` and `cargo test --workspace` green
+  (the stale `lysilogy_test` database had to be recreated, see U4 notes); web `typecheck`, `lint`,
+  `build`, `test:relevance` (13, 4 new), `test:literature-layout` (20, 5 new), `test:acquisition` (14).
+- Legend moved to `LiteratureLegend.tsx`. Tag chips list every tag (not only those present in the
+  graph) so `1`-`9` still switch tags while a filter hides the others; chips with no Works in the
+  current graph are dimmed. Count is the number of visible Works carrying the tag (from `work_tags`).
+- `LiteratureCuration` gained the Tags section. The color input is disabled and shows the existing
+  color when the typed name matches an existing tag. Names are normalized client-side (trim, collapse
+  whitespace) before `POST /api/tags`; a 409 on create (another session made it first) reuses the
+  existing tag instead of failing.
+- Esc: the graph's quit-event handler blurs the tag input first, then closes the label editor, then
+  the panel. Keys `1`-`9`/`0` are inert while the panel is open; `t` focuses the tag input.
+- Tag mutations are not optimistic: they refetch tags and neighbors (a few ms) and the chips and
+  ticks follow. Marks stay optimistic as in U5.
+- Adjustment not in the plan: the 150+ node check failed the label-overlap assertion (3 pairs over
+  30 %, worst 47 %, mostly labels of adjacent rings and a cluster pill). Added `planVisibleLabels`
+  (`literatureLayout.ts`): labels are drawn in priority order (center and active always, then pinned,
+  then rank order) and skipped when their estimated box collides with one already kept or a cluster
+  pill. Skipped Works keep the dot, `aria-label` and a `<title>` tooltip. Result: 0 overlapping pairs.
+
+## Result
+
+U6 complete. Commits: `186f0bf` (tags, legend, ticks, helpers, tests) and `0ec4399` (label thinning).
+
+## Report
+
+What shipped (Ramp D, whole): Postgres relevance schema (tags, work tags, marks, prominence cache),
+a deterministic prominence score refreshed after lit jobs and acquisitions, curation and ranked
+neighbors APIs (limit, expand, tags), and in the overlay a ranked fanout of the top 40 with cluster
+nodes, pin/downplay/hide, tags with colors, legend filters, and node ticks.
+
+How to user-test: `lysilogy serve --web web/dist` against the dev DB, open a paper linked to a Work,
+press `L`. Expect "Showing 40 of N". `j`/`k` walk nodes and clusters; `↵` on a cluster expands it,
+`c` collapses; `+`/`-` change the top-N. `↵` on a Work opens its panel: `p`/`d`/`h` mark, `t` then a
+tag name and `↵` creates (with the color swatch) or assigns; `×` on a chip unassigns. Close the panel
+(`Esc` twice if the tag input is focused), then `1`-`9` filter by the nth legend tag and `0` clears.
+
+Smoke results:
+- Mock (`~/.cache/lysilogy-smoke/relevance-smoke.mjs`, 180-Work fanout, 12 tagged, 3 pinned, 4 hidden,
+  6 downplayed): 39 checks passed, no console errors. Covers top-40 view "Showing 40 of 176", pinned
+  visible and hidden/downplayed absent, `j` cycling every placement with all 50 placements inside the
+  canvas and 0 label pairs over 30 %, cluster expand/collapse requests, `+`/`-` limits, `p`/`h`
+  requests and effects, tag create (chosen color in the POST) plus assign, ticks, legend, `1`/`2`/`0`
+  filter requests, Esc blur order, case-insensitive existing-tag assignment, unassign. Screenshots
+  `relevance-default.png`, `relevance-expanded.png`, `relevance-marks.png`, `relevance-filtered.png`.
+- Live (`lysilogy serve --bind 127.0.0.1:7394`, release build, dev DB, 332-node paper): 40 nodes plus
+  14 cluster nodes, "Showing 40 of 332 · 0 pinned · 0 hidden"; expanding `decade:2020` grew the view
+  from 40 to 59 nodes (19); pinned and tagged one Work ("u6 live check"); the `1` filter showed that
+  one Work; no console errors. The mark and tag were then deleted; `reader.tag`, `work_mark`,
+  `work_tag` have 0 rows. Screenshots `live-u6-expanded.png`, `live-u6-filtered.png`.
+
+Known gaps:
+- Tag rename, recolor, and delete exist in the API client but have no UI.
+- Label thinning uses a character-width estimate, so a skipped label can occasionally have fit.
+- The legend can grow tall with many tags (wraps; no scrolling or search).
+- Score weights (Decision 7) are untuned; `npm run smoke` is still broken locally.
