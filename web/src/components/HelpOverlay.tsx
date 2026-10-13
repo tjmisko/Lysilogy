@@ -33,6 +33,8 @@ const GROUPS = [
       ["g (graph, Work open)", "Show the citing sentence in the paper"],
       ["f (graph, Work open)", "Fetch an open-access copy of the selected work"],
       ["w / double-click (graph)", "Expand / collapse the selected work's references in place (up to 3 hops, 6 expansions)"],
+      ["y (graph)", "Add the selected work to the reading ramp, with the works that lead to it; starts a ramp if none exists"],
+      ["R (graph)", "Show / hide the reading ramp sidebar: status, notes, order, open or fetch each work"],
       ["g", "Open the technical glossary (pause after one g)"],
       ["m", "Toggle PDF / requested Markdown reconstruction"],
       ["p", "Toggle overview / source PDF"],

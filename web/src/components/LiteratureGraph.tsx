@@ -16,8 +16,10 @@ import type {
 } from "../types";
 import {
   EXPANSION_TOP_N, MAX_UI_DEPTH, MAX_UI_EXPANSIONS, addExpansion, canExpand, collapseExpansion, fanoutKnown,
-  type WalkExpansion,
+  walkPathTo, type WalkExpansion,
 } from "../lib/walk";
+import { useRamps } from "../lib/useRamps";
+import { LiteratureRamp } from "./LiteratureRamp";
 import { LiteratureCuration, TAG_INPUT_CLASS } from "./LiteratureCuration";
 import { LiteratureLegend, TAG_KEY_LIMIT } from "./LiteratureLegend";
 import "./LiteratureGraph.css";
@@ -174,6 +176,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   const [walkData, setWalkData] = useState<ReadonlyMap<string, GraphNeighbors>>(() => new Map());
   const [expanding, setExpanding] = useState<ReadonlyMap<string, ExpandingEntry>>(() => new Map());
   const [walkNotice, setWalkNotice] = useState<string | null>(null);
+  const [rampOpen, setRampOpen] = useState(false);
   const [viewOverrides, setViewOverrides] = useState<ReadonlyMap<string, ExpansionView>>(() => new Map());
   const expandingRef = useRef<ReadonlyMap<string, ExpandingEntry>>(new Map());
   const walkAbort = useRef<AbortController | null>(null);
@@ -356,6 +359,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   }, [activeWorkId, citationsToken]);
 
   const centerId = graph?.work.id;
+  const ramps = useRamps(centerId);
   const activeFetch = activeWorkId === undefined ? undefined : fetches.get(activeWorkId);
 
   const recordFetch = useCallback((workId: string, status: AcquisitionStatus, fresh: boolean): void => {
@@ -720,6 +724,17 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     setWalkData((current) => new Map([...current].filter(([parentId]) => kept.has(parentId))));
   }, [graph, positions, walk]);
 
+  // `y`: add the Work to the current ramp, with the Works on the walk that led to it.
+  const addToRamp = useCallback((workId: string): void => {
+    if (graph === null) return;
+    const baseIds = new Set(placements.filter((placement) => placement.kind === "work").map((placement) => placement.id));
+    const path = walkPathTo(walk, graph.work.id, workId, baseIds);
+    void ramps.addWork(workId, path).then((result) => setWalkNotice(result.message));
+  }, [graph, placements, ramps, walk]);
+  const selectRampWork = useCallback((workId: string): void => {
+    if (positions.has(workId)) setSelectedId(workId);
+  }, [positions]);
+
   // A notice belongs to the selection it was raised on.
   useEffect(() => setWalkNotice(null), [selectedId]);
 
@@ -747,17 +762,18 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     const root = rootRef.current;
     if (root === null) return;
     const onQuit = (event: Event): void => {
-      if (!workPanelOpen) return;
+      if (!workPanelOpen && !rampOpen) return;
       event.preventDefault();
-      // One layer per press: a focused tag input, the label editor, then the panel.
+      // One layer per press: a focused tag or ramp input, the label editor, the panel, then the ramp.
       const focused = document.activeElement;
-      if (focused instanceof HTMLInputElement && focused.classList.contains(TAG_INPUT_CLASS)) focused.blur();
+      if (focused instanceof HTMLInputElement && (focused.classList.contains(TAG_INPUT_CLASS) || focused.classList.contains("literature-ramp-input"))) focused.blur();
       else if (editingId !== null) setEditingId(null);
-      else setWorkPanelOpen(false);
+      else if (workPanelOpen) setWorkPanelOpen(false);
+      else setRampOpen(false);
     };
     root.addEventListener(LITERATURE_QUIT_EVENT, onQuit);
     return () => root.removeEventListener(LITERATURE_QUIT_EVENT, onQuit);
-  }, [editingId, workPanelOpen]);
+  }, [editingId, rampOpen, workPanelOpen]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -772,6 +788,17 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
         if (editingId !== null || activeWork === undefined) return;
         event.preventDefault();
         toggleWalk(activeWork.id);
+        return;
+      }
+      if (event.key === "y") {
+        if (editingId !== null || activeWork === undefined) return;
+        event.preventDefault();
+        addToRamp(activeWork.id);
+        return;
+      }
+      if (event.key === "R") {
+        event.preventDefault();
+        setRampOpen((open) => !open);
         return;
       }
       if (workPanelOpen) {
@@ -837,7 +864,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [actionableLabel, activateIndex, activeIndex, activeWork, applyMark, centerId, editingId, fetchable, markFor, phase.kind, allPlacements, reviewLabel, runLiterature, showInPaper, startFetch, tags, toggleTagFilter, toggleWalk, workPanelOpen]);
+  }, [actionableLabel, activateIndex, addToRamp, activeIndex, activeWork, applyMark, centerId, editingId, fetchable, markFor, phase.kind, allPlacements, reviewLabel, runLiterature, showInPaper, startFetch, tags, toggleTagFilter, toggleWalk, workPanelOpen]);
 
   // A Work that left the canvas (hidden, downplayed, filtered) takes its panel with it.
   const panelWorkGone = workPanelOpen && graph !== null && selectedId !== null
@@ -860,6 +887,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
         role="dialog"
         aria-label="Literature graph"
         data-work-open={workPanelOpen ? "true" : "false"}
+        data-ramp-open={rampOpen ? "true" : "false"}
         data-phase={phase.kind}
       >
         <header>
@@ -1073,6 +1101,14 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                   canFetch={fetchable}
                   onFetch={startFetch}
                   onClose={() => setWorkPanelOpen(false)}
+                />
+              )}
+              {rampOpen && (
+                <LiteratureRamp
+                  ramps={ramps}
+                  selectedWorkId={activeWork?.id ?? null}
+                  onSelectWork={selectRampWork}
+                  onOpenPaper={onOpenPaper}
                 />
               )}
             </>

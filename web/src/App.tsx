@@ -991,7 +991,7 @@ export function App() {
       else if (sourceQuestion !== null) close = () => setSourceQuestion(null);
       else if (literatureOpen) close = () => {
         // The Work panel closes first; the overlay closes on the next press.
-        const overlay = document.querySelector('.literature-graph[data-work-open="true"]');
+        const overlay = document.querySelector('.literature-graph[data-work-open="true"], .literature-graph[data-ramp-open="true"]');
         if (overlay !== null && !overlay.dispatchEvent(new CustomEvent(LITERATURE_QUIT_EVENT, { cancelable: true }))) return;
         setLiteratureOpen(false);
       };
