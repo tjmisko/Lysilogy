@@ -159,15 +159,18 @@ export function WorkProvenance({ work }: { work: Work }) {
     const dialogNode = event.currentTarget;
     const controls = Array.from(dialogNode.querySelectorAll<HTMLElement>(FOCUSABLE))
       .filter((control) => control.getClientRects().length > 0);
-    const first = controls[0];
-    const last = controls.at(-1);
-    if (event.shiftKey && (event.target === first || event.target === dialogNode)) {
+    if (controls.length === 0) {
       event.preventDefault();
-      last?.focus();
-    } else if (!event.shiftKey && event.target === last) {
-      event.preventDefault();
-      first?.focus();
+      return;
     }
+    // The app cancels Tab at the document to cycle reading phases, so focus moves by hand.
+    event.preventDefault();
+    const at = controls.indexOf(event.target as HTMLElement);
+    const step = event.shiftKey ? -1 : 1;
+    const next = at === -1
+      ? (event.shiftKey ? controls.length - 1 : 0)
+      : (at + step + controls.length) % controls.length;
+    controls[next]?.focus();
   };
 
   const authors = work.display_authors ?? [];
