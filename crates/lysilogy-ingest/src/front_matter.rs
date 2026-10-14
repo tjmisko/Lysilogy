@@ -34,7 +34,32 @@ fn confirmed_title(front_matter: &str, hint: Option<&str>) -> Option<String> {
     if key.split_whitespace().count() < MIN_TITLE_KEY_WORDS {
         return None;
     }
-    title_key(front_matter).contains(&key).then_some(title)
+    printed_title_blocks(front_matter)
+        .any(|block| title_key(&block) == key)
+        .then_some(title)
+}
+
+/// Every run of consecutive non-blank lines that is followed by a blank line
+/// or the end of the text, so a title is compared against whole printed
+/// blocks and a truncated prefix of a longer printed title never matches.
+fn printed_title_blocks(front_matter: &str) -> impl Iterator<Item = String> + '_ {
+    let lines: Vec<&str> = front_matter.lines().map(str::trim).collect();
+    let mut blocks = Vec::new();
+    for end in 0..lines.len() {
+        let block_ends_here = lines[end + 1..].first().is_none_or(|next| next.is_empty());
+        if lines[end].is_empty() || !block_ends_here {
+            continue;
+        }
+        let mut start = end;
+        loop {
+            blocks.push(lines[start..=end].join(" "));
+            if start == 0 || lines[start - 1].is_empty() {
+                break;
+            }
+            start -= 1;
+        }
+    }
+    blocks.into_iter()
 }
 
 fn confirmed_authors(front_matter: &str, hints: &[String]) -> Vec<String> {
@@ -99,6 +124,25 @@ mod tests {
             assert_eq!(fields.title, None, "{title:?}");
         }
         assert_eq!(front_matter_fields(FRONT, hints(None, &[])).title, None);
+    }
+
+    #[test]
+    fn should_reject_title_when_hint_is_a_truncated_prefix_of_the_printed_title() {
+        let fields = front_matter_fields(FRONT, hints(Some("Deep Reinforcement Learning"), &[]));
+        assert_eq!(fields.title, None);
+    }
+
+    #[test]
+    fn should_accept_title_when_it_is_the_last_lines_of_a_block() {
+        let front = "Preprint\nDeep Reinforcement Learning\nfrom Human Preferences\n\nAuthors";
+        let fields = front_matter_fields(
+            front,
+            hints(
+                Some("Deep Reinforcement Learning from Human Preferences"),
+                &[],
+            ),
+        );
+        assert!(fields.title.is_some());
     }
 
     #[test]

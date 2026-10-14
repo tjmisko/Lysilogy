@@ -1235,3 +1235,14 @@ higher tier. Rerun: 0 calls, 32 + 1 cache hits, 1.0 s. Cache records: 32 `biblio
    when a Work's selected title changes, OpenAlex venue, Semantic Scholar, a provenance page.
 6. App-level keys such as `:` and `Q` are not blocked while the dialog is open (only graph keys are).
 7. Open questions 2 (keep the Library file column) and 3 (make `--fields` the default) remain open.
+
+## Review fixes
+
+- `front_matter::confirmed_title` no longer confirms a catalog title hint that is only a prefix of
+  the printed title. A hint is confirmed only when its `title_key` equals a whole block of
+  consecutive non-blank front-matter lines that ends at a blank line or the end of the text. A
+  file-name hint such as "Deep Reinforcement Learning" therefore no longer outranks OpenAlex's full
+  title as a `paper`-tier claim. Regression test: `should_reject_title_when_hint_is_a_truncated_prefix_of_the_printed_title`.
+- Known tradeoff: a title printed directly above the authors with no blank line between them is not
+  confirmed (the fallback is the provider title). The literature test fixture now separates title
+  and authors with a blank line.

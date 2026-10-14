@@ -1412,7 +1412,7 @@ mod tests {
         let paper = DoiPaper::new();
         let authors = vec!["Ada Lovelace".to_owned(), "Grace Hopper".to_owned()];
         let front = format!(
-            "{}\nAda Lovelace   Grace Hopper\nDOI: {}\nAbstract text",
+            "{}\n\nAda Lovelace   Grace Hopper\nDOI: {}\nAbstract text",
             paper.title, paper.doi
         );
         let mut routes = paper.routes();
