@@ -1129,3 +1129,109 @@ checkout), `lit "Deep Reinforcement Learning from Human Preferences" --fields --
   (`display_title`, `known` checked in `graph.work`); `set year 19999` is refused
   (`year must be between 1400 and 2200`); `set authors "A. One; B. Two"` then `clear authors`
   restored the bib-v1 list. Only retracted scratch overrides remain (history is kept, A9).
+
+## U4 implementation notes
+
+Built as planned: appended provenance types and `api` methods, pure `web/src/lib/provenance.ts`
+with `web/scripts/provenance.test.mjs` (13 tests, `test:provenance` after `test:relevance`),
+`WorkProvenance.tsx` / `.css`, the one import and one JSX line in `WorkPanel`, the help-overlay
+entry, and the scratch Playwright smoke. Commits: `5e4625c` (types, api, pure logic, tests),
+`7a11b68` (component), `4db602b` (manual Tab handling), then the focus-ring fix and these docs.
+
+Deviations (smallest sound changes):
+
+- **Tab is moved by hand.** `useTabPhase` cancels every Tab at the document capture phase (it cycles
+  reading phases), so the `PassageQuestion` style trap alone left focus stuck on the dialog. The
+  dialog's `onKeyDown` now moves focus through its visible controls (buttons, inputs, textareas,
+  summaries) itself and wraps. Found by the Playwright check, not by typecheck.
+- **Esc/q arrive only through `LITERATURE_QUIT_EVENT`.** App's window-capture handler consumes the
+  key before React sees it, so the capture listener on `document` also cancels an open edit first
+  (Esc during an edit cancels the edit, a second press closes the dialog). The dialog's own Escape
+  handler is a fallback outside the App.
+- The dialog renders in a portal on `document.body` (the Work panel is `aside` inside an
+  overflow-hidden overlay) with `z-index: 200`.
+- The override editor starts pre-filled with the current value (the override, else the selected
+  display); authors are one per line.
+- Grouping key is `display`; an unreadable claim (`display: null`) groups under "(unreadable)".
+- Extra pure helpers: `overrideDraft`; `parseOverrideInput` also rejects `https://` URLs that are
+  not doi.org (they fail the `10.` check).
+- A hidden "no claim" cell and "selected value / agrees with ... / excluded: reason" text use a
+  local `.work-provenance-hidden` class (the app has no shared visually-hidden class).
+
+Gate (worktree root, test DB from `scripts/db env`):
+
+- `cargo clippy --workspace --all-targets -- -D warnings`: clean.
+- `cargo test --workspace --no-fail-fast`: root lib 367, root bin 26 + 1 + 1, core 95, db 110,
+  ingest 286 passed, 0 failed (DB tests ran).
+- web: `typecheck`, `lint`, `build` pass; `test:walk` 11, `test:ramp` 10, `test:relevance` 13,
+  `test:literature-layout` 31, `test:provenance` 13 pass. `test:api` fails as on the base
+  (`ERR_MODULE_NOT_FOUND` for `./relevance`), unrelated.
+
+Playwright (`~/.cache/lysilogy-smoke/provenance-smoke.mjs . `, from `web/` after `npm run build`,
+mocked `/api/*`): 29 checks pass, 0 console errors, 0 unexpected requests. It covers the authors line
+(first six + `+2`), `s` opening a modal dialog with focus inside, columns Field, You, Publisher, The
+paper, OpenAlex, Library file, Citing papers, selected/green/red cells (computed outline and tints),
+grouped citing values with counts, Tab to Override, Esc cancelling an edit, Enter sending
+`PUT .../provenance/title`, an inline year error sending nothing, Clear sending `DELETE`, Reject
+sending `PUT /api/field-claims/<id>/review`, `j a x p w y R` doing nothing while open, Esc closing
+only the dialog then the panel, and `q` closing only the dialog. Screenshot
+`~/.cache/lysilogy-smoke/provenance.png`.
+
+Live smoke (debug build of this branch, `serve` on 127.0.0.1:7397, dev DB, scratch data/notes dirs,
+`~/.cache/lysilogy-smoke/live-provenance.mjs`): opened "Deep Reinforcement Learning from Human
+Preferences", `L`, selected the stub `Superintelligence: paths, dangers, strategies`, `s`. The table
+matched `lysilogy provenance show` row for row: title selected from OpenAlex with two agreeing
+citing values (`Paths, Dangers, Strategies` x2); year 2015 selected from OpenAlex, citing 2014 x2 red;
+authors `Nick Bostrom` selected from the citing column (x2); venue `Oxford University Press`;
+DOI `10.5860/choice.187536` from OpenAlex. Overriding the year to 2019 made the You cell selected, the
+row header `2019`, OpenAlex 2015 and citing 2014 red, and the graph label `... 2019` after reloading
+the overlay. Clear restored 2015 in the table and the label. No console errors. The override left a
+retracted `user` year claim on that stub (history, A9).
+
+## Report
+
+**Built.** Claims became tracked evidence: migration 0009 adds origin, extractor, confidence,
+entry and retraction to `graph.field_claim` and `display_authors`/`authors_state` to `graph.work`.
+One pure `select_field` (core) ranks claims by (origin, confidence) with the trust order user >
+publisher > paper > OpenAlex > library file > citing papers, and one `reselect_in` recomputes
+title, year and authors after every write. Harvest: bib-v1 claims for every resolved entry, OpenAlex
+authorships, Crossref publisher records (own Work always, cited Works with `--publisher`),
+deterministic front-matter claims, and an opt-in grounded Haiku pass (`--fields`) cached per entry.
+API and CLI: provenance read, override set/clear, claim review, `provenance show|set|clear|reselect`.
+UI: `display_authors` in every Work payload, the authors line and the Sources dialog.
+
+**Gate.** Rust: clippy clean; tests root 367 + 26 + 1 + 1, core 95, db 110, ingest 286, 0 failed.
+Web: typecheck, lint, build pass; walk 11, ramp 10, relevance 13, literature-layout 31, provenance 13
+pass; `test:api` fails on the unmodified base too. Playwright 29/29.
+
+**Dev DB after all units** (active claims, `retracted_at IS NULL`; 6,921 rows, 3 retracted scratch
+overrides): openalex title 3,014, year 3,015, author 138, identifier 121 (`openalex/explicit`);
+citing_bibliography bib-v1 title 127, year 124, author 53, venue 44 (heuristic), identifier 1
+(explicit), bib-model-v1 title 22, year 25, author 22 (model); library_metadata title 106, year 98;
+paper frontmatter-v1 title 2, frontmatter-model-v1 author 1; publisher crossref-v1 one each of title,
+year, author, venue, identifier. Selected states across 3,461 Works: title known 3,099 / unknown 362;
+year known 3,095 / unknown 366; authors known 170 / unknown 3,291. **Conflicting: 0 for title, year
+and authors** (no Work has two disagreeing claims in its winning tier).
+
+**Model cost proxy.** One `lit --fields` on the Christiano paper: 2 bibliography calls (32 entries,
+batches of 20 and 12) plus 1 front-matter call, 37 s, 0 dropped, 0 failed, 21 entries skipped as
+higher tier. Rerun: 0 calls, 32 + 1 cache hits, 1.0 s. Cache records: 32 `bibliography_fields_model`,
+1 `paper_fields_model`. Only that one paper has been run through the model pass.
+
+**Known gaps.**
+
+1. Open question 1 stands with data: model claims rank below bib-v1, so bib-v1 mis-parses stay
+   selected; and `paper` beats `openalex` regardless of confidence, so a model-read front-matter
+   author order displaced OpenAlex's order for the Christiano paper.
+2. Authors are known for 170 of 3,461 Works only: OpenAlex authorships fill in as summaries are
+   refetched, and bib-v1 author claims exist for few entries until `lit --fields` runs per paper.
+3. The Sources UI marks agreement per claim as the server computed it; the 6-column table is wide
+   (scrolls horizontally under ~860px). No test renders the React component (the Playwright smoke is
+   scratch, not in the repo), and screen-reader behavior is unverified.
+4. Venue and DOI are selected on read only; a DOI override masks the displayed DOI but never changes
+   identity. Crossref lookups for cited Works were exercised only against fixtures; real-DOI Crossref
+   was checked for one paper ("The China Syndrome").
+5. Out of scope and not done: author identity resolution, fuzzy title matching, re-resolving entries
+   when a Work's selected title changes, OpenAlex venue, Semantic Scholar, a provenance page.
+6. App-level keys such as `:` and `Q` are not blocked while the dialog is open (only graph keys are).
+7. Open questions 2 (keep the Library file column) and 3 (make `--fields` the default) remain open.

@@ -37,6 +37,10 @@ Migrations apply automatically on connect. Optional:
 - `LYSILOGY_CONTACT_EMAIL=<you>` enables Unpaywall in `fetch` and the OpenAlex polite pool. Without
   it, both still work (Unpaywall is skipped with `unpaywall_skipped_no_email`).
 - `--sidecar claude|codex` requires the respective CLI to be logged in.
+- After upgrading to the provenance migration (0009), run `./target/release/lysilogy provenance
+  reselect --all` once (add `--library/--data/--notes` pointing at existing dirs if the defaults do
+  not exist). It recomputes `display_title`, `display_year` and `display_authors` from the tracked
+  claims; the Sources view is correct without it because selection is computed on read.
 
 The dev DB already holds data from the live smoke runs (see "State left behind" below), so several of
 the papers named here are already ingested; reruns are idempotent and mostly cached.
@@ -104,6 +108,36 @@ ramp sidebar: cycle status, add notes, reorder, **Suggest order**, Open/Fetch pe
 ./target/release/lysilogy ramp list
 ./target/release/lysilogy ramp show <title prefix>
 ```
+
+### Provenance: where does each title, year and author list come from?
+
+Every printed title, year, author list, venue and DOI is a claim with an origin. Selection ranks
+them: your override, then the publisher (Crossref), the paper's own front matter, OpenAlex, the
+library file's catalog metadata, and citing papers' bibliographies. In the graph, select a Work and
+press `s` (or click **Sources**): a table of field by source. Outlined is the selected value, green
+agrees with it, red disagrees, struck through is rejected. `Override` / `Edit` in the You column sets
+your own value (`Enter` saves, `Esc` cancels, **Clear** restores the tiered choice); expand a value
+for its extractor, source and the citing entry's printed text, and **Reject** / **Restore** it.
+
+```sh
+./target/release/lysilogy lit "Deep Reinforcement Learning from Human Preferences" --local --fields --sidecar claude --fields-limit 3
+./target/release/lysilogy provenance show "Superintelligence: paths, dangers, strategies"
+./target/release/lysilogy provenance set <work> year 2019
+./target/release/lysilogy provenance clear <work> year
+(cd web && npm run test:provenance)    # pure cell marking, override parsing, author truncation
+```
+
+Provenance known gaps:
+
+- `paper` outranks `openalex` whatever the confidence, so a model-read author order from a gridded
+  front-matter header can beat an explicit OpenAlex list; and bib-v1 mis-parses outrank correct
+  model claims (plan, Open question 1).
+- No Work is `conflicting` in the dev DB yet: ties inside one tier are rare with today's sources.
+- The Sources dialog manages focus itself because the app cancels Tab for reading phases; screen
+  reader behavior is untested. App-level keys (`:`, `Q`) still act while it is open.
+- The model pass is opt-in (`--fields`); cited-Work Crossref lookups need `--publisher`.
+- Overrides keep history (retracted rows) that the UI does not show. `test:api` still fails on the
+  base (`ERR_MODULE_NOT_FOUND` for `./relevance`).
 
 ## Known issues, by priority
 
