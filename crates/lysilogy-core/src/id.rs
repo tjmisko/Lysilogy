@@ -234,6 +234,11 @@ id_type!(
     RampId,
     'p'
 );
+id_type!(
+    /// Identifies one field claim (a sourced value for a Work's title, year, etc.).
+    FieldClaimId,
+    'a'
+);
 
 #[cfg(test)]
 mod tests {

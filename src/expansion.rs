@@ -32,7 +32,7 @@ pub struct ExpandOptions {
     pub bounds: WalkBounds,
     /// Rerun the flow even when the fanout is already known.
     pub refresh: bool,
-    /// Also run local evidence for held papers.
+    /// Also run local evidence for held papers, then the state's field pass.
     pub local: bool,
 }
 
@@ -361,7 +361,7 @@ impl AppState {
         local: bool,
         warnings: &mut Vec<String>,
     ) -> Result<Option<ExpansionRow>> {
-        let summary = self.run_literature_flow(paper).await?;
+        let summary = self.run_literature_flow(paper, false).await?;
         match (&summary.status, summary.work_id) {
             (LiteratureStatus::Linked, Some(linked)) if linked == work => {}
             (LiteratureStatus::Linked, Some(linked)) => {
@@ -374,8 +374,19 @@ impl AppState {
             }
         }
         warnings.extend(summary.warnings.iter().cloned());
-        if local && let Err(error) = self.run_local_evidence(paper, &summary).await {
-            warnings.push(format!("local_evidence_failed:{error}"));
+        if local {
+            match self.run_local_evidence(paper, &summary).await {
+                Ok(Some(mut evidence)) => {
+                    if let Err(error) = self
+                        .harvest_default_fields(paper, &summary, &mut evidence)
+                        .await
+                    {
+                        warnings.push(format!("field_pass_failed:{error}"));
+                    }
+                }
+                Ok(None) => {}
+                Err(error) => warnings.push(format!("local_evidence_failed:{error}")),
+            }
         }
         let row = graph
             .expansions
@@ -404,6 +415,7 @@ impl AppState {
         let context = ExpandContext {
             works: &graph.works,
             citations: &graph.citations,
+            claims: &graph.claims,
             records: &graph.source_records,
             client: self.literature.client(),
         };
@@ -691,7 +703,8 @@ pub(crate) mod fixtures {
         }
 
         /// Serves each `(OpenAlex or doi: key, record)` pair, titles summary
-        /// batches, answers metrics batches, and 404s everything else.
+        /// batches, answers metrics batches, gives Crossref an empty record, and
+        /// 404s everything else.
         pub fn serving(records: Vec<(String, Value)>) -> Self {
             let routes: Vec<(String, Value)> = records
                 .into_iter()
@@ -700,6 +713,10 @@ pub(crate) mod fixtures {
             Self::new(move |url| {
                 if url.contains("filter=openalex:") {
                     return Ok(batch_reply(url));
+                }
+                if url.contains("api.crossref.org/works/") {
+                    // A registry record that holds no usable metadata.
+                    return Ok(json!({"message": {}}));
                 }
                 routes
                     .iter()
@@ -748,7 +765,8 @@ pub(crate) mod fixtures {
                     json!({"id": format!("https://openalex.org/{id}"), "cited_by_count": 4})
                 } else {
                     json!({"id": format!("https://openalex.org/{id}"),
-                           "display_name": format!("Title of {id}"), "publication_year": 2008})
+                           "display_name": format!("Title of {id}"), "publication_year": 2008,
+                           "authorships": []})
                 }
             })
             .collect();

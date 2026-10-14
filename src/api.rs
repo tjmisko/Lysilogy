@@ -15,6 +15,7 @@ mod labels;
 mod literature;
 mod neighbors;
 mod notes;
+mod provenance;
 mod ramps;
 mod reader_tools;
 mod source_index;
@@ -95,6 +96,9 @@ pub struct AppState {
     tools_extract: Arc<Mutex<()>>,
     reading_indexes: source_index::IndexJobs,
     frontend_root: Option<Arc<PathBuf>>,
+    /// The model pass that fills missing authors and years whenever local
+    /// evidence runs. `None` skips it.
+    pub(crate) field_extractor: Option<crate::field_extraction::SidecarFieldExtractor>,
 }
 
 #[derive(Debug, Serialize)]
@@ -182,6 +186,7 @@ impl AppState {
             acquisition_throttle: Arc::new(lysilogy_ingest::acquire::HostThrottle::polite()),
             acquisition_fetcher: crate::acquisition::SharedFetcher::default(),
             frontend_root: None,
+            field_extractor: None,
         })
     }
 
@@ -209,6 +214,16 @@ impl AppState {
         throttle: lysilogy_ingest::acquire::HostThrottle,
     ) -> Self {
         self.acquisition_throttle = Arc::new(throttle);
+        self
+    }
+
+    /// Run the field pass with `extractor` whenever local evidence runs.
+    #[must_use]
+    pub fn with_field_extractor(
+        mut self,
+        extractor: crate::field_extraction::SidecarFieldExtractor,
+    ) -> Self {
+        self.field_extractor = Some(extractor);
         self
     }
 
@@ -1846,6 +1861,7 @@ pub fn build_router(mut state: AppState, frontend_directory: Option<&Path>) -> R
         .merge(acquisition::routes())
         .merge(expansion::routes())
         .merge(ramps::routes())
+        .merge(provenance::routes())
         .merge(curation::routes())
         .merge(labels::routes())
         .merge(source_index::routes())

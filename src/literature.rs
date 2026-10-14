@@ -8,6 +8,9 @@ pub mod evidence;
 use std::{fmt, path::Path, sync::Arc};
 
 use lysilogy_core::{DocumentFormat, ScannedFile, first_author_family, front_matter};
+use lysilogy_ingest::field_model::{
+    FieldContext, FieldExtractor, FieldHarvestSummary, harvest_front_matter_fields,
+};
 use lysilogy_ingest::identify::PaperHints;
 use lysilogy_ingest::literature::{
     LiteratureContext, LiteratureInput, LiteratureSummary, run_literature_flow,
@@ -69,8 +72,13 @@ impl LiteratureClient {
 }
 
 impl AppState {
-    /// Link one paper to a Work and ingest what it cites.
-    pub async fn run_literature_flow(&self, id: &PaperId) -> Result<LiteratureSummary> {
+    /// Link one paper to a Work and ingest what it cites. `publisher_cited`
+    /// also fetches the publisher record of the cited Works with a DOI.
+    pub async fn run_literature_flow(
+        &self,
+        id: &PaperId,
+        publisher_cited: bool,
+    ) -> Result<LiteratureSummary> {
         let graph = self.graph.as_ref().ok_or_else(|| {
             Error::InvalidRequest(
                 "the literature graph needs a database; set LYSILOGY_DATABASE_URL".to_owned(),
@@ -104,11 +112,13 @@ impl AppState {
             title: Some(overview.metadata.title.as_str()).filter(|title| !title.trim().is_empty()),
             year: overview.metadata.year.map(i32::from),
             first_author: first_author.as_deref(),
+            authors: &overview.metadata.authors,
         };
         let context = LiteratureContext {
             works: &graph.works,
             documents: &graph.documents,
             citations: &graph.citations,
+            claims: &graph.claims,
             records: &graph.source_records,
             client: &self.literature.0,
         };
@@ -118,9 +128,37 @@ impl AppState {
                 file,
                 front_matter: &front_matter,
                 hints,
+                publisher_cited,
             },
         )
         .await?)
+    }
+
+    /// Ask `extractor` for the paper's own title, authors and year from its
+    /// front matter, and record the grounded answers as model claims on its
+    /// Work. Returns `None` when the paper has no Work.
+    pub async fn harvest_paper_fields_with_model(
+        &self,
+        id: &PaperId,
+        summary: &LiteratureSummary,
+        extractor: &dyn FieldExtractor,
+    ) -> Result<Option<FieldHarvestSummary>> {
+        let Some(work) = summary.work_id else {
+            return Ok(None);
+        };
+        let graph = self.graph.as_ref().ok_or_else(|| {
+            Error::InvalidRequest(
+                "the literature graph needs a database; set LYSILOGY_DATABASE_URL".to_owned(),
+            )
+        })?;
+        let front_matter = self.front_matter_text(id).await?;
+        let context = FieldContext {
+            claims: &graph.claims,
+            records: &graph.source_records,
+            evidence: &graph.evidence,
+        };
+        let fields = harvest_front_matter_fields(&context, work, &front_matter, extractor).await?;
+        Ok(Some(fields))
     }
 
     /// The paper's front matter: pages 1-2 cut at the references heading.
@@ -293,7 +331,7 @@ mod tests {
             .await
             .unwrap();
         let id = state.library().await.papers[0].id.clone();
-        let error = state.run_literature_flow(&id).await.unwrap_err();
+        let error = state.run_literature_flow(&id, false).await.unwrap_err();
         assert!(
             matches!(&error, Error::InvalidRequest(message) if message.contains("LYSILOGY_DATABASE_URL")),
             "{error}"

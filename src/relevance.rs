@@ -297,6 +297,8 @@ mod tests {
             title_state: FieldState::Known,
             display_year: year,
             year_state: FieldState::Known,
+            display_authors: None,
+            authors_state: FieldState::Unknown,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         }

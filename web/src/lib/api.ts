@@ -29,6 +29,7 @@ import type {
   LiteratureJob,
   LiteratureOptions,
   PaperWork,
+  ProvenanceView,
   RampDetail,
   RampItemAdd,
   RampItemPatch,
@@ -291,4 +292,18 @@ export const api = {
     if (!response.ok) throw await apiError(response);
     return response.text();
   },
+  workProvenance: (workId: string, signal?: AbortSignal): Promise<ProvenanceView> =>
+    request(`/api/works/${encodeURIComponent(workId)}/provenance`, { signal }),
+  setFieldOverride: (workId: string, field: string, value: unknown): Promise<ProvenanceView> =>
+    request(`/api/works/${encodeURIComponent(workId)}/provenance/${encodeURIComponent(field)}`, {
+      method: "PUT",
+      body: JSON.stringify({ value }),
+    }),
+  clearFieldOverride: (workId: string, field: string): Promise<ProvenanceView> =>
+    request(`/api/works/${encodeURIComponent(workId)}/provenance/${encodeURIComponent(field)}`, { method: "DELETE" }),
+  reviewFieldClaim: (claimId: string, reviewState: "accepted" | "rejected" | "unreviewed"): Promise<ProvenanceView> =>
+    request(`/api/field-claims/${encodeURIComponent(claimId)}/review`, {
+      method: "PUT",
+      body: JSON.stringify({ review_state: reviewState }),
+    }),
 };

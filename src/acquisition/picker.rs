@@ -80,6 +80,7 @@ impl LandingLinkPicker for SidecarLinkPicker {
                         schema: LINK_PICK_SCHEMA,
                         prompt: &prompt,
                         live_web: false,
+                        fast: false,
                     },
                 )
                 .await

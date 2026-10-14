@@ -176,6 +176,35 @@ impl EvidenceRepository {
         rows.iter().map(entry_from_row).collect()
     }
 
+    /// Entries of a document version that are accepted as a Work, in ordinal
+    /// order, each with that Work.
+    pub async fn resolved_entries(
+        &self,
+        version: DocumentVersionId,
+    ) -> Result<Vec<(StoredEntry, WorkId)>> {
+        let columns = ENTRY_COLUMNS
+            .split(", ")
+            .map(|column| format!("e.{}", column.trim()))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let rows = sqlx::query(&format!(
+            "select {columns}, r.candidate_work_id from source.bibliography_entry e \
+             join graph.entry_resolution r on r.entry_id = e.id and r.status = 'accepted' \
+             where e.citing_version_id = $1 order by e.ordinal, e.entry_key"
+        ))
+        .bind(version.as_uuid())
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter()
+            .map(|row| {
+                Ok((
+                    entry_from_row(row)?,
+                    WorkId::from_uuid(row.try_get("candidate_work_id")?),
+                ))
+            })
+            .collect()
+    }
+
     /// The Work an entry is currently accepted as, with how it was resolved.
     pub async fn accepted_resolution(
         &self,

@@ -5,7 +5,11 @@
 
 pub mod acquire;
 pub mod bibliography;
+pub mod concurrency;
+pub mod crossref;
 pub mod expand;
+pub mod field_model;
+pub mod front_matter;
 pub mod identify;
 pub mod ingest;
 pub mod labels;

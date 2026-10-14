@@ -121,6 +121,7 @@ impl AppState {
                     schema,
                     prompt,
                     live_web,
+                    fast: false,
                 },
             )
             .await

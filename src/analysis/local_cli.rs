@@ -28,6 +28,7 @@ use super::{
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(20 * 60);
 const CACHE_SCHEMA_VERSION: u16 = 2;
 const CODEX_FAST_MODEL: &str = "gpt-5.6-luna";
+const CLAUDE_FAST_MODEL: &str = "haiku";
 const CODEX_PRIMARY_MODEL: &str = "gpt-5.6-terra";
 const CODEX_CONTEXT_MODEL: &str = "gpt-6-astra";
 const PREFETCH_FILENAME: &str = "analysis-context.json";
@@ -77,6 +78,7 @@ struct StageProfile {
     local_files: bool,
     persist_session: bool,
     claude_tools: &'static str,
+    claude_model: Option<&'static str>,
 }
 
 impl PromptStage {
@@ -89,6 +91,7 @@ impl PromptStage {
                 local_files: false,
                 persist_session: false,
                 claude_tools: "",
+                claude_model: None,
             },
             Self::AbstractReview | Self::Experiment => StageProfile {
                 codex_model: CODEX_PRIMARY_MODEL,
@@ -97,6 +100,7 @@ impl PromptStage {
                 local_files: false,
                 persist_session: false,
                 claude_tools: "",
+                claude_model: None,
             },
             Self::Structure => StageProfile {
                 codex_model: CODEX_PRIMARY_MODEL,
@@ -105,6 +109,7 @@ impl PromptStage {
                 local_files: true,
                 persist_session: true,
                 claude_tools: "Read,Grep",
+                claude_model: None,
             },
             Self::ExternalContext => StageProfile {
                 codex_model: CODEX_PRIMARY_MODEL,
@@ -113,6 +118,7 @@ impl PromptStage {
                 local_files: false,
                 persist_session: false,
                 claude_tools: "WebSearch,WebFetch",
+                claude_model: None,
             },
             Self::ContextWriter => StageProfile {
                 codex_model: CODEX_CONTEXT_MODEL,
@@ -121,6 +127,7 @@ impl PromptStage {
                 local_files: false,
                 persist_session: false,
                 claude_tools: "",
+                claude_model: None,
             },
             Self::ContextReview => StageProfile {
                 codex_model: CODEX_PRIMARY_MODEL,
@@ -129,6 +136,7 @@ impl PromptStage {
                 local_files: false,
                 persist_session: false,
                 claude_tools: "WebSearch,WebFetch",
+                claude_model: None,
             },
             Self::Revision => StageProfile {
                 codex_model: CODEX_PRIMARY_MODEL,
@@ -137,6 +145,7 @@ impl PromptStage {
                 local_files: true,
                 persist_session: true,
                 claude_tools: "Read,Grep,WebSearch,WebFetch",
+                claude_model: None,
             },
         }
     }
@@ -181,7 +190,7 @@ impl LocalCliAnalyzer {
         let schema_path = directory.join("output.schema.json");
         write_schema(&schema_path, request.schema).await?;
         let schema_path = canonical_schema(&schema_path).await?;
-        let mut profile = PromptStage::Experiment.profile();
+        let mut profile = reader_tool_profile(&request);
         profile.live_web = request.live_web;
         profile.claude_tools = if request.live_web {
             "WebSearch,WebFetch"
@@ -799,6 +808,26 @@ impl LocalCliAnalyzer {
         parse_structured_output(provider, &output.result)
     }
 
+    /// The `claude` command up to the session flags.
+    fn claude_base_command(&self, request: &AgentRequest<'_>) -> Command {
+        let mut command = Command::new(&self.claude_command);
+        command.arg("--print");
+        // Plan mode silently swaps a model alias such as `haiku` for
+        // the plan model, so a pinned model runs without it. Pinned
+        // calls are tool-free, so no permission mode is needed.
+        if request.profile.claude_model.is_none() {
+            command.args(["--permission-mode", "plan"]);
+        }
+        command
+            .arg("--tools")
+            .arg(request.profile.claude_tools)
+            .args(["--effort", request.profile.effort]);
+        if let Some(model) = request.profile.claude_model {
+            command.args(["--model", model]);
+        }
+        command
+    }
+
     async fn run_agent(
         &self,
         provider: AnalysisProvider,
@@ -868,11 +897,7 @@ impl LocalCliAnalyzer {
                 })
             }
             AnalysisProvider::Claude => {
-                let mut command = Command::new(&self.claude_command);
-                command
-                    .args(["--print", "--permission-mode", "plan", "--tools"])
-                    .arg(request.profile.claude_tools)
-                    .args(["--effort", request.profile.effort]);
+                let mut command = self.claude_base_command(&request);
                 if !request.profile.persist_session {
                     command.arg("--no-session-persistence");
                 }
@@ -987,6 +1012,27 @@ pub fn structured_model_key(provider: AnalysisProvider) -> String {
         AnalysisProvider::Claude => "claude:default".to_owned(),
         AnalysisProvider::Codex => format!("codex:{CODEX_PRIMARY_MODEL}"),
         AnalysisProvider::Heuristic => "heuristic:none".to_owned(),
+    }
+}
+
+/// Identifies the cheap model behind a `fast` reader tool call.
+pub fn structured_fast_model_key(provider: AnalysisProvider) -> String {
+    match provider {
+        AnalysisProvider::Claude => format!("claude:{CLAUDE_FAST_MODEL}"),
+        AnalysisProvider::Codex => format!("codex:{CODEX_FAST_MODEL}"),
+        AnalysisProvider::Heuristic => "heuristic:none".to_owned(),
+    }
+}
+
+/// Fast calls use the orientation profile pinned to the cheap Claude model;
+/// every other call keeps the experiment profile and the CLI's own model.
+const fn reader_tool_profile(request: &super::ReaderToolRequest<'_>) -> StageProfile {
+    if !request.fast {
+        return PromptStage::Experiment.profile();
+    }
+    StageProfile {
+        claude_model: Some(CLAUDE_FAST_MODEL),
+        ..PromptStage::Orientation.profile()
     }
 }
 
@@ -1701,6 +1747,65 @@ esac
             .await?;
         assert!(withheld.context_notes.is_empty());
         Ok(())
+    }
+
+    #[cfg(unix)]
+    async fn claude_arguments_for(fast: bool) -> String {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().expect("temporary directory");
+        let script = dir.path().join("claude");
+        std::fs::write(
+            &script,
+            "#!/bin/sh\ncat >/dev/null\necho \"$@\" >> \"$(dirname \"$0\")/arguments\"\necho '{\"structured_output\":{\"answer\":\"plain\",\"connections\":[],\"limitation\":null}}'\n",
+        )
+        .expect("script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        let cli = LocalCliAnalyzer::with_commands("codex-not-used", &script);
+        let _: ClarificationDraft = cli
+            .reader_tool(
+                AnalysisProvider::Claude,
+                dir.path(),
+                crate::analysis::ReaderToolRequest {
+                    schema: CLARIFICATION_SCHEMA,
+                    prompt: "p",
+                    live_web: false,
+                    fast,
+                },
+            )
+            .await
+            .expect("reader tool");
+        std::fs::read_to_string(dir.path().join("arguments")).expect("arguments")
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_pass_haiku_model_when_fast_claude_call_runs() {
+        let arguments = claude_arguments_for(true).await;
+        assert!(arguments.contains("--model haiku"), "{arguments}");
+        assert!(arguments.contains("--effort low"), "{arguments}");
+        assert!(!arguments.contains("--permission-mode"), "{arguments}");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_not_pass_model_when_reader_tool_is_not_fast() {
+        let arguments = claude_arguments_for(false).await;
+        assert!(!arguments.contains("--model"), "{arguments}");
+        assert!(arguments.contains("--permission-mode plan"), "{arguments}");
+        assert!(arguments.contains("--effort medium"), "{arguments}");
+    }
+
+    #[test]
+    fn should_key_fast_calls_by_cheap_model_when_naming_fast_model() {
+        assert_eq!(
+            structured_fast_model_key(AnalysisProvider::Claude),
+            "claude:haiku"
+        );
+        assert_eq!(
+            structured_fast_model_key(AnalysisProvider::Codex),
+            format!("codex:{CODEX_FAST_MODEL}")
+        );
     }
 
     #[test]

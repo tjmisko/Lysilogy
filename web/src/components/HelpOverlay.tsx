@@ -32,6 +32,7 @@ const GROUPS = [
       ["a / x / e (graph, Work open)", "Accept / reject / edit the reason a work is cited"],
       ["g (graph, Work open)", "Show the citing sentence in the paper"],
       ["f (graph, Work open)", "Fetch an open-access copy of the selected work"],
+      ["s (graph, Work open)", "Sources: every claimed title, year, author list, venue and DOI by source; override any field"],
       ["w / double-click (graph)", "Expand / collapse the selected work's references in place (up to 3 hops, 6 expansions)"],
       ["y (graph)", "Add the selected work to the reading ramp, with the works that lead to it; starts a ramp if none exists"],
       ["R (graph)", "Show / hide the reading ramp sidebar: status, notes, order, open or fetch each work"],

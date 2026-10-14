@@ -1,0 +1,264 @@
+.work-provenance-authors {
+  margin: 4px 0 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.work-provenance-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 5px 10px;
+  border: 1px solid var(--line-bright);
+  border-radius: 6px;
+  background: var(--panel-bright);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.work-provenance-open:hover {
+  border-color: var(--signal);
+}
+
+.work-provenance-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.work-provenance-backdrop {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: #0009;
+}
+
+.work-provenance {
+  width: min(1100px, 94vw);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border: 1px solid var(--line-bright);
+  background: var(--panel);
+  padding: 20px 22px;
+  box-shadow: 0 20px 70px #0008;
+}
+
+.work-provenance > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.work-provenance h2 {
+  margin: 0 0 12px;
+  font: 22px Georgia, serif;
+}
+
+.work-provenance-close {
+  padding: 2px 10px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.work-provenance-table-wrap {
+  overflow-x: auto;
+}
+
+.work-provenance table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.work-provenance caption {
+  padding-bottom: 8px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  text-align: left;
+}
+
+.work-provenance th,
+.work-provenance td {
+  padding: 8px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.work-provenance thead th {
+  border-top: 0;
+  border-bottom: 1px solid var(--line-bright);
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.work-provenance tbody th {
+  min-width: 150px;
+  max-width: 220px;
+  font-weight: 400;
+}
+
+.work-provenance-field {
+  display: block;
+  color: var(--ink-faint);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.work-provenance-selected {
+  display: block;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+
+.work-provenance-badge {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 6px;
+  border: 1px solid var(--danger);
+  border-radius: 999px;
+  color: var(--danger);
+  font-size: 11px;
+}
+
+.work-provenance ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.work-provenance li[data-mark] {
+  display: flex;
+  gap: 6px;
+  align-items: start;
+  padding: 3px 6px;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+.work-provenance li[data-mark="selected"] {
+  outline: 2px solid var(--signal);
+  outline-offset: -1px;
+}
+
+.work-provenance li[data-mark="agrees"] {
+  background: color-mix(in srgb, var(--evidence) 18%, transparent);
+}
+
+.work-provenance li[data-mark="disagrees"] {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+}
+
+.work-provenance li[data-mark="excluded"] {
+  color: var(--ink-faint);
+}
+
+.work-provenance li[data-mark="excluded"] summary {
+  text-decoration: line-through;
+}
+
+.work-provenance-glyph {
+  flex: none;
+  width: 1.1em;
+  text-align: center;
+}
+
+.work-provenance li[data-mark="agrees"] .work-provenance-glyph {
+  color: var(--evidence);
+}
+
+.work-provenance li[data-mark="disagrees"] .work-provenance-glyph {
+  color: var(--danger);
+}
+
+.work-provenance li[data-mark="selected"] .work-provenance-glyph {
+  color: var(--signal);
+}
+
+.work-provenance details {
+  min-width: 0;
+}
+
+.work-provenance summary {
+  cursor: pointer;
+}
+
+.work-provenance-count {
+  margin-left: 6px;
+  color: var(--ink-faint);
+}
+
+.work-provenance-claim {
+  margin: 6px 0 0;
+  padding: 6px 0 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.work-provenance-claim p {
+  margin: 0 0 4px;
+}
+
+.work-provenance-claim blockquote {
+  margin: 4px 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--line-bright);
+  color: var(--ink-faint);
+}
+
+.work-provenance-claim button,
+.work-provenance-actions button,
+.work-provenance-cell-button {
+  padding: 3px 9px;
+  border: 1px solid var(--line-bright);
+  border-radius: 5px;
+  background: var(--panel-bright);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.work-provenance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.work-provenance form input,
+.work-provenance form textarea {
+  width: 100%;
+  min-width: 140px;
+  box-sizing: border-box;
+  padding: 5px 7px;
+  border: 1px solid var(--line-bright);
+  border-radius: 4px;
+  background: var(--bg-raised);
+  color: var(--ink);
+}
+
+.work-provenance-error {
+  margin: 6px 0 0;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.work-provenance:focus-visible {
+  outline: none;
+}

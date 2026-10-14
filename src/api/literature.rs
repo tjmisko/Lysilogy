@@ -17,7 +17,8 @@ use axum::{
 use chrono::{DateTime, Utc};
 use lysilogy_core::{Work, WorkId, WorkLinkMethod};
 use lysilogy_ingest::{
-    labels::LabelOptions, literature::LiteratureSummary, local_evidence::LocalEvidenceSummary,
+    field_model::FieldOptions, labels::LabelOptions, literature::LiteratureSummary,
+    local_evidence::LocalEvidenceSummary,
 };
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
@@ -113,6 +114,15 @@ pub struct LiteratureOptions {
     pub labels: Option<LabelSidecarChoice>,
     /// Most model calls for the label pass.
     pub label_limit: Option<usize>,
+    /// Also fetch the publisher (Crossref) record of cited Works with a DOI.
+    pub publisher: Option<bool>,
+    /// Read missing authors and years with this sidecar's cheap model instead
+    /// of the server's default field pass. Implies `local`.
+    pub fields: Option<LabelSidecarChoice>,
+    /// Skip the field pass that otherwise runs with local evidence.
+    pub no_fields: Option<bool>,
+    /// Most model calls for the field pass.
+    pub fields_limit: Option<usize>,
 }
 
 /// Run the job, then refresh prominence around the linked Work. A refresh
@@ -134,34 +144,60 @@ async fn run_job_steps(
     id: &PaperId,
     options: LiteratureOptions,
 ) -> crate::Result<(LiteratureSummary, Option<LocalEvidenceSummary>)> {
-    let summary = state.run_literature_flow(id).await?;
-    if !options.local.unwrap_or(false) && options.labels.is_none() {
+    let summary = state
+        .run_literature_flow(id, options.publisher.unwrap_or(false))
+        .await?;
+    if !options.local.unwrap_or(false) && options.labels.is_none() && options.fields.is_none() {
         return Ok((summary, None));
     }
     let Some(mut local) = state.run_local_evidence(id, &summary).await? else {
         return Ok((summary, None));
     };
-    let Some(sidecar) = options.labels else {
+    if let Some(sidecar) = options.labels {
+        let labeler = crate::labeling::SidecarLabeler::new(
+            sidecar_provider(sidecar),
+            crate::analysis::LocalCliAnalyzer::default(),
+            state.store.root().join("labels"),
+        )?;
+        let defaults = LabelOptions::default();
+        let label_options = LabelOptions {
+            limit: options.label_limit.unwrap_or(defaults.limit),
+            ..defaults
+        };
+        local.labels = state
+            .label_local_edges(id, &summary, &labeler, label_options)
+            .await?;
+    }
+    if options.no_fields.unwrap_or(false) {
+        return Ok((summary, Some(local)));
+    }
+    let extractor = match options.fields {
+        Some(sidecar) => Some(crate::field_extraction::SidecarFieldExtractor::new(
+            sidecar_provider(sidecar),
+            crate::analysis::LocalCliAnalyzer::default(),
+            state.store.root().join("fields"),
+        )?),
+        None => state.field_extractor.clone(),
+    };
+    let Some(extractor) = extractor else {
         return Ok((summary, Some(local)));
     };
-    let provider = match sidecar {
-        LabelSidecarChoice::Claude => crate::domain::AnalysisProvider::Claude,
-        LabelSidecarChoice::Codex => crate::domain::AnalysisProvider::Codex,
-    };
-    let labeler = crate::labeling::SidecarLabeler::new(
-        provider,
-        crate::analysis::LocalCliAnalyzer::default(),
-        state.store.root().join("labels"),
-    )?;
-    let defaults = LabelOptions::default();
-    let label_options = LabelOptions {
-        limit: options.label_limit.unwrap_or(defaults.limit),
+    let defaults = FieldOptions::default();
+    let field_options = FieldOptions {
+        limit: options.fields_limit.unwrap_or(defaults.limit),
         ..defaults
     };
-    local.labels = state
-        .label_local_edges(id, &summary, &labeler, label_options)
+    state
+        .harvest_fields_into(id, &summary, &extractor, field_options, &mut local)
         .await?;
     Ok((summary, Some(local)))
+}
+
+const fn sidecar_provider(sidecar: LabelSidecarChoice) -> crate::domain::AnalysisProvider {
+    match sidecar {
+        LabelSidecarChoice::Claude => crate::domain::AnalysisProvider::Claude,
+        LabelSidecarChoice::Codex => crate::domain::AnalysisProvider::Codex,
+    }
 }
 
 pub(super) fn routes() -> Router<AppState> {
@@ -641,7 +677,8 @@ mod tests {
         ) -> ProviderFuture<'a, std::result::Result<Value, ProviderError>> {
             Box::pin(async move {
                 tokio::time::sleep(Duration::from_millis(300)).await;
-                if self.with_metrics && url.contains("filter=openalex:") {
+                let metrics_url = url.contains("cited_by_count");
+                if url.contains("filter=openalex:") && (self.with_metrics || !metrics_url) {
                     let ids = url
                         .split("filter=openalex:")
                         .nth(1)
@@ -653,9 +690,14 @@ mod tests {
                         .map(|id| {
                             if metrics {
                                 json!({"id": format!("https://openalex.org/{id}"), "cited_by_count": 5})
+                            } else if id.eq_ignore_ascii_case(&self.openalex_id) {
+                                json!({"id": format!("https://openalex.org/{id}"),
+                                       "display_name": self.title, "publication_year": 2013,
+                                       "authorships": []})
                             } else {
                                 json!({"id": format!("https://openalex.org/{id}"),
-                                       "display_name": "A Cited Stub", "publication_year": 2001})
+                                       "display_name": "A Cited Stub", "publication_year": 2001,
+                                       "authorships": []})
                             }
                         })
                         .collect();
@@ -944,12 +986,32 @@ mod tests {
         for body in [
             json!({"labels": "gpt"}),
             json!({"label_limit": -1}),
+            json!({"fields": "gpt"}),
+            json!({"fields_limit": -1}),
+            json!({"publisher": "yes"}),
             json!({"extra": 1}),
         ] {
             let (status, json) = request_with_body(&fixture.state, "POST", &uri, Some(body)).await;
             assert_eq!(status, StatusCode::BAD_REQUEST, "{json}");
             assert_eq!(json["error"], "invalid_body");
         }
+    }
+
+    #[test]
+    fn should_reject_non_boolean_publisher_when_parsing_lit_options() {
+        for body in [
+            json!({"publisher": "yes"}),
+            json!({"publisher": 1}),
+            json!({"publisher": null, "extra": true}),
+        ] {
+            let parsed = serde_json::from_value::<LiteratureOptions>(body.clone());
+            assert!(parsed.is_err(), "{body}");
+        }
+        let options: LiteratureOptions =
+            serde_json::from_value(json!({"publisher": true})).expect("bool");
+        assert_eq!(options.publisher, Some(true));
+        let unset: LiteratureOptions = serde_json::from_value(json!({})).expect("empty");
+        assert_eq!(unset.publisher, None);
     }
 
     #[tokio::test]

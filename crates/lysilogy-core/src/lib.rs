@@ -11,6 +11,7 @@ pub mod id;
 pub mod identifier;
 pub mod names;
 pub mod prominence;
+pub mod provenance;
 pub mod ramp;
 pub mod state;
 pub mod title;
@@ -23,8 +24,9 @@ pub use expansion::{
     WALK_DEPTH_MAX, WALK_EXPANSIONS_MAX, WALK_FANOUT_MAX, WalkBounds, WalkBoundsError,
 };
 pub use id::{
-    AssertionId, BlobId, DocumentId, DocumentVersionId, EntryId, IdError, IdentifierId, MentionId,
-    RampId, RelationshipClaimId, SourceRecordId, TagId, WorkId, WorkVersionId, WorkspaceId,
+    AssertionId, BlobId, DocumentId, DocumentVersionId, EntryId, FieldClaimId, IdError,
+    IdentifierId, MentionId, RampId, RelationshipClaimId, SourceRecordId, TagId, WorkId,
+    WorkVersionId, WorkspaceId,
 };
 pub use identifier::{DetectedIdentifier, extract as extract_identifiers, front_matter};
 pub use names::first_author_family;
@@ -37,11 +39,12 @@ pub use ramp::{
     RampOrderItem, RampTitle, default_ramp_title, suggest_order,
 };
 pub use state::{
-    AcquisitionState, AssertionStatus, CandidateOrigin, CitationStyle, Coverage, DecisionKind,
-    DocumentFormat, ExpansionMethod, ExpansionState, ExpansionUnavailableReason, FieldKind,
-    FieldState, IdentifierScheme, IdentifierStatus, ParseStateError, RampItemStatus,
-    RelationshipOrigin, ResolutionMethod, ResolutionStatus, ReviewState, TagKind,
-    UnavailableReason, UploadState, VersionKind, Visibility, WorkKind, WorkLinkMethod, WorkMark,
+    AcquisitionState, AssertionStatus, CandidateOrigin, CitationStyle, ClaimConfidence,
+    ClaimOrigin, Coverage, DecisionKind, DocumentFormat, ExpansionMethod, ExpansionState,
+    ExpansionUnavailableReason, FieldKind, FieldState, IdentifierScheme, IdentifierStatus,
+    ParseStateError, ProvenanceField, RampItemStatus, RelationshipOrigin, ResolutionMethod,
+    ResolutionStatus, ReviewState, TagKind, UnavailableReason, UploadState, VersionKind,
+    Visibility, WorkKind, WorkLinkMethod, WorkMark,
 };
 pub use title::{title_key, title_similarity};
 pub use work::{Work, WorkIdentifier, WorkVersion};
