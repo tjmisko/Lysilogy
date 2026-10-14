@@ -1,0 +1,270 @@
+.literature-histogram {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.literature-histogram-seed {
+  display: flex;
+  height: 84px;
+  flex: none;
+  align-items: stretch;
+  gap: 14px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.literature-histogram-seed-card {
+  display: flex;
+  width: 280px;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  padding: 6px 10px;
+  border: 1px solid var(--line-bright);
+  border-radius: 8px;
+  background: var(--panel-bright);
+}
+
+.literature-histogram-seed-head {
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+}
+
+.literature-histogram-seed-card h3 {
+  display: -webkit-box;
+  flex: none;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font: 500 12.5px/1.25 Georgia, serif;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.literature-histogram-kicker,
+.literature-histogram-year {
+  color: var(--ink-faint);
+  font: 9.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+}
+
+.literature-histogram-chips {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.literature-histogram-scroll {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.literature-histogram-content {
+  position: relative;
+}
+
+.literature-histogram-axis {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 30px;
+  border-bottom: 1px solid var(--line-bright);
+  background: var(--panel);
+}
+
+.literature-histogram-tick {
+  position: absolute;
+  top: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 9px 0 0 4px;
+  color: var(--ink-soft);
+  font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.literature-histogram-tick[data-slot-kind="empty_year"] {
+  padding: 0;
+}
+
+.literature-histogram-tick[data-slot-kind="gap"] {
+  color: var(--ink-faint);
+  font-size: 8.5px;
+}
+
+.literature-histogram-gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px solid var(--line);
+}
+
+.literature-histogram-gridline[data-slot-kind="empty_year"] {
+  opacity: 0.5;
+}
+
+.literature-histogram-column {
+  position: absolute;
+  top: 30px;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.literature-histogram-card {
+  position: absolute;
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+  padding: 5px 8px;
+  border: 1px solid var(--line-bright);
+  border-radius: 6px;
+  background: var(--panel-bright);
+  cursor: pointer;
+}
+
+.literature-histogram-card[data-focused="true"] {
+  z-index: 1;
+  border-color: var(--signal);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
+}
+
+.literature-histogram-card[data-mark="pinned"] {
+  box-shadow: inset 0 0 0 1px var(--signal);
+}
+
+.literature-histogram-card[data-mark="pinned"][data-focused="true"] {
+  box-shadow: inset 0 0 0 1px var(--signal), 0 4px 16px rgb(0 0 0 / 0.35);
+}
+
+.literature-histogram-card[data-mark="downplayed"] {
+  opacity: 0.55;
+}
+
+.literature-histogram-card[data-mark="hidden"] {
+  border-style: dashed;
+  opacity: 0.45;
+}
+
+.literature-histogram-title {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font: 400 11.5px/1.25 Georgia, serif;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.literature-histogram-card[data-expanded="true"] .literature-histogram-title {
+  font-size: 13px;
+  -webkit-line-clamp: 4;
+}
+
+.literature-histogram-authors {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font: 9.5px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.literature-histogram-card[data-expanded="true"] .literature-histogram-authors {
+  -webkit-line-clamp: 2;
+}
+
+.literature-histogram-meta {
+  margin: auto 0 0;
+  color: var(--ink-faint);
+  font: 9.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.literature-histogram-thumb {
+  height: 112px;
+  flex: none;
+}
+
+.literature-histogram-card .paper-preview {
+  height: 112px;
+  box-sizing: border-box;
+  aspect-ratio: auto;
+  padding: 4px;
+}
+
+.literature-histogram-placeholder {
+  display: flex;
+  height: 30px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px dashed var(--line-bright);
+  border-radius: 4px;
+  color: var(--ink-faint);
+  font: 9.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+}
+
+.literature-histogram-held {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--signal);
+}
+
+.literature-histogram > .literature-status {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  transform: translate(-50%, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .literature-histogram-card,
+  .literature-histogram-scroll {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}
+
+.literature-histogram-link-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.literature-histogram-link {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 1.5;
+  stroke-opacity: 0.7;
+}
+
+/* The overlay is a grid with an auto column; without this the body grows to the content width. */
+.literature-graph[data-view="histogram"] .literature-body {
+  min-width: 0;
+}

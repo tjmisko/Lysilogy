@@ -1,3 +1,4 @@
+import type { LiteratureView } from "../lib/histogramLayout";
 import type { GraphNeighbors, TagView } from "../types";
 
 type LiteratureLegendProps = {
@@ -11,6 +12,7 @@ type LiteratureLegendProps = {
   onToggleTag: (tagId: string) => void;
   onClearTagFilter: () => void;
   error: string | null;
+  view?: LiteratureView;
 };
 
 /** Index keys `1`..`9` address the first nine tags. */
@@ -26,7 +28,7 @@ function tagCounts(graph: GraphNeighbors): Map<string, number> {
 
 /** Keys, status line, tag filter chips, and expanded-cluster chips below the canvas. */
 export function LiteratureLegend({
-  graph, placementCount, expanded, clusterLabels, onToggleExpansion, tags, tagFilter, onToggleTag, onClearTagFilter, error,
+  graph, placementCount, expanded, clusterLabels, onToggleExpansion, tags, tagFilter, onToggleTag, onClearTagFilter, error, view = "radial",
 }: LiteratureLegendProps) {
   const ranking = graph.ranking;
   const visible = ranking?.visible ?? graph.nodes.filter((node) => node.id !== graph.center).length;
@@ -54,7 +56,9 @@ export function LiteratureLegend({
             {clusterLabels.get(key) ?? key} ×
           </button>
         ))}
-        <span><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>↵</kbd> open or expand · <kbd>+</kbd>/<kbd>-</kbd> more/fewer · <kbd>c</kbd> collapse · <kbd>Esc</kbd> close</span>
+        {view === "histogram"
+          ? <span><kbd>h</kbd>/<kbd>l</kbd> year · <kbd>j</kbd>/<kbd>k</kbd> within year · <kbd>↵</kbd> open · <kbd>c</kbd> collapse · <kbd>v</kbd> radial view · <kbd>Esc</kbd> close</span>
+          : <span><kbd>j</kbd>/<kbd>k</kbd> move · <kbd>↵</kbd> open or expand · <kbd>+</kbd>/<kbd>-</kbd> more/fewer · <kbd>c</kbd> collapse · <kbd>v</kbd> year view · <kbd>Esc</kbd> close</span>}
         {error !== null && <span className="literature-legend-error" role="alert">{error}</span>}
       </p>
       {(tags.length > 0 || tagFilter.size > 0) && (
