@@ -22,6 +22,7 @@ import { useRamps } from "../lib/useRamps";
 import { LiteratureRamp } from "./LiteratureRamp";
 import { LiteratureCuration, TAG_INPUT_CLASS } from "./LiteratureCuration";
 import { LiteratureLegend, TAG_KEY_LIMIT } from "./LiteratureLegend";
+import type { WorkSelection } from "../lib/provenance";
 import { WorkProvenance } from "./WorkProvenance";
 import "./LiteratureGraph.css";
 
@@ -179,6 +180,8 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   const [walkNotice, setWalkNotice] = useState<string | null>(null);
   const [rampOpen, setRampOpen] = useState(false);
   const [viewOverrides, setViewOverrides] = useState<ReadonlyMap<string, ExpansionView>>(() => new Map());
+  // Selections changed in the Sources dialog; they outlive refetches of stale payloads.
+  const [selectionPatches, setSelectionPatches] = useState<ReadonlyMap<string, WorkSelection>>(() => new Map());
   const expandingRef = useRef<ReadonlyMap<string, ExpandingEntry>>(new Map());
   const walkAbort = useRef<AbortController | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -329,8 +332,12 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
       Object.assign(expansions, payload.expansions);
     }
     if (graph !== null) works.set(graph.work.id, graph.work);
+    for (const [workId, selection] of selectionPatches) {
+      const work = works.get(workId);
+      if (work !== undefined) works.set(workId, { ...work, ...selection });
+    }
     return { works, localPapers, acquisitions, prominence, marks, workTags, expansions };
-  }, [graph, viewOverrides, walkData]);
+  }, [graph, selectionPatches, viewOverrides, walkData]);
   const worksById = merged.works;
   const edgeByCited = useMemo(() => {
     const map = new Map<string, GraphEdge>();
@@ -1102,6 +1109,8 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                   canFetch={fetchable}
                   onFetch={startFetch}
                   onClose={() => setWorkPanelOpen(false)}
+                  onSelectionChange={(workId, selection) =>
+                    setSelectionPatches((current) => new Map(current).set(workId, selection))}
                 />
               )}
               {rampOpen && (
@@ -1169,6 +1178,7 @@ type WorkPanelProps = {
   isExpanding: boolean;
   onToggleExpansion: () => void;
   onClose: () => void;
+  onSelectionChange: (workId: string, selection: WorkSelection) => void;
 };
 
 function LabelEditor({ label, onSave, onCancel }: { label: EdgeLabel; onSave: (edit: EdgeLabelEdit) => void; onCancel: () => void }) {
@@ -1298,7 +1308,7 @@ function WorkPanel(props: WorkPanelProps) {
         {work.display_year ?? "year unknown"} · {work.kind}
         {state.kind === "ready" && ` · cites ${state.citations.outgoing.length} · cited by ${state.citations.incoming.length} known`}
       </p>
-      <WorkProvenance work={work} />
+      <WorkProvenance work={work} onSelectionChange={props.onSelectionChange} />
       {!props.isCenter && (
         <LiteratureCuration
           key={work.id}

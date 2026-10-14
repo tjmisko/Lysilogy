@@ -1,4 +1,4 @@
-import type { ClaimView, FieldProvenance, ProvenanceColumnKey } from "../types";
+import type { ClaimView, FieldProvenance, ProvenanceColumnKey, ProvenanceView, Work } from "../types";
 
 /** Source columns in trust order, highest first. */
 export const PROVENANCE_COLUMN_ORDER: readonly ProvenanceColumnKey[] = [
@@ -116,4 +116,25 @@ export function fieldLabel(field: FieldProvenance["field"]): string {
 export function overrideDraft(field: FieldProvenance["field"], display: string | null): string {
   if (display === null) return "";
   return field === "authors" ? display.split("; ").join("\n") : display;
+}
+
+/** The Work fields a provenance change can move, as the graph prints them. */
+export type WorkSelection = Pick<Work, "display_title" | "title_state" | "display_year" | "year_state" | "display_authors">;
+
+/** The selected title, year and authors in `view`, shaped as Work fields. */
+export function workSelection(view: ProvenanceView): WorkSelection {
+  const selected = (name: FieldProvenance["field"]) =>
+    view.fields.find((field) => field.field === name)?.selected;
+  const title = selected("title");
+  const year = selected("year");
+  const authors = selected("authors")?.value;
+  return {
+    display_title: typeof title?.value === "string" ? title.value : null,
+    title_state: title?.state ?? "unknown",
+    display_year: typeof year?.value === "number" ? year.value : null,
+    year_state: year?.state ?? "unknown",
+    display_authors: Array.isArray(authors) && authors.every((name) => typeof name === "string")
+      ? authors
+      : null,
+  };
 }

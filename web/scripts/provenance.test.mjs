@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   PROVENANCE_COLUMN_ORDER, activeOverride, cellValues, formatAuthors, overrideDraft, parseOverrideInput,
+  workSelection,
 } from '../src/lib/provenance.ts';
 
 let nextId = 0;
@@ -105,4 +106,27 @@ test('should truncate author list with remaining count when formatting', () => {
   assert.equal(formatAuthors(['A', 'B'], 3), 'A, B');
   assert.equal(formatAuthors(['A', 'B', 'C', 'D', 'E', 'F', 'G']), 'A, B, C, D, E, F +1');
   assert.equal(formatAuthors([]), '');
+});
+
+const selection = (name, value, state = 'known') => ({ field: name, selected: { value, state }, claims: [] });
+
+test('should copy selected title, year and authors into Work fields when view loads', () => {
+  const view = { work_id: 'w', columns: [], fields: [
+    selection('title', 'Override Title'), selection('year', 2021), selection('authors', ['A', 'B']),
+    selection('venue', 'Ignored'),
+  ] };
+  assert.deepEqual(workSelection(view), {
+    display_title: 'Override Title', title_state: 'known',
+    display_year: 2021, year_state: 'known', display_authors: ['A', 'B'],
+  });
+});
+
+test('should null unknown or malformed fields when selection is missing', () => {
+  const view = { work_id: 'w', columns: [], fields: [
+    selection('title', null, 'unknown'), selection('year', '2021'), selection('authors', [1]),
+  ] };
+  assert.deepEqual(workSelection(view), {
+    display_title: null, title_state: 'unknown',
+    display_year: null, year_state: 'known', display_authors: null,
+  });
 });

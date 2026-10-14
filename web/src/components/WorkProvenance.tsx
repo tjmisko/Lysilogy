@@ -12,7 +12,9 @@ import {
   formatAuthors,
   overrideDraft,
   parseOverrideInput,
+  workSelection,
   type CellMark,
+  type WorkSelection,
   type CellValue,
 } from "../lib/provenance";
 import type { ClaimView, FieldProvenance, ProvenanceView, Work } from "../types";
@@ -47,7 +49,11 @@ function summaryText(field: Field, display: string): string {
 type Editing = { workId: string; field: Field; draft: string; error: string | null };
 
 /** The Work's printed authors and the Sources dialog: every claimed value of a field, by source. */
-export function WorkProvenance({ work }: { work: Work }) {
+export function WorkProvenance({ work, onSelectionChange }: {
+  work: Work;
+  /** Called after an override, clear, reject or restore with the Work's new selection. */
+  onSelectionChange?: (workId: string, selection: WorkSelection) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState<{ workId: string; view: ProvenanceView } | null>(null);
   const [failure, setFailure] = useState<{ workId: string; message: string } | null>(null);
@@ -129,6 +135,7 @@ export function WorkProvenance({ work }: { work: Work }) {
       .then((next) => {
         setLoaded({ workId, view: next });
         setEditing(null);
+        onSelectionChange?.(workId, workSelection(next));
       })
       .catch((reason: unknown) => {
         setFailure({ workId, message: reason instanceof Error ? reason.message : "Could not save" });
