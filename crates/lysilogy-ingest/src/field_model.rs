@@ -711,9 +711,9 @@ async fn record_grounded(
 /// Read the paper's own front matter and record the grounded title, authors
 /// and year.
 ///
-/// Runs when `work` lacks a non-model `paper` claim for any of them, and
-/// writes `paper` / `frontmatter-model-v1` / `model` claims for the fields
-/// that lack one.
+/// Runs when `work` lacks a non-model, unrejected `paper` claim for any of
+/// them, and writes `paper` / `frontmatter-model-v1` / `model` claims for the
+/// fields that lack one.
 ///
 /// # Errors
 /// Database failures.
@@ -729,6 +729,7 @@ pub async fn harvest_front_matter_fields(
         if claim.origin != ClaimOrigin::Paper
             || claim.confidence == ClaimConfidence::Model
             || claim.retracted_at.is_some()
+            || claim.review_state == ReviewState::Rejected
         {
             continue;
         }
@@ -1591,5 +1592,70 @@ mod tests {
         assert_eq!(second.claims_written, 0);
         assert_eq!(extractor.calls(), 1);
         let _ = &harness.pool;
+    }
+
+    #[tokio::test]
+    async fn should_fill_title_from_model_when_deterministic_paper_title_rejected() {
+        let (_guard, harness) = harness!();
+        let paper = harness.citing;
+        let title = format!("Learning {} Preferences", harness.marker);
+        let front = format!("{title}\nAda Lovelace\nPublished 2019.");
+        let wrong = FieldValue::Title(format!("Learning {}", harness.marker));
+        let year = FieldValue::Year(2019);
+        let authors = FieldValue::Authors(vec!["Ada Lovelace".to_owned()]);
+        let deterministic: Vec<NewClaim<'_>> = [&wrong, &year, &authors]
+            .into_iter()
+            .map(|value| NewClaim {
+                work_id: paper,
+                field: value.field(),
+                value,
+                origin: ClaimOrigin::Paper,
+                extractor: "frontmatter-v1",
+                confidence: ClaimConfidence::Explicit,
+                source_record_id: None,
+                entry_id: None,
+                locator: Some("front_matter"),
+            })
+            .collect();
+        harness.claims.record(&deterministic).await.expect("record");
+        let answer = title.clone();
+        let extractor = ScriptedFieldExtractor::new("test:model", move |_| {
+            Ok(FieldDraft {
+                items: vec![FieldDraftItem {
+                    index: 0,
+                    title: answer.clone(),
+                    authors: vec!["Ada Lovelace".to_owned()],
+                    year: "2019".to_owned(),
+                }],
+            })
+        });
+        let covered = harvest_front_matter_fields(&harness.context(), paper, &front, &extractor)
+            .await
+            .expect("covered");
+        assert_eq!(covered.model_calls, 0, "every field has a paper claim");
+
+        let rejected = harness
+            .claims
+            .claims_for(paper)
+            .await
+            .expect("claims")
+            .into_iter()
+            .find(|claim| claim.field == ProvenanceField::Title)
+            .expect("title claim");
+        harness
+            .claims
+            .set_review_state(rejected.id, ReviewState::Rejected)
+            .await
+            .expect("reject");
+        let filled = harvest_front_matter_fields(&harness.context(), paper, &front, &extractor)
+            .await
+            .expect("filled");
+        assert_eq!(filled.model_calls, 1, "{filled:?}");
+        assert_eq!(
+            filled.claims_written, 1,
+            "only the rejected field is filled"
+        );
+        let row = harness.works.get(paper).await.expect("get").expect("work");
+        assert_eq!(row.display_title.as_deref(), Some(title.as_str()));
     }
 }
