@@ -5,6 +5,8 @@
 //! (see `lysilogy_core::provenance`). Records are fetched through the same
 //! JSON transport as `OpenAlex`; no credentials are added for this host.
 
+use std::sync::LazyLock;
+
 use lysilogy_core::provenance::FieldValue;
 use lysilogy_core::{
     ClaimConfidence, ClaimOrigin, Coverage, IdentifierScheme, SourceRecordId, WorkId,
@@ -13,6 +15,7 @@ use lysilogy_core::{
 use lysilogy_db::claim::{ClaimRepository, NewClaim};
 use lysilogy_db::source_record::SourceRecordRepository;
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
+use regex::Regex;
 use serde::Serialize;
 use serde_json::{Value, json};
 
@@ -78,9 +81,52 @@ pub fn crossref_work_url(doi: &str) -> String {
     )
 }
 
+/// A tag-shaped run such as `<i>`, `</sub>`, `<mml:mi>` or `<br/>`. A bare
+/// `<` in running text (`p < 0.05`) does not match.
+static MARKUP_TAG: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"</?[A-Za-z][A-Za-z0-9:._-]*(?:\s[^<>]*)?/?>").expect("markup tag pattern")
+});
+
+static CHARACTER_REFERENCE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"&(?:#(\d{1,7})|#[xX]([0-9A-Fa-f]{1,6})|(amp|lt|gt|quot|apos|nbsp));")
+        .expect("character reference pattern")
+});
+
+/// Crossref deposits carry JATS/HTML inline markup (`<i>`, `<sub>`,
+/// `<scp>`, `MathML`) and character references. Drop the tags, decode the
+/// references, and collapse the whitespace they leave.
+fn strip_markup(text: &str) -> String {
+    let untagged = MARKUP_TAG.replace_all(text, "");
+    let decoded = CHARACTER_REFERENCE.replace_all(&untagged, |captures: &regex::Captures<'_>| {
+        let code = captures
+            .get(1)
+            .and_then(|digits| digits.as_str().parse::<u32>().ok())
+            .or_else(|| {
+                captures
+                    .get(2)
+                    .and_then(|hex| u32::from_str_radix(hex.as_str(), 16).ok())
+            });
+        if let Some(code) = code {
+            return char::from_u32(code)
+                .filter(|character| !character.is_control())
+                .map_or_else(String::new, String::from);
+        }
+        match captures.get(3).map(|name| name.as_str()) {
+            Some("amp") => "&",
+            Some("lt") => "<",
+            Some("gt") => ">",
+            Some("quot") => "\"",
+            Some("apos") => "'",
+            _ => " ",
+        }
+        .to_owned()
+    });
+    decoded.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
 fn nonempty(value: &Value) -> Option<String> {
-    let text = value.as_str()?.trim();
-    (!text.is_empty()).then(|| text.to_owned())
+    let text = strip_markup(value.as_str()?);
+    (!text.is_empty()).then_some(text)
 }
 
 fn first_string(message: &Value, key: &str) -> Option<String> {
@@ -295,6 +341,39 @@ mod tests {
                 "issued": {"date-parts": [[2018]]}
             }
         })
+    }
+
+    #[test]
+    fn should_strip_markup_when_crossref_title_has_inline_tags() {
+        let work = parse_crossref_work(&json!({"message": {
+            "title": ["The <i>Drosophila</i> CO<sub>2</sub>  sensor &amp; <scp>p</scp> &lt; 0.05"],
+            "author": [{"given": "Jos&#233;", "family": "Garc&#xED;a"}],
+            "container-title": ["<b>Nature</b>"],
+        }}));
+        assert_eq!(
+            work.title.as_deref(),
+            Some("The Drosophila CO2 sensor & p < 0.05")
+        );
+        assert_eq!(work.authors, ["Jos\u{e9} Garc\u{ed}a"]);
+        assert_eq!(work.venue.as_deref(), Some("Nature"));
+    }
+
+    #[test]
+    fn should_keep_bare_angle_brackets_when_crossref_title_has_no_tags() {
+        assert_eq!(
+            strip_markup("When p < 0.05 and q > 1"),
+            "When p < 0.05 and q > 1"
+        );
+        assert_eq!(
+            strip_markup("<mml:math><mml:mi>x</mml:mi></mml:math>-ray &bogus; &#0;"),
+            "x-ray &bogus;"
+        );
+    }
+
+    #[test]
+    fn should_skip_title_when_only_markup_remains() {
+        let work = parse_crossref_work(&json!({"message": {"title": ["<i> </i>", "Real"]}}));
+        assert_eq!(work.title.as_deref(), Some("Real"));
     }
 
     #[test]
