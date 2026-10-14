@@ -372,6 +372,15 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
     return { works, localPapers, acquisitions, prominence, marks, workTags, expansions };
   }, [graph, graphView, histogramData, selectionPatches, viewOverrides, walkData]);
   const worksById = merged.works;
+  // The year view lays out its own payload; Sources changes can move a card's year.
+  const patchedHistogramData = useMemo<GraphNeighbors | null>(() => {
+    if (histogramData === null || selectionPatches.size === 0) return histogramData;
+    const nodes = histogramData.nodes.map((node) => {
+      const selection = selectionPatches.get(node.id);
+      return selection === undefined ? node : { ...node, ...selection };
+    });
+    return { ...histogramData, nodes };
+  }, [histogramData, selectionPatches]);
   const histogramCardCount = useMemo(
     () => new Set((histogramData?.nodes ?? []).map((node) => node.id).filter((id) => id !== histogramData?.center)).size,
     [histogramData],
@@ -1163,8 +1172,8 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
                 )}
                 {graphView === "histogram" && (
                   <LiteratureHistogram
-                    centerWork={graph.work}
-                    neighbors={histogramData}
+                    centerWork={worksById.get(graph.work.id) ?? graph.work}
+                    neighbors={patchedHistogramData}
                     error={histogramError}
                     focusedWorkId={selectedId}
                     markFor={markFor}
