@@ -120,7 +120,7 @@ your own value (`Enter` saves, `Esc` cancels, **Clear** restores the tiered choi
 for its extractor, source and the citing entry's printed text, and **Reject** / **Restore** it.
 
 ```sh
-./target/release/lysilogy lit "Deep Reinforcement Learning from Human Preferences" --local --fields --sidecar claude --fields-limit 3
+./target/release/lysilogy lit "Deep Reinforcement Learning from Human Preferences" --local --fields-limit 3
 ./target/release/lysilogy provenance show "Superintelligence: paths, dangers, strategies"
 ./target/release/lysilogy provenance set <work> year 2019
 ./target/release/lysilogy provenance clear <work> year
@@ -135,7 +135,9 @@ Provenance known gaps:
 - No Work is `conflicting` in the dev DB yet: ties inside one tier are rare with today's sources.
 - The Sources dialog manages focus itself because the app cancels Tab for reading phases; screen
   reader behavior is untested. App-level keys (`:`, `Q`) still act while it is open.
-- The model pass is opt-in (`--fields`); cited-Work Crossref lookups need `--publisher`.
+- The model pass (Haiku) runs by default wherever local evidence runs: `lit --local`, `expand` and
+  walks. Skip it with `--no-fields` (CLI) or `no_fields` (API). Cited-Work Crossref lookups still
+  need `--publisher`.
 - Overrides keep history (retracted rows) that the UI does not show. `test:api` still fails on the
   base (`ERR_MODULE_NOT_FOUND` for `./relevance`).
 

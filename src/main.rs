@@ -273,9 +273,10 @@ enum Command {
         /// Also fetch the publisher (Crossref) record of every cited Work with a DOI.
         #[arg(long)]
         publisher: bool,
-        /// Read missing authors and years with a cheap model sidecar (implies --local).
+        /// Skip the cheap-model pass that reads missing authors and years
+        /// (it runs by default with --local or --labels).
         #[arg(long)]
-        fields: bool,
+        no_fields: bool,
         /// Stop the field pass after this many model calls; cached answers do not count.
         #[arg(long, default_value_t = 10)]
         fields_limit: usize,
@@ -336,6 +337,9 @@ enum Command {
         /// For papers held locally, skip the local bibliography and in-text evidence.
         #[arg(long)]
         no_local: bool,
+        /// Skip the cheap-model pass that reads missing authors and years.
+        #[arg(long)]
+        no_fields: bool,
     },
     /// Inspect and recompute where each Work's title, year and authors come from (needs `LYSILOGY_DATABASE_URL`).
     Provenance {
@@ -442,6 +446,22 @@ async fn run(cli: Cli) -> Result<()> {
         .with_notes_root(&cli.notes)
         .with_vimrc(config.vim.vimrc)
         .with_notes_template(config.notes)?;
+    let skip_fields = matches!(
+        cli.command,
+        Some(Command::Expand {
+            no_fields: true,
+            ..
+        })
+    );
+    let state = if skip_fields {
+        state
+    } else {
+        state.with_field_extractor(SidecarFieldExtractor::new(
+            AnalysisProvider::Claude,
+            LocalCliAnalyzer::default(),
+            cli.data.join("fields"),
+        )?)
+    };
     match cli.command.unwrap_or(Command::Serve {
         bind: "127.0.0.1:7319"
             .parse()
@@ -557,7 +577,7 @@ async fn run(cli: Cli) -> Result<()> {
             sidecar,
             label_limit,
             publisher,
-            fields,
+            no_fields,
             fields_limit,
         } => {
             let label_run = labels.then(|| LabelRun {
@@ -565,7 +585,7 @@ async fn run(cli: Cli) -> Result<()> {
                 limit: label_limit,
                 scratch: cli.data.join("labels"),
             });
-            let field_run = fields.then(|| LabelRun {
+            let field_run = (!no_fields).then(|| LabelRun {
                 sidecar,
                 limit: fields_limit,
                 scratch: cli.data.join("fields"),
@@ -616,6 +636,7 @@ async fn run(cli: Cli) -> Result<()> {
             fanout,
             refresh,
             no_local,
+            no_fields: _,
         } => {
             let options = ExpandOptions {
                 bounds: WalkBounds { depth, fanout },
@@ -1237,7 +1258,7 @@ async fn literature_command(
     let id = resolve_lit_target(state, library, paper).await?;
     let summary = state.run_literature_flow(&id, run.publisher).await?;
     print!("{}", render_literature_summary(&summary));
-    if run.local || run.labels.is_some() || run.fields.is_some() {
+    if run.local || run.labels.is_some() {
         match state.run_local_evidence(&id, &summary).await? {
             Some(mut evidence) => {
                 if let Some(label_run) = &run.labels {
@@ -1697,13 +1718,9 @@ async fn harvest_fields(
         limit: run.limit,
         ..FieldOptions::default()
     };
-    evidence.fields = state
-        .harvest_entry_fields_with_model(id, summary, &extractor, options)
-        .await?;
-    evidence.paper_fields = state
-        .harvest_paper_fields_with_model(id, summary, &extractor)
-        .await?;
-    Ok(())
+    state
+        .harvest_fields_into(id, summary, &extractor, options, evidence)
+        .await
 }
 
 async fn label_local_edges(
@@ -2411,12 +2428,12 @@ mod tests {
     }
 
     #[test]
-    fn should_accept_fields_flags_when_parsing_lit() {
+    fn should_run_fields_by_default_when_parsing_lit() {
         let plain = Cli::try_parse_from(["lysilogy", "lit", "Paper"]).expect("plain");
         assert!(matches!(
             plain.command,
             Some(Command::Lit {
-                fields: false,
+                no_fields: false,
                 fields_limit: 10,
                 ..
             })
@@ -2425,7 +2442,7 @@ mod tests {
             "lysilogy",
             "lit",
             "Paper",
-            "--fields",
+            "--no-fields",
             "--sidecar",
             "codex",
             "--fields-limit",
@@ -2435,7 +2452,7 @@ mod tests {
         assert!(matches!(
             flagged.command,
             Some(Command::Lit {
-                fields: true,
+                no_fields: true,
                 fields_limit: 3,
                 sidecar: LabelSidecar::Codex,
                 ..

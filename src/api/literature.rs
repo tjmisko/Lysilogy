@@ -116,9 +116,11 @@ pub struct LiteratureOptions {
     pub label_limit: Option<usize>,
     /// Also fetch the publisher (Crossref) record of cited Works with a DOI.
     pub publisher: Option<bool>,
-    /// Also read missing authors and years with this sidecar's cheap model.
-    /// Implies `local`.
+    /// Read missing authors and years with this sidecar's cheap model instead
+    /// of the server's default field pass. Implies `local`.
     pub fields: Option<LabelSidecarChoice>,
+    /// Skip the field pass that otherwise runs with local evidence.
+    pub no_fields: Option<bool>,
     /// Most model calls for the field pass.
     pub fields_limit: Option<usize>,
 }
@@ -166,24 +168,28 @@ async fn run_job_steps(
             .label_local_edges(id, &summary, &labeler, label_options)
             .await?;
     }
-    if let Some(sidecar) = options.fields {
-        let extractor = crate::field_extraction::SidecarFieldExtractor::new(
+    if options.no_fields.unwrap_or(false) {
+        return Ok((summary, Some(local)));
+    }
+    let extractor = match options.fields {
+        Some(sidecar) => Some(crate::field_extraction::SidecarFieldExtractor::new(
             sidecar_provider(sidecar),
             crate::analysis::LocalCliAnalyzer::default(),
             state.store.root().join("fields"),
-        )?;
-        let defaults = FieldOptions::default();
-        let field_options = FieldOptions {
-            limit: options.fields_limit.unwrap_or(defaults.limit),
-            ..defaults
-        };
-        local.fields = state
-            .harvest_entry_fields_with_model(id, &summary, &extractor, field_options)
-            .await?;
-        local.paper_fields = state
-            .harvest_paper_fields_with_model(id, &summary, &extractor)
-            .await?;
-    }
+        )?),
+        None => state.field_extractor.clone(),
+    };
+    let Some(extractor) = extractor else {
+        return Ok((summary, Some(local)));
+    };
+    let defaults = FieldOptions::default();
+    let field_options = FieldOptions {
+        limit: options.fields_limit.unwrap_or(defaults.limit),
+        ..defaults
+    };
+    state
+        .harvest_fields_into(id, &summary, &extractor, field_options, &mut local)
+        .await?;
     Ok((summary, Some(local)))
 }
 

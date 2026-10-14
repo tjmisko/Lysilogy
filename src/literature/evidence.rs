@@ -146,6 +146,39 @@ impl AppState {
         Ok(Some(fields))
     }
 
+    /// Run both field passes (cited entries, then the paper's own front
+    /// matter) with `extractor` and record their summaries on `local`.
+    pub async fn harvest_fields_into(
+        &self,
+        id: &PaperId,
+        summary: &LiteratureSummary,
+        extractor: &dyn FieldExtractor,
+        options: FieldOptions,
+        local: &mut LocalEvidenceSummary,
+    ) -> Result<()> {
+        local.fields = self
+            .harvest_entry_fields_with_model(id, summary, extractor, options)
+            .await?;
+        local.paper_fields = self
+            .harvest_paper_fields_with_model(id, summary, extractor)
+            .await?;
+        Ok(())
+    }
+
+    /// Run the configured field pass, if any, after local evidence.
+    pub async fn harvest_default_fields(
+        &self,
+        id: &PaperId,
+        summary: &LiteratureSummary,
+        local: &mut LocalEvidenceSummary,
+    ) -> Result<()> {
+        let Some(extractor) = self.field_extractor.clone() else {
+            return Ok(());
+        };
+        self.harvest_fields_into(id, summary, &extractor, FieldOptions::default(), local)
+            .await
+    }
+
     /// Persist and resolve the paper's local bibliography, and connect it to
     /// its in-text mentions. Returns `None` (the caller reports
     /// [`LOCAL_EVIDENCE_REQUIRES_WORK`]) when the paper has no Work.

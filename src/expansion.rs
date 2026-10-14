@@ -32,7 +32,7 @@ pub struct ExpandOptions {
     pub bounds: WalkBounds,
     /// Rerun the flow even when the fanout is already known.
     pub refresh: bool,
-    /// Also run local evidence for held papers.
+    /// Also run local evidence for held papers, then the state's field pass.
     pub local: bool,
 }
 
@@ -374,8 +374,19 @@ impl AppState {
             }
         }
         warnings.extend(summary.warnings.iter().cloned());
-        if local && let Err(error) = self.run_local_evidence(paper, &summary).await {
-            warnings.push(format!("local_evidence_failed:{error}"));
+        if local {
+            match self.run_local_evidence(paper, &summary).await {
+                Ok(Some(mut evidence)) => {
+                    if let Err(error) = self
+                        .harvest_default_fields(paper, &summary, &mut evidence)
+                        .await
+                    {
+                        warnings.push(format!("field_pass_failed:{error}"));
+                    }
+                }
+                Ok(None) => {}
+                Err(error) => warnings.push(format!("local_evidence_failed:{error}")),
+            }
         }
         let row = graph
             .expansions
