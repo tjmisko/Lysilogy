@@ -82,7 +82,7 @@ paper = obj(
     objects=arr(obj(kind=enum(["figure", "table", "equation", "algorithm"]),
                     label=s("As printed, e.g. 'Figure 3', 'Table 1', '(12)'.", null=True),
                     number=s("The number alone, e.g. '3', '1', '12', 'A.2'.", null=True),
-                    page=i(), caption=s("Verbatim caption.", null=True),
+                    page=i(), caption=s("The printed caption, copied verbatim. Null for equations and for any object without a printed caption; never write one.", null=True),
                     latex=s("Equations: LaTeX read from the page image. Null otherwise.", null=True),
                     plain_language=s(), why_it_matters=s(),
                     referenced_on_pages=arr(i()), confidence=confidence),
