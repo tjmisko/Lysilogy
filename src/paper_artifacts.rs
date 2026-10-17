@@ -6,6 +6,7 @@
 //! `scripts/spike/build_schemas.py`.
 
 pub mod admission;
+pub mod corrections;
 pub mod resources;
 
 /// The whole-paper artifacts a model fills in pass 1.
