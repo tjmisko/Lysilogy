@@ -19,7 +19,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-RANGE = re.compile(r"^(?P<prefix>(?:[A-Z]\.|\d+\.)?)(?P<start>\d+)-(?:(?P=prefix))?(?P<end>\d+)$")
+RANGE = re.compile(r"^(?P<prefix>(?:[A-Z]\.?|\d+\.)?)(?P<start>\d+)-(?:(?P=prefix))?(?P<end>\d+)$")
 
 
 def expand(labels):
@@ -27,6 +27,9 @@ def expand(labels):
     for label in labels:
         match = RANGE.match(label)
         if not match:
+            # A dash left in a label is a range this pattern failed to read.
+            if "-" in label:
+                raise SystemExit(f"unreadable equation range: {label}")
             numbers.append(label)
             continue
         prefix = match["prefix"]
