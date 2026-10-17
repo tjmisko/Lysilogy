@@ -8,6 +8,7 @@
 pub mod admission;
 pub mod corrections;
 pub mod resources;
+pub mod run;
 
 /// The whole-paper artifacts a model fills in pass 1.
 pub const PAPER_ARTIFACTS_SCHEMA: &str = include_str!("../prompts/paper-artifacts.schema.json");

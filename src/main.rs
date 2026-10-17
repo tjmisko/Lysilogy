@@ -221,6 +221,33 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// Fill the paper-artifacts schema from a PDF with one model (extraction spike).
+    Extract {
+        /// A paper ID or an unambiguous title fragment; or pass --pdf.
+        #[arg(required_unless_present = "pdf", conflicts_with = "pdf")]
+        query: Option<String>,
+        /// Any PDF path, inside the library or not.
+        #[arg(long)]
+        pdf: Option<PathBuf>,
+        /// The `OpenRouter` model.
+        #[arg(long, default_value = lysilogy::analysis::openrouter::DEFAULT_MODEL)]
+        model: String,
+        /// 1 for a single pass, 2 to add the self-check pass.
+        #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u8).range(1..=2))]
+        passes: u8,
+        /// Where the JSON record goes; defaults to <data>/extract/<stem>.json.
+        #[arg(long)]
+        out: Option<PathBuf>,
+        /// Where page text and images go; defaults to <data>/extract/<stem>/.
+        #[arg(long)]
+        work: Option<PathBuf>,
+        /// Page image resolution.
+        #[arg(long, default_value_t = lysilogy::paper_artifacts::resources::DEFAULT_DPI)]
+        dpi: u32,
+        /// No further model call starts once this paper has spent this much (USD).
+        #[arg(long, default_value_t = 0.25)]
+        paper_budget_usd: f64,
+    },
     /// Analyze one paper selected by ID or an unambiguous title fragment.
     Analyze {
         query: String,
@@ -501,6 +528,54 @@ async fn run(cli: Cli) -> Result<()> {
             Ok(())
         }
         Command::Audit { query, all, json } => audit_command(&state, query, all, json).await,
+        Command::Extract {
+            query,
+            pdf,
+            model,
+            passes,
+            out,
+            work,
+            dpi,
+            paper_budget_usd,
+        } => {
+            let pdf = match (pdf, query) {
+                (Some(pdf), _) => pdf,
+                (None, Some(query)) => {
+                    let id = resolve_paper(&state, &query).await?;
+                    let paper = state.paper(&id).await?;
+                    cli.library.join(&paper.paper.relative_path)
+                }
+                (None, None) => {
+                    return Err(Error::InvalidRequest("provide a paper or --pdf".into()));
+                }
+            };
+            let stem = pdf.file_stem().map_or_else(
+                || "paper".to_owned(),
+                |stem| stem.to_string_lossy().into_owned(),
+            );
+            let extract_root = cli.data.join("extract");
+            let options = lysilogy::paper_artifacts::run::ExtractOptions {
+                output: out.unwrap_or_else(|| extract_root.join(format!("{stem}.json"))),
+                work_directory: work.unwrap_or_else(|| extract_root.join(&stem)),
+                pdf,
+                model,
+                passes,
+                dpi,
+                paper_budget_usd,
+                timeout: std::time::Duration::from_secs(20 * 60),
+            };
+            let ledger = lysilogy::analysis::spend::SpendLedger::with_defaults();
+            let record = lysilogy::paper_artifacts::run::extract(&options, &ledger).await?;
+            print_extract_summary(&record, &options.output);
+            if record.succeeded() {
+                Ok(())
+            } else {
+                Err(Error::Task(format!(
+                    "extraction incomplete; see {}",
+                    options.output.display()
+                )))
+            }
+        }
         Command::Spend => {
             let path = lysilogy::analysis::spend::default_ledger_path();
             let budget = lysilogy::analysis::spend::budget_usd();
@@ -2244,6 +2319,55 @@ fn format_counts(counts: &BTreeMap<String, usize>) -> String {
         .map(|(kind, count)| format!("{kind} {count}"))
         .collect::<Vec<_>>()
         .join(", ")
+}
+
+fn print_extract_summary(
+    record: &lysilogy::paper_artifacts::run::ExtractRecord,
+    output: &std::path::Path,
+) {
+    println!(
+        "{} · {} pages · {}",
+        record.model,
+        record.pages,
+        record.pdf.display()
+    );
+    for call in &record.calls {
+        println!(
+            "  {:<16} {:>7} in {:>7} out  ${:.4}  {:>6.1}s  {}",
+            call.stage,
+            call.prompt_tokens,
+            call.completion_tokens,
+            call.cost_usd,
+            call.latency_s,
+            call.finish_reason.as_deref().unwrap_or("-"),
+        );
+    }
+    println!(
+        "  total ${:.4} · {:.1}s wall",
+        record.totals.cost_usd, record.totals.wall_s
+    );
+    if !record.admission_counts.is_empty() {
+        let counts = record
+            .admission_counts
+            .iter()
+            .map(|(status, count)| format!("{status} {count}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        println!("  quotes: {counts}");
+    }
+    if !record.correction_outcomes.is_empty() {
+        println!(
+            "  self-check: {} corrections",
+            record.correction_outcomes.len()
+        );
+    }
+    if let Some(reason) = &record.budget_stopped {
+        println!("  budget: {reason}");
+    }
+    for failure in &record.failures {
+        println!("  failed {}: {}", failure.stage, failure.error);
+    }
+    println!("  wrote {}", output.display());
 }
 
 async fn resolve_paper(state: &AppState, query: &str) -> Result<PaperId> {
