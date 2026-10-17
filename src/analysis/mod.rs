@@ -1,10 +1,11 @@
 pub mod context;
 mod heuristic;
 mod local_cli;
+pub mod openrouter;
 mod prefetch;
 mod sectioning;
-pub mod spend;
 mod sources;
+pub mod spend;
 
 use std::path::Path;
 

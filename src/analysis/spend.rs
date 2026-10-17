@@ -90,7 +90,9 @@ impl SpendLedger {
     }
 
     fn lock(&self) -> MutexGuard<'_, Inner> {
-        self.inner.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        self.inner
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     /// The cap, in US dollars.
@@ -171,7 +173,10 @@ pub fn completion_cost(prompt_tokens: u64, completion_tokens: u64) -> f64 {
     let completion = completion_tokens as f64;
     let input = prompt / 1_000_000.0;
     let output = completion / 1_000_000.0;
-    input.mul_add(DEEPSEEK_INPUT_PER_MILLION, output * DEEPSEEK_OUTPUT_PER_MILLION)
+    input.mul_add(
+        DEEPSEEK_INPUT_PER_MILLION,
+        output * DEEPSEEK_OUTPUT_PER_MILLION,
+    )
 }
 
 /// Read every record in the ledger at `path`; a missing file is empty.
@@ -205,7 +210,10 @@ pub fn stage_totals(records: &[SpendRecord]) -> Vec<StageTotal> {
 }
 
 fn read_total(path: &Path) -> f64 {
-    read_records(path).iter().map(|record| record.cost_usd).sum()
+    read_records(path)
+        .iter()
+        .map(|record| record.cost_usd)
+        .sum()
 }
 
 #[cfg(test)]
@@ -235,8 +243,12 @@ mod tests {
         let dir = tempfile::tempdir().expect("temporary directory");
         let path = dir.path().join("spend.jsonl");
         let ledger = SpendLedger::new(path.clone(), 1.0);
-        ledger.record(&record("orientation", 0.001)).expect("record");
-        ledger.record(&record("orientation", 0.002)).expect("record");
+        ledger
+            .record(&record("orientation", 0.001))
+            .expect("record");
+        ledger
+            .record(&record("orientation", 0.002))
+            .expect("record");
         ledger.record(&record("labels", 0.003)).expect("record");
         assert!((ledger.total_usd() - 0.006).abs() < 1e-9);
         let records = read_records(&path);

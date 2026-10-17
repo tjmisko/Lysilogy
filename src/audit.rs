@@ -101,7 +101,9 @@ fn count_pages(
             report.sparse_pages += 1;
         }
         if page.provenance == Provenance::Ocr
-            && page.confidence.is_none_or(|confidence| confidence < LOW_OCR_CONFIDENCE)
+            && page
+                .confidence
+                .is_none_or(|confidence| confidence < LOW_OCR_CONFIDENCE)
         {
             report.signals.push(ExtractionSignal {
                 code: "low_confidence_ocr",
@@ -181,7 +183,10 @@ fn summarize(index: &ReadingIndex, report: &mut ExtractionInventory) {
         report.signals.push(ExtractionSignal {
             code: "sparse_page",
             severity: Severity::Degraded,
-            detail: format!("{} pages under {SPARSE_PAGE_TOKENS} tokens", report.sparse_pages),
+            detail: format!(
+                "{} pages under {SPARSE_PAGE_TOKENS} tokens",
+                report.sparse_pages
+            ),
         });
     }
     if report.gaps > 0 {
@@ -236,7 +241,12 @@ mod tests {
         };
         let report = inventory(&index);
         assert_eq!(worst_severity(&report), Some(Severity::Unreadable));
-        assert!(report.signals.iter().any(|signal| signal.code == "empty_text"));
+        assert!(
+            report
+                .signals
+                .iter()
+                .any(|signal| signal.code == "empty_text")
+        );
     }
 
     #[test]

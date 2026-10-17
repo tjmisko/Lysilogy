@@ -153,9 +153,7 @@ fn is_float_list_entry(index: &ReadingIndex, paragraph_index: usize) -> bool {
         .objects
         .paragraph
         .get(paragraph_index + 1)
-        .is_some_and(|next| {
-            has_dot_leader(&utf16_slice(&index.text, next.start, next.end))
-        })
+        .is_some_and(|next| has_dot_leader(&utf16_slice(&index.text, next.start, next.end)))
 }
 
 fn is_bare_float_label(text: &str) -> bool {
@@ -173,8 +171,7 @@ fn is_bare_float_label(text: &str) -> bool {
         return false;
     }
     let suffix = &rest[digits..];
-    suffix.is_empty()
-        || (suffix.len() == 1 && suffix.chars().all(|ch| ch.is_ascii_lowercase()))
+    suffix.is_empty() || (suffix.len() == 1 && suffix.chars().all(|ch| ch.is_ascii_lowercase()))
 }
 
 // A float-list line ends with a dot leader and a page number ("... 41",
@@ -263,8 +260,7 @@ fn identifier(text: &str) -> Option<String> {
         text.trim_matches(|ch: char| matches!(ch, '(' | ')' | '[' | ']' | ',' | ':' | '.' | ';'));
     let chars = text.chars().collect::<Vec<_>>();
     let mut at = usize::from(
-        matches!(chars.first(), Some('S' | 's'))
-            && chars.get(1).is_some_and(char::is_ascii_digit),
+        matches!(chars.first(), Some('S' | 's')) && chars.get(1).is_some_and(char::is_ascii_digit),
     );
     let digits = chars[at..]
         .iter()

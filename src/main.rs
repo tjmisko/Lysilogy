@@ -2126,8 +2126,8 @@ async fn audit_command(
             targets.push((paper.id, paper.metadata.title));
         }
     } else {
-        let query = query
-            .ok_or_else(|| Error::InvalidRequest("provide a paper or pass --all".into()))?;
+        let query =
+            query.ok_or_else(|| Error::InvalidRequest("provide a paper or pass --all".into()))?;
         let id = resolve_paper(state, &query).await?;
         let title = state
             .library()
