@@ -210,6 +210,17 @@ enum Command {
     Scan,
     /// Report model spend by substage from the JSONL ledger.
     Spend,
+    /// Report deterministic extraction counts and mangle signals; no model calls.
+    Audit {
+        /// A paper ID or an unambiguous title fragment.
+        query: Option<String>,
+        /// Audit every paper in the library instead of one.
+        #[arg(long)]
+        all: bool,
+        /// Emit JSON instead of a text summary.
+        #[arg(long)]
+        json: bool,
+    },
     /// Analyze one paper selected by ID or an unambiguous title fragment.
     Analyze {
         query: String,
@@ -489,6 +500,7 @@ async fn run(cli: Cli) -> Result<()> {
             );
             Ok(())
         }
+        Command::Audit { query, all, json } => audit_command(&state, query, all, json).await,
         Command::Spend => {
             let path = lysilogy::analysis::spend::default_ledger_path();
             let budget = lysilogy::analysis::spend::budget_usd();
@@ -2100,6 +2112,138 @@ fn render_labels(labels: &LabelSummary) -> String {
         let _ = writeln!(output, "Rejected   {}", codes.join(", "));
     }
     output
+}
+
+async fn audit_command(
+    state: &AppState,
+    query: Option<String>,
+    all: bool,
+    json: bool,
+) -> Result<()> {
+    let mut targets = Vec::<(PaperId, String)>::new();
+    if all {
+        for paper in state.library().await.papers {
+            targets.push((paper.id, paper.metadata.title));
+        }
+    } else {
+        let query = query
+            .ok_or_else(|| Error::InvalidRequest("provide a paper or pass --all".into()))?;
+        let id = resolve_paper(state, &query).await?;
+        let title = state
+            .library()
+            .await
+            .papers
+            .into_iter()
+            .find(|paper| paper.id == id)
+            .map(|paper| paper.metadata.title)
+            .unwrap_or_default();
+        targets.push((id, title));
+    }
+
+    let mut reports = Vec::new();
+    let mut signal_totals = BTreeMap::<&'static str, usize>::new();
+    for (id, title) in &targets {
+        match state.reading_index(id, false).await {
+            Ok(index) => {
+                let report = lysilogy::audit::inventory(&index);
+                for signal in &report.signals {
+                    *signal_totals.entry(signal.code).or_default() += 1;
+                }
+                if json {
+                    reports.push(serde_json::json!({
+                        "paper": id.to_string(),
+                        "title": title,
+                        "inventory": report,
+                    }));
+                } else if all {
+                    println!(
+                        "{}\tpages={}\ttokens={}\tfigures={}\tsignals={}\t{}",
+                        id,
+                        report.pages,
+                        report.tokens,
+                        report.figures,
+                        report.signals.len(),
+                        title
+                    );
+                } else {
+                    print_inventory(id, title, &report);
+                }
+            }
+            Err(error) => {
+                if json {
+                    reports.push(serde_json::json!({
+                        "paper": id.to_string(),
+                        "title": title,
+                        "error": error.to_string(),
+                    }));
+                } else {
+                    println!("{id}\tERROR\t{error}");
+                }
+            }
+        }
+    }
+
+    if json {
+        println!("{}", serde_json::to_string_pretty(&reports)?);
+    } else if all {
+        println!();
+        println!("Audited {} papers.", targets.len());
+        for (code, count) in &signal_totals {
+            println!("  {code}: {count}");
+        }
+    }
+    Ok(())
+}
+
+fn print_inventory(id: &PaperId, title: &str, report: &lysilogy::audit::ExtractionInventory) {
+    println!("{id}  {title}");
+    println!(
+        "  pages {} (native {}, ocr {}, unavailable {}), {} without text, {} sparse",
+        report.pages,
+        report.native_pages,
+        report.ocr_pages,
+        report.unavailable_pages,
+        report.pages_without_text,
+        report.sparse_pages
+    );
+    println!(
+        "  text {} chars, {} tokens, {} words, {} sentences, {} paragraphs",
+        report.text_chars, report.tokens, report.words, report.sentences, report.paragraphs
+    );
+    if !report.paragraphs_by_kind.is_empty() {
+        println!("  kinds: {}", format_counts(&report.paragraphs_by_kind));
+    }
+    println!(
+        "  figures {} ({}), {} references",
+        report.figures,
+        format_counts(&report.figures_by_kind),
+        report.figure_references
+    );
+    if report.gaps > 0 {
+        println!(
+            "  gaps {} ({})",
+            report.gaps,
+            format_counts(&report.gaps_by_reason)
+        );
+    }
+    if report.signals.is_empty() {
+        println!("  clean");
+    } else {
+        for signal in &report.signals {
+            println!(
+                "  [{:?}] {}: {}",
+                signal.severity, signal.code, signal.detail
+            );
+        }
+    }
+}
+
+fn format_counts(counts: &BTreeMap<String, usize>) -> String {
+    counts
+        .iter()
+        .map(|(kind, count)| format!("{kind} {count}"))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 async fn resolve_paper(state: &AppState, query: &str) -> Result<PaperId> {
