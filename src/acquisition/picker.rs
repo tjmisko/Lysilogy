@@ -81,6 +81,7 @@ impl LandingLinkPicker for SidecarLinkPicker {
                         prompt: &prompt,
                         live_web: false,
                         fast: false,
+                        purpose: "acquisition-picker",
                     },
                 )
                 .await

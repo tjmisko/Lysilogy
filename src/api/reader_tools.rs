@@ -122,6 +122,7 @@ impl AppState {
                     prompt,
                     live_web,
                     fast: false,
+                    purpose: "reader-tool",
                 },
             )
             .await

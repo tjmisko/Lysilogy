@@ -1131,6 +1131,7 @@ impl AppState {
             model: match request.provider {
                 AnalysisProvider::Codex => "gpt-5.6-terra".to_owned(),
                 AnalysisProvider::Claude => "configured Claude model".to_owned(),
+                AnalysisProvider::OpenRouter => "deepseek/deepseek-v4.1-flash".to_owned(),
                 AnalysisProvider::Heuristic => unreachable!(),
             },
             reasoning_effort: "medium".to_owned(),

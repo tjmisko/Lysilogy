@@ -5,7 +5,7 @@ type GlobalKeyOptions = {
   enabled: boolean;
   activeIndex: number;
   itemCount: number;
-  view: "abstract" | "overview" | "glossary" | "text";
+  view: "abstract" | "overview" | "glossary" | "text" | "sources";
   textMode: "markdown" | "pdf";
   onMove: (index: number) => void;
   onOpen: () => void;

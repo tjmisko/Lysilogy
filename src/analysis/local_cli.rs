@@ -23,6 +23,7 @@ use super::{
     ExperimentVariantRequest, ExternalContextDraft, LEARNING_RAMP_SCHEMA, ORIENTATION_SCHEMA,
     OrientationDraft, STRUCTURE_SCHEMA, StructureDraft,
     prefetch::{PrefetchedPaperContext, clarification_context},
+    spend::{SpendLedger, SpendRecord, completion_cost},
 };
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(20 * 60);
@@ -31,6 +32,10 @@ const CODEX_FAST_MODEL: &str = "gpt-5.6-luna";
 const CLAUDE_FAST_MODEL: &str = "haiku";
 const CODEX_PRIMARY_MODEL: &str = "gpt-5.6-terra";
 const CODEX_CONTEXT_MODEL: &str = "gpt-6-astra";
+/// `OpenRouter`'s chat completions endpoint.
+const OPENROUTER_URL: &str = "https://openrouter.ai/api/v1/chat/completions";
+/// The `OpenRouter` model that drives pi sessions.
+const OPENROUTER_MODEL: &str = "deepseek/deepseek-v4.1-flash";
 const PREFETCH_FILENAME: &str = "analysis-context.json";
 const CACHE_MANIFEST_FILENAME: &str = "analysis-stage-cache.json";
 const ORIENTATION_CACHE_FILENAME: &str = "analysis-orientation.json";
@@ -43,6 +48,7 @@ pub struct LocalCliAnalyzer {
     codex_command: OsString,
     claude_command: OsString,
     timeout: Duration,
+    spend: SpendLedger,
 }
 
 #[derive(Debug)]
@@ -159,6 +165,8 @@ struct AgentRequest<'a> {
     session: Option<&'a AgentSession>,
     output_filename: &'a str,
     profile: StageProfile,
+    /// The substage this call belongs to, for the spend ledger.
+    stage: &'a str,
 }
 
 #[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
@@ -176,6 +184,7 @@ impl Default for LocalCliAnalyzer {
             codex_command: OsString::from("codex"),
             claude_command: OsString::from("claude"),
             timeout: DEFAULT_TIMEOUT,
+            spend: SpendLedger::with_defaults(),
         }
     }
 }
@@ -208,6 +217,7 @@ impl LocalCliAnalyzer {
                     session: None,
                     output_filename: "agent-output.json",
                     profile,
+                    stage: request.purpose,
                 },
             )
             .await?;
@@ -223,6 +233,7 @@ impl LocalCliAnalyzer {
             codex_command: codex_command.into(),
             claude_command: claude_command.into(),
             timeout: DEFAULT_TIMEOUT,
+            spend: SpendLedger::with_defaults(),
         }
     }
 
@@ -366,6 +377,7 @@ impl LocalCliAnalyzer {
                     session: None,
                     output_filename: &output_filename,
                     profile,
+                    stage: name,
                 },
             )
             .await?;
@@ -540,6 +552,7 @@ impl LocalCliAnalyzer {
                     session: None,
                     output_filename: "analysis-structure-agent-output.json",
                     profile,
+                    stage: "structure",
                 },
             )
             .await?;
@@ -563,6 +576,7 @@ impl LocalCliAnalyzer {
                         session: None,
                         output_filename: "analysis-structure-refinement-agent-output.json",
                         profile,
+                        stage: "structure",
                     },
                 )
                 .await?;
@@ -679,6 +693,7 @@ impl LocalCliAnalyzer {
             session,
             output_filename: "revision-agent-output.json",
             profile: PromptStage::Revision.profile(),
+            stage: "revision",
         };
         let output = match self.run_agent(provider, request(resumable)).await {
             Ok(output) => output,
@@ -747,6 +762,7 @@ impl LocalCliAnalyzer {
                     session: None,
                     output_filename: "clarification-agent-output.json",
                     profile: PromptStage::Clarification.profile(),
+                    stage: "clarification",
                 },
             )
             .await?;
@@ -802,6 +818,7 @@ impl LocalCliAnalyzer {
                     session: None,
                     output_filename: &output_filename,
                     profile,
+                    stage: "experiment",
                 },
             )
             .await?;
@@ -918,10 +935,91 @@ impl LocalCliAnalyzer {
                     result: output.stdout,
                 })
             }
+            AnalysisProvider::OpenRouter => self.run_openrouter(request).await,
             AnalysisProvider::Heuristic => Err(Error::InvalidRequest(
                 "heuristic analysis does not use a subprocess".to_owned(),
             )),
         }
+    }
+
+    /// One chat completion through `OpenRouter`, billed to the spend ledger.
+    async fn run_openrouter(&self, request: AgentRequest<'_>) -> Result<AgentOutput> {
+        let api_key = std::env::var("OPENROUTER_API_KEY")
+            .ok()
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| Error::ProgramUnavailable("OPENROUTER_API_KEY".to_owned()))?;
+        self.spend.ensure_available()?;
+        let schema: serde_json::Value = serde_json::from_str(request.schema)?;
+        let body = serde_json::json!({
+            "model": OPENROUTER_MODEL,
+            "messages": [{"role": "user", "content": request.prompt}],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {"name": "result", "strict": true, "schema": schema},
+            },
+        });
+        let client = reqwest::Client::builder()
+            .timeout(self.timeout)
+            .build()
+            .map_err(|error| {
+                Error::Task(format!("could not build the OpenRouter HTTP client: {error}"))
+            })?;
+        let response = client
+            .post(OPENROUTER_URL)
+            .bearer_auth(api_key)
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .header("HTTP-Referer", "https://github.com/tjmisko/lysilogy")
+            .header("X-Title", "Lysilogy")
+            .body(serde_json::to_vec(&body)?)
+            .send()
+            .await
+            .map_err(|error| Error::Task(format!("OpenRouter request failed: {error}")))?;
+        let status = response.status();
+        let text = response.text().await.map_err(|error| {
+            Error::Task(format!("OpenRouter response could not be read: {error}"))
+        })?;
+        if !status.is_success() {
+            return Err(Error::Task(format!(
+                "OpenRouter returned {status}: {}",
+                truncate_error(&text)
+            )));
+        }
+        let value: serde_json::Value = serde_json::from_str(&text)?;
+        let content = value
+            .get("choices")
+            .and_then(|choices| choices.get(0))
+            .and_then(|choice| choice.get("message"))
+            .and_then(|message| message.get("content"))
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| {
+                Error::InvalidAnalysis("OpenRouter returned no message content".to_owned())
+            })?;
+        let usage = value.get("usage");
+        let prompt_tokens = usage
+            .and_then(|usage| usage.get("prompt_tokens"))
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or(0);
+        let completion_tokens = usage
+            .and_then(|usage| usage.get("completion_tokens"))
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or(0);
+        let cost = usage
+            .and_then(|usage| usage.get("cost"))
+            .and_then(serde_json::Value::as_f64)
+            .filter(|cost| *cost > 0.0)
+            .unwrap_or_else(|| completion_cost(prompt_tokens, completion_tokens));
+        self.spend.record(&SpendRecord {
+            at: Utc::now(),
+            stage: request.stage.to_owned(),
+            model: OPENROUTER_MODEL.to_owned(),
+            prompt_tokens,
+            completion_tokens,
+            cost_usd: cost,
+        })?;
+        Ok(AgentOutput {
+            result: content.as_bytes().to_vec(),
+            session_id: None,
+        })
     }
 
     async fn execute(
@@ -994,13 +1092,13 @@ struct StageValue<T> {
 }
 
 fn context_model_label(provider: AnalysisProvider) -> String {
-    if provider == AnalysisProvider::Claude {
-        "Claude configured model · high effort".to_owned()
-    } else {
-        format!(
+    match provider {
+        AnalysisProvider::Claude => "Claude configured model · high effort".to_owned(),
+        AnalysisProvider::OpenRouter => format!("{OPENROUTER_MODEL} · high effort"),
+        AnalysisProvider::Codex | AnalysisProvider::Heuristic => format!(
             "{} · high effort",
             effective_model(PromptStage::ContextWriter.profile())
-        )
+        ),
     }
 }
 
@@ -1011,6 +1109,7 @@ pub fn structured_model_key(provider: AnalysisProvider) -> String {
     match provider {
         AnalysisProvider::Claude => "claude:default".to_owned(),
         AnalysisProvider::Codex => format!("codex:{CODEX_PRIMARY_MODEL}"),
+        AnalysisProvider::OpenRouter => format!("openrouter:{OPENROUTER_MODEL}"),
         AnalysisProvider::Heuristic => "heuristic:none".to_owned(),
     }
 }
@@ -1020,6 +1119,7 @@ pub fn structured_fast_model_key(provider: AnalysisProvider) -> String {
     match provider {
         AnalysisProvider::Claude => format!("claude:{CLAUDE_FAST_MODEL}"),
         AnalysisProvider::Codex => format!("codex:{CODEX_FAST_MODEL}"),
+        AnalysisProvider::OpenRouter => format!("openrouter:{OPENROUTER_MODEL}"),
         AnalysisProvider::Heuristic => "heuristic:none".to_owned(),
     }
 }
@@ -1118,12 +1218,17 @@ fn session_from_output(provider: AnalysisProvider, output: &AgentOutput) -> Opti
 }
 
 fn cache_manifest(provider: AnalysisProvider, paper: &ExtractedPaper) -> StageCacheManifest {
+    let (fast_model, primary_model) = if provider == AnalysisProvider::OpenRouter {
+        (OPENROUTER_MODEL.to_owned(), OPENROUTER_MODEL.to_owned())
+    } else {
+        (CODEX_FAST_MODEL.to_owned(), CODEX_PRIMARY_MODEL.to_owned())
+    };
     StageCacheManifest {
         schema_version: CACHE_SCHEMA_VERSION,
         source_fingerprint: source_fingerprint(paper),
         provider,
-        fast_model: CODEX_FAST_MODEL.to_owned(),
-        primary_model: CODEX_PRIMARY_MODEL.to_owned(),
+        fast_model,
+        primary_model,
     }
 }
 
@@ -1771,6 +1876,7 @@ esac
                     prompt: "p",
                     live_web: false,
                     fast,
+                    purpose: "reader-tool",
                 },
             )
             .await

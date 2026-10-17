@@ -222,7 +222,9 @@ pub struct FeedbackRecord {
 pub enum AnalysisProvider {
     Codex,
     Claude,
+    #[serde(rename = "openrouter")]
     #[default]
+    OpenRouter,
     Heuristic,
 }
 
@@ -231,6 +233,7 @@ impl fmt::Display for AnalysisProvider {
         formatter.write_str(match self {
             Self::Codex => "codex",
             Self::Claude => "claude",
+            Self::OpenRouter => "openrouter",
             Self::Heuristic => "heuristic",
         })
     }
@@ -243,6 +246,7 @@ impl std::str::FromStr for AnalysisProvider {
         match value.to_ascii_lowercase().as_str() {
             "codex" => Ok(Self::Codex),
             "claude" => Ok(Self::Claude),
+            "openrouter" | "deepseek" => Ok(Self::OpenRouter),
             "heuristic" | "offline" => Ok(Self::Heuristic),
             _ => Err(format!("unknown analysis provider: {value}")),
         }

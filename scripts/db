@@ -17,7 +17,7 @@ usage() {
   cat <<'EOF'
 usage: scripts/db <command> [args]
 
-  start              start the cluster and wait until it accepts connections
+  start              start the cluster if stopped, else report it is running (idempotent)
   stop               stop the cluster
   restart            stop then start
   status             report whether the cluster is accepting connections
@@ -53,8 +53,13 @@ case "${1:-}" in
     init_cluster
     ;;
   start)
+    init_cluster
     mkdir -p "$PGSOCKET"
-    pg_ctl -D "$PGDATA" -l "$PGLOG" -w start
+    if pg_ctl -D "$PGDATA" status >/dev/null 2>&1; then
+      echo "cluster already running at $PGDATA"
+    else
+      pg_ctl -D "$PGDATA" -l "$PGLOG" -w start
+    fi
     pg_isready
     ;;
   stop)

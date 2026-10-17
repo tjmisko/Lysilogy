@@ -3,6 +3,7 @@ mod heuristic;
 mod local_cli;
 mod prefetch;
 mod sectioning;
+pub mod spend;
 mod sources;
 
 use std::path::Path;
@@ -58,6 +59,8 @@ pub(crate) struct ReaderToolRequest<'a> {
     pub live_web: bool,
     /// Run on the cheap model (Haiku for Claude, the codex fast model).
     pub fast: bool,
+    /// The substage this call belongs to, for the spend ledger.
+    pub purpose: &'a str,
 }
 
 impl AnalysisService {
@@ -102,7 +105,7 @@ impl AnalysisService {
             .await?;
         let (draft, session) = match provider {
             AnalysisProvider::Heuristic => (HeuristicAnalyzer::analyze(paper), None),
-            AnalysisProvider::Codex | AnalysisProvider::Claude => {
+            AnalysisProvider::Codex | AnalysisProvider::Claude | AnalysisProvider::OpenRouter => {
                 let result = self
                     .local_cli
                     .analyze(
@@ -264,7 +267,7 @@ impl AnalysisService {
                 selection.trim(),
                 question.trim(),
             )),
-            AnalysisProvider::Codex | AnalysisProvider::Claude => {
+            AnalysisProvider::Codex | AnalysisProvider::Claude | AnalysisProvider::OpenRouter => {
                 let draft = self
                     .local_cli
                     .clarify(

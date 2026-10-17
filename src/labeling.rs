@@ -80,6 +80,7 @@ impl RelationshipLabeler for SidecarLabeler {
                         prompt: &prompt,
                         live_web: false,
                         fast: false,
+                        purpose: "labels",
                     },
                 )
                 .await

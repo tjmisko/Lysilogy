@@ -33,6 +33,8 @@ import "./LiteratureGraph.css";
 type LiteratureGraphProps = {
   paperId: string;
   paperTitle: string;
+  /** Render as a full-view Sources tab instead of a modal overlay. */
+  embedded?: boolean;
   onClose: () => void;
   /** Close the overlay and open a local paper. */
   onOpenPaper: (paperId: string) => void;
@@ -154,7 +156,7 @@ function storedLiteratureView(): LiteratureView {
   try {
     return parseLiteratureView(window.localStorage.getItem(LITERATURE_VIEW_STORAGE_KEY));
   } catch {
-    return "radial";
+    return "histogram";
   }
 }
 
@@ -162,7 +164,7 @@ function isUnavailable(reason: unknown): boolean {
   return reason instanceof ApiError && reason.status === 503;
 }
 
-export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onOpenPassage }: LiteratureGraphProps) {
+export function LiteratureGraph({ paperId, paperTitle, embedded = false, onClose, onOpenPaper, onOpenPassage }: LiteratureGraphProps) {
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
   const [reloadToken, setReloadToken] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -993,11 +995,11 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
   ), [merged]);
 
   return (
-    <div className="literature-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <div className={embedded ? "literature-embedded" : "literature-backdrop"} onMouseDown={embedded ? undefined : (event) => { if (event.target === event.currentTarget) onClose(); }}>
       <div
         ref={rootRef}
-        className="literature-graph"
-        role="dialog"
+        className={`literature-graph${embedded ? " is-embedded" : ""}`}
+        role={embedded ? "region" : "dialog"}
         aria-label="Literature graph"
         data-work-open={workPanelOpen ? "true" : "false"}
         data-ramp-open={rampOpen ? "true" : "false"}
@@ -1009,7 +1011,7 @@ export function LiteratureGraph({ paperId, paperTitle, onClose, onOpenPaper, onO
             <span className="literature-kicker">Literature · what this paper cites</span>
             <h2>{truncate(paperTitle, 110)}</h2>
           </div>
-          <button type="button" aria-label="Close literature graph (Esc)" onClick={onClose}>×</button>
+          {!embedded && <button type="button" aria-label="Close literature graph (Esc)" onClick={onClose}>×</button>}
         </header>
 
         <div className="literature-body">

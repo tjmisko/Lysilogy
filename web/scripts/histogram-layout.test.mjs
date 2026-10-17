@@ -317,10 +317,10 @@ test('should format authors with a limit and return null when none are printable
   assert.equal(authorLine(['A', 'B', 'C'], 3), 'A, B, C');
 });
 
-test('should parse only histogram as the histogram view when reading storage', () => {
-  assert.equal(parseLiteratureView('histogram'), 'histogram');
-  for (const value of [null, undefined, '', 'Histogram', 'radial', 'graph']) {
-    assert.equal(parseLiteratureView(value), 'radial');
+test('should default to the histogram and parse radial as the radial view when reading storage', () => {
+  assert.equal(parseLiteratureView('radial'), 'radial');
+  for (const value of [null, undefined, '', 'Histogram', 'histogram', 'graph']) {
+    assert.equal(parseLiteratureView(value), 'histogram');
   }
 });
 

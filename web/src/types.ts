@@ -1,4 +1,4 @@
-export type AnalysisProvider = "codex" | "claude" | "heuristic";
+export type AnalysisProvider = "openrouter" | "codex" | "claude" | "heuristic";
 export type ProcessingStage = "discovery" | "extraction" | "analysis" | "persistence";
 
 export type ProcessingStatus =

@@ -15,6 +15,16 @@ if [ ! -d web/node_modules ]; then
   (cd web && npm install)
 fi
 
+# The literature graph needs Postgres; without LYSILOGY_DATABASE_URL the
+# backend runs but the graph overlay reports itself unavailable. Use the dev
+# cluster from scripts/db unless a database URL is already set.
+if [ -z "${LYSILOGY_DATABASE_URL:-}" ]; then
+  echo "==> Ensuring dev Postgres (scripts/db start)"
+  scripts/db start
+  eval "$(scripts/db env)"
+fi
+echo "==> Graph database: $LYSILOGY_DATABASE_URL"
+
 echo "==> Building backend (cargo build)"
 cargo build
 

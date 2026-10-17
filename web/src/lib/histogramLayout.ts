@@ -4,9 +4,9 @@ import type { GraphEdge, GraphNeighbors, WorkMarkName } from "../types";
 export type LiteratureView = "radial" | "histogram";
 export const LITERATURE_VIEW_STORAGE_KEY = "lysilogy.literature.view";
 
-/** "histogram" is the only stored value that selects the histogram; anything else is radial. */
+/** The year histogram is the default; the radial graph is selected only by the stored "radial". */
 export function parseLiteratureView(stored: string | null | undefined): LiteratureView {
-  return stored === "histogram" ? "histogram" : "radial";
+  return stored === "radial" ? "radial" : "histogram";
 }
 
 /** Server `LIMIT_MAX`. */

@@ -41,10 +41,10 @@ import type {
 } from "./types";
 
 type Panel = "digest" | "help" | null;
-type ViewMode = "abstract" | "overview" | "glossary" | "text";
+type ViewMode = "abstract" | "overview" | "glossary" | "text" | "sources";
 type TextMode = "markdown" | "pdf";
 
-const VIEW_ORDER: ViewMode[] = ["abstract", "overview", "glossary", "text"];
+const VIEW_ORDER: ViewMode[] = ["abstract", "overview", "glossary", "text", "sources"];
 const VIEW_STORAGE_KEY = "lysilogy.reader-view";
 
 const PROCESSING_STATES = new Set(["queued", "extracting", "analyzing"]);
@@ -94,7 +94,7 @@ export function App() {
   const [refreshingComponent, setRefreshingComponent] = useState<"abstract" | "context" | "structure" | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [preferredView, setView] = useState<ViewMode>(initialView);
-  const view: ViewMode = paperView?.analysis == null ? "text" : preferredView;
+  const view: ViewMode = paperView?.analysis == null && preferredView !== "sources" ? "text" : preferredView;
   const [textMode, setTextMode] = useState<TextMode>("pdf");
   const [compactLayout, setCompactLayout] = useState(() => window.innerWidth < 1180);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -102,7 +102,6 @@ export function App() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
   const [experimentOpen, setExperimentOpen] = useState(false);
-  const [literatureOpen, setLiteratureOpen] = useState(false);
   const [sourceFocus, setSourceFocus] = useState<(SourceFocus & { paperId: string }) | null>(null);
   const sourceFocusNonce = useRef(0);
   const [toolsTab, setToolsTab] = useState<"supercut" | "references" | null>(null);
@@ -112,7 +111,7 @@ export function App() {
   const [libraryQuery, setLibraryQuery] = useState("");
   const [homeQuery, setHomeQuery] = useState("");
   const [homeActiveId, setHomeActiveId] = useState<string | null>(null);
-  const [provider, setProvider] = useState<AnalysisProvider>("codex");
+  const [provider, setProvider] = useState<AnalysisProvider>("openrouter");
   const [pdfPage, setPdfPage] = useState(1);
   const [pdfPages, setPdfPages] = useState(1);
   const [pdfZoom, setPdfZoom] = useState(1);
@@ -248,14 +247,12 @@ export function App() {
         setSwitcherOpen(false);
         setCommandOpen(false);
         setQueueOpen(false);
-        setLiteratureOpen(false);
         setLibraryOpen((open) => !open);
       } else if (event.key === "F10") {
         event.preventDefault();
         setPanel(null);
         setCommandOpen(false);
         setQueueOpen(false);
-        setLiteratureOpen(false);
         if (compactLayout) setLibraryOpen(false);
         setSwitcherOpen((open) => !open);
       } else if (event.key === ":" && !isEditableTarget(event.target)) {
@@ -263,14 +260,12 @@ export function App() {
         setPanel(null);
         setSwitcherOpen(false);
         setQueueOpen(false);
-        setLiteratureOpen(false);
         if (compactLayout) setLibraryOpen(false);
         setCommandOpen(true);
       } else if (event.key === "Q" && !isEditableTarget(event.target)) {
         event.preventDefault();
         setSwitcherOpen(false);
         setCommandOpen(false);
-        setLiteratureOpen(false);
         if (compactLayout) setLibraryOpen(false);
         setFocusQueueFeedback(false);
         setQueueOpen((open) => !open);
@@ -342,7 +337,6 @@ export function App() {
       setCommandOpen(false);
       setQueueOpen(false);
       setExperimentOpen(false);
-      setLiteratureOpen(false);
       setSourceFocus(null);
       setToolsTab(null);
       setClarifySeed("");
@@ -489,7 +483,6 @@ export function App() {
   }, [activeSection, paperMap, sections]);
 
   const openPassage = useCallback((target: { paperId: string; page: number; start: number; end: number; passage: string }): void => {
-    setLiteratureOpen(false);
     selectPaper(target.paperId);
     focusRestore.current = null;
     setPanel(null);
@@ -697,7 +690,7 @@ export function App() {
     nativeTab: home,
     // The switcher and the command menu read Tab themselves; everywhere else
     // Tab steps through the reading phases of the current paper.
-    overlayHandlesTab: home || switcherOpen || commandOpen || queueOpen || sourceQuestion !== null || experimentOpen || literatureOpen || toolsTab !== null || paperView?.analysis == null || (panel === "digest" && view === "overview"),
+    overlayHandlesTab: home || switcherOpen || commandOpen || queueOpen || sourceQuestion !== null || experimentOpen || toolsTab !== null || paperView?.analysis == null || (panel === "digest" && view === "overview"),
     onCycle: (delta) => {
       setQueueOpen(false);
       if (compactLayout) setLibraryOpen(false);
@@ -707,7 +700,7 @@ export function App() {
 
   useGlobalKeys({
     enabled:
-      !home && panel === null && sourceQuestion === null && view !== "glossary" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && !literatureOpen && toolsTab === null &&
+      !home && panel === null && sourceQuestion === null && view !== "glossary" && view !== "sources" && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null &&
       !(compactLayout && libraryOpen),
     activeIndex: activeSection,
     itemCount: sections.length,
@@ -720,7 +713,7 @@ export function App() {
     onDigest: () => selectedSection !== null && openSection(selectedSection, activeSection),
     onGloss: () => paperView?.analysis != null && openGlossary(),
     onHelp: () => setPanel("help"),
-    onLiterature: () => { if (selectedId !== null) setLiteratureOpen(true); },
+    onLiterature: () => { if (selectedId !== null) { setPanel(null); setView("sources"); } },
     onSearch: () => {
       pendingSourceSearch.current = true;
       setPanel(null);
@@ -966,7 +959,7 @@ export function App() {
       const target = event.target instanceof Element ? event.target : null;
       if (target?.closest(".notes-panel") != null) return;
       if (document.querySelector('.pdf-reader[data-link-hints="true"]') !== null) return;
-      if (event.key === "/" && !isEditableTarget(event.target) && !home && !readingPdf && panel === null && !commandOpen && !switcherOpen && !queueOpen && !experimentOpen && !literatureOpen && toolsTab === null && !(compactLayout && libraryOpen) && target?.closest(".library-rail") == null) {
+      if (event.key === "/" && !isEditableTarget(event.target) && !home && !readingPdf && panel === null && !commandOpen && !switcherOpen && !queueOpen && !experimentOpen && toolsTab === null && !(compactLayout && libraryOpen) && target?.closest(".library-rail") == null) {
         event.preventDefault(); event.stopImmediatePropagation(); pendingSourceSearch.current = true; setTextMode("pdf"); setView("text"); return;
       }
       if (!isEditableTarget(event.target) && event.key === "T" && readingPdf) {
@@ -989,11 +982,11 @@ export function App() {
       else if (switcherOpen) close = () => setSwitcherOpen(false);
       else if (queueOpen) close = () => setQueueOpen(false);
       else if (sourceQuestion !== null) close = () => setSourceQuestion(null);
-      else if (literatureOpen) close = () => {
-        // The Work panel closes first; the overlay closes on the next press.
+      else if (view === "sources" && selectedId !== null) close = () => {
+        // The Work panel closes first; the Sources tab closes on the next press.
         const overlay = document.querySelector('.literature-graph[data-work-open="true"], .literature-graph[data-ramp-open="true"]');
         if (overlay !== null && !overlay.dispatchEvent(new CustomEvent(LITERATURE_QUIT_EVENT, { cancelable: true }))) return;
-        setLiteratureOpen(false);
+        setView("text");
       };
       else if (experimentOpen) close = () => setExperimentOpen(false);
       else if (toolsTab !== null) close = () => setToolsTab(null);
@@ -1022,15 +1015,15 @@ export function App() {
     };
     window.addEventListener("keydown", onReaderKey, true);
     return () => window.removeEventListener("keydown", onReaderKey, true);
-  }, [analysis, closeSection, commandOpen, compactLayout, experimentOpen, home, libraryOpen, literatureOpen, markMode, notesOpen, openHome, openNotes, panel,
-    queueOpen, readingPdf, requestNotesClose, sectionFocused, sourceQuestion, switcherOpen, toolsTab, view]);
+  }, [analysis, closeSection, commandOpen, compactLayout, experimentOpen, home, libraryOpen, markMode, notesOpen, openHome, openNotes, panel,
+    queueOpen, readingPdf, requestNotesClose, sectionFocused, selectedId, sourceQuestion, switcherOpen, toolsTab, view]);
 
   return (
     <div className={`app-shell ${home ? "is-home" : ""} ${notesOpen ? "has-notes" : ""} ${readingPdf ? "is-reading" : ""} ${sectionFocused ? "has-section-focus" : ""} ${libraryOpen ? "has-library" : ""}`} style={{ "--topbar-height": `${topbarHeight}px` } as CSSProperties}>
       {readingPdf && <button className="reader-reveal" type="button" aria-label="Show reader controls (T)" onFocus={() => setToolbarPeek(true)} onClick={() => { setToolbarPinned((value) => !value); setToolbarPeek(false); }} />}
       <LibraryRail
         open={libraryOpen}
-        keyboardMode={(compactLayout || home) && libraryOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && !literatureOpen && toolsTab === null && panel === null && sourceQuestion === null}
+        keyboardMode={(compactLayout || home) && libraryOpen && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && panel === null && sourceQuestion === null}
         name={library?.name ?? "Articles"}
         papers={library?.papers ?? []}
         selectedId={selectedId}
@@ -1103,6 +1096,17 @@ export function App() {
               Text
             </button>
             </>}
+            <button
+              type="button"
+              className={view === "sources" ? "is-active" : ""}
+              aria-current={view === "sources" ? "page" : undefined}
+              onClick={() => {
+                setPanel(null);
+                setView("sources");
+              }}
+            >
+              Sources
+            </button>
           </div>}
           <div className="topbar-actions">
             {!home && <button className="queue-button notes-toggle" type="button" aria-pressed={notesOpen} title="Markdown notes (E)" onClick={() => { if (notesOpen) requestNotesClose(); else openNotes(); }}>Notes <kbd>E</kbd></button>}
@@ -1118,6 +1122,7 @@ export function App() {
             <label className="provider-select">
               <span>Reader</span>
               <select value={provider} onChange={(event) => setProvider(event.target.value as AnalysisProvider)}>
+                <option value="openrouter">OpenRouter</option>
                 <option value="codex">Codex</option>
                 <option value="claude">Claude</option>
                 <option value="heuristic">Offline</option>
@@ -1146,7 +1151,7 @@ export function App() {
           {!loading && home && <HomePage papers={library?.papers ?? []} name={library?.name ?? "Library"}
             darkInk={darkInk} onToggleInk={() => setDarkInk((value) => !value)}
             query={homeQuery} onQuery={setHomeQuery} onSelect={selectPaper} activeId={homeActiveId} onActive={setHomeActiveId}
-            keyboardEnabled={!libraryOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && !literatureOpen && toolsTab === null}
+            keyboardEnabled={!libraryOpen && !switcherOpen && !commandOpen && !queueOpen && panel === null && !experimentOpen && toolsTab === null}
             onImport={() => setLibraryOpen(true)} />}
           {!loading && !home && paperView === null && <div className="center-state"><span className="loader large" /><p>Opening paper…</p></div>}
           {!home && currentPaper !== null && paperView !== null && (
@@ -1187,6 +1192,16 @@ export function App() {
                   onBack={() => setView("overview")}
                   onSection={openGlossSection}
                 />
+              ) : view === "sources" ? (
+                <LiteratureGraph
+                  key={selectedId}
+                  embedded
+                  paperId={selectedId}
+                  paperTitle={currentPaper.metadata.title}
+                  onClose={() => setView("text")}
+                  onOpenPassage={openPassage}
+                  onOpenPaper={(id) => selectPaper(id)}
+                />
               ) : (
                 <section className="text-view" aria-label="Full paper text">
                   {textMode === "markdown" ? (
@@ -1207,7 +1222,7 @@ export function App() {
                       zoom={pdfZoom}
                       darkInk={darkInk}
                       spread={pdfSpread}
-                      keyboardEnabled={panel === null && sourceQuestion === null && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && !literatureOpen && toolsTab === null && !(compactLayout && libraryOpen)}
+                      keyboardEnabled={panel === null && sourceQuestion === null && !switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && !(compactLayout && libraryOpen)}
                       onZoom={(delta) => setPdfZoom((value) => Math.max(.5, Math.min(2.5, value + delta)))}
                       onPage={setPdfPage}
                       onPageCount={setPdfPages}
@@ -1234,12 +1249,12 @@ export function App() {
         <SectionFocus key={`${currentPaper.id}:${selectedSection.id}`} url={api.source(currentPaper.id)} title={currentPaper.metadata.title}
           toolbarVisible={toolbarVisible}
           analysis={analysis} section={selectedSection} index={activeSection} paperMap={paperMap} darkInk={darkInk}
-          keyboardEnabled={!switcherOpen && !commandOpen && !queueOpen && !experimentOpen && !literatureOpen && toolsTab === null && sourceQuestion === null}
+          keyboardEnabled={!switcherOpen && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null && sourceQuestion === null}
           snapshots={pageSnapshots} onToggleInk={() => setDarkInk((value) => !value)} onSection={openSection} onClose={closeSection}
           onFullPaper={openPage} onClarify={clarifySentence}
           onSaveReference={(text, page) => { setReferenceSeed({ text, page }); setToolsTab("references"); }}
           digest={(onPage, keyboardEnabled, navigation) => <DigestPanel key={`${selectedSection.id}:${clarifySeed}`} navigation={navigation}
-            section={selectedSection} claims={relatedClaims} initialSelection={clarifySeed} keyboardEnabled={keyboardEnabled && !commandOpen && !queueOpen && !experimentOpen && !literatureOpen && toolsTab === null}
+            section={selectedSection} claims={relatedClaims} initialSelection={clarifySeed} keyboardEnabled={keyboardEnabled && !commandOpen && !queueOpen && !experimentOpen && toolsTab === null}
             onClose={closeSection} onGloss={openGlossary} onOpenPage={onPage} onClarify={clarify} />}
         />
       ) : panel === "digest" && selectedSection !== null ? (
@@ -1280,19 +1295,6 @@ export function App() {
             selectPaper(id);
           }}
           onFeedback={sendFeedback}
-        />
-      )}
-      {literatureOpen && selectedId !== null && (
-        <LiteratureGraph
-          key={selectedId}
-          paperId={selectedId}
-          paperTitle={currentPaper?.metadata.title ?? "Paper"}
-          onClose={() => setLiteratureOpen(false)}
-          onOpenPassage={openPassage}
-          onOpenPaper={(id) => {
-            setLiteratureOpen(false);
-            selectPaper(id);
-          }}
         />
       )}
       {experimentOpen && selectedId !== null && (

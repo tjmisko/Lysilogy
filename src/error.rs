@@ -32,6 +32,8 @@ pub enum Error {
     },
     #[error("required program is unavailable: {0}")]
     ProgramUnavailable(String),
+    #[error("model spend budget exhausted: spent ${spent_usd:.4} of ${budget_usd:.2}")]
+    BudgetExceeded { budget_usd: f64, spent_usd: f64 },
     #[error("PDF extraction produced no readable text for {0}")]
     EmptyExtraction(PathBuf),
     #[error("PDF coordinate extraction was invalid: {0}")]
@@ -92,6 +94,7 @@ impl IntoResponse for Error {
             }
             Self::AlreadyProcessing(_) => (StatusCode::CONFLICT, "already_processing"),
             Self::ProgramUnavailable(_) => (StatusCode::SERVICE_UNAVAILABLE, "program_unavailable"),
+            Self::BudgetExceeded { .. } => (StatusCode::PAYMENT_REQUIRED, "budget_exceeded"),
             Self::RemoteImport(_) => (StatusCode::BAD_GATEWAY, "remote_import_failed"),
             Self::Literature(_) => (StatusCode::BAD_GATEWAY, "literature_failed"),
             Self::Acquisition(_) => (StatusCode::BAD_GATEWAY, "acquisition_failed"),

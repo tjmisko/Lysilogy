@@ -73,6 +73,8 @@ struct Cli {
 enum LabelSidecar {
     Claude,
     Codex,
+    #[value(name = "openrouter")]
+    OpenRouter,
 }
 
 impl LabelSidecar {
@@ -80,6 +82,7 @@ impl LabelSidecar {
         match self {
             Self::Claude => AnalysisProvider::Claude,
             Self::Codex => AnalysisProvider::Codex,
+            Self::OpenRouter => AnalysisProvider::OpenRouter,
         }
     }
 }
@@ -205,10 +208,12 @@ enum Command {
     },
     /// Refresh discovery and report the library state.
     Scan,
+    /// Report model spend by substage from the JSONL ledger.
+    Spend,
     /// Analyze one paper selected by ID or an unambiguous title fragment.
     Analyze {
         query: String,
-        #[arg(long, default_value = "codex")]
+        #[arg(long, default_value = "openrouter")]
         provider: AnalysisProvider,
         #[arg(long)]
         force: bool,
@@ -216,7 +221,7 @@ enum Command {
     /// Refresh only the authored abstract, preserving the map and context.
     RefreshAbstract {
         query: String,
-        #[arg(long, default_value = "codex")]
+        #[arg(long, default_value = "openrouter")]
         provider: AnalysisProvider,
         #[arg(long)]
         force: bool,
@@ -224,7 +229,7 @@ enum Command {
     /// Refresh only cited research history and subsequent influence.
     RefreshContext {
         query: String,
-        #[arg(long, default_value = "codex")]
+        #[arg(long, default_value = "openrouter")]
         provider: AnalysisProvider,
         #[arg(long)]
         force: bool,
@@ -232,7 +237,7 @@ enum Command {
     /// Regenerate only the section map, claims, and glossary as coherent reading units.
     RefreshStructure {
         query: String,
-        #[arg(long, default_value = "codex")]
+        #[arg(long, default_value = "openrouter")]
         provider: AnalysisProvider,
         #[arg(long)]
         force: bool,
@@ -265,7 +270,7 @@ enum Command {
         #[arg(long)]
         labels: bool,
         /// Which local CLI writes the labels.
-        #[arg(long, value_enum, default_value = "claude")]
+        #[arg(long, value_enum, default_value = "openrouter")]
         sidecar: LabelSidecar,
         /// Stop after this many model calls; cached answers do not count.
         #[arg(long, default_value_t = 25)]
@@ -353,7 +358,7 @@ enum Command {
     },
     /// Analyze all papers that are not ready, continuing past individual faults.
     Ingest {
-        #[arg(long, default_value = "codex")]
+        #[arg(long, default_value = "openrouter")]
         provider: AnalysisProvider,
         #[arg(long)]
         force: bool,
@@ -369,7 +374,7 @@ enum Command {
         /// Experiment ID from experiments/catalog.json.
         #[arg(long, default_value = "conceptual-bridge")]
         experiment: String,
-        #[arg(long, default_value = "codex")]
+        #[arg(long, default_value = "openrouter")]
         provider: AnalysisProvider,
         /// Independent A/B replications for each paper.
         #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..=20))]
@@ -390,7 +395,7 @@ enum Command {
         queries: Vec<String>,
         #[arg(long, default_value = "conceptual-bridge")]
         experiment: String,
-        #[arg(long, default_value = "codex")]
+        #[arg(long, default_value = "openrouter")]
         provider: AnalysisProvider,
         #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u8).range(1..=20))]
         repeat: u8,
@@ -457,7 +462,7 @@ async fn run(cli: Cli) -> Result<()> {
         state
     } else {
         state.with_field_extractor(SidecarFieldExtractor::new(
-            AnalysisProvider::Claude,
+            AnalysisProvider::OpenRouter,
             LocalCliAnalyzer::default(),
             cli.data.join("fields"),
         )?)
@@ -482,6 +487,28 @@ async fn run(cli: Cli) -> Result<()> {
                 library.name,
                 ready
             );
+            Ok(())
+        }
+        Command::Spend => {
+            let path = lysilogy::analysis::spend::default_ledger_path();
+            let budget = lysilogy::analysis::spend::budget_usd();
+            let records = lysilogy::analysis::spend::read_records(&path);
+            let total: f64 = records.iter().map(|record| record.cost_usd).sum();
+            println!("Model spend ({})", path.display());
+            if records.is_empty() {
+                println!("No calls recorded.");
+            }
+            for entry in lysilogy::analysis::spend::stage_totals(&records) {
+                println!(
+                    "{:<24} {:>4} calls  {:>7} in  {:>7} out  ${:.4}",
+                    entry.stage,
+                    entry.calls,
+                    entry.prompt_tokens,
+                    entry.completion_tokens,
+                    entry.cost_usd
+                );
+            }
+            println!("Total ${total:.4} of ${budget:.2}");
             Ok(())
         }
         Command::Analyze {

@@ -82,6 +82,7 @@ impl FieldExtractor for SidecarFieldExtractor {
                         prompt: &prompt,
                         live_web: false,
                         fast: true,
+                        purpose: "fields",
                     },
                 )
                 .await
