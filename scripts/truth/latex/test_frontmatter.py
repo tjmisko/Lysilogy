@@ -126,6 +126,18 @@ class AbstractTests(unittest.TestCase):
         self.assertIsNone(result["abstract"])
         self.assertIn("abstract", result["withheld"])
 
+    def test_should_drop_keywords_and_classification_typed_inside_the_abstract(self):
+        result = read(r"\title{T}", "\\begin{abstract}We prove a bound.\n\nKey words: models, methods. AMS MSC 2010: 65M70.\\end{abstract}")
+        self.assertEqual(result["abstract"], "We prove a bound.")
+        result = read(r"\title{T}", r"\begin{abstract}We prove a bound. \keywords{billiards, loci} \subclass{37-40}\end{abstract}")
+        self.assertEqual(result["abstract"], "We prove a bound.")
+        result = read(r"\title{T}", "\\begin{abstract}We prove a bound.\n\nMSC 37-40, 51N20\\end{abstract}")
+        self.assertEqual(result["abstract"], "We prove a bound.")
+
+    def test_should_keep_an_abstract_that_mentions_keywords_in_prose(self):
+        result = read(r"\title{T}", r"\begin{abstract}We rank keywords by salience.\end{abstract}")
+        self.assertEqual(result["abstract"], "We rank keywords by salience.")
+
     def test_should_drop_display_math_from_the_abstract(self):
         result = read(r"\title{T}", r"\begin{abstract}Show \[ a=b \] and $$c$$ done.\end{abstract}")
         self.assertEqual(result["abstract"], "Show and done.")

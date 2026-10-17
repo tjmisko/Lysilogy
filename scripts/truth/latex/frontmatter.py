@@ -33,6 +33,11 @@ NOISE = {
 CITATIONS = dict.fromkeys(
     ("cite", "citep", "citet", "citealp", "citealt", "citeauthor", "citeyear", "parencite", "textcite", "autocite"), 1
 )
+KEYWORD_COMMANDS = dict.fromkeys(("keywords", "keyword", "subclass", "pacs", "PACS", "MSC", "msc", "ccsdesc", "jel", "JEL"), 1)
+KEYWORD_LINE = re.compile(
+    r"\s*\b(?:(?:key\s*words?|keywords|index terms|ams\s+(?:msc|subject)|msc(?:\s*20\d\d)?|mathematics subject classification|pacs|jel)\b\s*[:.—-]|msc\s+\d\d)",
+    re.IGNORECASE,
+)
 PLACEHOLDER = re.compile(r"\b(?:anonymous|submission|x{3,}|author\s*names?|first\s*name|last\s*name)\b", re.IGNORECASE)
 INSTITUTIONAL = re.compile(
     r"\b(?:university|universit[äéy]|institut[e]?|department|dept|laboratory|laboratories|lab|school|college|"
@@ -181,8 +186,11 @@ def abstract_of(text, renderer):
         if not values:
             return None, "no abstract environment or command"
         raw = values[0]
-    raw = drop_commands(drop_math(raw), {**CITATIONS, "label": 1, "footnote": 1, "thanks": 1})
+    raw = drop_commands(drop_math(raw), {**CITATIONS, **KEYWORD_COMMANDS, "label": 1, "footnote": 1, "thanks": 1})
     paragraphs = [clean(renderer, part) for part in re.split(r"\n\s*\n|\\par\b", raw)]
+    # Keyword and classification lines are often typed inside the abstract
+    # environment but are not part of the abstract.
+    paragraphs = [KEYWORD_LINE.split(part, maxsplit=1)[0].strip() for part in paragraphs]
     abstract = "\n\n".join(part for part in paragraphs if part)
     if not abstract:
         return None, "abstract renders empty"
