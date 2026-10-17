@@ -21,6 +21,7 @@ pub mod library;
 pub mod literature;
 pub mod markdown;
 pub mod notes;
+pub mod paper_artifacts;
 pub mod prominence;
 pub mod provenance;
 pub mod ramps;
