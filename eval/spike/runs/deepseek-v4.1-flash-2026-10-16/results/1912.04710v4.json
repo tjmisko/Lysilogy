@@ -1,0 +1,5108 @@
+{
+  "record_version": 1,
+  "started_at": "2026-10-17T06:03:24.993115289Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1912.04710v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "dpi": 120,
+  "pages": 8,
+  "calls": [
+    {
+      "stage": "extract.pass1",
+      "provider": "DigitalOcean",
+      "finish_reason": "stop",
+      "prompt_tokens": 16767,
+      "completion_tokens": 31828,
+      "reasoning_tokens": 13169,
+      "cost_usd": 0.028095405,
+      "cost_source": "reported",
+      "latency_s": 85.937180735
+    },
+    {
+      "stage": "extract.pass2",
+      "provider": "DigitalOcean",
+      "finish_reason": "stop",
+      "prompt_tokens": 31043,
+      "completion_tokens": 36230,
+      "reasoning_tokens": 35118,
+      "cost_usd": 0.034312785,
+      "cost_source": "reported",
+      "latency_s": 86.086177992
+    },
+    {
+      "stage": "extract.repair",
+      "provider": "Decart",
+      "finish_reason": "stop",
+      "prompt_tokens": 3137,
+      "completion_tokens": 9080,
+      "reasoning_tokens": 9130,
+      "cost_usd": 0.00191673,
+      "cost_source": "reported",
+      "latency_s": 90.272634066
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 50947,
+    "completion_tokens": 77138,
+    "cost_usd": 0.06432492000000001,
+    "model_latency_s": 262.295992793,
+    "wall_s": 264.083564378
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity. Results show the conditions for finding the unitary regions on the parameter space. There exists (n − 1)th order theories on the boundary of a unitary nth order model on parameter space under certain conditions, as the first example recently demonstrated from the bimetric generalization of exotic massive gravity. We investigated the mechanism that causes this type of transition for thirdorder models. Hamiltonian analysis of the theory also presents that ghost and no-ghost regions can be separated by Chern–Simons theories."
+    },
+    "card": {
+      "headline_results": [
+        {
+          "carrier": "seven-dimensional hypersurfaces",
+          "confidence": "high",
+          "evidence": [
+            {
+              "page": 4,
+              "quote": "Therefore, one can conclude that the hypersurface, which separates the unitary and nonunitary regions are seven-dimensional."
+            }
+          ],
+          "statement": "Unitary and nonunitary regions in the eight-dimensional parameter space are separated by seven-dimensional hypersurfaces."
+        },
+        {
+          "carrier": "det(g)=0 and K>0",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "page": 5,
+              "quote": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:"
+            },
+            {
+              "page": 6,
+              "quote": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region."
+            }
+          ],
+          "statement": "A 3→2 flavor transition can occur at det(g)=0, where the no-ghost condition K>0 can also break down."
+        },
+        {
+          "carrier": "Chern–Simons theories",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "page": 4,
+              "quote": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space."
+            }
+          ],
+          "statement": "Ghost and no-ghost regions can be separated by Chern–Simons theories."
+        }
+      ],
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Chern–Simons-like formalism and earlier lower-order transitions",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω)."
+              },
+              {
+                "page": 4,
+                "quote": "As first discovered in [16], this surface may contain an (n − 1)-flavor model."
+              }
+            ],
+            "reference_key": "[15, 16]",
+            "why": "The paper uses the CS-like first-order Lagrangian and extends the reported transition to lower-flavor models."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "MMG ghost analysis",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12]."
+              }
+            ],
+            "reference_key": "[12]",
+            "why": "The Hamiltonian and ghost analysis follows the same strategy as for MMG."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "solvable special models such as TMG, NMG, GMG, MMG",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions."
+              }
+            ],
+            "reference_key": "[3, 6, 12]",
+            "why": "It treats the general three-flavor case where equations are not simply solvable."
+          }
+        ]
+      },
+      "read_signal": {
+        "judgment": "read",
+        "reason": "The paper gives a general classification, explicit unitarity conditions, and a concrete flow example; a specialist would need the derivations and equations."
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity."
+          },
+          {
+            "page": 4,
+            "quote": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space."
+          }
+        ],
+        "text": "The most general third-order (three-flavor) Chern–Simons-like massive 3D gravity has a critical hypersurface separating unitary and nonunitary regions, and on that hypersurface the theory can degenerate to a lower-flavor model."
+      }
+    },
+    "citations": [
+      {
+        "context": "GR in three dimensions (3D) yields a trivial theory without any local degree of freedom [1].",
+        "page": 1,
+        "reference_key": "1"
+      },
+      {
+        "context": "However, a degree of freedom is attainable by adding a gravitational Chern–Simons term to an Einstein–Hilbert action in 3D, which is called topological massive gravity (TMG) [2].",
+        "page": 1,
+        "reference_key": "2"
+      },
+      {
+        "context": "Another example, new massive gravity (NMG) [3], is a parity-preserving fourth-order model and its linearization gives the Fierz–Pauli theory [4] with two massive graviton modes with helicity ±2.",
+        "page": 1,
+        "reference_key": "3,4"
+      },
+      {
+        "context": "If one abandons the parity-preserving condition on NMG the theory can be extended to general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and NMG as a limit.",
+        "page": 1,
+        "reference_key": "5"
+      },
+      {
+        "context": "Other than NMG and GMG, there is another fourth-order theory called exotic massive gravity [6], which is a parity-odd theory with an intriguing feature called third-way consistency [7].",
+        "page": 1,
+        "reference_key": "6,7"
+      },
+      {
+        "context": "In the 3D case, the first-order formulation of the bimetric theory is known as zwei-dreibein gravity (ZDG) [8] that has a limiting case to NMG.",
+        "page": 1,
+        "reference_key": "8"
+      },
+      {
+        "context": "The relation has been shown that under certain conditions 3D gravity theory generates two copies of Virasoro algebra on the boundary dual to the bulk theory [9].",
+        "page": 1,
+        "reference_key": "9"
+      },
+      {
+        "context": "The duality is also known as the AdS/CFT correspondence [10, 11].",
+        "page": 1,
+        "reference_key": "10,11"
+      },
+      {
+        "context": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG.",
+        "page": 1,
+        "reference_key": "12"
+      },
+      {
+        "context": "The nondynamical nature of GR in 3D permits it to be seen as topological theory and hence a Chern–Simons gauge theory [13, 14].",
+        "page": 1,
+        "reference_key": "13,14"
+      },
+      {
+        "context": "In this case, the new theory is called “CS-like” [15] and contains a degree of freedom instead of being a topological theory.",
+        "page": 1,
+        "reference_key": "15"
+      },
+      {
+        "context": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+        "page": 1,
+        "reference_key": "3,6,12"
+      },
+      {
+        "context": "One can construct the Lagrangian three-form with a flavor metric g rs and a coefficient tensor f rst as mentioned in [15].",
+        "page": 2,
+        "reference_key": "15"
+      },
+      {
+        "context": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+        "page": 2,
+        "reference_key": "6"
+      },
+      {
+        "context": "This can be tested through some of the well-known 3D models, such as TMG [2] and MMG [12].",
+        "page": 3,
+        "reference_key": "2,12"
+      },
+      {
+        "context": "However, MMG needs to redefine the spin connection Ω = ω + αf as in [12].",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "By the method introduced in [17] one can find,",
+        "page": 3,
+        "reference_key": "17"
+      },
+      {
+        "context": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "In this section we will follow the method introduced in [18].",
+        "page": 3,
+        "reference_key": "18"
+      },
+      {
+        "context": "As first discovered in [16], this surface may contain an (n − 1)-flavor model.",
+        "page": 4,
+        "reference_key": "16"
+      },
+      {
+        "context": "First off all, we need to define what reducing to a lower order is, in a mathematical way. For instance, consider the GMG Lagrangian [5],",
+        "page": 4,
+        "reference_key": "5"
+      }
+    ],
+    "claims": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "In our case, there are ten linearly independent terms in Lagrangian with their arbitrary coefficients, which can be seen as parameters."
+          },
+          {
+            "page": 6,
+            "quote": "Since these two can be calculated completely by the others, parameter space dimension reduces to 8 from 10."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (4)",
+          "Eq. (43)",
+          "Sec. III"
+        ],
+        "id": "claim1",
+        "statement": "The most general three-flavor CS-like theory has ten independent a_i parameters; AdS conditions reduce the parameter space to eight dimensions.",
+        "strength": "strong",
+        "support": "The Lagrangian (4) contains ten a_i terms; AdS conditions (43) make two coefficients dependent."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity."
+          },
+          {
+            "page": 3,
+            "quote": "After this observation, no-tachyon condition M 2 > 0 becomes M 2 l 2 > 1, which now can be connected to the a i coefficients."
+          },
+          {
+            "page": 3,
+            "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12]."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (16)",
+          "Eq. (19)",
+          "Eq. (22)"
+        ],
+        "id": "claim2",
+        "statement": "Bulk and boundary unitarity require C±>0, M^2 l^2>1, and K>0.",
+        "strength": "strong",
+        "support": "Central charges (16), no-tachyon condition, and no-ghost condition K>0."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "Therefore, one can conclude that the hypersurface, which separates the unitary and nonunitary regions are seven-dimensional."
+          }
+        ],
+        "evidence_refs": [
+          "Sec. III"
+        ],
+        "id": "claim3",
+        "statement": "The unitary and nonunitary regions are separated by seven-dimensional hypersurfaces.",
+        "strength": "strong",
+        "support": "Parameter space is eight-dimensional; the separating surface is one dimension less."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "At these critical surfaces where the determinant vanishes, the theory can degenerate into a (n − 1)-flavor model or a (n − 2) one, or totally collapse since there is no such first-order theory in 3D gravity."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (37)",
+          "Eq. (39)",
+          "Eq. (42)"
+        ],
+        "id": "claim4",
+        "statement": "At det(g)=0 the theory can degenerate to an (n−1)-flavor or lower model; a 3→2 transition is possible.",
+        "strength": "strong",
+        "support": "Flavor-metric degeneration makes fields linearly dependent and imposes constraints."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space."
+          }
+        ],
+        "evidence_refs": [
+          "Sec. IV"
+        ],
+        "id": "claim5",
+        "statement": "Ghost and no-ghost regions can be separated by Chern–Simons theories.",
+        "strength": "moderate",
+        "support": "Rank-2 conditions force M to zero and can place CS theories on the boundary."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "In this situation, we have 4 secondclass and 10 − 4 = 6 first-class constraints."
+          },
+          {
+            "page": 4,
+            "quote": "Then we can conclude that our degree of freedom is one."
+          },
+          {
+            "page": 4,
+            "quote": "Therefore, phase space dimension is 3 ∗ 6 − 8 ∗ 2 − 2 = 0 and the theory propagates no bulk degree of freedom."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (31)",
+          "Eq. (32)",
+          "Eq. (33)"
+        ],
+        "id": "claim6",
+        "statement": "Hamiltonian constraint analysis gives one bulk degree of freedom generically and zero when the rank-reducing conditions (33) hold.",
+        "strength": "strong",
+        "support": "Rank of the Q-matrix changes from four to two under (33)."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 6,
+            "quote": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region."
+          }
+        ],
+        "evidence_refs": [
+          "Eqs. (45)-(48)",
+          "Figs. 1-3"
+        ],
+        "id": "claim7",
+        "statement": "A concrete flow between chosen parameter points undergoes a 3→2 transition near λ≈0.28 where det(g) and K vanish.",
+        "strength": "moderate",
+        "support": "Numerical example with two random parameter sets and flow parametrization."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "which areexactly the same equations as the Einstein–Cartan theory in 3D."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (49)",
+          "Eq. (53)"
+        ],
+        "id": "claim8",
+        "statement": "At the transition point the equations reduce to those of Einstein–Cartan theory in 3D.",
+        "strength": "strong",
+        "support": "The reduced equations of motion (49)–(53) match Einstein–Cartan form."
+      }
+    ],
+    "glossary": [
+      {
+        "confidence": "high",
+        "definition": "A first-order formulation of 3D gravity with extra flavors; when it is not purely topological it is called CS-like.",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In this case, the new theory is called “CS-like” [15] and contains a degree of freedom instead of being a topological theory."
+          }
+        ],
+        "term": "Chern–Simons-like (CS-like) theory"
+      },
+      {
+        "confidence": "high",
+        "definition": "Auxiliary one-form fields in the CS-like formulation; the number of flavors sets the order of the theory.",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Hence, the order of theory will be used interchangeably to refer to flavor."
+          }
+        ],
+        "term": "flavor"
+      },
+      {
+        "confidence": "high",
+        "definition": "Parity-odd fourth-order 3D massive gravity with third-way consistency.",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "there is another fourth-order theory called exotic massive gravity [6], which is a parity-odd theory with an intriguing feature called third-way consistency [7]."
+          }
+        ],
+        "term": "exotic massive gravity"
+      },
+      {
+        "confidence": "high",
+        "definition": "Minimal massive gravity; an extension of TMG that can avoid the bulk/boundary unitarity clash.",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG."
+          }
+        ],
+        "term": "MMG"
+      },
+      {
+        "confidence": "high",
+        "definition": "A condition that the Fierz–Pauli mass squared is positive; here M^2 l^2 > 1.",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "After this observation, no-tachyon condition M 2 > 0 becomes M 2 l 2 > 1, which now can be connected to the a i coefficients."
+          }
+        ],
+        "term": "no-tachyon condition"
+      },
+      {
+        "confidence": "high",
+        "definition": "A condition K>0 ensuring absence of ghost degrees of freedom after diagonalization.",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12]."
+          }
+        ],
+        "term": "no-ghost condition"
+      },
+      {
+        "confidence": "high",
+        "definition": "The determinant of the flavor metric; its vanishing signals degeneration of the theory to fewer flavors.",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:"
+          }
+        ],
+        "term": "det(g)=0"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Department of Physics, Istanbul Technical University, Maslak 34469 Istanbul, Turkey",
+          "name": "Sinan Sevim"
+        },
+        {
+          "affiliation": "Department of Physics, Istanbul Technical University, Maslak 34469 Istanbul, Turkey",
+          "name": "M. Salih Zög"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Sinan Sevim ∗ and M. Salih Zög †"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1912.04710v4 [hep-th]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Unitarity flow in 2+1 dimensional massive gravity",
+      "venue": null,
+      "year": 2020
+    },
+    "key_numbers": [
+      {
+        "confidence": "high",
+        "context": "Number of independent terms in Lagrangian",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "In our case, there are ten linearly independent terms in Lagrangian with their arbitrary coefficients, which can be seen as parameters."
+          }
+        ],
+        "quantity": "10",
+        "value": "10 parameters a_i"
+      },
+      {
+        "confidence": "high",
+        "context": "Parameter space dimension after AdS restrictions",
+        "evidence": [
+          {
+            "page": 6,
+            "quote": "Since these two can be calculated completely by the others, parameter space dimension reduces to 8 from 10."
+          }
+        ],
+        "quantity": "8",
+        "value": "8-dimensional parameter space"
+      },
+      {
+        "confidence": "high",
+        "context": "Transition value in example flow",
+        "evidence": [
+          {
+            "page": 6,
+            "quote": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region."
+          }
+        ],
+        "quantity": "0.28",
+        "value": "λ ≈ 0.28"
+      }
+    ],
+    "limitations": [
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 6,
+            "quote": "Seeing that some of the important quantities such as central charges and mass parameter depend on c, for simplicity, we set a 4 = 0 through the flow in this example."
+          }
+        ],
+        "stated_by": "model",
+        "text": "The numerical example simplifies by setting a4=0 through the flow, so the transition example is not fully general."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions."
+          }
+        ],
+        "stated_by": "model",
+        "text": "Analytic treatment of generic three-flavor models is difficult; some regions require infinite serial expansions."
+      }
+    ],
+    "method": {
+      "assumptions": [
+        "AdS background",
+        "Parity-preserving? general parity?",
+        "Three-flavor Chern–Simons-like first-order formalism"
+      ],
+      "confidence": "high",
+      "data": "Analytic Hamiltonian and unitarity analysis of the general three-flavor CS-like Lagrangian.",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "Following the procedure introduced in [6], most general models in three-flavor theory have"
+        }
+      ],
+      "procedure": "Write the most general three-flavor CS-like Lagrangian, impose AdS conditions, linearize, derive central charges and Fierz–Pauli mass, analyze ghosts via Hamiltonian constraints, then study parameter-space flows and degenerations.",
+      "setting": "2+1 dimensional massive gravity"
+    },
+    "notation": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω)."
+          }
+        ],
+        "meaning": "One-form fields for the three flavors: dreibein, auxiliary field, and dual spin connection.",
+        "page": 2,
+        "symbol": "a^r = (e, f, ω)"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "Here f is an auxiliary field and e, ω denotes the dreibein and dual spin connection, respectively."
+          }
+        ],
+        "meaning": "Dreibein and dual spin connection.",
+        "page": 2,
+        "symbol": "e, ω"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "Defining the torsion and dual curvature two-forms,"
+          }
+        ],
+        "meaning": "Torsion and dual curvature two-forms.",
+        "page": 2,
+        "symbol": "T(ω), R(ω)"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "with a flavor metric g rs and a coefficient tensor f rst"
+          }
+        ],
+        "meaning": "Flavor metric and coefficient tensor in the CS-like Lagrangian.",
+        "page": 2,
+        "symbol": "g_rs, f_rst"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "f 111 = α 1, f 112 = α 2, f 122 = α 3... etc."
+          }
+        ],
+        "meaning": "Coefficients replacing the f_rst tensor after index raising.",
+        "page": 2,
+        "symbol": "α_i"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "where det(g) is the determinant of flavor metric."
+          }
+        ],
+        "meaning": "Determinant of the flavor metric; zeros signal degeneration.",
+        "page": 2,
+        "symbol": "det(g)"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "where M = α 5 + (α 6 − α 2)c − α 3 c 2 is the mass parameter."
+          }
+        ],
+        "meaning": "Mass parameter in the linearized theory.",
+        "page": 3,
+        "symbol": "M"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "The following relations which we refer to here as AdS conditions can be derived from equations of motion:"
+          }
+        ],
+        "meaning": "Conditions (15) fixing the AdS background and c.",
+        "page": 3,
+        "symbol": "AdS conditions"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity."
+          }
+        ],
+        "meaning": "Left/right central charges; positivity gives boundary unitarity.",
+        "page": 3,
+        "symbol": "C±"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "For bulk, one has to find the Fierz–Pauli mass M which is related to the mass parameter we found in (13) as M 2 = M 2 + Λ."
+          }
+        ],
+        "meaning": "Fierz–Pauli mass squared in AdS.",
+        "page": 3,
+        "symbol": "M^2"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12]."
+          }
+        ],
+        "meaning": "Ghost-freedom condition after diagonalization.",
+        "page": 3,
+        "symbol": "K"
+      }
+    ],
+    "objects": [
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(1)",
+        "latex": "T(\\omega)=D(\\omega)e=de+\\omega\\times e,\\quad R(\\omega)=d\\omega+\\frac12\\omega\\times\\omega",
+        "number": "1",
+        "page": 2,
+        "plain_language": "Defines torsion and dual curvature two-forms for the dreibein and spin connection.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "These are the basic field strengths used throughout the first-order formulation."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(2)",
+        "latex": "\\mathcal L=\\frac12 g_{rs}a^r\\cdot da^s+\\frac16 f_{rst}a^r\\cdot(a^s\\times a^t)",
+        "number": "2",
+        "page": 2,
+        "plain_language": "General three-form Lagrangian for CS-like gravity with flavor metric and coefficient tensor.",
+        "referenced_on_pages": [
+          2,
+          5
+        ],
+        "why_it_matters": "Starting point for all three-flavor models."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(3)",
+        "latex": "(a^r\\times a^s)^a=\\epsilon^{abc}a^r_b a^s_c,\\quad a^r\\cdot a^s\\equiv\\eta^{ab}a^r_a a^s_b",
+        "number": "3",
+        "page": 2,
+        "plain_language": "Definitions of dot and cross products in the local frame.",
+        "referenced_on_pages": [
+          2
+        ],
+        "why_it_matters": "Notation for the Lagrangian and equations of motion."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(4)",
+        "latex": "\\begin{aligned}L&=\\frac{a_1}{2}e\\cdot T+a_2 e\\cdot Df+a_3 e\\cdot R+\\frac{a_4}{2}f\\cdot Df\\\\&+a_5 f\\cdot R+a_6 L_{LCS}+\\frac{a_7}{6}e\\cdot e\\times e+\\frac{a_8}{2}e\\cdot f\\times f\\\\&+\\frac{a_9}{2}e\\cdot e\\times f+\\frac{a_{10}}{6}f\\cdot f\\times f\\end{aligned}",
+        "number": "4",
+        "page": 2,
+        "plain_language": "Most general three-flavor Lagrangian with ten a_i coefficients.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "Defines the model class analyzed; a_i are the parameters."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(5)",
+        "latex": "\\delta e:a_1T+a_2Df+a_3R+\\frac{a_7}{2}e\\times e+\\frac{a_8}{2}f\\times f+a_9 e\\times f=0,\\quad \\delta \\omega:a_3T+a_5Df+a_6R+\\frac{a_1}{2}e\\times e+\\frac{a_4}{2}f\\times f+a_2 e\\times f=0,\\quad \\delta f:a_2T+a_4Df+a_5R+\\frac{a_{10}}{2}f\\times f+a_8 e\\times f=0",
+        "number": "5",
+        "page": 2,
+        "plain_language": "Equations of motion obtained from (4) by varying e, ω, and f.",
+        "referenced_on_pages": [
+          2,
+          4
+        ],
+        "why_it_matters": "These constraints are used in the Hamiltonian analysis."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(6)",
+        "latex": "E_r=g_{rs}da^s+\\frac12 f_{rst}a^s\\times a^t",
+        "number": "6",
+        "page": 2,
+        "plain_language": "Summarized general form of the equations of motion.",
+        "referenced_on_pages": [
+          2
+        ],
+        "why_it_matters": "Compact form before raising indices."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(7)",
+        "latex": "E^p=g^{pr}E_r=da^p+\\frac12 f^p_{st}a^s\\times a^t",
+        "number": "7",
+        "page": 2,
+        "plain_language": "Raised-index equation of motion.",
+        "referenced_on_pages": [
+          2
+        ],
+        "why_it_matters": "Allows redefinition in terms of α-coefficients."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(8)",
+        "latex": "T+\\frac12\\alpha_1 e\\times e+\\alpha_2 e\\times f+\\frac12\\alpha_3 f\\times f=0,\\quad Df+\\frac12\\alpha_4 e\\times e+\\alpha_5 e\\times f+\\frac12\\alpha_6 f\\times f=0,\\quad R+\\frac12\\alpha_7 e\\times e+\\alpha_8 e\\times f+\\frac12\\alpha_9 f\\times f=0",
+        "number": "8",
+        "page": 2,
+        "plain_language": "Elegant equations of motion in α-parameter form.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "Simplifies linearization and unitarity analysis."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(9)",
+        "latex": "f^1{}_{11}=\\alpha_1,\\quad f^1{}_{12}=\\alpha_2,\\quad f^1{}_{22}=\\alpha_3\\dots\\ etc.",
+        "number": "9",
+        "page": 2,
+        "plain_language": "Definition of α's in terms of components of f.",
+        "referenced_on_pages": [
+          2
+        ],
+        "why_it_matters": "Connects the a_i and α_i descriptions."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(10)",
+        "latex": "\\alpha_1=\\frac{a_1a_2a_5-a_1a_3a_4-a_2a_6a_9+a_3a_5a_9+a_4a_6a_7-a_5^2a_7}{det(g)}",
+        "number": "10",
+        "page": 2,
+        "plain_language": "Example relation between α1 and a_i coefficients, with det(g) in the denominator.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "Shows why α_i and M may diverge when det(g)→0."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(11)",
+        "latex": "e=\\bar e,\\quad f=\\bar f=c\\bar e,\\quad \\omega=\\bar\\omega",
+        "number": "11",
+        "page": 2,
+        "plain_language": "AdS background ansatz: auxiliary field proportional to dreibein.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "Background around which fluctuations are defined."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(12)",
+        "latex": "e=\\bar e+\\kappa k,\\quad f=c(\\bar e+\\kappa k)+\\kappa p,\\quad \\omega=\\bar\\omega+\\kappa v",
+        "number": "12",
+        "page": 2,
+        "plain_language": "First-order fluctuations around the AdS background.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "Used to derive the linearized equations."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(13)",
+        "latex": "\\bar Dk+\\bar e\\times v+(\\alpha_3 c+\\alpha_2)\\bar e\\times p=0,\\quad \\bar Dp+M\\bar e\\times p=0,\\quad \\bar Dv+\\frac1{l^2}\\bar e\\times k+(\\alpha_9 c+\\alpha_8)\\bar e\\times p=0",
+        "number": "13",
+        "page": 3,
+        "plain_language": "Linearized equations of motion around AdS.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "Defines the mass parameter M and is diagonalized for unitarity."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(14)",
+        "latex": "\\bar T\\equiv D(\\bar\\omega)\\bar e=0,\\quad \\bar R\\equiv R(\\bar\\omega)=\\frac12\\Lambda\\bar e\\times\\bar e",
+        "number": "14",
+        "page": 3,
+        "plain_language": "Torsion and curvature in the AdS background.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "Used to derive the AdS conditions."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(15)",
+        "latex": "\\frac12\\alpha_1+\\alpha_2 c+\\frac12\\alpha_3 c^2=0,\\quad \\frac12\\alpha_4+\\alpha_5 c+\\frac12\\alpha_6 c^2=0,\\quad \\frac12\\alpha_7+\\alpha_8 c+\\frac12\\alpha_9 c^2=\\frac1{2l^2}",
+        "number": "15",
+        "page": 3,
+        "plain_language": "AdS conditions relating α_i, c, and Λ.",
+        "referenced_on_pages": [
+          3,
+          4
+        ],
+        "why_it_matters": "Determines the AdS background and reduces parameter space."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(16)",
+        "latex": "C_{\\pm}=\\frac{3l}{2G}(-(a_3+a_5 c)\\pm \\frac1l a_6)",
+        "number": "16",
+        "page": 3,
+        "plain_language": "Central charges C±.",
+        "referenced_on_pages": [
+          3,
+          5,
+          6
+        ],
+        "why_it_matters": "Boundary unitarity requires C±>0."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(17)",
+        "latex": "k=l(f_+-f_-)+\\frac{l^2(M\\alpha_3 c+M\\alpha_2+\\alpha_9 c+\\alpha_8)}{l^2M^2-1}p,\\quad v=f_++f_-+\\frac{\\alpha_9 c l^2 M+\\alpha_8 l^2 M+\\alpha_3 c+\\alpha_2}{l^2M^2-1}p",
+        "number": "17",
+        "page": 3,
+        "plain_language": "Redefinitions diagonalizing the linearized equations.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "Shows the helicity modes and diagonalization."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(18)",
+        "latex": "\\bar Df_++\\frac1l\\bar e\\times f_+=0,\\quad \\bar Df_--\\frac1l\\bar e\\times f_-=0,\\quad \\bar Dp+M\\bar e\\times p=0",
+        "number": "18",
+        "page": 3,
+        "plain_language": "Simplified diagonalized equations of motion.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "Used to identify the massive modes."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(19)",
+        "latex": "\\mathcal L^{(2)}=l a_+ f_+\\cdot(\\bar Df_++\\frac1l\\bar e\\times f_+)-l a_- f_-\\cdot(\\bar Df_--\\frac1l\\bar e\\times f_-)-\\frac{K}{M}p\\cdot(\\bar Dp+M\\bar e\\times p)",
+        "number": "19",
+        "page": 3,
+        "plain_language": "Second-order perturbative Lagrangian in diagonal variables.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "Ghost condition K>0 follows from this form."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(20)",
+        "latex": "a^{ra}=a^{ra}_0 dt+a^{ra}_i dx^i,\\quad L=-\\frac12\\epsilon^{ij}g_{rs}a^r_i\\cdot\\dot a^s_j+a^r_0\\cdot\\phi_r",
+        "number": "20",
+        "page": 3,
+        "plain_language": "Decomposition of one-forms and Lagrangian into time and space parts.",
+        "referenced_on_pages": [
+          3,
+          4
+        ],
+        "why_it_matters": "Starts the Hamiltonian constraint analysis."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(21)",
+        "latex": "\\phi^a_r=\\epsilon^{ij}\\left(g_{rs}\\partial_i a^s_{ja}+\\frac12 f_{rst}(a^s_i\\times a^t_j)^a\\right)",
+        "number": "21",
+        "page": 3,
+        "plain_language": "Primary constraints φ_r.",
+        "referenced_on_pages": [
+          3,
+          4
+        ],
+        "why_it_matters": "Constraints whose algebra determines the degrees of freedom."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(22)",
+        "latex": "H=-\\frac12\\epsilon^{ij}g_{rs}a^r_i\\cdot\\dot a^s_j-L=-a^r_0\\cdot\\phi_r,\\quad \\{a^r_{ia}(x),a^s_{jb}(y)\\}_{P.B.}=\\epsilon^{ij}g^{rs}\\eta_{ab}\\delta^{(2)}(x-y)",
+        "number": "22",
+        "page": 3,
+        "plain_language": "Hamiltonian and Poisson brackets.",
+        "referenced_on_pages": [
+          3,
+          4
+        ],
+        "why_it_matters": "Foundation for constraint analysis."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(23)",
+        "latex": "\\phi[\\xi]=\\int_\\Sigma d^2x\\xi^r_a\\phi^a_r(x)",
+        "number": "23",
+        "page": 4,
+        "plain_language": "Smeared test functional for constraints.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Used to compute the constraint algebra."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(24)",
+        "latex": "\\varphi[\\xi]=\\int_\\Sigma d^2x\\xi^r_a\\phi^a_r+Q[\\xi]",
+        "number": "24",
+        "page": 4,
+        "plain_language": "Improved primary constraint operator with boundary counterterm.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Ensures well-defined functional derivatives at the boundary."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(25)",
+        "latex": "\\{\\varphi[\\xi],\\varphi[\\eta]\\}=\\varphi[[\\xi,\\eta]]+\\int_\\Sigma d^2x\\xi^r_a\\eta^s_b\\mathcal P^{ab}_{rs}-\\int_{\\partial\\Sigma}dx^i\\xi^r\\cdot(g_{rs}\\partial_i\\eta^s+f_{rst}a^s_i\\times\\eta^t)",
+        "number": "25",
+        "page": 4,
+        "plain_language": "Poisson bracket of improved primary constraints.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Contains the primary Poisson bracket matrix."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(26)",
+        "latex": "\\mathcal P^{ab}_{rs}=f^t_{q[rs]pt}\\eta^{ab}\\Delta^{pq}+2f^t_{r[s}f_{q]pt}V^{ab}_{pq}",
+        "number": "26",
+        "page": 4,
+        "plain_language": "Primary Poisson bracket matrix.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Used to count constraints and degrees of freedom."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(27)",
+        "latex": "V^{pq}_{ab}=\\epsilon^{ij}a^p_{ia}a^q_{jb},\\quad \\Delta^{pq}=\\epsilon^{ij}a^p_i\\cdot a^q_j",
+        "number": "27",
+        "page": 4,
+        "plain_language": "Definitions of V and Δ objects entering the Poisson bracket matrix.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Δ^ef becomes a secondary constraint."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(28)",
+        "latex": "D(\\omega)T(\\omega)=R(\\omega)\\times e,\\quad D(\\omega)R(\\omega)=0",
+        "number": "28",
+        "page": 4,
+        "plain_language": "Bianchi identities used in integrability conditions.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Helps derive the secondary constraint."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(29)",
+        "latex": "\\psi=\\Delta^{ef}=0",
+        "number": "29",
+        "page": 4,
+        "plain_language": "Secondary constraint from integrability.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Needed for the constraint rank analysis."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(30)",
+        "latex": "\\{\\phi[\\xi],\\psi\\}_{P.B.}=P_0\\epsilon^{ij}(\\xi^f D_i e_j-\\xi^e D_i f_j+(\\alpha_4\\xi^e+\\alpha_5\\xi^f)e_i\\times e_j+(( -\\alpha_1+\\alpha_5)\\xi^e+(-\\alpha_2+\\alpha_6)\\xi^f)e_i\\times f_j+(-\\alpha_2\\xi^e+\\alpha_3\\xi^f)f_i\\times f_j)",
+        "number": "30",
+        "page": 4,
+        "plain_language": "Poisson bracket between primary constraints and the secondary constraint.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Completes the extended constraint matrix."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(31)",
+        "latex": "(\\mathcal P_{ab})_{rs}=P_0\\begin{pmatrix}(Q_{ab})_{rs}&0\\\\0&0\\end{pmatrix}=P_0\\begin{pmatrix}V^{ff}_{ab}&V^{ef}_{ab}&0\\\\V^{fe}_{ab}&V^{ee}_{ab}&0\\\\0&0&0\\end{pmatrix}",
+        "number": "31",
+        "page": 4,
+        "plain_language": "Matrix form of the primary Poisson bracket matrix.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Its rank determines degrees of freedom."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(32)",
+        "latex": "\\mathbb Q=\\begin{pmatrix}Q&v\\\\-v^T&0\\end{pmatrix},\\quad v=\\begin{pmatrix}\\{\\phi_e,\\psi\\}_{PB}\\\\{\\phi_f,\\psi\\}_{PB}\\end{pmatrix}",
+        "number": "32",
+        "page": 4,
+        "plain_language": "Extended Q-matrix including secondary constraint brackets.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Rank four generically, reduced under special conditions."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(33)",
+        "latex": "\\alpha_4=\\alpha_3=0,\\quad \\alpha_1=2\\alpha_5,\\quad \\alpha_6=2\\alpha_2",
+        "number": "33",
+        "page": 4,
+        "plain_language": "Special rank-reducing conditions.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Leads to zero bulk degrees of freedom and M=0."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(34)",
+        "latex": "L_{GMG}=-\\sigma e\\cdot R+\\frac{\\Lambda_0}{6}e\\cdot e\\times e+h\\cdot De-\\frac1{m^2}f\\cdot\\left(R+\\frac12 e\\times f\\right)+\\frac1\\mu L_{LCS}",
+        "number": "34",
+        "page": 4,
+        "plain_language": "GMG Lagrangian used as an example of lowering order.",
+        "referenced_on_pages": [
+          4,
+          5
+        ],
+        "why_it_matters": "Illustrates the decoupling limit m→∞."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(35)",
+        "latex": "L'_{GMG}=-\\sigma e\\cdot R+\\frac{\\Lambda_0}{6}e\\cdot e\\times e+h\\cdot De-\\frac1{m^2}f\\cdot\\left(R+\\frac12 e\\times f\\right)+\\frac1\\mu L_{LCS}+f\\cdot De-\\frac1{m^2}h\\cdot\\left(R+\\frac12 e\\times h+e\\times f\\right)",
+        "number": "35",
+        "page": 5,
+        "plain_language": "Modified GMG Lagrangian with extra terms.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Shows another way to lower order."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(36)",
+        "latex": "L'_{GMG}=-\\sigma e\\cdot R+\\frac{\\Lambda_0}{6}e\\cdot e\\times e+q\\cdot De-\\frac1{m^2}q\\cdot\\left(R+\\frac12 e\\times q\\right)+\\frac1\\mu L_{LCS}",
+        "number": "36",
+        "page": 5,
+        "plain_language": "Rewriting (35) with q=h+f shows it is not truly fourth-order.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Demonstrates flavor degeneration."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(37)",
+        "latex": "det(g)=0",
+        "number": "37",
+        "page": 5,
+        "plain_language": "Condition for flavor-metric degeneration and possible order reduction.",
+        "referenced_on_pages": [
+          5,
+          6
+        ],
+        "why_it_matters": "Defines the critical surface for unitarity flow transitions."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(38)",
+        "latex": "a_5=+l(a_4 c+a_2)\\rightarrow det(g)\\propto C_+,\\quad a_5=-l(a_4 c+a_2)\\rightarrow det(g)\\propto C_-",
+        "number": "38",
+        "page": 5,
+        "plain_language": "Conditions making det(g) proportional to one central charge.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Shows when central-charge breakdown aligns with determinant zeros."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(39)",
+        "latex": "\\frac12\\alpha e\\times e+\\beta e\\times f+\\frac12\\gamma f\\times f=0",
+        "number": "39",
+        "page": 5,
+        "plain_language": "Constraint equation at degeneration, with potential terms.",
+        "referenced_on_pages": [
+          5,
+          7
+        ],
+        "why_it_matters": "Forces f to be proportional to e after expansion."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(40)",
+        "latex": "e=\\bar e+\\kappa k+\\frac{\\kappa^2}{2!}k'+\\frac{\\kappa^3}{3!}k''+\\cdots=\\bar e+\\sum_{n=1}^\\infty\\frac{\\kappa^n}{n!}k^{(n-1)},\\quad f=c\\left(\\bar e+\\kappa k+\\frac{\\kappa^2}{2!}k'+\\cdots\\right)+\\kappa p+\\frac{\\kappa^2}{2!}p'+\\cdots",
+        "number": "40",
+        "page": 5,
+        "plain_language": "Infinite series expansion around AdS when degeneracy occurs.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Needed to solve the nonlinear constraint (39)."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(41)",
+        "latex": "p_{\\mu\\nu}=p'_{\\mu\\nu}=p''_{\\mu\\nu}=\\cdots=0",
+        "number": "41",
+        "page": 5,
+        "plain_language": "Higher fluctuations of the auxiliary field vanish.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Implies f remains proportional to e."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(42)",
+        "latex": "f=c\\left(\\bar e+\\sum_{n=1}^\\infty\\frac{\\kappa^n}{n!}k^{(n-1)}\\right)=c e",
+        "number": "42",
+        "page": 5,
+        "plain_language": "Degenerate auxiliary field becomes proportional to the dreibein.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Confirms flavor number decreases as det(g)→0."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(43)",
+        "latex": "a_1+a_4 c^2+2a_2 c=\\frac{a_6}{l^2},\\quad a_7+a_8 c^2+2a_9 c=\\frac{a_3}{l^2},\\quad a_9+a_{10}c^2+2a_8 c=\\frac{a_5}{l^2}",
+        "number": "43",
+        "page": 6,
+        "plain_language": "AdS conditions expressed in terms of a_i coefficients.",
+        "referenced_on_pages": [
+          6,
+          7
+        ],
+        "why_it_matters": "Reduces parameter space and determines c."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(44)",
+        "latex": "c=\\frac{a_6-a_1 l^2}{2a_2 l^2}\\in \\mathbb R",
+        "number": "44",
+        "page": 6,
+        "plain_language": "Choice of c after setting a4=0 in the example.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Keeps c real for the flow example."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(45)",
+        "latex": "a_1^\\star=6,\\ a_2^\\star=6,\\ a_3^\\star=-12,\\ a_4^\\star=0,\\ a_5^\\star=12,\\ a_6^\\star=-16,\\ a_8^\\star=-20,\\ a_{10}^\\star=13",
+        "number": "45",
+        "page": 6,
+        "plain_language": "Coordinates of a unitary random point.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Starting point of the numerical flow example."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(46)",
+        "latex": "a_1^{\\star\\star}=22,\\ a_2^{\\star\\star}=-20,\\ a_3^{\\star\\star}=-0,\\ a_4^{\\star\\star}=0,\\ a_5^{\\star\\star}=-40,\\ a_6^{\\star\\star}=-23,\\ a_8^{\\star\\star}=13,\\ a_{10}^{\\star\\star}=11",
+        "number": "46",
+        "page": 6,
+        "plain_language": "Coordinates of a nonunitary random point.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "End point of the numerical flow example."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(47)",
+        "latex": "a_i(\\lambda)=(1-\\lambda^2)a_i^\\star+\\lambda a_i^{\\star\\star}",
+        "number": "47",
+        "page": 6,
+        "plain_language": "Flow parametrization connecting the two points.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Used to plot det(g), K, and central charges."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(48)",
+        "latex": "L=\\frac{a_1}{2}e\\cdot T+a_3 e\\cdot R+a_6 L_{LCS}+\\frac{a_7}{6}e\\cdot e\\times e+\\frac{a_8}{2}e\\cdot f\\times f+\\frac{a_9}{2}e\\cdot e\\times f+\\frac{a_{10}}{6}f\\cdot f\\times f",
+        "number": "48",
+        "page": 6,
+        "plain_language": "Lagrangian at the transition point in the example.",
+        "referenced_on_pages": [
+          6,
+          7
+        ],
+        "why_it_matters": "Leads to the reduced Einstein–Cartan form."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(49)",
+        "latex": "\\delta e:a_1T+a_3R+\\frac{a_7}{2}e\\times e+\\frac{a_8}{2}f\\times f+a_9 e\\times f=0,\\quad \\delta \\omega:a_3T+a_6R+\\frac{a_1}{2}e\\times e=0,\\quad \\delta f:\\frac{a_9}{2}e\\times e+\\frac{a_{10}}{2}f\\times f+a_8 e\\times f=0",
+        "number": "49",
+        "page": 7,
+        "plain_language": "Equations of motion at the transition point.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "Reduces to Einstein–Cartan equations."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(50)",
+        "latex": "L=\\frac{a_1}{2}e\\cdot T+a_3 e\\cdot R+a_6 L_{LCS}+\\frac16\\left(a_7+3c^2a_8+3c a_9+c^3a_{10}\\right)e\\cdot e\\times e",
+        "number": "50",
+        "page": 7,
+        "plain_language": "Lagrangian after substituting f=ce.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "Intermediate step to simplified Lagrangian."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(51)",
+        "latex": "L=-a_6\\frac{\\Lambda}{2}e\\cdot T+a_3 e\\cdot R+a_6 L_{LCS}-a_3\\frac{\\Lambda}{6}e\\cdot e\\times e",
+        "number": "51",
+        "page": 7,
+        "plain_language": "Simplified Lagrangian at transition using AdS relations.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "Shows the reduced theory."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(52)",
+        "latex": "\\delta e:-a_6\\Lambda T+a_3R-a_3\\frac{\\Lambda}{2}e\\times e=0,\\quad \\delta \\omega:a_3T+a_6R-a_6\\frac{\\Lambda}{2}e\\times e=0",
+        "number": "52",
+        "page": 7,
+        "plain_language": "Equations of motion of the simplified theory.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "Rearranged to show Einstein–Cartan structure."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(53)",
+        "latex": "a_3\\delta e+a_6\\Lambda\\delta\\omega:\\ (a_3^2+a_6^2\\Lambda)\\left(R-\\frac{\\Lambda}{2}e\\times e\\right)=0,\\quad a_3\\delta\\omega-a_6\\delta e:\\ (a_3^2+a_6^2\\Lambda)T=0",
+        "number": "53",
+        "page": 7,
+        "plain_language": "Rearranged equations separating curvature and torsion.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "Final Einstein–Cartan-like equations."
+      },
+      {
+        "caption": "FIG. 1. det(g) along the flow",
+        "confidence": "high",
+        "kind": "figure",
+        "label": "FIG. 1.",
+        "latex": null,
+        "number": "1",
+        "page": 6,
+        "plain_language": "Plot of det(g) along the flow parameter λ; it crosses zero near λ≈0.28.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Shows the critical surface where the flow transitions."
+      },
+      {
+        "caption": "FIG. 2. K changes sign along the flow",
+        "confidence": "high",
+        "kind": "figure",
+        "label": "FIG. 2.",
+        "latex": null,
+        "number": "2",
+        "page": 6,
+        "plain_language": "Plot of no-ghost quantity K along the flow; K changes sign at the transition.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Confirms the no-ghost condition breaks down."
+      },
+      {
+        "caption": "FIG. 3. Central charges are positive along the flow",
+        "confidence": "high",
+        "kind": "figure",
+        "label": "FIG. 3.",
+        "latex": null,
+        "number": "3",
+        "page": 6,
+        "plain_language": "Plot of central charges along the flow; they remain positive.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Shows boundary unitarity is maintained in the example."
+      }
+    ],
+    "open_questions": [
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "We will investigate the generic fall of third-order theories to second ones."
+          }
+        ],
+        "stated_by": "model",
+        "text": "How generic the 3→2 transition is beyond the particular flow example remains to be fully established."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions."
+          }
+        ],
+        "stated_by": "model",
+        "text": "Whether the infinite serial expansions converge in all relevant regions is not addressed."
+      }
+    ],
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 4,
+          "quote": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space."
+        }
+      ],
+      "text": "How do unitary and nonunitary regions connect in the parameter space of the most general three-flavor Chern–Simons-like massive 3D gravity, and can the theory degenerate to lower-order models at the transition?"
+    },
+    "references": [
+      {
+        "authors": [
+          "S. Deser",
+          "R. Jackiw",
+          "G. 't Hooft"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 7,
+        "title": null,
+        "venue": "Annals Phys.",
+        "year": 1984
+      },
+      {
+        "authors": [
+          "S. Deser",
+          "R. Jackiw",
+          "S. Templeton"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 7,
+        "title": null,
+        "venue": "Annals Phys.",
+        "year": 1982
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "O. Hohm",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 7,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "M. Fierz",
+          "W. Pauli"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 7,
+        "title": null,
+        "venue": "Proc. Roy. Soc. Lond.",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "W. Merbis"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 7,
+        "title": "Chern–Simons-like Theories of Gravity",
+        "venue": "Ph.D. thesis, Groningen U.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "M. Özkan",
+          "Y. Pang",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 7,
+        "title": null,
+        "venue": "JHEP",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "E. Bergshoeff",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 7,
+        "title": null,
+        "venue": "Int. J. Mod. Phys.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "S. de Haan",
+          "O. Hohm",
+          "W. Merbis",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 7,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "J. D. Brown",
+          "M. Henneaux"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 7,
+        "title": null,
+        "venue": "Commun. Math. Phys.",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "J. M. Maldacena"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 7,
+        "title": null,
+        "venue": "Int. J. Theor. Phys.",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "E. Witten"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 7,
+        "title": null,
+        "venue": "Adv. Theor. Math. Phys.",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "E. Bergshoeff",
+          "O. Hohm",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 7,
+        "title": null,
+        "venue": "Class. Quant. Grav.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "E. Witten"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 7,
+        "title": null,
+        "venue": "Nucl. Phys.",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "A. Achucarro",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 7,
+        "title": null,
+        "venue": "Phys. Lett.",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "O. Hohm",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 8,
+        "title": "Proceedings of the 7th Aegean Summer School: Beyond Einstein’s theory of gravity. Modifications of Einstein’s Theory of Gravity at Large Distances.: Paros, Greece, September 23-28, 2013",
+        "venue": "Lect. Notes Phys.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "M. Ozkan",
+          "Y. Pang",
+          "U. Zorba"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "W. Merbis",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 8,
+        "title": null,
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "O. Hohm",
+          "A. Routh",
+          "P. K. Townsend",
+          "B. Zhang"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. D",
+        "year": 2012
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "GR in three dimensions (3D) yields a trivial theory without any local degree of freedom [1].",
+        "reference_key": "1",
+        "relation": "uses_method",
+        "why": "The paper uses the triviality of 3D GR to motivate adding massive-gravity terms."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "However, a degree of freedom is attainable by adding a gravitational Chern–Simons term to an Einstein–Hilbert action in 3D, which is called topological massive gravity (TMG) [2].",
+        "reference_key": "2",
+        "relation": "extends",
+        "why": "TMG is a foundational example of a three-flavor theory that the general analysis includes."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Another example, new massive gravity (NMG) [3], is a parity-preserving fourth-order model and its linearization gives the Fierz–Pauli theory [4] with two massive graviton modes with helicity ±2.",
+        "reference_key": "3,4",
+        "relation": "extends",
+        "why": "NMG and Fierz–Pauli theory are reference points for parity-preserving massive gravitons."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "If one abandons the parity-preserving condition on NMG the theory can be extended to general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and NMG as a limit.",
+        "reference_key": "5",
+        "relation": "extends",
+        "why": "GMG provides the generic fourth-order example whose compactification is discussed."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+        "reference_key": "6",
+        "relation": "uses_method",
+        "why": "The general Lagrangian is constructed following the method of [6]."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "One can construct the Lagrangian three-form with a flavor metric g rs and a coefficient tensor f rst as mentioned in [15].",
+        "reference_key": "15",
+        "relation": "uses_method",
+        "why": "The CS-like formalism and notation are taken from [15]."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "By the method introduced in [17] one can find,",
+        "reference_key": "17",
+        "relation": "uses_method",
+        "why": "Central charges are derived using the method of [17]."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+        "reference_key": "12",
+        "relation": "uses_method",
+        "why": "The ghost analysis replicates the MMG analysis in [12]."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In this section we will follow the method introduced in [18].",
+        "reference_key": "18",
+        "relation": "uses_method",
+        "why": "Hamiltonian constraint analysis follows [18]."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "As first discovered in [16], this surface may contain an (n − 1)-flavor model.",
+        "reference_key": "16",
+        "relation": "extends",
+        "why": "The paper generalizes the lower-order transition first reported in [16]."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "For instance, consider the GMG Lagrangian [5],",
+        "reference_key": "5",
+        "relation": "uses_method",
+        "why": "GMG Lagrangian is used as an explicit example of reducing to a lower-flavor theory."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The duality is also known as the AdS/CFT correspondence [10, 11].",
+        "reference_key": "10,11",
+        "relation": "background",
+        "why": "AdS/CFT is background motivation for boundary unitarity and central charges."
+      }
+    ],
+    "supercut": [
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "The paper studies the most general third-order CS-like massive 3D gravity."
+      },
+      {
+        "kind": "source",
+        "page": 1,
+        "text": "In this work, the most general three-flavor case is analyzed."
+      },
+      {
+        "kind": "source",
+        "page": 2,
+        "text": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω)."
+      },
+      {
+        "kind": "source",
+        "page": 2,
+        "text": "Following the procedure introduced in [6], most general models in three-flavor theory have"
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "They impose an AdS background and analyze bulk and boundary unitarity."
+      },
+      {
+        "kind": "source",
+        "page": 3,
+        "text": "In this section we will examine the bulk and boundary unitarity of the most general three-flavor model."
+      },
+      {
+        "kind": "source",
+        "page": 3,
+        "text": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity."
+      },
+      {
+        "kind": "source",
+        "page": 3,
+        "text": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12]."
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "Hamiltonian analysis counts the degrees of freedom and identifies special rank-reducing conditions."
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "The rank of Q is now four, unless the rare possibility of satisfying simultaneously the conditions below,"
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space."
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "They then study flows on the parameter space and lower-order transitions."
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space."
+      },
+      {
+        "kind": "source",
+        "page": 5,
+        "text": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:"
+      },
+      {
+        "kind": "source",
+        "page": 5,
+        "text": "At these critical surfaces where the determinant vanishes, the theory can degenerate into a (n − 1)-flavor model or a (n − 2) one, or totally collapse since there is no such first-order theory in 3D gravity."
+      },
+      {
+        "kind": "source",
+        "page": 6,
+        "text": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region."
+      },
+      {
+        "kind": "source",
+        "page": 7,
+        "text": "This classification shows us there is a hypersurface in the parameter space, which separates unitary and nonunitary regions and between them there exists a n = 2 model under certain restrictions."
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper develops a general theoretical classification and applies it to a specific model class.",
+      "value": "theory"
+    }
+  },
+  "pass1_check": {
+    "sites": 101,
+    "verbatim": 96,
+    "near": 2,
+    "missing": 3,
+    "wrong_page": 4
+  },
+  "corrections": [
+    {
+      "path": "/claims/0/evidence/0/page",
+      "action": "replace",
+      "value_json": "1",
+      "reason": "The quoted sentence appears on page 1, not page 2.",
+      "evidence": [
+        {
+          "quote": "In our case, there are ten linearly independent terms in Lagrangian with their arbitrary coefficients, which can be seen as parameters.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/key_numbers/0/evidence/0/page",
+      "action": "replace",
+      "value_json": "1",
+      "reason": "The quoted sentence appears on page 1, not page 2.",
+      "evidence": [
+        {
+          "quote": "In our case, there are ten linearly independent terms in Lagrangian with their arbitrary coefficients, which can be seen as parameters.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/limitations/1/evidence/0/page",
+      "action": "replace",
+      "value_json": "1",
+      "reason": "The quoted sentence appears on page 1, not page 3.",
+      "evidence": [
+        {
+          "quote": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/open_questions/1/evidence/0/page",
+      "action": "replace",
+      "value_json": "1",
+      "reason": "The quoted sentence appears on page 1, not page 4.",
+      "evidence": [
+        {
+          "quote": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/objects/4/latex",
+      "action": "replace",
+      "value_json": "\"\\delta e:a_1T+a_2Df+a_3R+\\frac{a_7}{2}e\\times e+\\frac{a_8}{2}f\\times f+a_9 e\\times f=0,\\quad \\delta \\omega:a_3T+a_5Df+a_6R+\\frac{a_1}{2}e\\times e+\\frac{a_4}{2}f\\times f+a_2 e\\times f=0,\\quad \\delta f:a_2T+a_4Df+a_5R+\\frac{a_9}{2}e\\times e+\\frac{a_{10}}{2}f\\times f+a_8 e\\times f=0\"",
+      "reason": "Equation (5) in the paper includes the term + a9/2 e×e in the δf equation; the draft omits it.",
+      "evidence": [
+        {
+          "quote": "δf: a 2 T + a 4 Df + a 5 R + a 9/2 e × e + a 10/2 f × f + a 8 e × f = 0",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/objects/39/latex",
+      "action": "replace",
+      "value_json": "\"e=\\bar e+\\kappa k+\\frac{\\kappa^2}{2!}k'+\\frac{\\kappa^3}{3!}k''+\\cdots=\\bar e+\\sum_{n=1}^\\infty\\frac{\\kappa^n}{n!}k^{(n-1)},\\quad f=c\\left(\\bar e+\\kappa k+\\frac{\\kappa^2}{2!}k'+\\frac{\\kappa^3}{3!}k''+\\cdots\\right)+\\kappa p+\\frac{\\kappa^2}{2!}p'+\\cdots=c\\left(\\bar e+\\sum_{n=1}^\\infty\\frac{\\kappa^n}{n!}k^{(n-1)}\\right)+\\sum_{n=1}^\\infty\\frac{\\kappa^n}{n!}p^{(n-1)}\"",
+      "reason": "Equation (40) in the paper also includes the final equality expressing f as c(ē + sum k) + sum p; the draft omits it.",
+      "evidence": [
+        {
+          "quote": "f = c ( ē + κk + κ^2/2! k' + κ^3/3! k'' + · · · ) + κp + κ^2/2! p' + · · · = c ( ē + ∑_{n=1}^∞ κ^n/n! k^{(n−1)} ) + ∑_{n=1}^∞ κ^n/n! p^{(n−1)}",
+          "page": 5
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/claims/0/evidence/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/key_numbers/0/evidence/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/limitations/1/evidence/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/open_questions/1/evidence/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/objects/4/latex",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "value_json is not JSON: invalid escape at line 1 column 3"
+    },
+    {
+      "index": 5,
+      "path": "/objects/39/latex",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "value_json is not JSON: invalid escape at line 1 column 12"
+    }
+  ],
+  "pass2_check": {
+    "sites": 101,
+    "verbatim": 96,
+    "near": 2,
+    "missing": 3,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity. Results show the conditions for finding the unitary regions on the parameter space. There exists (n − 1)th order theories on the boundary of a unitary nth order model on parameter space under certain conditions, as the first example recently demonstrated from the bimetric generalization of exotic massive gravity. We investigated the mechanism that causes this type of transition for thirdorder models. Hamiltonian analysis of the theory also presents that ghost and no-ghost regions can be separated by Chern–Simons theories.",
+      "admitted": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity. Results show the conditions for finding the unitary regions on the parameter space. There exists (n − 1)th order theories on the boundary of a unitary nth order model on parameter space under certain conditions, as the first example recently demonstrated from the bimetric generalization of exotic massive gravity. We investigated the mechanism that causes this type of transition for thirdorder models. Hamiltonian analysis of the theory also presents that ghost and no-ghost regions can be separated by Chern–Simons theories.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/headline_results/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Therefore, one can conclude that the hypersurface, which separates the unitary and nonunitary regions are seven-dimensional.",
+      "admitted": "Therefore, one can conclude that the hypersurface, which separates the unitary and nonunitary regions are seven-dimensional.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/headline_results/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:",
+      "admitted": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/headline_results/1/evidence/1/quote",
+      "status": "verbatim",
+      "original": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region.",
+      "admitted": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/headline_results/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space.",
+      "admitted": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω).",
+      "admitted": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/1/quote",
+      "status": "verbatim",
+      "original": "As first discovered in [16], this surface may contain an (n − 1)-flavor model.",
+      "admitted": "As first discovered in [16], this surface may contain an (n − 1)-flavor model.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/replications/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "admitted": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+      "admitted": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity.",
+      "admitted": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space.",
+      "admitted": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In our case, there are ten linearly independent terms in Lagrangian with their arbitrary coefficients, which can be seen as parameters.",
+      "admitted": "In our case, there are ten linearly independent terms in Lagrangian with their arbitrary coefficients, which can be seen as parameters.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/0/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Since these two can be calculated completely by the others, parameter space dimension reduces to 8 from 10.",
+      "admitted": "Since these two can be calculated completely by the others, parameter space dimension reduces to 8 from 10.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity.",
+      "admitted": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/1/evidence/1/quote",
+      "status": "verbatim",
+      "original": "After this observation, no-tachyon condition M 2 > 0 becomes M 2 l 2 > 1, which now can be connected to the a i coefficients.",
+      "admitted": "After this observation, no-tachyon condition M 2 > 0 becomes M 2 l 2 > 1, which now can be connected to the a i coefficients.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/1/evidence/2/quote",
+      "status": "verbatim",
+      "original": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "admitted": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Therefore, one can conclude that the hypersurface, which separates the unitary and nonunitary regions are seven-dimensional.",
+      "admitted": "Therefore, one can conclude that the hypersurface, which separates the unitary and nonunitary regions are seven-dimensional.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "At these critical surfaces where the determinant vanishes, the theory can degenerate into a (n − 1)-flavor model or a (n − 2) one, or totally collapse since there is no such first-order theory in 3D gravity.",
+      "admitted": "At these critical surfaces where the determinant vanishes, the theory can degenerate into a (n − 1)-flavor model or a (n − 2) one, or totally collapse since there is no such first-order theory in 3D gravity.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space.",
+      "admitted": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/5/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this situation, we have 4 secondclass and 10 − 4 = 6 first-class constraints.",
+      "admitted": "In this situation, we have 4 secondclass and 10 − 4 = 6 first-class constraints.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/5/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Then we can conclude that our degree of freedom is one.",
+      "admitted": "Then we can conclude that our degree of freedom is one.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/5/evidence/2/quote",
+      "status": "verbatim",
+      "original": "Therefore, phase space dimension is 3 ∗ 6 − 8 ∗ 2 − 2 = 0 and the theory propagates no bulk degree of freedom.",
+      "admitted": "Therefore, phase space dimension is 3 ∗ 6 − 8 ∗ 2 − 2 = 0 and the theory propagates no bulk degree of freedom.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/6/evidence/0/quote",
+      "status": "verbatim",
+      "original": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region.",
+      "admitted": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/7/evidence/0/quote",
+      "status": "verbatim",
+      "original": "which areexactly the same equations as the Einstein–Cartan theory in 3D.",
+      "admitted": "which areexactly the same equations as the Einstein–Cartan theory in 3D.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this case, the new theory is called “CS-like” [15] and contains a degree of freedom instead of being a topological theory.",
+      "admitted": "In this case, the new theory is called “CS-like” [15] and contains a degree of freedom instead of being a topological theory.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Hence, the order of theory will be used interchangeably to refer to flavor.",
+      "admitted": "Hence, the order of theory will be used interchangeably to refer to flavor.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "there is another fourth-order theory called exotic massive gravity [6], which is a parity-odd theory with an intriguing feature called third-way consistency [7].",
+      "admitted": "there is another fourth-order theory called exotic massive gravity [6], which is a parity-odd theory with an intriguing feature called third-way consistency [7].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG.",
+      "admitted": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "After this observation, no-tachyon condition M 2 > 0 becomes M 2 l 2 > 1, which now can be connected to the a i coefficients.",
+      "admitted": "After this observation, no-tachyon condition M 2 > 0 becomes M 2 l 2 > 1, which now can be connected to the a i coefficients.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/5/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "admitted": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/6/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:",
+      "admitted": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "dropped",
+      "original": "Sinan Sevim ∗ and M. Salih Zög †",
+      "admitted": null,
+      "similarity": 0.8333333333333334,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/key_numbers/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In our case, there are ten linearly independent terms in Lagrangian with their arbitrary coefficients, which can be seen as parameters.",
+      "admitted": "In our case, there are ten linearly independent terms in Lagrangian with their arbitrary coefficients, which can be seen as parameters.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/key_numbers/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Since these two can be calculated completely by the others, parameter space dimension reduces to 8 from 10.",
+      "admitted": "Since these two can be calculated completely by the others, parameter space dimension reduces to 8 from 10.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/key_numbers/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region.",
+      "admitted": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/limitations/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Seeing that some of the important quantities such as central charges and mass parameter depend on c, for simplicity, we set a 4 = 0 through the flow in this example.",
+      "admitted": "Seeing that some of the important quantities such as central charges and mass parameter depend on c, for simplicity, we set a 4 = 0 through the flow in this example.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/limitations/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+      "admitted": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/method/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+      "admitted": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω).",
+      "admitted": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Here f is an auxiliary field and e, ω denotes the dreibein and dual spin connection, respectively.",
+      "admitted": "Here f is an auxiliary field and e, ω denotes the dreibein and dual spin connection, respectively.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Defining the torsion and dual curvature two-forms,",
+      "admitted": "Defining the torsion and dual curvature two-forms,",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "with a flavor metric g rs and a coefficient tensor f rst",
+      "admitted": "with a flavor metric g rs and a coefficient tensor f rst",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "f 111 = α 1, f 112 = α 2, f 122 = α 3... etc.",
+      "admitted": "f 111 = α 1, f 112 = α 2, f 122 = α 3... etc.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/5/evidence/0/quote",
+      "status": "verbatim",
+      "original": "where det(g) is the determinant of flavor metric.",
+      "admitted": "where det(g) is the determinant of flavor metric.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/6/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "where M = α 5 + (α 6 − α 2)c − α 3 c 2 is the mass parameter.",
+      "admitted": "where M = α 5 + (α 6 − α 2)c − α 3 c 2 is the mass",
+      "similarity": 0.9375,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/7/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The following relations which we refer to here as AdS conditions can be derived from equations of motion:",
+      "admitted": "The following relations which we refer to here as AdS conditions can be derived from equations of motion:",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/8/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity.",
+      "admitted": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/9/evidence/0/quote",
+      "status": "verbatim",
+      "original": "For bulk, one has to find the Fierz–Pauli mass M which is related to the mass parameter we found in (13) as M 2 = M 2 + Λ.",
+      "admitted": "For bulk, one has to find the Fierz–Pauli mass M which is related to the mass parameter we found in (13) as M 2 = M 2 + Λ.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/10/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "admitted": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/open_questions/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We will investigate the generic fall of third-order theories to second ones.",
+      "admitted": "We will investigate the generic fall of third-order theories to second ones.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/open_questions/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+      "admitted": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space.",
+      "admitted": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/1/text",
+      "status": "verbatim",
+      "original": "In this work, the most general three-flavor case is analyzed.",
+      "admitted": "In this work, the most general three-flavor case is analyzed.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/2/text",
+      "status": "verbatim",
+      "original": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω).",
+      "admitted": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/3/text",
+      "status": "verbatim",
+      "original": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+      "admitted": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/5/text",
+      "status": "verbatim",
+      "original": "In this section we will examine the bulk and boundary unitarity of the most general three-flavor model.",
+      "admitted": "In this section we will examine the bulk and boundary unitarity of the most general three-flavor model.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/6/text",
+      "status": "verbatim",
+      "original": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity.",
+      "admitted": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/7/text",
+      "status": "verbatim",
+      "original": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "admitted": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/9/text",
+      "status": "verbatim",
+      "original": "The rank of Q is now four, unless the rare possibility of satisfying simultaneously the conditions below,",
+      "admitted": "The rank of Q is now four, unless the rare possibility of satisfying simultaneously the conditions below,",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/10/text",
+      "status": "verbatim",
+      "original": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space.",
+      "admitted": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/12/text",
+      "status": "verbatim",
+      "original": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space.",
+      "admitted": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/13/text",
+      "status": "verbatim",
+      "original": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:",
+      "admitted": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/14/text",
+      "status": "verbatim",
+      "original": "At these critical surfaces where the determinant vanishes, the theory can degenerate into a (n − 1)-flavor model or a (n − 2) one, or totally collapse since there is no such first-order theory in 3D gravity.",
+      "admitted": "At these critical surfaces where the determinant vanishes, the theory can degenerate into a (n − 1)-flavor model or a (n − 2) one, or totally collapse since there is no such first-order theory in 3D gravity.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/15/text",
+      "status": "verbatim",
+      "original": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region.",
+      "admitted": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/16/text",
+      "status": "verbatim",
+      "original": "This classification shows us there is a hypersurface in the parameter space, which separates unitary and nonunitary regions and between them there exists a n = 2 model under certain restrictions.",
+      "admitted": "This classification shows us there is a hypersurface in the parameter space, which separates unitary and nonunitary regions and between them there exists a n = 2 model under certain restrictions.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "GR in three dimensions (3D) yields a trivial theory without any local degree of freedom [1].",
+      "admitted": "GR in three dimensions (3D) yields a trivial theory without any local degree of freedom [1].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "However, a degree of freedom is attainable by adding a gravitational Chern–Simons term to an Einstein–Hilbert action in 3D, which is called topological massive gravity (TMG) [2].",
+      "admitted": "However, a degree of freedom is attainable by adding a gravitational Chern–Simons term to an Einstein–Hilbert action in 3D, which is called topological massive gravity (TMG) [2].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "Another example, new massive gravity (NMG) [3], is a parity-preserving fourth-order model and its linearization gives the Fierz–Pauli theory [4] with two massive graviton modes with helicity ±2.",
+      "admitted": "Another example, new massive gravity (NMG) [3], is a parity-preserving fourth-order model and its linearization gives the Fierz–Pauli theory [4] with two massive graviton modes with helicity ±2.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "If one abandons the parity-preserving condition on NMG the theory can be extended to general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and NMG as a limit.",
+      "admitted": "If one abandons the parity-preserving condition on NMG the theory can be extended to general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and NMG as a limit.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "Other than NMG and GMG, there is another fourth-order theory called exotic massive gravity [6], which is a parity-odd theory with an intriguing feature called third-way consistency [7].",
+      "admitted": "Other than NMG and GMG, there is another fourth-order theory called exotic massive gravity [6], which is a parity-odd theory with an intriguing feature called third-way consistency [7].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "In the 3D case, the first-order formulation of the bimetric theory is known as zwei-dreibein gravity (ZDG) [8] that has a limiting case to NMG.",
+      "admitted": "In the 3D case, the first-order formulation of the bimetric theory is known as zwei-dreibein gravity (ZDG) [8] that has a limiting case to NMG.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "The relation has been shown that under certain conditions 3D gravity theory generates two copies of Virasoro algebra on the boundary dual to the bulk theory [9].",
+      "admitted": "The relation has been shown that under certain conditions 3D gravity theory generates two copies of Virasoro algebra on the boundary dual to the bulk theory [9].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "withdrawn",
+      "original": "The duality is also known as the AdS/CFT correspondence [10, 11].",
+      "admitted": null,
+      "similarity": 0.8181818181818181,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG.",
+      "admitted": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "The nondynamical nature of GR in 3D permits it to be seen as topological theory and hence a Chern–Simons gauge theory [13, 14].",
+      "admitted": "The nondynamical nature of GR in 3D permits it to be seen as topological theory and hence a Chern–Simons gauge theory [13, 14].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "In this case, the new theory is called “CS-like” [15] and contains a degree of freedom instead of being a topological theory.",
+      "admitted": "In this case, the new theory is called “CS-like” [15] and contains a degree of freedom instead of being a topological theory.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+      "admitted": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "One can construct the Lagrangian three-form with a flavor metric g rs and a coefficient tensor f rst as mentioned in [15].",
+      "admitted": "One can construct the Lagrangian three-form with a flavor metric g rs and a coefficient tensor f rst as mentioned in [15].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+      "admitted": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "repaired_local",
+      "original": "This can be tested through some of the well-known 3D models, such as TMG [2] and MMG [12].",
+      "admitted": "parameter.This can be tested through some of the well-known 3D models, such as TMG [2] and MMG [12].",
+      "similarity": 0.9444444444444444,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "However, MMG needs to redefine the spin connection Ω = ω + αf as in [12].",
+      "admitted": "However, MMG needs to redefine the spin connection Ω = ω + αf as in [12].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "By the method introduced in [17] one can find,",
+      "admitted": "By the method introduced in [17] one can find,",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "admitted": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "In this section we will follow the method introduced in [18].",
+      "admitted": "In this section we will follow the method introduced in [18].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "As first discovered in [16], this surface may contain an (n − 1)-flavor model.",
+      "admitted": "As first discovered in [16], this surface may contain an (n − 1)-flavor model.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "First off all, we need to define what reducing to a lower order is, in a mathematical way. For instance, consider the GMG Lagrangian [5],",
+      "admitted": "First off all, we need to define what reducing to a lower order is, in a mathematical way. For instance, consider the GMG Lagrangian [5],",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "GR in three dimensions (3D) yields a trivial theory without any local degree of freedom [1].",
+      "admitted": "GR in three dimensions (3D) yields a trivial theory without any local degree of freedom [1].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "However, a degree of freedom is attainable by adding a gravitational Chern–Simons term to an Einstein–Hilbert action in 3D, which is called topological massive gravity (TMG) [2].",
+      "admitted": "However, a degree of freedom is attainable by adding a gravitational Chern–Simons term to an Einstein–Hilbert action in 3D, which is called topological massive gravity (TMG) [2].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "Another example, new massive gravity (NMG) [3], is a parity-preserving fourth-order model and its linearization gives the Fierz–Pauli theory [4] with two massive graviton modes with helicity ±2.",
+      "admitted": "Another example, new massive gravity (NMG) [3], is a parity-preserving fourth-order model and its linearization gives the Fierz–Pauli theory [4] with two massive graviton modes with helicity ±2.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "If one abandons the parity-preserving condition on NMG the theory can be extended to general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and NMG as a limit.",
+      "admitted": "If one abandons the parity-preserving condition on NMG the theory can be extended to general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and NMG as a limit.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+      "admitted": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "One can construct the Lagrangian three-form with a flavor metric g rs and a coefficient tensor f rst as mentioned in [15].",
+      "admitted": "One can construct the Lagrangian three-form with a flavor metric g rs and a coefficient tensor f rst as mentioned in [15].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "By the method introduced in [17] one can find,",
+      "admitted": "By the method introduced in [17] one can find,",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "admitted": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "In this section we will follow the method introduced in [18].",
+      "admitted": "In this section we will follow the method introduced in [18].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "verbatim",
+      "original": "As first discovered in [16], this surface may contain an (n − 1)-flavor model.",
+      "admitted": "As first discovered in [16], this surface may contain an (n − 1)-flavor model.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/10/quote",
+      "status": "verbatim",
+      "original": "For instance, consider the GMG Lagrangian [5],",
+      "admitted": "For instance, consider the GMG Lagrangian [5],",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/11/quote",
+      "status": "withdrawn",
+      "original": "The duality is also known as the AdS/CFT correspondence [10, 11].",
+      "admitted": null,
+      "similarity": 0.8181818181818181,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "caption",
+      "pointer": "/objects/53/caption",
+      "status": "verbatim",
+      "original": "FIG. 1. det(g) along the flow",
+      "admitted": "FIG. 1. det(g) along the flow",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "caption",
+      "pointer": "/objects/54/caption",
+      "status": "verbatim",
+      "original": "FIG. 2. K changes sign along the flow",
+      "admitted": "FIG. 2. K changes sign along the flow",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "caption",
+      "pointer": "/objects/55/caption",
+      "status": "verbatim",
+      "original": "FIG. 3. Central charges are positive along the flow",
+      "admitted": "FIG. 3. Central charges are positive along the flow",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    }
+  ],
+  "admission_counts": {
+    "dropped": 1,
+    "repaired_local": 2,
+    "verbatim": 96,
+    "withdrawn": 2
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity. Results show the conditions for finding the unitary regions on the parameter space. There exists (n − 1)th order theories on the boundary of a unitary nth order model on parameter space under certain conditions, as the first example recently demonstrated from the bimetric generalization of exotic massive gravity. We investigated the mechanism that causes this type of transition for thirdorder models. Hamiltonian analysis of the theory also presents that ghost and no-ghost regions can be separated by Chern–Simons theories."
+    },
+    "card": {
+      "headline_results": [
+        {
+          "carrier": "seven-dimensional hypersurfaces",
+          "confidence": "high",
+          "evidence": [
+            {
+              "page": 4,
+              "quote": "Therefore, one can conclude that the hypersurface, which separates the unitary and nonunitary regions are seven-dimensional."
+            }
+          ],
+          "statement": "Unitary and nonunitary regions in the eight-dimensional parameter space are separated by seven-dimensional hypersurfaces."
+        },
+        {
+          "carrier": "det(g)=0 and K>0",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "page": 5,
+              "quote": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:"
+            },
+            {
+              "page": 6,
+              "quote": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region."
+            }
+          ],
+          "statement": "A 3→2 flavor transition can occur at det(g)=0, where the no-ghost condition K>0 can also break down."
+        },
+        {
+          "carrier": "Chern–Simons theories",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "page": 4,
+              "quote": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space."
+            }
+          ],
+          "statement": "Ghost and no-ghost regions can be separated by Chern–Simons theories."
+        }
+      ],
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Chern–Simons-like formalism and earlier lower-order transitions",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω)."
+              },
+              {
+                "page": 4,
+                "quote": "As first discovered in [16], this surface may contain an (n − 1)-flavor model."
+              }
+            ],
+            "reference_key": "[15, 16]",
+            "why": "The paper uses the CS-like first-order Lagrangian and extends the reported transition to lower-flavor models."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "MMG ghost analysis",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12]."
+              }
+            ],
+            "reference_key": "[12]",
+            "why": "The Hamiltonian and ghost analysis follows the same strategy as for MMG."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "solvable special models such as TMG, NMG, GMG, MMG",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions."
+              }
+            ],
+            "reference_key": "[3, 6, 12]",
+            "why": "It treats the general three-flavor case where equations are not simply solvable."
+          }
+        ]
+      },
+      "read_signal": {
+        "judgment": "read",
+        "reason": "The paper gives a general classification, explicit unitarity conditions, and a concrete flow example; a specialist would need the derivations and equations."
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity."
+          },
+          {
+            "page": 4,
+            "quote": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space."
+          }
+        ],
+        "text": "The most general third-order (three-flavor) Chern–Simons-like massive 3D gravity has a critical hypersurface separating unitary and nonunitary regions, and on that hypersurface the theory can degenerate to a lower-flavor model."
+      }
+    },
+    "citations": [
+      {
+        "context": "GR in three dimensions (3D) yields a trivial theory without any local degree of freedom [1].",
+        "page": 1,
+        "reference_key": "1"
+      },
+      {
+        "context": "However, a degree of freedom is attainable by adding a gravitational Chern–Simons term to an Einstein–Hilbert action in 3D, which is called topological massive gravity (TMG) [2].",
+        "page": 1,
+        "reference_key": "2"
+      },
+      {
+        "context": "Another example, new massive gravity (NMG) [3], is a parity-preserving fourth-order model and its linearization gives the Fierz–Pauli theory [4] with two massive graviton modes with helicity ±2.",
+        "page": 1,
+        "reference_key": "3,4"
+      },
+      {
+        "context": "If one abandons the parity-preserving condition on NMG the theory can be extended to general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and NMG as a limit.",
+        "page": 1,
+        "reference_key": "5"
+      },
+      {
+        "context": "Other than NMG and GMG, there is another fourth-order theory called exotic massive gravity [6], which is a parity-odd theory with an intriguing feature called third-way consistency [7].",
+        "page": 1,
+        "reference_key": "6,7"
+      },
+      {
+        "context": "In the 3D case, the first-order formulation of the bimetric theory is known as zwei-dreibein gravity (ZDG) [8] that has a limiting case to NMG.",
+        "page": 1,
+        "reference_key": "8"
+      },
+      {
+        "context": "The relation has been shown that under certain conditions 3D gravity theory generates two copies of Virasoro algebra on the boundary dual to the bulk theory [9].",
+        "page": 1,
+        "reference_key": "9"
+      },
+      {
+        "context": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG.",
+        "page": 1,
+        "reference_key": "12"
+      },
+      {
+        "context": "The nondynamical nature of GR in 3D permits it to be seen as topological theory and hence a Chern–Simons gauge theory [13, 14].",
+        "page": 1,
+        "reference_key": "13,14"
+      },
+      {
+        "context": "In this case, the new theory is called “CS-like” [15] and contains a degree of freedom instead of being a topological theory.",
+        "page": 1,
+        "reference_key": "15"
+      },
+      {
+        "context": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions.",
+        "page": 1,
+        "reference_key": "3,6,12"
+      },
+      {
+        "context": "One can construct the Lagrangian three-form with a flavor metric g rs and a coefficient tensor f rst as mentioned in [15].",
+        "page": 2,
+        "reference_key": "15"
+      },
+      {
+        "context": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+        "page": 2,
+        "reference_key": "6"
+      },
+      {
+        "context": "parameter.This can be tested through some of the well-known 3D models, such as TMG [2] and MMG [12].",
+        "page": 3,
+        "reference_key": "2,12"
+      },
+      {
+        "context": "However, MMG needs to redefine the spin connection Ω = ω + αf as in [12].",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "By the method introduced in [17] one can find,",
+        "page": 3,
+        "reference_key": "17"
+      },
+      {
+        "context": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "In this section we will follow the method introduced in [18].",
+        "page": 3,
+        "reference_key": "18"
+      },
+      {
+        "context": "As first discovered in [16], this surface may contain an (n − 1)-flavor model.",
+        "page": 4,
+        "reference_key": "16"
+      },
+      {
+        "context": "First off all, we need to define what reducing to a lower order is, in a mathematical way. For instance, consider the GMG Lagrangian [5],",
+        "page": 4,
+        "reference_key": "5"
+      }
+    ],
+    "claims": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In our case, there are ten linearly independent terms in Lagrangian with their arbitrary coefficients, which can be seen as parameters."
+          },
+          {
+            "page": 6,
+            "quote": "Since these two can be calculated completely by the others, parameter space dimension reduces to 8 from 10."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (4)",
+          "Eq. (43)",
+          "Sec. III"
+        ],
+        "id": "claim1",
+        "statement": "The most general three-flavor CS-like theory has ten independent a_i parameters; AdS conditions reduce the parameter space to eight dimensions.",
+        "strength": "strong",
+        "support": "The Lagrangian (4) contains ten a_i terms; AdS conditions (43) make two coefficients dependent."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity."
+          },
+          {
+            "page": 3,
+            "quote": "After this observation, no-tachyon condition M 2 > 0 becomes M 2 l 2 > 1, which now can be connected to the a i coefficients."
+          },
+          {
+            "page": 3,
+            "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12]."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (16)",
+          "Eq. (19)",
+          "Eq. (22)"
+        ],
+        "id": "claim2",
+        "statement": "Bulk and boundary unitarity require C±>0, M^2 l^2>1, and K>0.",
+        "strength": "strong",
+        "support": "Central charges (16), no-tachyon condition, and no-ghost condition K>0."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "Therefore, one can conclude that the hypersurface, which separates the unitary and nonunitary regions are seven-dimensional."
+          }
+        ],
+        "evidence_refs": [
+          "Sec. III"
+        ],
+        "id": "claim3",
+        "statement": "The unitary and nonunitary regions are separated by seven-dimensional hypersurfaces.",
+        "strength": "strong",
+        "support": "Parameter space is eight-dimensional; the separating surface is one dimension less."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "At these critical surfaces where the determinant vanishes, the theory can degenerate into a (n − 1)-flavor model or a (n − 2) one, or totally collapse since there is no such first-order theory in 3D gravity."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (37)",
+          "Eq. (39)",
+          "Eq. (42)"
+        ],
+        "id": "claim4",
+        "statement": "At det(g)=0 the theory can degenerate to an (n−1)-flavor or lower model; a 3→2 transition is possible.",
+        "strength": "strong",
+        "support": "Flavor-metric degeneration makes fields linearly dependent and imposes constraints."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space."
+          }
+        ],
+        "evidence_refs": [
+          "Sec. IV"
+        ],
+        "id": "claim5",
+        "statement": "Ghost and no-ghost regions can be separated by Chern–Simons theories.",
+        "strength": "moderate",
+        "support": "Rank-2 conditions force M to zero and can place CS theories on the boundary."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "In this situation, we have 4 secondclass and 10 − 4 = 6 first-class constraints."
+          },
+          {
+            "page": 4,
+            "quote": "Then we can conclude that our degree of freedom is one."
+          },
+          {
+            "page": 4,
+            "quote": "Therefore, phase space dimension is 3 ∗ 6 − 8 ∗ 2 − 2 = 0 and the theory propagates no bulk degree of freedom."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (31)",
+          "Eq. (32)",
+          "Eq. (33)"
+        ],
+        "id": "claim6",
+        "statement": "Hamiltonian constraint analysis gives one bulk degree of freedom generically and zero when the rank-reducing conditions (33) hold.",
+        "strength": "strong",
+        "support": "Rank of the Q-matrix changes from four to two under (33)."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 6,
+            "quote": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region."
+          }
+        ],
+        "evidence_refs": [
+          "Eqs. (45)-(48)",
+          "Figs. 1-3"
+        ],
+        "id": "claim7",
+        "statement": "A concrete flow between chosen parameter points undergoes a 3→2 transition near λ≈0.28 where det(g) and K vanish.",
+        "strength": "moderate",
+        "support": "Numerical example with two random parameter sets and flow parametrization."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "which areexactly the same equations as the Einstein–Cartan theory in 3D."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (49)",
+          "Eq. (53)"
+        ],
+        "id": "claim8",
+        "statement": "At the transition point the equations reduce to those of Einstein–Cartan theory in 3D.",
+        "strength": "strong",
+        "support": "The reduced equations of motion (49)–(53) match Einstein–Cartan form."
+      }
+    ],
+    "glossary": [
+      {
+        "confidence": "high",
+        "definition": "A first-order formulation of 3D gravity with extra flavors; when it is not purely topological it is called CS-like.",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In this case, the new theory is called “CS-like” [15] and contains a degree of freedom instead of being a topological theory."
+          }
+        ],
+        "term": "Chern–Simons-like (CS-like) theory"
+      },
+      {
+        "confidence": "high",
+        "definition": "Auxiliary one-form fields in the CS-like formulation; the number of flavors sets the order of the theory.",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Hence, the order of theory will be used interchangeably to refer to flavor."
+          }
+        ],
+        "term": "flavor"
+      },
+      {
+        "confidence": "high",
+        "definition": "Parity-odd fourth-order 3D massive gravity with third-way consistency.",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "there is another fourth-order theory called exotic massive gravity [6], which is a parity-odd theory with an intriguing feature called third-way consistency [7]."
+          }
+        ],
+        "term": "exotic massive gravity"
+      },
+      {
+        "confidence": "high",
+        "definition": "Minimal massive gravity; an extension of TMG that can avoid the bulk/boundary unitarity clash.",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG."
+          }
+        ],
+        "term": "MMG"
+      },
+      {
+        "confidence": "high",
+        "definition": "A condition that the Fierz–Pauli mass squared is positive; here M^2 l^2 > 1.",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "After this observation, no-tachyon condition M 2 > 0 becomes M 2 l 2 > 1, which now can be connected to the a i coefficients."
+          }
+        ],
+        "term": "no-tachyon condition"
+      },
+      {
+        "confidence": "high",
+        "definition": "A condition K>0 ensuring absence of ghost degrees of freedom after diagonalization.",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12]."
+          }
+        ],
+        "term": "no-ghost condition"
+      },
+      {
+        "confidence": "high",
+        "definition": "The determinant of the flavor metric; its vanishing signals degeneration of the theory to fewer flavors.",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:"
+          }
+        ],
+        "term": "det(g)=0"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Department of Physics, Istanbul Technical University, Maslak 34469 Istanbul, Turkey",
+          "name": "Sinan Sevim"
+        },
+        {
+          "affiliation": "Department of Physics, Istanbul Technical University, Maslak 34469 Istanbul, Turkey",
+          "name": "M. Salih Zög"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [],
+      "identifiers": {
+        "arxiv": "arXiv:1912.04710v4 [hep-th]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Unitarity flow in 2+1 dimensional massive gravity",
+      "venue": null,
+      "year": 2020
+    },
+    "key_numbers": [
+      {
+        "confidence": "high",
+        "context": "Number of independent terms in Lagrangian",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In our case, there are ten linearly independent terms in Lagrangian with their arbitrary coefficients, which can be seen as parameters."
+          }
+        ],
+        "quantity": "10",
+        "value": "10 parameters a_i"
+      },
+      {
+        "confidence": "high",
+        "context": "Parameter space dimension after AdS restrictions",
+        "evidence": [
+          {
+            "page": 6,
+            "quote": "Since these two can be calculated completely by the others, parameter space dimension reduces to 8 from 10."
+          }
+        ],
+        "quantity": "8",
+        "value": "8-dimensional parameter space"
+      },
+      {
+        "confidence": "high",
+        "context": "Transition value in example flow",
+        "evidence": [
+          {
+            "page": 6,
+            "quote": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region."
+          }
+        ],
+        "quantity": "0.28",
+        "value": "λ ≈ 0.28"
+      }
+    ],
+    "limitations": [
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 6,
+            "quote": "Seeing that some of the important quantities such as central charges and mass parameter depend on c, for simplicity, we set a 4 = 0 through the flow in this example."
+          }
+        ],
+        "stated_by": "model",
+        "text": "The numerical example simplifies by setting a4=0 through the flow, so the transition example is not fully general."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions."
+          }
+        ],
+        "stated_by": "model",
+        "text": "Analytic treatment of generic three-flavor models is difficult; some regions require infinite serial expansions."
+      }
+    ],
+    "method": {
+      "assumptions": [
+        "AdS background",
+        "Parity-preserving? general parity?",
+        "Three-flavor Chern–Simons-like first-order formalism"
+      ],
+      "confidence": "high",
+      "data": "Analytic Hamiltonian and unitarity analysis of the general three-flavor CS-like Lagrangian.",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "Following the procedure introduced in [6], most general models in three-flavor theory have"
+        }
+      ],
+      "procedure": "Write the most general three-flavor CS-like Lagrangian, impose AdS conditions, linearize, derive central charges and Fierz–Pauli mass, analyze ghosts via Hamiltonian constraints, then study parameter-space flows and degenerations.",
+      "setting": "2+1 dimensional massive gravity"
+    },
+    "notation": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω)."
+          }
+        ],
+        "meaning": "One-form fields for the three flavors: dreibein, auxiliary field, and dual spin connection.",
+        "page": 2,
+        "symbol": "a^r = (e, f, ω)"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "Here f is an auxiliary field and e, ω denotes the dreibein and dual spin connection, respectively."
+          }
+        ],
+        "meaning": "Dreibein and dual spin connection.",
+        "page": 2,
+        "symbol": "e, ω"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "Defining the torsion and dual curvature two-forms,"
+          }
+        ],
+        "meaning": "Torsion and dual curvature two-forms.",
+        "page": 2,
+        "symbol": "T(ω), R(ω)"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "with a flavor metric g rs and a coefficient tensor f rst"
+          }
+        ],
+        "meaning": "Flavor metric and coefficient tensor in the CS-like Lagrangian.",
+        "page": 2,
+        "symbol": "g_rs, f_rst"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "f 111 = α 1, f 112 = α 2, f 122 = α 3... etc."
+          }
+        ],
+        "meaning": "Coefficients replacing the f_rst tensor after index raising.",
+        "page": 2,
+        "symbol": "α_i"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "where det(g) is the determinant of flavor metric."
+          }
+        ],
+        "meaning": "Determinant of the flavor metric; zeros signal degeneration.",
+        "page": 2,
+        "symbol": "det(g)"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "where M = α 5 + (α 6 − α 2)c − α 3 c 2 is the mass"
+          }
+        ],
+        "meaning": "Mass parameter in the linearized theory.",
+        "page": 3,
+        "symbol": "M"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "The following relations which we refer to here as AdS conditions can be derived from equations of motion:"
+          }
+        ],
+        "meaning": "Conditions (15) fixing the AdS background and c.",
+        "page": 3,
+        "symbol": "AdS conditions"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity."
+          }
+        ],
+        "meaning": "Left/right central charges; positivity gives boundary unitarity.",
+        "page": 3,
+        "symbol": "C±"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "For bulk, one has to find the Fierz–Pauli mass M which is related to the mass parameter we found in (13) as M 2 = M 2 + Λ."
+          }
+        ],
+        "meaning": "Fierz–Pauli mass squared in AdS.",
+        "page": 3,
+        "symbol": "M^2"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12]."
+          }
+        ],
+        "meaning": "Ghost-freedom condition after diagonalization.",
+        "page": 3,
+        "symbol": "K"
+      }
+    ],
+    "objects": [
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(1)",
+        "latex": "T(\\omega)=D(\\omega)e=de+\\omega\\times e,\\quad R(\\omega)=d\\omega+\\frac12\\omega\\times\\omega",
+        "number": "1",
+        "page": 2,
+        "plain_language": "Defines torsion and dual curvature two-forms for the dreibein and spin connection.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "These are the basic field strengths used throughout the first-order formulation."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(2)",
+        "latex": "\\mathcal L=\\frac12 g_{rs}a^r\\cdot da^s+\\frac16 f_{rst}a^r\\cdot(a^s\\times a^t)",
+        "number": "2",
+        "page": 2,
+        "plain_language": "General three-form Lagrangian for CS-like gravity with flavor metric and coefficient tensor.",
+        "referenced_on_pages": [
+          2,
+          5
+        ],
+        "why_it_matters": "Starting point for all three-flavor models."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(3)",
+        "latex": "(a^r\\times a^s)^a=\\epsilon^{abc}a^r_b a^s_c,\\quad a^r\\cdot a^s\\equiv\\eta^{ab}a^r_a a^s_b",
+        "number": "3",
+        "page": 2,
+        "plain_language": "Definitions of dot and cross products in the local frame.",
+        "referenced_on_pages": [
+          2
+        ],
+        "why_it_matters": "Notation for the Lagrangian and equations of motion."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(4)",
+        "latex": "\\begin{aligned}L&=\\frac{a_1}{2}e\\cdot T+a_2 e\\cdot Df+a_3 e\\cdot R+\\frac{a_4}{2}f\\cdot Df\\\\&+a_5 f\\cdot R+a_6 L_{LCS}+\\frac{a_7}{6}e\\cdot e\\times e+\\frac{a_8}{2}e\\cdot f\\times f\\\\&+\\frac{a_9}{2}e\\cdot e\\times f+\\frac{a_{10}}{6}f\\cdot f\\times f\\end{aligned}",
+        "number": "4",
+        "page": 2,
+        "plain_language": "Most general three-flavor Lagrangian with ten a_i coefficients.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "Defines the model class analyzed; a_i are the parameters."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(5)",
+        "latex": "\\delta e:a_1T+a_2Df+a_3R+\\frac{a_7}{2}e\\times e+\\frac{a_8}{2}f\\times f+a_9 e\\times f=0,\\quad \\delta \\omega:a_3T+a_5Df+a_6R+\\frac{a_1}{2}e\\times e+\\frac{a_4}{2}f\\times f+a_2 e\\times f=0,\\quad \\delta f:a_2T+a_4Df+a_5R+\\frac{a_{10}}{2}f\\times f+a_8 e\\times f=0",
+        "number": "5",
+        "page": 2,
+        "plain_language": "Equations of motion obtained from (4) by varying e, ω, and f.",
+        "referenced_on_pages": [
+          2,
+          4
+        ],
+        "why_it_matters": "These constraints are used in the Hamiltonian analysis."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(6)",
+        "latex": "E_r=g_{rs}da^s+\\frac12 f_{rst}a^s\\times a^t",
+        "number": "6",
+        "page": 2,
+        "plain_language": "Summarized general form of the equations of motion.",
+        "referenced_on_pages": [
+          2
+        ],
+        "why_it_matters": "Compact form before raising indices."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(7)",
+        "latex": "E^p=g^{pr}E_r=da^p+\\frac12 f^p_{st}a^s\\times a^t",
+        "number": "7",
+        "page": 2,
+        "plain_language": "Raised-index equation of motion.",
+        "referenced_on_pages": [
+          2
+        ],
+        "why_it_matters": "Allows redefinition in terms of α-coefficients."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(8)",
+        "latex": "T+\\frac12\\alpha_1 e\\times e+\\alpha_2 e\\times f+\\frac12\\alpha_3 f\\times f=0,\\quad Df+\\frac12\\alpha_4 e\\times e+\\alpha_5 e\\times f+\\frac12\\alpha_6 f\\times f=0,\\quad R+\\frac12\\alpha_7 e\\times e+\\alpha_8 e\\times f+\\frac12\\alpha_9 f\\times f=0",
+        "number": "8",
+        "page": 2,
+        "plain_language": "Elegant equations of motion in α-parameter form.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "Simplifies linearization and unitarity analysis."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(9)",
+        "latex": "f^1{}_{11}=\\alpha_1,\\quad f^1{}_{12}=\\alpha_2,\\quad f^1{}_{22}=\\alpha_3\\dots\\ etc.",
+        "number": "9",
+        "page": 2,
+        "plain_language": "Definition of α's in terms of components of f.",
+        "referenced_on_pages": [
+          2
+        ],
+        "why_it_matters": "Connects the a_i and α_i descriptions."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(10)",
+        "latex": "\\alpha_1=\\frac{a_1a_2a_5-a_1a_3a_4-a_2a_6a_9+a_3a_5a_9+a_4a_6a_7-a_5^2a_7}{det(g)}",
+        "number": "10",
+        "page": 2,
+        "plain_language": "Example relation between α1 and a_i coefficients, with det(g) in the denominator.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "Shows why α_i and M may diverge when det(g)→0."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(11)",
+        "latex": "e=\\bar e,\\quad f=\\bar f=c\\bar e,\\quad \\omega=\\bar\\omega",
+        "number": "11",
+        "page": 2,
+        "plain_language": "AdS background ansatz: auxiliary field proportional to dreibein.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "Background around which fluctuations are defined."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(12)",
+        "latex": "e=\\bar e+\\kappa k,\\quad f=c(\\bar e+\\kappa k)+\\kappa p,\\quad \\omega=\\bar\\omega+\\kappa v",
+        "number": "12",
+        "page": 2,
+        "plain_language": "First-order fluctuations around the AdS background.",
+        "referenced_on_pages": [
+          2,
+          3
+        ],
+        "why_it_matters": "Used to derive the linearized equations."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(13)",
+        "latex": "\\bar Dk+\\bar e\\times v+(\\alpha_3 c+\\alpha_2)\\bar e\\times p=0,\\quad \\bar Dp+M\\bar e\\times p=0,\\quad \\bar Dv+\\frac1{l^2}\\bar e\\times k+(\\alpha_9 c+\\alpha_8)\\bar e\\times p=0",
+        "number": "13",
+        "page": 3,
+        "plain_language": "Linearized equations of motion around AdS.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "Defines the mass parameter M and is diagonalized for unitarity."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(14)",
+        "latex": "\\bar T\\equiv D(\\bar\\omega)\\bar e=0,\\quad \\bar R\\equiv R(\\bar\\omega)=\\frac12\\Lambda\\bar e\\times\\bar e",
+        "number": "14",
+        "page": 3,
+        "plain_language": "Torsion and curvature in the AdS background.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "Used to derive the AdS conditions."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(15)",
+        "latex": "\\frac12\\alpha_1+\\alpha_2 c+\\frac12\\alpha_3 c^2=0,\\quad \\frac12\\alpha_4+\\alpha_5 c+\\frac12\\alpha_6 c^2=0,\\quad \\frac12\\alpha_7+\\alpha_8 c+\\frac12\\alpha_9 c^2=\\frac1{2l^2}",
+        "number": "15",
+        "page": 3,
+        "plain_language": "AdS conditions relating α_i, c, and Λ.",
+        "referenced_on_pages": [
+          3,
+          4
+        ],
+        "why_it_matters": "Determines the AdS background and reduces parameter space."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(16)",
+        "latex": "C_{\\pm}=\\frac{3l}{2G}(-(a_3+a_5 c)\\pm \\frac1l a_6)",
+        "number": "16",
+        "page": 3,
+        "plain_language": "Central charges C±.",
+        "referenced_on_pages": [
+          3,
+          5,
+          6
+        ],
+        "why_it_matters": "Boundary unitarity requires C±>0."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(17)",
+        "latex": "k=l(f_+-f_-)+\\frac{l^2(M\\alpha_3 c+M\\alpha_2+\\alpha_9 c+\\alpha_8)}{l^2M^2-1}p,\\quad v=f_++f_-+\\frac{\\alpha_9 c l^2 M+\\alpha_8 l^2 M+\\alpha_3 c+\\alpha_2}{l^2M^2-1}p",
+        "number": "17",
+        "page": 3,
+        "plain_language": "Redefinitions diagonalizing the linearized equations.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "Shows the helicity modes and diagonalization."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(18)",
+        "latex": "\\bar Df_++\\frac1l\\bar e\\times f_+=0,\\quad \\bar Df_--\\frac1l\\bar e\\times f_-=0,\\quad \\bar Dp+M\\bar e\\times p=0",
+        "number": "18",
+        "page": 3,
+        "plain_language": "Simplified diagonalized equations of motion.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "Used to identify the massive modes."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(19)",
+        "latex": "\\mathcal L^{(2)}=l a_+ f_+\\cdot(\\bar Df_++\\frac1l\\bar e\\times f_+)-l a_- f_-\\cdot(\\bar Df_--\\frac1l\\bar e\\times f_-)-\\frac{K}{M}p\\cdot(\\bar Dp+M\\bar e\\times p)",
+        "number": "19",
+        "page": 3,
+        "plain_language": "Second-order perturbative Lagrangian in diagonal variables.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "Ghost condition K>0 follows from this form."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(20)",
+        "latex": "a^{ra}=a^{ra}_0 dt+a^{ra}_i dx^i,\\quad L=-\\frac12\\epsilon^{ij}g_{rs}a^r_i\\cdot\\dot a^s_j+a^r_0\\cdot\\phi_r",
+        "number": "20",
+        "page": 3,
+        "plain_language": "Decomposition of one-forms and Lagrangian into time and space parts.",
+        "referenced_on_pages": [
+          3,
+          4
+        ],
+        "why_it_matters": "Starts the Hamiltonian constraint analysis."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(21)",
+        "latex": "\\phi^a_r=\\epsilon^{ij}\\left(g_{rs}\\partial_i a^s_{ja}+\\frac12 f_{rst}(a^s_i\\times a^t_j)^a\\right)",
+        "number": "21",
+        "page": 3,
+        "plain_language": "Primary constraints φ_r.",
+        "referenced_on_pages": [
+          3,
+          4
+        ],
+        "why_it_matters": "Constraints whose algebra determines the degrees of freedom."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(22)",
+        "latex": "H=-\\frac12\\epsilon^{ij}g_{rs}a^r_i\\cdot\\dot a^s_j-L=-a^r_0\\cdot\\phi_r,\\quad \\{a^r_{ia}(x),a^s_{jb}(y)\\}_{P.B.}=\\epsilon^{ij}g^{rs}\\eta_{ab}\\delta^{(2)}(x-y)",
+        "number": "22",
+        "page": 3,
+        "plain_language": "Hamiltonian and Poisson brackets.",
+        "referenced_on_pages": [
+          3,
+          4
+        ],
+        "why_it_matters": "Foundation for constraint analysis."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(23)",
+        "latex": "\\phi[\\xi]=\\int_\\Sigma d^2x\\xi^r_a\\phi^a_r(x)",
+        "number": "23",
+        "page": 4,
+        "plain_language": "Smeared test functional for constraints.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Used to compute the constraint algebra."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(24)",
+        "latex": "\\varphi[\\xi]=\\int_\\Sigma d^2x\\xi^r_a\\phi^a_r+Q[\\xi]",
+        "number": "24",
+        "page": 4,
+        "plain_language": "Improved primary constraint operator with boundary counterterm.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Ensures well-defined functional derivatives at the boundary."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(25)",
+        "latex": "\\{\\varphi[\\xi],\\varphi[\\eta]\\}=\\varphi[[\\xi,\\eta]]+\\int_\\Sigma d^2x\\xi^r_a\\eta^s_b\\mathcal P^{ab}_{rs}-\\int_{\\partial\\Sigma}dx^i\\xi^r\\cdot(g_{rs}\\partial_i\\eta^s+f_{rst}a^s_i\\times\\eta^t)",
+        "number": "25",
+        "page": 4,
+        "plain_language": "Poisson bracket of improved primary constraints.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Contains the primary Poisson bracket matrix."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(26)",
+        "latex": "\\mathcal P^{ab}_{rs}=f^t_{q[rs]pt}\\eta^{ab}\\Delta^{pq}+2f^t_{r[s}f_{q]pt}V^{ab}_{pq}",
+        "number": "26",
+        "page": 4,
+        "plain_language": "Primary Poisson bracket matrix.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Used to count constraints and degrees of freedom."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(27)",
+        "latex": "V^{pq}_{ab}=\\epsilon^{ij}a^p_{ia}a^q_{jb},\\quad \\Delta^{pq}=\\epsilon^{ij}a^p_i\\cdot a^q_j",
+        "number": "27",
+        "page": 4,
+        "plain_language": "Definitions of V and Δ objects entering the Poisson bracket matrix.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Δ^ef becomes a secondary constraint."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(28)",
+        "latex": "D(\\omega)T(\\omega)=R(\\omega)\\times e,\\quad D(\\omega)R(\\omega)=0",
+        "number": "28",
+        "page": 4,
+        "plain_language": "Bianchi identities used in integrability conditions.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Helps derive the secondary constraint."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(29)",
+        "latex": "\\psi=\\Delta^{ef}=0",
+        "number": "29",
+        "page": 4,
+        "plain_language": "Secondary constraint from integrability.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Needed for the constraint rank analysis."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(30)",
+        "latex": "\\{\\phi[\\xi],\\psi\\}_{P.B.}=P_0\\epsilon^{ij}(\\xi^f D_i e_j-\\xi^e D_i f_j+(\\alpha_4\\xi^e+\\alpha_5\\xi^f)e_i\\times e_j+(( -\\alpha_1+\\alpha_5)\\xi^e+(-\\alpha_2+\\alpha_6)\\xi^f)e_i\\times f_j+(-\\alpha_2\\xi^e+\\alpha_3\\xi^f)f_i\\times f_j)",
+        "number": "30",
+        "page": 4,
+        "plain_language": "Poisson bracket between primary constraints and the secondary constraint.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Completes the extended constraint matrix."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(31)",
+        "latex": "(\\mathcal P_{ab})_{rs}=P_0\\begin{pmatrix}(Q_{ab})_{rs}&0\\\\0&0\\end{pmatrix}=P_0\\begin{pmatrix}V^{ff}_{ab}&V^{ef}_{ab}&0\\\\V^{fe}_{ab}&V^{ee}_{ab}&0\\\\0&0&0\\end{pmatrix}",
+        "number": "31",
+        "page": 4,
+        "plain_language": "Matrix form of the primary Poisson bracket matrix.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Its rank determines degrees of freedom."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(32)",
+        "latex": "\\mathbb Q=\\begin{pmatrix}Q&v\\\\-v^T&0\\end{pmatrix},\\quad v=\\begin{pmatrix}\\{\\phi_e,\\psi\\}_{PB}\\\\{\\phi_f,\\psi\\}_{PB}\\end{pmatrix}",
+        "number": "32",
+        "page": 4,
+        "plain_language": "Extended Q-matrix including secondary constraint brackets.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Rank four generically, reduced under special conditions."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(33)",
+        "latex": "\\alpha_4=\\alpha_3=0,\\quad \\alpha_1=2\\alpha_5,\\quad \\alpha_6=2\\alpha_2",
+        "number": "33",
+        "page": 4,
+        "plain_language": "Special rank-reducing conditions.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "Leads to zero bulk degrees of freedom and M=0."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(34)",
+        "latex": "L_{GMG}=-\\sigma e\\cdot R+\\frac{\\Lambda_0}{6}e\\cdot e\\times e+h\\cdot De-\\frac1{m^2}f\\cdot\\left(R+\\frac12 e\\times f\\right)+\\frac1\\mu L_{LCS}",
+        "number": "34",
+        "page": 4,
+        "plain_language": "GMG Lagrangian used as an example of lowering order.",
+        "referenced_on_pages": [
+          4,
+          5
+        ],
+        "why_it_matters": "Illustrates the decoupling limit m→∞."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(35)",
+        "latex": "L'_{GMG}=-\\sigma e\\cdot R+\\frac{\\Lambda_0}{6}e\\cdot e\\times e+h\\cdot De-\\frac1{m^2}f\\cdot\\left(R+\\frac12 e\\times f\\right)+\\frac1\\mu L_{LCS}+f\\cdot De-\\frac1{m^2}h\\cdot\\left(R+\\frac12 e\\times h+e\\times f\\right)",
+        "number": "35",
+        "page": 5,
+        "plain_language": "Modified GMG Lagrangian with extra terms.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Shows another way to lower order."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(36)",
+        "latex": "L'_{GMG}=-\\sigma e\\cdot R+\\frac{\\Lambda_0}{6}e\\cdot e\\times e+q\\cdot De-\\frac1{m^2}q\\cdot\\left(R+\\frac12 e\\times q\\right)+\\frac1\\mu L_{LCS}",
+        "number": "36",
+        "page": 5,
+        "plain_language": "Rewriting (35) with q=h+f shows it is not truly fourth-order.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Demonstrates flavor degeneration."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(37)",
+        "latex": "det(g)=0",
+        "number": "37",
+        "page": 5,
+        "plain_language": "Condition for flavor-metric degeneration and possible order reduction.",
+        "referenced_on_pages": [
+          5,
+          6
+        ],
+        "why_it_matters": "Defines the critical surface for unitarity flow transitions."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(38)",
+        "latex": "a_5=+l(a_4 c+a_2)\\rightarrow det(g)\\propto C_+,\\quad a_5=-l(a_4 c+a_2)\\rightarrow det(g)\\propto C_-",
+        "number": "38",
+        "page": 5,
+        "plain_language": "Conditions making det(g) proportional to one central charge.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Shows when central-charge breakdown aligns with determinant zeros."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(39)",
+        "latex": "\\frac12\\alpha e\\times e+\\beta e\\times f+\\frac12\\gamma f\\times f=0",
+        "number": "39",
+        "page": 5,
+        "plain_language": "Constraint equation at degeneration, with potential terms.",
+        "referenced_on_pages": [
+          5,
+          7
+        ],
+        "why_it_matters": "Forces f to be proportional to e after expansion."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(40)",
+        "latex": "e=\\bar e+\\kappa k+\\frac{\\kappa^2}{2!}k'+\\frac{\\kappa^3}{3!}k''+\\cdots=\\bar e+\\sum_{n=1}^\\infty\\frac{\\kappa^n}{n!}k^{(n-1)},\\quad f=c\\left(\\bar e+\\kappa k+\\frac{\\kappa^2}{2!}k'+\\cdots\\right)+\\kappa p+\\frac{\\kappa^2}{2!}p'+\\cdots",
+        "number": "40",
+        "page": 5,
+        "plain_language": "Infinite series expansion around AdS when degeneracy occurs.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Needed to solve the nonlinear constraint (39)."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(41)",
+        "latex": "p_{\\mu\\nu}=p'_{\\mu\\nu}=p''_{\\mu\\nu}=\\cdots=0",
+        "number": "41",
+        "page": 5,
+        "plain_language": "Higher fluctuations of the auxiliary field vanish.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Implies f remains proportional to e."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(42)",
+        "latex": "f=c\\left(\\bar e+\\sum_{n=1}^\\infty\\frac{\\kappa^n}{n!}k^{(n-1)}\\right)=c e",
+        "number": "42",
+        "page": 5,
+        "plain_language": "Degenerate auxiliary field becomes proportional to the dreibein.",
+        "referenced_on_pages": [
+          5
+        ],
+        "why_it_matters": "Confirms flavor number decreases as det(g)→0."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(43)",
+        "latex": "a_1+a_4 c^2+2a_2 c=\\frac{a_6}{l^2},\\quad a_7+a_8 c^2+2a_9 c=\\frac{a_3}{l^2},\\quad a_9+a_{10}c^2+2a_8 c=\\frac{a_5}{l^2}",
+        "number": "43",
+        "page": 6,
+        "plain_language": "AdS conditions expressed in terms of a_i coefficients.",
+        "referenced_on_pages": [
+          6,
+          7
+        ],
+        "why_it_matters": "Reduces parameter space and determines c."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(44)",
+        "latex": "c=\\frac{a_6-a_1 l^2}{2a_2 l^2}\\in \\mathbb R",
+        "number": "44",
+        "page": 6,
+        "plain_language": "Choice of c after setting a4=0 in the example.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Keeps c real for the flow example."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(45)",
+        "latex": "a_1^\\star=6,\\ a_2^\\star=6,\\ a_3^\\star=-12,\\ a_4^\\star=0,\\ a_5^\\star=12,\\ a_6^\\star=-16,\\ a_8^\\star=-20,\\ a_{10}^\\star=13",
+        "number": "45",
+        "page": 6,
+        "plain_language": "Coordinates of a unitary random point.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Starting point of the numerical flow example."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(46)",
+        "latex": "a_1^{\\star\\star}=22,\\ a_2^{\\star\\star}=-20,\\ a_3^{\\star\\star}=-0,\\ a_4^{\\star\\star}=0,\\ a_5^{\\star\\star}=-40,\\ a_6^{\\star\\star}=-23,\\ a_8^{\\star\\star}=13,\\ a_{10}^{\\star\\star}=11",
+        "number": "46",
+        "page": 6,
+        "plain_language": "Coordinates of a nonunitary random point.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "End point of the numerical flow example."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(47)",
+        "latex": "a_i(\\lambda)=(1-\\lambda^2)a_i^\\star+\\lambda a_i^{\\star\\star}",
+        "number": "47",
+        "page": 6,
+        "plain_language": "Flow parametrization connecting the two points.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Used to plot det(g), K, and central charges."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(48)",
+        "latex": "L=\\frac{a_1}{2}e\\cdot T+a_3 e\\cdot R+a_6 L_{LCS}+\\frac{a_7}{6}e\\cdot e\\times e+\\frac{a_8}{2}e\\cdot f\\times f+\\frac{a_9}{2}e\\cdot e\\times f+\\frac{a_{10}}{6}f\\cdot f\\times f",
+        "number": "48",
+        "page": 6,
+        "plain_language": "Lagrangian at the transition point in the example.",
+        "referenced_on_pages": [
+          6,
+          7
+        ],
+        "why_it_matters": "Leads to the reduced Einstein–Cartan form."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(49)",
+        "latex": "\\delta e:a_1T+a_3R+\\frac{a_7}{2}e\\times e+\\frac{a_8}{2}f\\times f+a_9 e\\times f=0,\\quad \\delta \\omega:a_3T+a_6R+\\frac{a_1}{2}e\\times e=0,\\quad \\delta f:\\frac{a_9}{2}e\\times e+\\frac{a_{10}}{2}f\\times f+a_8 e\\times f=0",
+        "number": "49",
+        "page": 7,
+        "plain_language": "Equations of motion at the transition point.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "Reduces to Einstein–Cartan equations."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(50)",
+        "latex": "L=\\frac{a_1}{2}e\\cdot T+a_3 e\\cdot R+a_6 L_{LCS}+\\frac16\\left(a_7+3c^2a_8+3c a_9+c^3a_{10}\\right)e\\cdot e\\times e",
+        "number": "50",
+        "page": 7,
+        "plain_language": "Lagrangian after substituting f=ce.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "Intermediate step to simplified Lagrangian."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(51)",
+        "latex": "L=-a_6\\frac{\\Lambda}{2}e\\cdot T+a_3 e\\cdot R+a_6 L_{LCS}-a_3\\frac{\\Lambda}{6}e\\cdot e\\times e",
+        "number": "51",
+        "page": 7,
+        "plain_language": "Simplified Lagrangian at transition using AdS relations.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "Shows the reduced theory."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(52)",
+        "latex": "\\delta e:-a_6\\Lambda T+a_3R-a_3\\frac{\\Lambda}{2}e\\times e=0,\\quad \\delta \\omega:a_3T+a_6R-a_6\\frac{\\Lambda}{2}e\\times e=0",
+        "number": "52",
+        "page": 7,
+        "plain_language": "Equations of motion of the simplified theory.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "Rearranged to show Einstein–Cartan structure."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(53)",
+        "latex": "a_3\\delta e+a_6\\Lambda\\delta\\omega:\\ (a_3^2+a_6^2\\Lambda)\\left(R-\\frac{\\Lambda}{2}e\\times e\\right)=0,\\quad a_3\\delta\\omega-a_6\\delta e:\\ (a_3^2+a_6^2\\Lambda)T=0",
+        "number": "53",
+        "page": 7,
+        "plain_language": "Rearranged equations separating curvature and torsion.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "Final Einstein–Cartan-like equations."
+      },
+      {
+        "caption": "FIG. 1. det(g) along the flow",
+        "confidence": "high",
+        "kind": "figure",
+        "label": "FIG. 1.",
+        "latex": null,
+        "number": "1",
+        "page": 6,
+        "plain_language": "Plot of det(g) along the flow parameter λ; it crosses zero near λ≈0.28.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Shows the critical surface where the flow transitions."
+      },
+      {
+        "caption": "FIG. 2. K changes sign along the flow",
+        "confidence": "high",
+        "kind": "figure",
+        "label": "FIG. 2.",
+        "latex": null,
+        "number": "2",
+        "page": 6,
+        "plain_language": "Plot of no-ghost quantity K along the flow; K changes sign at the transition.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Confirms the no-ghost condition breaks down."
+      },
+      {
+        "caption": "FIG. 3. Central charges are positive along the flow",
+        "confidence": "high",
+        "kind": "figure",
+        "label": "FIG. 3.",
+        "latex": null,
+        "number": "3",
+        "page": 6,
+        "plain_language": "Plot of central charges along the flow; they remain positive.",
+        "referenced_on_pages": [
+          6
+        ],
+        "why_it_matters": "Shows boundary unitarity is maintained in the example."
+      }
+    ],
+    "open_questions": [
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "We will investigate the generic fall of third-order theories to second ones."
+          }
+        ],
+        "stated_by": "model",
+        "text": "How generic the 3→2 transition is beyond the particular flow example remains to be fully established."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "At this point, equations of motion are not “simply solvable” like cases [3, 6, 12]; one may need to use infinite serial expansions for several regions."
+          }
+        ],
+        "stated_by": "model",
+        "text": "Whether the infinite serial expansions converge in all relevant regions is not addressed."
+      }
+    ],
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 4,
+          "quote": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space."
+        }
+      ],
+      "text": "How do unitary and nonunitary regions connect in the parameter space of the most general three-flavor Chern–Simons-like massive 3D gravity, and can the theory degenerate to lower-order models at the transition?"
+    },
+    "references": [
+      {
+        "authors": [
+          "S. Deser",
+          "R. Jackiw",
+          "G. 't Hooft"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 7,
+        "title": null,
+        "venue": "Annals Phys.",
+        "year": 1984
+      },
+      {
+        "authors": [
+          "S. Deser",
+          "R. Jackiw",
+          "S. Templeton"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 7,
+        "title": null,
+        "venue": "Annals Phys.",
+        "year": 1982
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "O. Hohm",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 7,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "M. Fierz",
+          "W. Pauli"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 7,
+        "title": null,
+        "venue": "Proc. Roy. Soc. Lond.",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "W. Merbis"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 7,
+        "title": "Chern–Simons-like Theories of Gravity",
+        "venue": "Ph.D. thesis, Groningen U.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "M. Özkan",
+          "Y. Pang",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 7,
+        "title": null,
+        "venue": "JHEP",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "E. Bergshoeff",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 7,
+        "title": null,
+        "venue": "Int. J. Mod. Phys.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "S. de Haan",
+          "O. Hohm",
+          "W. Merbis",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 7,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "J. D. Brown",
+          "M. Henneaux"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 7,
+        "title": null,
+        "venue": "Commun. Math. Phys.",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "J. M. Maldacena"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 7,
+        "title": null,
+        "venue": "Int. J. Theor. Phys.",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "E. Witten"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 7,
+        "title": null,
+        "venue": "Adv. Theor. Math. Phys.",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "E. Bergshoeff",
+          "O. Hohm",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 7,
+        "title": null,
+        "venue": "Class. Quant. Grav.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "E. Witten"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 7,
+        "title": null,
+        "venue": "Nucl. Phys.",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "A. Achucarro",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 7,
+        "title": null,
+        "venue": "Phys. Lett.",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "O. Hohm",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 8,
+        "title": "Proceedings of the 7th Aegean Summer School: Beyond Einstein’s theory of gravity. Modifications of Einstein’s Theory of Gravity at Large Distances.: Paros, Greece, September 23-28, 2013",
+        "venue": "Lect. Notes Phys.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "M. Ozkan",
+          "Y. Pang",
+          "U. Zorba"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "W. Merbis",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 8,
+        "title": null,
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "O. Hohm",
+          "A. Routh",
+          "P. K. Townsend",
+          "B. Zhang"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. D",
+        "year": 2012
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "GR in three dimensions (3D) yields a trivial theory without any local degree of freedom [1].",
+        "reference_key": "1",
+        "relation": "uses_method",
+        "why": "The paper uses the triviality of 3D GR to motivate adding massive-gravity terms."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "However, a degree of freedom is attainable by adding a gravitational Chern–Simons term to an Einstein–Hilbert action in 3D, which is called topological massive gravity (TMG) [2].",
+        "reference_key": "2",
+        "relation": "extends",
+        "why": "TMG is a foundational example of a three-flavor theory that the general analysis includes."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Another example, new massive gravity (NMG) [3], is a parity-preserving fourth-order model and its linearization gives the Fierz–Pauli theory [4] with two massive graviton modes with helicity ±2.",
+        "reference_key": "3,4",
+        "relation": "extends",
+        "why": "NMG and Fierz–Pauli theory are reference points for parity-preserving massive gravitons."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "If one abandons the parity-preserving condition on NMG the theory can be extended to general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and NMG as a limit.",
+        "reference_key": "5",
+        "relation": "extends",
+        "why": "GMG provides the generic fourth-order example whose compactification is discussed."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Following the procedure introduced in [6], most general models in three-flavor theory have",
+        "reference_key": "6",
+        "relation": "uses_method",
+        "why": "The general Lagrangian is constructed following the method of [6]."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "One can construct the Lagrangian three-form with a flavor metric g rs and a coefficient tensor f rst as mentioned in [15].",
+        "reference_key": "15",
+        "relation": "uses_method",
+        "why": "The CS-like formalism and notation are taken from [15]."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "By the method introduced in [17] one can find,",
+        "reference_key": "17",
+        "relation": "uses_method",
+        "why": "Central charges are derived using the method of [17]."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12].",
+        "reference_key": "12",
+        "relation": "uses_method",
+        "why": "The ghost analysis replicates the MMG analysis in [12]."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In this section we will follow the method introduced in [18].",
+        "reference_key": "18",
+        "relation": "uses_method",
+        "why": "Hamiltonian constraint analysis follows [18]."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "As first discovered in [16], this surface may contain an (n − 1)-flavor model.",
+        "reference_key": "16",
+        "relation": "extends",
+        "why": "The paper generalizes the lower-order transition first reported in [16]."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "For instance, consider the GMG Lagrangian [5],",
+        "reference_key": "5",
+        "relation": "uses_method",
+        "why": "GMG Lagrangian is used as an explicit example of reducing to a lower-flavor theory."
+      }
+    ],
+    "supercut": [
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "The paper studies the most general third-order CS-like massive 3D gravity."
+      },
+      {
+        "kind": "source",
+        "page": 1,
+        "text": "In this work, the most general three-flavor case is analyzed."
+      },
+      {
+        "kind": "source",
+        "page": 2,
+        "text": "The 3D gravity models can be expressed in terms of one form a r, where in three-flavor case r = 1, 2, 3, and we have a r = (e, f, ω)."
+      },
+      {
+        "kind": "source",
+        "page": 2,
+        "text": "Following the procedure introduced in [6], most general models in three-flavor theory have"
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "They impose an AdS background and analyze bulk and boundary unitarity."
+      },
+      {
+        "kind": "source",
+        "page": 3,
+        "text": "In this section we will examine the bulk and boundary unitarity of the most general three-flavor model."
+      },
+      {
+        "kind": "source",
+        "page": 3,
+        "text": "Therefore, C ± > 0 is the sufficient condition for boundary unitarity."
+      },
+      {
+        "kind": "source",
+        "page": 3,
+        "text": "It can be concluded that no-ghost condition is K > 0 as one goes after the same analysis of MMG in [12]."
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "Hamiltonian analysis counts the degrees of freedom and identifies special rank-reducing conditions."
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "The rank of Q is now four, unless the rare possibility of satisfying simultaneously the conditions below,"
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "It can be concluded that Chern–Simon theories may exist on the boundaries which separate the ghost and no-ghost regions on the parameter space."
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "They then study flows on the parameter space and lower-order transitions."
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "Our main interest in this paper is the flows between unitary and nonunitary regions on the parameter space."
+      },
+      {
+        "kind": "source",
+        "page": 5,
+        "text": "We know determinant det(g) goes to zero where the metric degenerates, so it can be our condition for a fall:"
+      },
+      {
+        "kind": "source",
+        "page": 5,
+        "text": "At these critical surfaces where the determinant vanishes, the theory can degenerate into a (n − 1)-flavor model or a (n − 2) one, or totally collapse since there is no such first-order theory in 3D gravity."
+      },
+      {
+        "kind": "source",
+        "page": 6,
+        "text": "As expected, at the point where the metric degenerates (around λ ≈ 0.28), no-ghost condition K > 0 also breaks down, and the model enters the nonunitary region."
+      },
+      {
+        "kind": "source",
+        "page": 7,
+        "text": "This classification shows us there is a hypersurface in the parameter space, which separates unitary and nonunitary regions and between them there exists a n = 2 model under certain restrictions."
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper develops a general theoretical classification and applies it to a specific model class.",
+      "value": "theory"
+    }
+  }
+}
