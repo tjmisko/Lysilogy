@@ -1,0 +1,72 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "corrections"
+  ],
+  "properties": {
+    "corrections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "action",
+          "value_json",
+          "reason",
+          "evidence"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "JSON Pointer into the draft, e.g. '/identity/title' or '/objects/3/latex'. For add, point at the array, e.g. '/objects'."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "remove",
+              "add",
+              "flag"
+            ]
+          },
+          "value_json": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The new value encoded as a JSON string, for replace and add; null for remove and flag."
+          },
+          "reason": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "page"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "description": "Copied exactly from the page text, 8 to 300 characters."
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "1-based page number."
+                }
+              },
+              "description": "A verbatim passage from the paper and the page it is on."
+            },
+            "description": "Verbatim support. Empty only when the item is a model judgment."
+          }
+        }
+      }
+    }
+  },
+  "description": "Corrections to a draft of paper-artifacts. Only correct or flag; every correction needs verbatim evidence."
+}
