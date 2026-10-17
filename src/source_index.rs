@@ -22,7 +22,7 @@ use crate::{Error, Result, domain::TextRect};
 
 pub use cache::{IndexDocument, load_cached, load_or_build, load_or_build_priority};
 
-pub const SCHEMA_VERSION: u16 = 6;
+pub const SCHEMA_VERSION: u16 = 7;
 const MAX_PAGES: usize = 400;
 const MAX_OCR_PAGES: usize = 12;
 const MAX_TEXT_BYTES: usize = 4 * 1024 * 1024;
@@ -188,7 +188,21 @@ async fn build(
         ])
         .arg(source)
         .arg("-");
-    let bytes = bounded_command(&mut command, "pdftotext", MAX_COMMAND_BYTES).await?;
+    let bytes = match bounded_command(&mut command, "pdftotext", MAX_COMMAND_BYTES).await {
+        Ok(bytes) => bytes,
+        // A corrupt or empty document is unreadable, not a failed run.
+        Err(error @ Error::CommandFailed { .. }) => {
+            let mut index = assemble(&[]);
+            index.gaps.push(IndexGap {
+                page: 1,
+                reason: format!(
+                    "Native text extraction failed; the document may be corrupt or have no text layer: {error}"
+                ),
+            });
+            return Ok(index);
+        }
+        Err(error) => return Err(error),
+    };
     let mut pages = native::parse(&String::from_utf8_lossy(&bytes))?;
     let mut gaps = Vec::new();
     if pages.len() == MAX_PAGES {

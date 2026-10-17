@@ -170,7 +170,14 @@ async fn failed_jobs_release_their_slot_and_allow_retry() {
     let root = tempfile::tempdir().unwrap();
     let source = root.path().join("source.pdf");
     let directory = root.path().join("cache");
-    tokio::fs::write(&source, b"not a PDF").await.unwrap();
+    tokio::fs::write(
+        &source,
+        native_pdf("A repaired source contains enough valid words to rebuild the reading index."),
+    )
+    .await
+    .unwrap();
+    // A regular file where the cache directory belongs makes the build fail.
+    tokio::fs::write(&directory, b"blocked").await.unwrap();
     let jobs = IndexJobs::default();
     let extraction = Arc::new(Mutex::new(()));
     assert!(
@@ -185,12 +192,7 @@ async fn failed_jobs_release_their_slot_and_allow_retry() {
         .is_err()
     );
     wait_for_jobs(&jobs, 0).await;
-    tokio::fs::write(
-        &source,
-        native_pdf("A repaired source contains enough valid words to rebuild the reading index."),
-    )
-    .await
-    .unwrap();
+    tokio::fs::remove_file(&directory).await.unwrap();
     assert!(
         jobs.get_or_build(
             source,

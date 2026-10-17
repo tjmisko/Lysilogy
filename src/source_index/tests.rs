@@ -670,11 +670,14 @@ async fn real_image_only_pdf_uses_local_ocr_then_the_source_keyed_cache() {
             .collect::<Vec<_>>(),
         [Provenance::Native, Provenance::Ocr]
     );
-    // Replacing the PDF must not return the now-stale index.
+    // Replacing the PDF must not return the now-stale index. A corrupt source
+    // builds an explicit unreadable index instead of failing the run.
     tokio::fs::write(&scan_path, b"no longer a pdf")
         .await
         .unwrap();
-    assert!(load_or_build(&scan_path, &cache, false).await.is_err());
+    let unreadable = load_or_build(&scan_path, &cache, false).await.unwrap();
+    assert!(unreadable.text.trim().is_empty());
+    assert!(!unreadable.gaps.is_empty());
 }
 
 fn floating_continuation_pages() -> Vec<SourcePage> {
@@ -885,6 +888,45 @@ fn table_and_figure_namespaces_and_stacked_bounds_are_independent() {
             .references
             .is_empty()
     );
+}
+
+#[test]
+fn sectioned_and_subfigure_labels_stay_distinct() {
+    let index = assemble(&[page(vec![
+        word("Figure", 0, 0, 50.0, 50.0),
+        word("2-1.", 0, 0, 100.0, 50.0),
+        word("Figure", 1, 1, 50.0, 80.0),
+        word("2-2.", 1, 1, 100.0, 80.0),
+        word("Figure", 2, 2, 50.0, 110.0),
+        word("3a.", 2, 2, 100.0, 110.0),
+        word("Figure", 3, 3, 50.0, 140.0),
+        word("3b.", 3, 3, 100.0, 140.0),
+    ])]);
+    let ids = figures::find(&index)
+        .into_iter()
+        .map(|figure| figure.id)
+        .collect::<Vec<_>>();
+    for expected in ["figure-2-1", "figure-2-2", "figure-3a", "figure-3b"] {
+        assert!(ids.contains(&expected.to_string()), "{ids:?}");
+    }
+}
+
+#[test]
+fn float_list_entries_are_not_figures() {
+    let mut heading = word("List of tables", 0, 0, 50.0, 50.0);
+    heading.rect.y_max = 64.0;
+    let index = assemble(&[page(vec![
+        heading,
+        word("Table", 1, 1, 50.0, 100.0),
+        word("1:", 1, 1, 100.0, 100.0),
+        prose_line("Estimates of global food waste ......XII", 2, 50.0, 130.0),
+        word("Table", 3, 2, 50.0, 200.0),
+        word("2:", 3, 2, 100.0, 200.0),
+        prose_line("Actual caption text.", 4, 50.0, 230.0),
+    ])]);
+    let figures = figures::find(&index);
+    assert_eq!(figures.len(), 1, "{:?}", paragraph_texts(&index));
+    assert_eq!(figures[0].id, "table-2");
 }
 
 #[test]

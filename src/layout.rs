@@ -148,7 +148,7 @@ fn parse_line_tokens(
             },
             page_width,
             page_height,
-        )?;
+        );
         let text = decode_xml_text(content[tag_end + 1..close].trim());
         if !text.is_empty() {
             let token = ParsedToken {
@@ -228,22 +228,30 @@ fn parse_attribute(tag: &str, name: &str) -> Result<f32> {
         .map_err(|error| Error::InvalidLayout(format!("invalid {name} attribute: {error}")))
 }
 
-fn normalize_rect(mut rect: TextRect, width: f32, height: f32) -> Result<TextRect> {
-    let values = [rect.x_min, rect.y_min, rect.x_max, rect.y_max];
-    if !values.into_iter().all(f32::is_finite) || rect.x_min > rect.x_max || rect.y_min > rect.y_max
-    {
-        return Err(Error::InvalidLayout(
-            "word rectangle must contain ordered finite coordinates".to_owned(),
-        ));
+// A malformed word rectangle must not reject an otherwise readable document.
+// Reorder reversed edges and pin non-finite values to the origin.
+fn normalize_rect(mut rect: TextRect, width: f32, height: f32) -> TextRect {
+    let finite = |value: f32| if value.is_finite() { value } else { 0.0 };
+    rect.x_min = finite(rect.x_min);
+    rect.y_min = finite(rect.y_min);
+    rect.x_max = finite(rect.x_max);
+    rect.y_max = finite(rect.y_max);
+    if rect.x_min > rect.x_max {
+        std::mem::swap(&mut rect.x_min, &mut rect.x_max);
+    }
+    if rect.y_min > rect.y_max {
+        std::mem::swap(&mut rect.y_min, &mut rect.y_max);
     }
     // Some PDFs intentionally paint glyphs beyond their crop box. The viewer
     // cannot display that area, so preserving alignment means clipping to the
     // rendered page rather than rejecting an otherwise readable document.
+    let width = finite(width).max(0.0);
+    let height = finite(height).max(0.0);
     rect.x_min = rect.x_min.clamp(0.0, width);
     rect.y_min = rect.y_min.clamp(0.0, height);
     rect.x_max = rect.x_max.clamp(rect.x_min, width);
     rect.y_max = rect.y_max.clamp(rect.y_min, height);
-    Ok(rect)
+    rect
 }
 
 fn decode_xml_text(value: &str) -> String {
@@ -640,7 +648,7 @@ mod tests {
     }
 
     #[test]
-    fn clips_authored_glyphs_to_the_pdf_crop_box() -> Result<()> {
+    fn clips_authored_glyphs_to_the_pdf_crop_box() {
         let rect = normalize_rect(
             TextRect {
                 x_min: -12.0,
@@ -650,9 +658,24 @@ mod tests {
             },
             200.0,
             300.0,
-        )?;
+        );
         assert!(rect.x_min.abs() < f32::EPSILON);
         assert!((rect.x_max - 200.0).abs() < f32::EPSILON);
-        Ok(())
+    }
+
+    #[test]
+    fn repairs_reversed_and_non_finite_rectangles() {
+        let rect = normalize_rect(
+            TextRect {
+                x_min: f32::NAN,
+                y_min: 40.0,
+                x_max: -5.0,
+                y_max: 20.0,
+            },
+            200.0,
+            300.0,
+        );
+        assert!(rect.x_min.is_finite() && rect.y_min.is_finite());
+        assert!(rect.x_min <= rect.x_max && rect.y_min <= rect.y_max);
     }
 }

@@ -1,10 +1,12 @@
+use std::collections::BTreeMap;
+
 use super::{Figure, FigureReference, ReadingIndex, ReadingToken, TextRange, native::union};
 use crate::domain::TextRect;
 
 pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
     let mut figures = Vec::<Figure>::new();
-    for paragraph in &index.objects.paragraph {
-        if paragraph.kind != "caption" {
+    for (paragraph_index, paragraph) in index.objects.paragraph.iter().enumerate() {
+        if paragraph.kind != "caption" || is_float_list_entry(index, paragraph_index) {
             continue;
         }
         let tokens = tokens(index, paragraph.start, paragraph.end);
@@ -41,8 +43,27 @@ pub(super) fn find(index: &ReadingIndex) -> Vec<Figure> {
             references: Vec::new(),
         });
     }
+    let mut figures = merge_continuations(figures);
     attach_references(index, &mut figures);
     figures
+}
+
+// A long table repeats its caption on each page as "(continued)". Merge those
+// into the first float with the same id so reader ids stay unique.
+fn merge_continuations(figures: Vec<Figure>) -> Vec<Figure> {
+    let mut merged = Vec::<Figure>::new();
+    let mut index_of = BTreeMap::<String, usize>::new();
+    for mut figure in figures {
+        let continuation = figure.caption.to_ascii_lowercase().contains("continued");
+        if continuation && let Some(&at) = index_of.get(&figure.id) {
+            merged[at].spans.append(&mut figure.spans);
+            merged[at].references.append(&mut figure.references);
+            continue;
+        }
+        index_of.insert(figure.id.clone(), merged.len());
+        merged.push(figure);
+    }
+    merged
 }
 
 fn attach_references(index: &ReadingIndex, figures: &mut [Figure]) {
@@ -116,6 +137,63 @@ fn attach_references(index: &ReadingIndex, figures: &mut [Figure]) {
     }
 }
 
+// A "List of tables" / "List of figures" entry looks like a caption but is a
+// table-of-contents line: a bare label and a dot-leader page list. The real
+// float keeps the same label later in the document.
+fn is_float_list_entry(index: &ReadingIndex, paragraph_index: usize) -> bool {
+    let paragraph = &index.objects.paragraph[paragraph_index];
+    let caption = utf16_slice(&index.text, paragraph.start, paragraph.end);
+    if has_dot_leader(&caption) {
+        return true;
+    }
+    if !is_bare_float_label(&caption) {
+        return false;
+    }
+    index
+        .objects
+        .paragraph
+        .get(paragraph_index + 1)
+        .is_some_and(|next| {
+            has_dot_leader(&utf16_slice(&index.text, next.start, next.end))
+        })
+}
+
+fn is_bare_float_label(text: &str) -> bool {
+    let lower = text.trim().to_ascii_lowercase();
+    let Some(rest) = ["figure", "table", "fig.", "tab."]
+        .iter()
+        .find_map(|prefix| lower.strip_prefix(prefix))
+    else {
+        return false;
+    };
+    let rest = rest.trim().trim_end_matches([':', '.']);
+    let rest = rest.strip_prefix('s').unwrap_or(rest);
+    let digits = rest.chars().take_while(char::is_ascii_digit).count();
+    if digits == 0 {
+        return false;
+    }
+    let suffix = &rest[digits..];
+    suffix.is_empty()
+        || (suffix.len() == 1 && suffix.chars().all(|ch| ch.is_ascii_lowercase()))
+}
+
+// A float-list line ends with a dot leader and a page number ("... 41",
+// ".....XII"). Real captions do not end with a dot run plus page token.
+fn has_dot_leader(text: &str) -> bool {
+    let trimmed = text.trim_end();
+    let is_page = |ch: char| {
+        ch.is_ascii_digit()
+            || matches!(
+                ch,
+                'i' | 'v' | 'x' | 'l' | 'c' | 'd' | 'm' | 'I' | 'V' | 'X' | 'L' | 'C' | 'D' | 'M'
+            )
+    };
+    let trailing_dots = |value: &str| value.chars().rev().take_while(|&ch| ch == '.').count();
+    let without_page = trimmed.trim_end_matches(is_page).trim_end();
+    trailing_dots(trimmed) >= 2
+        || (without_page.len() != trimmed.len() && trailing_dots(without_page) >= 2)
+}
+
 fn range_tail(text: &str) -> Vec<String> {
     let Some((start, end)) = text.split_once(['–', '-']) else {
         return Vec::new();
@@ -178,21 +256,43 @@ fn label_at(
     identifier(&next.text).map(|label| (kind, label, token.start, next.end))
 }
 
+// Labels may be simple ("3"), sectioned ("2-1"), prefixed ("S1") or a
+// sub-figure ("2a"). An en-dash range ("1–3") stays its first number.
 fn identifier(text: &str) -> Option<String> {
     let text =
         text.trim_matches(|ch: char| matches!(ch, '(' | ')' | '[' | ']' | ',' | ':' | '.' | ';'));
-    let prefix = text
-        .chars()
-        .take_while(|ch| ch.is_ascii_digit() || matches!(ch, 'S' | 's'))
-        .collect::<String>();
-    if !prefix.chars().any(|ch| ch.is_ascii_digit()) || prefix.len() > 6 {
+    let chars = text.chars().collect::<Vec<_>>();
+    let mut at = usize::from(
+        matches!(chars.first(), Some('S' | 's'))
+            && chars.get(1).is_some_and(char::is_ascii_digit),
+    );
+    let digits = chars[at..]
+        .iter()
+        .take_while(|ch| ch.is_ascii_digit())
+        .count();
+    if digits == 0 || digits > 4 {
         return None;
     }
-    let suffix = &text[prefix.len()..];
-    if !suffix.is_empty() && !suffix.starts_with(['(', 'a', 'b', 'c', 'd', '–', '-']) {
+    at += digits;
+    if chars.get(at) == Some(&'-') && chars.get(at + 1).is_some_and(char::is_ascii_digit) {
+        at += 1;
+        let more = chars[at..]
+            .iter()
+            .take_while(|ch| ch.is_ascii_digit())
+            .count();
+        if more == 0 || more > 4 {
+            return None;
+        }
+        at += more;
+    }
+    if chars.get(at).is_some_and(char::is_ascii_alphabetic) {
+        at += 1;
+    }
+    let rest = chars[at..].iter().collect::<String>();
+    if !rest.is_empty() && !rest.starts_with(['(', '–', '-']) {
         return None;
     }
-    Some(prefix.to_ascii_uppercase())
+    Some(chars[..at].iter().collect::<String>().to_ascii_uppercase())
 }
 
 fn figure_region(

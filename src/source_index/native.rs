@@ -404,9 +404,11 @@ fn kind(line: &Line<'_>, page: &SourcePage, font: f32) -> &'static str {
         .iter()
         .any(|prefix| lower.starts_with(prefix))
         && (height < font * 0.96
-            || line.words.iter().take(3).any(|word| {
-                word.text.chars().any(|ch| ch.is_ascii_digit()) && word.text.ends_with([':', '.'])
-            }))
+            || line
+                .words
+                .iter()
+                .take(3)
+                .any(|word| labels_a_float(&word.text)))
     {
         return "caption";
     }
@@ -433,6 +435,14 @@ fn kind(line: &Line<'_>, page: &SourcePage, font: f32) -> &'static str {
         return "list";
     }
     "body"
+}
+
+// A caption line carries a digit and ends in '.' or ':'. A cross-reference
+// such as "figure 5). As ..." ends in ")." and stays prose.
+fn labels_a_float(word: &str) -> bool {
+    word.chars().any(|ch| ch.is_ascii_digit())
+        && word.ends_with([':', '.'])
+        && !word.ends_with(").")
 }
 
 fn named_heading(text: &str) -> bool {
