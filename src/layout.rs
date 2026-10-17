@@ -490,7 +490,7 @@ fn page_matches(page: &LayoutPage, needle: &[char]) -> Vec<TextAnchor> {
         .collect()
 }
 
-fn canonical_chars(value: &str) -> Vec<char> {
+pub(crate) fn canonical_chars(value: &str) -> Vec<char> {
     value
         .chars()
         .flat_map(|character| match character {
