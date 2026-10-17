@@ -4,6 +4,11 @@
 //! correction is applied only when its evidence is admitted, its pointer
 //! resolves, and its value keeps the JSON type of what it replaces, so a bad
 //! patch is rejected and counted rather than corrupting the draft.
+//!
+//! Equations are the exception: the page image is their evidence, and the
+//! text layer cannot reproduce math verbatim. A correction to an equation
+//! object needs evidence on a page but is applied as image-evidenced, and
+//! reported separately.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -43,6 +48,8 @@ pub struct Evidence {
 #[serde(tag = "status", content = "reason", rename_all = "snake_case")]
 pub enum Outcome {
     Applied,
+    /// Applied to an equation on image evidence; the text cannot verify it.
+    AppliedImageEvidence,
     Flagged,
     Rejected(String),
 }
@@ -71,7 +78,17 @@ pub fn apply(
             if correction.action != action {
                 continue;
             }
-            let outcome = match admitted(correction, source) {
+            let image_evidence = targets_equation(draft, correction);
+            let evidence = if image_evidence {
+                if correction.evidence.is_empty() {
+                    Err("no evidence".to_owned())
+                } else {
+                    Ok(())
+                }
+            } else {
+                admitted(correction, source)
+            };
+            let outcome = match evidence {
                 Err(reason) => Outcome::Rejected(reason),
                 Ok(()) => match action {
                     Action::Flag => Outcome::Flagged,
@@ -85,6 +102,10 @@ pub fn apply(
                         outcome
                     }
                 },
+            };
+            let outcome = match outcome {
+                Outcome::Applied if image_evidence => Outcome::AppliedImageEvidence,
+                other => other,
             };
             outcomes.push(CorrectionOutcome {
                 index,
@@ -112,6 +133,26 @@ pub fn apply(
     }
     outcomes.sort_by_key(|outcome| outcome.index);
     outcomes
+}
+
+/// Whether the correction changes an existing equation object or adds one.
+fn targets_equation(draft: &Value, correction: &Correction) -> bool {
+    let is_equation =
+        |object: &Value| object.get("kind").and_then(Value::as_str) == Some("equation");
+    if correction.action == Action::Add && correction.path == "/objects" {
+        return correction
+            .value_json
+            .as_deref()
+            .and_then(|text| serde_json::from_str::<Value>(text).ok())
+            .is_some_and(|value| is_equation(&value));
+    }
+    let Some(rest) = correction.path.strip_prefix("/objects/") else {
+        return false;
+    };
+    let index = rest.split('/').next().unwrap_or_default();
+    draft
+        .pointer(&format!("/objects/{index}"))
+        .is_some_and(is_equation)
 }
 
 fn admitted(correction: &Correction, source: &SourceText<'_>) -> Result<(), String> {
@@ -432,6 +473,56 @@ mod tests {
         assert!(matches!(statuses[2], Outcome::Rejected(_)));
         assert_eq!(statuses[3], &Outcome::Applied);
         assert_eq!(value["objects"].as_array().map(Vec::len), Some(4));
+    }
+
+    #[test]
+    fn should_apply_an_equation_correction_on_image_evidence_and_label_it() {
+        let pages = pages();
+        let mut value = json!({"objects": [
+            {"kind": "equation", "label": "(3)", "latex": "a=b", "page": 1},
+            {"kind": "table", "label": "Table 1", "latex": null, "page": 1}
+        ]});
+        let math = "− ln |K ε l | ≤ 1 2 ln(ε −1)";
+        let outcomes = apply(
+            &mut value,
+            &[
+                correction(
+                    "/objects/0/latex",
+                    Action::Replace,
+                    Some(r#""a=b+c""#),
+                    math,
+                ),
+                correction("/objects/0/page", Action::Replace, Some("2"), ""),
+                correction("/objects/1/page", Action::Replace, Some("2"), math),
+                correction(
+                    "/objects",
+                    Action::Add,
+                    Some(r#"{"kind": "equation", "label": "(4)", "latex": "x", "page": 1}"#),
+                    math,
+                ),
+                correction(
+                    "/objects",
+                    Action::Add,
+                    Some(r#"{"kind": "figure", "label": "Figure 9", "latex": null, "page": 1}"#),
+                    math,
+                ),
+            ],
+            &SourceText::new(&pages),
+        );
+        let statuses = outcomes
+            .iter()
+            .map(|outcome| outcome.outcome.clone())
+            .collect::<Vec<_>>();
+        assert_eq!(statuses[0], Outcome::AppliedImageEvidence);
+        assert!(matches!(&statuses[1], Outcome::Rejected(reason) if reason == "no evidence"));
+        assert!(
+            matches!(&statuses[2], Outcome::Rejected(reason) if reason.contains("not in the source"))
+        );
+        assert_eq!(statuses[3], Outcome::AppliedImageEvidence);
+        assert!(matches!(statuses[4], Outcome::Rejected(_)));
+        assert_eq!(value["objects"][0]["latex"], "a=b+c");
+        assert_eq!(value["objects"][1]["page"], 1);
+        assert_eq!(value["objects"].as_array().map(Vec::len), Some(3));
     }
 
     #[test]
