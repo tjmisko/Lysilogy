@@ -7,20 +7,24 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::{Path, PathBuf},
+    sync::{Mutex, MutexGuard},
     time::{Duration, Instant},
 };
+
+use futures_util::{StreamExt as _, stream};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{
-    CHECK_SCHEMA, PAPER_ARTIFACTS_SCHEMA, REPAIR_SCHEMA,
+    CHECK_SCHEMA, CORE_SCHEMA, OBJECTS_SCHEMA, PAPER_ARTIFACTS_SCHEMA, REPAIR_SCHEMA,
     admission::{
         CheckCounts, LOCAL_REPAIR_SIMILARITY, QuoteSite, SiteKind, SourceText, Verdict,
         apply_removals, check, quote_sites,
     },
     corrections::{self, CheckResponse, Correction, CorrectionOutcome},
+    objects::{self, ChunkObjects, MergeStats},
     resources::{self, PageResources},
 };
 use crate::{
@@ -34,11 +38,17 @@ use crate::{
 };
 
 const EXTRACT_PROMPT: &str = include_str!("../../prompts/paper-artifacts-extract.md");
+const OBJECTS_INLINE: &str = include_str!("../../prompts/paper-artifacts-objects-inline.md");
+const OBJECTS_SEPARATE: &str = include_str!("../../prompts/paper-artifacts-objects-separate.md");
+const OBJECTS_PROMPT: &str = include_str!("../../prompts/paper-objects.md");
 const CHECK_PROMPT: &str = include_str!("../../prompts/paper-artifacts-check.md");
 const REPAIR_PROMPT: &str = include_str!("../../prompts/paper-artifacts-repair.md");
 
 /// Bump when the record shape changes.
-const RECORD_VERSION: u16 = 1;
+const RECORD_VERSION: u16 = 2;
+
+/// Object chunks in flight at once.
+const CHUNK_CONCURRENCY: usize = 3;
 
 /// The most pages sent with a repair request.
 const REPAIR_PAGE_LIMIT: usize = 10;
@@ -58,8 +68,37 @@ pub struct ExtractOptions {
     /// The JSON record.
     pub output: PathBuf,
     /// No further model call starts once this paper has spent this much.
+    /// Calls already in flight finish, so concurrent object chunks can pass
+    /// it by up to `CHUNK_CONCURRENCY - 1` calls.
     pub paper_budget_usd: f64,
     pub timeout: Duration,
+    pub objects: ObjectMode,
+}
+
+/// Where the object inventory comes from.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ObjectMode {
+    /// Inside the whole-paper pass 1 answer.
+    Inline,
+    /// A separate pass over page chunks of this size, merged.
+    Chunked { pages_per_chunk: usize },
+}
+
+impl ObjectMode {
+    fn label(self) -> String {
+        match self {
+            Self::Inline => "inline".to_owned(),
+            Self::Chunked { pages_per_chunk } => format!("chunked:{pages_per_chunk}"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ChunkRecord {
+    pub first_page: u32,
+    pub last_page: u32,
+    /// Objects returned before merging; `None` when the call failed.
+    pub objects: Option<usize>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -122,6 +161,7 @@ pub struct ExtractRecord {
     pub pdf: PathBuf,
     pub model: String,
     pub passes_requested: u8,
+    pub object_mode: String,
     pub dpi: u32,
     pub pages: usize,
     pub calls: Vec<CallRecord>,
@@ -129,6 +169,9 @@ pub struct ExtractRecord {
     /// Why a later stage did not run, when the paper budget stopped it.
     pub budget_stopped: Option<String>,
     pub failures: Vec<Failure>,
+    pub object_chunks: Vec<ChunkRecord>,
+    pub object_merge: Option<MergeStats>,
+    /// Pass 1 with the merged object inventory, before the self-check.
     pub pass1: Option<Value>,
     pub pass1_check: Option<CheckCounts>,
     pub corrections: Vec<Correction>,
@@ -166,33 +209,60 @@ enum RepairAction {
     Withdraw,
 }
 
-/// The model calls for one paper, with its own spend cap.
+/// The model calls for one paper, with its own spend cap. Calls take `&self`
+/// so independent calls can run concurrently.
 struct Session<'a> {
     client: reqwest::Client,
     ledger: &'a SpendLedger,
     model: &'a str,
     paper_budget_usd: f64,
+    state: Mutex<SessionState>,
+}
+
+#[derive(Default)]
+struct SessionState {
     spent_usd: f64,
     calls: Vec<CallRecord>,
     failures: Vec<Failure>,
     budget_stopped: Option<String>,
 }
 
-impl Session<'_> {
+impl<'a> Session<'a> {
+    fn new(
+        client: reqwest::Client,
+        ledger: &'a SpendLedger,
+        model: &'a str,
+        paper_budget_usd: f64,
+    ) -> Self {
+        Self {
+            client,
+            ledger,
+            model,
+            paper_budget_usd,
+            state: Mutex::new(SessionState::default()),
+        }
+    }
+
+    fn state(&self) -> MutexGuard<'_, SessionState> {
+        self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn into_state(self) -> SessionState {
+        self.state
+            .into_inner()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
     /// One call parsed as JSON; `None` after recording why there is no value.
     async fn call<T: serde::de::DeserializeOwned>(
-        &mut self,
+        &self,
         stage: &str,
         parts: &[ContentPart],
         schema: &str,
     ) -> Option<T> {
-        if self.spent_usd >= self.paper_budget_usd {
-            self.budget_stopped.get_or_insert_with(|| {
-                format!(
-                    "{stage} skipped: ${:.4} spent of the ${:.2} paper budget",
-                    self.spent_usd, self.paper_budget_usd
-                )
-            });
+        if !self.within_budget(stage) {
             return None;
         }
         let schema: Value = match serde_json::from_str(schema) {
@@ -216,18 +286,7 @@ impl Session<'_> {
             }
         };
         let parsed = completion.parsed;
-        self.spent_usd += parsed.cost_usd;
-        self.calls.push(CallRecord {
-            stage: stage.to_owned(),
-            provider: parsed.provider.clone(),
-            finish_reason: parsed.finish_reason.clone(),
-            prompt_tokens: parsed.prompt_tokens,
-            completion_tokens: parsed.completion_tokens,
-            reasoning_tokens: parsed.reasoning_tokens,
-            cost_usd: parsed.cost_usd,
-            cost_source: parsed.cost_source,
-            latency_s: completion.latency.as_secs_f64(),
-        });
+        self.record_call(stage, &parsed, completion.latency);
         if parsed.finish_reason.as_deref() == Some("length") {
             self.fail(
                 stage,
@@ -249,13 +308,49 @@ impl Session<'_> {
         }
     }
 
-    fn fail(&mut self, stage: &str, error: String, raw: Option<&str>) {
-        self.failures.push(Failure {
+    /// Whether another call may start; records why not when it may not.
+    fn within_budget(&self, stage: &str) -> bool {
+        let mut guard = self.state();
+        if guard.spent_usd < self.paper_budget_usd {
+            return true;
+        }
+        let reason = format!(
+            "{stage} skipped: ${:.4} spent of the ${:.2} paper budget",
+            guard.spent_usd, self.paper_budget_usd
+        );
+        guard.budget_stopped.get_or_insert(reason);
+        drop(guard);
+        false
+    }
+
+    fn record_call(&self, stage: &str, parsed: &openrouter::ParsedCompletion, latency: Duration) {
+        let mut guard = self.state();
+        guard.spent_usd += parsed.cost_usd;
+        guard.calls.push(CallRecord {
+            stage: stage.to_owned(),
+            provider: parsed.provider.clone(),
+            finish_reason: parsed.finish_reason.clone(),
+            prompt_tokens: parsed.prompt_tokens,
+            completion_tokens: parsed.completion_tokens,
+            reasoning_tokens: parsed.reasoning_tokens,
+            cost_usd: parsed.cost_usd,
+            cost_source: parsed.cost_source,
+            latency_s: latency.as_secs_f64(),
+        });
+    }
+
+    fn fail(&self, stage: &str, error: String, raw: Option<&str>) {
+        self.state().failures.push(Failure {
             stage: stage.to_owned(),
             error,
             raw: raw.map(|raw| raw.chars().take(RAW_PREVIEW_CHARS).collect()),
         });
     }
+}
+
+#[derive(Deserialize)]
+struct ObjectsResponse {
+    objects: Vec<Value>,
 }
 
 /// Extract one paper and write its record to `options.output`.
@@ -282,33 +377,27 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
     .await?;
     let pages = page_parts(&resources).await?;
     let source = SourceText::new(&resources.paper.pages);
-    let mut session = Session {
-        client: openrouter::client(options.timeout)?,
+    let session = Session::new(
+        openrouter::client(options.timeout)?,
         ledger,
-        model: &options.model,
-        paper_budget_usd: options.paper_budget_usd,
-        spent_usd: 0.0,
-        calls: Vec::new(),
-        failures: Vec::new(),
-        budget_stopped: None,
-    };
+        &options.model,
+        options.paper_budget_usd,
+    );
 
-    let mut parts = vec![ContentPart::Text(EXTRACT_PROMPT.to_owned())];
-    parts.extend(pages.iter().cloned());
-    let pass1: Option<Value> = session
-        .call("extract.pass1", &parts, PAPER_ARTIFACTS_SCHEMA)
-        .await;
+    let (pass1, object_chunks, object_merge) =
+        first_pass(&session, options.objects, &resources, &pages).await;
     let pass1_check = pass1.as_ref().map(|draft| check(&source, draft));
 
     let mut draft = pass1.clone();
     let check_pass = match draft.as_mut() {
         Some(current) if options.passes == 2 => {
-            self_check(current, &pages, &source, &mut session).await?
+            let hide_objects = options.objects != ObjectMode::Inline;
+            self_check(current, &pages, &source, &session, hide_objects).await?
         }
         _ => SelfCheck::default(),
     };
     let admission = match draft.as_mut() {
-        Some(current) => admit(current, &source, &resources, &mut session).await,
+        Some(current) => admit(current, &source, &resources, &session).await,
         None => Vec::new(),
     };
     let mut admission_counts = BTreeMap::new();
@@ -320,6 +409,7 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
         *admission_counts.entry(key).or_insert(0) += 1;
     }
 
+    let session = session.into_state();
     let totals = Totals {
         calls: session.calls.len(),
         prompt_tokens: session.calls.iter().map(|call| call.prompt_tokens).sum(),
@@ -338,12 +428,15 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
         pdf: options.pdf.clone(),
         model: options.model.clone(),
         passes_requested: options.passes,
+        object_mode: options.objects.label(),
         dpi: resources.dpi,
         pages: resources.paper.pages.len(),
         calls: session.calls,
         totals,
         budget_stopped: session.budget_stopped,
         failures: session.failures,
+        object_chunks,
+        object_merge,
         pass1,
         pass1_check,
         corrections: check_pass.corrections,
@@ -380,13 +473,20 @@ async fn self_check(
     draft: &mut Value,
     pages: &[ContentPart],
     source: &SourceText<'_>,
-    session: &mut Session<'_>,
+    session: &Session<'_>,
+    hide_objects: bool,
 ) -> Result<SelfCheck> {
+    // With a chunked inventory the self-check reviews everything else; it
+    // cannot reach the objects, so it cannot spend on them.
+    let mut view = draft.clone();
+    if hide_objects && let Some(fields) = view.as_object_mut() {
+        fields.remove("objects");
+    }
     let mut parts = vec![
         ContentPart::Text(CHECK_PROMPT.to_owned()),
         ContentPart::Text(format!(
             "Draft:\n```json\n{}\n```",
-            serde_json::to_string(draft)?
+            serde_json::to_string(&view)?
         )),
     ];
     parts.extend(pages.iter().cloned());
@@ -402,6 +502,93 @@ async fn self_check(
         outcomes,
         counts: Some(check(source, draft)),
     })
+}
+
+/// Pass 1, with the object inventory inline or from the chunked pass.
+async fn first_pass(
+    session: &Session<'_>,
+    mode: ObjectMode,
+    resources: &PageResources,
+    pages: &[ContentPart],
+) -> (Option<Value>, Vec<ChunkRecord>, Option<MergeStats>) {
+    match mode {
+        ObjectMode::Inline => {
+            let mut parts = vec![ContentPart::Text(
+                EXTRACT_PROMPT.replace("{{objects}}", OBJECTS_INLINE.trim_end()),
+            )];
+            parts.extend(pages.iter().cloned());
+            let pass1 = session
+                .call::<Value>("extract.pass1", &parts, PAPER_ARTIFACTS_SCHEMA)
+                .await;
+            (pass1, Vec::new(), None)
+        }
+        ObjectMode::Chunked { pages_per_chunk } => {
+            let mut parts = vec![ContentPart::Text(
+                EXTRACT_PROMPT.replace("{{objects}}", OBJECTS_SEPARATE.trim_end()),
+            )];
+            parts.extend(pages.iter().cloned());
+            let (core, (inventory, merge, chunks)) = tokio::join!(
+                session.call::<Value>("extract.pass1", &parts, CORE_SCHEMA),
+                object_pass(session, resources, pages, pages_per_chunk),
+            );
+            let pass1 = core.map(|mut core| {
+                if let Some(fields) = core.as_object_mut() {
+                    fields.insert("objects".to_owned(), Value::Array(inventory));
+                }
+                core
+            });
+            (pass1, chunks, Some(merge))
+        }
+    }
+}
+
+/// The object inventory, read a chunk of pages at a time and merged.
+async fn object_pass(
+    session: &Session<'_>,
+    resources: &PageResources,
+    pages: &[ContentPart],
+    pages_per_chunk: usize,
+) -> (Vec<Value>, MergeStats, Vec<ChunkRecord>) {
+    let numbers = resources
+        .paper
+        .pages
+        .iter()
+        .map(|page| page.number)
+        .collect::<Vec<_>>();
+    let chunks = objects::page_chunks(&numbers, pages_per_chunk);
+    let mut start = 0;
+    let requests = chunks
+        .into_iter()
+        .map(|chunk| {
+            // `pages` holds a text part and an image part per page, in order.
+            let mut parts = vec![ContentPart::Text(OBJECTS_PROMPT.to_owned())];
+            parts.extend(pages[start * 2..(start + chunk.len()) * 2].iter().cloned());
+            start += chunk.len();
+            (chunk, parts)
+        })
+        .collect::<Vec<_>>();
+    let results = stream::iter(requests.into_iter().map(|(chunk, parts)| async move {
+        let response = session
+            .call::<ObjectsResponse>("extract.objects", &parts, OBJECTS_SCHEMA)
+            .await;
+        ChunkObjects {
+            pages: chunk,
+            objects: response.map(|response| response.objects),
+        }
+    }))
+    .buffered(CHUNK_CONCURRENCY)
+    .collect::<Vec<_>>()
+    .await;
+    let records = results
+        .iter()
+        .map(|chunk| ChunkRecord {
+            first_page: chunk.pages.first().copied().unwrap_or_default(),
+            last_page: chunk.pages.last().copied().unwrap_or_default(),
+            objects: chunk.objects.as_ref().map(Vec::len),
+        })
+        .collect();
+    let (inventory, merge) = objects::merge(results);
+    (inventory, merge, records)
 }
 
 /// Each page's text followed by its image.
@@ -427,7 +614,7 @@ async fn admit(
     draft: &mut Value,
     source: &SourceText<'_>,
     resources: &PageResources,
-    session: &mut Session<'_>,
+    session: &Session<'_>,
 ) -> Vec<SiteOutcome> {
     let mut outcomes = Vec::new();
     let mut failing = Vec::<(usize, QuoteSite)>::new();
@@ -518,7 +705,7 @@ async fn request_repairs(
     failing: &[(usize, QuoteSite)],
     outcomes: &[SiteOutcome],
     resources: &PageResources,
-    session: &mut Session<'_>,
+    session: &Session<'_>,
 ) -> BTreeMap<String, Repair> {
     let items = failing
         .iter()
@@ -612,16 +799,12 @@ mod tests {
     }
 
     fn session(ledger: &SpendLedger, paper_budget_usd: f64) -> Session<'_> {
-        Session {
-            client: reqwest::Client::new(),
+        Session::new(
+            reqwest::Client::new(),
             ledger,
-            model: openrouter::DEFAULT_MODEL,
+            openrouter::DEFAULT_MODEL,
             paper_budget_usd,
-            spent_usd: 0.0,
-            calls: Vec::new(),
-            failures: Vec::new(),
-            budget_stopped: None,
-        }
+        )
     }
 
     fn draft() -> Value {
@@ -645,9 +828,9 @@ mod tests {
         let ledger = SpendLedger::new(directory.path().join("spend.jsonl"), 1.0);
         let resources = resources();
         let source = SourceText::new(&resources.paper.pages);
-        let mut session = session(&ledger, 0.0);
+        let session = session(&ledger, 0.0);
         let mut value = draft();
-        let outcomes = admit(&mut value, &source, &resources, &mut session).await;
+        let outcomes = admit(&mut value, &source, &resources, &session).await;
         let statuses = outcomes
             .iter()
             .map(|outcome| (outcome.pointer.as_str(), outcome.status))
@@ -663,10 +846,10 @@ mod tests {
             ]
         );
         assert!(
-            session.budget_stopped.is_some(),
+            session.state().budget_stopped.is_some(),
             "the repair call must be skipped"
         );
-        assert!(session.calls.is_empty());
+        assert!(session.state().calls.is_empty());
         // The verbatim abstract's page is corrected to where it actually is.
         assert_eq!(value["abstract"]["page"], 1);
         assert_eq!(
@@ -683,21 +866,21 @@ mod tests {
         let ledger = SpendLedger::new(directory.path().join("spend.jsonl"), 1.0);
         let resources = resources();
         let source = SourceText::new(&resources.paper.pages);
-        let mut session = session(&ledger, 1.0);
+        let session = session(&ledger, 1.0);
         let mut value =
             json!({"objects": [{"caption": "Table 1: Accuracy after pruning.", "page": 2}]});
-        let outcomes = admit(&mut value, &source, &resources, &mut session).await;
+        let outcomes = admit(&mut value, &source, &resources, &session).await;
         assert_eq!(outcomes.len(), 1);
-        assert!(session.calls.is_empty() && session.failures.is_empty());
-        assert!(session.budget_stopped.is_none());
+        assert!(session.state().calls.is_empty() && session.state().failures.is_empty());
+        assert!(session.state().budget_stopped.is_none());
     }
 
     #[tokio::test]
     async fn should_record_why_a_call_was_skipped_when_the_paper_budget_is_spent() {
         let directory = tempfile::tempdir().expect("temporary directory");
         let ledger = SpendLedger::new(directory.path().join("spend.jsonl"), 1.0);
-        let mut session = session(&ledger, 0.25);
-        session.spent_usd = 0.30;
+        let session = session(&ledger, 0.25);
+        session.state().spent_usd = 0.30;
         let value: Option<Value> = session
             .call(
                 "extract.pass2",
@@ -706,11 +889,49 @@ mod tests {
             )
             .await;
         assert!(value.is_none());
-        let reason = session.budget_stopped.expect("reason");
+        let reason = session.state().budget_stopped.clone().expect("reason");
         assert!(reason.starts_with("extract.pass2 skipped"), "{reason}");
         assert!(
-            session.failures.is_empty(),
+            session.state().failures.is_empty(),
             "a budget stop is not a failure"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_start_no_object_chunk_once_the_paper_budget_is_spent() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let ledger = SpendLedger::new(directory.path().join("spend.jsonl"), 1.0);
+        let resources = resources();
+        let pages = resources
+            .paper
+            .pages
+            .iter()
+            .flat_map(|page| {
+                [
+                    ContentPart::Text(page.text.clone()),
+                    ContentPart::Png(Vec::new()),
+                ]
+            })
+            .collect::<Vec<_>>();
+        let session = session(&ledger, 0.15);
+        session.state().spent_usd = 0.15;
+        let (inventory, merge, chunks) = object_pass(&session, &resources, &pages, 1).await;
+        assert!(inventory.is_empty());
+        assert_eq!(merge.chunks, 2);
+        assert_eq!(merge.failed_chunks, 2);
+        assert_eq!(
+            chunks
+                .iter()
+                .map(|chunk| (chunk.first_page, chunk.last_page, chunk.objects))
+                .collect::<Vec<_>>(),
+            [(1, 1, None), (2, 2, None)]
+        );
+        let state = session.into_state();
+        assert!(state.calls.is_empty());
+        assert!(
+            state
+                .budget_stopped
+                .is_some_and(|reason| reason.starts_with("extract.objects skipped"))
         );
     }
 
@@ -728,6 +949,7 @@ mod tests {
                 output: directory.path().join("out.json"),
                 paper_budget_usd: 0.25,
                 timeout: Duration::from_secs(1),
+                objects: ObjectMode::Chunked { pages_per_chunk: 6 },
             };
             assert!(matches!(
                 extract(&options, &ledger).await,

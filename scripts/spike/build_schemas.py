@@ -113,7 +113,23 @@ repair = obj(
                     quote=s("The exact text from the page, for replace_quote.", null=True),
                     page=i(null=True))))
 
-for name, schema in [("paper-artifacts", paper), ("paper-artifacts-check", check), ("paper-artifacts-repair", repair)]:
+# Chunked mode: pass 1 fills everything but objects; a separate pass reads a
+# few pages at a time and returns only the objects printed on them.
+core = json.loads(json.dumps(paper))
+del core["properties"]["objects"]
+core["required"].remove("objects")
+core["description"] = "The paper-alone artifacts of one scientific paper, without the object inventory."
+chunk_objects = obj(
+    "The figures, tables, algorithms and numbered equations printed on the given pages.",
+    objects=json.loads(json.dumps(paper["properties"]["objects"])),
+)
+chunk_objects["properties"]["objects"]["description"] = (
+    "Every figure, table and algorithm whose caption is printed on the given pages, and every numbered "
+    "displayed equation whose number is printed on them. One object per printed label; never a range."
+)
+
+for name, schema in [("paper-artifacts", paper), ("paper-artifacts-core", core), ("paper-objects", chunk_objects),
+                     ("paper-artifacts-check", check), ("paper-artifacts-repair", repair)]:
     with open(f"{out}/{name}.schema.json", "w") as f:
         json.dump(schema, f, indent=2)
         f.write("\n")

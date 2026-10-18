@@ -7,11 +7,18 @@
 
 pub mod admission;
 pub mod corrections;
+pub mod objects;
 pub mod resources;
 pub mod run;
 
 /// The whole-paper artifacts a model fills in pass 1.
 pub const PAPER_ARTIFACTS_SCHEMA: &str = include_str!("../prompts/paper-artifacts.schema.json");
+
+/// Chunked mode, pass 1: everything except the object inventory.
+pub const CORE_SCHEMA: &str = include_str!("../prompts/paper-artifacts-core.schema.json");
+
+/// Chunked mode: the objects printed on a few pages.
+pub const OBJECTS_SCHEMA: &str = include_str!("../prompts/paper-objects.schema.json");
 
 /// Pass 2: corrections and flags against a pass-1 draft.
 pub const CHECK_SCHEMA: &str = include_str!("../prompts/paper-artifacts-check.schema.json");
@@ -63,6 +70,8 @@ mod tests {
     fn should_satisfy_strict_mode_when_any_schema_is_edited() {
         for (name, text) in [
             ("paper-artifacts", PAPER_ARTIFACTS_SCHEMA),
+            ("core", CORE_SCHEMA),
+            ("objects", OBJECTS_SCHEMA),
             ("check", CHECK_SCHEMA),
             ("repair", REPAIR_SCHEMA),
         ] {

@@ -36,6 +36,8 @@ def run_one(paper, args, run_dir, binary):
                 "--model", args.model,
                 "--passes", str(args.passes),
                 "--paper-budget-usd", str(args.paper_budget),
+                "--objects", args.objects,
+                "--object-pages", str(args.object_pages),
                 "--work", str(Path.home() / ".cache/lysilogy/spike/work" / paper["stem"]),
                 "--out", str(out),
             ],
@@ -56,7 +58,9 @@ def main():
     parser.add_argument("--passes", type=int, default=2, choices=(1, 2))
     parser.add_argument("--jobs", type=int, default=4)
     parser.add_argument("--budget", type=float, default=5.0)
-    parser.add_argument("--paper-budget", type=float, default=0.25)
+    parser.add_argument("--paper-budget", type=float, default=0.15)
+    parser.add_argument("--objects", choices=("chunked", "inline"), default="chunked")
+    parser.add_argument("--object-pages", type=int, default=6)
     parser.add_argument("--sample", type=Path, default=Path("eval/spike/sample.json"))
     parser.add_argument("--binary", type=Path, default=Path("target/release/lysilogy"))
     parser.add_argument("--force", action="store_true", help="rerun papers that already have a result")
@@ -70,6 +74,7 @@ def main():
     (run_dir / "run.json").write_text(json.dumps({
         "run": args.run, "model": args.model, "passes": args.passes, "jobs": args.jobs,
         "budget_usd": args.budget, "paper_budget_usd": args.paper_budget,
+        "objects": args.objects, "object_pages": args.object_pages,
         "sample": str(args.sample), "started": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
     }, indent=2) + "\n")
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:

@@ -87,6 +87,13 @@ impl LabelSidecar {
     }
 }
 
+/// Where `extract` reads the object inventory.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+enum ObjectSource {
+    Inline,
+    Chunked,
+}
+
 /// How `lit` should label edges, when asked to.
 struct LabelRun {
     sidecar: LabelSidecar,
@@ -245,8 +252,14 @@ enum Command {
         #[arg(long, default_value_t = lysilogy::paper_artifacts::resources::DEFAULT_DPI)]
         dpi: u32,
         /// No further model call starts once this paper has spent this much (USD).
-        #[arg(long, default_value_t = 0.25)]
+        #[arg(long, default_value_t = 0.15)]
         paper_budget_usd: f64,
+        /// Read figures, tables and equations in a separate chunked pass, or inside pass 1.
+        #[arg(long, value_enum, default_value = "chunked")]
+        objects: ObjectSource,
+        /// Pages per chunk for the chunked object pass.
+        #[arg(long, default_value_t = 6, value_parser = clap::value_parser!(u16).range(1..=50))]
+        object_pages: u16,
     },
     /// Analyze one paper selected by ID or an unambiguous title fragment.
     Analyze {
@@ -537,6 +550,8 @@ async fn run(cli: Cli) -> Result<()> {
             work,
             dpi,
             paper_budget_usd,
+            objects,
+            object_pages,
         } => {
             let pdf = match (pdf, query) {
                 (Some(pdf), _) => pdf,
@@ -563,6 +578,12 @@ async fn run(cli: Cli) -> Result<()> {
                 dpi,
                 paper_budget_usd,
                 timeout: std::time::Duration::from_secs(20 * 60),
+                objects: match objects {
+                    ObjectSource::Inline => lysilogy::paper_artifacts::run::ObjectMode::Inline,
+                    ObjectSource::Chunked => lysilogy::paper_artifacts::run::ObjectMode::Chunked {
+                        pages_per_chunk: usize::from(object_pages),
+                    },
+                },
             };
             let ledger = lysilogy::analysis::spend::SpendLedger::with_defaults();
             let record = lysilogy::paper_artifacts::run::extract(&options, &ledger).await?;
