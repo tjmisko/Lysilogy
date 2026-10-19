@@ -56,7 +56,7 @@ const CHECK_PROMPT: &str = include_str!("../../prompts/paper-artifacts-check.md"
 const REPAIR_PROMPT: &str = include_str!("../../prompts/paper-artifacts-repair.md");
 
 /// Bump when the record shape changes.
-const RECORD_VERSION: u16 = 4;
+const RECORD_VERSION: u16 = 5;
 
 /// Object chunks in flight at once.
 const CHUNK_CONCURRENCY: usize = 3;
