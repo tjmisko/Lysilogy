@@ -1,0 +1,55 @@
+{
+  "record_version": 4,
+  "started_at": "2026-10-19T20:55:05.287206873Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1812.00029v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 17,
+  "calls": [
+    {
+      "stage": "core",
+      "provider": "Together",
+      "finish_reason": "length",
+      "prompt_tokens": 12424,
+      "cached_tokens": 256,
+      "completion_tokens": 24576,
+      "reasoning_tokens": 12570,
+      "cost_usd": 0.033143136,
+      "cost_source": "reported",
+      "latency_s": 95.686353029
+    }
+  ],
+  "totals": {
+    "calls": 1,
+    "prompt_tokens": 12424,
+    "cached_tokens": 256,
+    "completion_tokens": 24576,
+    "cost_usd": 0.033143136,
+    "model_latency_s": 95.686353029,
+    "wall_s": 101.176484728
+  },
+  "budget_stopped": null,
+  "failures": [
+    {
+      "stage": "core",
+      "error": "output was cut off at the length limit",
+      "raw": "{\n  \"abstract\": {\n    \"confidence\":    \"high\",\n    \"page\": 1,\n    \"text\": \"Decision forests are popular tools for classification and regression. These forests naturally generate proximity matrices that measure the frequency of observations appearing in the same leaf node. While other kernels are known to have strong theoretical properties such as being characteristic, there is no similar result available for decision forest-based kernels. In addition, existing approaches to independence and k-sample testing may require unfeasibly large sample sizes and are not interpretable. In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests. We leverage this to introduce kernel mean embedding random forest (KMERF), which is a valid and consistent method for independence and k-sample testing. Our extensive simulations demonstrate that KMERF outperforms other tests across a variety of independence and two-sample testing scenarios. Additionally, the test is interpretable, and its key features are readily discernible. This work therefore demonstrates the existence of a test that is both more powerful and more interpretable than existing methods, flying in the face of conventional wisdom of the trade-off between the two.\"\n  },\n  \"card\": {\n    \"position\":   {\n      \"predecessors\":       [\n        {\n          \"cited_work\": \"Breiman [5] random forests\",\n          \"confidence\": \"high\",\n          \"evidence\": [\n            {\n              \"page\": 1,\n              \"quote\": \"Decision forests are ensemble method popularized by Breiman [5].\"\n            }\n          ],\n          \"reference_key\": \"5\",\n          \"why\": \"The paper builds KMERF directly on random forests and their proximity matrix.\"\n        },\n        {\n          \"cited_work\": \"Gretton et al. [12]\",\n          \"confidence\": \"high\",\n          \"evidence\": [\n            {\n              \"page\": 2,\n              \"quote"
+    }
+  ],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e1-markdown-2026-10-19/results/1812.00029v4.reasoning.jsonl",
+  "pass1": null,
+  "pass1_check": null,
+  "corrections": [],
+  "correction_outcomes": [],
+  "pass2_check": null,
+  "admission": [],
+  "admission_counts": {},
+  "artifacts": null
+}
