@@ -783,6 +783,8 @@ async fn object_pass(
                 } else {
                     first
                 };
+                // Keep only the kinds that were requested, whatever the model returned.
+                let objects = objects.map(|objects| keep_requested_kinds(objects, kinds));
                 (
                     ChunkObjects {
                         pages: chunk,
@@ -809,6 +811,19 @@ async fn object_pass(
     let results = answers.into_iter().map(|(chunk, _, _)| chunk).collect();
     let (inventory, merge) = objects::merge(results);
     (inventory, merge, records)
+}
+
+/// The objects whose kind was actually requested.
+fn keep_requested_kinds(objects: Vec<Value>, kinds: &[&str]) -> Vec<Value> {
+    objects
+        .into_iter()
+        .filter(|object| {
+            object
+                .get("kind")
+                .and_then(Value::as_str)
+                .is_some_and(|kind| kinds.contains(&kind))
+        })
+        .collect()
 }
 
 /// The equation numbers the text layer shows on each page of a chunk.
@@ -1281,6 +1296,18 @@ mod tests {
                 ContentPart::Png(_) => panic!("text passes must not send images"),
             }
         }
+    }
+
+    #[test]
+    fn should_keep_only_the_requested_object_kinds() {
+        let objects = vec![
+            serde_json::json!({"kind": "figure", "number": "1"}),
+            serde_json::json!({"kind": "equation", "number": "2"}),
+            serde_json::json!({"kind": "table", "number": "3"}),
+        ];
+        let kept = keep_requested_kinds(objects, &["figure", "equation"]);
+        assert_eq!(kept.len(), 2);
+        assert_eq!(kept[1]["kind"], "equation");
     }
 
     #[test]
