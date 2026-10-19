@@ -79,6 +79,9 @@ pub struct Call {
     /// A tier name in `models`, or a literal model id.
     #[serde(default)]
     pub model: Option<String>,
+    /// The most output tokens for this call; defaults by field kind.
+    #[serde(default)]
+    pub max_tokens: Option<u32>,
     /// `all`, `front`, or `firstN`, e.g. `first3`.
     #[serde(default)]
     pub scope: Option<String>,

@@ -792,6 +792,25 @@ pub fn is_unit(name: &str) -> bool {
     unit_schema(name).is_some()
 }
 
+/// Whether a config field name is one of the nine core fields.
+#[must_use]
+fn is_core_field(name: &str) -> bool {
+    super::core_fields::CORE_FIELDS
+        .iter()
+        .any(|field| field.name == name)
+}
+
+/// The output ceiling for a plan call: explicit, else by the fields it carries.
+fn plan_max_tokens(call: &super::config::Call) -> u32 {
+    call.max_tokens.unwrap_or_else(|| {
+        if call.fields.iter().any(|field| is_core_field(field)) {
+            CORE_MAX_TOKENS
+        } else {
+            FEATURE_MAX_TOKENS
+        }
+    })
+}
+
 fn unit_schema(name: &str) -> Option<&'static str> {
     Some(match name {
         "identity" => IDENTITY_SCHEMA,
@@ -911,13 +930,14 @@ async fn run_plan(
         }
         parts.push(ContentPart::Text(instruction));
         let model = plan.model_for(call);
+        let max_tokens = plan_max_tokens(call);
         let value = session
             .call_with::<Value>(
                 &call.name,
                 None,
                 &parts,
                 &schema,
-                FEATURE_MAX_TOKENS,
+                max_tokens,
                 &model,
                 call.effort.reasoning(),
             )
@@ -1835,12 +1855,39 @@ mod tests {
     }
 
     #[test]
+    fn should_size_a_plan_call_by_the_fields_it_carries() {
+        let make = |name: &str, field: &str, max_tokens: Option<u32>| {
+            crate::paper_artifacts::config::Call {
+                name: name.to_owned(),
+                fields: vec![field.to_owned()],
+                effort: crate::paper_artifacts::config::Effort::Low,
+                model: None,
+                max_tokens,
+                scope: None,
+            }
+        };
+        assert_eq!(
+            plan_max_tokens(&make("core", "sections", None)),
+            CORE_MAX_TOKENS
+        );
+        assert_eq!(
+            plan_max_tokens(&make("feature", "analysis", None)),
+            FEATURE_MAX_TOKENS
+        );
+        assert_eq!(
+            plan_max_tokens(&make("short", "identity", Some(4_096))),
+            4_096
+        );
+    }
+
+    #[test]
     fn should_union_the_schemas_of_a_call() {
         let call = crate::paper_artifacts::config::Call {
             name: "graph".to_owned(),
             fields: vec!["references".to_owned(), "citations".to_owned()],
             effort: crate::paper_artifacts::config::Effort::Low,
             model: None,
+            max_tokens: None,
             scope: None,
         };
         let schema = call_schema(&call);
