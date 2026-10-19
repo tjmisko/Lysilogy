@@ -9,6 +9,7 @@ Rules:
 - **Not objects:** a mention in the running text ("as shown in Figure 3", "by (12)") is not the object. Only the printed caption or the equation number itself counts.
 - `page` is the page where the caption or the equation number is printed.
 - For every object give a short plain-language meaning, why it matters in the paper, and the pages you can see referring to it (leave the list empty if none are in view).
+- **Checklist.** After the pages comes a checklist of equation numbers that the text layer shows on them, by page. It is a hint, not truth: it can include years, citation numbers, or references to equations printed elsewhere, and it misses numbers the text layer garbles. Check every entry against the page images: list each one that is a displayed equation number on these pages, skip the rest, and add any numbered equations the checklist missed.
 - An empty list is the right answer when these pages print no objects.
 
 Return only the JSON object.

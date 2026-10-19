@@ -18,6 +18,98 @@ pub fn page_chunks(pages: &[u32], size: usize) -> Vec<Vec<u32>> {
     pages.chunks(size.max(1)).map(<[u32]>::to_vec).collect()
 }
 
+/// Equation numbers the text layer shows at the end of a line, in order,
+/// without repeats: `(12)`, `(2.7)`, `(A.3)`, `(B1)`, `(4b)`.
+///
+/// A checklist for the model, not truth: a reference to an equation that ends
+/// a line also matches, and years are skipped.
+#[must_use]
+pub fn equation_candidates(page_text: &str) -> Vec<String> {
+    let mut found = Vec::<String>::new();
+    for line in page_text.lines() {
+        let line = line.trim_end();
+        let Some(body) = line.strip_suffix(')') else {
+            continue;
+        };
+        let Some(open) = body.rfind('(') else {
+            continue;
+        };
+        // `f(x)` is not a label: the number must stand apart from the text.
+        if open > 0 && !body[..open].ends_with(char::is_whitespace) {
+            continue;
+        }
+        let label = &body[open + 1..];
+        if is_equation_label(label) && !found.iter().any(|seen| seen == label) {
+            found.push(label.to_owned());
+        }
+    }
+    found
+}
+
+fn is_equation_label(label: &str) -> bool {
+    let rest = label
+        .strip_prefix(|c: char| c.is_ascii_uppercase())
+        .map_or(label, |rest| rest.strip_prefix('.').unwrap_or(rest));
+    let rest = rest
+        .strip_suffix(|c: char| c.is_ascii_lowercase())
+        .unwrap_or(rest);
+    let mut parts = rest.split('.');
+    let Some(first) = parts.next() else {
+        return false;
+    };
+    let digits = |part: &str| {
+        !part.is_empty() && part.len() <= 3 && part.bytes().all(|b| b.is_ascii_digit())
+    };
+    // Four-digit numbers are years, not equation numbers.
+    digits(first) && parts.all(digits)
+}
+
+/// Whether a chunk answer is worth one retry: the call failed, or it listed
+/// fewer than half the equation numbers its checklist found (when the
+/// checklist found at least `RETRY_MINIMUM_CANDIDATES`).
+#[must_use]
+pub fn needs_retry(objects: Option<&[Value]>, candidates: usize) -> bool {
+    let Some(objects) = objects else {
+        return true;
+    };
+    candidates >= RETRY_MINIMUM_CANDIDATES && numbered_equations(objects) * 2 < candidates
+}
+
+/// The better of two chunk answers: the one with more numbered objects; the
+/// first on a tie.
+#[must_use]
+pub fn better(first: Option<Vec<Value>>, second: Option<Vec<Value>>) -> Option<Vec<Value>> {
+    match (first, second) {
+        (Some(first), Some(second)) => {
+            if numbered(&second) > numbered(&first) {
+                Some(second)
+            } else {
+                Some(first)
+            }
+        }
+        (first, second) => first.or(second),
+    }
+}
+
+/// Fewer checklist candidates than this never trigger a retry on their own.
+pub const RETRY_MINIMUM_CANDIDATES: usize = 4;
+
+fn numbered(objects: &[Value]) -> usize {
+    objects
+        .iter()
+        .filter(|object| !normalized_number(object).is_empty())
+        .count()
+}
+
+fn numbered_equations(objects: &[Value]) -> usize {
+    objects
+        .iter()
+        .filter(|object| {
+            text(object, "kind") == "equation" && !normalized_number(object).is_empty()
+        })
+        .count()
+}
+
 /// What merging kept and discarded, for the run record.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize)]
 pub struct MergeStats {
@@ -140,6 +232,57 @@ mod tests {
             pages: pages.to_vec(),
             objects: Some(objects),
         }
+    }
+
+    #[test]
+    fn should_find_equation_numbers_that_end_a_line() {
+        let text = "V(φ) = 1/2 Tr[φ, φ†].   (1.1)\nin the vacuum\nφ = a σ3, (1.3)\nx = y (A.3)\n z (B1)\nw (4b)\n";
+        assert_eq!(equation_candidates(text), ["1.1", "1.3", "A.3", "B1", "4b"]);
+    }
+
+    #[test]
+    fn should_skip_years_function_calls_and_repeats() {
+        let text =
+            "Phys. Rev. Lett. 117 (2016)\nwhere f(x)\nsee (12)\nas in (12)\n(Smith)\n(iii)\n()\n";
+        assert_eq!(equation_candidates(text), ["12"]);
+    }
+
+    #[test]
+    fn should_accept_a_number_alone_on_its_line() {
+        assert_eq!(equation_candidates("(7)\n  (8)  \n"), ["7", "8"]);
+    }
+
+    #[test]
+    fn should_retry_a_failed_chunk_or_one_that_lists_under_half_its_checklist() {
+        let two = vec![object("equation", "1", 1), object("equation", "2", 1)];
+        assert!(needs_retry(None, 0));
+        assert!(needs_retry(Some(&two), 5));
+        assert!(!needs_retry(Some(&two), 4));
+        assert!(
+            !needs_retry(Some(&[]), 3),
+            "a short checklist alone never retries"
+        );
+        let figures = vec![
+            object("figure", "1", 1),
+            object("figure", "2", 1),
+            object("figure", "3", 1),
+        ];
+        assert!(
+            needs_retry(Some(&figures), 4),
+            "figures do not count toward equations"
+        );
+    }
+
+    #[test]
+    fn should_keep_the_answer_with_more_numbered_objects() {
+        let one = Some(vec![object("equation", "1", 1)]);
+        let two = Some(vec![object("equation", "1", 1), object("equation", "2", 1)]);
+        assert_eq!(better(one.clone(), two.clone()), two);
+        assert_eq!(better(two.clone(), one.clone()), two);
+        assert_eq!(better(one.clone(), one.clone()), one);
+        assert_eq!(better(None, one.clone()), one);
+        assert_eq!(better(one.clone(), None), one);
+        assert_eq!(better(None, None), None);
     }
 
     #[test]

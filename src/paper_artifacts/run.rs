@@ -50,6 +50,13 @@ const RECORD_VERSION: u16 = 2;
 /// Object chunks in flight at once.
 const CHUNK_CONCURRENCY: usize = 3;
 
+// Output ceilings per call, reasoning included, so a looping answer fails
+// fast instead of running to the provider limit (131k tokens, 16 cents).
+const PASS1_MAX_TOKENS: u32 = 65_536;
+const CHECK_MAX_TOKENS: u32 = 49_152;
+const OBJECTS_MAX_TOKENS: u32 = 32_768;
+const REPAIR_MAX_TOKENS: u32 = 32_768;
+
 /// The most pages sent with a repair request.
 const REPAIR_PAGE_LIMIT: usize = 10;
 
@@ -99,6 +106,10 @@ pub struct ChunkRecord {
     pub last_page: u32,
     /// Objects returned before merging; `None` when the call failed.
     pub objects: Option<usize>,
+    /// Equation numbers the text-layer checklist offered.
+    pub checklist: usize,
+    /// The first answer failed or listed under half the checklist.
+    pub retried: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -261,6 +272,7 @@ impl<'a> Session<'a> {
         stage: &str,
         parts: &[ContentPart],
         schema: &str,
+        max_tokens: u32,
     ) -> Option<T> {
         if !self.within_budget(stage) {
             return None;
@@ -277,6 +289,7 @@ impl<'a> Session<'a> {
             parts,
             schema: &schema,
             stage,
+            max_tokens: Some(max_tokens),
         };
         let completion = match openrouter::complete(&self.client, self.ledger, &request).await {
             Ok(completion) => completion,
@@ -491,7 +504,7 @@ async fn self_check(
     ];
     parts.extend(pages.iter().cloned());
     let Some(response) = session
-        .call::<CheckResponse>("extract.pass2", &parts, CHECK_SCHEMA)
+        .call::<CheckResponse>("extract.pass2", &parts, CHECK_SCHEMA, CHECK_MAX_TOKENS)
         .await
     else {
         return Ok(SelfCheck::default());
@@ -518,7 +531,12 @@ async fn first_pass(
             )];
             parts.extend(pages.iter().cloned());
             let pass1 = session
-                .call::<Value>("extract.pass1", &parts, PAPER_ARTIFACTS_SCHEMA)
+                .call::<Value>(
+                    "extract.pass1",
+                    &parts,
+                    PAPER_ARTIFACTS_SCHEMA,
+                    PASS1_MAX_TOKENS,
+                )
                 .await;
             (pass1, Vec::new(), None)
         }
@@ -528,7 +546,7 @@ async fn first_pass(
             )];
             parts.extend(pages.iter().cloned());
             let (core, (inventory, merge, chunks)) = tokio::join!(
-                session.call::<Value>("extract.pass1", &parts, CORE_SCHEMA),
+                session.call::<Value>("extract.pass1", &parts, CORE_SCHEMA, PASS1_MAX_TOKENS),
                 object_pass(session, resources, pages, pages_per_chunk),
             );
             let pass1 = core.map(|mut core| {
@@ -561,34 +579,94 @@ async fn object_pass(
         .into_iter()
         .map(|chunk| {
             // `pages` holds a text part and an image part per page, in order.
+            let chunk_pages = &resources.paper.pages[start..start + chunk.len()];
             let mut parts = vec![ContentPart::Text(OBJECTS_PROMPT.to_owned())];
             parts.extend(pages[start * 2..(start + chunk.len()) * 2].iter().cloned());
+            parts.push(ContentPart::Text(checklist(chunk_pages)));
+            let candidates = chunk_pages
+                .iter()
+                .map(|page| objects::equation_candidates(&page.text).len())
+                .sum::<usize>();
             start += chunk.len();
-            (chunk, parts)
+            (chunk, parts, candidates)
         })
         .collect::<Vec<_>>();
-    let results = stream::iter(requests.into_iter().map(|(chunk, parts)| async move {
-        let response = session
-            .call::<ObjectsResponse>("extract.objects", &parts, OBJECTS_SCHEMA)
-            .await;
-        ChunkObjects {
-            pages: chunk,
-            objects: response.map(|response| response.objects),
-        }
-    }))
+    let answers = stream::iter(
+        requests
+            .into_iter()
+            .map(|(chunk, parts, candidates)| async move {
+                let ask = |stage| {
+                    let parts = &parts;
+                    async move {
+                        session
+                            .call::<ObjectsResponse>(
+                                stage,
+                                parts,
+                                OBJECTS_SCHEMA,
+                                OBJECTS_MAX_TOKENS,
+                            )
+                            .await
+                            .map(|response| response.objects)
+                    }
+                };
+                let first = ask("extract.objects").await;
+                let retried = objects::needs_retry(first.as_deref(), candidates);
+                let objects = if retried {
+                    objects::better(first, ask("extract.objects.retry").await)
+                } else {
+                    first
+                };
+                (
+                    ChunkObjects {
+                        pages: chunk,
+                        objects,
+                    },
+                    candidates,
+                    retried,
+                )
+            }),
+    )
     .buffered(CHUNK_CONCURRENCY)
     .collect::<Vec<_>>()
     .await;
-    let records = results
+    let records = answers
         .iter()
-        .map(|chunk| ChunkRecord {
+        .map(|(chunk, candidates, retried)| ChunkRecord {
             first_page: chunk.pages.first().copied().unwrap_or_default(),
             last_page: chunk.pages.last().copied().unwrap_or_default(),
             objects: chunk.objects.as_ref().map(Vec::len),
+            checklist: *candidates,
+            retried: *retried,
         })
         .collect();
+    let results = answers.into_iter().map(|(chunk, _, _)| chunk).collect();
     let (inventory, merge) = objects::merge(results);
     (inventory, merge, records)
+}
+
+/// The equation numbers the text layer shows on each page of a chunk.
+fn checklist(pages: &[crate::domain::ExtractedPage]) -> String {
+    use std::fmt::Write as _;
+    let mut text = "Checklist of equation numbers in the text layer:".to_owned();
+    let mut any = false;
+    for page in pages {
+        let candidates = objects::equation_candidates(&page.text);
+        if candidates.is_empty() {
+            continue;
+        }
+        any = true;
+        let labels = candidates
+            .iter()
+            .map(|label| format!("({label})"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        // Writing to a String cannot fail.
+        let _ = write!(text, "\n- page {}: {labels}", page.number);
+    }
+    if !any {
+        text.push_str(" none found.");
+    }
+    text
 }
 
 /// Each page's text followed by its image.
@@ -743,7 +821,7 @@ async fn request_repairs(
             }),
     );
     session
-        .call::<RepairResponse>("extract.repair", &parts, REPAIR_SCHEMA)
+        .call::<RepairResponse>("extract.repair", &parts, REPAIR_SCHEMA, REPAIR_MAX_TOKENS)
         .await
         .map(|response| {
             response
@@ -886,6 +964,7 @@ mod tests {
                 "extract.pass2",
                 &[ContentPart::Text("x".to_owned())],
                 CHECK_SCHEMA,
+                CHECK_MAX_TOKENS,
             )
             .await;
         assert!(value.is_none());
@@ -894,6 +973,23 @@ mod tests {
         assert!(
             session.state().failures.is_empty(),
             "a budget stop is not a failure"
+        );
+    }
+
+    #[test]
+    fn should_list_candidates_by_page_and_say_when_there_are_none() {
+        let resources = resources();
+        assert_eq!(
+            checklist(&resources.paper.pages),
+            "Checklist of equation numbers in the text layer: none found."
+        );
+        let pages = [crate::domain::ExtractedPage {
+            number: 4,
+            text: "a = b (3)\nc = d (4)".to_owned(),
+        }];
+        assert_eq!(
+            checklist(&pages),
+            "Checklist of equation numbers in the text layer:\n- page 4: (3) (4)"
         );
     }
 
@@ -922,9 +1018,14 @@ mod tests {
         assert_eq!(
             chunks
                 .iter()
-                .map(|chunk| (chunk.first_page, chunk.last_page, chunk.objects))
+                .map(|chunk| (
+                    chunk.first_page,
+                    chunk.last_page,
+                    chunk.objects,
+                    chunk.retried
+                ))
                 .collect::<Vec<_>>(),
-            [(1, 1, None), (2, 2, None)]
+            [(1, 1, None, true), (2, 2, None, true)]
         );
         let state = session.into_state();
         assert!(state.calls.is_empty());

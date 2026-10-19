@@ -37,6 +37,8 @@ pub struct ChatRequest<'a> {
     pub schema: &'a Value,
     /// The substage this call belongs to, for the spend ledger.
     pub stage: &'a str,
+    /// The most output tokens, reasoning included, before the call is cut off.
+    pub max_tokens: Option<u32>,
 }
 
 /// Where a recorded cost came from.
@@ -78,7 +80,7 @@ pub fn request_body(request: &ChatRequest<'_>) -> Value {
         [ContentPart::Text(text)] => Value::String(text.clone()),
         parts => Value::Array(parts.iter().map(content_part).collect()),
     };
-    json!({
+    let mut body = json!({
         "model": request.model,
         "messages": [{"role": "user", "content": content}],
         "response_format": {
@@ -86,7 +88,11 @@ pub fn request_body(request: &ChatRequest<'_>) -> Value {
             "json_schema": {"name": "result", "strict": true, "schema": request.schema},
         },
         "usage": {"include": true},
-    })
+    });
+    if let Some(max_tokens) = request.max_tokens {
+        body["max_tokens"] = json!(max_tokens);
+    }
+    body
 }
 
 fn content_part(part: &ContentPart) -> Value {
@@ -260,6 +266,7 @@ mod tests {
             parts: &parts,
             schema: &schema,
             stage: "test",
+            max_tokens: None,
         });
         assert_eq!(body["model"], DEFAULT_MODEL);
         assert_eq!(body["messages"][0]["content"], "hello");
@@ -280,6 +287,7 @@ mod tests {
             parts: &parts,
             schema: &schema,
             stage: "test",
+            max_tokens: None,
         });
         let content = body["messages"][0]["content"]
             .as_array()
@@ -304,8 +312,25 @@ mod tests {
             parts: &parts,
             schema: &schema,
             stage: "test",
+            max_tokens: None,
         });
         assert!(body["messages"][0]["content"].is_array());
+    }
+
+    #[test]
+    fn should_send_max_tokens_only_when_a_ceiling_is_set() {
+        let schema = schema();
+        let parts = [ContentPart::Text("hello".to_owned())];
+        let mut request = ChatRequest {
+            model: DEFAULT_MODEL,
+            parts: &parts,
+            schema: &schema,
+            stage: "test",
+            max_tokens: None,
+        };
+        assert!(request_body(&request).get("max_tokens").is_none());
+        request.max_tokens = Some(32_768);
+        assert_eq!(request_body(&request)["max_tokens"], 32_768);
     }
 
     #[test]
