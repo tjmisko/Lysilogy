@@ -73,6 +73,7 @@ def main():
                         help="pin a provider, in order; repeat to allow several")
     parser.add_argument("--object-pages", type=int, default=6)
     parser.add_argument("--sample", type=Path, default=Path("eval/spike/sample.json"))
+    parser.add_argument("--subset", help="comma-separated paper stems to keep from the sample")
     parser.add_argument("--pdf-dir", type=Path,
                         help="run over every PDF in this directory instead of the sample (no oracle truth)")
     parser.add_argument("--api-key-file", type=Path,
@@ -93,6 +94,9 @@ def main():
         [{"stem": pdf.stem, "pdf": str(pdf)} for pdf in sorted(args.pdf_dir.glob("*.pdf"))]
         if args.pdf_dir else json.loads(args.sample.read_text())["papers"]
     )
+    if args.subset:
+        wanted = {stem.strip() for stem in args.subset.split(",") if stem.strip()}
+        papers = [paper for paper in papers if paper["stem"] in wanted]
     run_dir = Path("eval/spike/runs") / args.run
     for sub in ("results", "logs", "empty-library"):
         (run_dir / sub).mkdir(parents=True, exist_ok=True)
@@ -102,6 +106,7 @@ def main():
         "features": args.features, "object_pages": args.object_pages, "reasoning": args.reasoning,
         "core_mode": args.core_mode, "providers": args.providers,
         "config": str(args.config) if args.config else None,
+        "subset": args.subset,
         "sample": str(args.sample), "pdf_dir": str(args.pdf_dir) if args.pdf_dir else None,
         "started": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
     }, indent=2) + "\n")
