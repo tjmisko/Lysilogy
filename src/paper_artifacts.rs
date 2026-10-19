@@ -12,6 +12,7 @@ pub mod features;
 pub mod objects;
 pub mod resources;
 pub mod run;
+pub mod schema;
 
 /// The whole-paper artifacts a model fills in one pass, with every feature on.
 pub const PAPER_ARTIFACTS_SCHEMA: &str = include_str!("../prompts/paper-artifacts.schema.json");

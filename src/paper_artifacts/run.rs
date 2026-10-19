@@ -504,12 +504,14 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
 
     let check_pass = match draft.as_mut() {
         Some(current) if options.passes == 2 => {
+            let schema = draft_schema(options.features);
             self_check(
                 current,
                 &text,
                 &source,
                 &session,
                 options.features.any_objects(),
+                &schema,
             )
             .await?
         }
@@ -627,6 +629,7 @@ async fn self_check(
     source: &SourceText<'_>,
     session: &Session<'_>,
     hide_objects: bool,
+    schema: &Value,
 ) -> Result<SelfCheck> {
     // Objects are verified against the page images elsewhere; the text-only
     // self-check spends nothing on them.
@@ -650,7 +653,8 @@ async fn self_check(
     else {
         return Ok(SelfCheck::default());
     };
-    let outcomes = corrections::apply(draft, &response.corrections, source);
+    let outcomes =
+        corrections::apply_with_schema(draft, &response.corrections, source, Some(schema));
     Ok(SelfCheck {
         corrections: response.corrections,
         outcomes,
@@ -849,6 +853,52 @@ fn merge_fields(draft: &mut serde_json::Map<String, Value>, fields: &Value) {
             }
         } else {
             draft.insert(key.clone(), value.clone());
+        }
+    }
+}
+
+/// The schema for a draft, so a self-check correction can be validated against
+/// the shape the app expects. Feature fields are added when the feature ran.
+fn draft_schema(features: Features) -> Value {
+    let mut base: Value = serde_json::from_str(CORE_SCHEMA).unwrap_or(Value::Null);
+    if features.any_objects() {
+        merge_properties(&mut base, OBJECTS_SCHEMA);
+    }
+    if features.supercut {
+        merge_properties(&mut base, SUPERCUT_SCHEMA);
+    }
+    if features.analysis {
+        merge_properties(&mut base, ANALYSIS_SCHEMA);
+    }
+    if features.glossary {
+        merge_properties(&mut base, GLOSSARY_SCHEMA);
+    }
+    base
+}
+
+/// Add the properties and required keys of `extra` to `base`.
+fn merge_properties(base: &mut Value, extra: &str) {
+    let Ok(extra) = serde_json::from_str::<Value>(extra) else {
+        return;
+    };
+    let Some(extra_properties) = extra.get("properties").and_then(Value::as_object) else {
+        return;
+    };
+    if let Some(base_properties) = base.get_mut("properties").and_then(Value::as_object_mut) {
+        for (key, value) in extra_properties {
+            base_properties.insert(key.clone(), value.clone());
+        }
+    }
+    let extra_required = extra
+        .get("required")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    if let Some(base_required) = base.get_mut("required").and_then(Value::as_array_mut) {
+        for key in extra_required {
+            if !base_required.contains(&key) {
+                base_required.push(key);
+            }
         }
     }
 }

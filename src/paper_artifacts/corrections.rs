@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::admission::{LOCAL_REPAIR_SIMILARITY, SourceText, Verdict};
+use super::schema::{subschema_at, validate};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct CheckResponse {
@@ -70,6 +71,20 @@ pub fn apply(
     corrections: &[Correction],
     source: &SourceText<'_>,
 ) -> Vec<CorrectionOutcome> {
+    apply_with_schema(draft, corrections, source, None)
+}
+
+/// Like `apply`, but each replacement and addition must keep the draft valid
+/// against `schema`.
+///
+/// A correction cannot write a shape the app cannot read. `None` skips the
+/// check, for a caller with no schema.
+pub fn apply_with_schema(
+    draft: &mut Value,
+    corrections: &[Correction],
+    source: &SourceText<'_>,
+    schema: Option<&Value>,
+) -> Vec<CorrectionOutcome> {
     let mut outcomes = Vec::with_capacity(corrections.len());
     let mut removals = Vec::<(usize, String)>::new();
     let order = [Action::Flag, Action::Replace, Action::Add, Action::Remove];
@@ -92,8 +107,8 @@ pub fn apply(
                 Err(reason) => Outcome::Rejected(reason),
                 Ok(()) => match action {
                     Action::Flag => Outcome::Flagged,
-                    Action::Replace => replace(draft, correction),
-                    Action::Add => add(draft, correction),
+                    Action::Replace => replace(draft, correction, schema),
+                    Action::Add => add(draft, correction, schema),
                     Action::Remove => {
                         let outcome = removable(draft, &correction.path);
                         if outcome == Outcome::Applied {
@@ -181,7 +196,7 @@ fn parsed_value(correction: &Correction) -> Result<Value, Outcome> {
         .map_err(|error| Outcome::Rejected(format!("value_json is not JSON: {error}")))
 }
 
-fn replace(draft: &mut Value, correction: &Correction) -> Outcome {
+fn replace(draft: &mut Value, correction: &Correction, schema: Option<&Value>) -> Outcome {
     if correction.path.is_empty() || correction.path == "/" {
         return Outcome::Rejected("cannot replace the whole draft".to_owned());
     }
@@ -189,6 +204,12 @@ fn replace(draft: &mut Value, correction: &Correction) -> Outcome {
         Ok(value) => value,
         Err(outcome) => return outcome,
     };
+    if let Some(schema) = schema
+        && let Some(sub) = subschema_at(schema, &correction.path)
+        && let Err(reason) = validate(&value, sub)
+    {
+        return Outcome::Rejected(format!("value does not match the schema: {reason}"));
+    }
     let Some(slot) = draft.pointer_mut(&correction.path) else {
         return Outcome::Rejected("path does not exist".to_owned());
     };
@@ -199,11 +220,17 @@ fn replace(draft: &mut Value, correction: &Correction) -> Outcome {
     Outcome::Applied
 }
 
-fn add(draft: &mut Value, correction: &Correction) -> Outcome {
+fn add(draft: &mut Value, correction: &Correction, schema: Option<&Value>) -> Outcome {
     let value = match parsed_value(correction) {
         Ok(value) => value,
         Err(outcome) => return outcome,
     };
+    if let Some(schema) = schema
+        && let Some(items) = subschema_at(schema, &correction.path).and_then(|sub| sub.get("items"))
+        && let Err(reason) = validate(&value, items)
+    {
+        return Outcome::Rejected(format!("value does not match the schema: {reason}"));
+    }
     let Some(Value::Array(items)) = draft.pointer_mut(&correction.path) else {
         return Outcome::Rejected("add must point at an array".to_owned());
     };
@@ -563,5 +590,43 @@ mod tests {
                 .collect::<Vec<_>>(),
             [0, 1, 2]
         );
+    }
+
+    #[test]
+    fn should_reject_a_schema_shaped_replacement_that_loses_required_fields() {
+        let pages = pages();
+        let mut value = draft();
+        let schema = json!({
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "sections": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["title", "pages"],
+                        "properties": {
+                            "title": {"type": "string"},
+                            "pages": {"type": "object"}
+                        }
+                    }
+                }
+            }
+        });
+        let malformed = "[{\"title\":\"Intro\"}]";
+        let outcomes = apply_with_schema(
+            &mut value,
+            &[correction(
+                "/sections",
+                Action::Replace,
+                Some(malformed),
+                TITLE,
+            )],
+            &SourceText::new(&pages),
+            Some(&schema),
+        );
+        assert!(matches!(outcomes[0].outcome, Outcome::Rejected(_)));
+        assert!(value.get("sections").is_none());
     }
 }
