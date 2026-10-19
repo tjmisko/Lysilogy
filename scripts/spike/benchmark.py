@@ -166,6 +166,11 @@ def score_paper(paper, record, oracle, inventory, bibliography):
         "counts": {key: len((final or {}).get(key) or []) for key in ("supercut", "claims", "key_numbers", "citations", "relations", "notation", "glossary")},
         "type": ((final or {}).get("type") or {}).get("value"),
         "read_signal": (((final or {}).get("card") or {}).get("read_signal") or {}).get("judgment"),
+        "object_mode": record.get("object_mode", "inline"),
+        "object_chunks": len(record.get("object_chunks") or []),
+        "object_retries": sum(1 for chunk in record.get("object_chunks") or [] if chunk.get("retried")),
+        "recovered_failures": len(record.get("recovered_failures") or []),
+        "object_merge": record.get("object_merge"),
         "pass1_check": record.get("pass1_check"),
         "pass2_check": record.get("pass2_check"),
         "corrections": dict(corrections),
@@ -235,6 +240,13 @@ def aggregate(rows):
             stage_costs[call["stage"]] += call["cost_usd"]
     summary["cost_by_stage"] = {stage: round(value, 4) for stage, value in stage_costs.items()}
     summary["failures"] = [(row["stem"], failure["stage"], failure["error"][:120]) for row in rows for failure in row.get("failures") or []]
+    summary["object_chunks"] = {
+        "chunks": sum(row.get("object_chunks", 0) for row in scored),
+        "retries": sum(row.get("object_retries", 0) for row in scored),
+        "recovered_failures": sum(row.get("recovered_failures", 0) for row in scored),
+    }
+    over = [row["stem"] for row in scored if (row.get("cost_usd") or 0) > 0.15]
+    summary["papers_over_15_cents"] = over
     return summary
 
 
