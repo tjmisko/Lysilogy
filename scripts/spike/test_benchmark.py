@@ -112,5 +112,40 @@ class AggregateTests(unittest.TestCase):
         self.assertEqual(summary["failures"], [("y", "run", "no result file")])
 
 
+class ReasoningTests(unittest.TestCase):
+    def test_should_sum_reasoning_tokens_per_stage(self):
+        record = {
+            "calls": [
+                {"stage": "extract.pass1", "reasoning_tokens": 100, "completion_tokens": 200},
+                {"stage": "extract.pass1", "reasoning_tokens": 50, "completion_tokens": 100},
+                {"stage": "extract.pass2", "reasoning_tokens": 30, "completion_tokens": 60},
+            ]
+        }
+        profile = b.reasoning_profile(record)
+        self.assertEqual(profile["tokens"], 180)
+        self.assertEqual(profile["by_stage"], {"extract.pass1": 150, "extract.pass2": 30})
+        self.assertEqual(profile["share"], 0.5)
+
+    def test_should_flag_a_stage_that_spends_far_more_reasoning_than_the_cohort(self):
+        def row(stem, tokens):
+            return {"stem": stem, "identity": {}, "reasoning_profile": {"tokens": tokens, "by_stage": {"extract.pass1": tokens}}}
+
+        rows = [row("a", 10_000), row("b", 11_000), row("c", 40_000)]
+        medians = b.mark_confused(rows)
+        self.assertEqual(medians["extract.pass1"], 11_000)
+        self.assertTrue(rows[2]["confused"])
+        self.assertFalse(rows[0]["confused"])
+
+    def test_should_not_flag_a_stage_below_the_floor_even_when_it_dominates(self):
+        rows = [{"stem": "a", "identity": {}, "reasoning_profile": {"tokens": 100, "by_stage": {"extract.repair": 100}}}]
+        b.mark_confused(rows)
+        self.assertFalse(rows[0]["confused"])
+
+    def test_should_leave_a_failed_paper_without_a_confusion_judgment(self):
+        rows = [{"stem": "y", "succeeded": False, "failures": []}]
+        b.mark_confused(rows)
+        self.assertIsNone(rows[0]["confused"])
+
+
 if __name__ == "__main__":
     unittest.main()

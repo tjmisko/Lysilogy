@@ -31,6 +31,11 @@ from parser import parse_project  # noqa: E402
 KINDS = ("figure", "table", "algorithm", "equation")
 ABSTRACT_MATCH_F1 = 0.95
 
+# A paper is "confused" at a stage when the model spends at least this many
+# reasoning tokens there and at least this multiple of the cohort's median.
+CONFUSED_FACTOR = 2.0
+CONFUSED_FLOOR = 8_000
+
 
 def fold(text):
     text = unicodedata.normalize("NFKD", text or "")
@@ -141,7 +146,40 @@ def quote_stats(record):
     return {kind: dict(counts) for kind, counts in by_kind.items()}
 
 
-def score_paper(paper, record, oracle, inventory, bibliography):
+def reasoning_profile(record, result_file=None):
+    """Reasoning tokens per stage, and trace characters when the trace exists."""
+    by_stage = Counter()
+    completion = 0
+    for call in record.get("calls") or []:
+        by_stage[call["stage"]] += call.get("reasoning_tokens") or 0
+        completion += call.get("completion_tokens") or 0
+    total = sum(by_stage.values())
+    path = None
+    if record.get("reasoning_trace"):
+        path = Path(record["reasoning_trace"])
+    elif result_file is not None:
+        result_file = Path(result_file)
+        path = result_file.with_name(f"{result_file.stem}.reasoning.jsonl")
+    chars = None
+    chars_by_stage = {}
+    if path is not None and path.exists():
+        for line in path.read_text().splitlines():
+            if not line.strip():
+                continue
+            trace = json.loads(line)
+            chars_by_stage[trace["stage"]] = chars_by_stage.get(trace["stage"], 0) + len(trace["text"])
+        chars = sum(chars_by_stage.values())
+    return {
+        "tokens": total,
+        "by_stage": dict(by_stage),
+        "completion_tokens": completion,
+        "share": round(total / completion, 3) if completion else None,
+        "chars": chars,
+        "chars_by_stage": chars_by_stage,
+    }
+
+
+def score_paper(paper, record, oracle, inventory, bibliography, result_file=None):
     final = record.get("artifacts")
     pass1 = record.get("pass1")
     corrections = Counter(outcome["status"] for outcome in record.get("correction_outcomes") or [])
@@ -169,6 +207,7 @@ def score_paper(paper, record, oracle, inventory, bibliography):
         "features": record.get("features", ""),
         "reasoning": record.get("reasoning", ""),
         "reasoning_trace": record.get("reasoning_trace"),
+        "reasoning_profile": reasoning_profile(record, result_file),
         "object_chunks": len(record.get("object_chunks") or []),
         "object_retries": sum(1 for chunk in record.get("object_chunks") or [] if chunk.get("retried")),
         "recovered_failures": len(record.get("recovered_failures") or []),
@@ -188,6 +227,36 @@ def mean(values):
 def rate(values):
     values = [bool(value) for value in values if value is not None]
     return f"{sum(values)}/{len(values)}" if values else "-"
+
+
+def mark_confused(rows, factor=CONFUSED_FACTOR, floor=CONFUSED_FLOOR):
+    """Flag the stages where a paper spends far more reasoning than its cohort."""
+    profiles = [row["reasoning_profile"] for row in rows if row.get("reasoning_profile")]
+    stages = set()
+    for profile in profiles:
+        stages.update(profile["by_stage"])
+    medians = {}
+    for stage in stages:
+        values = [profile["by_stage"][stage] for profile in profiles if stage in profile["by_stage"]]
+        medians[stage] = statistics.median(values) if values else 0
+    for row in rows:
+        profile = row.get("reasoning_profile")
+        if not profile:
+            row["confused"] = None
+            continue
+        flagged = []
+        for stage, tokens in profile["by_stage"].items():
+            median = medians.get(stage, 0)
+            if tokens >= max(floor, factor * median):
+                flagged.append({
+                    "stage": stage,
+                    "tokens": tokens,
+                    "median": median,
+                    "ratio": round(tokens / median, 2) if median else None,
+                })
+        row["confused"] = bool(flagged)
+        row["confused_stages"] = flagged
+    return medians
 
 
 def aggregate(rows):
@@ -249,13 +318,40 @@ def aggregate(rows):
     }
     over = [row["stem"] for row in scored if (row.get("cost_usd") or 0) > 0.15]
     summary["papers_over_15_cents"] = over
+    medians = mark_confused(rows)
+    summary["reasoning_by_stage_median"] = {stage: value for stage, value in sorted(medians.items())}
+    summary["confused_papers"] = [
+        {"stem": row["stem"], "stages": row.get("confused_stages")}
+        for row in rows
+        if row.get("confused")
+    ]
     return summary
+
+
+def print_table(rows):
+    print(f"{'stem':18} {'cost':>7} {'wall':>6} {'reason':>8} {'share':>6}  confused")
+    for row in rows:
+        profile = row.get("reasoning_profile") or {}
+        if not row.get("identity"):
+            print(f"{row['stem']:18} {'-':>7} {'-':>6} {'-':>8} {'-':>6}  failed")
+            continue
+        flagged = ",".join(
+            f"{entry['stage'].replace('extract.', '')}(x{entry['ratio']})" if entry["ratio"] else entry["stage"].replace("extract.", "")
+            for entry in row.get("confused_stages") or []
+        )
+        marker = f"*{flagged}" if flagged else ""
+        share = profile.get("share")
+        print(
+            f"{row['stem']:18} {row.get('cost_usd') or 0:7.4f} {row.get('wall_s') or 0:6.0f} "
+            f"{profile.get('tokens', 0):8d} {share if share is not None else 0:6.2f}  {marker}"
+        )
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--run", required=True)
     parser.add_argument("--sample", type=Path, default=Path("eval/spike/sample.json"))
+    parser.add_argument("--table", action="store_true", help="print a per-paper table after the summary")
     args = parser.parse_args()
     run_dir = Path("eval/spike/runs") / args.run
     rows = []
@@ -267,10 +363,13 @@ def main():
         record = json.loads(result.read_text())
         oracle = front_matter_from_source(paper["source"], paper["main"])
         inventory = json.loads(Path(paper["object_truth"]).read_text())
-        rows.append(score_paper(paper, record, oracle, inventory, bibliography_count(paper)))
+        rows.append(score_paper(paper, record, oracle, inventory, bibliography_count(paper), result))
     summary = aggregate(rows)
     (run_dir / "metrics.json").write_text(json.dumps({"summary": summary, "papers": rows}, indent=1) + "\n")
     print(json.dumps(summary, indent=1))
+    if args.table:
+        print()
+        print_table(rows)
     return 0
 
 
