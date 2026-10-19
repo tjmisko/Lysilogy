@@ -1,1 +1,0 @@
-- `objects` are not part of this record: a separate pass lists the figures, tables, algorithms and numbered equations a few pages at a time. Claims may still name objects in `evidence_refs`.

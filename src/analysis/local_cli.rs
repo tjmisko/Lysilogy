@@ -953,6 +953,7 @@ impl LocalCliAnalyzer {
                 schema: &schema,
                 stage: request.stage,
                 max_tokens: None,
+                reasoning: None,
             },
         )
         .await?;

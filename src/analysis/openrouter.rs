@@ -39,6 +39,53 @@ pub struct ChatRequest<'a> {
     pub stage: &'a str,
     /// The most output tokens, reasoning included, before the call is cut off.
     pub max_tokens: Option<u32>,
+    /// How much reasoning the provider should spend; `None` leaves the model
+    /// default in place.
+    pub reasoning: Option<ReasoningEffort>,
+}
+
+/// How much reasoning the provider should spend before answering.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ReasoningEffort {
+    /// Ask the provider not to reason.
+    Off,
+    Low,
+    Medium,
+    High,
+}
+
+impl ReasoningEffort {
+    /// Parse a command-line value, or `None` for an unknown one.
+    #[must_use]
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "off" => Some(Self::Off),
+            "low" => Some(Self::Low),
+            "medium" => Some(Self::Medium),
+            "high" => Some(Self::High),
+            _ => None,
+        }
+    }
+
+    fn to_body(self) -> Value {
+        match self {
+            Self::Off => json!({"enabled": false}),
+            Self::Low => json!({"effort": "low"}),
+            Self::Medium => json!({"effort": "medium"}),
+            Self::High => json!({"effort": "high"}),
+        }
+    }
+
+    /// The lowercase name, for records and command-line output.
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+        }
+    }
 }
 
 /// Where a recorded cost came from.
@@ -91,6 +138,9 @@ pub fn request_body(request: &ChatRequest<'_>) -> Value {
     });
     if let Some(max_tokens) = request.max_tokens {
         body["max_tokens"] = json!(max_tokens);
+    }
+    if let Some(effort) = request.reasoning {
+        body["reasoning"] = effort.to_body();
     }
     body
 }
@@ -267,11 +317,33 @@ mod tests {
             schema: &schema,
             stage: "test",
             max_tokens: None,
+            reasoning: None,
         });
         assert_eq!(body["model"], DEFAULT_MODEL);
         assert_eq!(body["messages"][0]["content"], "hello");
         assert_eq!(body["response_format"]["json_schema"]["strict"], true);
         assert_eq!(body["usage"]["include"], true);
+        assert!(body.get("reasoning").is_none());
+    }
+
+    #[test]
+    fn should_send_reasoning_effort_when_it_is_set() {
+        let schema = schema();
+        let parts = [ContentPart::Text("hello".to_owned())];
+        for (effort, expected) in [
+            (ReasoningEffort::Low, json!({"effort": "low"})),
+            (ReasoningEffort::Off, json!({"enabled": false})),
+        ] {
+            let body = request_body(&ChatRequest {
+                model: DEFAULT_MODEL,
+                parts: &parts,
+                schema: &schema,
+                stage: "test",
+                max_tokens: None,
+                reasoning: Some(effort),
+            });
+            assert_eq!(body["reasoning"], expected);
+        }
     }
 
     #[test]
@@ -288,6 +360,7 @@ mod tests {
             schema: &schema,
             stage: "test",
             max_tokens: None,
+            reasoning: None,
         });
         let content = body["messages"][0]["content"]
             .as_array()
@@ -313,6 +386,7 @@ mod tests {
             schema: &schema,
             stage: "test",
             max_tokens: None,
+            reasoning: None,
         });
         assert!(body["messages"][0]["content"].is_array());
     }
@@ -327,6 +401,7 @@ mod tests {
             schema: &schema,
             stage: "test",
             max_tokens: None,
+            reasoning: None,
         };
         assert!(request_body(&request).get("max_tokens").is_none());
         request.max_tokens = Some(32_768);
