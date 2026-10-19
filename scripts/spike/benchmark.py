@@ -163,7 +163,7 @@ def score_objects(artifacts, inventory):
     objects = (artifacts or {}).get("objects") or []
     result = {}
     for kind in KINDS:
-        truth = {item["number"].upper(): item["page"] for item in inventory[f"{kind}s"]}
+        truth = {item["number"].upper(): item["page"] for item in inventory.get(f"{kind}s", [])}
         predicted_items = [item for item in objects if item.get("kind") == kind]
         numbered = {}
         for item in predicted_items:
@@ -553,9 +553,10 @@ def main():
             rows.append({"stem": paper["stem"], "succeeded": False, "failures": [{"stage": "run", "error": "no result file"}]})
             continue
         record = json.loads(result.read_text())
-        oracle = front_matter_from_source(paper["source"], paper["main"])
-        inventory = json.loads(Path(paper["object_truth"]).read_text())
-        rows.append(score_paper(paper, record, oracle, inventory, bibliography_count(paper), result))
+        oracle = paper.get("oracle") or front_matter_from_source(paper["source"], paper["main"])
+        inventory = json.loads(Path(paper["object_truth"]).read_text()) if paper.get("object_truth") else {}
+        bibliography = bibliography_count(paper) if paper.get("source") else None
+        rows.append(score_paper(paper, record, oracle, inventory, bibliography, result))
     summary = aggregate(rows)
     (run_dir / "metrics.json").write_text(json.dumps({"summary": summary, "papers": rows}, indent=1) + "\n")
     print(json.dumps(summary, indent=1))
