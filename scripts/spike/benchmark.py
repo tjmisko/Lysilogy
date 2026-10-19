@@ -168,6 +168,7 @@ def score_paper(paper, record, oracle, inventory, bibliography):
         "read_signal": (((final or {}).get("card") or {}).get("read_signal") or {}).get("judgment"),
         "features": record.get("features", ""),
         "reasoning": record.get("reasoning", ""),
+        "reasoning_trace": record.get("reasoning_trace"),
         "object_chunks": len(record.get("object_chunks") or []),
         "object_retries": sum(1 for chunk in record.get("object_chunks") or [] if chunk.get("retried")),
         "recovered_failures": len(record.get("recovered_failures") or []),

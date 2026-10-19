@@ -2383,6 +2383,9 @@ fn print_extract_summary(
         "  total ${:.4} · {:.1}s wall",
         record.totals.cost_usd, record.totals.wall_s
     );
+    if let Some(trace) = &record.reasoning_trace {
+        println!("  reasoning traces: {trace}");
+    }
     if !record.admission_counts.is_empty() {
         let counts = record
             .admission_counts

@@ -117,6 +117,13 @@ pub struct CallRecord {
     pub latency_s: f64,
 }
 
+/// One call's reasoning text, for reading back how the model worked.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ReasoningTrace {
+    pub stage: String,
+    pub text: String,
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Failure {
     pub stage: String,
@@ -182,6 +189,8 @@ pub struct ExtractRecord {
     pub recovered_failures: Vec<Failure>,
     pub object_chunks: Vec<ChunkRecord>,
     pub object_merge: Option<MergeStats>,
+    /// Where the model's reasoning traces were written, when it returned any.
+    pub reasoning_trace: Option<String>,
     /// Pass 1 with the merged object inventory, before the self-check.
     pub pass1: Option<Value>,
     pub pass1_check: Option<CheckCounts>,
@@ -235,6 +244,7 @@ struct Session<'a> {
 struct SessionState {
     spent_usd: f64,
     calls: Vec<CallRecord>,
+    reasoning: Vec<ReasoningTrace>,
     failures: Vec<Failure>,
     recovered: Vec<Failure>,
     budget_stopped: Option<String>,
@@ -369,6 +379,12 @@ impl<'a> Session<'a> {
             cost_source: parsed.cost_source,
             latency_s: latency.as_secs_f64(),
         });
+        if let Some(text) = &parsed.reasoning {
+            guard.reasoning.push(ReasoningTrace {
+                stage: stage.to_owned(),
+                text: text.clone(),
+            });
+        }
     }
 
     /// Move the failures of a chunk whose retry succeeded out of the failures.
@@ -470,6 +486,7 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
     }
 
     let session = session.into_state();
+    let reasoning_trace = write_reasoning_traces(&options.output, &session.reasoning).await?;
     let totals = Totals {
         calls: session.calls.len(),
         prompt_tokens: session.calls.iter().map(|call| call.prompt_tokens).sum(),
@@ -499,6 +516,7 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
         recovered_failures: session.recovered,
         object_chunks,
         object_merge,
+        reasoning_trace,
         pass1: core,
         pass1_check,
         corrections: check_pass.corrections,
@@ -510,6 +528,33 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
     };
     write_record(&options.output, &record).await?;
     Ok(record)
+}
+
+/// Write one JSON line per call's reasoning beside the result, for later reading.
+async fn write_reasoning_traces(
+    output: &Path,
+    traces: &[ReasoningTrace],
+) -> Result<Option<String>> {
+    if traces.is_empty() {
+        return Ok(None);
+    }
+    let path = output.with_extension("reasoning.jsonl");
+    if let Some(parent) = path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        tokio::fs::create_dir_all(parent)
+            .await
+            .map_err(|error| Error::io(parent, error))?;
+    }
+    let mut text = String::new();
+    for trace in traces {
+        text.push_str(&serde_json::to_string(trace)?);
+        text.push('\n');
+    }
+    tokio::fs::write(&path, text)
+        .await
+        .map_err(|error| Error::io(&path, error))?;
+    Ok(Some(path.to_string_lossy().into_owned()))
 }
 
 async fn write_record(output: &Path, record: &ExtractRecord) -> Result<()> {

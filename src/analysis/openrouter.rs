@@ -102,6 +102,8 @@ pub enum CostSource {
 #[derive(Clone, Debug, PartialEq)]
 pub struct ParsedCompletion {
     pub content: String,
+    /// The model's reasoning text, when the provider returns it.
+    pub reasoning: Option<String>,
     pub provider: Option<String>,
     pub finish_reason: Option<String>,
     pub prompt_tokens: u64,
@@ -171,13 +173,14 @@ pub fn parse_response(text: &str) -> Result<ParsedCompletion> {
         )));
     }
     let choice = value.get("choices").and_then(|choices| choices.get(0));
-    let content = choice
-        .and_then(|choice| choice.get("message"))
+    let message = choice.and_then(|choice| choice.get("message"));
+    let content = message
         .and_then(|message| message.get("content"))
         .and_then(Value::as_str)
         .ok_or_else(|| {
             Error::InvalidAnalysis("OpenRouter returned no message content".to_owned())
         })?;
+    let reasoning = message_reasoning(message);
     let usage = value.get("usage");
     let count = |key: &str| {
         usage
@@ -213,6 +216,7 @@ pub fn parse_response(text: &str) -> Result<ParsedCompletion> {
     };
     Ok(ParsedCompletion {
         content: content.to_owned(),
+        reasoning,
         provider: text_field(Some(&value), "provider"),
         finish_reason: text_field(choice, "finish_reason"),
         prompt_tokens,
@@ -221,6 +225,25 @@ pub fn parse_response(text: &str) -> Result<ParsedCompletion> {
         cost_usd,
         cost_source,
     })
+}
+
+fn message_reasoning(message: Option<&Value>) -> Option<String> {
+    let message = message?;
+    // Providers normalize the trace differently: `reasoning` (OpenRouter),
+    // `reasoning_content` (DeepSeek), or a `reasoning_details` array.
+    for key in ["reasoning", "reasoning_content"] {
+        if let Some(text) = message.get(key).and_then(Value::as_str)
+            && !text.is_empty()
+        {
+            return Some(text.to_owned());
+        }
+    }
+    let details = message.get("reasoning_details").and_then(Value::as_array)?;
+    let parts = details
+        .iter()
+        .filter_map(|detail| detail.get("text").and_then(Value::as_str))
+        .collect::<Vec<_>>();
+    (!parts.is_empty()).then(|| parts.join("\n"))
 }
 
 /// Send `request`, bill it to `ledger`, and return the completion.
@@ -421,6 +444,25 @@ mod tests {
         assert_eq!(parsed.reasoning_tokens, 287);
         assert_eq!(parsed.provider.as_deref(), Some("Together"));
         assert_eq!(parsed.finish_reason.as_deref(), Some("stop"));
+    }
+
+    #[test]
+    fn should_harvest_reasoning_from_any_provider_shape() {
+        let call = |body: &str| parse_response(body).expect("parsed").reasoning;
+        assert_eq!(
+            call(r#"{"choices":[{"message":{"content":"{}","reasoning":"step 1"}}]}"#).as_deref(),
+            Some("step 1")
+        );
+        assert_eq!(
+            call(r#"{"choices":[{"message":{"content":"{}","reasoning_content":"step 2"}}]}"#)
+                .as_deref(),
+            Some("step 2")
+        );
+        assert_eq!(
+            call(r#"{"choices":[{"message":{"content":"{}","reasoning_details":[{"text":"x"},{"text":"y"}]}}]}"#).as_deref(),
+            Some("x\ny")
+        );
+        assert_eq!(call(r#"{"choices":[{"message":{"content":"{}"}}]}"#), None);
     }
 
     #[test]
