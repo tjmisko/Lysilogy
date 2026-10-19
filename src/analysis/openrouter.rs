@@ -149,13 +149,16 @@ pub fn request_body(request: &ChatRequest<'_>) -> Value {
     if let Some(effort) = request.reasoning {
         body["reasoning"] = effort.to_body();
     }
-    if !request.provider_order.is_empty() {
+    if request.provider_order.is_empty() {
+        body["provider"] = json!({"require_parameters": true});
+    } else {
         let order: Vec<String> = request
             .provider_order
             .iter()
             .map(|provider| provider.trim().to_ascii_lowercase())
             .collect();
-        body["provider"] = json!({"order": order, "allow_fallbacks": false});
+        body["provider"] =
+            json!({"order": order, "allow_fallbacks": false, "require_parameters": true});
     }
     body
 }
@@ -514,6 +517,24 @@ mod tests {
         });
         assert_eq!(body["provider"]["order"][0], "deepseek");
         assert_eq!(body["provider"]["allow_fallbacks"], false);
+        assert_eq!(body["provider"]["require_parameters"], true);
+    }
+
+    #[test]
+    fn should_require_parameter_support_when_no_provider_is_pinned() {
+        let schema = schema();
+        let parts = [ContentPart::Text("hello".to_owned())];
+        let body = request_body(&ChatRequest {
+            model: DEFAULT_MODEL,
+            parts: &parts,
+            schema: &schema,
+            stage: "test",
+            max_tokens: None,
+            reasoning: None,
+            provider_order: &[],
+        });
+        assert_eq!(body["provider"]["require_parameters"], true);
+        assert!(body["provider"].get("order").is_none());
     }
 
     #[test]
