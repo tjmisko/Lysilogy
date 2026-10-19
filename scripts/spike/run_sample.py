@@ -40,6 +40,8 @@ def run_one(paper, args, run_dir, binary):
                 "--features", args.features,
                 "--object-pages", str(args.object_pages),
                 "--reasoning", args.reasoning,
+                "--core-mode", args.core_mode,
+                *[part for provider in args.providers for part in ("--provider", provider)],
                 "--work", str(Path.home() / ".cache/lysilogy/spike/work" / paper["stem"]),
                 "--out", str(out),
             ],
@@ -64,6 +66,9 @@ def main():
     parser.add_argument("--features", default="",
                         help="optional feature passes: figures, tables, algorithms, equations, objects, supercut, analysis, glossary, all")
     parser.add_argument("--reasoning", choices=("off", "low", "medium", "high"), default="low")
+    parser.add_argument("--core-mode", choices=("combined", "fanout"), default="combined")
+    parser.add_argument("--provider", dest="providers", action="append", default=[],
+                        help="pin a provider, in order; repeat to allow several")
     parser.add_argument("--object-pages", type=int, default=6)
     parser.add_argument("--sample", type=Path, default=Path("eval/spike/sample.json"))
     parser.add_argument("--pdf-dir", type=Path,
@@ -93,6 +98,7 @@ def main():
         "run": args.run, "model": args.model, "passes": args.passes, "jobs": args.jobs,
         "budget_usd": args.budget, "paper_budget_usd": args.paper_budget,
         "features": args.features, "object_pages": args.object_pages, "reasoning": args.reasoning,
+        "core_mode": args.core_mode, "providers": args.providers,
         "sample": str(args.sample), "pdf_dir": str(args.pdf_dir) if args.pdf_dir else None,
         "started": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
     }, indent=2) + "\n")

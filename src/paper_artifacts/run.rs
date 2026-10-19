@@ -24,6 +24,7 @@ use super::{
         CheckCounts, LOCAL_REPAIR_SIMILARITY, QuoteSite, SiteKind, SourceText, Verdict,
         apply_removals, check, quote_sites,
     },
+    core_fields::CORE_FIELDS,
     corrections::{self, CheckResponse, Correction, CorrectionOutcome},
     features::Features,
     objects::{self, ChunkObjects, MergeStats},
@@ -40,6 +41,7 @@ use crate::{
 };
 
 const CORE_PROMPT: &str = include_str!("../../prompts/paper-core.md");
+const FIELDS_PROMPT: &str = include_str!("../../prompts/paper-fields.md");
 const SECTIONS_POLICY: &str = include_str!("../../prompts/sectioning.md");
 const OBJECTS_PROMPT: &str = include_str!("../../prompts/paper-objects.md");
 const SUPERCUT_PROMPT: &str = include_str!("../../prompts/paper-supercut.md");
@@ -49,7 +51,7 @@ const CHECK_PROMPT: &str = include_str!("../../prompts/paper-artifacts-check.md"
 const REPAIR_PROMPT: &str = include_str!("../../prompts/paper-artifacts-repair.md");
 
 /// Bump when the record shape changes.
-const RECORD_VERSION: u16 = 3;
+const RECORD_VERSION: u16 = 4;
 
 /// Object chunks in flight at once.
 const CHUNK_CONCURRENCY: usize = 3;
@@ -90,6 +92,31 @@ pub struct ExtractOptions {
     pub object_pages: usize,
     /// How much reasoning every model call may spend.
     pub reasoning: ReasoningEffort,
+    /// How the core fields are requested: one combined call or one per field.
+    pub core_mode: CoreMode,
+    /// Providers to try in order; empty lets `OpenRouter` choose.
+    pub providers: Vec<String>,
+}
+
+/// How the core record's fields are asked for.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum CoreMode {
+    /// One call fills every core field at once.
+    #[default]
+    Combined,
+    /// One call per field, all sharing the same paper prefix so a provider
+    /// cache can serve it repeatedly.
+    Fanout,
+}
+
+impl CoreMode {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Combined => "combined",
+            Self::Fanout => "fanout",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -110,6 +137,8 @@ pub struct CallRecord {
     pub provider: Option<String>,
     pub finish_reason: Option<String>,
     pub prompt_tokens: u64,
+    /// Prompt tokens served from the provider's prefix cache.
+    pub cached_tokens: u64,
     pub completion_tokens: u64,
     pub reasoning_tokens: u64,
     pub cost_usd: f64,
@@ -161,6 +190,8 @@ pub struct SiteOutcome {
 pub struct Totals {
     pub calls: usize,
     pub prompt_tokens: u64,
+    /// Prompt tokens served from the provider's prefix cache.
+    pub cached_tokens: u64,
     pub completion_tokens: u64,
     pub cost_usd: f64,
     pub model_latency_s: f64,
@@ -176,6 +207,8 @@ pub struct ExtractRecord {
     pub passes_requested: u8,
     /// The optional feature passes that ran, in a stable order.
     pub features: String,
+    /// How the core fields were requested: `combined` or `fanout`.
+    pub core_mode: String,
     /// The reasoning effort every call was asked to use.
     pub reasoning: String,
     pub dpi: u32,
@@ -237,6 +270,8 @@ struct Session<'a> {
     model: &'a str,
     paper_budget_usd: f64,
     reasoning: ReasoningEffort,
+    /// Providers to try in order, so a shared prefix can hit one cache.
+    providers: Vec<String>,
     state: Mutex<SessionState>,
 }
 
@@ -257,6 +292,7 @@ impl<'a> Session<'a> {
         model: &'a str,
         paper_budget_usd: f64,
         reasoning: ReasoningEffort,
+        providers: Vec<String>,
     ) -> Self {
         Self {
             client,
@@ -264,6 +300,7 @@ impl<'a> Session<'a> {
             model,
             paper_budget_usd,
             reasoning,
+            providers,
             state: Mutex::new(SessionState::default()),
         }
     }
@@ -317,6 +354,7 @@ impl<'a> Session<'a> {
             stage,
             max_tokens: Some(max_tokens),
             reasoning: Some(self.reasoning),
+            provider_order: &self.providers,
         };
         let completion = match openrouter::complete(&self.client, self.ledger, &request).await {
             Ok(completion) => completion,
@@ -373,6 +411,7 @@ impl<'a> Session<'a> {
             provider: parsed.provider.clone(),
             finish_reason: parsed.finish_reason.clone(),
             prompt_tokens: parsed.prompt_tokens,
+            cached_tokens: parsed.cached_tokens,
             completion_tokens: parsed.completion_tokens,
             reasoning_tokens: parsed.reasoning_tokens,
             cost_usd: parsed.cost_usd,
@@ -443,9 +482,13 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
         &options.model,
         options.paper_budget_usd,
         options.reasoning,
+        options.providers.clone(),
     );
 
-    let core = core_pass(&session, &resources, &text).await;
+    let core = match options.core_mode {
+        CoreMode::Combined => core_pass(&session, &resources, &text).await,
+        CoreMode::Fanout => fanout_core(&session, &resources, &text).await,
+    };
     let pass1_check = core.as_ref().map(|draft| check(&source, draft));
 
     let mut draft = core.clone();
@@ -490,6 +533,7 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
     let totals = Totals {
         calls: session.calls.len(),
         prompt_tokens: session.calls.iter().map(|call| call.prompt_tokens).sum(),
+        cached_tokens: session.calls.iter().map(|call| call.cached_tokens).sum(),
         completion_tokens: session
             .calls
             .iter()
@@ -506,6 +550,7 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
         model: options.model.clone(),
         passes_requested: options.passes,
         features: options.features.label(),
+        core_mode: options.core_mode.label().to_owned(),
         reasoning: options.reasoning.label().to_owned(),
         dpi: resources.dpi,
         pages: resources.paper.pages.len(),
@@ -628,6 +673,64 @@ async fn core_pass(
     session
         .call::<Value>("extract.pass1", &parts, CORE_SCHEMA, CORE_MAX_TOKENS)
         .await
+}
+
+/// The core fields, one call each over the same paper prefix. The fields run
+/// in order so the first call can populate a provider's prefix cache and the
+/// rest can read it back.
+async fn fanout_core(
+    session: &Session<'_>,
+    resources: &PageResources,
+    text: &[ContentPart],
+) -> Option<Value> {
+    let mut draft = serde_json::Map::new();
+    let mut abstract_answered = false;
+    for field in CORE_FIELDS {
+        let shared = shared_prefix(FIELDS_PROMPT, text, field.page_limit);
+        let instruction = field.instruction.replace(
+            "{{sections}}",
+            &sections_guidance(resources.paper.pages.len()),
+        );
+        let parts = [ContentPart::Text(shared), ContentPart::Text(instruction)];
+        let Some(value) = session
+            .call::<Value>(field.stage, &parts, field.schema, FEATURE_MAX_TOKENS)
+            .await
+        else {
+            continue;
+        };
+        if field.name == "abstract" {
+            abstract_answered = true;
+        }
+        merge_fields(&mut draft, &value);
+    }
+    if abstract_answered
+        && draft
+            .get("abstract")
+            .and_then(|value| value.get("text"))
+            .and_then(Value::as_str)
+            .is_none()
+    {
+        session.fail(
+            "extract.abstract",
+            None,
+            "no abstract found in the first three pages".to_owned(),
+            None,
+        );
+    }
+    (!draft.is_empty()).then_some(Value::Object(draft))
+}
+
+/// The shared prefix every field call carries, so a provider cache can hit it.
+/// `limit` keeps only the first pages, for the abstract shortcut.
+fn shared_prefix(preamble: &str, text: &[ContentPart], limit: Option<usize>) -> String {
+    let mut out = String::from(preamble);
+    for part in text.iter().take(limit.unwrap_or(usize::MAX)) {
+        if let ContentPart::Text(page) = part {
+            out.push('\n');
+            out.push_str(page);
+        }
+    }
+    out
 }
 
 /// Run the optional feature passes that were asked for and merge them in.
@@ -1120,6 +1223,7 @@ mod tests {
             openrouter::DEFAULT_MODEL,
             paper_budget_usd,
             ReasoningEffort::Low,
+            Vec::new(),
         )
     }
 
@@ -1344,6 +1448,45 @@ mod tests {
     }
 
     #[test]
+    fn should_send_only_the_leading_pages_for_the_abstract_shortcut() {
+        let resources = resources();
+        let text = text_parts(&resources);
+        let all = shared_prefix(FIELDS_PROMPT, &text, None);
+        let first = shared_prefix(FIELDS_PROMPT, &text, Some(1));
+        assert!(all.contains("<<page 2>>"));
+        assert!(first.contains("<<page 1>>") && !first.contains("<<page 2>>"));
+        assert!(first.starts_with(FIELDS_PROMPT));
+        assert!(all.starts_with(FIELDS_PROMPT));
+    }
+
+    #[test]
+    fn should_name_every_core_field_once() {
+        let names = CORE_FIELDS
+            .iter()
+            .map(|field| field.name)
+            .collect::<Vec<_>>();
+        assert_eq!(
+            names,
+            [
+                "identity",
+                "type",
+                "abstract",
+                "card",
+                "question",
+                "sections",
+                "references",
+                "citations",
+                "relations"
+            ]
+        );
+        let stages = CORE_FIELDS
+            .iter()
+            .map(|field| field.stage)
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(stages.len(), CORE_FIELDS.len());
+    }
+
+    #[test]
     fn should_keep_only_the_requested_object_kinds() {
         let objects = vec![
             serde_json::json!({"kind": "figure", "number": "1"}),
@@ -1380,6 +1523,8 @@ mod tests {
                 features: Features::default(),
                 object_pages: 6,
                 reasoning: ReasoningEffort::Low,
+                core_mode: CoreMode::Combined,
+                providers: Vec::new(),
             };
             assert!(matches!(
                 extract(&options, &ledger).await,

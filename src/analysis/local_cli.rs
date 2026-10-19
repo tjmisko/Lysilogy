@@ -954,6 +954,7 @@ impl LocalCliAnalyzer {
                 stage: request.stage,
                 max_tokens: None,
                 reasoning: None,
+                provider_order: &[],
             },
         )
         .await?;

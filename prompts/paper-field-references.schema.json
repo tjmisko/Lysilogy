@@ -1,0 +1,66 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "references"
+  ],
+  "properties": {
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "title",
+          "authors",
+          "year",
+          "venue",
+          "doi",
+          "page"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The in-text marker, e.g. '12' or 'Smith et al., 2020'."
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "year": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "venue": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "doi": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page": {
+            "type": "integer"
+          }
+        }
+      },
+      "description": "Every bibliography entry, in order."
+    }
+  },
+  "description": "The paper's bibliography entries."
+}

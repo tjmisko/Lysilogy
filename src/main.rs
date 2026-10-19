@@ -108,6 +108,23 @@ impl ReasoningChoice {
     }
 }
 
+/// How `extract` asks for the core fields.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+enum CoreModeChoice {
+    Combined,
+    Fanout,
+}
+
+impl CoreModeChoice {
+    const fn mode(self) -> lysilogy::paper_artifacts::run::CoreMode {
+        use lysilogy::paper_artifacts::run::CoreMode;
+        match self {
+            Self::Combined => CoreMode::Combined,
+            Self::Fanout => CoreMode::Fanout,
+        }
+    }
+}
+
 /// How `lit` should label edges, when asked to.
 struct LabelRun {
     sidecar: LabelSidecar,
@@ -278,6 +295,13 @@ enum Command {
         /// How much reasoning each model call may spend.
         #[arg(long, value_enum, default_value = "low")]
         reasoning: ReasoningChoice,
+        /// Ask for the core fields one per call over a shared prefix (`fanout`),
+        /// or all at once (`combined`).
+        #[arg(long, value_enum, default_value = "combined")]
+        core_mode: CoreModeChoice,
+        /// Try this provider first and do not fall back; repeat to order several.
+        #[arg(long = "provider")]
+        providers: Vec<String>,
     },
     /// Analyze one paper selected by ID or an unambiguous title fragment.
     Analyze {
@@ -571,6 +595,8 @@ async fn run(cli: Cli) -> Result<()> {
             features,
             object_pages,
             reasoning,
+            core_mode,
+            providers,
         } => {
             let pdf = match (pdf, query) {
                 (Some(pdf), _) => pdf,
@@ -600,6 +626,8 @@ async fn run(cli: Cli) -> Result<()> {
                 features: lysilogy::paper_artifacts::features::Features::parse(&features)?,
                 object_pages: usize::from(object_pages),
                 reasoning: reasoning.effort(),
+                core_mode: core_mode.mode(),
+                providers,
             };
             let ledger = lysilogy::analysis::spend::SpendLedger::with_defaults();
             let record = lysilogy::paper_artifacts::run::extract(&options, &ledger).await?;

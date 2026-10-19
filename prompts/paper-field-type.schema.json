@@ -1,0 +1,46 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type"
+  ],
+  "properties": {
+    "type": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "reason",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "string",
+          "enum": [
+            "survey",
+            "method",
+            "empirical",
+            "theory",
+            "dataset",
+            "position",
+            "replication",
+            "resource"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "description": "How sure you are that this item is correct."
+        }
+      }
+    }
+  },
+  "description": "The kind of paper."
+}

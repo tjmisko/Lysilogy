@@ -18,6 +18,8 @@
     "key_numbers",
     "limitations",
     "open_questions",
+    "headline_results",
+    "read_signal",
     "notation",
     "glossary"
   ],
@@ -1260,6 +1262,83 @@
             ],
             "description": "How sure you are that this item is correct."
           }
+        }
+      }
+    },
+    "headline_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "statement",
+          "carrier",
+          "evidence",
+          "confidence"
+        ],
+        "properties": {
+          "statement": {
+            "type": "string"
+          },
+          "carrier": {
+            "type": "string",
+            "description": "The object label or number that carries the result."
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "page"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "description": "Copied exactly from the page text, 8 to 300 characters."
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "1-based page number."
+                }
+              },
+              "description": "A verbatim passage from the paper and the page it is on."
+            },
+            "description": "Verbatim support. Empty only when the item is a model judgment."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    },
+    "read_signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "judgment",
+        "reason"
+      ],
+      "properties": {
+        "judgment": {
+          "type": "string",
+          "enum": [
+            "read",
+            "skim",
+            "glance",
+            "summary_enough"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "Model judgment; say why."
         }
       }
     },

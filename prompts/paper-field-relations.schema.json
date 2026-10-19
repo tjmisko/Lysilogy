@@ -1,0 +1,63 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "relations"
+  ],
+  "properties": {
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reference_key",
+          "relation",
+          "why",
+          "quote",
+          "page",
+          "confidence"
+        ],
+        "properties": {
+          "reference_key": {
+            "type": "string"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "background",
+              "uses_method",
+              "uses_data",
+              "extends",
+              "supports",
+              "contrasts",
+              "critiques",
+              "compares",
+              "other"
+            ]
+          },
+          "why": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string",
+            "description": "Verbatim."
+          },
+          "page": {
+            "type": "integer"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    }
+  },
+  "description": "The paper's relations to cited works."
+}

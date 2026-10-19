@@ -6,6 +6,7 @@
 //! `scripts/spike/build_schemas.py`.
 
 pub mod admission;
+pub mod core_fields;
 pub mod corrections;
 pub mod features;
 pub mod objects;
@@ -29,6 +30,17 @@ pub const ANALYSIS_SCHEMA: &str = include_str!("../prompts/paper-analysis.schema
 
 /// Notation and glossary terms.
 pub const GLOSSARY_SCHEMA: &str = include_str!("../prompts/paper-glossary.schema.json");
+
+/// One schema per core field, for the fan-out mode.
+pub const IDENTITY_SCHEMA: &str = include_str!("../prompts/paper-field-identity.schema.json");
+pub const TYPE_SCHEMA: &str = include_str!("../prompts/paper-field-type.schema.json");
+pub const ABSTRACT_SCHEMA: &str = include_str!("../prompts/paper-field-abstract.schema.json");
+pub const CARD_SCHEMA: &str = include_str!("../prompts/paper-field-card.schema.json");
+pub const QUESTION_SCHEMA: &str = include_str!("../prompts/paper-field-question.schema.json");
+pub const SECTIONS_SCHEMA: &str = include_str!("../prompts/paper-field-sections.schema.json");
+pub const REFERENCES_SCHEMA: &str = include_str!("../prompts/paper-field-references.schema.json");
+pub const CITATIONS_SCHEMA: &str = include_str!("../prompts/paper-field-citations.schema.json");
+pub const RELATIONS_SCHEMA: &str = include_str!("../prompts/paper-field-relations.schema.json");
 
 /// Pass 2: corrections and flags against a pass-1 draft.
 pub const CHECK_SCHEMA: &str = include_str!("../prompts/paper-artifacts-check.schema.json");
@@ -85,6 +97,15 @@ mod tests {
             ("supercut", SUPERCUT_SCHEMA),
             ("analysis", ANALYSIS_SCHEMA),
             ("glossary", GLOSSARY_SCHEMA),
+            ("field-identity", IDENTITY_SCHEMA),
+            ("field-type", TYPE_SCHEMA),
+            ("field-abstract", ABSTRACT_SCHEMA),
+            ("field-card", CARD_SCHEMA),
+            ("field-question", QUESTION_SCHEMA),
+            ("field-sections", SECTIONS_SCHEMA),
+            ("field-references", REFERENCES_SCHEMA),
+            ("field-citations", CITATIONS_SCHEMA),
+            ("field-relations", RELATIONS_SCHEMA),
             ("check", CHECK_SCHEMA),
             ("repair", REPAIR_SCHEMA),
         ] {

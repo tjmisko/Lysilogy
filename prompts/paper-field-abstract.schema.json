@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "abstract"
+  ],
+  "properties": {
+    "abstract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "page",
+        "confidence"
+      ],
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The abstract copied verbatim, paragraphs joined with a blank line; null if the paper has none."
+        },
+        "page": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "description": "How sure you are that this item is correct."
+        }
+      }
+    }
+  },
+  "description": "The paper's abstract."
+}

@@ -177,10 +177,25 @@ objects_schema["properties"]["objects"]["description"] = (
     "One object per printed label; never a range."
 )
 
+# One schema per core field, for the fan-out mode where each field is its own
+# request over the same paper prefix.
+field_schemas = {
+    "identity": obj("The paper's identity.", identity=identity),
+    "type": obj("The kind of paper.", type=paper_type),
+    "abstract": obj("The paper's abstract.", abstract=abstract),
+    "card": obj("The paper's thesis and position.", card=card_core),
+    "question": obj("The paper's research question.", question=question),
+    "sections": obj("The paper's reading map.", sections=sections),
+    "references": obj("The paper's bibliography entries.", references=references),
+    "citations": obj("The paper's in-text citations.", citations=citations),
+    "relations": obj("The paper's relations to cited works.", relations=relations),
+}
+
 for name, schema in [("paper-artifacts", paper), ("paper-core", core_schema),
                      ("paper-objects", objects_schema), ("paper-supercut", supercut_schema),
                      ("paper-analysis", analysis_schema), ("paper-glossary", glossary_schema),
-                     ("paper-artifacts-check", check), ("paper-artifacts-repair", repair)]:
+                     ("paper-artifacts-check", check), ("paper-artifacts-repair", repair),
+                     *[(f"paper-field-{name}", schema) for name, schema in field_schemas.items()]]:
     with open(f"{out}/{name}.schema.json", "w") as f:
         json.dump(schema, f, indent=2)
         f.write("\n")

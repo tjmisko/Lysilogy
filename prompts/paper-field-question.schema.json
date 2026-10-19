@@ -1,0 +1,57 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "question"
+  ],
+  "properties": {
+    "question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "evidence",
+        "confidence"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The research question or hypothesis."
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "quote",
+              "page"
+            ],
+            "properties": {
+              "quote": {
+                "type": "string",
+                "description": "Copied exactly from the page text, 8 to 300 characters."
+              },
+              "page": {
+                "type": "integer",
+                "description": "1-based page number."
+              }
+            },
+            "description": "A verbatim passage from the paper and the page it is on."
+          },
+          "description": "Verbatim support. Empty only when the item is a model judgment."
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "description": "How sure you are that this item is correct."
+        }
+      }
+    }
+  },
+  "description": "The paper's research question."
+}

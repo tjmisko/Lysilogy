@@ -1,0 +1,110 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sections"
+  ],
+  "properties": {
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "kind",
+          "family",
+          "pages",
+          "source_span",
+          "summary"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short topic title, not a breadcrumb of the paper's own headings."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "background",
+              "research_question",
+              "theory",
+              "methods",
+              "data",
+              "results",
+              "discussion",
+              "limitations",
+              "conclusion",
+              "references",
+              "appendix",
+              "other"
+            ]
+          },
+          "family": {
+            "type": "string",
+            "enum": [
+              "context",
+              "question",
+              "method",
+              "evidence",
+              "interpretation",
+              "caveat",
+              "reference"
+            ]
+          },
+          "pages": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "start",
+              "end"
+            ],
+            "properties": {
+              "start": {
+                "type": "integer",
+                "description": "First 1-based PDF page."
+              },
+              "end": {
+                "type": "integer",
+                "description": "Last 1-based PDF page."
+              }
+            }
+          },
+          "source_span": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "start_text",
+              "start_page",
+              "end_text",
+              "end_page"
+            ],
+            "properties": {
+              "start_text": {
+                "type": "string",
+                "description": "A short verbatim phrase from where the unit begins."
+              },
+              "start_page": {
+                "type": "integer"
+              },
+              "end_text": {
+                "type": "string",
+                "description": "A short verbatim phrase from where the unit ends."
+              },
+              "end_page": {
+                "type": "integer"
+              }
+            }
+          },
+          "summary": {
+            "type": "string",
+            "description": "One or two sentences that synthesize the whole unit."
+          }
+        }
+      },
+      "description": "Coherent topic-based reading units, usually 1-2 pages and generally 1-5 pages of content. Keep related headings, variants, and examples together. Increasing PDF order, non-overlapping spans. Never a list of the paper's own headings."
+    }
+  },
+  "description": "The paper's reading map."
+}

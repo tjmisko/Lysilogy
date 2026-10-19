@@ -199,7 +199,7 @@ def score_paper(paper, record, oracle, inventory, bibliography, result_file=None
         "cost_usd": record.get("totals", {}).get("cost_usd"),
         "wall_s": record.get("totals", {}).get("wall_s"),
         "calls": [
-            {key: call[key] for key in ("stage", "prompt_tokens", "completion_tokens", "reasoning_tokens", "cost_usd", "latency_s", "finish_reason", "cost_source")}
+            {key: call.get(key) for key in ("stage", "prompt_tokens", "cached_tokens", "completion_tokens", "reasoning_tokens", "cost_usd", "latency_s", "finish_reason", "cost_source")}
             for call in record.get("calls") or []
         ],
         "identity": {"pass1": score_identity(pass1, oracle), "final": score_identity(final, oracle)},
@@ -212,6 +212,7 @@ def score_paper(paper, record, oracle, inventory, bibliography, result_file=None
         "type": ((final or {}).get("type") or {}).get("value"),
         "read_signal": (((final or {}).get("card") or {}).get("read_signal") or {}).get("judgment"),
         "features": record.get("features", ""),
+        "core_mode": record.get("core_mode", "combined"),
         "reasoning": record.get("reasoning", ""),
         "reasoning_trace": record.get("reasoning_trace"),
         "reasoning_profile": reasoning_profile(record, result_file),
@@ -317,6 +318,13 @@ def aggregate(rows):
         for call in row["calls"]:
             stage_costs[call["stage"]] += call["cost_usd"]
     summary["cost_by_stage"] = {stage: round(value, 4) for stage, value in stage_costs.items()}
+    prompt = sum(call.get("prompt_tokens") or 0 for row in scored for call in row["calls"])
+    cached = sum(call.get("cached_tokens") or 0 for row in scored for call in row["calls"])
+    summary["cached_tokens"] = {
+        "cached": cached,
+        "prompt": prompt,
+        "hit_rate": round(cached / prompt, 4) if prompt else None,
+    }
     summary["failures"] = [(row["stem"], failure["stage"], failure["error"][:120]) for row in rows for failure in row.get("failures") or []]
     summary["object_chunks"] = {
         "chunks": sum(row.get("object_chunks", 0) for row in scored),
@@ -336,11 +344,11 @@ def aggregate(rows):
 
 
 def print_table(rows):
-    print(f"{'stem':18} {'cost':>7} {'wall':>6} {'reason':>8} {'share':>6}  confused")
+    print(f"{'stem':18} {'cost':>7} {'wall':>6} {'reason':>8} {'cache':>6} {'share':>6}  confused")
     for row in rows:
         profile = row.get("reasoning_profile") or {}
         if not row.get("identity"):
-            print(f"{row['stem']:18} {'-':>7} {'-':>6} {'-':>8} {'-':>6}  failed")
+            print(f"{row['stem']:18} {'-':>7} {'-':>6} {'-':>8} {'-':>6} {'-':>6}  failed")
             continue
         flagged = ",".join(
             f"{entry['stage'].replace('extract.', '')}(x{entry['ratio']})" if entry["ratio"] else entry["stage"].replace("extract.", "")
@@ -348,9 +356,12 @@ def print_table(rows):
         )
         marker = f"*{flagged}" if flagged else ""
         share = profile.get("share")
+        prompt = sum(call.get("prompt_tokens") or 0 for call in row["calls"])
+        cached = sum(call.get("cached_tokens") or 0 for call in row["calls"])
+        hit = cached / prompt if prompt else 0
         print(
             f"{row['stem']:18} {row.get('cost_usd') or 0:7.4f} {row.get('wall_s') or 0:6.0f} "
-            f"{profile.get('tokens', 0):8d} {share if share is not None else 0:6.2f}  {marker}"
+            f"{profile.get('tokens', 0):8d} {hit:6.2f} {share if share is not None else 0:6.2f}  {marker}"
         )
 
 

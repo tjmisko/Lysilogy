@@ -42,6 +42,9 @@ pub struct ChatRequest<'a> {
     /// How much reasoning the provider should spend; `None` leaves the model
     /// default in place.
     pub reasoning: Option<ReasoningEffort>,
+    /// Try these providers in order and do not fall back, so calls that share
+    /// a prefix can land on the same cache. Empty leaves routing to `OpenRouter`.
+    pub provider_order: &'a [String],
 }
 
 /// How much reasoning the provider should spend before answering.
@@ -107,6 +110,8 @@ pub struct ParsedCompletion {
     pub provider: Option<String>,
     pub finish_reason: Option<String>,
     pub prompt_tokens: u64,
+    /// The part of `prompt_tokens` the provider served from its prefix cache.
+    pub cached_tokens: u64,
     pub completion_tokens: u64,
     pub reasoning_tokens: u64,
     pub cost_usd: f64,
@@ -143,6 +148,9 @@ pub fn request_body(request: &ChatRequest<'_>) -> Value {
     }
     if let Some(effort) = request.reasoning {
         body["reasoning"] = effort.to_body();
+    }
+    if !request.provider_order.is_empty() {
+        body["provider"] = json!({"order": request.provider_order, "allow_fallbacks": false});
     }
     body
 }
@@ -189,6 +197,11 @@ pub fn parse_response(text: &str) -> Result<ParsedCompletion> {
             .unwrap_or(0)
     };
     let prompt_tokens = count("prompt_tokens");
+    let cached_tokens = usage
+        .and_then(|usage| usage.get("prompt_tokens_details"))
+        .and_then(|details| details.get("cached_tokens"))
+        .and_then(Value::as_u64)
+        .unwrap_or(0);
     let completion_tokens = count("completion_tokens");
     let reasoning_tokens = usage
         .and_then(|usage| usage.get("completion_tokens_details"))
@@ -220,6 +233,7 @@ pub fn parse_response(text: &str) -> Result<ParsedCompletion> {
         provider: text_field(Some(&value), "provider"),
         finish_reason: text_field(choice, "finish_reason"),
         prompt_tokens,
+        cached_tokens,
         completion_tokens,
         reasoning_tokens,
         cost_usd,
@@ -341,6 +355,7 @@ mod tests {
             stage: "test",
             max_tokens: None,
             reasoning: None,
+            provider_order: &[],
         });
         assert_eq!(body["model"], DEFAULT_MODEL);
         assert_eq!(body["messages"][0]["content"], "hello");
@@ -364,6 +379,7 @@ mod tests {
                 stage: "test",
                 max_tokens: None,
                 reasoning: Some(effort),
+                provider_order: &[],
             });
             assert_eq!(body["reasoning"], expected);
         }
@@ -384,6 +400,7 @@ mod tests {
             stage: "test",
             max_tokens: None,
             reasoning: None,
+            provider_order: &[],
         });
         let content = body["messages"][0]["content"]
             .as_array()
@@ -410,6 +427,7 @@ mod tests {
             stage: "test",
             max_tokens: None,
             reasoning: None,
+            provider_order: &[],
         });
         assert!(body["messages"][0]["content"].is_array());
     }
@@ -425,6 +443,7 @@ mod tests {
             stage: "test",
             max_tokens: None,
             reasoning: None,
+            provider_order: &[],
         };
         assert!(request_body(&request).get("max_tokens").is_none());
         request.max_tokens = Some(32_768);
@@ -463,6 +482,33 @@ mod tests {
             Some("x\ny")
         );
         assert_eq!(call(r#"{"choices":[{"message":{"content":"{}"}}]}"#), None);
+    }
+
+    #[test]
+    fn should_read_cached_prompt_tokens_when_the_provider_reports_them() {
+        let parsed = parse_response(
+            r#"{"choices":[{"message":{"content":"{}"}}],"usage":{"prompt_tokens":900,"prompt_tokens_details":{"cached_tokens":768},"completion_tokens":10}}"#,
+        )
+        .expect("parsed");
+        assert_eq!(parsed.cached_tokens, 768);
+    }
+
+    #[test]
+    fn should_pin_providers_only_when_one_is_named() {
+        let schema = schema();
+        let parts = [ContentPart::Text("hello".to_owned())];
+        let pinned = ["DeepSeek".to_owned()];
+        let body = request_body(&ChatRequest {
+            model: DEFAULT_MODEL,
+            parts: &parts,
+            schema: &schema,
+            stage: "test",
+            max_tokens: None,
+            reasoning: None,
+            provider_order: &pinned,
+        });
+        assert_eq!(body["provider"]["order"][0], "DeepSeek");
+        assert_eq!(body["provider"]["allow_fallbacks"], false);
     }
 
     #[test]
