@@ -12,10 +12,33 @@ use std::collections::HashSet;
 use serde::Serialize;
 use serde_json::Value;
 
-/// Consecutive page groups of at most `size` pages; every page exactly once.
+/// The most checklist equations one chunk carries; 77 dense equations in one
+/// chunk overran a 32k-token answer.
+pub const CHUNK_EQUATION_LOAD: usize = 40;
+
+/// Consecutive page groups, each page exactly once.
+///
+/// A page joins the current chunk unless that would pass `max_pages` pages or
+/// `max_load` checklist equations; a page heavier than `max_load` on its own
+/// gets its own chunk.
 #[must_use]
-pub fn page_chunks(pages: &[u32], size: usize) -> Vec<Vec<u32>> {
-    pages.chunks(size.max(1)).map(<[u32]>::to_vec).collect()
+pub fn page_chunks(pages: &[(u32, usize)], max_pages: usize, max_load: usize) -> Vec<Vec<u32>> {
+    let mut chunks = Vec::<Vec<u32>>::new();
+    let mut load = 0;
+    for &(page, page_load) in pages {
+        let full = chunks
+            .last()
+            .is_none_or(|chunk| chunk.len() >= max_pages.max(1) || load + page_load > max_load);
+        if full {
+            chunks.push(Vec::new());
+            load = 0;
+        }
+        if let Some(chunk) = chunks.last_mut() {
+            chunk.push(page);
+        }
+        load += page_load;
+    }
+    chunks
 }
 
 /// Equation numbers the text layer shows at the end of a line, in order,
@@ -285,20 +308,45 @@ mod tests {
         assert_eq!(better(None, None), None);
     }
 
+    fn unloaded(pages: std::ops::RangeInclusive<u32>) -> Vec<(u32, usize)> {
+        pages.map(|page| (page, 0)).collect()
+    }
+
     #[test]
     fn should_cover_every_page_exactly_once_including_a_partial_last_chunk() {
-        let pages = (1..=25).collect::<Vec<u32>>();
-        let chunks = page_chunks(&pages, 6);
+        let chunks = page_chunks(&unloaded(1..=25), 6, 40);
         assert_eq!(chunks.len(), 5);
         assert_eq!(chunks[4], vec![25]);
-        assert_eq!(chunks.concat(), pages);
+        assert_eq!(chunks.concat(), (1..=25).collect::<Vec<u32>>());
     }
 
     #[test]
     fn should_make_one_chunk_when_the_paper_is_shorter_than_a_chunk() {
-        assert_eq!(page_chunks(&[1, 2, 3], 6), vec![vec![1, 2, 3]]);
-        assert!(page_chunks(&[], 6).is_empty());
-        assert_eq!(page_chunks(&[1, 2], 0), vec![vec![1], vec![2]]);
+        assert_eq!(page_chunks(&unloaded(1..=3), 6, 40), vec![vec![1, 2, 3]]);
+        assert!(page_chunks(&[], 6, 40).is_empty());
+        assert_eq!(page_chunks(&unloaded(1..=2), 0, 40), vec![vec![1], vec![2]]);
+    }
+
+    #[test]
+    fn should_split_a_chunk_before_it_carries_too_many_equations() {
+        // 1909.06187 pages 7-12 carried 77 equations in one chunk.
+        let pages = [(7, 14), (8, 9), (9, 13), (10, 10), (11, 13), (12, 18)];
+        let chunks = page_chunks(&pages, 6, 40);
+        assert_eq!(chunks, vec![vec![7, 8, 9], vec![10, 11], vec![12]]);
+        for chunk in &chunks {
+            let load: usize = pages
+                .iter()
+                .filter(|(page, _)| chunk.contains(page))
+                .map(|(_, load)| load)
+                .sum();
+            assert!(load <= 40, "{chunk:?} carries {load}");
+        }
+    }
+
+    #[test]
+    fn should_give_a_page_heavier_than_the_limit_its_own_chunk() {
+        let chunks = page_chunks(&[(1, 2), (2, 55), (3, 1)], 6, 40);
+        assert_eq!(chunks, vec![vec![1], vec![2], vec![3]]);
     }
 
     #[test]

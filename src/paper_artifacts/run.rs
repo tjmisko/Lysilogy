@@ -128,6 +128,9 @@ pub struct CallRecord {
 #[derive(Clone, Debug, Serialize)]
 pub struct Failure {
     pub stage: String,
+    /// The object chunk, as `p7-12`, when the failure belongs to one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chunk: Option<String>,
     pub error: String,
     /// The start of the model output when it could not be parsed.
     pub raw: Option<String>,
@@ -180,6 +183,8 @@ pub struct ExtractRecord {
     /// Why a later stage did not run, when the paper budget stopped it.
     pub budget_stopped: Option<String>,
     pub failures: Vec<Failure>,
+    /// Object-chunk failures a retry made good; not counted as failures.
+    pub recovered_failures: Vec<Failure>,
     pub object_chunks: Vec<ChunkRecord>,
     pub object_merge: Option<MergeStats>,
     /// Pass 1 with the merged object inventory, before the self-check.
@@ -235,6 +240,7 @@ struct SessionState {
     spent_usd: f64,
     calls: Vec<CallRecord>,
     failures: Vec<Failure>,
+    recovered: Vec<Failure>,
     budget_stopped: Option<String>,
 }
 
@@ -274,13 +280,25 @@ impl<'a> Session<'a> {
         schema: &str,
         max_tokens: u32,
     ) -> Option<T> {
+        self.call_for(stage, None, parts, schema, max_tokens).await
+    }
+
+    /// A call whose failure belongs to `chunk`, so a later retry can recover it.
+    async fn call_for<T: serde::de::DeserializeOwned>(
+        &self,
+        stage: &str,
+        chunk: Option<&str>,
+        parts: &[ContentPart],
+        schema: &str,
+        max_tokens: u32,
+    ) -> Option<T> {
         if !self.within_budget(stage) {
             return None;
         }
         let schema: Value = match serde_json::from_str(schema) {
             Ok(schema) => schema,
             Err(error) => {
-                self.fail(stage, format!("schema is not JSON: {error}"), None);
+                self.fail(stage, chunk, format!("schema is not JSON: {error}"), None);
                 return None;
             }
         };
@@ -294,7 +312,7 @@ impl<'a> Session<'a> {
         let completion = match openrouter::complete(&self.client, self.ledger, &request).await {
             Ok(completion) => completion,
             Err(error) => {
-                self.fail(stage, error.to_string(), None);
+                self.fail(stage, chunk, error.to_string(), None);
                 return None;
             }
         };
@@ -303,6 +321,7 @@ impl<'a> Session<'a> {
         if parsed.finish_reason.as_deref() == Some("length") {
             self.fail(
                 stage,
+                chunk,
                 "output was cut off at the length limit".to_owned(),
                 Some(&parsed.content),
             );
@@ -313,6 +332,7 @@ impl<'a> Session<'a> {
             Err(error) => {
                 self.fail(
                     stage,
+                    chunk,
                     format!("output does not match the schema: {error}"),
                     Some(&parsed.content),
                 );
@@ -352,9 +372,20 @@ impl<'a> Session<'a> {
         });
     }
 
-    fn fail(&self, stage: &str, error: String, raw: Option<&str>) {
+    /// Move the failures of a chunk whose retry succeeded out of the failures.
+    fn recover(&self, chunk: &str) {
+        let mut guard = self.state();
+        let (recovered, failures) = std::mem::take(&mut guard.failures)
+            .into_iter()
+            .partition(|failure| failure.chunk.as_deref() == Some(chunk));
+        guard.failures = failures;
+        guard.recovered.extend::<Vec<Failure>>(recovered);
+    }
+
+    fn fail(&self, stage: &str, chunk: Option<&str>, error: String, raw: Option<&str>) {
         self.state().failures.push(Failure {
             stage: stage.to_owned(),
+            chunk: chunk.map(str::to_owned),
             error,
             raw: raw.map(|raw| raw.chars().take(RAW_PREVIEW_CHARS).collect()),
         });
@@ -448,6 +479,7 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
         totals,
         budget_stopped: session.budget_stopped,
         failures: session.failures,
+        recovered_failures: session.recovered,
         object_chunks,
         object_merge,
         pass1,
@@ -567,13 +599,13 @@ async fn object_pass(
     pages: &[ContentPart],
     pages_per_chunk: usize,
 ) -> (Vec<Value>, MergeStats, Vec<ChunkRecord>) {
-    let numbers = resources
+    let loads = resources
         .paper
         .pages
         .iter()
-        .map(|page| page.number)
+        .map(|page| (page.number, objects::equation_candidates(&page.text).len()))
         .collect::<Vec<_>>();
-    let chunks = objects::page_chunks(&numbers, pages_per_chunk);
+    let chunks = objects::page_chunks(&loads, pages_per_chunk, objects::CHUNK_EQUATION_LOAD);
     let mut start = 0;
     let requests = chunks
         .into_iter()
@@ -595,12 +627,18 @@ async fn object_pass(
         requests
             .into_iter()
             .map(|(chunk, parts, candidates)| async move {
+                let tag = format!(
+                    "p{}-{}",
+                    chunk.first().copied().unwrap_or_default(),
+                    chunk.last().copied().unwrap_or_default()
+                );
                 let ask = |stage| {
-                    let parts = &parts;
+                    let (parts, tag) = (&parts, &tag);
                     async move {
                         session
-                            .call::<ObjectsResponse>(
+                            .call_for::<ObjectsResponse>(
                                 stage,
+                                Some(tag),
                                 parts,
                                 OBJECTS_SCHEMA,
                                 OBJECTS_MAX_TOKENS,
@@ -612,7 +650,11 @@ async fn object_pass(
                 let first = ask("extract.objects").await;
                 let retried = objects::needs_retry(first.as_deref(), candidates);
                 let objects = if retried {
-                    objects::better(first, ask("extract.objects.retry").await)
+                    let objects = objects::better(first, ask("extract.objects.retry").await);
+                    if objects.is_some() {
+                        session.recover(&tag);
+                    }
+                    objects
                 } else {
                     first
                 };
@@ -1033,6 +1075,40 @@ mod tests {
             state
                 .budget_stopped
                 .is_some_and(|reason| reason.starts_with("extract.objects skipped"))
+        );
+    }
+
+    #[test]
+    fn should_move_only_the_recovered_chunks_failures() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let ledger = SpendLedger::new(directory.path().join("spend.jsonl"), 1.0);
+        let session = session(&ledger, 1.0);
+        session.fail("extract.objects", Some("p7-12"), "cut off".to_owned(), None);
+        session.fail(
+            "extract.objects",
+            Some("p13-18"),
+            "cut off".to_owned(),
+            None,
+        );
+        session.fail("extract.pass1", None, "bad json".to_owned(), None);
+        session.recover("p7-12");
+        let state = session.into_state();
+        let stages = |failures: &[Failure]| {
+            failures
+                .iter()
+                .map(|failure| (failure.stage.clone(), failure.chunk.clone()))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            stages(&state.failures),
+            [
+                ("extract.objects".to_owned(), Some("p13-18".to_owned())),
+                ("extract.pass1".to_owned(), None)
+            ]
+        );
+        assert_eq!(
+            stages(&state.recovered),
+            [("extract.objects".to_owned(), Some("p7-12".to_owned()))]
         );
     }
 
