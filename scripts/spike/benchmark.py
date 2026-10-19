@@ -13,6 +13,7 @@ the self-check delta is measured on the same truth.
 Usage: python3 -B scripts/spike/benchmark.py --run <name>
 """
 import argparse
+import difflib
 import json
 import math
 import re
@@ -82,6 +83,38 @@ def author_name(author):
     return author.get("name", "") if isinstance(author, dict) else str(author)
 
 
+def loose(value):
+    """A comparison key that survives case, accents, spacing and ligatures."""
+    text = unicodedata.normalize("NFKD", value or "")
+    text = "".join(char for char in text if not unicodedata.combining(char)).casefold()
+    for special, plain in (("ı", "i"), ("ł", "l"), ("ø", "o"), ("ß", "ss"), ("đ", "d"), ("ð", "d"),
+                           ("þ", "th"), ("æ", "ae"), ("œ", "oe"), ("ɡ", "g")):
+        text = text.replace(special, plain)
+    return re.sub(r"[^a-z0-9]+", " ", text).strip()
+
+
+def similar(left, right):
+    """A 0..1 edit ratio on the loose keys."""
+    return difflib.SequenceMatcher(None, loose(left), loose(right)).ratio()
+
+
+def authors_match(predicted, truth):
+    """Order-insensitive: each truth name has a distinct close predicted name."""
+    predicted = [loose(author_name(author)) for author in predicted]
+    truth = [loose(name) for name in truth]
+    if len(predicted) != len(truth):
+        return False
+    used = set()
+    for name in truth:
+        for index, candidate in enumerate(predicted):
+            if index not in used and similar(name, candidate) >= 0.85:
+                used.add(index)
+                break
+        else:
+            return False
+    return True
+
+
 def score_identity(artifacts, oracle):
     identity = (artifacts or {}).get("identity") or {}
     if not isinstance(identity, dict):
@@ -91,11 +124,14 @@ def score_identity(artifacts, oracle):
         title = identity.get("title") or ""
         result["title_exact"] = compact(title) == compact(oracle["title"])
         result["title_f1"] = round(token_f1(title, oracle["title"]), 4)
+        result["title_matchable"] = similar(title, oracle["title"]) >= 0.95
     if oracle.get("authors"):
         predicted = [name_key(author_name(author)) for author in identity.get("authors") or []]
         truth = [name_key(name) for name in oracle["authors"]]
         overlap = sum((Counter(predicted) & Counter(truth)).values())
         result["authors_ordered_exact"] = predicted == truth
+        result["authors_set_exact"] = Counter(predicted) == Counter(truth)
+        result["authors_matchable"] = authors_match(identity.get("authors") or [], oracle["authors"])
         result["authors_f1"] = round(2 * overlap / (len(predicted) + len(truth)), 4) if predicted or truth else 1.0
         result["authors_count_error"] = len(predicted) - len(truth)
     if oracle.get("abstract"):
@@ -103,8 +139,16 @@ def score_identity(artifacts, oracle):
         f1 = token_f1(abstract, oracle["abstract"])
         result["abstract_f1"] = round(f1, 4)
         result["abstract_match"] = f1 >= ABSTRACT_MATCH_F1
+        result["abstract_near"] = f1 >= 0.90
         result["abstract_exact_words"] = words(abstract) == words(oracle["abstract"])
     return result
+
+
+def identity_resolvable(score):
+    """The exact and perfect-enough verdicts across the identity fields present."""
+    exact = [value for key, value in score.items() if key in ("title_exact", "authors_ordered_exact", "abstract_match")]
+    matchable = [value for key, value in score.items() if key in ("title_matchable", "authors_matchable", "abstract_match")]
+    return (None if not exact else all(exact), None if not matchable else all(matchable))
 
 
 def object_number(item):
@@ -194,6 +238,8 @@ def reasoning_profile(record, result_file=None):
 def score_paper(paper, record, oracle, inventory, bibliography, result_file=None):
     final = record.get("artifacts")
     pass1 = record.get("pass1")
+    final_identity = score_identity(final, oracle)
+    exact, matchable = identity_resolvable(final_identity)
     corrections = Counter(outcome["status"] for outcome in record.get("correction_outcomes") or [])
     return {
         "stem": paper["stem"],
@@ -207,7 +253,9 @@ def score_paper(paper, record, oracle, inventory, bibliography, result_file=None
             {key: call.get(key) for key in ("stage", "prompt_tokens", "cached_tokens", "completion_tokens", "reasoning_tokens", "cost_usd", "latency_s", "finish_reason", "cost_source")}
             for call in record.get("calls") or []
         ],
-        "identity": {"pass1": score_identity(pass1, oracle), "final": score_identity(final, oracle)},
+        "identity": {"pass1": score_identity(pass1, oracle), "final": final_identity},
+        "identity_exact": exact,
+        "identity_matchable": matchable,
         "objects": {"pass1": score_objects(pass1, inventory), "final": score_objects(final, inventory)},
         "references": {
             "predicted": len((final or {}).get("references") or []),
@@ -292,6 +340,8 @@ def worst_case(rows):
         "title": [row["stem"] for row in rows if row.get("identity") and row["identity"]["final"].get("title_exact") is False],
         "authors": [row["stem"] for row in rows if row.get("identity") and row["identity"]["final"].get("authors_ordered_exact") is False],
         "abstract": [row["stem"] for row in rows if row.get("identity") and row["identity"]["final"].get("abstract_match") is False],
+        "identity_exact": [row["stem"] for row in rows if row.get("identity_exact") is False],
+        "identity_matchable": [row["stem"] for row in rows if row.get("identity_matchable") is False],
         "sections": [
             row["stem"]
             for row in rows
@@ -342,9 +392,13 @@ def aggregate(rows):
         identity = [row["identity"][stage] for row in scored]
         summary[f"identity_{stage}"] = {
             "title_exact": rate(item.get("title_exact") for item in identity),
+            "title_matchable": rate(item.get("title_matchable") for item in identity),
             "authors_ordered_exact": rate(item.get("authors_ordered_exact") for item in identity),
+            "authors_set_exact": rate(item.get("authors_set_exact") for item in identity),
+            "authors_matchable": rate(item.get("authors_matchable") for item in identity),
             "authors_f1": mean(item.get("authors_f1") for item in identity),
             "abstract_match": rate(item.get("abstract_match") for item in identity),
+            "abstract_near": rate(item.get("abstract_near") for item in identity),
             "abstract_f1": mean(item.get("abstract_f1") for item in identity),
         }
         objects = {}
@@ -420,6 +474,30 @@ def aggregate(rows):
         ),
         "abstract_match": wilson(
             sum(1 for row in scored if row["identity"]["final"].get("abstract_match")),
+            len(scored),
+        ),
+        "title_matchable": wilson(
+            sum(1 for row in scored if row["identity"]["final"].get("title_matchable")),
+            len(scored),
+        ),
+        "authors_set_exact": wilson(
+            sum(1 for row in scored if row["identity"]["final"].get("authors_set_exact")),
+            len(scored),
+        ),
+        "authors_matchable": wilson(
+            sum(1 for row in scored if row["identity"]["final"].get("authors_matchable")),
+            len(scored),
+        ),
+        "abstract_near": wilson(
+            sum(1 for row in scored if row["identity"]["final"].get("abstract_near")),
+            len(scored),
+        ),
+        "identity_exact": wilson(
+            sum(1 for row in scored if row.get("identity_exact")),
+            len(scored),
+        ),
+        "identity_matchable": wilson(
+            sum(1 for row in scored if row.get("identity_matchable")),
             len(scored),
         ),
     }

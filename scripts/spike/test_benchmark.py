@@ -65,6 +65,25 @@ class IdentityTests(unittest.TestCase):
         identity = {"title": ORACLE["title"], "authors": [{"name": "Martin B ROSSARD"}, {"name": "Silv\u00e8re B ONNABEL"}]}
         self.assertTrue(b.score_identity(artifacts(identity=identity), oracle)["authors_ordered_exact"])
 
+    def test_should_treat_author_order_as_a_set_and_allow_a_near_name(self):
+        swapped = artifacts(identity={"title": ORACLE["title"], "authors": [{"name": "Xiangyu Zhang"}, {"name": "Kaiming He"}, {"name": "Shaoqing Ren"}]})
+        score = b.score_identity(swapped, ORACLE)
+        self.assertFalse(score["authors_ordered_exact"])
+        self.assertTrue(score["authors_set_exact"])
+        self.assertTrue(score["authors_matchable"])
+        typo = artifacts(identity={"title": ORACLE["title"], "authors": [{"name": "Kaiming He"}, {"name": "Xiangyu Zbang"}, {"name": "Shaoqing Ren"}]})
+        score = b.score_identity(typo, ORACLE)
+        self.assertFalse(score["authors_set_exact"])
+        self.assertTrue(score["authors_matchable"])
+
+    def test_should_separate_exact_from_perfect_enough_identity(self):
+        oracle = {"title": ORACLE["title"], "authors": None, "abstract": None}
+        near = artifacts(identity={"title": "Deep Residual Learning for Image Recognitionn", "authors": []}, abstract={"text": None})
+        score = b.score_identity(near, oracle)
+        self.assertFalse(score["title_exact"])
+        self.assertTrue(score["title_matchable"])
+        self.assertEqual(b.identity_resolvable(score), (False, True))
+
     def test_should_score_a_missing_abstract_as_zero_not_an_error(self):
         score = b.score_identity(artifacts(abstract={"text": None}), ORACLE)
         self.assertEqual(score["abstract_f1"], 0.0)
