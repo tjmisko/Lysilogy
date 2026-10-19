@@ -72,15 +72,22 @@ def name_key(name):
     return f"{family}:{initial}"
 
 
+def author_name(author):
+    """An author entry, whether the model wrote an object or a bare name."""
+    return author.get("name", "") if isinstance(author, dict) else str(author)
+
+
 def score_identity(artifacts, oracle):
     identity = (artifacts or {}).get("identity") or {}
+    if not isinstance(identity, dict):
+        identity = {}
     result = {}
     if oracle.get("title"):
         title = identity.get("title") or ""
         result["title_exact"] = compact(title) == compact(oracle["title"])
         result["title_f1"] = round(token_f1(title, oracle["title"]), 4)
     if oracle.get("authors"):
-        predicted = [name_key(author.get("name", "")) for author in identity.get("authors") or []]
+        predicted = [name_key(author_name(author)) for author in identity.get("authors") or []]
         truth = [name_key(name) for name in oracle["authors"]]
         overlap = sum((Counter(predicted) & Counter(truth)).values())
         result["authors_ordered_exact"] = predicted == truth
