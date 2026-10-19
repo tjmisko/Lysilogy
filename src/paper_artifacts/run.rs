@@ -18,44 +18,49 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{
-    CHECK_SCHEMA, CORE_SCHEMA, OBJECTS_SCHEMA, PAPER_ARTIFACTS_SCHEMA, REPAIR_SCHEMA,
+    ANALYSIS_SCHEMA, CHECK_SCHEMA, CORE_SCHEMA, GLOSSARY_SCHEMA, OBJECTS_SCHEMA, REPAIR_SCHEMA,
+    SUPERCUT_SCHEMA,
     admission::{
         CheckCounts, LOCAL_REPAIR_SIMILARITY, QuoteSite, SiteKind, SourceText, Verdict,
         apply_removals, check, quote_sites,
     },
     corrections::{self, CheckResponse, Correction, CorrectionOutcome},
+    features::Features,
     objects::{self, ChunkObjects, MergeStats},
     resources::{self, PageResources},
 };
 use crate::{
     Error, Result,
     analysis::{
-        openrouter::{self, ChatRequest, ContentPart, CostSource},
+        openrouter::{self, ChatRequest, ContentPart, CostSource, ReasoningEffort},
         spend::SpendLedger,
     },
     extract::PdfExtractor,
     store::write_atomic,
 };
 
-const EXTRACT_PROMPT: &str = include_str!("../../prompts/paper-artifacts-extract.md");
-const OBJECTS_INLINE: &str = include_str!("../../prompts/paper-artifacts-objects-inline.md");
-const OBJECTS_SEPARATE: &str = include_str!("../../prompts/paper-artifacts-objects-separate.md");
+const CORE_PROMPT: &str = include_str!("../../prompts/paper-core.md");
+const SECTIONS_POLICY: &str = include_str!("../../prompts/sectioning.md");
 const OBJECTS_PROMPT: &str = include_str!("../../prompts/paper-objects.md");
+const SUPERCUT_PROMPT: &str = include_str!("../../prompts/paper-supercut.md");
+const ANALYSIS_PROMPT: &str = include_str!("../../prompts/paper-analysis.md");
+const GLOSSARY_PROMPT: &str = include_str!("../../prompts/paper-glossary.md");
 const CHECK_PROMPT: &str = include_str!("../../prompts/paper-artifacts-check.md");
 const REPAIR_PROMPT: &str = include_str!("../../prompts/paper-artifacts-repair.md");
 
 /// Bump when the record shape changes.
-const RECORD_VERSION: u16 = 2;
+const RECORD_VERSION: u16 = 3;
 
 /// Object chunks in flight at once.
 const CHUNK_CONCURRENCY: usize = 3;
 
 // Output ceilings per call, reasoning included, so a looping answer fails
 // fast instead of running to the provider limit (131k tokens, 16 cents).
-const PASS1_MAX_TOKENS: u32 = 65_536;
+const CORE_MAX_TOKENS: u32 = 65_536;
 const CHECK_MAX_TOKENS: u32 = 49_152;
 const OBJECTS_MAX_TOKENS: u32 = 32_768;
 const REPAIR_MAX_TOKENS: u32 = 32_768;
+const FEATURE_MAX_TOKENS: u32 = 24_576;
 
 /// The most pages sent with a repair request.
 const REPAIR_PAGE_LIMIT: usize = 10;
@@ -79,25 +84,12 @@ pub struct ExtractOptions {
     /// it by up to `CHUNK_CONCURRENCY - 1` calls.
     pub paper_budget_usd: f64,
     pub timeout: Duration,
-    pub objects: ObjectMode,
-}
-
-/// Where the object inventory comes from.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ObjectMode {
-    /// Inside the whole-paper pass 1 answer.
-    Inline,
-    /// A separate pass over page chunks of this size, merged.
-    Chunked { pages_per_chunk: usize },
-}
-
-impl ObjectMode {
-    fn label(self) -> String {
-        match self {
-            Self::Inline => "inline".to_owned(),
-            Self::Chunked { pages_per_chunk } => format!("chunked:{pages_per_chunk}"),
-        }
-    }
+    /// The optional feature passes to run after the core pass.
+    pub features: Features,
+    /// Pages per chunk for the chunked object pass.
+    pub object_pages: usize,
+    /// How much reasoning every model call may spend.
+    pub reasoning: ReasoningEffort,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -175,7 +167,10 @@ pub struct ExtractRecord {
     pub pdf: PathBuf,
     pub model: String,
     pub passes_requested: u8,
-    pub object_mode: String,
+    /// The optional feature passes that ran, in a stable order.
+    pub features: String,
+    /// The reasoning effort every call was asked to use.
+    pub reasoning: String,
     pub dpi: u32,
     pub pages: usize,
     pub calls: Vec<CallRecord>,
@@ -232,6 +227,7 @@ struct Session<'a> {
     ledger: &'a SpendLedger,
     model: &'a str,
     paper_budget_usd: f64,
+    reasoning: ReasoningEffort,
     state: Mutex<SessionState>,
 }
 
@@ -250,12 +246,14 @@ impl<'a> Session<'a> {
         ledger: &'a SpendLedger,
         model: &'a str,
         paper_budget_usd: f64,
+        reasoning: ReasoningEffort,
     ) -> Self {
         Self {
             client,
             ledger,
             model,
             paper_budget_usd,
+            reasoning,
             state: Mutex::new(SessionState::default()),
         }
     }
@@ -308,6 +306,7 @@ impl<'a> Session<'a> {
             schema: &schema,
             stage,
             max_tokens: Some(max_tokens),
+            reasoning: Some(self.reasoning),
         };
         let completion = match openrouter::complete(&self.client, self.ledger, &request).await {
             Ok(completion) => completion,
@@ -403,6 +402,7 @@ struct ObjectsResponse {
 /// Fails only when the options are invalid, the PDF cannot be turned into
 /// page resources, or the record cannot be written. Model failures are
 /// recorded in the returned record instead.
+#[allow(clippy::too_many_lines)]
 pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<ExtractRecord> {
     if !(1..=2).contains(&options.passes) {
         return Err(Error::InvalidRequest(format!(
@@ -419,24 +419,40 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
         options.dpi,
     )
     .await?;
-    let pages = page_parts(&resources).await?;
+    let text = text_parts(&resources);
     let source = SourceText::new(&resources.paper.pages);
     let session = Session::new(
         openrouter::client(options.timeout)?,
         ledger,
         &options.model,
         options.paper_budget_usd,
+        options.reasoning,
     );
 
-    let (pass1, object_chunks, object_merge) =
-        first_pass(&session, options.objects, &resources, &pages).await;
-    let pass1_check = pass1.as_ref().map(|draft| check(&source, draft));
+    let core = core_pass(&session, &resources, &text).await;
+    let pass1_check = core.as_ref().map(|draft| check(&source, draft));
 
-    let mut draft = pass1.clone();
+    let mut draft = core.clone();
+    let (object_chunks, object_merge) = feature_passes(
+        &mut draft,
+        &session,
+        &resources,
+        &text,
+        options.features,
+        options.object_pages,
+    )
+    .await;
+
     let check_pass = match draft.as_mut() {
         Some(current) if options.passes == 2 => {
-            let hide_objects = options.objects != ObjectMode::Inline;
-            self_check(current, &pages, &source, &session, hide_objects).await?
+            self_check(
+                current,
+                &text,
+                &source,
+                &session,
+                options.features.any_objects(),
+            )
+            .await?
         }
         _ => SelfCheck::default(),
     };
@@ -472,7 +488,8 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
         pdf: options.pdf.clone(),
         model: options.model.clone(),
         passes_requested: options.passes,
-        object_mode: options.objects.label(),
+        features: options.features.label(),
+        reasoning: options.reasoning.label().to_owned(),
         dpi: resources.dpi,
         pages: resources.paper.pages.len(),
         calls: session.calls,
@@ -482,7 +499,7 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
         recovered_failures: session.recovered,
         object_chunks,
         object_merge,
-        pass1,
+        pass1: core,
         pass1_check,
         corrections: check_pass.corrections,
         correction_outcomes: check_pass.outcomes,
@@ -516,25 +533,27 @@ struct SelfCheck {
 /// Pass 2: the model may only correct or flag the draft.
 async fn self_check(
     draft: &mut Value,
-    pages: &[ContentPart],
+    text: &[ContentPart],
     source: &SourceText<'_>,
     session: &Session<'_>,
     hide_objects: bool,
 ) -> Result<SelfCheck> {
-    // With a chunked inventory the self-check reviews everything else; it
-    // cannot reach the objects, so it cannot spend on them.
+    // Objects are verified against the page images elsewhere; the text-only
+    // self-check spends nothing on them.
     let mut view = draft.clone();
     if hide_objects && let Some(fields) = view.as_object_mut() {
         fields.remove("objects");
     }
-    let mut parts = vec![
+    let parts = vec![
         ContentPart::Text(CHECK_PROMPT.to_owned()),
         ContentPart::Text(format!(
             "Draft:\n```json\n{}\n```",
             serde_json::to_string(&view)?
         )),
+        ContentPart::Text("Paper:".to_owned()),
     ];
-    parts.extend(pages.iter().cloned());
+    let mut parts = parts;
+    parts.extend(text.iter().cloned());
     let Some(response) = session
         .call::<CheckResponse>("extract.pass2", &parts, CHECK_SCHEMA, CHECK_MAX_TOKENS)
         .await
@@ -549,47 +568,151 @@ async fn self_check(
     })
 }
 
-/// Pass 1, with the object inventory inline or from the chunked pass.
-async fn first_pass(
+/// The core pass: every field every extraction needs, from text alone.
+async fn core_pass(
     session: &Session<'_>,
-    mode: ObjectMode,
     resources: &PageResources,
-    pages: &[ContentPart],
-) -> (Option<Value>, Vec<ChunkRecord>, Option<MergeStats>) {
-    match mode {
-        ObjectMode::Inline => {
-            let mut parts = vec![ContentPart::Text(
-                EXTRACT_PROMPT.replace("{{objects}}", OBJECTS_INLINE.trim_end()),
-            )];
-            parts.extend(pages.iter().cloned());
-            let pass1 = session
-                .call::<Value>(
-                    "extract.pass1",
-                    &parts,
-                    PAPER_ARTIFACTS_SCHEMA,
-                    PASS1_MAX_TOKENS,
-                )
-                .await;
-            (pass1, Vec::new(), None)
+    text: &[ContentPart],
+) -> Option<Value> {
+    let prompt = CORE_PROMPT.replace(
+        "{{sections}}",
+        &sections_guidance(resources.paper.pages.len()),
+    );
+    let mut parts = vec![ContentPart::Text(prompt)];
+    parts.extend(text.iter().cloned());
+    session
+        .call::<Value>("extract.pass1", &parts, CORE_SCHEMA, CORE_MAX_TOKENS)
+        .await
+}
+
+/// Run the optional feature passes that were asked for and merge them in.
+/// Objects go through the chunked pass; the rest are one text call each.
+async fn feature_passes(
+    draft: &mut Option<Value>,
+    session: &Session<'_>,
+    resources: &PageResources,
+    text: &[ContentPart],
+    features: Features,
+    object_pages: usize,
+) -> (Vec<ChunkRecord>, Option<MergeStats>) {
+    if draft.is_none() {
+        return (Vec::new(), None);
+    }
+    let supercut = async {
+        if features.supercut {
+            text_feature(
+                session,
+                text,
+                "extract.supercut",
+                SUPERCUT_PROMPT,
+                SUPERCUT_SCHEMA,
+            )
+            .await
+        } else {
+            None
         }
-        ObjectMode::Chunked { pages_per_chunk } => {
-            let mut parts = vec![ContentPart::Text(
-                EXTRACT_PROMPT.replace("{{objects}}", OBJECTS_SEPARATE.trim_end()),
-            )];
-            parts.extend(pages.iter().cloned());
-            let (core, (inventory, merge, chunks)) = tokio::join!(
-                session.call::<Value>("extract.pass1", &parts, CORE_SCHEMA, PASS1_MAX_TOKENS),
-                object_pass(session, resources, pages, pages_per_chunk),
-            );
-            let pass1 = core.map(|mut core| {
-                if let Some(fields) = core.as_object_mut() {
-                    fields.insert("objects".to_owned(), Value::Array(inventory));
+    };
+    let analysis = async {
+        if features.analysis {
+            text_feature(
+                session,
+                text,
+                "extract.analysis",
+                ANALYSIS_PROMPT,
+                ANALYSIS_SCHEMA,
+            )
+            .await
+        } else {
+            None
+        }
+    };
+    let glossary = async {
+        if features.glossary {
+            text_feature(
+                session,
+                text,
+                "extract.glossary",
+                GLOSSARY_PROMPT,
+                GLOSSARY_SCHEMA,
+            )
+            .await
+        } else {
+            None
+        }
+    };
+    let objects = async {
+        if features.any_objects() {
+            let kinds = features.object_kinds();
+            let page_parts = match page_parts(resources).await {
+                Ok(parts) => parts,
+                Err(error) => {
+                    session.fail("extract.objects", None, error.to_string(), None);
+                    return (Vec::new(), None, Vec::new());
                 }
-                core
-            });
-            (pass1, chunks, Some(merge))
+            };
+            let (inventory, merge, chunks) =
+                object_pass(session, resources, &page_parts, &kinds, object_pages).await;
+            (chunks, Some(merge), inventory)
+        } else {
+            (Vec::new(), None, Vec::new())
+        }
+    };
+    let (supercut, analysis, glossary, (chunks, merge, inventory)) =
+        tokio::join!(supercut, analysis, glossary, objects);
+    if let Some(draft) = draft.as_mut() {
+        let Some(fields) = draft.as_object_mut() else {
+            return (chunks, merge);
+        };
+        for value in [supercut, analysis, glossary].into_iter().flatten() {
+            merge_fields(fields, &value);
+        }
+        if features.any_objects() {
+            fields.insert("objects".to_owned(), Value::Array(inventory));
         }
     }
+    (chunks, merge)
+}
+
+/// One text-only feature call that returns the fields named by its schema.
+async fn text_feature(
+    session: &Session<'_>,
+    text: &[ContentPart],
+    stage: &str,
+    prompt: &str,
+    schema: &str,
+) -> Option<Value> {
+    let mut parts = vec![ContentPart::Text(prompt.to_owned())];
+    parts.extend(text.iter().cloned());
+    session
+        .call::<Value>(stage, &parts, schema, FEATURE_MAX_TOKENS)
+        .await
+}
+
+/// Merge a feature answer into the draft. Headline results and the read
+/// signal belong under `card`.
+fn merge_fields(draft: &mut serde_json::Map<String, Value>, fields: &Value) {
+    let Some(fields) = fields.as_object() else {
+        return;
+    };
+    for (key, value) in fields {
+        if matches!(key.as_str(), "headline_results" | "read_signal") {
+            if let Some(card) = draft.get_mut("card").and_then(Value::as_object_mut) {
+                card.insert(key.clone(), value.clone());
+            }
+        } else {
+            draft.insert(key.clone(), value.clone());
+        }
+    }
+}
+
+/// The sectioning policy plus a page-count budget, for `{{sections}}`.
+fn sections_guidance(page_count: usize) -> String {
+    let pages = page_count.max(1);
+    let lower = pages.div_ceil(2);
+    let upper = pages.saturating_mul(2).div_ceil(3).max(lower);
+    format!(
+        "{SECTIONS_POLICY}\nThis PDF contains {pages} pages. Start by considering roughly {lower}\u{2013}{upper} substantive reading units, then adjust for actual topic boundaries and subtract references, appendices, or adjacent articles from the main-text budget. This is a planning guide, not a quota or a reason to drop content."
+    )
 }
 
 /// The object inventory, read a chunk of pages at a time and merged.
@@ -597,6 +720,7 @@ async fn object_pass(
     session: &Session<'_>,
     resources: &PageResources,
     pages: &[ContentPart],
+    kinds: &[&str],
     pages_per_chunk: usize,
 ) -> (Vec<Value>, MergeStats, Vec<ChunkRecord>) {
     let loads = resources
@@ -606,13 +730,14 @@ async fn object_pass(
         .map(|page| (page.number, objects::equation_candidates(&page.text).len()))
         .collect::<Vec<_>>();
     let chunks = objects::page_chunks(&loads, pages_per_chunk, objects::CHUNK_EQUATION_LOAD);
+    let prompt = OBJECTS_PROMPT.replace("{{kinds}}", &kinds.join(", "));
     let mut start = 0;
     let requests = chunks
         .into_iter()
         .map(|chunk| {
             // `pages` holds a text part and an image part per page, in order.
             let chunk_pages = &resources.paper.pages[start..start + chunk.len()];
-            let mut parts = vec![ContentPart::Text(OBJECTS_PROMPT.to_owned())];
+            let mut parts = vec![ContentPart::Text(prompt.clone())];
             parts.extend(pages[start * 2..(start + chunk.len()) * 2].iter().cloned());
             parts.push(ContentPart::Text(checklist(chunk_pages)));
             let candidates = chunk_pages
@@ -709,6 +834,16 @@ fn checklist(pages: &[crate::domain::ExtractedPage]) -> String {
         text.push_str(" none found.");
     }
     text
+}
+
+/// Each page's text part alone, for the text-only core and feature passes.
+fn text_parts(resources: &PageResources) -> Vec<ContentPart> {
+    resources
+        .paper
+        .pages
+        .iter()
+        .map(|page| ContentPart::Text(format!("<<page {}>>\n{}", page.number, page.text.trim())))
+        .collect()
 }
 
 /// Each page's text followed by its image.
@@ -924,6 +1059,7 @@ mod tests {
             ledger,
             openrouter::DEFAULT_MODEL,
             paper_budget_usd,
+            ReasoningEffort::Low,
         )
     }
 
@@ -1053,7 +1189,8 @@ mod tests {
             .collect::<Vec<_>>();
         let session = session(&ledger, 0.15);
         session.state().spent_usd = 0.15;
-        let (inventory, merge, chunks) = object_pass(&session, &resources, &pages, 1).await;
+        let (inventory, merge, chunks) =
+            object_pass(&session, &resources, &pages, &["equation"], 1).await;
         assert!(inventory.is_empty());
         assert_eq!(merge.chunks, 2);
         assert_eq!(merge.failed_chunks, 2);
@@ -1112,6 +1249,48 @@ mod tests {
         );
     }
 
+    #[test]
+    fn should_put_headline_results_and_read_signal_under_card() {
+        let draft = serde_json::json!({"card": {"thesis": {"text": "t"}}});
+        let mut fields = draft.as_object().expect("object").clone();
+        merge_fields(
+            &mut fields,
+            &serde_json::json!({
+                "claims": [{"id": "c1"}],
+                "headline_results": [{"statement": "s"}],
+                "read_signal": {"judgment": "skim"}
+            }),
+        );
+        let merged = serde_json::Value::Object(fields);
+        assert_eq!(merged["claims"][0]["id"], "c1");
+        assert_eq!(merged["card"]["headline_results"][0]["statement"], "s");
+        assert_eq!(merged["card"]["read_signal"]["judgment"], "skim");
+        assert!(merged.get("headline_results").is_none());
+    }
+
+    #[test]
+    fn should_build_one_text_part_per_page_for_the_text_passes() {
+        let resources = resources();
+        let parts = text_parts(&resources);
+        assert_eq!(parts.len(), 2);
+        for (part, page) in parts.iter().zip(&resources.paper.pages) {
+            match part {
+                ContentPart::Text(text) => {
+                    assert!(text.starts_with(&format!("<<page {}>>", page.number)));
+                }
+                ContentPart::Png(_) => panic!("text passes must not send images"),
+            }
+        }
+    }
+
+    #[test]
+    fn should_state_a_page_budget_in_the_section_guidance() {
+        let guidance = sections_guidance(2);
+        assert!(guidance.contains("This PDF contains 2 pages"));
+        assert!(guidance.contains("1\u{2013}2 substantive reading units"));
+        assert!(guidance.starts_with(SECTIONS_POLICY));
+    }
+
     #[tokio::test]
     async fn should_reject_a_pass_count_other_than_one_or_two() {
         let directory = tempfile::tempdir().expect("temporary directory");
@@ -1126,7 +1305,9 @@ mod tests {
                 output: directory.path().join("out.json"),
                 paper_budget_usd: 0.25,
                 timeout: Duration::from_secs(1),
-                objects: ObjectMode::Chunked { pages_per_chunk: 6 },
+                features: Features::default(),
+                object_pages: 6,
+                reasoning: ReasoningEffort::Low,
             };
             assert!(matches!(
                 extract(&options, &ledger).await,

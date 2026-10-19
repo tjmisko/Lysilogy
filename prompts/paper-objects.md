@@ -1,6 +1,8 @@
-You are listing the objects printed on a few pages of a scientific paper: figures, tables, algorithms, and numbered displayed equations. Other pages are handled separately, so list only what is printed on the pages you are given.
+You are listing the objects printed on a few pages of a scientific paper. Other pages are handled separately, so list only what is printed on the pages you are given.
 
 What you are given: the text of each page, starting with a marker like `<<page 7>>` (1-based PDF page), followed by an image of that page. The images are the evidence for equations, figures and tables.
+
+You are asked for these kinds only: {{kinds}}.
 
 Rules:
 
@@ -8,8 +10,8 @@ Rules:
 - **Equations:** list every displayed equation whose number is printed on these pages, such as `(12)`, `(A.3)` or `(2.7)`. Read its LaTeX off the page image. One object per printed number: when several lines carry several numbers, list each number separately; never write a range like `24-28`. Skip unnumbered displays. Equations have no caption: leave `caption` null.
 - **Not objects:** a mention in the running text ("as shown in Figure 3", "by (12)") is not the object. Only the printed caption or the equation number itself counts.
 - `page` is the page where the caption or the equation number is printed.
-- For every object give a short plain-language meaning, why it matters in the paper, and the pages you can see referring to it (leave the list empty if none are in view).
+- List the pages you can see referring to the object; leave the list empty if none are in view.
 - **Checklist.** After the pages comes a checklist of equation numbers that the text layer shows on them, by page. It is a hint, not truth: it can include years, citation numbers, or references to equations printed elsewhere, and it misses numbers the text layer garbles. Check every entry against the page images: list each one that is a displayed equation number on these pages, skip the rest, and add any numbered equations the checklist missed.
-- An empty list is the right answer when these pages print no objects.
+- An empty list is the right answer when these pages print no objects of the requested kinds.
 
 Return only the JSON object.

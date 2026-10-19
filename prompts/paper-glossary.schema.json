@@ -1,0 +1,125 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "notation",
+    "glossary"
+  ],
+  "properties": {
+    "notation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "symbol",
+          "meaning",
+          "page",
+          "evidence",
+          "confidence"
+        ],
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "LaTeX."
+          },
+          "meaning": {
+            "type": "string"
+          },
+          "page": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "page"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "description": "Copied exactly from the page text, 8 to 300 characters."
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "1-based page number."
+                }
+              },
+              "description": "A verbatim passage from the paper and the page it is on."
+            },
+            "description": "Verbatim support. Empty only when the item is a model judgment."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    },
+    "glossary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "term",
+          "definition",
+          "evidence",
+          "confidence"
+        ],
+        "properties": {
+          "term": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "page"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "description": "Copied exactly from the page text, 8 to 300 characters."
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "1-based page number."
+                }
+              },
+              "description": "A verbatim passage from the paper and the page it is on."
+            },
+            "description": "Verbatim support. Empty only when the item is a model judgment."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    }
+  },
+  "description": "The symbols and terms a newcomer would need."
+}

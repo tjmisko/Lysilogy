@@ -6,19 +6,20 @@
     "type",
     "abstract",
     "card",
-    "supercut",
     "question",
+    "sections",
+    "references",
+    "citations",
+    "relations",
+    "objects",
+    "supercut",
     "claims",
     "method",
     "key_numbers",
     "limitations",
     "open_questions",
-    "objects",
     "notation",
-    "glossary",
-    "references",
-    "citations",
-    "relations"
+    "glossary"
   ],
   "properties": {
     "identity": {
@@ -555,39 +556,6 @@
         }
       }
     },
-    "supercut": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "kind",
-          "text",
-          "page"
-        ],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "source",
-              "connector"
-            ],
-            "description": "source: the paper's own sentences, verbatim. connector: your short bridging text."
-          },
-          "text": {
-            "type": "string"
-          },
-          "page": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "description": "Required for source segments; null for connectors."
-          }
-        }
-      },
-      "description": "The argument as ordered segments. Length and quote density follow the paper's importance and prose quality."
-    },
     "question": {
       "type": "object",
       "additionalProperties": false,
@@ -634,6 +602,347 @@
           "description": "How sure you are that this item is correct."
         }
       }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "kind",
+          "family",
+          "pages",
+          "source_span",
+          "summary"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short topic title, not a breadcrumb of the paper's own headings."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "background",
+              "research_question",
+              "theory",
+              "methods",
+              "data",
+              "results",
+              "discussion",
+              "limitations",
+              "conclusion",
+              "references",
+              "appendix",
+              "other"
+            ]
+          },
+          "family": {
+            "type": "string",
+            "enum": [
+              "context",
+              "question",
+              "method",
+              "evidence",
+              "interpretation",
+              "caveat",
+              "reference"
+            ]
+          },
+          "pages": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "start",
+              "end"
+            ],
+            "properties": {
+              "start": {
+                "type": "integer",
+                "description": "First 1-based PDF page."
+              },
+              "end": {
+                "type": "integer",
+                "description": "Last 1-based PDF page."
+              }
+            }
+          },
+          "source_span": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "start_text",
+              "start_page",
+              "end_text",
+              "end_page"
+            ],
+            "properties": {
+              "start_text": {
+                "type": "string",
+                "description": "A short verbatim phrase from where the unit begins."
+              },
+              "start_page": {
+                "type": "integer"
+              },
+              "end_text": {
+                "type": "string",
+                "description": "A short verbatim phrase from where the unit ends."
+              },
+              "end_page": {
+                "type": "integer"
+              }
+            }
+          },
+          "summary": {
+            "type": "string",
+            "description": "One or two sentences that synthesize the whole unit."
+          }
+        }
+      },
+      "description": "Coherent topic-based reading units, usually 1-2 pages and generally 1-5 pages of content. Keep related headings, variants, and examples together. Increasing PDF order, non-overlapping spans. Never a list of the paper's own headings."
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "title",
+          "authors",
+          "year",
+          "venue",
+          "doi",
+          "page"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The in-text marker, e.g. '12' or 'Smith et al., 2020'."
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "year": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "venue": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "doi": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page": {
+            "type": "integer"
+          }
+        }
+      },
+      "description": "Every bibliography entry, in order."
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reference_key",
+          "page",
+          "context"
+        ],
+        "properties": {
+          "reference_key": {
+            "type": "string"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "context": {
+            "type": "string",
+            "description": "The citing sentence, verbatim."
+          }
+        }
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reference_key",
+          "relation",
+          "why",
+          "quote",
+          "page",
+          "confidence"
+        ],
+        "properties": {
+          "reference_key": {
+            "type": "string"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "background",
+              "uses_method",
+              "uses_data",
+              "extends",
+              "supports",
+              "contrasts",
+              "critiques",
+              "compares",
+              "other"
+            ]
+          },
+          "why": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string",
+            "description": "Verbatim."
+          },
+          "page": {
+            "type": "integer"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "label",
+          "number",
+          "page",
+          "caption",
+          "latex",
+          "referenced_on_pages",
+          "confidence"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "figure",
+              "table",
+              "equation",
+              "algorithm"
+            ]
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "As printed, e.g. 'Figure 3', 'Table 1', '(12)'."
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The number alone, e.g. '3', '1', '12', 'A.2'."
+          },
+          "page": {
+            "type": "integer"
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The printed caption, copied verbatim. Null for equations and for any object without a printed caption; never write one."
+          },
+          "latex": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Equations: LaTeX read from the page image. Null otherwise."
+          },
+          "referenced_on_pages": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      },
+      "description": "Every figure, table, and numbered displayed equation of the requested kinds; also unnumbered displayed equations that matter."
+    },
+    "supercut": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "text",
+          "page"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "source",
+              "connector"
+            ],
+            "description": "source: the paper's own sentences, verbatim. connector: your short bridging text."
+          },
+          "text": {
+            "type": "string"
+          },
+          "page": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Required for source segments; null for connectors."
+          }
+        }
+      },
+      "description": "The argument as ordered segments. Length and quote density follow the paper's importance and prose quality."
     },
     "claims": {
       "type": "array",
@@ -954,89 +1263,6 @@
         }
       }
     },
-    "objects": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "kind",
-          "label",
-          "number",
-          "page",
-          "caption",
-          "latex",
-          "plain_language",
-          "why_it_matters",
-          "referenced_on_pages",
-          "confidence"
-        ],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "figure",
-              "table",
-              "equation",
-              "algorithm"
-            ]
-          },
-          "label": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "As printed, e.g. 'Figure 3', 'Table 1', '(12)'."
-          },
-          "number": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The number alone, e.g. '3', '1', '12', 'A.2'."
-          },
-          "page": {
-            "type": "integer"
-          },
-          "caption": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The printed caption, copied verbatim. Null for equations and for any object without a printed caption; never write one."
-          },
-          "latex": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Equations: LaTeX read from the page image. Null otherwise."
-          },
-          "plain_language": {
-            "type": "string"
-          },
-          "why_it_matters": {
-            "type": "string"
-          },
-          "referenced_on_pages": {
-            "type": "array",
-            "items": {
-              "type": "integer"
-            }
-          },
-          "confidence": {
-            "type": "string",
-            "enum": [
-              "high",
-              "medium",
-              "low"
-            ],
-            "description": "How sure you are that this item is correct."
-          }
-        }
-      },
-      "description": "Every figure, table, and numbered displayed equation; also unnumbered displayed equations that matter."
-    },
     "notation": {
       "type": "array",
       "items": {
@@ -1138,139 +1364,6 @@
               "description": "A verbatim passage from the paper and the page it is on."
             },
             "description": "Verbatim support. Empty only when the item is a model judgment."
-          },
-          "confidence": {
-            "type": "string",
-            "enum": [
-              "high",
-              "medium",
-              "low"
-            ],
-            "description": "How sure you are that this item is correct."
-          }
-        }
-      }
-    },
-    "references": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "key",
-          "title",
-          "authors",
-          "year",
-          "venue",
-          "doi",
-          "page"
-        ],
-        "properties": {
-          "key": {
-            "type": "string",
-            "description": "The in-text marker, e.g. '12' or 'Smith et al., 2020'."
-          },
-          "title": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "authors": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "year": {
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
-          "venue": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "doi": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "page": {
-            "type": "integer"
-          }
-        }
-      },
-      "description": "Every bibliography entry, in order."
-    },
-    "citations": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "reference_key",
-          "page",
-          "context"
-        ],
-        "properties": {
-          "reference_key": {
-            "type": "string"
-          },
-          "page": {
-            "type": "integer"
-          },
-          "context": {
-            "type": "string",
-            "description": "The citing sentence, verbatim."
-          }
-        }
-      }
-    },
-    "relations": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "reference_key",
-          "relation",
-          "why",
-          "quote",
-          "page",
-          "confidence"
-        ],
-        "properties": {
-          "reference_key": {
-            "type": "string"
-          },
-          "relation": {
-            "type": "string",
-            "enum": [
-              "background",
-              "uses_method",
-              "uses_data",
-              "extends",
-              "supports",
-              "contrasts",
-              "critiques",
-              "compares",
-              "other"
-            ]
-          },
-          "why": {
-            "type": "string"
-          },
-          "quote": {
-            "type": "string",
-            "description": "Verbatim."
-          },
-          "page": {
-            "type": "integer"
           },
           "confidence": {
             "type": "string",

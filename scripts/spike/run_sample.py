@@ -36,8 +36,9 @@ def run_one(paper, args, run_dir, binary):
                 "--model", args.model,
                 "--passes", str(args.passes),
                 "--paper-budget-usd", str(args.paper_budget),
-                "--objects", args.objects,
+                "--features", args.features,
                 "--object-pages", str(args.object_pages),
+                "--reasoning", args.reasoning,
                 "--work", str(Path.home() / ".cache/lysilogy/spike/work" / paper["stem"]),
                 "--out", str(out),
             ],
@@ -59,23 +60,31 @@ def main():
     parser.add_argument("--jobs", type=int, default=4)
     parser.add_argument("--budget", type=float, default=5.0)
     parser.add_argument("--paper-budget", type=float, default=0.15)
-    parser.add_argument("--objects", choices=("chunked", "inline"), default="chunked")
+    parser.add_argument("--features", default="",
+                        help="optional feature passes: figures, tables, algorithms, equations, objects, supercut, analysis, glossary, all")
+    parser.add_argument("--reasoning", choices=("off", "low", "medium", "high"), default="low")
     parser.add_argument("--object-pages", type=int, default=6)
     parser.add_argument("--sample", type=Path, default=Path("eval/spike/sample.json"))
+    parser.add_argument("--pdf-dir", type=Path,
+                        help="run over every PDF in this directory instead of the sample (no oracle truth)")
     parser.add_argument("--binary", type=Path, default=Path("target/release/lysilogy"))
     parser.add_argument("--force", action="store_true", help="rerun papers that already have a result")
     args = parser.parse_args()
     if not os.environ.get("OPENROUTER_API_KEY"):
         sys.exit("OPENROUTER_API_KEY is not set")
-    papers = json.loads(args.sample.read_text())["papers"]
+    papers = (
+        [{"stem": pdf.stem, "pdf": str(pdf)} for pdf in sorted(args.pdf_dir.glob("*.pdf"))]
+        if args.pdf_dir else json.loads(args.sample.read_text())["papers"]
+    )
     run_dir = Path("eval/spike/runs") / args.run
     for sub in ("results", "logs", "empty-library"):
         (run_dir / sub).mkdir(parents=True, exist_ok=True)
     (run_dir / "run.json").write_text(json.dumps({
         "run": args.run, "model": args.model, "passes": args.passes, "jobs": args.jobs,
         "budget_usd": args.budget, "paper_budget_usd": args.paper_budget,
-        "objects": args.objects, "object_pages": args.object_pages,
-        "sample": str(args.sample), "started": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        "features": args.features, "object_pages": args.object_pages, "reasoning": args.reasoning,
+        "sample": str(args.sample), "pdf_dir": str(args.pdf_dir) if args.pdf_dir else None,
+        "started": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
     }, indent=2) + "\n")
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
         for stem, status, seconds in pool.map(lambda paper: run_one(paper, args, run_dir, args.binary.resolve()), papers):

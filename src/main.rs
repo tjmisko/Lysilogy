@@ -87,11 +87,25 @@ impl LabelSidecar {
     }
 }
 
-/// Where `extract` reads the object inventory.
+/// How much reasoning `extract` asks each model call to spend.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
-enum ObjectSource {
-    Inline,
-    Chunked,
+enum ReasoningChoice {
+    Off,
+    Low,
+    Medium,
+    High,
+}
+
+impl ReasoningChoice {
+    const fn effort(self) -> lysilogy::analysis::openrouter::ReasoningEffort {
+        use lysilogy::analysis::openrouter::ReasoningEffort;
+        match self {
+            Self::Off => ReasoningEffort::Off,
+            Self::Low => ReasoningEffort::Low,
+            Self::Medium => ReasoningEffort::Medium,
+            Self::High => ReasoningEffort::High,
+        }
+    }
 }
 
 /// How `lit` should label edges, when asked to.
@@ -254,12 +268,16 @@ enum Command {
         /// No further model call starts once this paper has spent this much (USD).
         #[arg(long, default_value_t = 0.15)]
         paper_budget_usd: f64,
-        /// Read figures, tables and equations in a separate chunked pass, or inside pass 1.
-        #[arg(long, value_enum, default_value = "chunked")]
-        objects: ObjectSource,
+        /// Optional feature passes after the core pass: figures, tables,
+        /// algorithms, equations, objects, supercut, analysis, glossary, all, none.
+        #[arg(long, default_value = "")]
+        features: String,
         /// Pages per chunk for the chunked object pass.
         #[arg(long, default_value_t = 6, value_parser = clap::value_parser!(u16).range(1..=50))]
         object_pages: u16,
+        /// How much reasoning each model call may spend.
+        #[arg(long, value_enum, default_value = "low")]
+        reasoning: ReasoningChoice,
     },
     /// Analyze one paper selected by ID or an unambiguous title fragment.
     Analyze {
@@ -550,8 +568,9 @@ async fn run(cli: Cli) -> Result<()> {
             work,
             dpi,
             paper_budget_usd,
-            objects,
+            features,
             object_pages,
+            reasoning,
         } => {
             let pdf = match (pdf, query) {
                 (Some(pdf), _) => pdf,
@@ -578,12 +597,9 @@ async fn run(cli: Cli) -> Result<()> {
                 dpi,
                 paper_budget_usd,
                 timeout: std::time::Duration::from_secs(20 * 60),
-                objects: match objects {
-                    ObjectSource::Inline => lysilogy::paper_artifacts::run::ObjectMode::Inline,
-                    ObjectSource::Chunked => lysilogy::paper_artifacts::run::ObjectMode::Chunked {
-                        pages_per_chunk: usize::from(object_pages),
-                    },
-                },
+                features: lysilogy::paper_artifacts::features::Features::parse(&features)?,
+                object_pages: usize::from(object_pages),
+                reasoning: reasoning.effort(),
             };
             let ledger = lysilogy::analysis::spend::SpendLedger::with_defaults();
             let record = lysilogy::paper_artifacts::run::extract(&options, &ledger).await?;

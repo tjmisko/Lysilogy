@@ -3,6 +3,10 @@
 Strict mode requires every property in `required`, `additionalProperties:
 false`, and nulls only through type unions, which is error-prone by hand.
 Edit this file and run: python3 -B scripts/spike/build_schemas.py prompts
+
+The core schema carries the fields every extraction needs. Each optional
+feature is its own schema so it can be requested on its own, later, without
+re-running the core pass.
 """
 import json
 import sys
@@ -42,61 +46,106 @@ position_item = obj(
     evidence=evidence_list, confidence=confidence)
 relation_kinds = ["background", "uses_method", "uses_data", "extends", "supports", "contrasts", "critiques", "compares", "other"]
 
-paper = obj(
-    "The paper-alone artifacts of one scientific paper.",
-    identity=obj(
-        title=s("As printed, without line-break hyphens."),
-        subtitle=s(null=True),
-        authors=arr(obj(name=s("As printed."), affiliation=s(null=True)), "All authors, in printed order."),
-        year=i(null=True), venue=s(null=True),
-        identifiers=obj(doi=s(null=True), arxiv=s("arXiv identifier without the 'arXiv:' prefix.", null=True)),
-        publication_state=enum(["preprint", "published", "unknown"]),
-        evidence=evidence_list, confidence=confidence),
-    type=obj(value=enum(["survey", "method", "empirical", "theory", "dataset", "position", "replication", "resource"]),
-             reason=s(), confidence=confidence),
-    abstract=obj(text=s("The abstract copied verbatim, paragraphs joined with a blank line; null if the paper has none.", null=True),
-                 page=i(null=True), confidence=confidence),
-    card=obj(
-        thesis=obj(text=s("One plain sentence."), evidence=evidence_list, confidence=confidence),
-        position=obj(predecessors=arr(position_item, "Work this paper builds on."),
-                     targets=arr(position_item, "Work it contrasts with or critiques."),
-                     replications=arr(position_item, "Work it replicates or that replicates it.")),
-        headline_results=arr(obj(statement=s(), carrier=s("The object label or number that carries the result."),
-                                 evidence=evidence_list, confidence=confidence)),
-        read_signal=obj(judgment=enum(["read", "skim", "glance", "summary_enough"]),
-                        reason=s("Model judgment; say why."))),
-    supercut=arr(obj(kind=enum(["source", "connector"], "source: the paper's own sentences, verbatim. connector: your short bridging text."),
-                     text=s(), page=i("Required for source segments; null for connectors.", null=True)),
-                 "The argument as ordered segments. Length and quote density follow the paper's importance and prose quality."),
-    question=obj(text=s("The research question or hypothesis."), evidence=evidence_list, confidence=confidence),
-    claims=arr(obj(id=s("c1, c2, ..."), statement=s(), support=s("What supports it, in a line."),
-                   strength=enum(["strong", "moderate", "weak", "speculative"]),
-                   evidence_refs=arr(s(), "Object labels, numbers, or section names that support it."),
-                   evidence=evidence_list, confidence=confidence)),
-    method=obj(setting=s(null=True), data=s(null=True), procedure=s(null=True), assumptions=arr(s()),
-               evidence=evidence_list, confidence=confidence),
-    key_numbers=arr(obj(value=s("As printed, with units."), quantity=s(), context=s(),
-                        evidence=evidence_list, confidence=confidence)),
-    limitations=arr(obj(text=s(), stated_by=enum(["authors", "model"]), evidence=evidence_list, confidence=confidence)),
-    open_questions=arr(obj(text=s(), stated_by=enum(["authors", "model"]), evidence=evidence_list, confidence=confidence)),
-    objects=arr(obj(kind=enum(["figure", "table", "equation", "algorithm"]),
-                    label=s("As printed, e.g. 'Figure 3', 'Table 1', '(12)'.", null=True),
-                    number=s("The number alone, e.g. '3', '1', '12', 'A.2'.", null=True),
-                    page=i(), caption=s("The printed caption, copied verbatim. Null for equations and for any object without a printed caption; never write one.", null=True),
-                    latex=s("Equations: LaTeX read from the page image. Null otherwise.", null=True),
-                    plain_language=s(), why_it_matters=s(),
-                    referenced_on_pages=arr(i()), confidence=confidence),
-                "Every figure, table, and numbered displayed equation; also unnumbered displayed equations that matter."),
-    notation=arr(obj(symbol=s("LaTeX."), meaning=s(), page=i(null=True), evidence=evidence_list, confidence=confidence)),
-    glossary=arr(obj(term=s(), definition=s(), evidence=evidence_list, confidence=confidence)),
-    references=arr(obj(key=s("The in-text marker, e.g. '12' or 'Smith et al., 2020'."),
-                       title=s(null=True), authors=arr(s()), year=i(null=True), venue=s(null=True), doi=s(null=True),
-                       page=i()), "Every bibliography entry, in order."),
-    citations=arr(obj(reference_key=s(), page=i(), context=s("The citing sentence, verbatim."))),
-    relations=arr(obj(reference_key=s(), relation=enum(relation_kinds), why=s(), quote=s("Verbatim."), page=i(),
-                      confidence=confidence)),
-)
+section_kinds = ["abstract", "background", "research_question", "theory", "methods",
+                 "data", "results", "discussion", "limitations", "conclusion",
+                 "references", "appendix", "other"]
+section_families = ["context", "question", "method", "evidence", "interpretation", "caveat", "reference"]
 
+# The fields, gathered per feature so the core schema and each feature schema
+# are assembled from the same definitions.
+identity = obj(
+    title=s("As printed, without line-break hyphens."),
+    subtitle=s(null=True),
+    authors=arr(obj(name=s("As printed."), affiliation=s(null=True)), "All authors, in printed order."),
+    year=i(null=True), venue=s(null=True),
+    identifiers=obj(doi=s(null=True), arxiv=s("arXiv identifier without the 'arXiv:' prefix.", null=True)),
+    publication_state=enum(["preprint", "published", "unknown"]),
+    evidence=evidence_list, confidence=confidence)
+paper_type = obj(value=enum(["survey", "method", "empirical", "theory", "dataset", "position", "replication", "resource"]),
+         reason=s(), confidence=confidence)
+abstract = obj(text=s("The abstract copied verbatim, paragraphs joined with a blank line; null if the paper has none.", null=True),
+             page=i(null=True), confidence=confidence)
+card_core = obj(
+    thesis=obj(text=s("One plain sentence."), evidence=evidence_list, confidence=confidence),
+    position=obj(predecessors=arr(position_item, "Work this paper builds on."),
+                 targets=arr(position_item, "Work it contrasts with or critiques."),
+                 replications=arr(position_item, "Work it replicates or that replicates it.")))
+question = obj(text=s("The research question or hypothesis."), evidence=evidence_list, confidence=confidence)
+sections = arr(obj(
+    title=s("A short topic title, not a breadcrumb of the paper's own headings."),
+    kind=enum(section_kinds),
+    family=enum(section_families),
+    pages=obj(start=i("First 1-based PDF page."), end=i("Last 1-based PDF page.")),
+    source_span=obj(start_text=s("A short verbatim phrase from where the unit begins."), start_page=i(),
+                    end_text=s("A short verbatim phrase from where the unit ends."), end_page=i()),
+    summary=s("One or two sentences that synthesize the whole unit.")),
+    "Coherent topic-based reading units, usually 1-2 pages and generally 1-5 pages of content. "
+    "Keep related headings, variants, and examples together. Increasing PDF order, non-overlapping spans. Never a list of the paper's own headings.")
+references = arr(obj(key=s("The in-text marker, e.g. '12' or 'Smith et al., 2020'."),
+                   title=s(null=True), authors=arr(s()), year=i(null=True), venue=s(null=True), doi=s(null=True),
+                   page=i()), "Every bibliography entry, in order.")
+citations = arr(obj(reference_key=s(), page=i(), context=s("The citing sentence, verbatim.")))
+relations = arr(obj(reference_key=s(), relation=enum(relation_kinds), why=s(), quote=s("Verbatim."), page=i(),
+                  confidence=confidence))
+
+# Optional features.
+supercut = arr(obj(kind=enum(["source", "connector"], "source: the paper's own sentences, verbatim. connector: your short bridging text."),
+                 text=s(), page=i("Required for source segments; null for connectors.", null=True)),
+             "The argument as ordered segments. Length and quote density follow the paper's importance and prose quality.")
+claims = arr(obj(id=s("c1, c2, ..."), statement=s(), support=s("What supports it, in a line."),
+               strength=enum(["strong", "moderate", "weak", "speculative"]),
+               evidence_refs=arr(s(), "Object labels, numbers, or section names that support it."),
+               evidence=evidence_list, confidence=confidence))
+method = obj(setting=s(null=True), data=s(null=True), procedure=s(null=True), assumptions=arr(s()),
+           evidence=evidence_list, confidence=confidence)
+key_numbers = arr(obj(value=s("As printed, with units."), quantity=s(), context=s(),
+                    evidence=evidence_list, confidence=confidence))
+limitations = arr(obj(text=s(), stated_by=enum(["authors", "model"]), evidence=evidence_list, confidence=confidence))
+open_questions = arr(obj(text=s(), stated_by=enum(["authors", "model"]), evidence=evidence_list, confidence=confidence))
+objects = arr(obj(kind=enum(["figure", "table", "equation", "algorithm"]),
+                label=s("As printed, e.g. 'Figure 3', 'Table 1', '(12)'.", null=True),
+                number=s("The number alone, e.g. '3', '1', '12', 'A.2'.", null=True),
+                page=i(), caption=s("The printed caption, copied verbatim. Null for equations and for any object without a printed caption; never write one.", null=True),
+                latex=s("Equations: LaTeX read from the page image. Null otherwise.", null=True),
+                referenced_on_pages=arr(i()), confidence=confidence),
+            "Every figure, table, and numbered displayed equation of the requested kinds; also unnumbered displayed equations that matter.")
+notation = arr(obj(symbol=s("LaTeX."), meaning=s(), page=i(null=True), evidence=evidence_list, confidence=confidence))
+glossary = arr(obj(term=s(), definition=s(), evidence=evidence_list, confidence=confidence))
+headline_results = arr(obj(statement=s(), carrier=s("The object label or number that carries the result."),
+                         evidence=evidence_list, confidence=confidence))
+read_signal = obj(judgment=enum(["read", "skim", "glance", "summary_enough"]),
+                  reason=s("Model judgment; say why."))
+
+CORE = {
+    "identity": identity,
+    "type": paper_type,
+    "abstract": abstract,
+    "card": card_core,
+    "question": question,
+    "sections": sections,
+    "references": references,
+    "citations": citations,
+    "relations": relations,
+}
+FEATURES = {
+    "objects": {"objects": objects},
+    "supercut": {"supercut": supercut},
+    "analysis": {"claims": claims, "method": method, "key_numbers": key_numbers,
+                 "limitations": limitations, "open_questions": open_questions,
+                 "headline_results": headline_results, "read_signal": read_signal},
+    "glossary": {"notation": notation, "glossary": glossary},
+}
+
+full = dict(CORE)
+for fields in FEATURES.values():
+    full.update(fields)
+full["card"] = obj(
+    thesis=obj(text=s("One plain sentence."), evidence=evidence_list, confidence=confidence),
+    position=obj(predecessors=arr(position_item, "Work this paper builds on."),
+                 targets=arr(position_item, "Work it contrasts with or critiques."),
+                 replications=arr(position_item, "Work it replicates or that replicates it.")),
+    headline_results=headline_results, read_signal=read_signal)
+paper = obj("The paper-alone artifacts of one scientific paper.", **full)
 
 check = obj(
     "Corrections to a draft of paper-artifacts. Only correct or flag; every correction needs verbatim evidence.",
@@ -113,22 +162,24 @@ repair = obj(
                     quote=s("The exact text from the page, for replace_quote.", null=True),
                     page=i(null=True))))
 
-# Chunked mode: pass 1 fills everything but objects; a separate pass reads a
-# few pages at a time and returns only the objects printed on them.
-core = json.loads(json.dumps(paper))
-del core["properties"]["objects"]
-core["required"].remove("objects")
-core["description"] = "The paper-alone artifacts of one scientific paper, without the object inventory."
-chunk_objects = obj(
+core_schema = obj("The fields every extraction needs: identity, abstract, context, sections, references, citations and relations.", **CORE)
+analysis_schema = obj("The paper's claims, method, key numbers, limitations, open questions, headline results and read signal.",
+                      **FEATURES["analysis"])
+glossary_schema = obj("The symbols and terms a newcomer would need.", **FEATURES["glossary"])
+supercut_schema = obj("The argument as ordered segments.", **FEATURES["supercut"])
+objects_schema = obj(
     "The figures, tables, algorithms and numbered equations printed on the given pages.",
-    objects=json.loads(json.dumps(paper["properties"]["objects"])),
+    objects=json.loads(json.dumps(objects)),
 )
-chunk_objects["properties"]["objects"]["description"] = (
-    "Every figure, table and algorithm whose caption is printed on the given pages, and every numbered "
-    "displayed equation whose number is printed on them. One object per printed label; never a range."
+objects_schema["properties"]["objects"]["description"] = (
+    "Every figure, table and algorithm of the requested kinds whose caption is printed on the given pages, "
+    "and every numbered displayed equation of the requested kinds whose number is printed on them. "
+    "One object per printed label; never a range."
 )
 
-for name, schema in [("paper-artifacts", paper), ("paper-artifacts-core", core), ("paper-objects", chunk_objects),
+for name, schema in [("paper-artifacts", paper), ("paper-core", core_schema),
+                     ("paper-objects", objects_schema), ("paper-supercut", supercut_schema),
+                     ("paper-analysis", analysis_schema), ("paper-glossary", glossary_schema),
                      ("paper-artifacts-check", check), ("paper-artifacts-repair", repair)]:
     with open(f"{out}/{name}.schema.json", "w") as f:
         json.dump(schema, f, indent=2)

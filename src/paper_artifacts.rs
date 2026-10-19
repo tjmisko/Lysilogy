@@ -7,18 +7,28 @@
 
 pub mod admission;
 pub mod corrections;
+pub mod features;
 pub mod objects;
 pub mod resources;
 pub mod run;
 
-/// The whole-paper artifacts a model fills in pass 1.
+/// The whole-paper artifacts a model fills in one pass, with every feature on.
 pub const PAPER_ARTIFACTS_SCHEMA: &str = include_str!("../prompts/paper-artifacts.schema.json");
 
-/// Chunked mode, pass 1: everything except the object inventory.
-pub const CORE_SCHEMA: &str = include_str!("../prompts/paper-artifacts-core.schema.json");
+/// The fields every extraction needs, without any optional feature.
+pub const CORE_SCHEMA: &str = include_str!("../prompts/paper-core.schema.json");
 
-/// Chunked mode: the objects printed on a few pages.
+/// The objects printed on a few pages of one chunk.
 pub const OBJECTS_SCHEMA: &str = include_str!("../prompts/paper-objects.schema.json");
+
+/// The argument as ordered segments.
+pub const SUPERCUT_SCHEMA: &str = include_str!("../prompts/paper-supercut.schema.json");
+
+/// Claims, method, numbers, limitations, open questions and the read signal.
+pub const ANALYSIS_SCHEMA: &str = include_str!("../prompts/paper-analysis.schema.json");
+
+/// Notation and glossary terms.
+pub const GLOSSARY_SCHEMA: &str = include_str!("../prompts/paper-glossary.schema.json");
 
 /// Pass 2: corrections and flags against a pass-1 draft.
 pub const CHECK_SCHEMA: &str = include_str!("../prompts/paper-artifacts-check.schema.json");
@@ -72,6 +82,9 @@ mod tests {
             ("paper-artifacts", PAPER_ARTIFACTS_SCHEMA),
             ("core", CORE_SCHEMA),
             ("objects", OBJECTS_SCHEMA),
+            ("supercut", SUPERCUT_SCHEMA),
+            ("analysis", ANALYSIS_SCHEMA),
+            ("glossary", GLOSSARY_SCHEMA),
             ("check", CHECK_SCHEMA),
             ("repair", REPAIR_SCHEMA),
         ] {
