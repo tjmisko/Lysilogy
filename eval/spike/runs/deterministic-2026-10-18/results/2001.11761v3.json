@@ -1,0 +1,97 @@
+{
+  "abstract_status": "Accepted",
+  "artifacts": {
+    "abstract": {
+      "page": 1,
+      "text": "Decoding and reconstructing images from brain imaging data is a research area of high interest. Recent progress in deep generative neural networks has introduced new opportunities to tackle this problem. Here, we employ a recently proposed large-scale bi-directional generative adversarial network, called BigBiGAN, to decode and reconstruct natural scenes from fMRI patterns. BigBiGAN converts images into a 120-dimensional latent space which encodes class and attribute information together, and can also reconstruct images based on their latent vectors. We computed a linear mapping between fMRI data, acquired over images from 150 different categories of ImageNet, and their corresponding BigBiGAN latent vectors. Then, we applied this mapping to the fMRI activity patterns obtained from 50 new test images from 50 unseen categories in order to retrieve their latent vectors, and reconstruct the corresponding images. Pairwise image decoding from the predicted latent vectors was highly accurate (84%). Moreover, qualitative and quantitative assessments revealed that the resulting image reconstructions were visually plausible, successfully captured many attributes of the original images, and had high perceptual similarity with the original content. This method establishes a new state-of-theart for fMRI-based natural image reconstruction, and can be flexibly updated to take into account any future improvements in generative models of natural scene images. Index Terms—fMRI Decoding, Visual Reconstruction, Natural Scenes, BigBiGAN"
+    },
+    "citations": [],
+    "identity": {
+      "authors": [],
+      "title": ""
+    },
+    "objects": [
+      {
+        "caption": "Fig. 1: The proposed method. (a) Training phase. We compute a linear mapping (computing the linear transform matrix W ) from 120-D latent vectors (derived from the BigBiGAN encoder or from PCA decomposition) to nv-D fMRI patterns. nv is the number of voxels inside the brain region of interest. (b) Test phase. The obtained mapping is inversely used to transform fMRI patterns of test images into the latent vectors. The image is then reconstructed using BigBiGAN’s generator (or a PCA inverse transform).",
+        "kind": "figure",
+        "label": "Figure 1",
+        "number": null,
+        "page": 2
+      },
+      {
+        "caption": "Fig. 2: fMRI reconstructions by the proposed method across all subjects. The first and second columns show the input image and BigBiGAN’s original reconstruction (reconstruction from the original latent vector), respectively. The next five columns illustrate BigBiGAN’s fMRI reconstructions (reconstruction from predicted latent vectors) for each of the five subjects. Although fMRI reconstructions are not a perfect match to the input images, there are many attributes that are consistently captured by all subjects. These attributes can be semantic, such as being an animal or the body pose, and/or visually driven such as roundness or tallness, to mention a few.",
+        "kind": "figure",
+        "label": "Figure 2",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Fig. 3: Comparison of fMRI reconstructions by different methods. The first and second columns show the input image and BigBiGAN’s original reconstruction (reconstruction from the original latent vector), respectively. Columns three to seven illustrate fMRI reconstructions for BigBiGAN (our method, reconstruction from the predicted latent vector), Eigen-Image (PCA, baseline model), Ren et al. [10], Beliy et al. [7], and Shen et al. [6], respectively. Clearly, reconstructions by the proposed method are the most naturalistic, with the highest resolution, in contrast to the more blurry or semantically ambiguous results of the other methods.",
+        "kind": "figure",
+        "label": "Figure 3",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Fig. 4: Pairwise decoding accuracy across different brain regions of interest (ROIs). While voxels in high-level areas of the visual cortex are best decoded using BigBiGAN (our method), PCA performs better in low-level regions (V1, V2). Although the best performance is achieved when all the voxels (the whole visual cortex) are included, PCA could only do marginally better than when only V1d voxels were used.",
+        "kind": "figure",
+        "label": "Figure 4",
+        "number": null,
+        "page": 7
+      }
+    ],
+    "references": []
+  },
+  "calls": [],
+  "failures": [],
+  "model": "deterministic",
+  "pages": 8,
+  "pass1": {
+    "abstract": {
+      "page": 1,
+      "text": "Decoding and reconstructing images from brain imaging data is a research area of high interest. Recent progress in deep generative neural networks has introduced new opportunities to tackle this problem. Here, we employ a recently proposed large-scale bi-directional generative adversarial network, called BigBiGAN, to decode and reconstruct natural scenes from fMRI patterns. BigBiGAN converts images into a 120-dimensional latent space which encodes class and attribute information together, and can also reconstruct images based on their latent vectors. We computed a linear mapping between fMRI data, acquired over images from 150 different categories of ImageNet, and their corresponding BigBiGAN latent vectors. Then, we applied this mapping to the fMRI activity patterns obtained from 50 new test images from 50 unseen categories in order to retrieve their latent vectors, and reconstruct the corresponding images. Pairwise image decoding from the predicted latent vectors was highly accurate (84%). Moreover, qualitative and quantitative assessments revealed that the resulting image reconstructions were visually plausible, successfully captured many attributes of the original images, and had high perceptual similarity with the original content. This method establishes a new state-of-theart for fMRI-based natural image reconstruction, and can be flexibly updated to take into account any future improvements in generative models of natural scene images. Index Terms—fMRI Decoding, Visual Reconstruction, Natural Scenes, BigBiGAN"
+    },
+    "citations": [],
+    "identity": {
+      "authors": [],
+      "title": ""
+    },
+    "objects": [
+      {
+        "caption": "Fig. 1: The proposed method. (a) Training phase. We compute a linear mapping (computing the linear transform matrix W ) from 120-D latent vectors (derived from the BigBiGAN encoder or from PCA decomposition) to nv-D fMRI patterns. nv is the number of voxels inside the brain region of interest. (b) Test phase. The obtained mapping is inversely used to transform fMRI patterns of test images into the latent vectors. The image is then reconstructed using BigBiGAN’s generator (or a PCA inverse transform).",
+        "kind": "figure",
+        "label": "Figure 1",
+        "number": null,
+        "page": 2
+      },
+      {
+        "caption": "Fig. 2: fMRI reconstructions by the proposed method across all subjects. The first and second columns show the input image and BigBiGAN’s original reconstruction (reconstruction from the original latent vector), respectively. The next five columns illustrate BigBiGAN’s fMRI reconstructions (reconstruction from predicted latent vectors) for each of the five subjects. Although fMRI reconstructions are not a perfect match to the input images, there are many attributes that are consistently captured by all subjects. These attributes can be semantic, such as being an animal or the body pose, and/or visually driven such as roundness or tallness, to mention a few.",
+        "kind": "figure",
+        "label": "Figure 2",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Fig. 3: Comparison of fMRI reconstructions by different methods. The first and second columns show the input image and BigBiGAN’s original reconstruction (reconstruction from the original latent vector), respectively. Columns three to seven illustrate fMRI reconstructions for BigBiGAN (our method, reconstruction from the predicted latent vector), Eigen-Image (PCA, baseline model), Ren et al. [10], Beliy et al. [7], and Shen et al. [6], respectively. Clearly, reconstructions by the proposed method are the most naturalistic, with the highest resolution, in contrast to the more blurry or semantically ambiguous results of the other methods.",
+        "kind": "figure",
+        "label": "Figure 3",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Fig. 4: Pairwise decoding accuracy across different brain regions of interest (ROIs). While voxels in high-level areas of the visual cortex are best decoded using BigBiGAN (our method), PCA performs better in low-level regions (V1, V2). Although the best performance is achieved when all the voxels (the whole visual cortex) are included, PCA could only do marginally better than when only V1d voxels were used.",
+        "kind": "figure",
+        "label": "Figure 4",
+        "number": null,
+        "page": 7
+      }
+    ],
+    "references": []
+  },
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/2001.11761v3.pdf",
+  "record_version": 2,
+  "totals": {
+    "cost_usd": 0.0,
+    "wall_s": 0.15509338
+  }
+}
