@@ -150,7 +150,12 @@ pub fn request_body(request: &ChatRequest<'_>) -> Value {
         body["reasoning"] = effort.to_body();
     }
     if !request.provider_order.is_empty() {
-        body["provider"] = json!({"order": request.provider_order, "allow_fallbacks": false});
+        let order: Vec<String> = request
+            .provider_order
+            .iter()
+            .map(|provider| provider.trim().to_ascii_lowercase())
+            .collect();
+        body["provider"] = json!({"order": order, "allow_fallbacks": false});
     }
     body
 }
@@ -507,7 +512,7 @@ mod tests {
             reasoning: None,
             provider_order: &pinned,
         });
-        assert_eq!(body["provider"]["order"][0], "DeepSeek");
+        assert_eq!(body["provider"]["order"][0], "deepseek");
         assert_eq!(body["provider"]["allow_fallbacks"], false);
     }
 

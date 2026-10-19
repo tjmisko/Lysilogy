@@ -41,7 +41,10 @@ CONFUSED_FLOOR = 8_000
 def fold(text):
     text = unicodedata.normalize("NFKD", text or "")
     text = "".join(char for char in text if not unicodedata.combining(char))
-    return text.replace("ł", "l").replace("Ł", "L").replace("ø", "o").replace("ß", "ss").lower()
+    for special, plain in (("ı", "i"), ("ł", "l"), ("Ł", "L"), ("ø", "o"), ("ß", "ss"),
+                           ("đ", "d"), ("ð", "d"), ("þ", "th"), ("æ", "ae"), ("œ", "oe"), ("ɡ", "g")):
+        text = text.replace(special, plain)
+    return text.lower()
 
 
 def compact(text):
@@ -65,6 +68,7 @@ def token_f1(predicted, truth):
 
 def name_key(name):
     """Family name plus first given initial, so 'J. Smith' and 'John Smith' agree."""
+    name = re.sub(r"\b([A-Za-z])\s+([A-Z]{2,})\b", r"\1\2", name or "")
     parts = [part for part in re.split(r"[\s.]+", fold(name)) if part]
     if not parts:
         return ""

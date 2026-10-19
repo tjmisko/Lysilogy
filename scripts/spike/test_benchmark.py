@@ -56,6 +56,15 @@ class IdentityTests(unittest.TestCase):
         self.assertFalse(score["authors_ordered_exact"])
         self.assertEqual(score["authors_f1"], 1.0)
 
+    def test_should_fold_dotless_i_and_ligature_letters(self):
+        self.assertEqual(b.name_key("Jan Kr\u0131\u0301z\u030c"), b.name_key("Jan K\u0159\u00ed\u017e"))
+        self.assertEqual(b.fold("Tworzyd\u0142o"), "tworzydlo")
+
+    def test_should_match_a_small_caps_surname_with_a_dropped_capital(self):
+        oracle = {**ORACLE, "authors": ["Martin Brossard", "Silv\u00e8re Bonnabel"]}
+        identity = {"title": ORACLE["title"], "authors": [{"name": "Martin B ROSSARD"}, {"name": "Silv\u00e8re B ONNABEL"}]}
+        self.assertTrue(b.score_identity(artifacts(identity=identity), oracle)["authors_ordered_exact"])
+
     def test_should_score_a_missing_abstract_as_zero_not_an_error(self):
         score = b.score_identity(artifacts(abstract={"text": None}), ORACLE)
         self.assertEqual(score["abstract_f1"], 0.0)
