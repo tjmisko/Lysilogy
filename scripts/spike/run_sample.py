@@ -7,7 +7,8 @@ The per-paper budget is enforced inside extract; the run budget is enforced
 per process from the ledger total at its start, so with concurrency it is a
 soft cap of roughly budget + (jobs - 1) * paper budget.
 
-Needs OPENROUTER_API_KEY in the environment.
+Reads the model key from `OPENROUTER_API_KEY` when it is set, or from the file
+given to `--api-key-file`.
 Usage: python3 -B scripts/spike/run_sample.py --run <name> [--model M] [--passes 2] [--jobs 4]
 """
 import argparse
@@ -67,11 +68,20 @@ def main():
     parser.add_argument("--sample", type=Path, default=Path("eval/spike/sample.json"))
     parser.add_argument("--pdf-dir", type=Path,
                         help="run over every PDF in this directory instead of the sample (no oracle truth)")
+    parser.add_argument("--api-key-file", type=Path,
+                        help="read the model key from this file when the environment does not carry one")
     parser.add_argument("--binary", type=Path, default=Path("target/release/lysilogy"))
     parser.add_argument("--force", action="store_true", help="rerun papers that already have a result")
     args = parser.parse_args()
-    if not os.environ.get("OPENROUTER_API_KEY"):
-        sys.exit("OPENROUTER_API_KEY is not set")
+    value = os.environ.get("OPENROUTER_API_KEY")
+    if args.api_key_file:
+        try:
+            value = args.api_key_file.expanduser().read_text().strip()
+        except OSError as error:
+            sys.exit(f"could not read --api-key-file: {error}")
+    if not value:
+        sys.exit("set OPENROUTER_API_KEY or pass --api-key-file")
+    os.environ["OPENROUTER_API_KEY"] = value
     papers = (
         [{"stem": pdf.stem, "pdf": str(pdf)} for pdf in sorted(args.pdf_dir.glob("*.pdf"))]
         if args.pdf_dir else json.loads(args.sample.read_text())["papers"]
