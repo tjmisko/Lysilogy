@@ -1,0 +1,13 @@
+{
+  "input": {"format": "raw"},
+  "calls": [
+    {"name": "extract.identity", "fields": ["identity"], "effort": "low", "model": "cheap", "scope": "front"},
+    {"name": "extract.type", "fields": ["type"], "effort": "low", "model": "cheap"},
+    {"name": "extract.abstract", "fields": ["abstract"], "effort": "low", "model": "cheap", "scope": "first3"},
+    {"name": "extract.card", "fields": ["card", "question"], "effort": "low", "model": "cheap"},
+    {"name": "extract.sections", "fields": ["sections"], "effort": "high", "model": "cheap"},
+    {"name": "extract.references", "fields": ["references"], "effort": "low", "model": "cheap"},
+    {"name": "extract.graph", "fields": ["citations", "relations"], "effort": "low", "model": "cheap"}
+  ],
+  "verify": {"self_check": "full", "repair": "model"}
+}

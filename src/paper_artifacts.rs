@@ -6,6 +6,7 @@
 //! `scripts/spike/build_schemas.py`.
 
 pub mod admission;
+pub mod config;
 pub mod core_fields;
 pub mod corrections;
 pub mod features;

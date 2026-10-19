@@ -14,6 +14,7 @@ Usage: python3 -B scripts/spike/benchmark.py --run <name>
 """
 import argparse
 import json
+import math
 import re
 import statistics
 import sys
@@ -208,6 +209,7 @@ def score_paper(paper, record, oracle, inventory, bibliography, result_file=None
             "predicted": len((final or {}).get("references") or []),
             "source_parser": bibliography,
         },
+        "sections": score_sections(final, record.get("pages")),
         "counts": {key: len((final or {}).get(key) or []) for key in ("sections", "supercut", "claims", "key_numbers", "citations", "relations", "notation", "glossary")},
         "type": ((final or {}).get("type") or {}).get("value"),
         "read_signal": (((final or {}).get("card") or {}).get("read_signal") or {}).get("judgment"),
@@ -230,6 +232,68 @@ def score_paper(paper, record, oracle, inventory, bibliography, result_file=None
 def mean(values):
     values = [value for value in values if value is not None]
     return round(statistics.mean(values), 4) if values else None
+
+
+def wilson(successes, total, z=1.96):
+    """A 95% Wilson interval for a rate, which behaves at 0 and 1."""
+    if not total:
+        return None
+    p = successes / total
+    denom = 1 + z * z / total
+    center = (p + z * z / (2 * total)) / denom
+    half = z * math.sqrt(p * (1 - p) / total + z * z / (4 * total * total)) / denom
+    return {
+        "n": successes,
+        "total": total,
+        "rate": round(p, 4),
+        "lower": round(max(0.0, center - half), 4),
+        "upper": round(min(1.0, center + half), 4),
+    }
+
+
+def score_sections(artifacts, pages):
+    """Section count, page coverage, and the defects the design names."""
+    sections = (artifacts or {}).get("sections") or []
+    result = {
+        "count": len(sections),
+        "coverage": 0.0,
+        "last_page": 0,
+        "short_units": 0,
+        "long_units": 0,
+        "malformed": 0,
+    }
+    if not sections:
+        return result
+    for section in sections:
+        span = section.get("pages") if isinstance(section, dict) else None
+        if not isinstance(span, dict):
+            result["malformed"] += 1
+            continue
+        start = span.get("start") or 0
+        end = span.get("end") or 0
+        result["last_page"] = max(result["last_page"], end)
+        length = end - start + 1
+        if length < 1:
+            result["short_units"] += 1
+        elif length > 5:
+            result["long_units"] += 1
+    if pages:
+        result["coverage"] = round(result["last_page"] / pages, 4)
+    return result
+
+
+def worst_case(rows):
+    """Papers that miss a floor, not just lower the average."""
+    return {
+        "title": [row["stem"] for row in rows if row.get("identity") and row["identity"]["final"].get("title_exact") is False],
+        "authors": [row["stem"] for row in rows if row.get("identity") and row["identity"]["final"].get("authors_ordered_exact") is False],
+        "abstract": [row["stem"] for row in rows if row.get("identity") and row["identity"]["final"].get("abstract_match") is False],
+        "sections": [
+            row["stem"]
+            for row in rows
+            if row.get("sections") and (row["sections"]["coverage"] < 0.95 or row["sections"]["malformed"] > 0)
+        ],
+    }
 
 
 def rate(values):
@@ -340,6 +404,34 @@ def aggregate(rows):
         for row in rows
         if row.get("confused")
     ]
+    summary["worst_case"] = worst_case(scored)
+    summary["intervals"] = {
+        "title_exact": wilson(
+            sum(1 for row in scored if row["identity"]["final"].get("title_exact")),
+            len(scored),
+        ),
+        "authors_ordered_exact": wilson(
+            sum(1 for row in scored if row["identity"]["final"].get("authors_ordered_exact")),
+            len(scored),
+        ),
+        "abstract_match": wilson(
+            sum(1 for row in scored if row["identity"]["final"].get("abstract_match")),
+            len(scored),
+        ),
+    }
+    coverages = [row["sections"]["coverage"] for row in scored if row.get("sections")]
+    summary["sections"] = {
+        "mean_coverage": mean(coverages),
+        "papers_below_95": sum(1 for value in coverages if value < 0.95),
+        "malformed_units": sum(row["sections"]["malformed"] for row in scored if row.get("sections")),
+        "short_units": sum(row["sections"]["short_units"] for row in scored if row.get("sections")),
+        "long_units": sum(row["sections"]["long_units"] for row in scored if row.get("sections")),
+    }
+    summary["graph_counts"] = {
+        "citations": sum((row.get("counts") or {}).get("citations", 0) for row in scored),
+        "relations": sum((row.get("counts") or {}).get("relations", 0) for row in scored),
+        "references": sum((row.get("references") or {}).get("predicted", 0) for row in scored),
+    }
     return summary
 
 

@@ -18,11 +18,16 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{
-    ANALYSIS_SCHEMA, CHECK_SCHEMA, CORE_SCHEMA, GLOSSARY_SCHEMA, OBJECTS_SCHEMA, REPAIR_SCHEMA,
-    SUPERCUT_SCHEMA,
+    ABSTRACT_SCHEMA, ANALYSIS_SCHEMA, CARD_SCHEMA, CHECK_SCHEMA, CITATIONS_SCHEMA, CORE_SCHEMA,
+    GLOSSARY_SCHEMA, IDENTITY_SCHEMA, OBJECTS_SCHEMA, QUESTION_SCHEMA, REFERENCES_SCHEMA,
+    RELATIONS_SCHEMA, REPAIR_SCHEMA, SECTIONS_SCHEMA, SUPERCUT_SCHEMA, TYPE_SCHEMA,
     admission::{
         CheckCounts, LOCAL_REPAIR_SIMILARITY, QuoteSite, SiteKind, SourceText, Verdict,
         apply_removals, check, quote_sites,
+    },
+    config::{
+        Input, InputFormat, Repair as RepairMode, RunConfig, SelfCheck as SelfCheckMode,
+        scope_pages,
     },
     core_fields::CORE_FIELDS,
     corrections::{self, CheckResponse, Correction, CorrectionOutcome},
@@ -96,6 +101,8 @@ pub struct ExtractOptions {
     pub core_mode: CoreMode,
     /// Providers to try in order; empty lets `OpenRouter` choose.
     pub providers: Vec<String>,
+    /// A configured call plan; when set it replaces the core/feature paths.
+    pub plan: Option<RunConfig>,
 }
 
 /// How the core record's fields are asked for.
@@ -337,6 +344,30 @@ impl<'a> Session<'a> {
         schema: &str,
         max_tokens: u32,
     ) -> Option<T> {
+        self.call_with(
+            stage,
+            chunk,
+            parts,
+            schema,
+            max_tokens,
+            self.model,
+            self.reasoning,
+        )
+        .await
+    }
+
+    /// One call with an explicit model and effort, for a configured plan.
+    #[allow(clippy::too_many_arguments)]
+    async fn call_with<T: serde::de::DeserializeOwned>(
+        &self,
+        stage: &str,
+        chunk: Option<&str>,
+        parts: &[ContentPart],
+        schema: &str,
+        max_tokens: u32,
+        model: &str,
+        reasoning: ReasoningEffort,
+    ) -> Option<T> {
         if !self.within_budget(stage) {
             return None;
         }
@@ -348,12 +379,12 @@ impl<'a> Session<'a> {
             }
         };
         let request = ChatRequest {
-            model: self.model,
+            model,
             parts,
             schema: &schema,
             stage,
             max_tokens: Some(max_tokens),
-            reasoning: Some(self.reasoning),
+            reasoning: Some(reasoning),
             provider_order: &self.providers,
         };
         let completion = match openrouter::complete(&self.client, self.ledger, &request).await {
@@ -485,40 +516,55 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
         options.providers.clone(),
     );
 
-    let core = match options.core_mode {
-        CoreMode::Combined => core_pass(&session, &resources, &text).await,
-        CoreMode::Fanout => fanout_core(&session, &resources, &text).await,
+    let (core, object_chunks, object_merge) = if let Some(plan) = &options.plan {
+        run_plan(&session, &resources, plan, options.object_pages).await
+    } else {
+        let core = match options.core_mode {
+            CoreMode::Combined => core_pass(&session, &resources, &text).await,
+            CoreMode::Fanout => fanout_core(&session, &resources, &text).await,
+        };
+        let mut draft = core.clone();
+        let (chunks, merge) = feature_passes(
+            &mut draft,
+            &session,
+            &resources,
+            &text,
+            options.features,
+            options.object_pages,
+        )
+        .await;
+        (draft, chunks, merge)
     };
     let pass1_check = core.as_ref().map(|draft| check(&source, draft));
 
     let mut draft = core.clone();
-    let (object_chunks, object_merge) = feature_passes(
-        &mut draft,
-        &session,
-        &resources,
-        &text,
-        options.features,
-        options.object_pages,
-    )
-    .await;
-
+    let self_check_enabled = options.plan.as_ref().map_or(options.passes == 2, |plan| {
+        plan.verify.self_check == SelfCheckMode::Full
+    });
+    let repair_model = options
+        .plan
+        .as_ref()
+        .is_none_or(|plan| plan.verify.repair == RepairMode::Model);
+    let hide_objects = options.plan.as_ref().map_or_else(
+        || options.features.any_objects(),
+        |plan| {
+            plan.calls
+                .iter()
+                .any(|call| call.fields.iter().any(|field| field == "objects"))
+        },
+    );
+    let schema = options
+        .plan
+        .as_ref()
+        .map_or_else(|| draft_schema(options.features), plan_schema);
     let check_pass = match draft.as_mut() {
-        Some(current) if options.passes == 2 => {
-            let schema = draft_schema(options.features);
-            self_check(
-                current,
-                &text,
-                &source,
-                &session,
-                options.features.any_objects(),
-                &schema,
-            )
-            .await?
+        Some(current) if self_check_enabled => {
+            self_check(current, &text, &source, &session, hide_objects, &schema).await?
         }
         _ => SelfCheck::default(),
     };
     let admission = match draft.as_mut() {
-        Some(current) => admit(current, &source, &resources, &session).await,
+        Some(current) => admit(current, &source, &resources, &session, repair_model).await,
         None => Vec::new(),
     };
     let mut admission_counts = BTreeMap::new();
@@ -552,7 +598,10 @@ pub async fn extract(options: &ExtractOptions, ledger: &SpendLedger) -> Result<E
         model: options.model.clone(),
         passes_requested: options.passes,
         features: options.features.label(),
-        core_mode: options.core_mode.label().to_owned(),
+        core_mode: options.plan.as_ref().map_or_else(
+            || options.core_mode.label().to_owned(),
+            |_| "plan".to_owned(),
+        ),
         reasoning: options.reasoning.label().to_owned(),
         dpi: resources.dpi,
         pages: resources.paper.pages.len(),
@@ -735,6 +784,212 @@ fn shared_prefix(preamble: &str, text: &[ContentPart], limit: Option<usize>) -> 
         }
     }
     out
+}
+
+/// Whether a config field name is one a call can fill.
+#[must_use]
+pub fn is_unit(name: &str) -> bool {
+    unit_schema(name).is_some()
+}
+
+fn unit_schema(name: &str) -> Option<&'static str> {
+    Some(match name {
+        "identity" => IDENTITY_SCHEMA,
+        "type" => TYPE_SCHEMA,
+        "abstract" => ABSTRACT_SCHEMA,
+        "card" => CARD_SCHEMA,
+        "question" => QUESTION_SCHEMA,
+        "sections" => SECTIONS_SCHEMA,
+        "references" => REFERENCES_SCHEMA,
+        "citations" => CITATIONS_SCHEMA,
+        "relations" => RELATIONS_SCHEMA,
+        "objects" => OBJECTS_SCHEMA,
+        "supercut" => SUPERCUT_SCHEMA,
+        "analysis" => ANALYSIS_SCHEMA,
+        "glossary" => GLOSSARY_SCHEMA,
+        _ => return None,
+    })
+}
+
+fn unit_instruction(name: &str, page_count: usize) -> String {
+    let instruction = CORE_FIELDS
+        .iter()
+        .find(|field| field.name == name)
+        .map_or_else(
+            || match name {
+                "objects" => "Return the `objects` field.",
+                "supercut" => "Return the `supercut` field: the argument as ordered source and connector segments.",
+                "analysis" => "Return the `analysis` fields: claims, method, key numbers, limitations, open questions, headline results, and the read signal.",
+                "glossary" => "Return the `notation` and `glossary` fields.",
+                _ => "",
+            },
+            |field| field.instruction,
+        );
+    instruction.replace("{{sections}}", &sections_guidance(page_count))
+}
+
+/// The union schema for the fields one call asks for.
+fn call_schema(call: &super::config::Call) -> Value {
+    let mut schema = serde_json::json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {}
+    });
+    for field in &call.fields {
+        if let Some(text) = unit_schema(field) {
+            merge_properties(&mut schema, text);
+        }
+    }
+    schema
+}
+
+/// The union schema for every field a plan asks for.
+fn plan_schema(plan: &RunConfig) -> Value {
+    let mut schema = serde_json::json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": [],
+        "properties": {}
+    });
+    for call in &plan.calls {
+        for field in &call.fields {
+            if let Some(text) = unit_schema(field) {
+                merge_properties(&mut schema, text);
+            }
+        }
+    }
+    schema
+}
+
+/// Run a configured list of calls and merge their answers into one draft.
+#[allow(clippy::too_many_lines)]
+async fn run_plan(
+    session: &Session<'_>,
+    resources: &PageResources,
+    plan: &RunConfig,
+    object_pages: usize,
+) -> (Option<Value>, Vec<ChunkRecord>, Option<MergeStats>) {
+    let mut draft = serde_json::Map::new();
+    let mut chunks = Vec::new();
+    let mut merge = None;
+    for call in &plan.calls {
+        let scope = scope_pages(call.scope.as_deref());
+        if call.fields.iter().any(|field| field == "objects") {
+            let kinds = ["figure", "table", "algorithm", "equation"];
+            let page_parts = match page_parts(resources).await {
+                Ok(parts) => parts,
+                Err(error) => {
+                    session.fail(&call.name, None, error.to_string(), None);
+                    continue;
+                }
+            };
+            let (inventory, call_merge, call_chunks) =
+                object_pass(session, resources, &page_parts, &kinds, object_pages).await;
+            draft.insert("objects".to_owned(), Value::Array(inventory));
+            chunks.extend(call_chunks);
+            merge = Some(call_merge);
+            continue;
+        }
+        let schema = call_schema(call);
+        let Ok(schema) = serde_json::to_string(&schema) else {
+            continue;
+        };
+        let instruction = call
+            .fields
+            .iter()
+            .map(|field| unit_instruction(field, resources.paper.pages.len()))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let mut parts = vec![ContentPart::Text(FIELDS_PROMPT.to_owned())];
+        match rendered_parts(resources, &plan.input, scope).await {
+            Ok(mut paper) => parts.append(&mut paper),
+            Err(error) => {
+                session.fail(&call.name, None, error.to_string(), None);
+                continue;
+            }
+        }
+        parts.push(ContentPart::Text(instruction));
+        let model = plan.model_for(call);
+        let value = session
+            .call_with::<Value>(
+                &call.name,
+                None,
+                &parts,
+                &schema,
+                FEATURE_MAX_TOKENS,
+                &model,
+                call.effort.reasoning(),
+            )
+            .await;
+        if let Some(value) = value {
+            merge_fields(&mut draft, &value);
+        }
+    }
+    let draft = (!draft.is_empty()).then_some(Value::Object(draft));
+    (draft, chunks, merge)
+}
+
+/// The paper as the model sees it: raw page-marked text or markdown, first
+/// pages only when scoped, page images optional, with a metadata block first.
+async fn rendered_parts(
+    resources: &PageResources,
+    input: &Input,
+    scope: Option<usize>,
+) -> Result<Vec<ContentPart>> {
+    let limit = scope.unwrap_or(usize::MAX);
+    let mut parts = Vec::new();
+    if input.priors {
+        parts.push(ContentPart::Text(front_matter(resources)));
+    }
+    match input.format {
+        InputFormat::Raw => {
+            for (index, page) in resources.paper.pages.iter().enumerate() {
+                if index >= limit {
+                    break;
+                }
+                parts.push(ContentPart::Text(format!(
+                    "<<page {}>>\n{}",
+                    page.number,
+                    page.text.trim()
+                )));
+                if input.images {
+                    let image = &resources.images[index];
+                    let bytes = tokio::fs::read(image)
+                        .await
+                        .map_err(|error| Error::io(image, error))?;
+                    parts.push(ContentPart::Png(bytes));
+                }
+            }
+        }
+        InputFormat::Markdown => {
+            let mut paper = resources.paper.clone();
+            if let Some(limit) = scope {
+                paper.pages.truncate(limit);
+            }
+            parts.push(ContentPart::Text(crate::markdown::render_source(&paper)));
+        }
+    }
+    Ok(parts)
+}
+
+/// A short deterministic front-matter block, when the PDF metadata has any.
+fn front_matter(resources: &PageResources) -> String {
+    use std::fmt::Write as _;
+    let metadata = &resources.paper.metadata;
+    let mut text =
+        String::from("Deterministic front matter from the PDF (may be incomplete or wrong):");
+    if !metadata.title.is_empty() {
+        let _ = write!(text, "\n- title: {}", metadata.title);
+    }
+    if !metadata.authors.is_empty() {
+        let _ = write!(text, "\n- authors: {}", metadata.authors.join(", "));
+    }
+    if let Some(year) = metadata.year {
+        let _ = write!(text, "\n- year: {year}");
+    }
+    text.push_str("\nEnd of front matter.\n");
+    text
 }
 
 /// Run the optional feature passes that were asked for and merge them in.
@@ -1083,6 +1338,7 @@ async fn admit(
     source: &SourceText<'_>,
     resources: &PageResources,
     session: &Session<'_>,
+    repair_model: bool,
 ) -> Vec<SiteOutcome> {
     let mut outcomes = Vec::new();
     let mut failing = Vec::<(usize, QuoteSite)>::new();
@@ -1121,7 +1377,7 @@ async fn admit(
         }
         outcomes.push(outcome);
     }
-    if !failing.is_empty() {
+    if !failing.is_empty() && repair_model {
         let repairs = request_repairs(&failing, &outcomes, resources, session).await;
         for (index, site) in &failing {
             let outcome = &mut outcomes[*index];
@@ -1300,7 +1556,7 @@ mod tests {
         let source = SourceText::new(&resources.paper.pages);
         let session = session(&ledger, 0.0);
         let mut value = draft();
-        let outcomes = admit(&mut value, &source, &resources, &session).await;
+        let outcomes = admit(&mut value, &source, &resources, &session, true).await;
         let statuses = outcomes
             .iter()
             .map(|outcome| (outcome.pointer.as_str(), outcome.status))
@@ -1339,7 +1595,7 @@ mod tests {
         let session = session(&ledger, 1.0);
         let mut value =
             json!({"objects": [{"caption": "Table 1: Accuracy after pruning.", "page": 2}]});
-        let outcomes = admit(&mut value, &source, &resources, &session).await;
+        let outcomes = admit(&mut value, &source, &resources, &session, true).await;
         assert_eq!(outcomes.len(), 1);
         assert!(session.state().calls.is_empty() && session.state().failures.is_empty());
         assert!(session.state().budget_stopped.is_none());
@@ -1556,6 +1812,85 @@ mod tests {
         assert!(guidance.starts_with(SECTIONS_POLICY));
     }
 
+    #[test]
+    fn should_recognize_the_fillable_units() {
+        for name in [
+            "identity",
+            "type",
+            "abstract",
+            "card",
+            "question",
+            "sections",
+            "references",
+            "citations",
+            "relations",
+            "objects",
+            "supercut",
+            "analysis",
+            "glossary",
+        ] {
+            assert!(is_unit(name), "{name}");
+        }
+        assert!(!is_unit("vibes"));
+    }
+
+    #[test]
+    fn should_union_the_schemas_of_a_call() {
+        let call = crate::paper_artifacts::config::Call {
+            name: "graph".to_owned(),
+            fields: vec!["references".to_owned(), "citations".to_owned()],
+            effort: crate::paper_artifacts::config::Effort::Low,
+            model: None,
+            scope: None,
+        };
+        let schema = call_schema(&call);
+        assert!(schema["properties"].get("references").is_some());
+        assert!(schema["properties"].get("citations").is_some());
+        assert!(schema["properties"].get("sections").is_none());
+        let required = schema["required"].as_array().expect("required");
+        assert!(required.contains(&serde_json::json!("references")));
+    }
+
+    #[tokio::test]
+    async fn should_scope_and_mark_raw_pages() {
+        let resources = resources();
+        let input = Input {
+            format: InputFormat::Raw,
+            images: false,
+            priors: false,
+        };
+        let parts = rendered_parts(&resources, &input, Some(1))
+            .await
+            .expect("parts");
+        assert_eq!(parts.len(), 1);
+        match &parts[0] {
+            ContentPart::Text(text) => {
+                assert!(text.contains("<<page 1>>"));
+                assert!(!text.contains("<<page 2>>"));
+            }
+            ContentPart::Png(_) => panic!("no images were asked for"),
+        }
+    }
+
+    #[tokio::test]
+    async fn should_prepend_front_matter_when_priors_are_on() {
+        let mut resources = resources();
+        resources.paper.metadata.title = "Sparse Models Under Noise".to_owned();
+        let input = Input {
+            format: InputFormat::Raw,
+            images: false,
+            priors: true,
+        };
+        let parts = rendered_parts(&resources, &input, None)
+            .await
+            .expect("parts");
+        match &parts[0] {
+            ContentPart::Text(text) => assert!(text.contains("Sparse Models Under Noise")),
+            ContentPart::Png(_) => panic!("front matter is text"),
+        }
+        assert_eq!(parts.len(), 3, "front matter plus two pages");
+    }
+
     #[tokio::test]
     async fn should_reject_a_pass_count_other_than_one_or_two() {
         let directory = tempfile::tempdir().expect("temporary directory");
@@ -1575,6 +1910,7 @@ mod tests {
                 reasoning: ReasoningEffort::Low,
                 core_mode: CoreMode::Combined,
                 providers: Vec::new(),
+                plan: None,
             };
             assert!(matches!(
                 extract(&options, &ledger).await,

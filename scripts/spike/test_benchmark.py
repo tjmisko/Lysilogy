@@ -147,5 +147,32 @@ class ReasoningTests(unittest.TestCase):
         self.assertIsNone(rows[0]["confused"])
 
 
+class SectionTests(unittest.TestCase):
+    def test_should_measure_coverage_and_flag_malformed_units(self):
+        artifacts = {
+            "sections": [
+                {"title": "A", "pages": {"start": 1, "end": 3}},
+                {"title": "B", "page": 4},
+            ]
+        }
+        score = b.score_sections(artifacts, 10)
+        self.assertEqual(score["coverage"], 0.3)
+        self.assertEqual(score["malformed"], 1)
+        self.assertEqual(score["count"], 2)
+
+    def test_should_report_zero_coverage_when_there_are_no_sections(self):
+        self.assertEqual(b.score_sections({"sections": []}, 5)["coverage"], 0.0)
+
+
+class IntervalTests(unittest.TestCase):
+    def test_should_bound_a_perfect_rate_below_one(self):
+        interval = b.wilson(20, 20)
+        self.assertEqual(interval["rate"], 1.0)
+        self.assertLess(interval["lower"], 1.0)
+
+    def test_should_return_none_for_no_papers(self):
+        self.assertIsNone(b.wilson(0, 0))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -41,6 +41,7 @@ def run_one(paper, args, run_dir, binary):
                 "--object-pages", str(args.object_pages),
                 "--reasoning", args.reasoning,
                 "--core-mode", args.core_mode,
+                *(["--config", str(args.config)] if args.config else []),
                 *[part for provider in args.providers for part in ("--provider", provider)],
                 "--work", str(Path.home() / ".cache/lysilogy/spike/work" / paper["stem"]),
                 "--out", str(out),
@@ -67,6 +68,7 @@ def main():
                         help="optional feature passes: figures, tables, algorithms, equations, objects, supercut, analysis, glossary, all")
     parser.add_argument("--reasoning", choices=("off", "low", "medium", "high"), default="low")
     parser.add_argument("--core-mode", choices=("combined", "fanout"), default="combined")
+    parser.add_argument("--config", type=Path, help="a run config JSON; overrides --features and --core-mode")
     parser.add_argument("--provider", dest="providers", action="append", default=[],
                         help="pin a provider, in order; repeat to allow several")
     parser.add_argument("--object-pages", type=int, default=6)
@@ -99,6 +101,7 @@ def main():
         "budget_usd": args.budget, "paper_budget_usd": args.paper_budget,
         "features": args.features, "object_pages": args.object_pages, "reasoning": args.reasoning,
         "core_mode": args.core_mode, "providers": args.providers,
+        "config": str(args.config) if args.config else None,
         "sample": str(args.sample), "pdf_dir": str(args.pdf_dir) if args.pdf_dir else None,
         "started": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
     }, indent=2) + "\n")

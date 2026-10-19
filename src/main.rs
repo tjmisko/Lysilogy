@@ -302,6 +302,9 @@ enum Command {
         /// Try this provider first and do not fall back; repeat to order several.
         #[arg(long = "provider")]
         providers: Vec<String>,
+        /// A run config JSON; its call list replaces --features and --core-mode.
+        #[arg(long)]
+        config: Option<PathBuf>,
     },
     /// Analyze one paper selected by ID or an unambiguous title fragment.
     Analyze {
@@ -597,6 +600,7 @@ async fn run(cli: Cli) -> Result<()> {
             reasoning,
             core_mode,
             providers,
+            config,
         } => {
             let pdf = match (pdf, query) {
                 (Some(pdf), _) => pdf,
@@ -628,6 +632,14 @@ async fn run(cli: Cli) -> Result<()> {
                 reasoning: reasoning.effort(),
                 core_mode: core_mode.mode(),
                 providers,
+                plan: match config {
+                    Some(path) => Some(lysilogy::paper_artifacts::config::RunConfig::parse(
+                        &tokio::fs::read_to_string(&path)
+                            .await
+                            .map_err(|error| Error::io(&path, error))?,
+                    )?),
+                    None => None,
+                },
             };
             let ledger = lysilogy::analysis::spend::SpendLedger::with_defaults();
             let record = lysilogy::paper_artifacts::run::extract(&options, &ledger).await?;
