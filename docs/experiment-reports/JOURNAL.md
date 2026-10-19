@@ -43,7 +43,19 @@ floor where high effort and fan-out did not, at a fraction of the cost. The
 design's assumption that sections needs a dedicated high-effort call is not
 supported by this sample. Caveats: coverage is `last_page / pages`, the sample
 is the E0 worst eight, and E0's own row on this set is circular. Validate on all
-20 before adopting.
+30 before adopting.
+
+## Cohort change
+
+The sample grows from 20 to 30: the frozen 20 (bulk arXiv) are kept, and 10
+papers from the authoritative local library `Projects/Lysilogy/local-articles`
+are added (`scripts/spike/add_local_sample.py`, stems `amodei2016` through
+`box1976`). The local papers have a hand-checked identity oracle and no object
+truth, so object metrics skip them. Sections no longer carry `kind`/`family`:
+the taxonomy was Procrustean and the segmentation is the work.
+
+Next arms: validate E2-low on all 30, and try a hierarchical sections pass
+(deterministic heading candidates, model boundaries) against the one-shot.
 
 ## Cross-cutting learnings
 
