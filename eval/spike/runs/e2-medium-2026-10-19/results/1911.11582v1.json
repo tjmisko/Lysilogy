@@ -1,0 +1,2054 @@
+{
+  "record_version": 4,
+  "started_at": "2026-10-19T22:14:15.688933489Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1911.11582v1.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 9,
+  "calls": [
+    {
+      "stage": "core",
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 8922,
+      "cached_tokens": 8448,
+      "completion_tokens": 21911,
+      "reasoning_tokens": 17293,
+      "cost_usd": 0.000682426,
+      "cost_source": "reported",
+      "latency_s": 153.853008164
+    },
+    {
+      "stage": "extract.pass2",
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 12206,
+      "cached_tokens": 0,
+      "completion_tokens": 19589,
+      "reasoning_tokens": 19579,
+      "cost_usd": 0.00081131,
+      "cost_source": "reported",
+      "latency_s": 144.088294462
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 21128,
+    "cached_tokens": 8448,
+    "completion_tokens": 41500,
+    "cost_usd": 0.0014937359999999998,
+    "model_latency_s": 297.941302626,
+    "wall_s": 300.21584344
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e2-medium-2026-10-19/results/1911.11582v1.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "medium",
+      "page": 1,
+      "text": "abstract not separately extracted in this field"
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "DOOBNet",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Previous methods, such as DOOBNet [18], OFNet [10] first use the backbone network to extract different level features and use the entire decoder to extract shared information for two tasks"
+              }
+            ],
+            "reference_key": "18",
+            "why": "Previous DOOBNet-style methods share the entire decoder for both tasks, whereas DDNet shares only high-stage features and splits low-stage paths."
+          },
+          {
+            "cited_work": "OFNet",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "OFNet [10] considers the importance of occlusion cues for two tasks, and designs two sub-networks to share occlusion cues."
+              }
+            ],
+            "reference_key": "10",
+            "why": "OFNet shares occlusion cues through two sub-networks; DDNet instead separates boundary and orientation recovery in lower stages."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "BSDS ownership",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "We evaluate the proposed approach on two public datasets: PIOD [19] and BSDS ownership dataset [13]."
+              }
+            ],
+            "reference_key": "13",
+            "why": "It validates on the same benchmark as prior occlusion-relationship work."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "DOC",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Previous methods [19, 18, 10] infer the occlusion orientation by regressing a continuous orientation value."
+              }
+            ],
+            "reference_key": "19",
+            "why": "DOC's continuous orientation regression is vulnerable to periodicity; DDNet uses orthogonal vectors and OOR."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "To address this issue, we propose a novel Dual-path Decoder Network, which uniformly extracts occlusion information at higher stages and separates into two paths to recover boundary and occlusion orientation respectively in lower stages."
+          }
+        ],
+        "text": "A dual-path decoder that shares high-stage features but separates low-stage boundary and orientation recovery, plus an orthogonal orientation representation and OOR loss, improves occlusion relationship reasoning."
+      }
+    },
+    "citations": [
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "4, 1, 17, 4, 23, 3, 15"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "8, 16, 12, 14"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "19"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "18"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "10"
+      },
+      {
+        "context": "Introduction",
+        "page": 2,
+        "reference_key": "18, 10"
+      },
+      {
+        "context": "Introduction",
+        "page": 2,
+        "reference_key": "19, 18, 10"
+      },
+      {
+        "context": "Introduction",
+        "page": 2,
+        "reference_key": "19, 13"
+      },
+      {
+        "context": "Introduction",
+        "page": 2,
+        "reference_key": "19, 13"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "2"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "20, 22"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "21"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "18"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "20"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "5"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "19"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "18"
+      },
+      {
+        "context": "Method",
+        "page": 4,
+        "reference_key": "6, 18, 11, 10"
+      },
+      {
+        "context": "Method",
+        "page": 4,
+        "reference_key": "20, 22, 9, 5"
+      },
+      {
+        "context": "Method",
+        "page": 4,
+        "reference_key": "7"
+      },
+      {
+        "context": "Method",
+        "page": 5,
+        "reference_key": "19, 18"
+      },
+      {
+        "context": "Experiments",
+        "page": 5,
+        "reference_key": "19, 13"
+      },
+      {
+        "context": "Experiments",
+        "page": 5,
+        "reference_key": "18, 10"
+      },
+      {
+        "context": "Experiments",
+        "page": 5,
+        "reference_key": "16, 19, 19, 18, 10"
+      },
+      {
+        "context": "Experiments",
+        "page": 6,
+        "reference_key": "18, 10"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Panhe Feng"
+        },
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Xuejing Kang"
+        },
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Lizhu Ye"
+        },
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Lei Zhu"
+        },
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Chunpeng Li"
+        },
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Anlong Ming"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "DDNet: Dual-path Decoder Network for Occlusion Relationship Reasoning"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1911.11582v1 [cs.CV] 26 Nov 2019",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "DDNet: Dual-path Decoder Network for Occlusion Relationship Reasoning",
+      "venue": "arXiv",
+      "year": 2019
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Due to the essential differences between the two subtasks in the feature expression at the higher and lower stages, it is challenging to carry on them simultaneously in one network."
+        }
+      ],
+      "text": "What network design and orientation representation can make occlusion boundary extraction and occlusion orientation inference share useful high-level occlusion information while still recovering task-specific low-level spatial information and avoiding the periodicity problem?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Alper Ayvaci",
+          "Stefano Soatto"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 9,
+        "title": "Detachable object detection: Segmentation and depth ordering from short-baseline video",
+        "venue": "IEEE transactions on pattern analysis and machine intelligence",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Ruoxi Deng",
+          "Chunhua Shen",
+          "Shengjun Liu",
+          "Huibing Wang",
+          "Xinru Liu"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 9,
+        "title": "Learning to predict crisp boundaries",
+        "venue": "Proceedings of the European Conference on Computer Vision (ECCV)",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Doron Feldman",
+          "Daphna Weinshall"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 9,
+        "title": "Motion segmentation and depth ordering using an occlusion detector",
+        "venue": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Tianshi Gao",
+          "Benjamin Packer",
+          "Daphne Koller"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 9,
+        "title": "A segmentation-aware object detection model with occlusion handling",
+        "venue": "CVPR 2011",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Jianzhong He",
+          "Shiliang Zhang",
+          "Ming Yang",
+          "Yanhu Shan",
+          "Tiejun Huang"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 9,
+        "title": "Bi-directional cascade network for perceptual edge detection",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Kaiming He",
+          "Xiangyu Zhang",
+          "Shaoqing Ren",
+          "Jian Sun"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 9,
+        "title": "Deep residual learning for image recognition",
+        "venue": "Proceedings of the IEEE conference on computer vision and pattern recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Kaiming He",
+          "Xiangyu Zhang",
+          "Shaoqing Ren",
+          "Jian Sun"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 9,
+        "title": "Deep residual learning for image recognition",
+        "venue": "Proceedings of the IEEE conference on computer vision and pattern recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Derek Hoiem",
+          "Alexei A Efros",
+          "Martial Hebert"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 9,
+        "title": "Recovering occlusion boundaries from an image",
+        "venue": "International Journal of Computer Vision",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Yun Liu",
+          "Ming-Ming Cheng",
+          "Xiaowei Hu",
+          "Kai Wang",
+          "Xiang Bai"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 9,
+        "title": "Richer convolutional features for edge detection",
+        "venue": "Proceedings of the IEEE conference on computer vision and pattern recognition",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Rui Lu",
+          "Feng Xue",
+          "Menghan Zhou",
+          "Anlong Ming",
+          "Yu Zhou"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 9,
+        "title": "Occlusion-shared and feature-separated network for occlusion relationship reasoning",
+        "venue": "arXiv preprint arXiv:1908.05898",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Rui Lu",
+          "Menghan Zhou",
+          "Anlong Ming",
+          "Yu Zhou"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 9,
+        "title": "Context-constrained accurate contour extraction for occlusion edge detection",
+        "venue": "2019 IEEE International Conference on Multimedia and Expo (ICME)",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Xiaofeng Ren",
+          "Charless C Fowlkes",
+          "Jitendra Malik"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 9,
+        "title": "Figure/ground assignment in natural images",
+        "venue": "European Conference on Computer Vision",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Xiaofeng Ren",
+          "Charless C Fowlkes",
+          "Jitendra Malik"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 9,
+        "title": "Figure/ground assignment in natural images",
+        "venue": "European Conference on Computer Vision",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Ashutosh Saxena",
+          "Sung H Chung",
+          "Andrew Y Ng"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 9,
+        "title": "Learning depth from single monocular images",
+        "venue": "Advances in neural information processing systems",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Qi Shan",
+          "Brian Curless",
+          "Yasutaka Furukawa",
+          "Carlos Hernandez",
+          "Steven M Seitz"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 9,
+        "title": "Occluding contours for multi-view stereo",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ching Teo",
+          "Cornelia Fermuller",
+          "Yiannis Aloimonos"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 9,
+        "title": "Fast 2d border ownership assignment",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Joseph Tighe",
+          "Marc Niethammer",
+          "Svetlana Lazebnik"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 9,
+        "title": "Scene parsing with object instances and occlusion ordering",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Guoxia Wang",
+          "Xiaochuan Wang",
+          "Frederick WB Li",
+          "Xiaohui Liang"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 9,
+        "title": "Doobnet: Deep object occlusion boundary detection from an image",
+        "venue": "Asian Conference on Computer Vision",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Peng Wang",
+          "Alan Yuille"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 9,
+        "title": "Doc: Deep occlusion estimation from a single image",
+        "venue": "European Conference on Computer Vision",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Saining Xie",
+          "Zhuowen Tu"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 9,
+        "title": "Holistically-nested edge detection",
+        "venue": "Proceedings of the IEEE international conference on computer vision",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jimei Yang",
+          "Brian Price",
+          "Scott Cohen",
+          "Honglak Lee",
+          "Ming-Hsuan Yang"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 9,
+        "title": "Object contour detection with a fully convolutional encoder-decoder network",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Yin Li Yupei Wang",
+          "Xin Zhao",
+          "Kaiqi Huang"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 9,
+        "title": "Deep crisp boundaries: From boundaries to higher-level tasks",
+        "venue": "TIP",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Ziyu Zhang",
+          "Alexander G Schwing",
+          "Sanja Fidler",
+          "Raquel Urtasun"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 9,
+        "title": "Monocular object instance segmentation and depth ordering with cnns",
+        "venue": "Proceedings of the IEEE International Conference on Computer Vision",
+        "year": 2015
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Previous methods, such as DOOBNet [18], OFNet [10] first use the backbone network to extract different level features and use the entire decoder to extract shared information for two tasks",
+        "reference_key": "18",
+        "relation": "contrasts",
+        "why": "Previous DOOBNet-style methods share the entire decoder for both tasks, whereas DDNet shares only high-stage features and splits low-stage paths."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "OFNet [10] considers the importance of occlusion cues for two tasks, and designs two sub-networks to share occlusion cues.",
+        "reference_key": "10",
+        "relation": "contrasts",
+        "why": "OFNet shares occlusion cues through two sub-networks; DDNet instead separates boundary and orientation recovery in lower stages."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Previous methods [19, 18, 10] infer the occlusion orientation by regressing a continuous orientation value.",
+        "reference_key": "19",
+        "relation": "critiques",
+        "why": "DOC's continuous orientation regression is vulnerable to periodicity; DDNet uses orthogonal vectors and OOR."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "DOC [19] proposes using the pixel-based orientation variable to represent the occlusion orientation relationship and regression to estimate the orientation variable.",
+        "reference_key": "19",
+        "relation": "contrasts",
+        "why": "DDNet replaces DOC's pixel-based orientation variable and regression with orthogonal representation."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Different from the method of supervised encoders that are widely used for edge detection [20, 22, 9, 5], we output and supervise the side-layer result of the decoder",
+        "reference_key": "20",
+        "relation": "contrasts",
+        "why": "Unlike supervised encoder side-layers for edge detection, DDNet supervises decoder side-layers for boundary path."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In our network, as shown in Fig. 2, we use ResNet [6] as a base feature extraction model as in previous works [18, 11, 10].",
+        "reference_key": "6",
+        "relation": "extends",
+        "why": "DDNet uses ResNet as its base feature extraction backbone."
+      },
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "BDCN [5] performs different supervision on different side-layers to optimize side output results.",
+        "reference_key": "5",
+        "relation": "contrasts",
+        "why": "BDCN directly supervises backbone side-layers; DDNet supervises decoder side-layers for boundary recovery."
+      },
+      {
+        "confidence": "medium",
+        "page": 5,
+        "quote": "We evaluate the proposed approach on two public datasets: PIOD [19] and BSDS ownership dataset [13].",
+        "reference_key": "13",
+        "relation": "extends",
+        "why": "It validates on the same benchmark as prior occlusion-relationship work."
+      }
+    ],
+    "sections": [
+      {
+        "family": "interpretation",
+        "kind": "methods",
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "ownership dataset [13].",
+          "start_page": 1,
+          "start_text": "Occlusion relationship reasoning based on convolution"
+        },
+        "summary": "Introduces occlusion relationship reasoning as boundary extraction plus orientation inference, identifies difficulties in sharing one decoder and regressing periodic orientation, lists DDNet and OOR contributions, and surveys encoder-decoder, multi-scale supervision, and orientation representation methods.",
+        "title": "Problem, Contributions, and Related Work"
+      },
+      {
+        "family": "interpretation",
+        "kind": "methods",
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "FFS-b, FFS-c, FFS-d, FFS-bd respectively.",
+          "start_page": 3,
+          "start_text": "3. Method"
+        },
+        "summary": "Describes DDNet architecture: share high-stage occlusion information, split into boundary and orientation paths, use occlusion-shared module, feature boost residual, feature fusion and separation, skip connection for orientation, and multi-scale boundary supervision.",
+        "title": "Dual-Path Decoder Network"
+      },
+      {
+        "family": "interpretation",
+        "kind": "methods",
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "L orientation =",
+          "start_page": 4,
+          "start_text": "3.2. Orthogonal Orientation Regression"
+        },
+        "summary": "Defines orthogonal vector representation for occlusion orientation, derives OOR loss, and combines boundary and orientation losses for network training.",
+        "title": "Orthogonal Orientation Regression and Training Loss"
+      },
+      {
+        "family": "interpretation",
+        "kind": "results",
+        "pages": {
+          "end": 6,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "In summary, our method can",
+          "start_page": 5,
+          "start_text": "4. Experiment"
+        },
+        "summary": "Describes PIOD and BSDS ownership datasets, implementation details, evaluation metrics, and quantitative and qualitative comparison against prior methods.",
+        "title": "Experiments: Datasets, Metrics, and Comparisons"
+      },
+      {
+        "family": "interpretation",
+        "kind": "results",
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "orange: false positive boundaries (Best viewed in color).",
+          "start_page": 7,
+          "start_text": "4.3. Ablation Study"
+        },
+        "summary": "Ablates shared-stage count, orientation supervision type, and multi-scale supervision; concludes DDNet and OOR; presents qualitative examples on PIOD and BSDS ownership in Fig. 7.",
+        "title": "Ablation Study, Conclusion, and Qualitative Results"
+      },
+      {
+        "family": "interpretation",
+        "kind": "references",
+        "pages": {
+          "end": 9,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "pages 2614–2622, 2015. 1",
+          "start_page": 9,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of cited works.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It proposes a new network architecture and loss for occlusion relationship reasoning and validates with experiments and ablations.",
+      "value": "method"
+    }
+  },
+  "pass1_check": {
+    "sites": 41,
+    "verbatim": 40,
+    "near": 0,
+    "missing": 1,
+    "wrong_page": 8
+  },
+  "corrections": [
+    {
+      "path": "/abstract/text",
+      "action": "replace",
+      "value_json": "\"Occlusion relationship reasoning based on convolution neural networks consists of two subtasks: occlusion boundary extraction and occlusion orientation inference. Due to the essential differences between the two subtasks in the feature expression at the higher and lower stages, it is challenging to carry on them simultaneously in one network. To address this issue, we propose a novel Dual-path Decoder Network, which uniformly extracts occlusion information at higher stages and separates into two paths to recover boundary and occlusion orientation respectively in lower stages. Besides, considering the restriction of occlusion orientation presentation to occlusion orientation learning, we design a new orthogonal representation for occlusion orientation and proposed the Orthogonal Orientation Regression loss which can get rid of the unfitness between occlusion representation and learning and further prompt the occlusion orientation learning. Finally, we apply a multi-scale loss together with our proposed orientation regression loss to guide the boundary and orientation path learning respectively. Experiments demonstrate that our proposed method achieves state-of-the-art results on PIOD and BSDS ownership datasets.\"",
+      "reason": "The draft abstract field only says it was not extracted; the paper has a full abstract on page 1.",
+      "evidence": [
+        {
+          "quote": "Occlusion relationship reasoning based on convolution neural networks consists of two subtasks: occlusion boundary extraction and occlusion orientation inference. Due to the essential differences between the two subtasks in the feature expression at the higher and lower stages, it is challenging to carry on them simultaneously in one network. To address this issue, we propose a novel Dual-path Decoder Network, which uniformly extracts occlusion information at higher stages and separates into two paths to recover boundary and occlusion orientation respectively in lower stages. Besides, considering the restriction of occlusion orientation presentation to occlusion orientation learning, we design a new orthogonal representation for occlusion orientation and proposed the Orthogonal Orientation Regression loss which can get rid of the unfitness between occlusion representation and learning and further prompt the occlusion orientation learning. Finally, we apply a multi-scale loss together with our proposed orientation regression loss to guide the boundary and orientation path learning respectively. Experiments demonstrate that our proposed method achieves state-of-the-art results on PIOD and BSDS ownership datasets.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/sections/0/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"It can’t handle the values at both ends of the interval well.\"",
+      "reason": "Section 1 includes the Related Work section, which ends on page 2 at the quoted sentence, not at the earlier contributions sentence.",
+      "evidence": [
+        {
+          "quote": "It can’t handle the values at both ends of the interval well.",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/sections/3/pages/end",
+      "action": "replace",
+      "value_json": "7",
+      "reason": "Section 4 continues onto page 7 with the completion of the comparison discussion before the Ablation Study.",
+      "evidence": [
+        {
+          "quote": "outperforms others by a large margin both in boundary and occlusion orientation, which proves the effectiveness of our network.",
+          "page": 7
+        }
+      ]
+    },
+    {
+      "path": "/sections/3/source_span/end_page",
+      "action": "replace",
+      "value_json": "7",
+      "reason": "Section 4 continues onto page 7 with the completion of the comparison discussion before the Ablation Study.",
+      "evidence": [
+        {
+          "quote": "outperforms others by a large margin both in boundary and occlusion orientation, which proves the effectiveness of our network.",
+          "page": 7
+        }
+      ]
+    },
+    {
+      "path": "/sections/3/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"outperforms others by a large margin both in boundary and occlusion orientation, which proves the effectiveness of our network.\"",
+      "reason": "Section 4 ends on page 7 with the quoted sentence, before section 4.3 begins.",
+      "evidence": [
+        {
+          "quote": "outperforms others by a large margin both in boundary and occlusion orientation, which proves the effectiveness of our network.",
+          "page": 7
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/abstract/text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/sections/0/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/sections/3/pages/end",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/sections/3/source_span/end_page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/sections/3/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 41,
+    "verbatim": 41,
+    "near": 0,
+    "missing": 0,
+    "wrong_page": 8
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "Occlusion relationship reasoning based on convolution neural networks consists of two subtasks: occlusion boundary extraction and occlusion orientation inference. Due to the essential differences between the two subtasks in the feature expression at the higher and lower stages, it is challenging to carry on them simultaneously in one network. To address this issue, we propose a novel Dual-path Decoder Network, which uniformly extracts occlusion information at higher stages and separates into two paths to recover boundary and occlusion orientation respectively in lower stages. Besides, considering the restriction of occlusion orientation presentation to occlusion orientation learning, we design a new orthogonal representation for occlusion orientation and proposed the Orthogonal Orientation Regression loss which can get rid of the unfitness between occlusion representation and learning and further prompt the occlusion orientation learning. Finally, we apply a multi-scale loss together with our proposed orientation regression loss to guide the boundary and orientation path learning respectively. Experiments demonstrate that our proposed method achieves state-of-the-art results on PIOD and BSDS ownership datasets.",
+      "admitted": "Occlusion relationship reasoning based on convolution neural networks consists of two subtasks: occlusion boundary extraction and occlusion orientation inference. Due to the essential differences between the two subtasks in the feature expression at the higher and lower stages, it is challenging to carry on them simultaneously in one network. To address this issue, we propose a novel Dual-path Decoder Network, which uniformly extracts occlusion information at higher stages and separates into two paths to recover boundary and occlusion orientation respectively in lower stages. Besides, considering the restriction of occlusion orientation presentation to occlusion orientation learning, we design a new orthogonal representation for occlusion orientation and proposed the Orthogonal Orientation Regression loss which can get rid of the unfitness between occlusion representation and learning and further prompt the occlusion orientation learning. Finally, we apply a multi-scale loss together with our proposed orientation regression loss to guide the boundary and orientation path learning respectively. Experiments demonstrate that our proposed method achieves state-of-the-art results on PIOD and BSDS ownership datasets.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Previous methods, such as DOOBNet [18], OFNet [10] first use the backbone network to extract different level features and use the entire decoder to extract shared information for two tasks",
+      "admitted": "Previous methods, such as DOOBNet [18], OFNet [10] first use the backbone network to extract different level features and use the entire decoder to extract shared information for two tasks",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "OFNet [10] considers the importance of occlusion cues for two tasks, and designs two sub-networks to share occlusion cues.",
+      "admitted": "OFNet [10] considers the importance of occlusion cues for two tasks, and designs two sub-networks to share occlusion cues.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/replications/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We evaluate the proposed approach on two public datasets: PIOD [19] and BSDS ownership dataset [13].",
+      "admitted": "We evaluate the proposed approach on two public datasets: PIOD [19] and BSDS ownership dataset [13].",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Previous methods [19, 18, 10] infer the occlusion orientation by regressing a continuous orientation value.",
+      "admitted": "Previous methods [19, 18, 10] infer the occlusion orientation by regressing a continuous orientation value.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "To address this issue, we propose a novel Dual-path Decoder Network, which uniformly extracts occlusion information at higher stages and separates into two paths to recover boundary and occlusion orientation respectively in lower stages.",
+      "admitted": "To address this issue, we propose a novel Dual-path Decoder Network, which uniformly extracts occlusion information at higher stages and separates into two paths to recover boundary and occlusion orientation respectively in lower stages.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "DDNet: Dual-path Decoder Network for Occlusion Relationship Reasoning",
+      "admitted": "DDNet: Dual-path Decoder Network for Occlusion Relationship Reasoning",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Due to the essential differences between the two subtasks in the feature expression at the higher and lower stages, it is challenging to carry on them simultaneously in one network.",
+      "admitted": "Due to the essential differences between the two subtasks in the feature expression at the higher and lower stages, it is challenging to carry on them simultaneously in one network.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "Method",
+      "admitted": "Method",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "Method",
+      "admitted": "Method",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "Method",
+      "admitted": "Method",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "Method",
+      "admitted": "Method",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "Experiments",
+      "admitted": "Experiments",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "Experiments",
+      "admitted": "Experiments",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "Experiments",
+      "admitted": "Experiments",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "Experiments",
+      "admitted": "Experiments",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Previous methods, such as DOOBNet [18], OFNet [10] first use the backbone network to extract different level features and use the entire decoder to extract shared information for two tasks",
+      "admitted": "Previous methods, such as DOOBNet [18], OFNet [10] first use the backbone network to extract different level features and use the entire decoder to extract shared information for two tasks",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "OFNet [10] considers the importance of occlusion cues for two tasks, and designs two sub-networks to share occlusion cues.",
+      "admitted": "OFNet [10] considers the importance of occlusion cues for two tasks, and designs two sub-networks to share occlusion cues.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "Previous methods [19, 18, 10] infer the occlusion orientation by regressing a continuous orientation value.",
+      "admitted": "Previous methods [19, 18, 10] infer the occlusion orientation by regressing a continuous orientation value.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "DOC [19] proposes using the pixel-based orientation variable to represent the occlusion orientation relationship and regression to estimate the orientation variable.",
+      "admitted": "DOC [19] proposes using the pixel-based orientation variable to represent the occlusion orientation relationship and regression to estimate the orientation variable.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Different from the method of supervised encoders that are widely used for edge detection [20, 22, 9, 5], we output and supervise the side-layer result of the decoder",
+      "admitted": "Different from the method of supervised encoders that are widely used for edge detection [20, 22, 9, 5], we output and supervise the side-layer result of the decoder",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "In our network, as shown in Fig. 2, we use ResNet [6] as a base feature extraction model as in previous works [18, 11, 10].",
+      "admitted": "In our network, as shown in Fig. 2, we use ResNet [6] as a base feature extraction model as in previous works [18, 11, 10].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "BDCN [5] performs different supervision on different side-layers to optimize side output results.",
+      "admitted": "BDCN [5] performs different supervision on different side-layers to optimize side output results.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "We evaluate the proposed approach on two public datasets: PIOD [19] and BSDS ownership dataset [13].",
+      "admitted": "We evaluate the proposed approach on two public datasets: PIOD [19] and BSDS ownership dataset [13].",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    }
+  ],
+  "admission_counts": {
+    "verbatim": 41
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "medium",
+      "page": 1,
+      "text": "Occlusion relationship reasoning based on convolution neural networks consists of two subtasks: occlusion boundary extraction and occlusion orientation inference. Due to the essential differences between the two subtasks in the feature expression at the higher and lower stages, it is challenging to carry on them simultaneously in one network. To address this issue, we propose a novel Dual-path Decoder Network, which uniformly extracts occlusion information at higher stages and separates into two paths to recover boundary and occlusion orientation respectively in lower stages. Besides, considering the restriction of occlusion orientation presentation to occlusion orientation learning, we design a new orthogonal representation for occlusion orientation and proposed the Orthogonal Orientation Regression loss which can get rid of the unfitness between occlusion representation and learning and further prompt the occlusion orientation learning. Finally, we apply a multi-scale loss together with our proposed orientation regression loss to guide the boundary and orientation path learning respectively. Experiments demonstrate that our proposed method achieves state-of-the-art results on PIOD and BSDS ownership datasets."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "DOOBNet",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Previous methods, such as DOOBNet [18], OFNet [10] first use the backbone network to extract different level features and use the entire decoder to extract shared information for two tasks"
+              }
+            ],
+            "reference_key": "18",
+            "why": "Previous DOOBNet-style methods share the entire decoder for both tasks, whereas DDNet shares only high-stage features and splits low-stage paths."
+          },
+          {
+            "cited_work": "OFNet",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "OFNet [10] considers the importance of occlusion cues for two tasks, and designs two sub-networks to share occlusion cues."
+              }
+            ],
+            "reference_key": "10",
+            "why": "OFNet shares occlusion cues through two sub-networks; DDNet instead separates boundary and orientation recovery in lower stages."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "BSDS ownership",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "We evaluate the proposed approach on two public datasets: PIOD [19] and BSDS ownership dataset [13]."
+              }
+            ],
+            "reference_key": "13",
+            "why": "It validates on the same benchmark as prior occlusion-relationship work."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "DOC",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Previous methods [19, 18, 10] infer the occlusion orientation by regressing a continuous orientation value."
+              }
+            ],
+            "reference_key": "19",
+            "why": "DOC's continuous orientation regression is vulnerable to periodicity; DDNet uses orthogonal vectors and OOR."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "To address this issue, we propose a novel Dual-path Decoder Network, which uniformly extracts occlusion information at higher stages and separates into two paths to recover boundary and occlusion orientation respectively in lower stages."
+          }
+        ],
+        "text": "A dual-path decoder that shares high-stage features but separates low-stage boundary and orientation recovery, plus an orthogonal orientation representation and OOR loss, improves occlusion relationship reasoning."
+      }
+    },
+    "citations": [
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "4, 1, 17, 4, 23, 3, 15"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "8, 16, 12, 14"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "19"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "18"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "10"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "18, 10"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "19, 18, 10"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "19, 13"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "19, 13"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "2"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "20, 22"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "21"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "18"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "20"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "5"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "19"
+      },
+      {
+        "context": "Related Work",
+        "page": 2,
+        "reference_key": "18"
+      },
+      {
+        "context": "Method",
+        "page": 4,
+        "reference_key": "6, 18, 11, 10"
+      },
+      {
+        "context": "Method",
+        "page": 4,
+        "reference_key": "20, 22, 9, 5"
+      },
+      {
+        "context": "Method",
+        "page": 4,
+        "reference_key": "7"
+      },
+      {
+        "context": "Method",
+        "page": 5,
+        "reference_key": "19, 18"
+      },
+      {
+        "context": "Experiments",
+        "page": 1,
+        "reference_key": "19, 13"
+      },
+      {
+        "context": "Experiments",
+        "page": 1,
+        "reference_key": "18, 10"
+      },
+      {
+        "context": "Experiments",
+        "page": 1,
+        "reference_key": "16, 19, 19, 18, 10"
+      },
+      {
+        "context": "Experiments",
+        "page": 1,
+        "reference_key": "18, 10"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Panhe Feng"
+        },
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Xuejing Kang"
+        },
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Lizhu Ye"
+        },
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Lei Zhu"
+        },
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Chunpeng Li"
+        },
+        {
+          "affiliation": "Beijing University of Posts and Telecommunications, Beijing, China",
+          "name": "Anlong Ming"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "DDNet: Dual-path Decoder Network for Occlusion Relationship Reasoning"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1911.11582v1 [cs.CV] 26 Nov 2019",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "DDNet: Dual-path Decoder Network for Occlusion Relationship Reasoning",
+      "venue": "arXiv",
+      "year": 2019
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Due to the essential differences between the two subtasks in the feature expression at the higher and lower stages, it is challenging to carry on them simultaneously in one network."
+        }
+      ],
+      "text": "What network design and orientation representation can make occlusion boundary extraction and occlusion orientation inference share useful high-level occlusion information while still recovering task-specific low-level spatial information and avoiding the periodicity problem?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Alper Ayvaci",
+          "Stefano Soatto"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 9,
+        "title": "Detachable object detection: Segmentation and depth ordering from short-baseline video",
+        "venue": "IEEE transactions on pattern analysis and machine intelligence",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Ruoxi Deng",
+          "Chunhua Shen",
+          "Shengjun Liu",
+          "Huibing Wang",
+          "Xinru Liu"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 9,
+        "title": "Learning to predict crisp boundaries",
+        "venue": "Proceedings of the European Conference on Computer Vision (ECCV)",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Doron Feldman",
+          "Daphna Weinshall"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 9,
+        "title": "Motion segmentation and depth ordering using an occlusion detector",
+        "venue": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Tianshi Gao",
+          "Benjamin Packer",
+          "Daphne Koller"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 9,
+        "title": "A segmentation-aware object detection model with occlusion handling",
+        "venue": "CVPR 2011",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Jianzhong He",
+          "Shiliang Zhang",
+          "Ming Yang",
+          "Yanhu Shan",
+          "Tiejun Huang"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 9,
+        "title": "Bi-directional cascade network for perceptual edge detection",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Kaiming He",
+          "Xiangyu Zhang",
+          "Shaoqing Ren",
+          "Jian Sun"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 9,
+        "title": "Deep residual learning for image recognition",
+        "venue": "Proceedings of the IEEE conference on computer vision and pattern recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Kaiming He",
+          "Xiangyu Zhang",
+          "Shaoqing Ren",
+          "Jian Sun"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 9,
+        "title": "Deep residual learning for image recognition",
+        "venue": "Proceedings of the IEEE conference on computer vision and pattern recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Derek Hoiem",
+          "Alexei A Efros",
+          "Martial Hebert"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 9,
+        "title": "Recovering occlusion boundaries from an image",
+        "venue": "International Journal of Computer Vision",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Yun Liu",
+          "Ming-Ming Cheng",
+          "Xiaowei Hu",
+          "Kai Wang",
+          "Xiang Bai"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 9,
+        "title": "Richer convolutional features for edge detection",
+        "venue": "Proceedings of the IEEE conference on computer vision and pattern recognition",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Rui Lu",
+          "Feng Xue",
+          "Menghan Zhou",
+          "Anlong Ming",
+          "Yu Zhou"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 9,
+        "title": "Occlusion-shared and feature-separated network for occlusion relationship reasoning",
+        "venue": "arXiv preprint arXiv:1908.05898",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Rui Lu",
+          "Menghan Zhou",
+          "Anlong Ming",
+          "Yu Zhou"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 9,
+        "title": "Context-constrained accurate contour extraction for occlusion edge detection",
+        "venue": "2019 IEEE International Conference on Multimedia and Expo (ICME)",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Xiaofeng Ren",
+          "Charless C Fowlkes",
+          "Jitendra Malik"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 9,
+        "title": "Figure/ground assignment in natural images",
+        "venue": "European Conference on Computer Vision",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Xiaofeng Ren",
+          "Charless C Fowlkes",
+          "Jitendra Malik"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 9,
+        "title": "Figure/ground assignment in natural images",
+        "venue": "European Conference on Computer Vision",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Ashutosh Saxena",
+          "Sung H Chung",
+          "Andrew Y Ng"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 9,
+        "title": "Learning depth from single monocular images",
+        "venue": "Advances in neural information processing systems",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Qi Shan",
+          "Brian Curless",
+          "Yasutaka Furukawa",
+          "Carlos Hernandez",
+          "Steven M Seitz"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 9,
+        "title": "Occluding contours for multi-view stereo",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ching Teo",
+          "Cornelia Fermuller",
+          "Yiannis Aloimonos"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 9,
+        "title": "Fast 2d border ownership assignment",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Joseph Tighe",
+          "Marc Niethammer",
+          "Svetlana Lazebnik"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 9,
+        "title": "Scene parsing with object instances and occlusion ordering",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Guoxia Wang",
+          "Xiaochuan Wang",
+          "Frederick WB Li",
+          "Xiaohui Liang"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 9,
+        "title": "Doobnet: Deep object occlusion boundary detection from an image",
+        "venue": "Asian Conference on Computer Vision",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Peng Wang",
+          "Alan Yuille"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 9,
+        "title": "Doc: Deep occlusion estimation from a single image",
+        "venue": "European Conference on Computer Vision",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Saining Xie",
+          "Zhuowen Tu"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 9,
+        "title": "Holistically-nested edge detection",
+        "venue": "Proceedings of the IEEE international conference on computer vision",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jimei Yang",
+          "Brian Price",
+          "Scott Cohen",
+          "Honglak Lee",
+          "Ming-Hsuan Yang"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 9,
+        "title": "Object contour detection with a fully convolutional encoder-decoder network",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Yin Li Yupei Wang",
+          "Xin Zhao",
+          "Kaiqi Huang"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 9,
+        "title": "Deep crisp boundaries: From boundaries to higher-level tasks",
+        "venue": "TIP",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Ziyu Zhang",
+          "Alexander G Schwing",
+          "Sanja Fidler",
+          "Raquel Urtasun"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 9,
+        "title": "Monocular object instance segmentation and depth ordering with cnns",
+        "venue": "Proceedings of the IEEE International Conference on Computer Vision",
+        "year": 2015
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Previous methods, such as DOOBNet [18], OFNet [10] first use the backbone network to extract different level features and use the entire decoder to extract shared information for two tasks",
+        "reference_key": "18",
+        "relation": "contrasts",
+        "why": "Previous DOOBNet-style methods share the entire decoder for both tasks, whereas DDNet shares only high-stage features and splits low-stage paths."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "OFNet [10] considers the importance of occlusion cues for two tasks, and designs two sub-networks to share occlusion cues.",
+        "reference_key": "10",
+        "relation": "contrasts",
+        "why": "OFNet shares occlusion cues through two sub-networks; DDNet instead separates boundary and orientation recovery in lower stages."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Previous methods [19, 18, 10] infer the occlusion orientation by regressing a continuous orientation value.",
+        "reference_key": "19",
+        "relation": "critiques",
+        "why": "DOC's continuous orientation regression is vulnerable to periodicity; DDNet uses orthogonal vectors and OOR."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "DOC [19] proposes using the pixel-based orientation variable to represent the occlusion orientation relationship and regression to estimate the orientation variable.",
+        "reference_key": "19",
+        "relation": "contrasts",
+        "why": "DDNet replaces DOC's pixel-based orientation variable and regression with orthogonal representation."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Different from the method of supervised encoders that are widely used for edge detection [20, 22, 9, 5], we output and supervise the side-layer result of the decoder",
+        "reference_key": "20",
+        "relation": "contrasts",
+        "why": "Unlike supervised encoder side-layers for edge detection, DDNet supervises decoder side-layers for boundary path."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In our network, as shown in Fig. 2, we use ResNet [6] as a base feature extraction model as in previous works [18, 11, 10].",
+        "reference_key": "6",
+        "relation": "extends",
+        "why": "DDNet uses ResNet as its base feature extraction backbone."
+      },
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "BDCN [5] performs different supervision on different side-layers to optimize side output results.",
+        "reference_key": "5",
+        "relation": "contrasts",
+        "why": "BDCN directly supervises backbone side-layers; DDNet supervises decoder side-layers for boundary recovery."
+      },
+      {
+        "confidence": "medium",
+        "page": 5,
+        "quote": "We evaluate the proposed approach on two public datasets: PIOD [19] and BSDS ownership dataset [13].",
+        "reference_key": "13",
+        "relation": "extends",
+        "why": "It validates on the same benchmark as prior occlusion-relationship work."
+      }
+    ],
+    "sections": [
+      {
+        "family": "interpretation",
+        "kind": "methods",
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "It can’t handle the values at both ends of the interval well.",
+          "start_page": 1,
+          "start_text": "Occlusion relationship reasoning based on convolution"
+        },
+        "summary": "Introduces occlusion relationship reasoning as boundary extraction plus orientation inference, identifies difficulties in sharing one decoder and regressing periodic orientation, lists DDNet and OOR contributions, and surveys encoder-decoder, multi-scale supervision, and orientation representation methods.",
+        "title": "Problem, Contributions, and Related Work"
+      },
+      {
+        "family": "interpretation",
+        "kind": "methods",
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "FFS-b, FFS-c, FFS-d, FFS-bd respectively.",
+          "start_page": 3,
+          "start_text": "3. Method"
+        },
+        "summary": "Describes DDNet architecture: share high-stage occlusion information, split into boundary and orientation paths, use occlusion-shared module, feature boost residual, feature fusion and separation, skip connection for orientation, and multi-scale boundary supervision.",
+        "title": "Dual-Path Decoder Network"
+      },
+      {
+        "family": "interpretation",
+        "kind": "methods",
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "L orientation =",
+          "start_page": 4,
+          "start_text": "3.2. Orthogonal Orientation Regression"
+        },
+        "summary": "Defines orthogonal vector representation for occlusion orientation, derives OOR loss, and combines boundary and orientation losses for network training.",
+        "title": "Orthogonal Orientation Regression and Training Loss"
+      },
+      {
+        "family": "interpretation",
+        "kind": "results",
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "outperforms others by a large margin both in boundary and occlusion orientation, which proves the effectiveness of our network.",
+          "start_page": 5,
+          "start_text": "4. Experiment"
+        },
+        "summary": "Describes PIOD and BSDS ownership datasets, implementation details, evaluation metrics, and quantitative and qualitative comparison against prior methods.",
+        "title": "Experiments: Datasets, Metrics, and Comparisons"
+      },
+      {
+        "family": "interpretation",
+        "kind": "results",
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "orange: false positive boundaries (Best viewed in color).",
+          "start_page": 7,
+          "start_text": "4.3. Ablation Study"
+        },
+        "summary": "Ablates shared-stage count, orientation supervision type, and multi-scale supervision; concludes DDNet and OOR; presents qualitative examples on PIOD and BSDS ownership in Fig. 7.",
+        "title": "Ablation Study, Conclusion, and Qualitative Results"
+      },
+      {
+        "family": "interpretation",
+        "kind": "references",
+        "pages": {
+          "end": 9,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "pages 2614–2622, 2015. 1",
+          "start_page": 9,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of cited works.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It proposes a new network architecture and loss for occlusion relationship reasoning and validates with experiments and ablations.",
+      "value": "method"
+    }
+  }
+}
