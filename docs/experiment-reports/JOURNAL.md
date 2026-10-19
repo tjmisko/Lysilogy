@@ -57,6 +57,22 @@ the taxonomy was Procrustean and the segmentation is the work.
 Next arms: validate E2-low on all 30, and try a hierarchical sections pass
 (deterministic heading candidates, model boundaries) against the one-shot.
 
+## Image-only inputs
+
+One clean image-only PDF exists in the local library (Putnam 1975); Borges is
+corrupt. To test the dimension, `scripts/spike/build_image_only.py` rasterizes
+three local text papers at 150 DPI and the set is `eval/spike/image-only.json`
+with `eval/spike/configs/image-only.json`.
+
+Measured: a 120 DPI letter page is a 1314x1020 PNG (~320 KB); tesseract takes
+~2.9 s/page and reads the scanned page well. At DeepSeek flash pricing the image
+tokens are roughly $0.001-0.003/paper, so wall time, not tokens, is the cost.
+The pipeline currently refuses a PDF with no text layer (`EmptyExtraction`), so
+the next code step is the OCR fallback: render each page (already done for
+images), run tesseract to fill `page.text`, and send `input.images` when the
+vision model should see the page. Ground truth for these comes from the
+strong-model kit in `eval/spike/ground-truth/`.
+
 ## Cross-cutting learnings
 
 - The malformed `sections` bug is fixed by correction validation (8 → 0).
