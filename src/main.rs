@@ -61,7 +61,7 @@ struct Cli {
     notes: PathBuf,
 
     /// JSON settings file; defaults to optional ./lysilogy.config.json.
-    #[arg(long, env = "LYSILOGY_CONFIG", global = true)]
+    #[arg(long, env = "LYSILOGY_CONFIG")]
     config: Option<PathBuf>,
 
     #[command(subcommand)]
@@ -2778,6 +2778,28 @@ mod tests {
             Cli::try_parse_from(["lysilogy", "fetch", "--cited-by", "Paper", "--limit", "5"])
                 .is_ok()
         );
+    }
+
+    #[test]
+    fn should_bind_config_to_the_extract_plan_not_app_settings() {
+        let plan = Cli::try_parse_from([
+            "lysilogy", "extract", "--pdf", "x.pdf", "--config", "run.json",
+        ])
+        .expect("extract plan config");
+        assert!(plan.config.is_none());
+        assert!(matches!(
+            plan.command,
+            Some(Command::Extract { config: Some(path), .. }) if path == Path::new("run.json")
+        ));
+        let settings = Cli::try_parse_from([
+            "lysilogy", "--config", "app.json", "extract", "--pdf", "x.pdf",
+        ])
+        .expect("app settings config");
+        assert_eq!(settings.config.as_deref(), Some(Path::new("app.json")));
+        assert!(matches!(
+            settings.command,
+            Some(Command::Extract { config: None, .. })
+        ));
     }
 
     #[test]
