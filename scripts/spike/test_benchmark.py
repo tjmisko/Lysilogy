@@ -191,6 +191,19 @@ class SectionTests(unittest.TestCase):
     def test_should_report_zero_coverage_when_there_are_no_sections(self):
         self.assertEqual(b.score_sections({"sections": []}, 5)["coverage"], 0.0)
 
+    def test_should_align_units_to_the_audited_spans(self):
+        oracle = {"sections": [{"pages": {"start": 1, "end": 2}}, {"pages": {"start": 3, "end": 4}}]}
+        exact = {"sections": [{"pages": {"start": 1, "end": 2}}, {"pages": {"start": 3, "end": 4}}]}
+        score = b.score_sections_oracle(exact, oracle)
+        self.assertEqual(score["unit_iou"], 1.0)
+        self.assertEqual(score["boundary_exact"], 1.0)
+        self.assertEqual(score["unit_count_error"], 0)
+        shifted = {"sections": [{"pages": {"start": 2, "end": 3}}]}
+        score = b.score_sections_oracle(shifted, oracle)
+        self.assertLess(score["unit_iou"], 1.0)
+        self.assertEqual(score["boundary_exact"], 0.0)
+        self.assertEqual(score["unit_count_error"], -1)
+
 
 class IntervalTests(unittest.TestCase):
     def test_should_bound_a_perfect_rate_below_one(self):

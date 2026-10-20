@@ -144,6 +144,40 @@ def score_identity(artifacts, oracle):
     return result
 
 
+def interval_iou(left, right):
+    """Page-interval intersection over union, inclusive of both ends."""
+    start, end = max(left[0], right[0]), min(left[1], right[1])
+    if end < start:
+        return 0.0
+    intersection = end - start + 1
+    union = (left[1] - left[0] + 1) + (right[1] - right[0] + 1) - intersection
+    return intersection / union if union else 0.0
+
+
+def score_sections_oracle(artifacts, oracle):
+    """Align predicted units to the audited spans: count, IoU, exact boundaries."""
+    truth = []
+    for section in oracle.get("sections") or []:
+        pages = section.get("pages") or {}
+        if pages.get("start") and pages.get("end"):
+            truth.append((pages["start"], pages["end"]))
+    if not truth:
+        return {}
+    predicted = []
+    for section in (artifacts or {}).get("sections") or []:
+        pages = section.get("pages") if isinstance(section, dict) else None
+        if isinstance(pages, dict) and pages.get("start") and pages.get("end"):
+            predicted.append((pages["start"], pages["end"]))
+    best = [max((interval_iou(unit, guess) for guess in predicted), default=0.0) for unit in truth]
+    return {
+        "truth_units": len(truth),
+        "predicted_units": len(predicted),
+        "unit_count_error": len(predicted) - len(truth),
+        "unit_iou": round(statistics.mean(best), 4),
+        "boundary_exact": round(sum(1 for unit in truth if unit in predicted) / len(truth), 4),
+    }
+
+
 def identity_resolvable(score):
     """The exact and perfect-enough verdicts across the identity fields present."""
     exact = [value for key, value in score.items() if key in ("title_exact", "authors_ordered_exact", "abstract_match")]
@@ -256,6 +290,7 @@ def score_paper(paper, record, oracle, inventory, bibliography, result_file=None
         "identity": {"pass1": score_identity(pass1, oracle), "final": final_identity},
         "identity_exact": exact,
         "identity_matchable": matchable,
+        "sections_oracle": score_sections_oracle(final, oracle),
         "objects": {"pass1": score_objects(pass1, inventory), "final": score_objects(final, inventory)},
         "references": {
             "predicted": len((final or {}).get("references") or []),
@@ -508,6 +543,15 @@ def aggregate(rows):
         "malformed_units": sum(row["sections"]["malformed"] for row in scored if row.get("sections")),
         "short_units": sum(row["sections"]["short_units"] for row in scored if row.get("sections")),
         "long_units": sum(row["sections"]["long_units"] for row in scored if row.get("sections")),
+    }
+    aligned = [row["sections_oracle"] for row in scored if row.get("sections_oracle")]
+    summary["sections_oracle"] = {
+        "papers": len(aligned),
+        "mean_iou": mean(item["unit_iou"] for item in aligned),
+        "mean_unit_count_error": mean(item["unit_count_error"] for item in aligned),
+        "mean_boundary_exact": mean(item["boundary_exact"] for item in aligned),
+        "truth_units": sum(item["truth_units"] for item in aligned),
+        "predicted_units": sum(item["predicted_units"] for item in aligned),
     }
     summary["graph_counts"] = {
         "citations": sum((row.get("counts") or {}).get("citations", 0) for row in scored),
