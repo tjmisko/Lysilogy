@@ -63,7 +63,10 @@ const CHUNK_CONCURRENCY: usize = 3;
 
 // Output ceilings per call, reasoning included, so a looping answer fails
 // fast instead of running to the provider limit (131k tokens, 16 cents).
-const CORE_MAX_TOKENS: u32 = 65_536;
+const CORE_TOKEN_FLOOR: u32 = 16_384;
+const CORE_TOKEN_CEILING: u32 = 131_072;
+const CORE_TOKENS_PER_PAGE: u32 = 3_000;
+const CORE_TOKEN_OVERHEAD: u32 = 8_192;
 const CHECK_MAX_TOKENS: u32 = 49_152;
 const OBJECTS_MAX_TOKENS: u32 = 32_768;
 const REPAIR_MAX_TOKENS: u32 = 32_768;
@@ -724,7 +727,12 @@ async fn core_pass(
     let mut parts = vec![ContentPart::Text(prompt)];
     parts.extend(text.iter().cloned());
     session
-        .call::<Value>("extract.pass1", &parts, CORE_SCHEMA, CORE_MAX_TOKENS)
+        .call::<Value>(
+            "extract.pass1",
+            &parts,
+            CORE_SCHEMA,
+            core_max_tokens(resources.paper.pages.len()),
+        )
         .await
 }
 
@@ -800,11 +808,23 @@ fn is_core_field(name: &str) -> bool {
         .any(|field| field.name == name)
 }
 
+/// The core ceiling for a paper, scaled by length: short papers fail cheap,
+/// long papers finish. About three thousand tokens per page for the record and
+/// its reasoning, plus a fixed overhead, within a floor and the provider limit.
+#[must_use]
+fn core_max_tokens(page_count: usize) -> u32 {
+    let pages = u32::try_from(page_count).unwrap_or(u32::MAX);
+    pages
+        .saturating_mul(CORE_TOKENS_PER_PAGE)
+        .saturating_add(CORE_TOKEN_OVERHEAD)
+        .clamp(CORE_TOKEN_FLOOR, CORE_TOKEN_CEILING)
+}
+
 /// The output ceiling for a plan call: explicit, else by the fields it carries.
-fn plan_max_tokens(call: &super::config::Call) -> u32 {
+fn plan_max_tokens(call: &super::config::Call, page_count: usize) -> u32 {
     call.max_tokens.unwrap_or_else(|| {
         if call.fields.iter().any(|field| is_core_field(field)) {
-            CORE_MAX_TOKENS
+            core_max_tokens(page_count)
         } else {
             FEATURE_MAX_TOKENS
         }
@@ -930,7 +950,7 @@ async fn run_plan(
         }
         parts.push(ContentPart::Text(instruction));
         let model = plan.model_for(call);
-        let max_tokens = plan_max_tokens(call);
+        let max_tokens = plan_max_tokens(call, resources.paper.pages.len());
         let value = session
             .call_with::<Value>(
                 &call.name,
@@ -1867,17 +1887,29 @@ mod tests {
             }
         };
         assert_eq!(
-            plan_max_tokens(&make("core", "sections", None)),
-            CORE_MAX_TOKENS
+            plan_max_tokens(&make("core", "sections", None), 30),
+            core_max_tokens(30)
         );
         assert_eq!(
-            plan_max_tokens(&make("feature", "analysis", None)),
+            plan_max_tokens(&make("feature", "analysis", None), 30),
             FEATURE_MAX_TOKENS
         );
         assert_eq!(
-            plan_max_tokens(&make("short", "identity", Some(4_096))),
+            plan_max_tokens(&make("short", "identity", Some(4_096)), 30),
             4_096
         );
+    }
+
+    #[test]
+    fn should_scale_the_core_ceiling_with_paper_length() {
+        assert!(core_max_tokens(2) < core_max_tokens(10));
+        assert!(core_max_tokens(10) < core_max_tokens(30));
+        assert_eq!(core_max_tokens(0), CORE_TOKEN_FLOOR);
+        assert_eq!(
+            core_max_tokens(30),
+            30 * CORE_TOKENS_PER_PAGE + CORE_TOKEN_OVERHEAD
+        );
+        assert_eq!(core_max_tokens(1_000), CORE_TOKEN_CEILING);
     }
 
     #[test]
