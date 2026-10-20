@@ -48,6 +48,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--library", type=Path, default=LIBRARY)
     parser.add_argument("--sample", type=Path, default=Path("eval/spike/sample.json"))
+    parser.add_argument("--oracles", type=Path, default=Path("eval/spike/ground-truth/oracles"))
     args = parser.parse_args()
     manifest = json.loads(args.sample.read_text())
     by_stem = {paper["stem"]: paper for paper in manifest["papers"]}
@@ -55,12 +56,19 @@ def main():
         pdf = args.library / filename
         if not pdf.exists():
             raise SystemExit(f"missing local paper: {pdf}")
+        checked = args.oracles / f"{stem}.json"
+        oracle = (
+            json.loads(checked.read_text())
+            if checked.exists()
+            else {"title": title, "authors": authors, "abstract": None}
+        )
         by_stem[stem] = {
             "stem": stem,
             "pdf": str(pdf),
             "pages": pages,
             "local": True,
-            "oracle": {"title": title, "authors": authors, "abstract": None},
+            "oracle": oracle,
+            "oracle_source": str(checked) if checked.exists() else "hand-checked title and authors",
             "object_truth": None,
         }
     manifest["papers"] = list(by_stem.values())
