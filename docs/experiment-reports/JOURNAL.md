@@ -45,6 +45,23 @@ supported by this sample. Caveats: coverage is `last_page / pages`, the sample
 is the E0 worst eight, and E0's own row on this set is circular. Validate on all
 30 before adopting.
 
+## E3 — 30-paper cohort with audited sections
+
+Combined core, low effort, cap fixed, Relace, 20 arXiv + 10 local papers. 28 of
+30 completed; `1908.00951v4` and `kaplan2020` still hit the 65,536 output cap.
+
+- Identity: title 27/30 (.90), authors ordered 25/30 (.83), set 27/30 (.90),
+matchable 28/30 (.93), abstract 24/26 (.92). All misses are the two cap failures
+plus one title (`1803.07954v4`).
+- Sections: coverage 0.894, but against the audited maps (10 local papers) the
+mean unit IoU is 0.728 with a +3.7 unit-count error (122 predicted vs 85 truth)
+and 0.42 exact boundaries. The model over-segments.
+- Cost: $0.0769 total, $0.0026/paper.
+
+The section oracle is the first real gradient for sections. The remaining work
+is granularity calibration against the audited maps, and chunking long papers
+past the cap.
+
 ## Cohort change
 
 The sample grows from 20 to 30: the frozen 20 (bulk arXiv) are kept, and 10
