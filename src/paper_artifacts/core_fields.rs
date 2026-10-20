@@ -25,7 +25,7 @@ pub const CORE_FIELDS: &[CoreField] = &[
         name: "identity",
         stage: "extract.identity",
         schema: IDENTITY_SCHEMA,
-        instruction: "Return the `identity` field: title and authors exactly as printed on the first page, authors in printed order, without affiliations or footnote marks. Year, venue, and identifiers only when the paper states them.",
+        instruction: "Return the `identity` field: title and authors exactly as printed on the first page, authors in printed order, without affiliations or footnote marks. Year, venue, and identifiers only when the paper states them. Use the paper's own title heading and byline; ignore a cite-as note, running heads, journal cover lines, and accepted-for-publication banners.",
         page_limit: None,
     },
     CoreField {

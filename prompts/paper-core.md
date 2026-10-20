@@ -14,7 +14,7 @@ Rules for every field:
 
 Field guidance:
 
-- `identity`: title and authors exactly as printed on the first page, authors in printed order, without affiliations or footnote marks. Year, venue, and identifiers only when the paper states them.
+- `identity`: title and authors exactly as printed on the first page, authors in printed order, without affiliations or footnote marks. Year, venue, and identifiers only when the paper states them. Use the paper's own title heading and byline; ignore a cite-as note, running heads, journal cover lines, and accepted-for-publication banners.
 - `type`: the kind of paper.
 - `abstract`: the abstract copied verbatim, paragraphs separated by a blank line. Null only if the paper has no abstract.
 - `card`: the thesis in one plain sentence; the position (what it builds on, contrasts with, critiques, replicates), each with a one-line why.
