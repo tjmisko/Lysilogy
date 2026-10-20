@@ -498,35 +498,18 @@ def aggregate(rows):
         if row.get("confused")
     ]
     summary["worst_case"] = worst_case(scored)
+    def field_interval(key):
+        values = [row["identity"]["final"] for row in scored if key in row["identity"]["final"]]
+        return wilson(sum(1 for value in values if value.get(key)), len(values))
+
     summary["intervals"] = {
-        "title_exact": wilson(
-            sum(1 for row in scored if row["identity"]["final"].get("title_exact")),
-            len(scored),
-        ),
-        "authors_ordered_exact": wilson(
-            sum(1 for row in scored if row["identity"]["final"].get("authors_ordered_exact")),
-            len(scored),
-        ),
-        "abstract_match": wilson(
-            sum(1 for row in scored if row["identity"]["final"].get("abstract_match")),
-            len(scored),
-        ),
-        "title_matchable": wilson(
-            sum(1 for row in scored if row["identity"]["final"].get("title_matchable")),
-            len(scored),
-        ),
-        "authors_set_exact": wilson(
-            sum(1 for row in scored if row["identity"]["final"].get("authors_set_exact")),
-            len(scored),
-        ),
-        "authors_matchable": wilson(
-            sum(1 for row in scored if row["identity"]["final"].get("authors_matchable")),
-            len(scored),
-        ),
-        "abstract_near": wilson(
-            sum(1 for row in scored if row["identity"]["final"].get("abstract_near")),
-            len(scored),
-        ),
+        "title_exact": field_interval("title_exact"),
+        "authors_ordered_exact": field_interval("authors_ordered_exact"),
+        "abstract_match": field_interval("abstract_match"),
+        "title_matchable": field_interval("title_matchable"),
+        "authors_set_exact": field_interval("authors_set_exact"),
+        "authors_matchable": field_interval("authors_matchable"),
+        "abstract_near": field_interval("abstract_near"),
         "identity_exact": wilson(
             sum(1 for row in scored if row.get("identity_exact")),
             len(scored),
