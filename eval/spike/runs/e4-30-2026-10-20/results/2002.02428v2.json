@@ -1,0 +1,3320 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-20T22:01:51.792371271Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/2002.02428v2.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 16,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 56192,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 19441,
+      "cached_tokens": 0,
+      "completion_tokens": 31640,
+      "reasoning_tokens": 19077,
+      "cost_usd": 0.01718087,
+      "cost_source": "reported",
+      "latency_s": 175.671571135
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 26794,
+      "cached_tokens": 0,
+      "completion_tokens": 30888,
+      "reasoning_tokens": 29404,
+      "cost_usd": 0.01731958,
+      "cost_source": "reported",
+      "latency_s": 197.356468801
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 46235,
+    "cached_tokens": 0,
+    "completion_tokens": 62528,
+    "cost_usd": 0.03450045,
+    "model_latency_s": 373.028039936,
+    "wall_s": 377.580476843
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e4-30-2026-10-20/results/2002.02428v2.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "A normalizing flow implements two operations: sampling via Equation (1), and evaluating the density via Equation (2). These operations have distinct computational requirements: generating samples and evaluating their density requires only f and its Jacobian determinant, whereas evaluating the density of arbitrary datapoints requires only f −1 and its Jacobian determinant. Thus, the intended usage of the flow dictates whether f, f −1 or both must have efficient implementations. For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019).\n\nNormalizing flows are a powerful tool for building expressive distributions in high dimensions. So far, most of the literature has concentrated on learning flows on Euclidean spaces. Some problems however, such as those involving angles, are defined on spaces with more complex geometries, such as tori or spheres. In this paper, we propose and compare expressive and numerically stable flows on such spaces. Our flows are built recursively on the dimension of the space, starting from flows on circles, closed intervals or spheres."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Papamakarios et al., 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019)."
+              }
+            ],
+            "reference_key": "Papamakarios et al., 2019",
+            "why": "Uses the overview of normalizing-flow implementations and trade-offs as background and terminology."
+          },
+          {
+            "cited_work": "Durkan et al., 2019b",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Here, we will show how to adapt the rational-quadratic spline flows of Durkan et al. (2019b) to satisfy the sufficient boundary conditions of circle diffeomorphisms."
+              }
+            ],
+            "reference_key": "Durkan et al., 2019b",
+            "why": "Adapts rational-quadratic spline flows to circular boundary conditions."
+          },
+          {
+            "cited_work": "Kato & McCullagh, 2015",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Möbius transformations have previously been used to define distributions on the circle and sphere (see e.g. Kato et al., 2008; Wang, 2013; Kato & McCullagh, 2015)."
+              }
+            ],
+            "reference_key": "Kato & McCullagh, 2015",
+            "why": "Uses Möbius transformations as circle diffeomorphism components."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Gemici et al., 2016",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "when M or N are not diffeomorphic to R D; in this case, the projection maps will necessarily contain singularities (i.e. points with non-invertible Jacobian), which may result in numerical instabilities during training."
+              }
+            ],
+            "reference_key": "Gemici et al., 2016",
+            "why": "Contrasts with projection-based Riemannian flows whose maps can be numerically unstable."
+          },
+          {
+            "cited_work": "Falorsi et al., 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Since these maps are not from N to itself, they are not straightforward to compose."
+              }
+            ],
+            "reference_key": "Falorsi et al., 2019",
+            "why": "Critiques Lie-group exponential-map flows as hard to compose and expensive."
+          },
+          {
+            "cited_work": "Sei, 2013",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "This motivates us to explore exponential-map flows, a mechanism for building flows on spheres proposed by Sei (2013)."
+              }
+            ],
+            "reference_key": "Sei, 2013",
+            "why": "Extends exponential-map flows with a new radial scalar field."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "Our main contribution is to propose a new set of expressive normalizing flows for the case where M and N are compact and connected differentiable manifolds."
+          }
+        ],
+        "text": "The paper constructs expressive, numerically stable normalizing flows on circles, tori, spheres, and products of circles/intervals, avoiding singular projection maps and non-composable exponential-map constructions."
+      }
+    },
+    "citations": [
+      {
+        "context": "Abstract",
+        "page": 1,
+        "reference_key": "Papamakarios et al., 2019"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Mardia & Jupp, 2009"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Hamelryck et al., 2006; Mardia et al., 2007; Boomsma et al., 2008; Shapovalov & Dunbrack Jr, 2011; Peel et al., 2001; Feiten et al., 2013; Senanayake & Ramos, 2018"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Davidson et al., 2018; Falorsi et al., 2018; Wang & Wang, 2019; Mathieu et al., 2019; Wang et al., 2019"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Kobayashi & Nomizu, 1963"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Gemici et al., 2016"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Falorsi et al., 2019"
+      },
+      {
+        "context": "Introduction",
+        "page": 2,
+        "reference_key": "Falorsi et al., 2019"
+      },
+      {
+        "context": "Introduction",
+        "page": 2,
+        "reference_key": "Falorsi et al., 2019"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Kato et al., 2008; Wang, 2013; Kato & McCullagh, 2015"
+      },
+      {
+        "context": "Methods",
+        "page": 3,
+        "reference_key": "Kato & McCullagh, 2015"
+      },
+      {
+        "context": "Methods",
+        "page": 3,
+        "reference_key": "Kato & McCullagh, 2015"
+      },
+      {
+        "context": "Methods",
+        "page": 3,
+        "reference_key": "Müller et al., 2019; Durkan et al., 2019a; Durkan et al., 2019b"
+      },
+      {
+        "context": "Methods",
+        "page": 3,
+        "reference_key": "Durkan et al., 2019b"
+      },
+      {
+        "context": "Methods",
+        "page": 3,
+        "reference_key": "Durkan et al., 2019b"
+      },
+      {
+        "context": "Methods",
+        "page": 3,
+        "reference_key": "Gemici et al., 2016"
+      },
+      {
+        "context": "Methods",
+        "page": 4,
+        "reference_key": "Downs & Mardia, 2002"
+      },
+      {
+        "context": "Methods",
+        "page": 4,
+        "reference_key": "Papamakarios et al., 2019"
+      },
+      {
+        "context": "Methods",
+        "page": 4,
+        "reference_key": "Dinh et al., 2017"
+      },
+      {
+        "context": "Methods",
+        "page": 4,
+        "reference_key": "Kingma et al., 2016; Papamakarios et al., 2017"
+      },
+      {
+        "context": "Methods",
+        "page": 5,
+        "reference_key": "Fisher, 1953; Jakob, 2012"
+      },
+      {
+        "context": "Methods",
+        "page": 5,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Methods",
+        "page": 5,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Methods",
+        "page": 5,
+        "reference_key": "Kobayashi & Nomizu, 1963"
+      },
+      {
+        "context": "Methods",
+        "page": 5,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Methods",
+        "page": 5,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Methods",
+        "page": 5,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Methods",
+        "page": 6,
+        "reference_key": "Tabak & Turner, 2013; Rezende & Mohamed, 2015"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Mardia & Jupp, 2009"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Navarro et al., 2017"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Jona-Lasinio et al., 2012"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Wang & Gelfand, 2013"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Wang, 2013; Gatto & Jammalamadaka, 2007"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Fisher, 1953"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Downs, 1972; Kent, 1982"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Mardia et al., 2008; Navarro et al., 2017"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Peel et al., 2001; Mardia et al., 2007"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Falorsi et al., 2019"
+      },
+      {
+        "context": "Related Work",
+        "page": 7,
+        "reference_key": "Falorsi et al., 2019"
+      },
+      {
+        "context": "Related Work",
+        "page": 7,
+        "reference_key": "Gemici et al., 2016"
+      },
+      {
+        "context": "Experiments",
+        "page": 7,
+        "reference_key": "Kingma & Ba, 2015"
+      },
+      {
+        "context": "Experiments",
+        "page": 8,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Discussion",
+        "page": 9,
+        "reference_key": "Woit, 2017"
+      },
+      {
+        "context": "Discussion",
+        "page": 9,
+        "reference_key": "Tilma & Sudarshan, 2002; Tilma & Sudarshan, 2004"
+      },
+      {
+        "context": "Appendix E",
+        "page": 12,
+        "reference_key": "Sei, 2013"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": null,
+          "name": "Danilo Jimenez Rezende"
+        },
+        {
+          "affiliation": null,
+          "name": "George Papamakarios"
+        },
+        {
+          "affiliation": null,
+          "name": "Sébastien Racanière"
+        },
+        {
+          "affiliation": null,
+          "name": "Michael S. Albergo"
+        },
+        {
+          "affiliation": null,
+          "name": "Gurtej Kanwar"
+        },
+        {
+          "affiliation": null,
+          "name": "Phiala E. Shanahan"
+        },
+        {
+          "affiliation": null,
+          "name": "Kyle Cranmer"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Normalizing Flows on Tori and Spheres"
+        },
+        {
+          "page": 1,
+          "quote": "Danilo Jimenez Rezende * 1 George Papamakarios * 1 Sébastien Racanière * 1 Michael S. Albergo² Gurtej Kanwar³ Phiala E. Shanahan³ Kyle Cranmer²"
+        },
+        {
+          "page": 1,
+          "quote": "Proceedings of the 37 th International Conference on Machine Learning, Vienna, Austria, PMLR 119, 2020."
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:2002.02428v2 [stat.ML] 1 Jul 2020"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:2002.02428v2 [stat.ML] 1 Jul 2020",
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Normalizing Flows on Tori and Spheres",
+      "venue": "Proceedings of the 37th International Conference on Machine Learning, Vienna, Austria, PMLR 119, 2020",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this paper, we propose and compare expressive and numerically stable flows on such spaces."
+        }
+      ],
+      "text": "Can expressive, numerically stable normalizing flows be constructed on tori and spheres, and on products of circles and intervals, while retaining tractable density evaluation and sampling?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Arnaud, D.",
+          "de Freitas, N.",
+          "Gordon, N."
+        ],
+        "doi": null,
+        "key": "Arnaud et al., 2001",
+        "page": 9,
+        "title": "Sequential Monte Carlo methods in practice",
+        "venue": "Information Science and Statistics. Springer New York",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Boomsma, W.",
+          "Mardia, K. V.",
+          "Taylor, C. C.",
+          "Ferkinghoff-Borg, J.",
+          "Krogh, A.",
+          "Hamelryck, T."
+        ],
+        "doi": null,
+        "key": "Boomsma et al., 2008",
+        "page": 9,
+        "title": "A generative, probabilistic model of local protein structure",
+        "venue": "Proceedings of the National Academy of Sciences, 105(26):8932–8937",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Davidson, T. R.",
+          "Falorsi, L.",
+          "De Cao, N.",
+          "Kipf, T.",
+          "Tomczak, J. M."
+        ],
+        "doi": null,
+        "key": "Davidson et al., 2018",
+        "page": 9,
+        "title": "Hyperspherical variational auto-encoders",
+        "venue": "Conference on Uncertainty in Artificial Intelligence",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Dinh, L.",
+          "Sohl-Dickstein, J.",
+          "Bengio, S."
+        ],
+        "doi": null,
+        "key": "Dinh et al., 2017",
+        "page": 9,
+        "title": "Density estimation using Real NVP",
+        "venue": "International Conference on Learning Representations",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Downs, T. D."
+        ],
+        "doi": null,
+        "key": "Downs, 1972",
+        "page": 9,
+        "title": "Orientation statistics",
+        "venue": "Biometrika, 59(3):665–676",
+        "year": 1972
+      },
+      {
+        "authors": [
+          "Downs, T. D.",
+          "Mardia, K. V."
+        ],
+        "doi": null,
+        "key": "Downs & Mardia, 2002",
+        "page": 9,
+        "title": "Circular regression",
+        "venue": "Biometrika, 89(3):683–698",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Durkan, C.",
+          "Bekasov, A.",
+          "Murray, I.",
+          "Papamakarios, G."
+        ],
+        "doi": null,
+        "key": "Durkan et al., 2019a",
+        "page": 9,
+        "title": "Cubic-spline flows",
+        "venue": "ICML workshop on Invertible Neural Networks and Normalizing Flows",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Durkan, C.",
+          "Bekasov, A.",
+          "Murray, I.",
+          "Papamakarios, G."
+        ],
+        "doi": null,
+        "key": "Durkan et al., 2019b",
+        "page": 9,
+        "title": "Neural spline flows",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Falorsi, L.",
+          "de Haan, P.",
+          "Davidson, T. R.",
+          "De Cao, N.",
+          "Weiler, M.",
+          "Forré, P.",
+          "Cohen, T. S."
+        ],
+        "doi": null,
+        "key": "Falorsi et al., 2018",
+        "page": 9,
+        "title": "Explorations in homeomorphic variational auto-encoding",
+        "venue": "ICML workshop on Theoretical Foundations and Applications of Deep Generative Models",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Falorsi, L.",
+          "de Haan, P.",
+          "Davidson, T. R.",
+          "Forré, P."
+        ],
+        "doi": null,
+        "key": "Falorsi et al., 2019",
+        "page": 9,
+        "title": "Reparameterizing distributions on Lie groups",
+        "venue": "International Conference on Artificial Intelligence and Statistics",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Feiten, W.",
+          "Lang, M.",
+          "Hirche, S."
+        ],
+        "doi": null,
+        "key": "Feiten et al., 2013",
+        "page": 9,
+        "title": "Rigid motion estimation using mixtures of projected Gaussians",
+        "venue": "International Conference on Information Fusion",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Fisher, R."
+        ],
+        "doi": null,
+        "key": "Fisher, 1953",
+        "page": 9,
+        "title": "Dispersion on a sphere",
+        "venue": "Proceedings of the Royal Society of London. Series A, Mathematical and Physical Sciences, 217(1130):295–305",
+        "year": 1953
+      },
+      {
+        "authors": [
+          "Gatto, R.",
+          "Jammalamadaka, S. R."
+        ],
+        "doi": null,
+        "key": "Gatto & Jammalamadaka, 2007",
+        "page": 9,
+        "title": "The generalized von Mises distribution",
+        "venue": "Statistical Methodology, 4(3):341–353",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Gemici, M. C.",
+          "Rezende, D. J.",
+          "Mohamed, S."
+        ],
+        "doi": null,
+        "key": "Gemici et al., 2016",
+        "page": 9,
+        "title": "Normalizing flows on Riemannian manifolds",
+        "venue": "arXiv preprint arXiv:1611.02304",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Hamelryck, T.",
+          "Kent, J. T.",
+          "Krogh, A."
+        ],
+        "doi": null,
+        "key": "Hamelryck et al., 2006",
+        "page": 9,
+        "title": "Sampling realistic protein conformations using local structural bias",
+        "venue": "PLoS Computational Biology, 2(9)",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Jakob, W."
+        ],
+        "doi": null,
+        "key": "Jakob, 2012",
+        "page": 9,
+        "title": "Numerically stable sampling of the von Mises Fisher distribution on S 2 (and other tricks)",
+        "venue": "Technical report, Interactive Geometry Lab, ETH Zürich",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Jona-Lasinio, G.",
+          "Gelfand, A.",
+          "Jona-Lasinio, M."
+        ],
+        "doi": null,
+        "key": "Jona-Lasinio et al., 2012",
+        "page": 9,
+        "title": "Spatial analysis of wave direction data using wrapped Gaussian processes",
+        "venue": "The Annals of Applied Statistics, 6(4):1478–1498",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Kato, S.",
+          "McCullagh, P."
+        ],
+        "doi": null,
+        "key": "Kato & McCullagh, 2015",
+        "page": 9,
+        "title": "Möbius transformation and a Cauchy family on the sphere",
+        "venue": "arXiv preprint arXiv:1510.07679",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Kato, S.",
+          "Shimizu, K.",
+          "Shieh, G. S."
+        ],
+        "doi": null,
+        "key": "Kato et al., 2008",
+        "page": 10,
+        "title": "A circular–circular regression model",
+        "venue": "Statistica Sinica, 18:633–645",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Kent, J. T."
+        ],
+        "doi": null,
+        "key": "Kent, 1982",
+        "page": 10,
+        "title": "The Fisher–Bingham distribution on the sphere",
+        "venue": "Journal of the Royal Statistical Society. Series B (Methodological), 44(1):71–80",
+        "year": 1982
+      },
+      {
+        "authors": [
+          "Kingma, D. P.",
+          "Ba, J."
+        ],
+        "doi": null,
+        "key": "Kingma & Ba, 2015",
+        "page": 10,
+        "title": "Adam: A method for stochastic optimization",
+        "venue": "International Conference for Learning Representations",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Kingma, D. P.",
+          "Salimans, T.",
+          "Jozefowicz, R.",
+          "Chen, X.",
+          "Sutskever, I.",
+          "Welling, M."
+        ],
+        "doi": null,
+        "key": "Kingma et al., 2016",
+        "page": 10,
+        "title": "Improved variational inference with inverse autoregressive flow",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Kobayashi, S.",
+          "Nomizu, K."
+        ],
+        "doi": null,
+        "key": "Kobayashi & Nomizu, 1963",
+        "page": 10,
+        "title": "Foundations of differential geometry, volume 1",
+        "venue": "Interscience Publishers",
+        "year": 1963
+      },
+      {
+        "authors": [
+          "Liu, J. S."
+        ],
+        "doi": null,
+        "key": "Liu, 2008",
+        "page": 10,
+        "title": "Monte Carlo strategies in scientific computing",
+        "venue": "Springer Science & Business Media",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Jupp, P. E."
+        ],
+        "doi": null,
+        "key": "Mardia & Jupp, 2009",
+        "page": 10,
+        "title": "Directional statistics",
+        "venue": "Wiley Series in Probability and Statistics. John Wiley & Sons",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Taylor, C. C.",
+          "Subramaniam, G. K."
+        ],
+        "doi": null,
+        "key": "Mardia et al., 2007",
+        "page": 10,
+        "title": "Protein bioinformatics and mixtures of bivariate von Mises distributions for angular data",
+        "venue": "Biometrics, 63(2):505–512",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Hughes, G.",
+          "Taylor, C. C.",
+          "Singh, H."
+        ],
+        "doi": null,
+        "key": "Mardia et al., 2008",
+        "page": 10,
+        "title": "A multivariate von Mises distribution with applications to bioinformatics",
+        "venue": "The Canadian Journal of Statistics, 36(1):99–109",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Mathieu, E.",
+          "Le Lan, C.",
+          "Maddison, C. J.",
+          "Tomioka, R.",
+          "Teh, Y. W."
+        ],
+        "doi": null,
+        "key": "Mathieu et al., 2019",
+        "page": 10,
+        "title": "Continuous hierarchical representations with Poincaré variational auto-encoders",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Müller, T.",
+          "McWilliams, B.",
+          "Rousselle, F.",
+          "Gross, M.",
+          "Novák, J."
+        ],
+        "doi": null,
+        "key": "Müller et al., 2019",
+        "page": 10,
+        "title": "Neural importance sampling",
+        "venue": "ACM Transactions on Graphics, 38(5):1–19",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Navarro, A. K. W.",
+          "Frellsen, J.",
+          "Turner, R. E."
+        ],
+        "doi": null,
+        "key": "Navarro et al., 2017",
+        "page": 10,
+        "title": "The multi-variate generalised von Mises distribution: Inference and applications",
+        "venue": "AAAI Conference on Artificial Intelligence",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Papamakarios, G.",
+          "Pavlakou, T.",
+          "Murray, I."
+        ],
+        "doi": null,
+        "key": "Papamakarios et al., 2017",
+        "page": 10,
+        "title": "Masked autoregressive flow for density estimation",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Papamakarios, G.",
+          "Nalisnick, E.",
+          "Rezende, D. J.",
+          "Mohamed, S.",
+          "Lakshminarayanan, B."
+        ],
+        "doi": null,
+        "key": "Papamakarios et al., 2019",
+        "page": 10,
+        "title": "Normalizing flows for probabilistic modeling and inference",
+        "venue": "arXiv preprint arXiv:1912.02762",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Peel, D.",
+          "Whiten, W. J.",
+          "McLachlan, G. J."
+        ],
+        "doi": null,
+        "key": "Peel et al., 2001",
+        "page": 10,
+        "title": "Fitting mixtures of Kent distributions to aid in joint set identification",
+        "venue": "Journal of the American Statistical Association, 96(453):56–63",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Rezende, D. J.",
+          "Mohamed, S."
+        ],
+        "doi": null,
+        "key": "Rezende & Mohamed, 2015",
+        "page": 10,
+        "title": "Variational inference with normalizing flows",
+        "venue": "International Conference on Machine Learning",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Sei, T."
+        ],
+        "doi": null,
+        "key": "Sei, 2013",
+        "page": 10,
+        "title": "A Jacobian inequality for gradient maps on the sphere and its application to directional statistics",
+        "venue": "Communications in Statistics—Theory and Methods, 42(14):2525–2542",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Senanayake, R.",
+          "Ramos, F."
+        ],
+        "doi": null,
+        "key": "Senanayake & Ramos, 2018",
+        "page": 10,
+        "title": "Directional grid maps: modeling multimodal angular uncertainty in dynamic environments",
+        "venue": "IEEE/RSJ International Conference on Intelligent Robots and Systems",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Shapovalov, M. V.",
+          "Dunbrack Jr, R. L."
+        ],
+        "doi": null,
+        "key": "Shapovalov & Dunbrack Jr, 2011",
+        "page": 10,
+        "title": "A smoothed backbone-dependent rotamer library for proteins derived from adaptive kernel density estimates and regressions",
+        "venue": "Structure, 19(6):844–858",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Tabak, E. G.",
+          "Turner, C. V."
+        ],
+        "doi": null,
+        "key": "Tabak & Turner, 2013",
+        "page": 10,
+        "title": "A family of nonparametric density estimation algorithms",
+        "venue": "Communications on Pure and Applied Mathematics, 66(2):145–164",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Tilma, T.",
+          "Sudarshan, E."
+        ],
+        "doi": null,
+        "key": "Tilma & Sudarshan, 2002",
+        "page": 10,
+        "title": "Generalized Euler angle parametrization for SU (N)",
+        "venue": "Journal of Physics A: Mathematical and General, 35(48):10467",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Tilma, T.",
+          "Sudarshan, E."
+        ],
+        "doi": null,
+        "key": "Tilma & Sudarshan, 2004",
+        "page": 10,
+        "title": "Generalized Euler angle parameterization for U (N) with applications to SU (N) coset volume measures",
+        "venue": "Journal of Geometry and Physics, 52(3):263–283",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Wang, F.",
+          "Gelfand, A. E."
+        ],
+        "doi": null,
+        "key": "Wang & Gelfand, 2013",
+        "page": 10,
+        "title": "Directional data analysis under the general projected normal distribution",
+        "venue": "Statistical Methodology, 10(1):113–127",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Wang, M."
+        ],
+        "doi": null,
+        "key": "Wang, 2013",
+        "page": 10,
+        "title": "Extensions of probability distributions on torus, cylinder and disc",
+        "venue": "PhD thesis, Graduate School of Science and Technology, Keio University",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Wang, P. Z.",
+          "Wang, W. Y."
+        ],
+        "doi": null,
+        "key": "Wang & Wang, 2019",
+        "page": 10,
+        "title": "Riemannian normalizing flow on variational Wasserstein autoencoder for text modeling",
+        "venue": "Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Wang, Z.",
+          "Cheng, S.",
+          "Li, Y.",
+          "Zhu, J.",
+          "Zhang, B."
+        ],
+        "doi": null,
+        "key": "Wang et al., 2019",
+        "page": 10,
+        "title": "A Wasserstein minimum velocity approach to learning unnormalized models",
+        "venue": "Symposium on Advances in Approximate Bayesian Inference",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Woit, P."
+        ],
+        "doi": null,
+        "key": "Woit, 2017",
+        "page": 10,
+        "title": "Quantum theory, groups and representations: An introduction",
+        "venue": "Springer",
+        "year": 2017
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019).",
+        "reference_key": "Papamakarios et al., 2019",
+        "relation": "uses_method",
+        "why": "Used as the overview of normalizing-flow implementation trade-offs."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "when M or N are not diffeomorphic to R D; in this case, the projection maps will necessarily contain singularities (i.e. points with non-invertible Jacobian), which may result in numerical instabilities during training.",
+        "reference_key": "Gemici et al., 2016",
+        "relation": "contrasts",
+        "why": "Critiques projection-based manifold flows as numerically unstable due to singularities."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Since these maps are not from N to itself, they are not straightforward to compose.",
+        "reference_key": "Falorsi et al., 2019",
+        "relation": "critiques",
+        "why": "Points out that Lie-group exponential-map flows are hard to compose."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "This motivates us to explore exponential-map flows, a mechanism for building flows on spheres proposed by Sei (2013).",
+        "reference_key": "Sei, 2013",
+        "relation": "extends",
+        "why": "Builds on Sei's exponential-map flow and proposes a new radial scalar field."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Here, we will show how to adapt the rational-quadratic spline flows of Durkan et al. (2019b) to satisfy the sufficient boundary conditions of circle diffeomorphisms.",
+        "reference_key": "Durkan et al., 2019b",
+        "relation": "extends",
+        "why": "Adapts rational-quadratic splines to circular boundary conditions."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Möbius transformations have previously been used to define distributions on the circle and sphere (see e.g. Kato et al., 2008; Wang, 2013; Kato & McCullagh, 2015).",
+        "reference_key": "Kato & McCullagh, 2015",
+        "relation": "uses_method",
+        "why": "Uses Möbius transformations as circle diffeomorphism components."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The need for probabilistic modelling of non-Euclidean data often arises in applications where the data is a set of angles, axes or directions (Mardia & Jupp, 2009).",
+        "reference_key": "Mardia & Jupp, 2009",
+        "relation": "uses_method",
+        "why": "Provides the directional-statistics motivation for non-Euclidean data."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "According to the taxonomy of Navarro et al. (2017), directional statistics traditionally uses three approaches for defining distributions on tori and spheres: wrapping, projecting, and conditioning.",
+        "reference_key": "Navarro et al., 2017",
+        "relation": "uses_method",
+        "why": "Organizes related work using their taxonomy of wrapping, projecting, and conditioning."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In our experiments, we implemented the conditioners using coupling layers (Dinh et al., 2017).",
+        "reference_key": "Dinh et al., 2017",
+        "relation": "uses_method",
+        "why": "Implements autoregressive conditioners using coupling layers."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Implementations based on masking (Kingma et al., 2016; Papamakarios et al., 2017) are also possible.",
+        "reference_key": "Kingma et al., 2016; Papamakarios et al., 2017",
+        "relation": "uses_method",
+        "why": "Notes that masked autoregressive implementations are also possible."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "All models were optimized using Adam (Kingma & Ba, 2015) with learning rate 2 × 10 −4, 20,000 iterations, and batch size 256.",
+        "reference_key": "Kingma & Ba, 2015",
+        "relation": "uses_method",
+        "why": "Uses Adam for optimization in the experiments."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Spline flows is a methodology for creating arbitrarily flexible flow transformations from R to itself, first proposed by Müller et al. (2019) and further developed by Durkan et al. (2019a; b).",
+        "reference_key": "Müller et al., 2019",
+        "relation": "extends",
+        "why": "Builds on the spline-flow methodology first proposed by Müller et al."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "2. Methods",
+          "start_page": 1,
+          "start_text": "1. Introduction"
+        },
+        "summary": "Motivates normalizing flows beyond Euclidean spaces, reviews prior manifold-flow approaches and their limitations, and states the paper's contribution: expressive, numerically stable flows on compact connected manifolds such as circles, tori, and spheres.",
+        "title": "Introduction, motivation, and contribution"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "2.2. Generalization to the Torus T D",
+          "start_page": 2,
+          "start_text": "2.1. Flows on the Circle S 1"
+        },
+        "summary": "Develops circle diffeomorphisms satisfying boundary conditions and presents three constructions: Möbius transformations, circular splines, and non-compact projections, including composition, convex combination, invertibility, and expressivity.",
+        "title": "Flows on the circle S¹"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "2.3. Generalization to the Sphere S D",
+          "start_page": 4,
+          "start_text": "2.2. Generalization to the Torus T D"
+        },
+        "summary": "Extends circle flows to tori and products of circles and intervals via autoregressive factorization, periodic conditioners, and coupling or masking.",
+        "title": "Autoregressive flows on tori and product spaces"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "2.3.2. E XPONENTIAL -M AP F LOWS",
+          "start_page": 4,
+          "start_text": "2.3. Generalization to the Sphere S D"
+        },
+        "summary": "Constructs sphere flows recursively through cylindrical coordinates, transforming height and base variables, composing T_s→c and T_c→s, and proving the density update despite non-diffeomorphic topology.",
+        "title": "Recursive flows on spheres via cylindrical coordinates"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "3. Related Work",
+          "start_page": 5,
+          "start_text": "2.3.2. E XPONENTIAL -M AP F LOWS"
+        },
+        "summary": "Explores exponential-map flows using cost-convex scalar fields and the sphere exponential map; introduces a new radial scalar field and notes the O(D³) density-update cost.",
+        "title": "Exponential-map flows on spheres"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "4. Experiments",
+          "start_page": 6,
+          "start_text": "3. Related Work"
+        },
+        "summary": "Places the work in directional statistics and prior manifold-flow methods: wrapping, projecting, conditioning, mixtures, Lie-group flows, and Gemici et al.'s Riemannian flows.",
+        "title": "Related work: directional statistics and prior manifold flows"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "5. Discussion",
+          "start_page": 7,
+          "start_text": "4. Experiments"
+        },
+        "summary": "Evaluates flows on T² and S² with KL and ESS, compares NCP, Möbius, and circular splines, and compares recursive sphere flows against polynomial and radial exponential-map flows.",
+        "title": "Experiments on T² and S²"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "Acknowledgements",
+          "start_page": 8,
+          "start_text": "5. Discussion"
+        },
+        "summary": "Compares model classes, discusses practical trade-offs between invertibility and expressivity, and sketches future extensions to SU(D) and U(D) using Euler-angle decompositions.",
+        "title": "Discussion: comparison, limitations, and future Lie groups"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "Woit, P. Quantum theory, groups and representations: An introduction. Springer, 2017.",
+          "start_page": 9,
+          "start_text": "References"
+        },
+        "summary": "Bibliography for the paper, including directional statistics, normalizing flows, spline flows, Lie groups, and Riemannian manifold flows.",
+        "title": "References"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "B. Detailed Diagram of Recursive Flow on S D",
+          "start_page": 11,
+          "start_text": "A. Density Transformations on Manifolds"
+        },
+        "summary": "Derives density transformations on embedded manifolds and proves the cylindrical-to-sphere density correction, including cancellation of singular terms and stability conditions.",
+        "title": "Appendix A–B: density transformations and recursive sphere details"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "Figure 11. Learning a complex density from data samples using autoregressive spline flows. Left: Target density from which i.i.d. data samples were generated. Middle: Model samples overlaid on target density; Right: Heat map of the learned density.",
+          "start_page": 12,
+          "start_text": "C. Examples of Möbius Transformations"
+        },
+        "summary": "Collects additional flow variants, target definitions, robustness checks, the NCP–Möbius equivalence, and applications to a robot arm on T⁶ and a map-of-the-world density on S².",
+        "title": "Appendices C–J: variants, targets, robustness, and applications"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It proposes new normalizing-flow constructions on tori and spheres and validates them with theoretical derivations, experiments, and applications.",
+      "value": "method"
+    }
+  },
+  "pass1_check": {
+    "sites": 70,
+    "verbatim": 66,
+    "near": 4,
+    "missing": 0,
+    "wrong_page": 20
+  },
+  "corrections": [
+    {
+      "path": "/citations/8",
+      "action": "remove",
+      "value_json": null,
+      "reason": "Duplicate Falorsi et al. (2019) citation on page 2; the paper has only one explicit citation there.",
+      "evidence": [
+        {
+          "quote": "Another approach, proposed by Falorsi et al. (2019) for the case where N is a Lie group, is to apply the usual Euclidean flows on the Lie algebra of N, and then use the exponential map to project the Lie algebra onto N.",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/citations/6",
+      "action": "remove",
+      "value_json": null,
+      "reason": "Falorsi et al. (2019) is cited on page 2, not page 1.",
+      "evidence": [
+        {
+          "quote": "Another approach, proposed by Falorsi et al. (2019) for the case where N is a Lie group, is to apply the usual Euclidean flows on the Lie algebra of N, and then use the exponential map to project the Lie algebra onto N.",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/citations",
+      "action": "add",
+      "value_json": "{\"context\":\"Experiments\",\"page\":7,\"reference_key\":\"Arnaud et al., 2001; Liu, 2008\"}",
+      "reason": "Missing citation occurrence for Arnaud et al. (2001) and Liu (2008) in the experiments section.",
+      "evidence": [
+        {
+          "quote": "The effective sample size, (Arnaud et al., 2001; Liu, 2008), can be estimated by",
+          "page": 7
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/citations/8",
+      "action": "remove",
+      "status": "rejected",
+      "reason": "evidence is not in the source"
+    },
+    {
+      "index": 1,
+      "path": "/citations/6",
+      "action": "remove",
+      "status": "rejected",
+      "reason": "evidence is not in the source"
+    },
+    {
+      "index": 2,
+      "path": "/citations",
+      "action": "add",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 71,
+    "verbatim": 67,
+    "near": 4,
+    "missing": 0,
+    "wrong_page": 20
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "A normalizing flow implements two operations: sampling via Equation (1), and evaluating the density via Equation (2). These operations have distinct computational requirements: generating samples and evaluating their density requires only f and its Jacobian determinant, whereas evaluating the density of arbitrary datapoints requires only f −1 and its Jacobian determinant. Thus, the intended usage of the flow dictates whether f, f −1 or both must have efficient implementations. For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019).\n\nNormalizing flows are a powerful tool for building expressive distributions in high dimensions. So far, most of the literature has concentrated on learning flows on Euclidean spaces. Some problems however, such as those involving angles, are defined on spaces with more complex geometries, such as tori or spheres. In this paper, we propose and compare expressive and numerically stable flows on such spaces. Our flows are built recursively on the dimension of the space, starting from flows on circles, closed intervals or spheres.",
+      "admitted": "A normalizing flow implements two operations: sampling via Equation (1), and evaluating the density via Equation (2). These operations have distinct computational requirements: generating samples and evaluating their density requires only f and its Jacobian determinant, whereas evaluating the density of arbitrary datapoints requires only f −1 and its Jacobian determinant. Thus, the intended usage of the flow dictates whether f, f −1 or both must have efficient implementations. For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019).\n\nNormalizing flows are a powerful tool for building expressive distributions in high dimensions. So far, most of the literature has concentrated on learning flows on Euclidean spaces. Some problems however, such as those involving angles, are defined on spaces with more complex geometries, such as tori or spheres. In this paper, we propose and compare expressive and numerically stable flows on such spaces. Our flows are built recursively on the dimension of the space, starting from flows on circles, closed intervals or spheres.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019).",
+      "admitted": "For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Here, we will show how to adapt the rational-quadratic spline flows of Durkan et al. (2019b) to satisfy the sufficient boundary conditions of circle diffeomorphisms.",
+      "admitted": "Here, we will show how to adapt the rational-quadratic spline flows of Durkan et al. (2019b) to satisfy the sufficient boundary conditions of circle diffeomorphisms.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "Möbius transformations have previously been used to define distributions on the circle and sphere (see e.g. Kato et al., 2008; Wang, 2013; Kato & McCullagh, 2015).",
+      "admitted": "Möbius transformations have previously been used to define distributions on the circle and sphere (see e.g. Kato et al., 2008; Wang, 2013; Kato & McCullagh, 2015).",
+      "similarity": 0.96,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "when M or N are not diffeomorphic to R D; in this case, the projection maps will necessarily contain singularities (i.e. points with non-invertible Jacobian), which may result in numerical instabilities during training.",
+      "admitted": "when M or N are not diffeomorphic to R D; in this case, the projection maps will necessarily contain singularities (i.e. points with non-invertible Jacobian), which may result in numerical instabilities during training.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Since these maps are not from N to itself, they are not straightforward to compose.",
+      "admitted": "Since these maps are not from N to itself, they are not straightforward to compose.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This motivates us to explore exponential-map flows, a mechanism for building flows on spheres proposed by Sei (2013).",
+      "admitted": "This motivates us to explore exponential-map flows, a mechanism for building flows on spheres proposed by Sei (2013).",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our main contribution is to propose a new set of expressive normalizing flows for the case where M and N are compact and connected differentiable manifolds.",
+      "admitted": "Our main contribution is to propose a new set of expressive normalizing flows for the case where M and N are compact and connected differentiable manifolds.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Normalizing Flows on Tori and Spheres",
+      "admitted": "Normalizing Flows on Tori and Spheres",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "repaired_local",
+      "original": "Danilo Jimenez Rezende * 1 George Papamakarios * 1 Sébastien Racanière * 1 Michael S. Albergo² Gurtej Kanwar³ Phiala E. Shanahan³ Kyle Cranmer²",
+      "admitted": "Danilo Jimenez Rezende * 1 George Papamakarios * 1 Sébastien Racanière * 1 Michael S. Albergo² Gurtej Kanwar³ Phiala E. Shanahan³ Kyle Cranmer²",
+      "similarity": 0.9,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/2/quote",
+      "status": "verbatim",
+      "original": "Proceedings of the 37 th International Conference on Machine Learning, Vienna, Austria, PMLR 119, 2020.",
+      "admitted": "Proceedings of the 37 th International Conference on Machine Learning, Vienna, Austria, PMLR 119, 2020.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/3/quote",
+      "status": "verbatim",
+      "original": "arXiv:2002.02428v2 [stat.ML] 1 Jul 2020",
+      "admitted": "arXiv:2002.02428v2 [stat.ML] 1 Jul 2020",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper, we propose and compare expressive and numerically stable flows on such spaces.",
+      "admitted": "In this paper, we propose and compare expressive and numerically stable flows on such spaces.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "Abstract",
+      "admitted": "Abstract",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "verbatim",
+      "original": "Methods",
+      "admitted": "Methods",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/28/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/29/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/30/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/31/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/32/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/33/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/34/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/35/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/36/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/37/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/38/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/39/context",
+      "status": "verbatim",
+      "original": "Related Work",
+      "admitted": "Related Work",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/40/context",
+      "status": "verbatim",
+      "original": "Experiments",
+      "admitted": "Experiments",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/41/context",
+      "status": "verbatim",
+      "original": "Experiments",
+      "admitted": "Experiments",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/42/context",
+      "status": "verbatim",
+      "original": "Discussion",
+      "admitted": "Discussion",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/43/context",
+      "status": "verbatim",
+      "original": "Discussion",
+      "admitted": "Discussion",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/44/context",
+      "status": "verbatim",
+      "original": "Appendix E",
+      "admitted": "Appendix E",
+      "similarity": null,
+      "cited_page": 12,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/45/context",
+      "status": "verbatim",
+      "original": "Experiments",
+      "admitted": "Experiments",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019).",
+      "admitted": "For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "when M or N are not diffeomorphic to R D; in this case, the projection maps will necessarily contain singularities (i.e. points with non-invertible Jacobian), which may result in numerical instabilities during training.",
+      "admitted": "when M or N are not diffeomorphic to R D; in this case, the projection maps will necessarily contain singularities (i.e. points with non-invertible Jacobian), which may result in numerical instabilities during training.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "Since these maps are not from N to itself, they are not straightforward to compose.",
+      "admitted": "Since these maps are not from N to itself, they are not straightforward to compose.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "This motivates us to explore exponential-map flows, a mechanism for building flows on spheres proposed by Sei (2013).",
+      "admitted": "This motivates us to explore exponential-map flows, a mechanism for building flows on spheres proposed by Sei (2013).",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Here, we will show how to adapt the rational-quadratic spline flows of Durkan et al. (2019b) to satisfy the sufficient boundary conditions of circle diffeomorphisms.",
+      "admitted": "Here, we will show how to adapt the rational-quadratic spline flows of Durkan et al. (2019b) to satisfy the sufficient boundary conditions of circle diffeomorphisms.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "repaired_local",
+      "original": "Möbius transformations have previously been used to define distributions on the circle and sphere (see e.g. Kato et al., 2008; Wang, 2013; Kato & McCullagh, 2015).",
+      "admitted": "Möbius transformations have previously been used to define distributions on the circle and sphere (see e.g. Kato et al., 2008; Wang, 2013; Kato & McCullagh, 2015).",
+      "similarity": 0.96,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "The need for probabilistic modelling of non-Euclidean data often arises in applications where the data is a set of angles, axes or directions (Mardia & Jupp, 2009).",
+      "admitted": "The need for probabilistic modelling of non-Euclidean data often arises in applications where the data is a set of angles, axes or directions (Mardia & Jupp, 2009).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "According to the taxonomy of Navarro et al. (2017), directional statistics traditionally uses three approaches for defining distributions on tori and spheres: wrapping, projecting, and conditioning.",
+      "admitted": "According to the taxonomy of Navarro et al. (2017), directional statistics traditionally uses three approaches for defining distributions on tori and spheres: wrapping, projecting, and conditioning.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "In our experiments, we implemented the conditioners using coupling layers (Dinh et al., 2017).",
+      "admitted": "In our experiments, we implemented the conditioners using coupling layers (Dinh et al., 2017).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "verbatim",
+      "original": "Implementations based on masking (Kingma et al., 2016; Papamakarios et al., 2017) are also possible.",
+      "admitted": "Implementations based on masking (Kingma et al., 2016; Papamakarios et al., 2017) are also possible.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/10/quote",
+      "status": "verbatim",
+      "original": "All models were optimized using Adam (Kingma & Ba, 2015) with learning rate 2 × 10 −4, 20,000 iterations, and batch size 256.",
+      "admitted": "All models were optimized using Adam (Kingma & Ba, 2015) with learning rate 2 × 10 −4, 20,000 iterations, and batch size 256.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/11/quote",
+      "status": "repaired_local",
+      "original": "Spline flows is a methodology for creating arbitrarily flexible flow transformations from R to itself, first proposed by Müller et al. (2019) and further developed by Durkan et al. (2019a; b).",
+      "admitted": "Spline flows is a methodology for creating arbitrarily flexible flow transformations from R to itself, first proposed by Müller et al. (2019) and further developed by Durkan et al. (2019a; b).",
+      "similarity": 0.967741935483871,
+      "cited_page": 3,
+      "matched_page": 3
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 4,
+    "verbatim": 67
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "A normalizing flow implements two operations: sampling via Equation (1), and evaluating the density via Equation (2). These operations have distinct computational requirements: generating samples and evaluating their density requires only f and its Jacobian determinant, whereas evaluating the density of arbitrary datapoints requires only f −1 and its Jacobian determinant. Thus, the intended usage of the flow dictates whether f, f −1 or both must have efficient implementations. For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019).\n\nNormalizing flows are a powerful tool for building expressive distributions in high dimensions. So far, most of the literature has concentrated on learning flows on Euclidean spaces. Some problems however, such as those involving angles, are defined on spaces with more complex geometries, such as tori or spheres. In this paper, we propose and compare expressive and numerically stable flows on such spaces. Our flows are built recursively on the dimension of the space, starting from flows on circles, closed intervals or spheres."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Papamakarios et al., 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019)."
+              }
+            ],
+            "reference_key": "Papamakarios et al., 2019",
+            "why": "Uses the overview of normalizing-flow implementations and trade-offs as background and terminology."
+          },
+          {
+            "cited_work": "Durkan et al., 2019b",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Here, we will show how to adapt the rational-quadratic spline flows of Durkan et al. (2019b) to satisfy the sufficient boundary conditions of circle diffeomorphisms."
+              }
+            ],
+            "reference_key": "Durkan et al., 2019b",
+            "why": "Adapts rational-quadratic spline flows to circular boundary conditions."
+          },
+          {
+            "cited_work": "Kato & McCullagh, 2015",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Möbius transformations have previously been used to define distributions on the circle and sphere (see e.g. Kato et al., 2008; Wang, 2013; Kato & McCullagh, 2015)."
+              }
+            ],
+            "reference_key": "Kato & McCullagh, 2015",
+            "why": "Uses Möbius transformations as circle diffeomorphism components."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Gemici et al., 2016",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "when M or N are not diffeomorphic to R D; in this case, the projection maps will necessarily contain singularities (i.e. points with non-invertible Jacobian), which may result in numerical instabilities during training."
+              }
+            ],
+            "reference_key": "Gemici et al., 2016",
+            "why": "Contrasts with projection-based Riemannian flows whose maps can be numerically unstable."
+          },
+          {
+            "cited_work": "Falorsi et al., 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Since these maps are not from N to itself, they are not straightforward to compose."
+              }
+            ],
+            "reference_key": "Falorsi et al., 2019",
+            "why": "Critiques Lie-group exponential-map flows as hard to compose and expensive."
+          },
+          {
+            "cited_work": "Sei, 2013",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "This motivates us to explore exponential-map flows, a mechanism for building flows on spheres proposed by Sei (2013)."
+              }
+            ],
+            "reference_key": "Sei, 2013",
+            "why": "Extends exponential-map flows with a new radial scalar field."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "Our main contribution is to propose a new set of expressive normalizing flows for the case where M and N are compact and connected differentiable manifolds."
+          }
+        ],
+        "text": "The paper constructs expressive, numerically stable normalizing flows on circles, tori, spheres, and products of circles/intervals, avoiding singular projection maps and non-composable exponential-map constructions."
+      }
+    },
+    "citations": [
+      {
+        "context": "Abstract",
+        "page": 1,
+        "reference_key": "Papamakarios et al., 2019"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Mardia & Jupp, 2009"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Hamelryck et al., 2006; Mardia et al., 2007; Boomsma et al., 2008; Shapovalov & Dunbrack Jr, 2011; Peel et al., 2001; Feiten et al., 2013; Senanayake & Ramos, 2018"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Davidson et al., 2018; Falorsi et al., 2018; Wang & Wang, 2019; Mathieu et al., 2019; Wang et al., 2019"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Kobayashi & Nomizu, 1963"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Gemici et al., 2016"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Falorsi et al., 2019"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Falorsi et al., 2019"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "Falorsi et al., 2019"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Kato et al., 2008; Wang, 2013; Kato & McCullagh, 2015"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Kato & McCullagh, 2015"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Kato & McCullagh, 2015"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Müller et al., 2019; Durkan et al., 2019a; Durkan et al., 2019b"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Durkan et al., 2019b"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Durkan et al., 2019b"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Gemici et al., 2016"
+      },
+      {
+        "context": "Methods",
+        "page": 4,
+        "reference_key": "Downs & Mardia, 2002"
+      },
+      {
+        "context": "Methods",
+        "page": 4,
+        "reference_key": "Papamakarios et al., 2019"
+      },
+      {
+        "context": "Methods",
+        "page": 4,
+        "reference_key": "Dinh et al., 2017"
+      },
+      {
+        "context": "Methods",
+        "page": 4,
+        "reference_key": "Kingma et al., 2016; Papamakarios et al., 2017"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Fisher, 1953; Jakob, 2012"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Kobayashi & Nomizu, 1963"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Methods",
+        "page": 2,
+        "reference_key": "Tabak & Turner, 2013; Rezende & Mohamed, 2015"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Mardia & Jupp, 2009"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Navarro et al., 2017"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Jona-Lasinio et al., 2012"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Wang & Gelfand, 2013"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Wang, 2013; Gatto & Jammalamadaka, 2007"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Fisher, 1953"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Downs, 1972; Kent, 1982"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Mardia et al., 2008; Navarro et al., 2017"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Peel et al., 2001; Mardia et al., 2007"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Falorsi et al., 2019"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Falorsi et al., 2019"
+      },
+      {
+        "context": "Related Work",
+        "page": 6,
+        "reference_key": "Gemici et al., 2016"
+      },
+      {
+        "context": "Experiments",
+        "page": 7,
+        "reference_key": "Kingma & Ba, 2015"
+      },
+      {
+        "context": "Experiments",
+        "page": 4,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Discussion",
+        "page": 9,
+        "reference_key": "Woit, 2017"
+      },
+      {
+        "context": "Discussion",
+        "page": 9,
+        "reference_key": "Tilma & Sudarshan, 2002; Tilma & Sudarshan, 2004"
+      },
+      {
+        "context": "Appendix E",
+        "page": 8,
+        "reference_key": "Sei, 2013"
+      },
+      {
+        "context": "Experiments",
+        "page": 7,
+        "reference_key": "Arnaud et al., 2001; Liu, 2008"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": null,
+          "name": "Danilo Jimenez Rezende"
+        },
+        {
+          "affiliation": null,
+          "name": "George Papamakarios"
+        },
+        {
+          "affiliation": null,
+          "name": "Sébastien Racanière"
+        },
+        {
+          "affiliation": null,
+          "name": "Michael S. Albergo"
+        },
+        {
+          "affiliation": null,
+          "name": "Gurtej Kanwar"
+        },
+        {
+          "affiliation": null,
+          "name": "Phiala E. Shanahan"
+        },
+        {
+          "affiliation": null,
+          "name": "Kyle Cranmer"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Normalizing Flows on Tori and Spheres"
+        },
+        {
+          "page": 1,
+          "quote": "Danilo Jimenez Rezende * 1 George Papamakarios * 1 Sébastien Racanière * 1 Michael S. Albergo² Gurtej Kanwar³ Phiala E. Shanahan³ Kyle Cranmer²"
+        },
+        {
+          "page": 1,
+          "quote": "Proceedings of the 37 th International Conference on Machine Learning, Vienna, Austria, PMLR 119, 2020."
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:2002.02428v2 [stat.ML] 1 Jul 2020"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:2002.02428v2 [stat.ML] 1 Jul 2020",
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Normalizing Flows on Tori and Spheres",
+      "venue": "Proceedings of the 37th International Conference on Machine Learning, Vienna, Austria, PMLR 119, 2020",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this paper, we propose and compare expressive and numerically stable flows on such spaces."
+        }
+      ],
+      "text": "Can expressive, numerically stable normalizing flows be constructed on tori and spheres, and on products of circles and intervals, while retaining tractable density evaluation and sampling?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Arnaud, D.",
+          "de Freitas, N.",
+          "Gordon, N."
+        ],
+        "doi": null,
+        "key": "Arnaud et al., 2001",
+        "page": 9,
+        "title": "Sequential Monte Carlo methods in practice",
+        "venue": "Information Science and Statistics. Springer New York",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Boomsma, W.",
+          "Mardia, K. V.",
+          "Taylor, C. C.",
+          "Ferkinghoff-Borg, J.",
+          "Krogh, A.",
+          "Hamelryck, T."
+        ],
+        "doi": null,
+        "key": "Boomsma et al., 2008",
+        "page": 9,
+        "title": "A generative, probabilistic model of local protein structure",
+        "venue": "Proceedings of the National Academy of Sciences, 105(26):8932–8937",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Davidson, T. R.",
+          "Falorsi, L.",
+          "De Cao, N.",
+          "Kipf, T.",
+          "Tomczak, J. M."
+        ],
+        "doi": null,
+        "key": "Davidson et al., 2018",
+        "page": 9,
+        "title": "Hyperspherical variational auto-encoders",
+        "venue": "Conference on Uncertainty in Artificial Intelligence",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Dinh, L.",
+          "Sohl-Dickstein, J.",
+          "Bengio, S."
+        ],
+        "doi": null,
+        "key": "Dinh et al., 2017",
+        "page": 9,
+        "title": "Density estimation using Real NVP",
+        "venue": "International Conference on Learning Representations",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Downs, T. D."
+        ],
+        "doi": null,
+        "key": "Downs, 1972",
+        "page": 9,
+        "title": "Orientation statistics",
+        "venue": "Biometrika, 59(3):665–676",
+        "year": 1972
+      },
+      {
+        "authors": [
+          "Downs, T. D.",
+          "Mardia, K. V."
+        ],
+        "doi": null,
+        "key": "Downs & Mardia, 2002",
+        "page": 9,
+        "title": "Circular regression",
+        "venue": "Biometrika, 89(3):683–698",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Durkan, C.",
+          "Bekasov, A.",
+          "Murray, I.",
+          "Papamakarios, G."
+        ],
+        "doi": null,
+        "key": "Durkan et al., 2019a",
+        "page": 9,
+        "title": "Cubic-spline flows",
+        "venue": "ICML workshop on Invertible Neural Networks and Normalizing Flows",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Durkan, C.",
+          "Bekasov, A.",
+          "Murray, I.",
+          "Papamakarios, G."
+        ],
+        "doi": null,
+        "key": "Durkan et al., 2019b",
+        "page": 9,
+        "title": "Neural spline flows",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Falorsi, L.",
+          "de Haan, P.",
+          "Davidson, T. R.",
+          "De Cao, N.",
+          "Weiler, M.",
+          "Forré, P.",
+          "Cohen, T. S."
+        ],
+        "doi": null,
+        "key": "Falorsi et al., 2018",
+        "page": 9,
+        "title": "Explorations in homeomorphic variational auto-encoding",
+        "venue": "ICML workshop on Theoretical Foundations and Applications of Deep Generative Models",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Falorsi, L.",
+          "de Haan, P.",
+          "Davidson, T. R.",
+          "Forré, P."
+        ],
+        "doi": null,
+        "key": "Falorsi et al., 2019",
+        "page": 9,
+        "title": "Reparameterizing distributions on Lie groups",
+        "venue": "International Conference on Artificial Intelligence and Statistics",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Feiten, W.",
+          "Lang, M.",
+          "Hirche, S."
+        ],
+        "doi": null,
+        "key": "Feiten et al., 2013",
+        "page": 9,
+        "title": "Rigid motion estimation using mixtures of projected Gaussians",
+        "venue": "International Conference on Information Fusion",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Fisher, R."
+        ],
+        "doi": null,
+        "key": "Fisher, 1953",
+        "page": 9,
+        "title": "Dispersion on a sphere",
+        "venue": "Proceedings of the Royal Society of London. Series A, Mathematical and Physical Sciences, 217(1130):295–305",
+        "year": 1953
+      },
+      {
+        "authors": [
+          "Gatto, R.",
+          "Jammalamadaka, S. R."
+        ],
+        "doi": null,
+        "key": "Gatto & Jammalamadaka, 2007",
+        "page": 9,
+        "title": "The generalized von Mises distribution",
+        "venue": "Statistical Methodology, 4(3):341–353",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Gemici, M. C.",
+          "Rezende, D. J.",
+          "Mohamed, S."
+        ],
+        "doi": null,
+        "key": "Gemici et al., 2016",
+        "page": 9,
+        "title": "Normalizing flows on Riemannian manifolds",
+        "venue": "arXiv preprint arXiv:1611.02304",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Hamelryck, T.",
+          "Kent, J. T.",
+          "Krogh, A."
+        ],
+        "doi": null,
+        "key": "Hamelryck et al., 2006",
+        "page": 9,
+        "title": "Sampling realistic protein conformations using local structural bias",
+        "venue": "PLoS Computational Biology, 2(9)",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Jakob, W."
+        ],
+        "doi": null,
+        "key": "Jakob, 2012",
+        "page": 9,
+        "title": "Numerically stable sampling of the von Mises Fisher distribution on S 2 (and other tricks)",
+        "venue": "Technical report, Interactive Geometry Lab, ETH Zürich",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Jona-Lasinio, G.",
+          "Gelfand, A.",
+          "Jona-Lasinio, M."
+        ],
+        "doi": null,
+        "key": "Jona-Lasinio et al., 2012",
+        "page": 9,
+        "title": "Spatial analysis of wave direction data using wrapped Gaussian processes",
+        "venue": "The Annals of Applied Statistics, 6(4):1478–1498",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Kato, S.",
+          "McCullagh, P."
+        ],
+        "doi": null,
+        "key": "Kato & McCullagh, 2015",
+        "page": 9,
+        "title": "Möbius transformation and a Cauchy family on the sphere",
+        "venue": "arXiv preprint arXiv:1510.07679",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Kato, S.",
+          "Shimizu, K.",
+          "Shieh, G. S."
+        ],
+        "doi": null,
+        "key": "Kato et al., 2008",
+        "page": 10,
+        "title": "A circular–circular regression model",
+        "venue": "Statistica Sinica, 18:633–645",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Kent, J. T."
+        ],
+        "doi": null,
+        "key": "Kent, 1982",
+        "page": 10,
+        "title": "The Fisher–Bingham distribution on the sphere",
+        "venue": "Journal of the Royal Statistical Society. Series B (Methodological), 44(1):71–80",
+        "year": 1982
+      },
+      {
+        "authors": [
+          "Kingma, D. P.",
+          "Ba, J."
+        ],
+        "doi": null,
+        "key": "Kingma & Ba, 2015",
+        "page": 10,
+        "title": "Adam: A method for stochastic optimization",
+        "venue": "International Conference for Learning Representations",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Kingma, D. P.",
+          "Salimans, T.",
+          "Jozefowicz, R.",
+          "Chen, X.",
+          "Sutskever, I.",
+          "Welling, M."
+        ],
+        "doi": null,
+        "key": "Kingma et al., 2016",
+        "page": 10,
+        "title": "Improved variational inference with inverse autoregressive flow",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Kobayashi, S.",
+          "Nomizu, K."
+        ],
+        "doi": null,
+        "key": "Kobayashi & Nomizu, 1963",
+        "page": 10,
+        "title": "Foundations of differential geometry, volume 1",
+        "venue": "Interscience Publishers",
+        "year": 1963
+      },
+      {
+        "authors": [
+          "Liu, J. S."
+        ],
+        "doi": null,
+        "key": "Liu, 2008",
+        "page": 10,
+        "title": "Monte Carlo strategies in scientific computing",
+        "venue": "Springer Science & Business Media",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Jupp, P. E."
+        ],
+        "doi": null,
+        "key": "Mardia & Jupp, 2009",
+        "page": 10,
+        "title": "Directional statistics",
+        "venue": "Wiley Series in Probability and Statistics. John Wiley & Sons",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Taylor, C. C.",
+          "Subramaniam, G. K."
+        ],
+        "doi": null,
+        "key": "Mardia et al., 2007",
+        "page": 10,
+        "title": "Protein bioinformatics and mixtures of bivariate von Mises distributions for angular data",
+        "venue": "Biometrics, 63(2):505–512",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Hughes, G.",
+          "Taylor, C. C.",
+          "Singh, H."
+        ],
+        "doi": null,
+        "key": "Mardia et al., 2008",
+        "page": 10,
+        "title": "A multivariate von Mises distribution with applications to bioinformatics",
+        "venue": "The Canadian Journal of Statistics, 36(1):99–109",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Mathieu, E.",
+          "Le Lan, C.",
+          "Maddison, C. J.",
+          "Tomioka, R.",
+          "Teh, Y. W."
+        ],
+        "doi": null,
+        "key": "Mathieu et al., 2019",
+        "page": 10,
+        "title": "Continuous hierarchical representations with Poincaré variational auto-encoders",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Müller, T.",
+          "McWilliams, B.",
+          "Rousselle, F.",
+          "Gross, M.",
+          "Novák, J."
+        ],
+        "doi": null,
+        "key": "Müller et al., 2019",
+        "page": 10,
+        "title": "Neural importance sampling",
+        "venue": "ACM Transactions on Graphics, 38(5):1–19",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Navarro, A. K. W.",
+          "Frellsen, J.",
+          "Turner, R. E."
+        ],
+        "doi": null,
+        "key": "Navarro et al., 2017",
+        "page": 10,
+        "title": "The multi-variate generalised von Mises distribution: Inference and applications",
+        "venue": "AAAI Conference on Artificial Intelligence",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Papamakarios, G.",
+          "Pavlakou, T.",
+          "Murray, I."
+        ],
+        "doi": null,
+        "key": "Papamakarios et al., 2017",
+        "page": 10,
+        "title": "Masked autoregressive flow for density estimation",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Papamakarios, G.",
+          "Nalisnick, E.",
+          "Rezende, D. J.",
+          "Mohamed, S.",
+          "Lakshminarayanan, B."
+        ],
+        "doi": null,
+        "key": "Papamakarios et al., 2019",
+        "page": 10,
+        "title": "Normalizing flows for probabilistic modeling and inference",
+        "venue": "arXiv preprint arXiv:1912.02762",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Peel, D.",
+          "Whiten, W. J.",
+          "McLachlan, G. J."
+        ],
+        "doi": null,
+        "key": "Peel et al., 2001",
+        "page": 10,
+        "title": "Fitting mixtures of Kent distributions to aid in joint set identification",
+        "venue": "Journal of the American Statistical Association, 96(453):56–63",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Rezende, D. J.",
+          "Mohamed, S."
+        ],
+        "doi": null,
+        "key": "Rezende & Mohamed, 2015",
+        "page": 10,
+        "title": "Variational inference with normalizing flows",
+        "venue": "International Conference on Machine Learning",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Sei, T."
+        ],
+        "doi": null,
+        "key": "Sei, 2013",
+        "page": 10,
+        "title": "A Jacobian inequality for gradient maps on the sphere and its application to directional statistics",
+        "venue": "Communications in Statistics—Theory and Methods, 42(14):2525–2542",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Senanayake, R.",
+          "Ramos, F."
+        ],
+        "doi": null,
+        "key": "Senanayake & Ramos, 2018",
+        "page": 10,
+        "title": "Directional grid maps: modeling multimodal angular uncertainty in dynamic environments",
+        "venue": "IEEE/RSJ International Conference on Intelligent Robots and Systems",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Shapovalov, M. V.",
+          "Dunbrack Jr, R. L."
+        ],
+        "doi": null,
+        "key": "Shapovalov & Dunbrack Jr, 2011",
+        "page": 10,
+        "title": "A smoothed backbone-dependent rotamer library for proteins derived from adaptive kernel density estimates and regressions",
+        "venue": "Structure, 19(6):844–858",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Tabak, E. G.",
+          "Turner, C. V."
+        ],
+        "doi": null,
+        "key": "Tabak & Turner, 2013",
+        "page": 10,
+        "title": "A family of nonparametric density estimation algorithms",
+        "venue": "Communications on Pure and Applied Mathematics, 66(2):145–164",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Tilma, T.",
+          "Sudarshan, E."
+        ],
+        "doi": null,
+        "key": "Tilma & Sudarshan, 2002",
+        "page": 10,
+        "title": "Generalized Euler angle parametrization for SU (N)",
+        "venue": "Journal of Physics A: Mathematical and General, 35(48):10467",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Tilma, T.",
+          "Sudarshan, E."
+        ],
+        "doi": null,
+        "key": "Tilma & Sudarshan, 2004",
+        "page": 10,
+        "title": "Generalized Euler angle parameterization for U (N) with applications to SU (N) coset volume measures",
+        "venue": "Journal of Geometry and Physics, 52(3):263–283",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Wang, F.",
+          "Gelfand, A. E."
+        ],
+        "doi": null,
+        "key": "Wang & Gelfand, 2013",
+        "page": 10,
+        "title": "Directional data analysis under the general projected normal distribution",
+        "venue": "Statistical Methodology, 10(1):113–127",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Wang, M."
+        ],
+        "doi": null,
+        "key": "Wang, 2013",
+        "page": 10,
+        "title": "Extensions of probability distributions on torus, cylinder and disc",
+        "venue": "PhD thesis, Graduate School of Science and Technology, Keio University",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Wang, P. Z.",
+          "Wang, W. Y."
+        ],
+        "doi": null,
+        "key": "Wang & Wang, 2019",
+        "page": 10,
+        "title": "Riemannian normalizing flow on variational Wasserstein autoencoder for text modeling",
+        "venue": "Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Wang, Z.",
+          "Cheng, S.",
+          "Li, Y.",
+          "Zhu, J.",
+          "Zhang, B."
+        ],
+        "doi": null,
+        "key": "Wang et al., 2019",
+        "page": 10,
+        "title": "A Wasserstein minimum velocity approach to learning unnormalized models",
+        "venue": "Symposium on Advances in Approximate Bayesian Inference",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Woit, P."
+        ],
+        "doi": null,
+        "key": "Woit, 2017",
+        "page": 10,
+        "title": "Quantum theory, groups and representations: An introduction",
+        "venue": "Springer",
+        "year": 2017
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019).",
+        "reference_key": "Papamakarios et al., 2019",
+        "relation": "uses_method",
+        "why": "Used as the overview of normalizing-flow implementation trade-offs."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "when M or N are not diffeomorphic to R D; in this case, the projection maps will necessarily contain singularities (i.e. points with non-invertible Jacobian), which may result in numerical instabilities during training.",
+        "reference_key": "Gemici et al., 2016",
+        "relation": "contrasts",
+        "why": "Critiques projection-based manifold flows as numerically unstable due to singularities."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Since these maps are not from N to itself, they are not straightforward to compose.",
+        "reference_key": "Falorsi et al., 2019",
+        "relation": "critiques",
+        "why": "Points out that Lie-group exponential-map flows are hard to compose."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "This motivates us to explore exponential-map flows, a mechanism for building flows on spheres proposed by Sei (2013).",
+        "reference_key": "Sei, 2013",
+        "relation": "extends",
+        "why": "Builds on Sei's exponential-map flow and proposes a new radial scalar field."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Here, we will show how to adapt the rational-quadratic spline flows of Durkan et al. (2019b) to satisfy the sufficient boundary conditions of circle diffeomorphisms.",
+        "reference_key": "Durkan et al., 2019b",
+        "relation": "extends",
+        "why": "Adapts rational-quadratic splines to circular boundary conditions."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Möbius transformations have previously been used to define distributions on the circle and sphere (see e.g. Kato et al., 2008; Wang, 2013; Kato & McCullagh, 2015).",
+        "reference_key": "Kato & McCullagh, 2015",
+        "relation": "uses_method",
+        "why": "Uses Möbius transformations as circle diffeomorphism components."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The need for probabilistic modelling of non-Euclidean data often arises in applications where the data is a set of angles, axes or directions (Mardia & Jupp, 2009).",
+        "reference_key": "Mardia & Jupp, 2009",
+        "relation": "uses_method",
+        "why": "Provides the directional-statistics motivation for non-Euclidean data."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "According to the taxonomy of Navarro et al. (2017), directional statistics traditionally uses three approaches for defining distributions on tori and spheres: wrapping, projecting, and conditioning.",
+        "reference_key": "Navarro et al., 2017",
+        "relation": "uses_method",
+        "why": "Organizes related work using their taxonomy of wrapping, projecting, and conditioning."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In our experiments, we implemented the conditioners using coupling layers (Dinh et al., 2017).",
+        "reference_key": "Dinh et al., 2017",
+        "relation": "uses_method",
+        "why": "Implements autoregressive conditioners using coupling layers."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Implementations based on masking (Kingma et al., 2016; Papamakarios et al., 2017) are also possible.",
+        "reference_key": "Kingma et al., 2016; Papamakarios et al., 2017",
+        "relation": "uses_method",
+        "why": "Notes that masked autoregressive implementations are also possible."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "All models were optimized using Adam (Kingma & Ba, 2015) with learning rate 2 × 10 −4, 20,000 iterations, and batch size 256.",
+        "reference_key": "Kingma & Ba, 2015",
+        "relation": "uses_method",
+        "why": "Uses Adam for optimization in the experiments."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Spline flows is a methodology for creating arbitrarily flexible flow transformations from R to itself, first proposed by Müller et al. (2019) and further developed by Durkan et al. (2019a; b).",
+        "reference_key": "Müller et al., 2019",
+        "relation": "extends",
+        "why": "Builds on the spline-flow methodology first proposed by Müller et al."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "2. Methods",
+          "start_page": 1,
+          "start_text": "1. Introduction"
+        },
+        "summary": "Motivates normalizing flows beyond Euclidean spaces, reviews prior manifold-flow approaches and their limitations, and states the paper's contribution: expressive, numerically stable flows on compact connected manifolds such as circles, tori, and spheres.",
+        "title": "Introduction, motivation, and contribution"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "2.2. Generalization to the Torus T D",
+          "start_page": 2,
+          "start_text": "2.1. Flows on the Circle S 1"
+        },
+        "summary": "Develops circle diffeomorphisms satisfying boundary conditions and presents three constructions: Möbius transformations, circular splines, and non-compact projections, including composition, convex combination, invertibility, and expressivity.",
+        "title": "Flows on the circle S¹"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "2.3. Generalization to the Sphere S D",
+          "start_page": 4,
+          "start_text": "2.2. Generalization to the Torus T D"
+        },
+        "summary": "Extends circle flows to tori and products of circles and intervals via autoregressive factorization, periodic conditioners, and coupling or masking.",
+        "title": "Autoregressive flows on tori and product spaces"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "2.3.2. E XPONENTIAL -M AP F LOWS",
+          "start_page": 4,
+          "start_text": "2.3. Generalization to the Sphere S D"
+        },
+        "summary": "Constructs sphere flows recursively through cylindrical coordinates, transforming height and base variables, composing T_s→c and T_c→s, and proving the density update despite non-diffeomorphic topology.",
+        "title": "Recursive flows on spheres via cylindrical coordinates"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "3. Related Work",
+          "start_page": 5,
+          "start_text": "2.3.2. E XPONENTIAL -M AP F LOWS"
+        },
+        "summary": "Explores exponential-map flows using cost-convex scalar fields and the sphere exponential map; introduces a new radial scalar field and notes the O(D³) density-update cost.",
+        "title": "Exponential-map flows on spheres"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "4. Experiments",
+          "start_page": 6,
+          "start_text": "3. Related Work"
+        },
+        "summary": "Places the work in directional statistics and prior manifold-flow methods: wrapping, projecting, conditioning, mixtures, Lie-group flows, and Gemici et al.'s Riemannian flows.",
+        "title": "Related work: directional statistics and prior manifold flows"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "5. Discussion",
+          "start_page": 7,
+          "start_text": "4. Experiments"
+        },
+        "summary": "Evaluates flows on T² and S² with KL and ESS, compares NCP, Möbius, and circular splines, and compares recursive sphere flows against polynomial and radial exponential-map flows.",
+        "title": "Experiments on T² and S²"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "Acknowledgements",
+          "start_page": 8,
+          "start_text": "5. Discussion"
+        },
+        "summary": "Compares model classes, discusses practical trade-offs between invertibility and expressivity, and sketches future extensions to SU(D) and U(D) using Euler-angle decompositions.",
+        "title": "Discussion: comparison, limitations, and future Lie groups"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "Woit, P. Quantum theory, groups and representations: An introduction. Springer, 2017.",
+          "start_page": 9,
+          "start_text": "References"
+        },
+        "summary": "Bibliography for the paper, including directional statistics, normalizing flows, spline flows, Lie groups, and Riemannian manifold flows.",
+        "title": "References"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "B. Detailed Diagram of Recursive Flow on S D",
+          "start_page": 11,
+          "start_text": "A. Density Transformations on Manifolds"
+        },
+        "summary": "Derives density transformations on embedded manifolds and proves the cylindrical-to-sphere density correction, including cancellation of singular terms and stability conditions.",
+        "title": "Appendix A–B: density transformations and recursive sphere details"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "Figure 11. Learning a complex density from data samples using autoregressive spline flows. Left: Target density from which i.i.d. data samples were generated. Middle: Model samples overlaid on target density; Right: Heat map of the learned density.",
+          "start_page": 12,
+          "start_text": "C. Examples of Möbius Transformations"
+        },
+        "summary": "Collects additional flow variants, target definitions, robustness checks, the NCP–Möbius equivalence, and applications to a robot arm on T⁶ and a map-of-the-world density on S².",
+        "title": "Appendices C–J: variants, targets, robustness, and applications"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It proposes new normalizing-flow constructions on tori and spheres and validates them with theoretical derivations, experiments, and applications.",
+      "value": "method"
+    }
+  }
+}
