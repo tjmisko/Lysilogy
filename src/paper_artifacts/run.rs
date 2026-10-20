@@ -63,7 +63,7 @@ const CHUNK_CONCURRENCY: usize = 3;
 
 // Output ceilings per call, reasoning included, so a looping answer fails
 // fast instead of running to the provider limit (131k tokens, 16 cents).
-const CORE_TOKEN_FLOOR: u32 = 16_384;
+const CORE_TOKEN_FLOOR: u32 = 65_536;
 const CORE_TOKEN_CEILING: u32 = 131_072;
 const CORE_TOKENS_PER_PAGE: u32 = 3_000;
 const CORE_TOKEN_OVERHEAD: u32 = 8_192;
@@ -816,9 +816,10 @@ fn is_core_field(name: &str) -> bool {
         .any(|field| field.name == name)
 }
 
-/// The core ceiling for a paper, scaled by length: short papers fail cheap,
-/// long papers finish. About three thousand tokens per page for the record and
-/// its reasoning, plus a fixed overhead, within a floor and the provider limit.
+/// The core ceiling for a paper, scaled by length: about three thousand tokens
+/// per page for the record and its reasoning, plus a fixed overhead, never
+/// below the fixed floor that ordinary papers need and never above the
+/// provider limit.
 #[must_use]
 fn core_max_tokens(page_count: usize) -> u32 {
     let pages = u32::try_from(page_count).unwrap_or(u32::MAX);
@@ -1910,9 +1911,9 @@ mod tests {
 
     #[test]
     fn should_scale_the_core_ceiling_with_paper_length() {
-        assert!(core_max_tokens(2) < core_max_tokens(10));
-        assert!(core_max_tokens(10) < core_max_tokens(30));
-        assert_eq!(core_max_tokens(0), CORE_TOKEN_FLOOR);
+        assert_eq!(core_max_tokens(4), CORE_TOKEN_FLOOR);
+        assert!(core_max_tokens(4) <= core_max_tokens(30));
+        assert!(core_max_tokens(30) < core_max_tokens(55));
         assert_eq!(
             core_max_tokens(30),
             30 * CORE_TOKENS_PER_PAGE + CORE_TOKEN_OVERHEAD
