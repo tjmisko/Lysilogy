@@ -284,7 +284,7 @@ def score_paper(paper, record, oracle, inventory, bibliography, result_file=None
         "cost_usd": record.get("totals", {}).get("cost_usd"),
         "wall_s": record.get("totals", {}).get("wall_s"),
         "calls": [
-            {key: call.get(key) for key in ("stage", "prompt_tokens", "cached_tokens", "completion_tokens", "reasoning_tokens", "cost_usd", "latency_s", "finish_reason", "cost_source")}
+            {key: call.get(key) for key in ("stage", "max_tokens", "prompt_tokens", "cached_tokens", "completion_tokens", "reasoning_tokens", "cost_usd", "latency_s", "finish_reason", "cost_source")}
             for call in record.get("calls") or []
         ],
         "identity": {"pass1": score_identity(pass1, oracle), "final": final_identity},

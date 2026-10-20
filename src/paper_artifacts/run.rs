@@ -144,6 +144,7 @@ pub struct ChunkRecord {
 #[derive(Clone, Debug, Serialize)]
 pub struct CallRecord {
     pub stage: String,
+    pub max_tokens: u32,
     pub provider: Option<String>,
     pub finish_reason: Option<String>,
     pub prompt_tokens: u64,
@@ -398,7 +399,7 @@ impl<'a> Session<'a> {
             }
         };
         let parsed = completion.parsed;
-        self.record_call(stage, &parsed, completion.latency);
+        self.record_call(stage, &parsed, completion.latency, max_tokens);
         if parsed.finish_reason.as_deref() == Some("length") {
             self.fail(
                 stage,
@@ -437,11 +438,18 @@ impl<'a> Session<'a> {
         false
     }
 
-    fn record_call(&self, stage: &str, parsed: &openrouter::ParsedCompletion, latency: Duration) {
+    fn record_call(
+        &self,
+        stage: &str,
+        parsed: &openrouter::ParsedCompletion,
+        latency: Duration,
+        max_tokens: u32,
+    ) {
         let mut guard = self.state();
         guard.spent_usd += parsed.cost_usd;
         guard.calls.push(CallRecord {
             stage: stage.to_owned(),
+            max_tokens,
             provider: parsed.provider.clone(),
             finish_reason: parsed.finish_reason.clone(),
             prompt_tokens: parsed.prompt_tokens,
