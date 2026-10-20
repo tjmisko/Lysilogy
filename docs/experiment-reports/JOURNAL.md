@@ -62,6 +62,11 @@ The section oracle is the first real gradient for sections. The remaining work
 is granularity calibration against the audited maps, and chunking long papers
 past the cap.
 
+The fixed 65,536 core cap is replaced by an adaptive one: roughly 3,000 tokens
+per page plus 8,192 overhead, floor 16,384, ceiling 131,072. Both capped papers
+completed on the rerun (`eval/spike/runs/e3b-capfix-2026-10-20/`). The cap is a
+ceiling, not a spend: actual core output was ~24k tokens on each.
+
 ## Cohort change
 
 The sample grows from 20 to 30: the frozen 20 (bulk arXiv) are kept, and 10
