@@ -180,7 +180,7 @@ def score_sections_oracle(artifacts, oracle):
 
 def identity_resolvable(score):
     """The exact and perfect-enough verdicts across the identity fields present."""
-    exact = [value for key, value in score.items() if key in ("title_exact", "authors_ordered_exact", "abstract_match")]
+    exact = [value for key, value in score.items() if key in ("title_exact", "authors_set_exact", "abstract_match")]
     matchable = [value for key, value in score.items() if key in ("title_matchable", "authors_matchable", "abstract_match")]
     return (None if not exact else all(exact), None if not matchable else all(matchable))
 
