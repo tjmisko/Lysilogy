@@ -1,0 +1,2209 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-20T04:38:34.048753482Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1809.05643v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 25,
+  "calls": [
+    {
+      "stage": "core",
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 19597,
+      "cached_tokens": 0,
+      "completion_tokens": 25648,
+      "reasoning_tokens": 16872,
+      "cost_usd": 0.00122134,
+      "cost_source": "reported",
+      "latency_s": 154.999697573
+    },
+    {
+      "stage": "extract.pass2",
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 24409,
+      "cached_tokens": 0,
+      "completion_tokens": 23565,
+      "reasoning_tokens": 22327,
+      "cost_usd": 0.001403906,
+      "cost_source": "reported",
+      "latency_s": 195.040379015
+    },
+    {
+      "stage": "extract.repair",
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 9016,
+      "cached_tokens": 0,
+      "completion_tokens": 9835,
+      "reasoning_tokens": 7573,
+      "cost_usd": 0.000534394,
+      "cost_source": "reported",
+      "latency_s": 68.305782376
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 53022,
+    "cached_tokens": 0,
+    "completion_tokens": 59048,
+    "cost_usd": 0.00315964,
+    "model_latency_s": 418.34585896400006,
+    "wall_s": 422.205856919
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e3-30-2026-10-20/results/1809.05643v4.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We propose kernel-based collocation methods for numerical solutions to Heath-Jarrow-Morton models with Musiela parametrization. The methods can be seen as the Euler-Maruyama approximation of some finite dimensional stochastic differential equations, and allow us to compute the derivative prices by the usual Monte Carlo methods. We derive a bound on the rate of convergence under some decay conditions on the interpolation functions and some regularity conditions on the volatility functionals."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Heath et al. [10]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Then, by Heath et.al [10], the process f pt, T q should evolve according to"
+              }
+            ],
+            "reference_key": "10",
+            "why": "The paper starts from the HJM forward-rate dynamics."
+          },
+          {
+            "cited_work": "Musiela [16]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Then, Musiela [16] shows that rpt, xq:“ f pt, t ` xq, which is called the Musiela parametrization, is a mild solution to the stochastic partial differential equation"
+              }
+            ],
+            "reference_key": "16",
+            "why": "It uses Musiela parametrization to write the HJMM SPDE."
+          },
+          {
+            "cited_work": "Filipović [8]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Our setup is based on [8], with a slight modification."
+              }
+            ],
+            "reference_key": "8",
+            "why": "It adopts the Hilbert-space setup and solution framework from [8]."
+          },
+          {
+            "cited_work": "Nakano [20]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "To this end, we use the stability result of the kernel-based interpolation with Wendland kernels proved in [20] and develop the error estimation result for the interpolation in a class of functions having relatively low regularities."
+              }
+            ],
+            "reference_key": "20",
+            "why": "It builds on kernel stability and interpolation error results."
+          },
+          {
+            "cited_work": "Wendland [23]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "Then, by Theorems 10.10 and 10.11 in Wendland [23], there exists a unique Hilbert space N Φ pRq with norm } ¨ } N Φ pRq, called the native space, of real-valued functions on R such that Φ is a reproducing kernel for N Φ pRq."
+              }
+            ],
+            "reference_key": "23",
+            "why": "It uses native-space and reproducing-kernel theory for interpolation."
+          },
+          {
+            "cited_work": "Kansa [12]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The methods using the kernel-based interpolation as in above are called kernel-based collocation methods in general, which are first proposed by Kansa [12] (see also Kansa [13, 14])."
+              }
+            ],
+            "reference_key": "12",
+            "why": "The kernel-based collocation method originates with Kansa."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Barth [2]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method."
+              }
+            ],
+            "reference_key": "2",
+            "why": "It contrasts with finite element methods by proposing kernel collocation."
+          },
+          {
+            "cited_work": "Dörsek and Teichmann [7]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method."
+              }
+            ],
+            "reference_key": "7",
+            "why": "It contrasts with splitting methods by proposing kernel collocation."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We propose kernel-based collocation methods for numerical solutions to Heath-Jarrow-Morton models with Musiela parametrization."
+          }
+        ],
+        "text": "Kernel-based collocation methods can numerically solve HJMM equations with Musiela parametrization, with a provable convergence-rate bound and usable numerical pricing performance."
+      }
+    },
+    "citations": [
+      {
+        "context": "The HJM forward-rate dynamics are introduced.",
+        "page": 1,
+        "reference_key": "10"
+      },
+      {
+        "context": "Standard textbooks on HJM models and related developments are cited.",
+        "page": 2,
+        "reference_key": "17,22,3"
+      },
+      {
+        "context": "Musiela parametrization is introduced as a mild solution to the SPDE.",
+        "page": 2,
+        "reference_key": "16"
+      },
+      {
+        "context": "Existence and uniqueness literature for HJMM versions is cited.",
+        "page": 2,
+        "reference_key": "9,8,1,15"
+      },
+      {
+        "context": "Existing numerical methods for HJMM are reviewed.",
+        "page": 2,
+        "reference_key": "2,7"
+      },
+      {
+        "context": "Kernel-based collocation methods are attributed to Kansa.",
+        "page": 2,
+        "reference_key": "12,13,14"
+      },
+      {
+        "context": "Rigorous convergence studies for kernel-based methods are listed.",
+        "page": 2,
+        "reference_key": "21,5,11,19,20,18"
+      },
+      {
+        "context": "The paper explains its use of stability results and interpolation error estimates.",
+        "page": 3,
+        "reference_key": "20"
+      },
+      {
+        "context": "The paper states its setup follows Filipovic with a slight modification.",
+        "page": 3,
+        "reference_key": "8"
+      },
+      {
+        "context": "Separability of U is proved using a result from [8].",
+        "page": 4,
+        "reference_key": "8"
+      },
+      {
+        "context": "A proof step follows Theorem 5.1.1 in [8].",
+        "page": 4,
+        "reference_key": "8"
+      },
+      {
+        "context": "The domain of the generator is linked to Lemma 4.2.2 in [8].",
+        "page": 6,
+        "reference_key": "8"
+      },
+      {
+        "context": "A preliminary bound uses Theorem 5.1.1 in [8].",
+        "page": 7,
+        "reference_key": "8"
+      },
+      {
+        "context": "An estimate uses Corollary 5.1.2 in [8].",
+        "page": 7,
+        "reference_key": "8"
+      },
+      {
+        "context": "Existence of a unique mild solution invokes Da Prato and Zabczyk.",
+        "page": 8,
+        "reference_key": "6"
+      },
+      {
+        "context": "Native-space theory is invoked from Wendland.",
+        "page": 9,
+        "reference_key": "23"
+      },
+      {
+        "context": "Representation of Wendland functions is cited from Wendland.",
+        "page": 10,
+        "reference_key": "23"
+      },
+      {
+        "context": "The equality up to a constant follows Chernih et al.",
+        "page": 10,
+        "reference_key": "4"
+      },
+      {
+        "context": "The interpolation formula is recalled from [20].",
+        "page": 13,
+        "reference_key": "20"
+      },
+      {
+        "context": "Stability results for kernel-based interpolations are taken from [20].",
+        "page": 13,
+        "reference_key": "20"
+      },
+      {
+        "context": "Lemma 3.5 in [20] is applied.",
+        "page": 13,
+        "reference_key": "20"
+      },
+      {
+        "context": "Lemma 3.4 in [20] is applied to an extension.",
+        "page": 14,
+        "reference_key": "20"
+      },
+      {
+        "context": "Lemma 3.6 in [20] is applied to a mollified function.",
+        "page": 14,
+        "reference_key": "20"
+      },
+      {
+        "context": "The yield-dependent volatility model is noted as addressed in [8] in slightly different form.",
+        "page": 21,
+        "reference_key": "8"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Tokyo Institute of Technology",
+          "name": "Yuki Kinoshita"
+        },
+        {
+          "affiliation": "Tokyo Institute of Technology",
+          "name": "Yumiharu Nakano"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Yuki Kinoshita ∗1 and Yumiharu Nakano †1"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1809.05643v4 [q-fin.CP]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Kernel-based collocation methods for Heath-Jarrow-Morton models with Musiela parametrization",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "In the present paper, we examine kernel-based collocation methods for numerical solutions to (1.2) when σ depends on f pt, ¨q, whence on rpt, ¨q, as an alternative to existing methods."
+        }
+      ],
+      "text": "How can kernel-based collocation methods approximate HJMM equations with Musiela parametrization, and what convergence-rate bound can be guaranteed under decay conditions on interpolation functions and regularity conditions on the volatility functionals?"
+    },
+    "references": [
+      {
+        "authors": [
+          "M. Barski",
+          "J. Zabczyk"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 22,
+        "title": "Heath-Jarrow-Morton-Musiela equation with Lévy perturbation",
+        "venue": "J. Differential Equations",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "A. Barth"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 22,
+        "title": "A finite element method for martingale-driven stochastic partial differential equations",
+        "venue": "Commun. Stochast. Anal.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "T. Björk"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 24,
+        "title": "Arbitrage theory in continuous time",
+        "venue": "Oxford University Press, Oxford, 2nd edition",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "A. Chernih",
+          "I. H. Sloan",
+          "R. S. Womersley"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 24,
+        "title": "Wendland functions with increasing smoothness converge to a Gaussian",
+        "venue": "Adv. Comput. Math.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "I. Cialenco",
+          "G. E. Fasshauer",
+          "Q. Ye"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 24,
+        "title": "Approximation of stochastic partial differential equations by a kernel-based collocation methods",
+        "venue": "Int. J. Comput. Math.",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "G. Da Prato",
+          "J. Zabczyk"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 24,
+        "title": "Stochastic equations in infinite dimensions",
+        "venue": "Cambridge University Press, Cambridge",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "P. Dörsek",
+          "J. Teichmann"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 24,
+        "title": "Efficient simulation and calibration of general HJM models by splitting schemes",
+        "venue": "SIAM J. Finan. Math.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "D. Filipović"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 24,
+        "title": "Consistency problems for Heath-Jarrow-Morton interest rate models",
+        "venue": "Springer, New York",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "B. Goldys",
+          "M. Musiela"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 24,
+        "title": "Infinite dimensional diffusions, Kolmogorov equations and interest rate models",
+        "venue": "In E. Jouini, J. Cvitanić, and M. Musiela, editors, Option pricing, interest rates and risk management, pages 314–335. Cambridge University Press, Cambridge",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "D. Heath",
+          "R. Jarrow",
+          "A. Morton"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 24,
+        "title": "Bond pricing and the term structure of interest rates: A new methodology for contingent claim valuation",
+        "venue": "Econometrica",
+        "year": 1992
+      },
+      {
+        "authors": [
+          "Y. C. Hon",
+          "R. Schaback",
+          "M. Zhong"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 24,
+        "title": "The meshless kernel-based method of line for parabolic equations",
+        "venue": "Comput. Math. Appl.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "E. J. Kansa"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 24,
+        "title": "Application of Hardy’s multiquadric interpolation to hydrodynamics",
+        "venue": "In Proc. 1986 Simul. Conf., pages 111–117",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "E. J. Kansa"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 24,
+        "title": "Multiquadricsa scattered data approximation scheme with application to computational fluid-dynamicsI",
+        "venue": "Computers Math. Applic.",
+        "year": 1990
+      },
+      {
+        "authors": [
+          "E. J. Kansa"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 24,
+        "title": "Multiquadricsa scattered data approximation scheme with application to computational fluid-dynamicsII",
+        "venue": "Computers Math. Applic.",
+        "year": 1990
+      },
+      {
+        "authors": [
+          "S. Kusuoka"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 24,
+        "title": "Term structure and SPDE",
+        "venue": "Adv. Math. Econ.",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "M. Musiela"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 24,
+        "title": "Stochastic PDEs and term structure models",
+        "venue": "Journées internationales de finance, IGR-AFFI, La Baule",
+        "year": 1993
+      },
+      {
+        "authors": [
+          "M. Musiela",
+          "M. Rutkowski"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 24,
+        "title": "Martingale methods in financial modelling",
+        "venue": "Springer, Berlin, 2nd edition",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Y. Nakano"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 24,
+        "title": "Convergent kernel-based methods for nonlinear parabolic equations",
+        "venue": "arXiv:1803.09446[Math.NA]",
+        "year": null
+      },
+      {
+        "authors": [
+          "Y. Nakano"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 25,
+        "title": "Convergence of meshfree collocation methods for fully nonlinear parabolic equations",
+        "venue": "Numer. Math.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Y. Nakano"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 25,
+        "title": "Kernel-based collocation methods for Zakai equations",
+        "venue": "Stoch. Partial Differ. Equ. Anal. Comput.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "R. Schaback"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 25,
+        "title": "Unsymmetric meshless methods for operator equations",
+        "venue": "Numer. Math.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "S. E. Shreve"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 25,
+        "title": "Stochastic calculus for finance II",
+        "venue": "Springer, New York",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "H. Wendland"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 25,
+        "title": "Scattered data approximation",
+        "venue": "Cambridge University Press, Cambridge",
+        "year": 2010
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Then, by Heath et.al [10], the process f pt, T q should evolve according to",
+        "reference_key": "10",
+        "relation": "extends",
+        "why": "The paper extends HJM modeling by developing numerical methods for its HJMM form."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Then, Musiela [16] shows that rpt, xq:“ f pt, t ` xq, which is called the Musiela parametrization, is a mild solution to the stochastic partial differential equation",
+        "reference_key": "16",
+        "relation": "uses_method",
+        "why": "It uses Musiela parametrization to place the HJM model in a suitable SPDE setting."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+        "reference_key": "2",
+        "relation": "contrasts",
+        "why": "It contrasts its kernel-based collocation approach with finite element methods."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+        "reference_key": "7",
+        "relation": "contrasts",
+        "why": "It contrasts its kernel-based collocation approach with splitting schemes."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Our setup is based on [8], with a slight modification.",
+        "reference_key": "8",
+        "relation": "uses_method",
+        "why": "It uses Filipovic's Hilbert-space setup for the HJMM analysis."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "To this end, we use the stability result of the kernel-based interpolation with Wendland kernels proved in [20] and develop the error estimation result for the interpolation in a class of functions having relatively low regularities.",
+        "reference_key": "20",
+        "relation": "extends",
+        "why": "It builds on and extends Nakano's kernel stability and interpolation error estimates."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "Then, by Theorem 7.2 in Da Prato and Zabczyk [6], for a given r 0 P U, there exists a unique U -valued predictable process rptq “ rpt, ¨q, t P R `, that is a mild solution to",
+        "reference_key": "6",
+        "relation": "uses_method",
+        "why": "It uses Da Prato and Zabczyk's infinite-dimensional SDE existence theorem."
+      },
+      {
+        "confidence": "high",
+        "page": 9,
+        "quote": "Then, by Theorems 10.10 and 10.11 in Wendland [23], there exists a unique Hilbert space N Φ pRq with norm } ¨ } N Φ pRq, called the native space, of real-valued functions on R such that Φ is a reproducing kernel for N Φ pRq.",
+        "reference_key": "23",
+        "relation": "uses_method",
+        "why": "It uses Wendland's native-space and reproducing-kernel framework for interpolation."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+          "start_page": 1,
+          "start_text": "In this paper, we are concerned with numerical methods for Heath-Jarrow-Morton (HJM) models with Musiela parametrization."
+        },
+        "summary": "Motivates numerical treatment of HJM models with Musiela parametrization, identifies existing finite element and splitting approaches, and positions kernel-based collocation as the alternative.",
+        "title": "Introduction: HJMM and numerical gap"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "This paper is organized as follows. The next section is devoted to the proof of the existence and uniqueness result for (1.2) in a Hilbert space that is suitable for our purpose.",
+          "start_page": 2,
+          "start_text": "The methods using the kernel-based interpolation as in above are called kernel-based collocation methods in general, which are first proposed by Kansa [12] (see also Kansa [13, 14])."
+        },
+        "summary": "States the paper's aim: adapt kernel-based collocation to HJMM equations and derive a convergence-rate bound under low regularity.",
+        "title": "Contribution: kernel collocation and convergence aim"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "The semigroup tSptqu tPR ` is strongly continuous on U, and the domain of its generator A is given by tφ P U: φ 1 P U u.",
+          "start_page": 3,
+          "start_text": "We work in the Hilbert space"
+        },
+        "summary": "Defines the weighted Sobolev-type Hilbert space U, proves separability and embedding into C_b^1, and identifies the shift semigroup generator as derivative.",
+        "title": "Hilbert space U and semigroup for HJMM"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "Consequently, the infinite dimensional SDE (2.3) leads to a risk-neutral modeling of interest rate processes.",
+          "start_page": 6,
+          "start_text": "Assumption 2.2. There exists a constant C 1 P p0, 8q such that for i “ 1,..., d and pt, ω, φ, ψq P R ` ˆ Ω ˆ U ˆ U,"
+        },
+        "summary": "Imposes bounded/Lipschitz volatility functionals, defines α, proves α is U-valued and Lipschitz, then obtains a unique mild solution and links it to bond prices and forward rates.",
+        "title": "Volatility assumptions and existence of HJMM solution"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "The function Φ τ is C 2τ on R, and the native space N Φ τ pRq coincides with H τ `1 pRq where H θ pRq is the Sobolev space on R of order θ ě 0 based on L 2 -norm.",
+          "start_page": 9,
+          "start_text": "Let Φ: R Ñ R be a radial and positive definite function"
+        },
+        "summary": "Introduces positive-definite kernels, native spaces, interpolation operator I, and Wendland kernels; states native-space equivalence to Sobolev spaces.",
+        "title": "Kernel interpolation and Wendland native spaces"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Furthermore, suppose that we compute r h pt k, ¨q at points in Γ e “ tξ 1,..., ξ M u Ă r0, 8q.",
+          "start_page": 11,
+          "start_text": "Notice that the right-hand side in the equality just above allows for a finite dimensional realization."
+        },
+        "summary": "Replaces r and its derivative by kernel interpolants, yielding an N-dimensional SDE and an Euler-Maruyama approximation; evaluation points yield output vector.",
+        "title": "Finite-dimensional collocation and Euler-Maruyama scheme"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Lemma 3.7. Suppose that the assumptions imposed in Theorem 3.4 hold. Let h 0 as in Lemma 3.5. Then,",
+          "start_page": 12,
+          "start_text": "Assumption 3.2. (i) The parameters ∆t, R, N, and ∆x satisfy ∆t Ñ 0, R Ñ 8, N Ñ 8, and ∆x Ñ 0 as h Œ 0."
+        },
+        "summary": "States regularity and grid assumptions, proves kernel stability, and derives interpolation error bounds used in the convergence proof.",
+        "title": "Assumptions, stability, and interpolation lemmas"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "Lemma 3.8. Suppose that Assumption 3.2 and τ ě 3 hold. Let h 0 as in Lemma 3.5.",
+          "start_page": 15,
+          "start_text": "Lemma 3.7. Suppose that the assumptions imposed in Theorem 3.4 hold. Let h 0 as in Lemma 3.5. Then,"
+        },
+        "summary": "Establishes uniform second-moment bounds for the Euler scheme and compares the original semigroup S with the interpolation-generated semigroup S̃.",
+        "title": "Moment bounds and semigroup comparison"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "Finally, applying Gronwall’s lemma for the function t ÞÑ max xPΓYΓ e E|rpt, xq ´ r h pt, xq| 2, we complete the proof of the theorem.",
+          "start_page": 16,
+          "start_text": "Proof of Theorem 3.4. First notice that r h pt, xq can be written as"
+        },
+        "summary": "Decomposes the approximation error into semigroup, interpolation, drift, and stochastic terms; bounds each and applies Gronwall to prove the rate.",
+        "title": "Convergence theorem proof"
+      },
+      {
+        "pages": {
+          "end": 20,
+          "start": 19
+        },
+        "source_span": {
+          "end_page": 20,
+          "end_text": "Table 4.1 shows that the resulting RMSE’s are sufficiently small for all pairs pN, nq although its decrease is nonmonotonic. This illustrates the convergence result given in Theorem 3.4.",
+          "start_page": 19,
+          "start_text": "Example 4.1 (Vasicek model). The HJMM equation corresponding to Vasicek model is described as"
+        },
+        "summary": "Applies the collocation method to the Vasicek HJMM model and reports RMSEs showing convergence despite nonmonotonic decrease.",
+        "title": "Vasicek model numerical example"
+      },
+      {
+        "pages": {
+          "end": 22,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 22,
+          "end_text": "We can confirm a regular behavior of our approximation with respect to the changes of the parameters θ 1 and θ 2.",
+          "start_page": 20,
+          "start_text": "Example 4.2 (Pricing of caplets). Here, we apply our approximation methods to the pricing of the caplet."
+        },
+        "summary": "Applies the method to caplet pricing with a 5-year yield-dependent volatility and shows regular price behavior over parameter grids.",
+        "title": "Caplet pricing example"
+      },
+      {
+        "pages": {
+          "end": 25,
+          "start": 22
+        },
+        "source_span": {
+          "end_page": 25,
+          "end_text": "H. Wendland. Scattered data approximation. Cambridge University Press, Cambridge, 2010.",
+          "start_page": 22,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of cited works.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It proposes and analyzes a numerical method, proves a convergence-rate theorem, and reports numerical pricing experiments.",
+      "value": "method"
+    }
+  },
+  "pass1_check": {
+    "sites": 44,
+    "verbatim": 16,
+    "near": 4,
+    "missing": 24,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/citations/13/page",
+      "action": "replace",
+      "value_json": "8",
+      "reason": "The cited Corollary 5.1.2 appears on page 8, not page 7.",
+      "evidence": [
+        {
+          "quote": "Then, by Corollary 5.1.2 in [8],",
+          "page": 8
+        }
+      ]
+    },
+    {
+      "path": "/sections/2/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"Thus the claim (ii) follows.\"",
+      "reason": "The section end quote should be from page 6; the current quote is from Proposition 2.1 on page 3.",
+      "evidence": [
+        {
+          "quote": "Thus the claim (ii) follows.",
+          "page": 6
+        }
+      ]
+    },
+    {
+      "path": "/sections/4/pages/end",
+      "action": "replace",
+      "value_json": "10",
+      "reason": "The section's ending text is on page 10, so its page range should end on page 10.",
+      "evidence": [
+        {
+          "quote": "The function Φ τ is C 2τ on R, and the native space N Φ τ pRq coincides with H τ `1 pRq where H θ pRq is the Sobolev space on R of order θ ě 0 based on L 2 -norm.",
+          "page": 10
+        }
+      ]
+    },
+    {
+      "path": "/sections/4/source_span/end_page",
+      "action": "replace",
+      "value_json": "10",
+      "reason": "The source_span end_page should match the page of the end_text, page 10.",
+      "evidence": [
+        {
+          "quote": "The function Φ τ is C 2τ on R, and the native space N Φ τ pRq coincides with H τ `1 pRq where H θ pRq is the Sobolev space on R of order θ ě 0 based on L 2 -norm.",
+          "page": 10
+        }
+      ]
+    },
+    {
+      "path": "/sections/6/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"Minimizing the right-hand side in the last inequality just above over ε ą 0, we obtain the claim (ii).\"",
+      "reason": "The section should end before Lemma 3.7; the current end_text is the start of the next section.",
+      "evidence": [
+        {
+          "quote": "Minimizing the right-hand side in the last inequality just above over ε ą 0, we obtain the claim (ii).",
+          "page": 15
+        }
+      ]
+    },
+    {
+      "path": "/sections/7/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"Thus by Gronwall’s lemma, the lemma follows.\"",
+      "reason": "The section should end after Lemma 3.8, not at the beginning of Lemma 3.8.",
+      "evidence": [
+        {
+          "quote": "Thus by Gronwall’s lemma, the lemma follows.",
+          "page": 16
+        }
+      ]
+    },
+    {
+      "path": "/sections/9/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"Table 4.1 shows that the resulting RMSE’s are sufficiently small for all pairs pN, nq although its decrease is nonmonotonic. This illustrates the convergence result given in Theorem 3.4.\"",
+      "reason": "The section end should include the sentence linking the RMSE results to Theorem 3.4.",
+      "evidence": [
+        {
+          "quote": "Table 4.1 shows that the resulting RMSE’s are sufficiently small for all pairs pN, nq although its decrease is nonmonotonic. This illustrates the convergence result given in Theorem 3.4.",
+          "page": 20
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/citations/13/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/sections/2/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/sections/4/pages/end",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/sections/4/source_span/end_page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/sections/6/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 5,
+      "path": "/sections/7/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 6,
+      "path": "/sections/9/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 44,
+    "verbatim": 16,
+    "near": 4,
+    "missing": 24,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We propose kernel-based collocation methods for numerical solutions to Heath-Jarrow-Morton models with Musiela parametrization. The methods can be seen as the Euler-Maruyama approximation of some finite dimensional stochastic differential equations, and allow us to compute the derivative prices by the usual Monte Carlo methods. We derive a bound on the rate of convergence under some decay conditions on the interpolation functions and some regularity conditions on the volatility functionals.",
+      "admitted": "We propose kernel-based collocation methods for numerical solutions to Heath-Jarrow-Morton models with Musiela parametrization. The methods can be seen as the Euler-Maruyama approximation of some finite dimensional stochastic differential equations, and allow us to compute the derivative prices by the usual Monte Carlo methods. We derive a bound on the rate of convergence under some decay conditions on the interpolation functions and some regularity conditions on the volatility functionals.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Then, by Heath et.al [10], the process f pt, T q should evolve according to",
+      "admitted": "Then, by Heath et.al [10], the process f pt, T q should evolve according to",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Then, Musiela [16] shows that rpt, xq:“ f pt, t ` xq, which is called the Musiela parametrization, is a mild solution to the stochastic partial differential equation",
+      "admitted": "Then, Musiela [16] shows that rpt, xq:“ f pt, t ` xq, which is called the Musiela parametrization, is a mild solution to the stochastic partial differential equation",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our setup is based on [8], with a slight modification.",
+      "admitted": "Our setup is based on [8], with a slight modification.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "To this end, we use the stability result of the kernel-based interpolation with Wendland kernels proved in [20] and develop the error estimation result for the interpolation in a class of functions having relatively low regularities.",
+      "admitted": "To this end, we use the stability result of the kernel-based interpolation with Wendland kernels proved in [20] and develop the error estimation result for the interpolation in a class of functions having relatively low regularities.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Then, by Theorems 10.10 and 10.11 in Wendland [23], there exists a unique Hilbert space N Φ pRq with norm } ¨ } N Φ pRq, called the native space, of real-valued functions on R such that Φ is a reproducing kernel for N Φ pRq.",
+      "admitted": "Then, by Theorems 10.10 and 10.11 in Wendland [23], there exists a unique Hilbert space N Φ pRq with norm } ¨ } N Φ pRq, called the native space, of real-valued functions on R such that Φ is a reproducing kernel for N Φ pRq.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/5/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The methods using the kernel-based interpolation as in above are called kernel-based collocation methods in general, which are first proposed by Kansa [12] (see also Kansa [13, 14]).",
+      "admitted": "The methods using the kernel-based interpolation as in above are called kernel-based collocation methods in general, which are first proposed by Kansa [12] (see also Kansa [13, 14]).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+      "admitted": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+      "similarity": 0.9565217391304348,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+      "admitted": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+      "similarity": 0.9565217391304348,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We propose kernel-based collocation methods for numerical solutions to Heath-Jarrow-Morton models with Musiela parametrization.",
+      "admitted": "We propose kernel-based collocation methods for numerical solutions to Heath-Jarrow-Morton models with Musiela parametrization.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Yuki Kinoshita ∗1 and Yumiharu Nakano †1",
+      "admitted": "Yuki Kinoshita ∗1 and Yumiharu Nakano †1",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In the present paper, we examine kernel-based collocation methods for numerical solutions to (1.2) when σ depends on f pt, ¨q, whence on rpt, ¨q, as an alternative to existing methods.",
+      "admitted": "In the present paper, we examine kernel-based collocation methods for numerical solutions to (1.2) when σ depends on f pt, ¨q, whence on rpt, ¨q, as an alternative to existing methods.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "repaired_model",
+      "original": "The HJM forward-rate dynamics are introduced.",
+      "admitted": "Consider the forward rate process f pt, T q, 0 ď t ď T ă 8, given as a family of Itô processes, in an arbitrage-free bond market. Then, by Heath et.al [10], the process f pt, T q should evolve according to",
+      "similarity": 0.33333333333333337,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "repaired_model",
+      "original": "Standard textbooks on HJM models and related developments are cited.",
+      "admitted": "We refer to standard textbooks such as Musiela and Rutkowski [17], Shreve [22], Björk [3] and the references therein for details and developments of HJM models (1.1).",
+      "similarity": 0.30000000000000004,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "repaired_model",
+      "original": "Musiela parametrization is introduced as a mild solution to the SPDE.",
+      "admitted": "Then, Musiela [16] shows that rpt, xq:“ f pt, t ` xq, which is called the Musiela parametrization, is a mild solution to the stochastic partial differential equation",
+      "similarity": 0.7272727272727273,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "repaired_model",
+      "original": "Existence and uniqueness literature for HJMM versions is cited.",
+      "admitted": "Since then the existence and uniqueness of solutions to versions of (1.2) have been vastly studied. See, e.g., Goldys and Musiela [9], Filipović [8], Barski and Zabczyk [1], Kusuoka [15] and the references therein.",
+      "similarity": 0.4444444444444444,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "repaired_model",
+      "original": "Existing numerical methods for HJMM are reviewed.",
+      "admitted": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+      "similarity": 0.4285714285714286,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "repaired_model",
+      "original": "Kernel-based collocation methods are attributed to Kansa.",
+      "admitted": "The methods using the kernel-based interpolation as in above are called kernel-based collocation methods in general, which are first proposed by Kansa [12] (see also Kansa [13, 14]).",
+      "similarity": 0.4285714285714286,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "repaired_model",
+      "original": "Rigorous convergence studies for kernel-based methods are listed.",
+      "admitted": "Rigorous convergence issues are studied in, e.g., Schaback [21], Cialenco et.al [5], Hon et.al [11], Nakano [19, 20, 18].",
+      "similarity": 0.375,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "repaired_model",
+      "original": "The paper explains its use of stability results and interpolation error estimates.",
+      "admitted": "To this end, we use the stability result of the kernel-based interpolation with Wendland kernels proved in [20] and develop the error estimation result for the interpolation in a class of functions having relatively low regularities.",
+      "similarity": 0.25,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "repaired_model",
+      "original": "The paper states its setup follows Filipovic with a slight modification.",
+      "admitted": "Our setup is based on [8], with a slight modification.",
+      "similarity": 0.36363636363636365,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "repaired_model",
+      "original": "Separability of U is proved using a result from [8].",
+      "admitted": "By Theorem 5.1.1 in [8], the space U 1 is separable. Then, U is isometric to a closed subspace of U 1 ˆ U 1 by the mapping φ ÞÑ pφ, φ 1 q. This shows that U is indeed separable.",
+      "similarity": 0.30000000000000004,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "repaired_model",
+      "original": "A proof step follows Theorem 5.1.1 in [8].",
+      "admitted": "Further, as in the proof of Theorem 5.1.1 in [8], we see",
+      "similarity": 0.625,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "repaired_model",
+      "original": "The domain of the generator is linked to Lemma 4.2.2 in [8].",
+      "admitted": "This together with the strong continuity of S means that the domain of A is included in tφ P U: φ 1 P U u (see Lemma 4.2.2 in [8]).",
+      "similarity": 0.41666666666666663,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "repaired_model",
+      "original": "A preliminary bound uses Theorem 5.1.1 in [8].",
+      "admitted": "Then, from the proof of Theorem 5.1.1 in [8] we have",
+      "similarity": 0.5,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "repaired_model",
+      "original": "An estimate uses Corollary 5.1.2 in [8].",
+      "admitted": "Then, by Corollary 5.1.2 in [8],",
+      "similarity": 0.5714285714285714,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "repaired_model",
+      "original": "Existence of a unique mild solution invokes Da Prato and Zabczyk.",
+      "admitted": "Then, by Theorem 7.2 in Da Prato and Zabczyk [6], for a given r 0 P U, there exists a unique U -valued predictable process rptq “ rpt, ¨q, t P R `, that is a mild solution to",
+      "similarity": 0.36363636363636365,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "repaired_model",
+      "original": "Native-space theory is invoked from Wendland.",
+      "admitted": "Then, by Theorems 10.10 and 10.11 in Wendland [23], there exists a unique Hilbert space N Φ pRq with norm } ¨ } N Φ pRq, called the native space, of real-valued functions on R such that Φ is a reproducing kernel for N Φ pRq.",
+      "similarity": 0.33333333333333337,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "repaired_model",
+      "original": "Representation of Wendland functions is cited from Wendland.",
+      "admitted": "Then, it follows from Theorems 9.12 and 9.13 in [23] that the function φ τ is represented as",
+      "similarity": 0.25,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "repaired_model",
+      "original": "The equality up to a constant follows Chernih et al.",
+      "admitted": "where “ denotes equality up to a positive constant factor (see Chernih et.al [4]).",
+      "similarity": 0.4,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "withdrawn",
+      "original": "The interpolation formula is recalled from [20].",
+      "admitted": null,
+      "similarity": 0.4285714285714286,
+      "cited_page": 13,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "withdrawn",
+      "original": "Stability results for kernel-based interpolations are taken from [20].",
+      "admitted": null,
+      "similarity": 0.6666666666666667,
+      "cited_page": 13,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "withdrawn",
+      "original": "Lemma 3.5 in [20] is applied.",
+      "admitted": null,
+      "similarity": 0.6666666666666667,
+      "cited_page": 13,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "withdrawn",
+      "original": "Lemma 3.4 in [20] is applied to an extension.",
+      "admitted": null,
+      "similarity": 0.5555555555555556,
+      "cited_page": 14,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "withdrawn",
+      "original": "Lemma 3.6 in [20] is applied to a mollified function.",
+      "admitted": null,
+      "similarity": 0.5,
+      "cited_page": 14,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "withdrawn",
+      "original": "The yield-dependent volatility model is noted as addressed in [8] in slightly different form.",
+      "admitted": null,
+      "similarity": 0.5,
+      "cited_page": 21,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Then, by Heath et.al [10], the process f pt, T q should evolve according to",
+      "admitted": "Then, by Heath et.al [10], the process f pt, T q should evolve according to",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Then, Musiela [16] shows that rpt, xq:“ f pt, t ` xq, which is called the Musiela parametrization, is a mild solution to the stochastic partial differential equation",
+      "admitted": "Then, Musiela [16] shows that rpt, xq:“ f pt, t ` xq, which is called the Musiela parametrization, is a mild solution to the stochastic partial differential equation",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "repaired_local",
+      "original": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+      "admitted": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+      "similarity": 0.9565217391304348,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "repaired_local",
+      "original": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+      "admitted": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+      "similarity": 0.9565217391304348,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Our setup is based on [8], with a slight modification.",
+      "admitted": "Our setup is based on [8], with a slight modification.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "To this end, we use the stability result of the kernel-based interpolation with Wendland kernels proved in [20] and develop the error estimation result for the interpolation in a class of functions having relatively low regularities.",
+      "admitted": "To this end, we use the stability result of the kernel-based interpolation with Wendland kernels proved in [20] and develop the error estimation result for the interpolation in a class of functions having relatively low regularities.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "Then, by Theorem 7.2 in Da Prato and Zabczyk [6], for a given r 0 P U, there exists a unique U -valued predictable process rptq “ rpt, ¨q, t P R `, that is a mild solution to",
+      "admitted": "Then, by Theorem 7.2 in Da Prato and Zabczyk [6], for a given r 0 P U, there exists a unique U -valued predictable process rptq “ rpt, ¨q, t P R `, that is a mild solution to",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "Then, by Theorems 10.10 and 10.11 in Wendland [23], there exists a unique Hilbert space N Φ pRq with norm } ¨ } N Φ pRq, called the native space, of real-valued functions on R such that Φ is a reproducing kernel for N Φ pRq.",
+      "admitted": "Then, by Theorems 10.10 and 10.11 in Wendland [23], there exists a unique Hilbert space N Φ pRq with norm } ¨ } N Φ pRq, called the native space, of real-valued functions on R such that Φ is a reproducing kernel for N Φ pRq.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 4,
+    "repaired_model": 18,
+    "verbatim": 16,
+    "withdrawn": 6
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We propose kernel-based collocation methods for numerical solutions to Heath-Jarrow-Morton models with Musiela parametrization. The methods can be seen as the Euler-Maruyama approximation of some finite dimensional stochastic differential equations, and allow us to compute the derivative prices by the usual Monte Carlo methods. We derive a bound on the rate of convergence under some decay conditions on the interpolation functions and some regularity conditions on the volatility functionals."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Heath et al. [10]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Then, by Heath et.al [10], the process f pt, T q should evolve according to"
+              }
+            ],
+            "reference_key": "10",
+            "why": "The paper starts from the HJM forward-rate dynamics."
+          },
+          {
+            "cited_work": "Musiela [16]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Then, Musiela [16] shows that rpt, xq:“ f pt, t ` xq, which is called the Musiela parametrization, is a mild solution to the stochastic partial differential equation"
+              }
+            ],
+            "reference_key": "16",
+            "why": "It uses Musiela parametrization to write the HJMM SPDE."
+          },
+          {
+            "cited_work": "Filipović [8]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Our setup is based on [8], with a slight modification."
+              }
+            ],
+            "reference_key": "8",
+            "why": "It adopts the Hilbert-space setup and solution framework from [8]."
+          },
+          {
+            "cited_work": "Nakano [20]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "To this end, we use the stability result of the kernel-based interpolation with Wendland kernels proved in [20] and develop the error estimation result for the interpolation in a class of functions having relatively low regularities."
+              }
+            ],
+            "reference_key": "20",
+            "why": "It builds on kernel stability and interpolation error results."
+          },
+          {
+            "cited_work": "Wendland [23]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "Then, by Theorems 10.10 and 10.11 in Wendland [23], there exists a unique Hilbert space N Φ pRq with norm } ¨ } N Φ pRq, called the native space, of real-valued functions on R such that Φ is a reproducing kernel for N Φ pRq."
+              }
+            ],
+            "reference_key": "23",
+            "why": "It uses native-space and reproducing-kernel theory for interpolation."
+          },
+          {
+            "cited_work": "Kansa [12]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The methods using the kernel-based interpolation as in above are called kernel-based collocation methods in general, which are first proposed by Kansa [12] (see also Kansa [13, 14])."
+              }
+            ],
+            "reference_key": "12",
+            "why": "The kernel-based collocation method originates with Kansa."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Barth [2]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method."
+              }
+            ],
+            "reference_key": "2",
+            "why": "It contrasts with finite element methods by proposing kernel collocation."
+          },
+          {
+            "cited_work": "Dörsek and Teichmann [7]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method."
+              }
+            ],
+            "reference_key": "7",
+            "why": "It contrasts with splitting methods by proposing kernel collocation."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We propose kernel-based collocation methods for numerical solutions to Heath-Jarrow-Morton models with Musiela parametrization."
+          }
+        ],
+        "text": "Kernel-based collocation methods can numerically solve HJMM equations with Musiela parametrization, with a provable convergence-rate bound and usable numerical pricing performance."
+      }
+    },
+    "citations": [
+      {
+        "context": "Consider the forward rate process f pt, T q, 0 ď t ď T ă 8, given as a family of Itô processes, in an arbitrage-free bond market. Then, by Heath et.al [10], the process f pt, T q should evolve according to",
+        "page": 1,
+        "reference_key": "10"
+      },
+      {
+        "context": "We refer to standard textbooks such as Musiela and Rutkowski [17], Shreve [22], Björk [3] and the references therein for details and developments of HJM models (1.1).",
+        "page": 2,
+        "reference_key": "17,22,3"
+      },
+      {
+        "context": "Then, Musiela [16] shows that rpt, xq:“ f pt, t ` xq, which is called the Musiela parametrization, is a mild solution to the stochastic partial differential equation",
+        "page": 2,
+        "reference_key": "16"
+      },
+      {
+        "context": "Since then the existence and uniqueness of solutions to versions of (1.2) have been vastly studied. See, e.g., Goldys and Musiela [9], Filipović [8], Barski and Zabczyk [1], Kusuoka [15] and the references therein.",
+        "page": 2,
+        "reference_key": "9,8,1,15"
+      },
+      {
+        "context": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+        "page": 2,
+        "reference_key": "2,7"
+      },
+      {
+        "context": "The methods using the kernel-based interpolation as in above are called kernel-based collocation methods in general, which are first proposed by Kansa [12] (see also Kansa [13, 14]).",
+        "page": 2,
+        "reference_key": "12,13,14"
+      },
+      {
+        "context": "Rigorous convergence issues are studied in, e.g., Schaback [21], Cialenco et.al [5], Hon et.al [11], Nakano [19, 20, 18].",
+        "page": 2,
+        "reference_key": "21,5,11,19,20,18"
+      },
+      {
+        "context": "To this end, we use the stability result of the kernel-based interpolation with Wendland kernels proved in [20] and develop the error estimation result for the interpolation in a class of functions having relatively low regularities.",
+        "page": 3,
+        "reference_key": "20"
+      },
+      {
+        "context": "Our setup is based on [8], with a slight modification.",
+        "page": 3,
+        "reference_key": "8"
+      },
+      {
+        "context": "By Theorem 5.1.1 in [8], the space U 1 is separable. Then, U is isometric to a closed subspace of U 1 ˆ U 1 by the mapping φ ÞÑ pφ, φ 1 q. This shows that U is indeed separable.",
+        "page": 4,
+        "reference_key": "8"
+      },
+      {
+        "context": "Further, as in the proof of Theorem 5.1.1 in [8], we see",
+        "page": 4,
+        "reference_key": "8"
+      },
+      {
+        "context": "This together with the strong continuity of S means that the domain of A is included in tφ P U: φ 1 P U u (see Lemma 4.2.2 in [8]).",
+        "page": 6,
+        "reference_key": "8"
+      },
+      {
+        "context": "Then, from the proof of Theorem 5.1.1 in [8] we have",
+        "page": 7,
+        "reference_key": "8"
+      },
+      {
+        "context": "Then, by Corollary 5.1.2 in [8],",
+        "page": 8,
+        "reference_key": "8"
+      },
+      {
+        "context": "Then, by Theorem 7.2 in Da Prato and Zabczyk [6], for a given r 0 P U, there exists a unique U -valued predictable process rptq “ rpt, ¨q, t P R `, that is a mild solution to",
+        "page": 8,
+        "reference_key": "6"
+      },
+      {
+        "context": "Then, by Theorems 10.10 and 10.11 in Wendland [23], there exists a unique Hilbert space N Φ pRq with norm } ¨ } N Φ pRq, called the native space, of real-valued functions on R such that Φ is a reproducing kernel for N Φ pRq.",
+        "page": 9,
+        "reference_key": "23"
+      },
+      {
+        "context": "Then, it follows from Theorems 9.12 and 9.13 in [23] that the function φ τ is represented as",
+        "page": 10,
+        "reference_key": "23"
+      },
+      {
+        "context": "where “ denotes equality up to a positive constant factor (see Chernih et.al [4]).",
+        "page": 10,
+        "reference_key": "4"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Tokyo Institute of Technology",
+          "name": "Yuki Kinoshita"
+        },
+        {
+          "affiliation": "Tokyo Institute of Technology",
+          "name": "Yumiharu Nakano"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Yuki Kinoshita ∗1 and Yumiharu Nakano †1"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1809.05643v4 [q-fin.CP]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Kernel-based collocation methods for Heath-Jarrow-Morton models with Musiela parametrization",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "In the present paper, we examine kernel-based collocation methods for numerical solutions to (1.2) when σ depends on f pt, ¨q, whence on rpt, ¨q, as an alternative to existing methods."
+        }
+      ],
+      "text": "How can kernel-based collocation methods approximate HJMM equations with Musiela parametrization, and what convergence-rate bound can be guaranteed under decay conditions on interpolation functions and regularity conditions on the volatility functionals?"
+    },
+    "references": [
+      {
+        "authors": [
+          "M. Barski",
+          "J. Zabczyk"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 22,
+        "title": "Heath-Jarrow-Morton-Musiela equation with Lévy perturbation",
+        "venue": "J. Differential Equations",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "A. Barth"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 22,
+        "title": "A finite element method for martingale-driven stochastic partial differential equations",
+        "venue": "Commun. Stochast. Anal.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "T. Björk"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 24,
+        "title": "Arbitrage theory in continuous time",
+        "venue": "Oxford University Press, Oxford, 2nd edition",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "A. Chernih",
+          "I. H. Sloan",
+          "R. S. Womersley"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 24,
+        "title": "Wendland functions with increasing smoothness converge to a Gaussian",
+        "venue": "Adv. Comput. Math.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "I. Cialenco",
+          "G. E. Fasshauer",
+          "Q. Ye"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 24,
+        "title": "Approximation of stochastic partial differential equations by a kernel-based collocation methods",
+        "venue": "Int. J. Comput. Math.",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "G. Da Prato",
+          "J. Zabczyk"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 24,
+        "title": "Stochastic equations in infinite dimensions",
+        "venue": "Cambridge University Press, Cambridge",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "P. Dörsek",
+          "J. Teichmann"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 24,
+        "title": "Efficient simulation and calibration of general HJM models by splitting schemes",
+        "venue": "SIAM J. Finan. Math.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "D. Filipović"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 24,
+        "title": "Consistency problems for Heath-Jarrow-Morton interest rate models",
+        "venue": "Springer, New York",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "B. Goldys",
+          "M. Musiela"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 24,
+        "title": "Infinite dimensional diffusions, Kolmogorov equations and interest rate models",
+        "venue": "In E. Jouini, J. Cvitanić, and M. Musiela, editors, Option pricing, interest rates and risk management, pages 314–335. Cambridge University Press, Cambridge",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "D. Heath",
+          "R. Jarrow",
+          "A. Morton"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 24,
+        "title": "Bond pricing and the term structure of interest rates: A new methodology for contingent claim valuation",
+        "venue": "Econometrica",
+        "year": 1992
+      },
+      {
+        "authors": [
+          "Y. C. Hon",
+          "R. Schaback",
+          "M. Zhong"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 24,
+        "title": "The meshless kernel-based method of line for parabolic equations",
+        "venue": "Comput. Math. Appl.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "E. J. Kansa"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 24,
+        "title": "Application of Hardy’s multiquadric interpolation to hydrodynamics",
+        "venue": "In Proc. 1986 Simul. Conf., pages 111–117",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "E. J. Kansa"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 24,
+        "title": "Multiquadricsa scattered data approximation scheme with application to computational fluid-dynamicsI",
+        "venue": "Computers Math. Applic.",
+        "year": 1990
+      },
+      {
+        "authors": [
+          "E. J. Kansa"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 24,
+        "title": "Multiquadricsa scattered data approximation scheme with application to computational fluid-dynamicsII",
+        "venue": "Computers Math. Applic.",
+        "year": 1990
+      },
+      {
+        "authors": [
+          "S. Kusuoka"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 24,
+        "title": "Term structure and SPDE",
+        "venue": "Adv. Math. Econ.",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "M. Musiela"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 24,
+        "title": "Stochastic PDEs and term structure models",
+        "venue": "Journées internationales de finance, IGR-AFFI, La Baule",
+        "year": 1993
+      },
+      {
+        "authors": [
+          "M. Musiela",
+          "M. Rutkowski"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 24,
+        "title": "Martingale methods in financial modelling",
+        "venue": "Springer, Berlin, 2nd edition",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Y. Nakano"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 24,
+        "title": "Convergent kernel-based methods for nonlinear parabolic equations",
+        "venue": "arXiv:1803.09446[Math.NA]",
+        "year": null
+      },
+      {
+        "authors": [
+          "Y. Nakano"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 25,
+        "title": "Convergence of meshfree collocation methods for fully nonlinear parabolic equations",
+        "venue": "Numer. Math.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Y. Nakano"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 25,
+        "title": "Kernel-based collocation methods for Zakai equations",
+        "venue": "Stoch. Partial Differ. Equ. Anal. Comput.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "R. Schaback"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 25,
+        "title": "Unsymmetric meshless methods for operator equations",
+        "venue": "Numer. Math.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "S. E. Shreve"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 25,
+        "title": "Stochastic calculus for finance II",
+        "venue": "Springer, New York",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "H. Wendland"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 25,
+        "title": "Scattered data approximation",
+        "venue": "Cambridge University Press, Cambridge",
+        "year": 2010
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Then, by Heath et.al [10], the process f pt, T q should evolve according to",
+        "reference_key": "10",
+        "relation": "extends",
+        "why": "The paper extends HJM modeling by developing numerical methods for its HJMM form."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Then, Musiela [16] shows that rpt, xq:“ f pt, t ` xq, which is called the Musiela parametrization, is a mild solution to the stochastic partial differential equation",
+        "reference_key": "16",
+        "relation": "uses_method",
+        "why": "It uses Musiela parametrization to place the HJM model in a suitable SPDE setting."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+        "reference_key": "2",
+        "relation": "contrasts",
+        "why": "It contrasts its kernel-based collocation approach with finite element methods."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+        "reference_key": "7",
+        "relation": "contrasts",
+        "why": "It contrasts its kernel-based collocation approach with splitting schemes."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Our setup is based on [8], with a slight modification.",
+        "reference_key": "8",
+        "relation": "uses_method",
+        "why": "It uses Filipovic's Hilbert-space setup for the HJMM analysis."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "To this end, we use the stability result of the kernel-based interpolation with Wendland kernels proved in [20] and develop the error estimation result for the interpolation in a class of functions having relatively low regularities.",
+        "reference_key": "20",
+        "relation": "extends",
+        "why": "It builds on and extends Nakano's kernel stability and interpolation error estimates."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "Then, by Theorem 7.2 in Da Prato and Zabczyk [6], for a given r 0 P U, there exists a unique U -valued predictable process rptq “ rpt, ¨q, t P R `, that is a mild solution to",
+        "reference_key": "6",
+        "relation": "uses_method",
+        "why": "It uses Da Prato and Zabczyk's infinite-dimensional SDE existence theorem."
+      },
+      {
+        "confidence": "high",
+        "page": 9,
+        "quote": "Then, by Theorems 10.10 and 10.11 in Wendland [23], there exists a unique Hilbert space N Φ pRq with norm } ¨ } N Φ pRq, called the native space, of real-valued functions on R such that Φ is a reproducing kernel for N Φ pRq.",
+        "reference_key": "23",
+        "relation": "uses_method",
+        "why": "It uses Wendland's native-space and reproducing-kernel framework for interpolation."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "As for numerical methods for (1.2), Barth [2] studies the finite element methods and Dörsek and Teichmann [7] proposes a splitting up method.",
+          "start_page": 1,
+          "start_text": "In this paper, we are concerned with numerical methods for Heath-Jarrow-Morton (HJM) models with Musiela parametrization."
+        },
+        "summary": "Motivates numerical treatment of HJM models with Musiela parametrization, identifies existing finite element and splitting approaches, and positions kernel-based collocation as the alternative.",
+        "title": "Introduction: HJMM and numerical gap"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "This paper is organized as follows. The next section is devoted to the proof of the existence and uniqueness result for (1.2) in a Hilbert space that is suitable for our purpose.",
+          "start_page": 2,
+          "start_text": "The methods using the kernel-based interpolation as in above are called kernel-based collocation methods in general, which are first proposed by Kansa [12] (see also Kansa [13, 14])."
+        },
+        "summary": "States the paper's aim: adapt kernel-based collocation to HJMM equations and derive a convergence-rate bound under low regularity.",
+        "title": "Contribution: kernel collocation and convergence aim"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "Thus the claim (ii) follows.",
+          "start_page": 3,
+          "start_text": "We work in the Hilbert space"
+        },
+        "summary": "Defines the weighted Sobolev-type Hilbert space U, proves separability and embedding into C_b^1, and identifies the shift semigroup generator as derivative.",
+        "title": "Hilbert space U and semigroup for HJMM"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "Consequently, the infinite dimensional SDE (2.3) leads to a risk-neutral modeling of interest rate processes.",
+          "start_page": 6,
+          "start_text": "Assumption 2.2. There exists a constant C 1 P p0, 8q such that for i “ 1,..., d and pt, ω, φ, ψq P R ` ˆ Ω ˆ U ˆ U,"
+        },
+        "summary": "Imposes bounded/Lipschitz volatility functionals, defines α, proves α is U-valued and Lipschitz, then obtains a unique mild solution and links it to bond prices and forward rates.",
+        "title": "Volatility assumptions and existence of HJMM solution"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "The function Φ τ is C 2τ on R, and the native space N Φ τ pRq coincides with H τ `1 pRq where H θ pRq is the Sobolev space on R of order θ ě 0 based on L 2 -norm.",
+          "start_page": 9,
+          "start_text": "Let Φ: R Ñ R be a radial and positive definite function"
+        },
+        "summary": "Introduces positive-definite kernels, native spaces, interpolation operator I, and Wendland kernels; states native-space equivalence to Sobolev spaces.",
+        "title": "Kernel interpolation and Wendland native spaces"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Furthermore, suppose that we compute r h pt k, ¨q at points in Γ e “ tξ 1,..., ξ M u Ă r0, 8q.",
+          "start_page": 11,
+          "start_text": "Notice that the right-hand side in the equality just above allows for a finite dimensional realization."
+        },
+        "summary": "Replaces r and its derivative by kernel interpolants, yielding an N-dimensional SDE and an Euler-Maruyama approximation; evaluation points yield output vector.",
+        "title": "Finite-dimensional collocation and Euler-Maruyama scheme"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Minimizing the right-hand side in the last inequality just above over ε ą 0, we obtain the claim (ii).",
+          "start_page": 12,
+          "start_text": "Assumption 3.2. (i) The parameters ∆t, R, N, and ∆x satisfy ∆t Ñ 0, R Ñ 8, N Ñ 8, and ∆x Ñ 0 as h Œ 0."
+        },
+        "summary": "States regularity and grid assumptions, proves kernel stability, and derives interpolation error bounds used in the convergence proof.",
+        "title": "Assumptions, stability, and interpolation lemmas"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "Thus by Gronwall’s lemma, the lemma follows.",
+          "start_page": 15,
+          "start_text": "Lemma 3.7. Suppose that the assumptions imposed in Theorem 3.4 hold. Let h 0 as in Lemma 3.5. Then,"
+        },
+        "summary": "Establishes uniform second-moment bounds for the Euler scheme and compares the original semigroup S with the interpolation-generated semigroup S̃.",
+        "title": "Moment bounds and semigroup comparison"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "Finally, applying Gronwall’s lemma for the function t ÞÑ max xPΓYΓ e E|rpt, xq ´ r h pt, xq| 2, we complete the proof of the theorem.",
+          "start_page": 16,
+          "start_text": "Proof of Theorem 3.4. First notice that r h pt, xq can be written as"
+        },
+        "summary": "Decomposes the approximation error into semigroup, interpolation, drift, and stochastic terms; bounds each and applies Gronwall to prove the rate.",
+        "title": "Convergence theorem proof"
+      },
+      {
+        "pages": {
+          "end": 20,
+          "start": 19
+        },
+        "source_span": {
+          "end_page": 20,
+          "end_text": "Table 4.1 shows that the resulting RMSE’s are sufficiently small for all pairs pN, nq although its decrease is nonmonotonic. This illustrates the convergence result given in Theorem 3.4.",
+          "start_page": 19,
+          "start_text": "Example 4.1 (Vasicek model). The HJMM equation corresponding to Vasicek model is described as"
+        },
+        "summary": "Applies the collocation method to the Vasicek HJMM model and reports RMSEs showing convergence despite nonmonotonic decrease.",
+        "title": "Vasicek model numerical example"
+      },
+      {
+        "pages": {
+          "end": 22,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 22,
+          "end_text": "We can confirm a regular behavior of our approximation with respect to the changes of the parameters θ 1 and θ 2.",
+          "start_page": 20,
+          "start_text": "Example 4.2 (Pricing of caplets). Here, we apply our approximation methods to the pricing of the caplet."
+        },
+        "summary": "Applies the method to caplet pricing with a 5-year yield-dependent volatility and shows regular price behavior over parameter grids.",
+        "title": "Caplet pricing example"
+      },
+      {
+        "pages": {
+          "end": 25,
+          "start": 22
+        },
+        "source_span": {
+          "end_page": 25,
+          "end_text": "H. Wendland. Scattered data approximation. Cambridge University Press, Cambridge, 2010.",
+          "start_page": 22,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of cited works.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It proposes and analyzes a numerical method, proves a convergence-rate theorem, and reports numerical pricing experiments.",
+      "value": "method"
+    }
+  }
+}
