@@ -67,6 +67,27 @@ per page plus 8,192 overhead, floor 16,384, ceiling 131,072. Both capped papers
 completed on the rerun (`eval/spike/runs/e3b-capfix-2026-10-20/`). The cap is a
 ceiling, not a spend: actual core output was ~24k tokens on each.
 
+## E4 — adaptive cap (rejected)
+
+The page-scaled core cap was tested on all 30 (`eval/spike/runs/e4-30-2026-10-20/`).
+It is worse: 26 of 30 completed against E3's 28, with three new truncations on
+short and medium papers (`dijkstra1968` at a 20,192 cap, `1912.06889v2` at
+35,192, `1911.01515v4` at 65,192).
+
+Core output is **not** proportional to page count. Successful completions sit
+near 20-30k tokens regardless of length: a 55-page paper used 29,683 and a
+48-page paper 29,666, while short papers that completed used 19-27k. The
+failures were reasoning loops that stopped exactly at their cap, not long
+records. A lower cap on a short paper only converts a loop into a failed paper.
+
+Recalibrate: the cap should be a fixed ceiling (65,536 worked), or at most a
+floor of 65,536 scaling up for long papers, never below it. Cost estimation
+should use observed usage (~25-30k per core call), not the cap.
+
+Separately, cost is not stable: E4 core produced 821k completion tokens for
+$0.4457 and E3 produced 820k for $0.0327, both reported by Relace. The 13x gap
+is provider pricing, not token count, and any cost model must expect that.
+
 ## Cohort change
 
 The sample grows from 20 to 30: the frozen 20 (bulk arXiv) are kept, and 10
