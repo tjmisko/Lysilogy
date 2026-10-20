@@ -1,0 +1,112 @@
+{
+  "title": "Concrete Problems in AI Safety",
+  "authors": [
+    "Dario Amodei",
+    "Chris Olah",
+    "Jacob Steinhardt",
+    "Paul Christiano",
+    "John Schulman",
+    "Dan Mané"
+  ],
+  "abstract": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI.",
+  "sections": [
+    {
+      "title": "A framework for AI accidents",
+      "pages": {
+        "start": 1,
+        "end": 4
+      },
+      "source_span": {
+        "start_text": "The last few years have seen rapid progress",
+        "start_page": 1,
+        "end_text": "relevant adjacent areas of research whenever possible.",
+        "end_page": 4
+      },
+      "summary": "Accidents arise from misspecified objectives, costly supervision, or errors during learning. A cleaning-robot example distinguishes five research problems and explains why reinforcement learning, complexity, and autonomy amplify them."
+    },
+    {
+      "title": "Limiting unintended environmental harm",
+      "pages": {
+        "start": 4,
+        "end": 7
+      },
+      "source_span": {
+        "start_text": "Suppose a designer wants an RL agent",
+        "start_page": 4,
+        "end_text": "to totally new applications.",
+        "end_page": 7
+      },
+      "summary": "Side effects arise when a task objective ignores the surrounding environment. The paper examines impact regularizers, influence penalties, cooperative approaches, and reward uncertainty, with experiments testing transfer across environments."
+    },
+    {
+      "title": "Preventing reward exploitation",
+      "pages": {
+        "start": 7,
+        "end": 11
+      },
+      "source_span": {
+        "start_text": "Imagine that an agent discovers a buffer overflow",
+        "start_page": 7,
+        "end_text": "fooled by delusion boxes that arise naturally in many diverse ways.",
+        "end_page": 11
+      },
+      "summary": "Agents can exploit imperfect observations, proxy metrics, feedback loops, and the physical implementation of rewards. Proposed defenses range from adversarial reward models and careful engineering to reward pretraining and trip wires, tested through environments that allow deceptive perceptions."
+    },
+    {
+      "title": "Learning with limited human evaluation",
+      "pages": {
+        "start": 11,
+        "end": 13
+      },
+      "source_span": {
+        "start_text": "Consider an autonomous agent performing some complex task",
+        "start_page": 11,
+        "end_text": "fruitful parallels between hierarchical RL and several aspects of the safety problem.",
+        "end_page": 13
+      },
+      "summary": "Scalable oversight would combine infrequent expensive evaluations with cheaper signals, using semi-supervised reinforcement learning, active reward learning, distant supervision, or hierarchical delegation. The paper proposes experiments and notes that subagents can themselves fail to serve their parent’s goals."
+    },
+    {
+      "title": "Exploring without catastrophe",
+      "pages": {
+        "start": 14,
+        "end": 16
+      },
+      "source_span": {
+        "start_text": "All autonomous learning agents need to sometimes engage in exploration",
+        "start_page": 14,
+        "end_text": "avoid catastrophes in all environments in the suite.",
+        "end_page": 16
+      },
+      "summary": "Exploration in consequential settings must account for irreversible harm. Risk-sensitive criteria, demonstrations, simulation, bounded exploration, trusted policies, and human oversight motivate a benchmark suite of varied catastrophic pitfalls."
+    },
+    {
+      "title": "Reliable behavior under distributional change",
+      "pages": {
+        "start": 16,
+        "end": 20
+      },
+      "source_span": {
+        "start_text": "All of us occasionally find ourselves in situations",
+        "start_page": 16,
+        "end_text": "estimates of its transcription error.",
+        "end_page": 20
+      },
+      "summary": "Distributional change requires both detecting unreliable predictions and responding conservatively. The paper compares well-specified and partially specified models, multiple training distributions, counterfactual reasoning, and behavioral contracts, proposing calibration and interactive speech experiments."
+    },
+    {
+      "title": "Related safety work and research priorities",
+      "pages": {
+        "start": 20,
+        "end": 21
+      },
+      "source_span": {
+        "start_text": "As mentioned in the introduction, several other communities",
+        "start_page": 20,
+        "end_text": "prevent these systems from causing unintended harm.",
+        "end_page": 21
+      },
+      "summary": "Cyber-physical verification, long-term AI safety, and research on privacy, fairness, security, and policy complement accident prevention. Increasingly autonomous deployments motivate a unified, experimentally grounded approach beyond case-specific fixes."
+    }
+  ]
+}
