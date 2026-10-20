@@ -65,10 +65,19 @@ pub async fn build(
     tokio::fs::create_dir_all(directory)
         .await
         .map_err(|error| Error::io(directory, error))?;
-    let paper = extractor.extract(pdf, &PaperMetadata::default()).await?;
+    let mut paper = extractor
+        .extract_allowing_empty(pdf, &PaperMetadata::default())
+        .await?;
     let mut images = Vec::with_capacity(paper.pages.len());
     for page in &paper.pages {
         images.push(render_page(pdf, page.number, dpi, directory).await?);
+    }
+    for (page, image) in paper.pages.iter_mut().zip(&images) {
+        if page.text.trim().is_empty()
+            && let Ok(text) = ocr_page(image).await
+        {
+            page.text = text;
+        }
     }
     write_atomic(
         &directory.join("source.md"),
@@ -95,6 +104,16 @@ pub async fn build(
     )
     .await?;
     Ok(PageResources { paper, images, dpi })
+}
+
+const MAX_OCR_BYTES: usize = 4 * 1024 * 1024;
+
+/// Text of a rendered page, via tesseract; an error leaves the page empty.
+async fn ocr_page(image: &Path) -> Result<String> {
+    let mut command = extraction_command("tesseract", BuildPriority::Background);
+    command.arg(image).arg("stdout");
+    let output = bounded_command(&mut command, "tesseract", MAX_OCR_BYTES).await?;
+    Ok(String::from_utf8_lossy(&output).trim().to_owned())
 }
 
 /// Render one page of `pdf` to `directory/page-NNN.png`.
