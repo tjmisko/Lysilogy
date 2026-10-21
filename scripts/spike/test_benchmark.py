@@ -130,7 +130,7 @@ class AggregateTests(unittest.TestCase):
                   "calls": [{"stage": "extract.pass1", "prompt_tokens": 1, "completion_tokens": 2, "reasoning_tokens": 0,
                              "cost_usd": 0.05, "latency_s": 9.0, "finish_reason": "stop", "cost_source": "reported"}]}
         paper = {"stem": "x"}
-        rows = [b.score_paper(paper, record, ORACLE, INVENTORY, 10), {"stem": "y", "succeeded": False, "failures": [{"stage": "run", "error": "no result file"}]}]
+        rows = [b.score_paper(paper, record, ORACLE, INVENTORY, None), {"stem": "y", "succeeded": False, "failures": [{"stage": "run", "error": "no result file"}]}]
         summary = b.aggregate(rows)
         self.assertEqual(summary["papers"], 2)
         self.assertEqual(summary["succeeded"], 1)
@@ -138,6 +138,31 @@ class AggregateTests(unittest.TestCase):
         self.assertEqual(summary["objects_final"]["equation"]["matched"], 2)
         self.assertEqual(summary["cost_usd"]["total"], 0.05)
         self.assertEqual(summary["failures"], [("y", "run", "no result file")])
+
+
+class ReferenceTests(unittest.TestCase):
+    def test_should_match_references_by_key_then_title(self):
+        entries = [
+            {"printed_key": "1", "text": "A. One. A first paper. 2019."},
+            {"printed_key": "2", "text": "B. Two. A second paper. 2020."},
+            {"printed_key": "3", "text": "C. Three. A third paper. 2021."},
+        ]
+        predicted = [
+            {"key": "[1]", "title": "A first paper"},
+            {"key": None, "title": "A second paper"},
+            {"key": None, "title": "A hallucinated paper"},
+        ]
+        score = b.reference_match(predicted, entries)
+        self.assertEqual((score["truth"], score["matched"]), (3, 2))
+        self.assertAlmostEqual(score["recall"], 0.6667, places=3)
+        self.assertAlmostEqual(score["precision"], 0.6667, places=3)
+        self.assertEqual(len(score["missing"]), 1)
+        self.assertEqual(len(score["extra"]), 1)
+
+    def test_should_skip_reference_scoring_when_the_source_is_absent(self):
+        score = b.reference_match([{"key": "[1]", "title": "x"}], None)
+        self.assertIsNone(score["truth"])
+        self.assertIsNone(score["recall"])
 
 
 class ReasoningTests(unittest.TestCase):

@@ -220,12 +220,63 @@ def score_objects(artifacts, inventory):
     return result
 
 
-def bibliography_count(paper):
+def bibliography_entries(paper):
     try:
         files, _ = read_archive(Path(paper["source"]).read_bytes())
-        return len(parse_project(files, selected_main=paper["main"])["entries"])
+        return parse_project(files, selected_main=paper["main"])["entries"]
     except (UnsupportedSource, OSError):
         return None
+
+
+def reference_key(value):
+    match = re.search(r"\d+", str(value or ""))
+    return match.group(0) if match else None
+
+
+def reference_match(predicted, entries):
+    """Match predicted references to the printed bibliography by key, then title."""
+    result = {"predicted": len(predicted), "truth": None, "recall": None, "precision": None,
+              "matched": 0, "missing": [], "extra": []}
+    if entries is None:
+        return result
+    truth = list(entries)
+    by_key = {}
+    for index, entry in enumerate(truth):
+        key = reference_key(entry.get("printed_key"))
+        if key:
+            by_key.setdefault(key, []).append(index)
+    matched = set()
+    extra = []
+    for reference in predicted:
+        key = reference_key(reference.get("key")) if isinstance(reference, dict) else None
+        if key and key in by_key:
+            free = next((index for index in by_key[key] if index not in matched), None)
+            if free is not None:
+                matched.add(free)
+                continue
+        title = compact(reference.get("title") or "") if isinstance(reference, dict) else ""
+        hit = None
+        if len(title) >= 12:
+            for index, entry in enumerate(truth):
+                if index not in matched and title in compact(entry.get("text") or ""):
+                    hit = index
+                    break
+        if hit is not None:
+            matched.add(hit)
+        else:
+            label = reference.get("title") if isinstance(reference, dict) else reference
+            extra.append((label or "")[:80])
+    missing = [(truth[index].get("printed_key"), (truth[index].get("text") or "")[:80])
+               for index in range(len(truth)) if index not in matched]
+    result.update({
+        "truth": len(truth),
+        "matched": len(matched),
+        "recall": round(len(matched) / len(truth), 4) if truth else None,
+        "precision": round((len(predicted) - len(extra)) / len(predicted), 4) if predicted else None,
+        "missing": missing[:10],
+        "extra": extra[:10],
+    })
+    return result
 
 
 def quote_stats(record):
@@ -269,7 +320,7 @@ def reasoning_profile(record, result_file=None):
     }
 
 
-def score_paper(paper, record, oracle, inventory, bibliography, result_file=None):
+def score_paper(paper, record, oracle, inventory, entries, result_file=None):
     final = record.get("artifacts")
     pass1 = record.get("pass1")
     final_identity = score_identity(final, oracle)
@@ -292,10 +343,7 @@ def score_paper(paper, record, oracle, inventory, bibliography, result_file=None
         "identity_matchable": matchable,
         "sections_oracle": score_sections_oracle(final, oracle),
         "objects": {"pass1": score_objects(pass1, inventory), "final": score_objects(final, inventory)},
-        "references": {
-            "predicted": len((final or {}).get("references") or []),
-            "source_parser": bibliography,
-        },
+        "references": reference_match((final or {}).get("references") or [], entries),
         "sections": score_sections(final, record.get("pages")),
         "counts": {key: len((final or {}).get(key) or []) for key in ("sections", "supercut", "claims", "key_numbers", "citations", "relations", "notation", "glossary")},
         "type": ((final or {}).get("type") or {}).get("value"),
@@ -541,6 +589,18 @@ def aggregate(rows):
         "relations": sum((row.get("counts") or {}).get("relations", 0) for row in scored),
         "references": sum((row.get("references") or {}).get("predicted", 0) for row in scored),
     }
+    scored_refs = [row["references"] for row in scored if (row.get("references") or {}).get("truth")]
+    truth_total = sum(item["truth"] for item in scored_refs)
+    predicted_total = sum(item["predicted"] for item in scored_refs)
+    matched_total = sum(item["matched"] for item in scored_refs)
+    summary["references"] = {
+        "papers": len(scored_refs),
+        "truth": truth_total,
+        "predicted": predicted_total,
+        "matched": matched_total,
+        "recall": round(matched_total / truth_total, 4) if truth_total else None,
+        "precision": round(matched_total / predicted_total, 4) if predicted_total else None,
+    }
     return summary
 
 
@@ -582,8 +642,8 @@ def main():
         record = json.loads(result.read_text())
         oracle = paper.get("oracle") or front_matter_from_source(paper["source"], paper["main"])
         inventory = json.loads(Path(paper["object_truth"]).read_text()) if paper.get("object_truth") else {}
-        bibliography = bibliography_count(paper) if paper.get("source") else None
-        rows.append(score_paper(paper, record, oracle, inventory, bibliography, result))
+        entries = bibliography_entries(paper) if paper.get("source") else None
+        rows.append(score_paper(paper, record, oracle, inventory, entries, result))
     summary = aggregate(rows)
     (run_dir / "metrics.json").write_text(json.dumps({"summary": summary, "papers": rows}, indent=1) + "\n")
     print(json.dumps(summary, indent=1))
