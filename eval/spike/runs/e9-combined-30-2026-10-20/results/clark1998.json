@@ -1,0 +1,316 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T03:40:04.743296341Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Clark and Chalmers - 1998 - The Extended Mind.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 14,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 10846,
+      "cached_tokens": 9728,
+      "completion_tokens": 16462,
+      "reasoning_tokens": 14981,
+      "cost_usd": 0.008387084,
+      "cost_source": "reported",
+      "latency_s": 72.240991205
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 10873,
+      "cached_tokens": 768,
+      "completion_tokens": 5702,
+      "reasoning_tokens": 5528,
+      "cost_usd": 0.009878508,
+      "cost_source": "reported",
+      "latency_s": 28.005049652
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 1159,
+      "cached_tokens": 0,
+      "completion_tokens": 704,
+      "reasoning_tokens": 712,
+      "cost_usd": 0.00043313,
+      "cost_source": "reported",
+      "latency_s": 3.548079495
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 22878,
+    "cached_tokens": 10496,
+    "completion_tokens": 22868,
+    "cost_usd": 0.018698721999999997,
+    "model_latency_s": 103.794120352,
+    "wall_s": 106.226064085
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e9-combined-30-2026-10-20/results/clark1998.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "No abstract is present on these pages."
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": []
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [],
+        "text": "The mind extends beyond the brain and body because cognitive processes and some beliefs can be constituted partly by reliably coupled features of the environment."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Washington University",
+          "name": "Andy Clark"
+        },
+        {
+          "affiliation": "University of California",
+          "name": "David Chalmers"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The Extended Mind"
+        },
+        {
+          "page": 1,
+          "quote": "Author(s): Andy Clark and David Chalmers"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "The Extended Mind",
+      "venue": "Analysis",
+      "year": 1998
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "Wheredoesthemindstopandtherestof theworldbegin?"
+        }
+      ],
+      "text": "Where does the mind stop and the rest of the world begin? Can cognitive processes and beliefs extend beyond the brain and skin to include external resources?"
+    },
+    "references": [],
+    "relations": [],
+    "sections": [],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a philosophical position paper that argues for active externalism and extended cognition/mind through thought experiments and conceptual analysis.",
+      "value": "theory"
+    }
+  },
+  "pass1_check": {
+    "sites": 4,
+    "verbatim": 3,
+    "near": 0,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/references",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft's references array is empty, but the paper includes a full References section on page 14 with 17 bibliographic entries.",
+      "evidence": [
+        {
+          "quote": "References",
+          "page": 14
+        },
+        {
+          "quote": "Beer, R. 1989. Intelligenceas Adaptive Behavior.New York: AcademicPress.",
+          "page": 14
+        }
+      ]
+    },
+    {
+      "path": "/sections",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft's sections array is empty, but the paper has five numbered sections: Introduction, Extended cognition, Active externalism, From cognition to mind, and Beyond the outer limits.",
+      "evidence": [
+        {
+          "quote": "1. Introduction",
+          "page": 2
+        },
+        {
+          "quote": "5. Beyondtheouterlimits",
+          "page": 11
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/references",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 1,
+      "path": "/sections",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 4,
+    "verbatim": 3,
+    "near": 0,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "withdrawn",
+      "original": "No abstract is present on these pages.",
+      "admitted": null,
+      "similarity": 0.2857142857142857,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The Extended Mind",
+      "admitted": "The Extended Mind",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Author(s): Andy Clark and David Chalmers",
+      "admitted": "Author(s): Andy Clark and David Chalmers",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Wheredoesthemindstopandtherestof theworldbegin?",
+      "admitted": "Wheredoesthemindstopandtherestof theworldbegin?",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    }
+  ],
+  "admission_counts": {
+    "verbatim": 3,
+    "withdrawn": 1
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": null
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": []
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [],
+        "text": "The mind extends beyond the brain and body because cognitive processes and some beliefs can be constituted partly by reliably coupled features of the environment."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Washington University",
+          "name": "Andy Clark"
+        },
+        {
+          "affiliation": "University of California",
+          "name": "David Chalmers"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The Extended Mind"
+        },
+        {
+          "page": 1,
+          "quote": "Author(s): Andy Clark and David Chalmers"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "The Extended Mind",
+      "venue": "Analysis",
+      "year": 1998
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "Wheredoesthemindstopandtherestof theworldbegin?"
+        }
+      ],
+      "text": "Where does the mind stop and the rest of the world begin? Can cognitive processes and beliefs extend beyond the brain and skin to include external resources?"
+    },
+    "references": [],
+    "relations": [],
+    "sections": [],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a philosophical position paper that argues for active externalism and extended cognition/mind through thought experiments and conceptual analysis.",
+      "value": "theory"
+    }
+  }
+}

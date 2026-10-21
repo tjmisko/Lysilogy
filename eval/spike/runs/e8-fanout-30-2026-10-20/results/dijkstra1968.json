@@ -1,0 +1,741 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T02:50:08.389931884Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Dijkstra - 1968 - GOTO Statements Considered Harmful.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 4,
+  "calls": [
+    {
+      "stage": "extract.identity",
+      "max_tokens": 65536,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 1911,
+      "cached_tokens": 0,
+      "completion_tokens": 6997,
+      "reasoning_tokens": 6863,
+      "cost_usd": 0.005199688,
+      "cost_source": "reported",
+      "latency_s": 45.30438897
+    },
+    {
+      "stage": "extract.type",
+      "max_tokens": 65536,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 7127,
+      "cached_tokens": 1664,
+      "completion_tokens": 1657,
+      "reasoning_tokens": 1601,
+      "cost_usd": 0.001760756,
+      "cost_source": "reported",
+      "latency_s": 11.42116117
+    },
+    {
+      "stage": "extract.abstract",
+      "max_tokens": 65536,
+      "provider": "InferenceNet",
+      "finish_reason": "length",
+      "prompt_tokens": 5312,
+      "cached_tokens": 0,
+      "completion_tokens": 65536,
+      "reasoning_tokens": 282,
+      "cost_usd": 0.047405376,
+      "cost_source": "reported",
+      "latency_s": 261.658642991
+    },
+    {
+      "stage": "extract.card",
+      "max_tokens": 65536,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 7158,
+      "cached_tokens": 6912,
+      "completion_tokens": 5120,
+      "reasoning_tokens": 4473,
+      "cost_usd": 0.003741434,
+      "cost_source": "reported",
+      "latency_s": 32.247059079
+    },
+    {
+      "stage": "extract.sections",
+      "max_tokens": 65536,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 7651,
+      "cached_tokens": 0,
+      "completion_tokens": 9215,
+      "reasoning_tokens": 9054,
+      "cost_usd": 0.007376778,
+      "cost_source": "reported",
+      "latency_s": 58.82490311
+    },
+    {
+      "stage": "extract.references",
+      "max_tokens": 65536,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 7151,
+      "cached_tokens": 256,
+      "completion_tokens": 8107,
+      "reasoning_tokens": 7531,
+      "cost_usd": 0.006508738,
+      "cost_source": "reported",
+      "latency_s": 50.671301287
+    },
+    {
+      "stage": "extract.graph",
+      "max_tokens": 65536,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 7162,
+      "cached_tokens": 0,
+      "completion_tokens": 9913,
+      "reasoning_tokens": 9790,
+      "cost_usd": 0.007825481,
+      "cost_source": "reported",
+      "latency_s": 59.442392445
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 8776,
+      "cached_tokens": 768,
+      "completion_tokens": 6762,
+      "reasoning_tokens": 6438,
+      "cost_usd": 0.010521408,
+      "cost_source": "reported",
+      "latency_s": 45.044861207
+    }
+  ],
+  "totals": {
+    "calls": 8,
+    "prompt_tokens": 52248,
+    "cached_tokens": 9600,
+    "completion_tokens": 113307,
+    "cost_usd": 0.09033965899999999,
+    "model_latency_s": 564.614710259,
+    "wall_s": 565.51285519
+  },
+  "budget_stopped": null,
+  "failures": [
+    {
+      "stage": "extract.abstract",
+      "error": "output was cut off at the length limit",
+      "raw": "{\"abstract\": \r\n\r\n   \r\n  \r\n\r\n   \r\n\r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n   \r\n"
+    }
+  ],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e8-fanout-30-2026-10-20/results/dijkstra1968.reasoning.jsonl",
+  "pass1": {
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "own prior familiarity",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce."
+              }
+            ],
+            "reference_key": "prior observation",
+            "why": "It builds on the observation that programmer quality decreases with go-to density."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "own prior observation",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce."
+              }
+            ],
+            "reference_key": "observed inverse relation",
+            "why": "It begins from the observed inverse relation between programmer quality and go-to density."
+          },
+          {
+            "cited_work": "own argument",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The go to statement as it stands is just too primitive; it is too\nmuch an invitation to make a mess of one's program."
+              }
+            ],
+            "reference_key": "critique of go-to statement",
+            "why": "It criticizes the go-to statement as too primitive and an invitation to messy programs."
+          },
+          {
+            "cited_work": "own proposal",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "One can\nregard and appreciate the clauses considered as bridling its use."
+              }
+            ],
+            "reference_key": "structured clauses as restraint",
+            "why": "It contrasts unrestricted go-to use with clauses that restrain or bridle it."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "the go to state-ment should be abolished from all \"higher level\" programming\nlanguages"
+          }
+        ],
+        "text": "The go to statement should be abolished from higher-level programming languages because its unbridled use makes it terribly hard to find a meaningful set of coordinates for describing process progress."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Go T o S t a t e m e n t\nConsidered Harmful"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Go To Statement Considered Harmful",
+      "venue": null,
+      "year": null
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "the go to state-ment should be abolished from all \"higher level\" programming\nlanguages"
+        }
+      ],
+      "text": "Should the go to statement be abolished from all higher-level programming languages because its use prevents a meaningful independent coordinate system for describing process progress?"
+    },
+    "references": [
+      {
+        "authors": [
+          "WIRTH, N.",
+          "HOARE, C. A. R."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 413,
+        "title": "A contribution to the development of ALGOL",
+        "venue": "Communications of the ACM",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "BÖHM, CORRADO",
+          "JACOPINI, GIUSEPPE"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 366,
+        "title": "Flow diagrams, Turing machines and languages with only two formation rules",
+        "venue": "Communications of the ACM",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "WELFORD, B. P."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 419,
+        "title": "Note on a method for calculating corrected sums of squares and products",
+        "venue": "Technometrics",
+        "year": 1962
+      },
+      {
+        "authors": [
+          "NEELY, PETER M."
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 496,
+        "title": "Comparison of several algorithms for computation of means, standard deviations and correlation coefficients",
+        "venue": "Communications of the ACM",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "KAHAN, W."
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 40,
+        "title": "Further remark on reducing truncation errors",
+        "venue": "Communications of the ACM",
+        "year": 1965
+      },
+      {
+        "authors": [
+          "LANGDON, G. J."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 298,
+        "title": "An algorithm for generating permutations",
+        "venue": "Communications of the ACM",
+        "year": 1967
+      },
+      {
+        "authors": [
+          "BROOKER, R. A.",
+          "ROHL, J. S.",
+          "CLARK, S. R."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 303,
+        "title": "The main features of Atlas Autocode",
+        "venue": "The Computer Journal",
+        "year": 1966
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "C. A. R. Hoare (case[i]of(At, A2,...,An))",
+        "reference_key": "R_0039",
+        "relation": "uses_method",
+        "why": "Dijkstra cites Hoare's case clause as an example of a structured clause that still allows process progress to be described by a single textual index."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Eindhoven, The NegheHa~ds",
+          "start_page": 1,
+          "start_text": "Go T o S t a t e m e n t\nConsidered Harmful"
+        },
+        "summary": "Dijkstra argues that the go to statement should be abolished from higher-level languages because it destroys the independent coordinate system needed to reason about the dynamic progress of a process.",
+        "title": "Go To Statement Considered Harmful"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It replicates the known phenomenon that abrupt six-nucleotide insertions are corrected with lower efficiency than single-nucleotide insertions.",
+      "value": "replication"
+    }
+  },
+  "pass1_check": {
+    "sites": 8,
+    "verbatim": 8,
+    "near": 0,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/identity/authors",
+      "action": "replace",
+      "value_json": "[\"Dijkstra, Edsger W.\"]",
+      "reason": "The draft lists no authors, but the paper is signed by Edsger W. Dijkstra.",
+      "evidence": [
+        {
+          "quote": "EDSGER Wo I)UKSTRA",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/year",
+      "action": "replace",
+      "value_json": "1968",
+      "reason": "The paper appeared in the March 1968 issue (Volume 11, Number 3), but the draft leaves the year null.",
+      "evidence": [
+        {
+          "quote": "Volume 11 / Number 3 / March, 1968",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/venue",
+      "action": "replace",
+      "value_json": "\"Communications of the ACM\"",
+      "reason": "The paper is published in Communications of the ACM, but the draft leaves the venue null.",
+      "evidence": [
+        {
+          "quote": "Communieations of the ACM",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/type/value",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The type value 'replication' is unsupported, and the accompanying reason refers to unrelated biology ('abrupt six-nucleotide insertions are corrected with lower efficiency than single-nucleotide insertions'). The paper is a position/critique letter, not a replication of an insertion-repair phenomenon.",
+      "evidence": [
+        {
+          "quote": "The go to statement as it stands is just too primitive; it is too much an invitation to make a mess of one's program.",
+          "page": 1
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/authors",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "value does not match the schema: /0: expected type \"object\", got string"
+    },
+    {
+      "index": 1,
+      "path": "/identity/year",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/identity/venue",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/type/value",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 8,
+    "verbatim": 8,
+    "near": 0,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce.",
+      "admitted": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce.",
+      "admitted": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The go to statement as it stands is just too primitive; it is too\nmuch an invitation to make a mess of one's program.",
+      "admitted": "The go to statement as it stands is just too primitive; it is too\nmuch an invitation to make a mess of one's program.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "One can\nregard and appreciate the clauses considered as bridling its use.",
+      "admitted": "One can\nregard and appreciate the clauses considered as bridling its use.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "the go to state-ment should be abolished from all \"higher level\" programming\nlanguages",
+      "admitted": "the go to state-ment should be abolished from all \"higher level\" programming\nlanguages",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Go T o S t a t e m e n t\nConsidered Harmful",
+      "admitted": "Go T o S t a t e m e n t\nConsidered Harmful",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "the go to state-ment should be abolished from all \"higher level\" programming\nlanguages",
+      "admitted": "the go to state-ment should be abolished from all \"higher level\" programming\nlanguages",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "C. A. R. Hoare (case[i]of(At, A2,...,An))",
+      "admitted": "C. A. R. Hoare (case[i]of(At, A2,...,An))",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    }
+  ],
+  "admission_counts": {
+    "verbatim": 8
+  },
+  "artifacts": {
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "own prior familiarity",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce."
+              }
+            ],
+            "reference_key": "prior observation",
+            "why": "It builds on the observation that programmer quality decreases with go-to density."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "own prior observation",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce."
+              }
+            ],
+            "reference_key": "observed inverse relation",
+            "why": "It begins from the observed inverse relation between programmer quality and go-to density."
+          },
+          {
+            "cited_work": "own argument",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The go to statement as it stands is just too primitive; it is too\nmuch an invitation to make a mess of one's program."
+              }
+            ],
+            "reference_key": "critique of go-to statement",
+            "why": "It criticizes the go-to statement as too primitive and an invitation to messy programs."
+          },
+          {
+            "cited_work": "own proposal",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "One can\nregard and appreciate the clauses considered as bridling its use."
+              }
+            ],
+            "reference_key": "structured clauses as restraint",
+            "why": "It contrasts unrestricted go-to use with clauses that restrain or bridle it."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "the go to state-ment should be abolished from all \"higher level\" programming\nlanguages"
+          }
+        ],
+        "text": "The go to statement should be abolished from higher-level programming languages because its unbridled use makes it terribly hard to find a meaningful set of coordinates for describing process progress."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Go T o S t a t e m e n t\nConsidered Harmful"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Go To Statement Considered Harmful",
+      "venue": "Communications of the ACM",
+      "year": 1968
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "the go to state-ment should be abolished from all \"higher level\" programming\nlanguages"
+        }
+      ],
+      "text": "Should the go to statement be abolished from all higher-level programming languages because its use prevents a meaningful independent coordinate system for describing process progress?"
+    },
+    "references": [
+      {
+        "authors": [
+          "WIRTH, N.",
+          "HOARE, C. A. R."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 413,
+        "title": "A contribution to the development of ALGOL",
+        "venue": "Communications of the ACM",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "BÖHM, CORRADO",
+          "JACOPINI, GIUSEPPE"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 366,
+        "title": "Flow diagrams, Turing machines and languages with only two formation rules",
+        "venue": "Communications of the ACM",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "WELFORD, B. P."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 419,
+        "title": "Note on a method for calculating corrected sums of squares and products",
+        "venue": "Technometrics",
+        "year": 1962
+      },
+      {
+        "authors": [
+          "NEELY, PETER M."
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 496,
+        "title": "Comparison of several algorithms for computation of means, standard deviations and correlation coefficients",
+        "venue": "Communications of the ACM",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "KAHAN, W."
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 40,
+        "title": "Further remark on reducing truncation errors",
+        "venue": "Communications of the ACM",
+        "year": 1965
+      },
+      {
+        "authors": [
+          "LANGDON, G. J."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 298,
+        "title": "An algorithm for generating permutations",
+        "venue": "Communications of the ACM",
+        "year": 1967
+      },
+      {
+        "authors": [
+          "BROOKER, R. A.",
+          "ROHL, J. S.",
+          "CLARK, S. R."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 303,
+        "title": "The main features of Atlas Autocode",
+        "venue": "The Computer Journal",
+        "year": 1966
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "C. A. R. Hoare (case[i]of(At, A2,...,An))",
+        "reference_key": "R_0039",
+        "relation": "uses_method",
+        "why": "Dijkstra cites Hoare's case clause as an example of a structured clause that still allows process progress to be described by a single textual index."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Eindhoven, The NegheHa~ds",
+          "start_page": 1,
+          "start_text": "Go T o S t a t e m e n t\nConsidered Harmful"
+        },
+        "summary": "Dijkstra argues that the go to statement should be abolished from higher-level languages because it destroys the independent coordinate system needed to reason about the dynamic progress of a process.",
+        "title": "Go To Statement Considered Harmful"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It replicates the known phenomenon that abrupt six-nucleotide insertions are corrected with lower efficiency than single-nucleotide insertions.",
+      "value": "replication"
+    }
+  }
+}

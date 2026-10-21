@@ -1,0 +1,931 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T02:14:49.211491818Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1903.02210v2.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 8,
+  "calls": [
+    {
+      "stage": "extract.identity",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 1560,
+      "cached_tokens": 256,
+      "completion_tokens": 2695,
+      "reasoning_tokens": 2356,
+      "cost_usd": 0.003626736,
+      "cost_source": "reported",
+      "latency_s": 5.298641207
+    },
+    {
+      "stage": "extract.type",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 10939,
+      "cached_tokens": 1408,
+      "completion_tokens": 702,
+      "reasoning_tokens": 655,
+      "cost_usd": 0.003710148,
+      "cost_source": "reported",
+      "latency_s": 2.065821827
+    },
+    {
+      "stage": "extract.abstract",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 3617,
+      "cached_tokens": 3584,
+      "completion_tokens": 2391,
+      "reasoning_tokens": 2101,
+      "cost_usd": 0.002900604,
+      "cost_source": "reported",
+      "latency_s": 4.30106544
+    },
+    {
+      "stage": "extract.card",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 10970,
+      "cached_tokens": 10880,
+      "completion_tokens": 4474,
+      "reasoning_tokens": 3482,
+      "cost_usd": 0.00546108,
+      "cost_source": "reported",
+      "latency_s": 7.703556025
+    },
+    {
+      "stage": "extract.sections",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 11463,
+      "cached_tokens": 256,
+      "completion_tokens": 7535,
+      "reasoning_tokens": 6268,
+      "cost_usd": 0.012405636,
+      "cost_source": "reported",
+      "latency_s": 15.331424112
+    },
+    {
+      "stage": "extract.references",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 10963,
+      "cached_tokens": 10880,
+      "completion_tokens": 5380,
+      "reasoning_tokens": 5322,
+      "cost_usd": 0.00654618,
+      "cost_source": "reported",
+      "latency_s": 8.964771678
+    },
+    {
+      "stage": "extract.graph",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 10974,
+      "cached_tokens": 10880,
+      "completion_tokens": 6759,
+      "reasoning_tokens": 6700,
+      "cost_usd": 0.00820428,
+      "cost_source": "reported",
+      "latency_s": 11.842348501
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 13749,
+      "cached_tokens": 1024,
+      "completion_tokens": 13579,
+      "reasoning_tokens": 12999,
+      "cost_usd": 0.020118444,
+      "cost_source": "reported",
+      "latency_s": 82.936185045
+    }
+  ],
+  "totals": {
+    "calls": 8,
+    "prompt_tokens": 74235,
+    "cached_tokens": 39168,
+    "completion_tokens": 43515,
+    "cost_usd": 0.062973108,
+    "model_latency_s": 138.44381383500001,
+    "wall_s": 140.74722715
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e8-fanout-30-2026-10-20/results/1903.02210v2.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "This paper proposes a real-time approach for longterm inertial navigation based only on an Inertial Measurement\nUnit (IMU) for self-localizing wheeled robots. The approach\nbuilds upon two components: 1) a robust detector that uses\nrecurrent deep neural networks to dynamically detect a variety\nof situations of interest, such as zero velocity or no lateral\nslip; and 2) a state-of-the-art Kalman filter which incorporates\nthis knowledge as pseudo-measurements for localization. Evaluations on a publicly available car dataset demonstrates that\nthe proposed scheme may achieve a final precision of 20 m for\na 21 km long trajectory of a vehicle driving for over an hour,\nequipped with an IMU of moderate precision (the gyro drift\nrate is 10 deg/h). To our knowledge, this is the first paper which\ncombines sophisticated deep learning techniques with state-ofthe-art filtering methods for pure inertial navigation on wheeled\nvehicles and as such opens up for novel data-driven inertial\nnavigation techniques. Moreover, albeit taylored for IMU-only\nbased localization, our method may be used as a component\nfor self-localization of wheeled robots equipped with a more\ncomplete sensor suite."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "The Invariant Extended Kalman Filter (IEKF) [9]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Invariant Extended Kalman Filter (IEKF) [9]"
+              }
+            ],
+            "reference_key": "Barrau2017",
+            "why": "The paper explicitly adopts the IEKF as its filtering framework."
+          },
+          {
+            "cited_work": "Zero velocity UPdaTe (ZUPT) [19,20]",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Zero velocity UPdaTe (ZUPT) [19,20]"
+              }
+            ],
+            "reference_key": "Ramanandan2012",
+            "why": "The method treats detected motion profiles as pseudo-measurements in the Kalman filter, in the same spirit as ZUPT."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Complex Urban LiDAR Data Set [11]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "the complex urban LiDAR dataset [11]"
+              }
+            ],
+            "reference_key": "Jeong2018",
+            "why": "The proposed method is evaluated on this publicly available car dataset."
+          },
+          {
+            "cited_work": "Acceleration-Moving Variance Detector (AMVD) [20]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "Acceleration-Moving Variance Detector (AMVD) [20]"
+              }
+            ],
+            "reference_key": "Skog2010",
+            "why": "The paper compares its zero-velocity detector against AMVD, an existing detector."
+          },
+          {
+            "cited_work": "Invariant Extended Kalman Filter (IEKF) [9]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Invariant Extended Kalman Filter (IEKF) [9]"
+              }
+            ],
+            "reference_key": "Barrau2017",
+            "why": "The paper builds its filter on the IEKF."
+          },
+          {
+            "cited_work": "Long-Short Term Memory (LSTM) [8]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Long-Short Term Memory (LSTM) [8]"
+              }
+            ],
+            "reference_key": "Goodfellow2016",
+            "why": "The detector uses LSTM recurrent neural networks."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "for self-localizing wheeled robots"
+          },
+          {
+            "page": 1,
+            "quote": "a robust detector that uses recurrent deep neural networks"
+          },
+          {
+            "page": 1,
+            "quote": "pseudo-measurements for localization"
+          }
+        ],
+        "text": "RINS-W couples a recurrent neural network that detects wheeled-vehicle motion profiles from IMU data with an invariant extended Kalman filter that treats those profiles as pseudo-measurements, enabling long-term IMU-only localization for wheeled robots and outperforming wheel odometry and odometry aided by an expensive fiber-optic gyro on a car dataset."
+      }
+    },
+    "citations": [
+      {
+        "context": "[1]–[3]",
+        "page": 1,
+        "reference_key": "[1]–[3]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "MINES ParisTech, PSL Research University, Centre for Robotics, 60 Boulevard Saint-Michel, 75006 Paris, France",
+          "name": "Martin BROSSARD∗"
+        },
+        {
+          "affiliation": "Safran Tech, Groupe Safran, Rue des Jeunes Bois-Châteaufort, 78772, Magny Les Hameaux Cedex, France",
+          "name": "Axel BARRAU†"
+        },
+        {
+          "affiliation": "MINES ParisTech, PSL Research University, Centre for Robotics, 60 Boulevard Saint-Michel, 75006 Paris, France",
+          "name": "Silvère BONNABEL∗"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "RINS-W: Robust Inertial Navigation System on Wheels\nMartin BROSSARD∗, Axel BARRAU† and Silvère BONNABEL∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1903.02210v2",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "RINS-W: Robust Inertial Navigation System on Wheels",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "medium",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "for self-localizing wheeled robots"
+        }
+      ],
+      "text": "Can a neural-network detector of wheeled-motion profiles, fused as pseudo-measurements into an invariant extended Kalman filter, achieve accurate long-term inertial navigation for wheeled robots using only an IMU, and thus rival or outperform wheel odometry and odometry aided by a high-cost fiber-optic gyro?"
+    },
+    "references": [
+      {
+        "authors": [],
+        "doi": "",
+        "key": "1",
+        "page": 8,
+        "title": "",
+        "venue": "",
+        "year": 2018
+      }
+    ],
+    "relations": [],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Inertial navigation systems have long leveraged pseudo-measurements from IMU signals, e.g. the widespread Zero",
+          "start_page": 1,
+          "start_text": "Index Terms—inertial navigation, deep learning, invariant"
+        },
+        "summary": "Introduces the paper's goal: long-term IMU-only inertial navigation for wheeled robots. The contributions combine recurrent deep neural network detectors for motion profiles with an invariant extended Kalman filter that treats detected profiles as pseudo-measurements. Related work contrasts high-precision INS, MEMS drift, sensor fusion, ZUPT, and recent deep-learning pedestrian inertial navigation, positioning RINS-W as the first to combine deep learning with state-of-the-art filtering for pure inertial wheeled-vehicle navigation.",
+        "title": "Motivation and Related Work"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Zero angular velocity: the heading is constant:",
+          "start_page": 2,
+          "start_text": "A. Inertial Measurement Unit (IMU) Model"
+        },
+        "summary": "Defines the inertial navigation state and IMU measurement model, then introduces four wheeled-vehicle motion profiles encoded as a binary vector: zero velocity, zero angular velocity, zero lateral velocity, and zero vertical velocity. It explains why zero velocity does not imply zero angular velocity for cars with shock absorbers, and separates the profiles into zero-velocity constraints that can correct biases and attitude versus motion constraints that improve long-term accuracy.",
+        "title": "Inertial Model and Wheeled Motion Profiles"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "3) Update: each motion profile yields one of the following",
+          "start_page": 4,
+          "start_text": "A. The Specific Motion Profile Detector"
+        },
+        "summary": "Describes the RINS-W system as two blocks: an LSTM-based detector that outputs binary motion-profile scores from raw IMU signals, and a right invariant extended Kalman filter that fuses IMU dynamics with detected profiles as pseudo-measurements. The detector uses four LSTMs with thresholded outputs. The IEKF state includes pose, velocity, and IMU biases; propagation is modified when zero-velocity or zero-angular-velocity profiles are detected, and updates use the corresponding pseudo-measurements. Initialization requires a short stop to estimate biases and attitude.",
+        "title": "RINS-W Detector and Invariant Extended Kalman Filter"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "F. Detector Evaluation",
+          "start_page": 5,
+          "start_text": "V. RESULTS ON CAR DATASET"
+        },
+        "summary": "Evaluates RINS-W on the complex urban LiDAR dataset using an Xsens MTi-300 IMU at 100 Hz. Training uses urban06–urban14 and testing uses urban15–urban17. The section details LSTM implementation, thresholds, noise covariances, training, error metrics, trajectory results, discussion, and detector evaluation. RINS-W achieves a 20 m final error on the 73-minute urban16 sequence, outperforms wheel odometry, and competes with or outperforms odometry aided by a much more accurate fiber-optic gyro. Ablations show lateral and vertical velocity updates are important for avoiding divergence, and the learned detector outperforms an ideal AMVD for zero-velocity detection. The conclusion emphasizes IMU-only operation, parallel safety use, and future work on covariance learning and generalization.",
+        "title": "Car Dataset Evaluation, Discussion, and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "where (·)× transforms a vector to a skew-symmetric matrix,",
+          "start_page": 7,
+          "start_text": "APPENDIX A"
+        },
+        "summary": "Provides the mathematical background and filter Jacobians used by RINS-W. Appendix A defines the Lie group SE2(3), maps uncertainty into the Lie algebra se2(3), and gives the closed-form exponential map. Appendix B gives the propagation Jacobians for the IEKF and the measurement Jacobians for zero-velocity, zero-angular-velocity, zero-lateral-velocity, and zero-vertical-velocity updates, including how rows are zeroed when those profiles are detected.",
+        "title": "Appendices: SE2(3) and Filter Jacobians"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "REFERENCES",
+          "start_page": 7,
+          "start_text": "REFERENCES"
+        },
+        "summary": "Optional navigation unit for the bibliography. It lists references for inertial navigation, invariant Kalman filtering, wheeled-vehicle localization, deep-learning inertial odometry, zero-velocity detection, and the datasets and optimization tools cited throughout the paper.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It proposes a new method (RINS-W) and validates it experimentally on a car dataset.",
+      "value": "survey"
+    }
+  },
+  "pass1_check": {
+    "sites": 13,
+    "verbatim": 11,
+    "near": 2,
+    "missing": 0,
+    "wrong_page": 1
+  },
+  "corrections": [
+    {
+      "path": "/type/value",
+      "action": "replace",
+      "value_json": "\"method\"",
+      "reason": "The paper introduces and experimentally validates a new method (RINS-W); it is not a survey. The draft's own reason contradicts the value 'survey'.",
+      "evidence": [
+        {
+          "quote": "This paper proposes a novel approach for robust inertial navigation for wheeled robots (RINS-W).",
+          "page": 7
+        }
+      ]
+    },
+    {
+      "path": "/card/position/predecessors/1/evidence/0/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "The quoted ZUPT passage appears on page 2, not page 1.",
+      "evidence": [
+        {
+          "quote": "Zero velocity UPdaTe (ZUPT) [19,20]",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/references/0",
+      "action": "replace",
+      "value_json": "{\"authors\":[\"OxTS\"],\"doi\":\"\",\"key\":\"1\",\"page\":8,\"title\":\"Why it is Necessary to Integrate an Inertial Measurement Unit with Imaging Systems on an Autonomous Vehicle\",\"venue\":\"\",\"year\":2018}",
+      "reason": "The single draft reference is an empty stub; its title and authors are missing. Reference [1] is the OxTS technical note.",
+      "evidence": [
+        {
+          "quote": "[1] OxTS. (2018) Why it is Necessary to Integrate an Inertial Measurement Unit with Imaging Systems on an Autonomous Vehicle.",
+          "page": 8
+        }
+      ]
+    },
+    {
+      "path": "/references",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The reference list is almost entirely missing: the paper's page 8 bibliography contains references [1]–[32], but the draft only holds a single (stub) entry.",
+      "evidence": [
+        {
+          "quote": "[2] J. Collin, P. Davidson, M. Kirkko-Jaakkola, and H. Leppäkoski, “Inertial Sensors and Their Applications,”",
+          "page": 8
+        }
+      ]
+    },
+    {
+      "path": "/sections/5/source_span/start_page",
+      "action": "replace",
+      "value_json": "8",
+      "reason": "The REFERENCES heading appears on page 8, not page 7.",
+      "evidence": [
+        {
+          "quote": "REFERENCES",
+          "page": 8
+        }
+      ]
+    },
+    {
+      "path": "/sections/5/source_span/end_page",
+      "action": "replace",
+      "value_json": "8",
+      "reason": "The REFERENCES heading is on page 8, so the section cannot end on page 7.",
+      "evidence": [
+        {
+          "quote": "REFERENCES",
+          "page": 8
+        }
+      ]
+    },
+    {
+      "path": "/sections/5/pages/start",
+      "action": "replace",
+      "value_json": "8",
+      "reason": "The References section begins on page 8, not page 7.",
+      "evidence": [
+        {
+          "quote": "REFERENCES",
+          "page": 8
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/type/value",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/card/position/predecessors/1/evidence/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/references/0",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/references",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 4,
+      "path": "/sections/5/source_span/start_page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 5,
+      "path": "/sections/5/source_span/end_page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 6,
+      "path": "/sections/5/pages/start",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 13,
+    "verbatim": 11,
+    "near": 2,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "repaired_local",
+      "original": "This paper proposes a real-time approach for longterm inertial navigation based only on an Inertial Measurement\nUnit (IMU) for self-localizing wheeled robots. The approach\nbuilds upon two components: 1) a robust detector that uses\nrecurrent deep neural networks to dynamically detect a variety\nof situations of interest, such as zero velocity or no lateral\nslip; and 2) a state-of-the-art Kalman filter which incorporates\nthis knowledge as pseudo-measurements for localization. Evaluations on a publicly available car dataset demonstrates that\nthe proposed scheme may achieve a final precision of 20 m for\na 21 km long trajectory of a vehicle driving for over an hour,\nequipped with an IMU of moderate precision (the gyro drift\nrate is 10 deg/h). To our knowledge, this is the first paper which\ncombines sophisticated deep learning techniques with state-ofthe-art filtering methods for pure inertial navigation on wheeled\nvehicles and as such opens up for novel data-driven inertial\nnavigation techniques. Moreover, albeit taylored for IMU-only\nbased localization, our method may be used as a component\nfor self-localization of wheeled robots equipped with a more\ncomplete sensor suite.",
+      "admitted": "Abstract—This paper proposes a real-time approach for longterm inertial navigation based only on an Inertial Measurement Unit (IMU) for self-localizing wheeled robots. The approach builds upon two components: 1) a robust detector that uses recurrent deep neural networks to dynamically detect a variety of situations of interest, such as zero velocity or no lateral slip; and 2) a state-of-the-art Kalman filter which incorporates this knowledge as pseudo-measurements for localization. Evaluations on a publicly available car dataset demonstrates that the proposed scheme may achieve a final precision of 20 m for a 21 km long trajectory of a vehicle driving for over an hour, equipped with an IMU of moderate precision (the gyro drift rate is 10 deg/h). To our knowledge, this is the first paper which combines sophisticated deep learning techniques with state-ofthe-art filtering methods for pure inertial navigation on wheeled vehicles and as such opens up for novel data-driven inertial navigation techniques. Moreover, albeit taylored for IMU-only based localization, our method may be used as a component for self-localization of wheeled robots equipped with a more complete sensor suite.",
+      "similarity": 0.9944444444444445,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Invariant Extended Kalman Filter (IEKF) [9]",
+      "admitted": "Invariant Extended Kalman Filter (IEKF) [9]",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Zero velocity UPdaTe (ZUPT) [19,20]",
+      "admitted": "Zero velocity UPdaTe (ZUPT) [19,20]",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "the complex urban LiDAR dataset [11]",
+      "admitted": "the complex urban LiDAR dataset [11]",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Acceleration-Moving Variance Detector (AMVD) [20]",
+      "admitted": "Acceleration-Moving Variance Detector (AMVD) [20]",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Invariant Extended Kalman Filter (IEKF) [9]",
+      "admitted": "Invariant Extended Kalman Filter (IEKF) [9]",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Long-Short Term Memory (LSTM) [8]",
+      "admitted": "Long-Short Term Memory (LSTM) [8]",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "for self-localizing wheeled robots",
+      "admitted": "for self-localizing wheeled robots",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/1/quote",
+      "status": "verbatim",
+      "original": "a robust detector that uses recurrent deep neural networks",
+      "admitted": "a robust detector that uses recurrent deep neural networks",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/2/quote",
+      "status": "verbatim",
+      "original": "pseudo-measurements for localization",
+      "admitted": "pseudo-measurements for localization",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "RINS-W: Robust Inertial Navigation System on Wheels\nMartin BROSSARD∗, Axel BARRAU† and Silvère BONNABEL∗",
+      "admitted": "RINS-W: Robust Inertial Navigation System on Wheels Martin BROSSARD∗, Axel BARRAU† and Silvère BONNABEL∗",
+      "similarity": 0.9285714285714286,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "for self-localizing wheeled robots",
+      "admitted": "for self-localizing wheeled robots",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "[1]–[3]",
+      "admitted": "[1]–[3]",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 2,
+    "verbatim": 11
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Abstract—This paper proposes a real-time approach for longterm inertial navigation based only on an Inertial Measurement Unit (IMU) for self-localizing wheeled robots. The approach builds upon two components: 1) a robust detector that uses recurrent deep neural networks to dynamically detect a variety of situations of interest, such as zero velocity or no lateral slip; and 2) a state-of-the-art Kalman filter which incorporates this knowledge as pseudo-measurements for localization. Evaluations on a publicly available car dataset demonstrates that the proposed scheme may achieve a final precision of 20 m for a 21 km long trajectory of a vehicle driving for over an hour, equipped with an IMU of moderate precision (the gyro drift rate is 10 deg/h). To our knowledge, this is the first paper which combines sophisticated deep learning techniques with state-ofthe-art filtering methods for pure inertial navigation on wheeled vehicles and as such opens up for novel data-driven inertial navigation techniques. Moreover, albeit taylored for IMU-only based localization, our method may be used as a component for self-localization of wheeled robots equipped with a more complete sensor suite."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "The Invariant Extended Kalman Filter (IEKF) [9]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Invariant Extended Kalman Filter (IEKF) [9]"
+              }
+            ],
+            "reference_key": "Barrau2017",
+            "why": "The paper explicitly adopts the IEKF as its filtering framework."
+          },
+          {
+            "cited_work": "Zero velocity UPdaTe (ZUPT) [19,20]",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Zero velocity UPdaTe (ZUPT) [19,20]"
+              }
+            ],
+            "reference_key": "Ramanandan2012",
+            "why": "The method treats detected motion profiles as pseudo-measurements in the Kalman filter, in the same spirit as ZUPT."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Complex Urban LiDAR Data Set [11]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "the complex urban LiDAR dataset [11]"
+              }
+            ],
+            "reference_key": "Jeong2018",
+            "why": "The proposed method is evaluated on this publicly available car dataset."
+          },
+          {
+            "cited_work": "Acceleration-Moving Variance Detector (AMVD) [20]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "Acceleration-Moving Variance Detector (AMVD) [20]"
+              }
+            ],
+            "reference_key": "Skog2010",
+            "why": "The paper compares its zero-velocity detector against AMVD, an existing detector."
+          },
+          {
+            "cited_work": "Invariant Extended Kalman Filter (IEKF) [9]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Invariant Extended Kalman Filter (IEKF) [9]"
+              }
+            ],
+            "reference_key": "Barrau2017",
+            "why": "The paper builds its filter on the IEKF."
+          },
+          {
+            "cited_work": "Long-Short Term Memory (LSTM) [8]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Long-Short Term Memory (LSTM) [8]"
+              }
+            ],
+            "reference_key": "Goodfellow2016",
+            "why": "The detector uses LSTM recurrent neural networks."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "for self-localizing wheeled robots"
+          },
+          {
+            "page": 1,
+            "quote": "a robust detector that uses recurrent deep neural networks"
+          },
+          {
+            "page": 1,
+            "quote": "pseudo-measurements for localization"
+          }
+        ],
+        "text": "RINS-W couples a recurrent neural network that detects wheeled-vehicle motion profiles from IMU data with an invariant extended Kalman filter that treats those profiles as pseudo-measurements, enabling long-term IMU-only localization for wheeled robots and outperforming wheel odometry and odometry aided by an expensive fiber-optic gyro on a car dataset."
+      }
+    },
+    "citations": [
+      {
+        "context": "[1]–[3]",
+        "page": 1,
+        "reference_key": "[1]–[3]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "MINES ParisTech, PSL Research University, Centre for Robotics, 60 Boulevard Saint-Michel, 75006 Paris, France",
+          "name": "Martin BROSSARD∗"
+        },
+        {
+          "affiliation": "Safran Tech, Groupe Safran, Rue des Jeunes Bois-Châteaufort, 78772, Magny Les Hameaux Cedex, France",
+          "name": "Axel BARRAU†"
+        },
+        {
+          "affiliation": "MINES ParisTech, PSL Research University, Centre for Robotics, 60 Boulevard Saint-Michel, 75006 Paris, France",
+          "name": "Silvère BONNABEL∗"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "RINS-W: Robust Inertial Navigation System on Wheels Martin BROSSARD∗, Axel BARRAU† and Silvère BONNABEL∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1903.02210v2",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "RINS-W: Robust Inertial Navigation System on Wheels",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "medium",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "for self-localizing wheeled robots"
+        }
+      ],
+      "text": "Can a neural-network detector of wheeled-motion profiles, fused as pseudo-measurements into an invariant extended Kalman filter, achieve accurate long-term inertial navigation for wheeled robots using only an IMU, and thus rival or outperform wheel odometry and odometry aided by a high-cost fiber-optic gyro?"
+    },
+    "references": [
+      {
+        "authors": [
+          "OxTS"
+        ],
+        "doi": "",
+        "key": "1",
+        "page": 8,
+        "title": "Why it is Necessary to Integrate an Inertial Measurement Unit with Imaging Systems on an Autonomous Vehicle",
+        "venue": "",
+        "year": 2018
+      }
+    ],
+    "relations": [],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Inertial navigation systems have long leveraged pseudo-measurements from IMU signals, e.g. the widespread Zero",
+          "start_page": 1,
+          "start_text": "Index Terms—inertial navigation, deep learning, invariant"
+        },
+        "summary": "Introduces the paper's goal: long-term IMU-only inertial navigation for wheeled robots. The contributions combine recurrent deep neural network detectors for motion profiles with an invariant extended Kalman filter that treats detected profiles as pseudo-measurements. Related work contrasts high-precision INS, MEMS drift, sensor fusion, ZUPT, and recent deep-learning pedestrian inertial navigation, positioning RINS-W as the first to combine deep learning with state-of-the-art filtering for pure inertial wheeled-vehicle navigation.",
+        "title": "Motivation and Related Work"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Zero angular velocity: the heading is constant:",
+          "start_page": 2,
+          "start_text": "A. Inertial Measurement Unit (IMU) Model"
+        },
+        "summary": "Defines the inertial navigation state and IMU measurement model, then introduces four wheeled-vehicle motion profiles encoded as a binary vector: zero velocity, zero angular velocity, zero lateral velocity, and zero vertical velocity. It explains why zero velocity does not imply zero angular velocity for cars with shock absorbers, and separates the profiles into zero-velocity constraints that can correct biases and attitude versus motion constraints that improve long-term accuracy.",
+        "title": "Inertial Model and Wheeled Motion Profiles"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "3) Update: each motion profile yields one of the following",
+          "start_page": 4,
+          "start_text": "A. The Specific Motion Profile Detector"
+        },
+        "summary": "Describes the RINS-W system as two blocks: an LSTM-based detector that outputs binary motion-profile scores from raw IMU signals, and a right invariant extended Kalman filter that fuses IMU dynamics with detected profiles as pseudo-measurements. The detector uses four LSTMs with thresholded outputs. The IEKF state includes pose, velocity, and IMU biases; propagation is modified when zero-velocity or zero-angular-velocity profiles are detected, and updates use the corresponding pseudo-measurements. Initialization requires a short stop to estimate biases and attitude.",
+        "title": "RINS-W Detector and Invariant Extended Kalman Filter"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "F. Detector Evaluation",
+          "start_page": 5,
+          "start_text": "V. RESULTS ON CAR DATASET"
+        },
+        "summary": "Evaluates RINS-W on the complex urban LiDAR dataset using an Xsens MTi-300 IMU at 100 Hz. Training uses urban06–urban14 and testing uses urban15–urban17. The section details LSTM implementation, thresholds, noise covariances, training, error metrics, trajectory results, discussion, and detector evaluation. RINS-W achieves a 20 m final error on the 73-minute urban16 sequence, outperforms wheel odometry, and competes with or outperforms odometry aided by a much more accurate fiber-optic gyro. Ablations show lateral and vertical velocity updates are important for avoiding divergence, and the learned detector outperforms an ideal AMVD for zero-velocity detection. The conclusion emphasizes IMU-only operation, parallel safety use, and future work on covariance learning and generalization.",
+        "title": "Car Dataset Evaluation, Discussion, and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "where (·)× transforms a vector to a skew-symmetric matrix,",
+          "start_page": 7,
+          "start_text": "APPENDIX A"
+        },
+        "summary": "Provides the mathematical background and filter Jacobians used by RINS-W. Appendix A defines the Lie group SE2(3), maps uncertainty into the Lie algebra se2(3), and gives the closed-form exponential map. Appendix B gives the propagation Jacobians for the IEKF and the measurement Jacobians for zero-velocity, zero-angular-velocity, zero-lateral-velocity, and zero-vertical-velocity updates, including how rows are zeroed when those profiles are detected.",
+        "title": "Appendices: SE2(3) and Filter Jacobians"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "REFERENCES",
+          "start_page": 8,
+          "start_text": "REFERENCES"
+        },
+        "summary": "Optional navigation unit for the bibliography. It lists references for inertial navigation, invariant Kalman filtering, wheeled-vehicle localization, deep-learning inertial odometry, zero-velocity detection, and the datasets and optimization tools cited throughout the paper.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It proposes a new method (RINS-W) and validates it experimentally on a car dataset.",
+      "value": "method"
+    }
+  }
+}

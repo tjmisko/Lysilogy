@@ -1,0 +1,805 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T02:34:16.549723729Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Amodei et al. - 2016 - Concrete Problems in AI Safety.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 29,
+  "calls": [
+    {
+      "stage": "extract.identity",
+      "max_tokens": 95192,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 870,
+      "cached_tokens": 0,
+      "completion_tokens": 2330,
+      "reasoning_tokens": 1969,
+      "cost_usd": 0.0012259,
+      "cost_source": "reported",
+      "latency_s": 15.760003236
+    },
+    {
+      "stage": "extract.type",
+      "max_tokens": 95192,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 25280,
+      "cached_tokens": 0,
+      "completion_tokens": 377,
+      "reasoning_tokens": 386,
+      "cost_usd": 0.0019581,
+      "cost_source": "reported",
+      "latency_s": 6.135302026
+    },
+    {
+      "stage": "extract.abstract",
+      "max_tokens": 95192,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 2447,
+      "cached_tokens": 2048,
+      "completion_tokens": 1084,
+      "reasoning_tokens": 1124,
+      "cost_usd": 0.000586314,
+      "cost_source": "reported",
+      "latency_s": 8.373369436
+    },
+    {
+      "stage": "extract.card",
+      "max_tokens": 95192,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 25311,
+      "cached_tokens": 24832,
+      "completion_tokens": 3145,
+      "reasoning_tokens": 2602,
+      "cost_usd": 0.001804686,
+      "cost_source": "reported",
+      "latency_s": 30.429545557
+    },
+    {
+      "stage": "extract.sections",
+      "max_tokens": 95192,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 25804,
+      "cached_tokens": 0,
+      "completion_tokens": 15432,
+      "reasoning_tokens": 17793,
+      "cost_usd": 0.00952228,
+      "cost_source": "reported",
+      "latency_s": 116.82914533
+    },
+    {
+      "stage": "extract.references",
+      "max_tokens": 95192,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 25304,
+      "cached_tokens": 24832,
+      "completion_tokens": 9171,
+      "reasoning_tokens": 8832,
+      "cost_usd": 0.004817196,
+      "cost_source": "reported",
+      "latency_s": 53.515093795
+    },
+    {
+      "stage": "extract.graph",
+      "max_tokens": 95192,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 25315,
+      "cached_tokens": 24832,
+      "completion_tokens": 16215,
+      "reasoning_tokens": 18183,
+      "cost_usd": 0.008339966,
+      "cost_source": "reported",
+      "latency_s": 76.434786243
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 27284,
+      "cached_tokens": 768,
+      "completion_tokens": 4461,
+      "reasoning_tokens": 3779,
+      "cost_usd": 0.013312608,
+      "cost_source": "reported",
+      "latency_s": 27.922922391
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 1521,
+      "cached_tokens": 0,
+      "completion_tokens": 1284,
+      "reasoning_tokens": 1213,
+      "cost_usd": 0.00074847,
+      "cost_source": "reported",
+      "latency_s": 9.061001578
+    }
+  ],
+  "totals": {
+    "calls": 9,
+    "prompt_tokens": 159136,
+    "cached_tokens": 77312,
+    "completion_tokens": 53499,
+    "cost_usd": 0.04231552,
+    "model_latency_s": 344.46116959200003,
+    "wall_s": 350.231205939
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e8-fanout-30-2026-10-20/results/amodei2016.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Existing machine learning safety, robustness, risk-sensitivity, safe exploration, transfer learning, counterfactual reasoning, active learning, and inverse reinforcement learning literature.",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below."
+              },
+              {
+                "page": 2,
+                "quote": "In Section 2, we frame mitigating accident risk (often referred to as “AI safety” in public discussions) in terms of classic methods in machine learning, such as supervised classification and reinforcement learning."
+              }
+            ],
+            "reference_key": "accident risk literature",
+            "why": "The paper positions itself as building on and reviewing prior ML safety/robustness/safe-exploration work."
+          },
+          {
+            "cited_work": "Reinforcement learning and deep RL as an increasingly important paradigm for autonomous agents.",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "First is the increasing promise of reinforcement learning (RL), which allows agents to have a highly intertwined interaction with their environment."
+              }
+            ],
+            "reference_key": "reinforcement learning",
+            "why": "The paper repeatedly frames its concrete safety problems in RL-agent and supervised-learning terms."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Public discussions that emphasize extreme superintelligent-agent scenarios as the main context for AI accident risk.",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27]. However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents"
+              }
+            ],
+            "reference_key": "extreme scenarios",
+            "why": "The paper argues that practical, modern-ML accident problems can and should be discussed without relying on speculative superintelligence scenarios."
+          },
+          {
+            "cited_work": "Views that treat safety failures as idiosyncratic design errors or as topics outside machine learning research.",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "we could choose to view side effects as idiosyncratic to each individual task—as the responsibility of each individual designer to capture as part of designing the correct objective function."
+              },
+              {
+                "page": 9,
+                "quote": "It might be thought that individual instances of reward hacking have little in common and that the remedy is simply to avoid choosing the wrong objective function in each individual case"
+              }
+            ],
+            "reference_key": "idiosyncratic design errors",
+            "why": "The paper counters that these failures often arise from general causes and are therefore suitable for ML research."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”)."
+          }
+        ],
+        "text": "This paper argues that accident risk in machine learning and AI should be studied as five concrete, practical research problems—avoiding negative side effects, avoiding reward hacking, scalable oversight, safe exploration, and robustness to distributional shift—arising from misspecified objectives, expensive objective evaluation, or unsafe learning processes."
+      }
+    },
+    "citations": [
+      {
+        "context": "page 1",
+        "page": 1,
+        "reference_key": "[82] [102] [86] [140]"
+      },
+      {
+        "context": "The last few years have seen rapid progress on long-standing, difficult problems in machine learning and artificial intelligence (AI), in areas as diverse as computer vision [82], video game playing [102], autonomous vehicles [86], and Go [140].",
+        "page": 1,
+        "reference_key": "[82] [102] [86] [140]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Google Brain",
+          "name": "Dario Amodei"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Chris Olah"
+        },
+        {
+          "affiliation": "Stanford University",
+          "name": "Jacob Steinhardt"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "John Schulman"
+        },
+        {
+          "affiliation": "UC Berkeley",
+          "name": "Paul Christiano"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Dan Mané"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Concrete Problems in AI Safety"
+        },
+        {
+          "page": 1,
+          "quote": "Dario Amodei∗\nGoogle Brain\nChris Olah∗\nGoogle Brain\nJacob Steinhardt\nStanford University\nJohn Schulman\nOpenAI\nPaul Christiano\nUC Berkeley\nDan Mané\nGoogle Brain"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1606.06565v2[cs.AI]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Concrete Problems in AI Safety",
+      "venue": "arXiv",
+      "year": 2016
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems."
+        },
+        {
+          "page": 2,
+          "quote": "Our goal in this document is to highlight a few concrete safety problems that are ready for experimentation today and relevant to the cutting edge of AI systems, as well as reviewing existing literature on these problems."
+        }
+      ],
+      "text": "How can the machine learning community identify and address concrete, practically relevant accident risks—unintended and harmful behaviors—in AI systems, especially as ML and RL systems become more autonomous, complex, and deployed in real-world settings?"
+    },
+    "references": [
+      {
+        "authors": [],
+        "doi": "",
+        "key": "1",
+        "page": 22,
+        "title": "",
+        "venue": "",
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": "",
+        "key": "2",
+        "page": 22,
+        "title": "",
+        "venue": "",
+        "year": null
+      }
+    ],
+    "relations": [],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "",
+          "start_page": 1,
+          "start_text": ""
+        },
+        "summary": "",
+        "title": ""
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It outlines five practical AI safety research problems, reviews prior work, and proposes research directions rather than presenting new experiments.",
+      "value": "position"
+    }
+  },
+  "pass1_check": {
+    "sites": 14,
+    "verbatim": 12,
+    "near": 1,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/references",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft lists only two empty placeholder references (keys \"1\" and \"2\"), but the paper contains a full numbered reference list [1]–[170] spanning pages 22–29. Almost all references are missing.",
+      "evidence": [
+        {
+          "quote": "Martin Abadi et al. “Deep Learning with Differential Privacy”. In: (in press (2016)).",
+          "page": 22
+        },
+        {
+          "quote": "Yuchen Zhang et al. “Spectral methods meet EM: A provably optimal algorithm for crowdsourcing”. In: Advances in neural information processing systems. 2014, pp. 1260–1268.",
+          "page": 29
+        }
+      ]
+    },
+    {
+      "path": "/references/0",
+      "action": "replace",
+      "value_json": "{\"authors\":[\"Martin Abadi et al.\"],\"doi\":\"\",\"key\":\"1\",\"page\":22,\"title\":\"Deep Learning with Differential Privacy\",\"venue\":\"\",\"year\":2016}",
+      "reason": "Reference 1 in the paper is Martin Abadi et al., “Deep Learning with Differential Privacy”; the draft entry is empty.",
+      "evidence": [
+        {
+          "quote": "Martin Abadi et al. “Deep Learning with Differential Privacy”. In: (in press (2016)).",
+          "page": 22
+        }
+      ]
+    },
+    {
+      "path": "/references/1",
+      "action": "replace",
+      "value_json": "{\"authors\":[\"Pieter Abbeel\",\"Andrew Y Ng\"],\"doi\":\"\",\"key\":\"2\",\"page\":22,\"title\":\"Exploration and apprenticeship learning in reinforcement learning\",\"venue\":\"Proceedings of the 22nd international conference on Machine learning\",\"year\":2005}",
+      "reason": "Reference 2 in the paper is Pieter Abbeel and Andrew Y Ng, “Exploration and apprenticeship learning in reinforcement learning” (ICML 2005); the draft entry is empty.",
+      "evidence": [
+        {
+          "quote": "Pieter Abbeel and Andrew Y Ng. “Exploration and apprenticeship learning in reinforcement learning”. In: Proceedings of the 22nd international conference on Machine learning. ACM. 2005, pp. 1–8.",
+          "page": 22
+        }
+      ]
+    },
+    {
+      "path": "/sections",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft has a single section with an empty title and empty summary covering pages 1–2, but the paper has nine sections (1 Introduction through 9 Conclusion) spanning pages 1–21. The section record is incomplete.",
+      "evidence": [
+        {
+          "quote": "1\nIntroduction",
+          "page": 1
+        },
+        {
+          "quote": "9\nConclusion",
+          "page": 21
+        }
+      ]
+    },
+    {
+      "path": "/citations/0",
+      "action": "flag",
+      "value_json": null,
+      "reason": "Citations[0] appears to be a malformed duplicate of citations[1]: it carries no real contextual sentence (context is just \"page 1\") while repeating the same page and reference key.",
+      "evidence": [
+        {
+          "quote": "The last few years have seen rapid progress on long-standing, difficult problems in machine learning and artificial intelligence (AI), in areas as diverse as computer vision [82], video game playing [102], autonomous vehicles [86], and Go [140].",
+          "page": 1
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/references",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 1,
+      "path": "/references/0",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/references/1",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/sections",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 4,
+      "path": "/citations/0",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 14,
+    "verbatim": 12,
+    "near": 1,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI.",
+      "admitted": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below.",
+      "admitted": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/1/quote",
+      "status": "verbatim",
+      "original": "In Section 2, we frame mitigating accident risk (often referred to as “AI safety” in public discussions) in terms of classic methods in machine learning, such as supervised classification and reinforcement learning.",
+      "admitted": "In Section 2, we frame mitigating accident risk (often referred to as “AI safety” in public discussions) in terms of classic methods in machine learning, such as supervised classification and reinforcement learning.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "First is the increasing promise of reinforcement learning (RL), which allows agents to have a highly intertwined interaction with their environment.",
+      "admitted": "First is the increasing promise of reinforcement learning (RL), which allows agents to have a highly intertwined interaction with their environment.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27]. However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents",
+      "admitted": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27]. However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "we could choose to view side effects as idiosyncratic to each individual task—as the responsibility of each individual designer to capture as part of designing the correct objective function.",
+      "admitted": "we could choose to view side effects as idiosyncratic to each individual task—as the responsibility of each individual designer to capture as part of designing the correct objective function.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/1/quote",
+      "status": "repaired_local",
+      "original": "It might be thought that individual instances of reward hacking have little in common and that the remedy is simply to avoid choosing the wrong objective function in each individual case",
+      "admitted": "It might be thought that individual instances of reward hacking have little in common and that the remedy is simply to avoid choosing the wrong objective function in each individual",
+      "similarity": 0.967741935483871,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”).",
+      "admitted": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Concrete Problems in AI Safety",
+      "admitted": "Concrete Problems in AI Safety",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Dario Amodei∗\nGoogle Brain\nChris Olah∗\nGoogle Brain\nJacob Steinhardt\nStanford University\nJohn Schulman\nOpenAI\nPaul Christiano\nUC Berkeley\nDan Mané\nGoogle Brain",
+      "admitted": "Dario Amodei∗\nGoogle Brain\nChris Olah∗\nGoogle Brain\nJacob Steinhardt\nStanford University\nJohn Schulman\nOpenAI\nPaul Christiano\nUC Berkeley\nDan Mané\nGoogle Brain",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems.",
+      "admitted": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Our goal in this document is to highlight a few concrete safety problems that are ready for experimentation today and relevant to the cutting edge of AI systems, as well as reviewing existing literature on these problems.",
+      "admitted": "Our goal in this document is to highlight a few concrete safety problems that are ready for experimentation today and relevant to the cutting edge of AI systems, as well as reviewing existing literature on these problems.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "withdrawn",
+      "original": "page 1",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "The last few years have seen rapid progress on long-standing, difficult problems in machine learning and artificial intelligence (AI), in areas as diverse as computer vision [82], video game playing [102], autonomous vehicles [86], and Go [140].",
+      "admitted": "The last few years have seen rapid progress on long-standing, difficult problems in machine learning and artificial intelligence (AI), in areas as diverse as computer vision [82], video game playing [102], autonomous vehicles [86], and Go [140].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 1,
+    "verbatim": 12,
+    "withdrawn": 1
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Existing machine learning safety, robustness, risk-sensitivity, safe exploration, transfer learning, counterfactual reasoning, active learning, and inverse reinforcement learning literature.",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below."
+              },
+              {
+                "page": 2,
+                "quote": "In Section 2, we frame mitigating accident risk (often referred to as “AI safety” in public discussions) in terms of classic methods in machine learning, such as supervised classification and reinforcement learning."
+              }
+            ],
+            "reference_key": "accident risk literature",
+            "why": "The paper positions itself as building on and reviewing prior ML safety/robustness/safe-exploration work."
+          },
+          {
+            "cited_work": "Reinforcement learning and deep RL as an increasingly important paradigm for autonomous agents.",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "First is the increasing promise of reinforcement learning (RL), which allows agents to have a highly intertwined interaction with their environment."
+              }
+            ],
+            "reference_key": "reinforcement learning",
+            "why": "The paper repeatedly frames its concrete safety problems in RL-agent and supervised-learning terms."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Public discussions that emphasize extreme superintelligent-agent scenarios as the main context for AI accident risk.",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27]. However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents"
+              }
+            ],
+            "reference_key": "extreme scenarios",
+            "why": "The paper argues that practical, modern-ML accident problems can and should be discussed without relying on speculative superintelligence scenarios."
+          },
+          {
+            "cited_work": "Views that treat safety failures as idiosyncratic design errors or as topics outside machine learning research.",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "we could choose to view side effects as idiosyncratic to each individual task—as the responsibility of each individual designer to capture as part of designing the correct objective function."
+              },
+              {
+                "page": 9,
+                "quote": "It might be thought that individual instances of reward hacking have little in common and that the remedy is simply to avoid choosing the wrong objective function in each individual"
+              }
+            ],
+            "reference_key": "idiosyncratic design errors",
+            "why": "The paper counters that these failures often arise from general causes and are therefore suitable for ML research."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”)."
+          }
+        ],
+        "text": "This paper argues that accident risk in machine learning and AI should be studied as five concrete, practical research problems—avoiding negative side effects, avoiding reward hacking, scalable oversight, safe exploration, and robustness to distributional shift—arising from misspecified objectives, expensive objective evaluation, or unsafe learning processes."
+      }
+    },
+    "citations": [
+      {
+        "context": "The last few years have seen rapid progress on long-standing, difficult problems in machine learning and artificial intelligence (AI), in areas as diverse as computer vision [82], video game playing [102], autonomous vehicles [86], and Go [140].",
+        "page": 1,
+        "reference_key": "[82] [102] [86] [140]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Google Brain",
+          "name": "Dario Amodei"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Chris Olah"
+        },
+        {
+          "affiliation": "Stanford University",
+          "name": "Jacob Steinhardt"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "John Schulman"
+        },
+        {
+          "affiliation": "UC Berkeley",
+          "name": "Paul Christiano"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Dan Mané"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Concrete Problems in AI Safety"
+        },
+        {
+          "page": 1,
+          "quote": "Dario Amodei∗\nGoogle Brain\nChris Olah∗\nGoogle Brain\nJacob Steinhardt\nStanford University\nJohn Schulman\nOpenAI\nPaul Christiano\nUC Berkeley\nDan Mané\nGoogle Brain"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1606.06565v2[cs.AI]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Concrete Problems in AI Safety",
+      "venue": "arXiv",
+      "year": 2016
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems."
+        },
+        {
+          "page": 2,
+          "quote": "Our goal in this document is to highlight a few concrete safety problems that are ready for experimentation today and relevant to the cutting edge of AI systems, as well as reviewing existing literature on these problems."
+        }
+      ],
+      "text": "How can the machine learning community identify and address concrete, practically relevant accident risks—unintended and harmful behaviors—in AI systems, especially as ML and RL systems become more autonomous, complex, and deployed in real-world settings?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Martin Abadi et al."
+        ],
+        "doi": "",
+        "key": "1",
+        "page": 22,
+        "title": "Deep Learning with Differential Privacy",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Pieter Abbeel",
+          "Andrew Y Ng"
+        ],
+        "doi": "",
+        "key": "2",
+        "page": 22,
+        "title": "Exploration and apprenticeship learning in reinforcement learning",
+        "venue": "Proceedings of the 22nd international conference on Machine learning",
+        "year": 2005
+      }
+    ],
+    "relations": [],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "",
+          "start_page": 1,
+          "start_text": ""
+        },
+        "summary": "",
+        "title": ""
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It outlines five practical AI safety research problems, reviews prior work, and proposes research directions rather than presenting new experiments.",
+      "value": "position"
+    }
+  }
+}
