@@ -88,6 +88,18 @@ Separately, cost is not stable: E4 core produced 821k completion tokens for
 $0.4457 and E3 produced 820k for $0.0327, both reported by Relace. The 13x gap
 is provider pricing, not token count, and any cost model must expect that.
 
+## E6 — fixes verified, providers are the bottleneck
+
+The four follow-ups landed and the targeted misses are fixed: the cite-as title
+on `1803.07954v4` resolved, `Tworzydło` now joins, and the 65,536 floor restored
+`dijkstra1968`. But both reruns were dominated by provider failures, not
+quality. Pinned to Relace the whole cohort returned 429 (upstream shared pool);
+unpinned, six papers got "no message content" and two looped, finishing 22 of 30
+at $1.18. Extraction is no longer the bottleneck; provider selection is.
+
+Watch item: `autor2013` returned the running-head title `The China Syndrome`
+without its subtitle, and `1908.00951v4` returned empty authors. Both completed.
+
 ## Cohort change
 
 The sample grows from 20 to 30: the frozen 20 (bulk arXiv) are kept, and 10
