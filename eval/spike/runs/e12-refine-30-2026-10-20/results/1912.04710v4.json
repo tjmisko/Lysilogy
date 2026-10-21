@@ -1,0 +1,1589 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T21:41:24.452008084Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1912.04710v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 8,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 10100,
+      "cached_tokens": 9984,
+      "completion_tokens": 17808,
+      "reasoning_tokens": 12237,
+      "cost_usd": 0.0075375328,
+      "cost_source": "reported",
+      "latency_s": 138.770109141
+    },
+    {
+      "stage": "extract.sections.refine",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 10306,
+      "cached_tokens": 9088,
+      "completion_tokens": 2684,
+      "reasoning_tokens": 2150,
+      "cost_usd": 0.0013359696,
+      "cost_source": "reported",
+      "latency_s": 25.315288419
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 13490,
+      "cached_tokens": 384,
+      "completion_tokens": 8612,
+      "reasoning_tokens": 8308,
+      "cost_usd": 0.0054534928,
+      "cost_source": "reported",
+      "latency_s": 82.833405915
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 33896,
+    "cached_tokens": 19456,
+    "completion_tokens": 29104,
+    "cost_usd": 0.014326995200000001,
+    "model_latency_s": 246.918803475,
+    "wall_s": 248.53344868
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e12-refine-30-2026-10-20/results/1912.04710v4.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity.\nResults show the conditions for finding the unitary regions on the parameter space. There exists\n(n − 1)th order theories on the boundary of a unitary nth order model on parameter space under\ncertain conditions, as the first example recently demonstrated from the bimetric generalization of\nexotic massive gravity. We investigated the mechanism that causes this type of transition for thirdorder models. Hamiltonian analysis of the theory also presents that ghost and no-ghost regions can\nbe separated by Chern–Simons theories."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Ozkan et al., 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model."
+              }
+            ],
+            "reference_key": "16",
+            "why": "Their earlier example of an n→n−1 transition is the direct precedent this paper generalizes to third-order models."
+          },
+          {
+            "cited_work": "Bergshoeff et al., 2015",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15]."
+              }
+            ],
+            "reference_key": "15",
+            "why": "The paper adopts the CS-like Lagrangian formalism from this reference."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "Ozkan et al., 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model."
+              }
+            ],
+            "reference_key": "16",
+            "why": "It demonstrates the same lower-flavor boundary mechanism in the n = 3 case."
+          }
+        ],
+        "targets": []
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Results show the conditions for finding the unitary regions on the parameter space. There exists\n(n − 1)th order theories on the boundary of a unitary nth order model on parameter space under\ncertain conditions, as the first example recently demonstrated from the bimetric generalization of\nexotic massive gravity."
+          }
+        ],
+        "text": "The most general third-order Chern–Simons-like massive 3D gravity has unitary and nonunitary regions separated by seven-dimensional hypersurfaces, and at these boundaries the theory can degenerate into a lower-flavor model."
+      }
+    },
+    "citations": [
+      {
+        "context": "On the other hand, GR in three dimensions (3D) yields\na trivial theory without any local degree of freedom [1].",
+        "page": 1,
+        "reference_key": "1"
+      },
+      {
+        "context": "However, a degree of freedom is attainable by adding a\ngravitational Chern–Simons term to an Einstein–Hilbert\naction in 3D, which is called topological massive gravity\n(TMG) [2].",
+        "page": 1,
+        "reference_key": "2"
+      },
+      {
+        "context": "Another example, new massive gravity (NMG) [3], is a paritypreserving fourth-order model and its linearization gives\nthe Fierz–Pauli theory [4] with two massive graviton\nmodes with helicity ±2.",
+        "page": 1,
+        "reference_key": "3, 4"
+      },
+      {
+        "context": "If one abandons the paritypreserving condition on NMG the theory can be extended\nto general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and\nNMG as a limit.",
+        "page": 1,
+        "reference_key": "5"
+      },
+      {
+        "context": "Other than NMG and GMG, there is\nanother fourth-order theory called exotic massive gravity\n[6], which is a parity-odd theory with an intriguing feature called third-way consistency [7].",
+        "page": 1,
+        "reference_key": "6, 7"
+      },
+      {
+        "context": "In the 3D case, the first-order formulation\nof the bimetric theory is known as zwei-dreibein gravity\n(ZDG) [8] that has a limiting case to NMG.",
+        "page": 1,
+        "reference_key": "8"
+      },
+      {
+        "context": "The relation has been shown that under certain conditions 3D\ngravity theory generates two copies of Virasoro algebra\non the boundary dual to the bulk theory [9].",
+        "page": 1,
+        "reference_key": "9"
+      },
+      {
+        "context": "is also known as the AdS/CFT correspondence [10, 11].",
+        "page": 1,
+        "reference_key": "10, 11"
+      },
+      {
+        "context": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG.",
+        "page": 1,
+        "reference_key": "12"
+      },
+      {
+        "context": "The nondynamical nature of GR in 3D permits it to\nbe seen as topological theory and hence a Chern–Simons\ngauge theory [13, 14].",
+        "page": 1,
+        "reference_key": "13, 14"
+      },
+      {
+        "context": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15].",
+        "page": 2,
+        "reference_key": "15"
+      },
+      {
+        "context": "Following the procedure introduced in [6], most general\nmodels in three-flavor theory have",
+        "page": 2,
+        "reference_key": "6"
+      },
+      {
+        "context": "However, MMG needs to redefine the\nspin connection Ω = ω + αf as in [12].",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "This can be tested through some of the well-known\n3D models, such as TMG [2] and MMG [12].",
+        "page": 3,
+        "reference_key": "2, 12"
+      },
+      {
+        "context": "By the method introduced in [17] one can find,",
+        "page": 3,
+        "reference_key": "17"
+      },
+      {
+        "context": "In this section we will\nfollow the method introduced in [18].",
+        "page": 3,
+        "reference_key": "18"
+      },
+      {
+        "context": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+        "page": 4,
+        "reference_key": "16"
+      },
+      {
+        "context": "For instance, consider\nthe GMG Lagrangian [5],",
+        "page": 4,
+        "reference_key": "5"
+      },
+      {
+        "context": "These hypersurfaces contain lower-order theories, as the first example recently demonstrated by [16].",
+        "page": 2,
+        "reference_key": "16"
+      },
+      {
+        "context": "it can be concluded that no-ghost condition is K > 0 as one goes after the same\nanalysis of MMG in [12].",
+        "page": 3,
+        "reference_key": "12"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Department of Physics, Istanbul Technical University,\nMaslak 34469 Istanbul, Turkey",
+          "name": "Sinan Sevim"
+        },
+        {
+          "affiliation": "Department of Physics, Istanbul Technical University,\nMaslak 34469 Istanbul, Turkey",
+          "name": "M. Salih Zöğ"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Unitarity flow in 2+1 dimensional massive gravity\nSinan Sevim∗ and M. Salih Zöğ†\nDepartment of Physics, Istanbul Technical University,\nMaslak 34469 Istanbul, Turkey"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1912.04710v4[hep-th]8Oct2020",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Unitarity flow in 2+1 dimensional massive gravity",
+      "venue": null,
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this work, the most general three-flavor case is analyzed."
+        },
+        {
+          "page": 2,
+          "quote": "Here, we will investigate the general properties of the n = 3 model by means of\nbulk/boundary unitarity and local degrees of freedom."
+        }
+      ],
+      "text": "What are the bulk and boundary unitarity conditions for the most general third-order (three-flavor) Chern–Simons-like massive 3D gravity, and how do unitary regions flow into lower-order theories across degeneracies of the flavor metric?"
+    },
+    "references": [
+      {
+        "authors": [
+          "S. Deser",
+          "R. Jackiw",
+          "G. ’t Hooft"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 7,
+        "title": "Annals Phys. 152, 220 (1984).",
+        "venue": "Annals Phys.",
+        "year": 1984
+      },
+      {
+        "authors": [
+          "S. Deser",
+          "R. Jackiw",
+          "S. Templeton"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 7,
+        "title": "Annals Phys. 140, 372 (1982), [Annals Phys.281,409(2000)].",
+        "venue": "Annals Phys.",
+        "year": 1982
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "O. Hohm",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:0901.1766 [hep-th]",
+        "key": "3",
+        "page": 7,
+        "title": "Phys. Rev. Lett. 102, 201301 (2009), arXiv:0901.1766 [hep-th].",
+        "venue": "Phys. Rev. Lett.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "M. Fierz",
+          "W. Pauli"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 7,
+        "title": "Proc. Roy. Soc. Lond. A173, 211 (1939).",
+        "venue": "Proc. Roy. Soc. Lond. A",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "W. Merbis"
+        ],
+        "doi": "arXiv:1411.6888 [hep-th]",
+        "key": "5",
+        "page": 7,
+        "title": "Chern–Simons-like Theories of Gravity, Ph.D. thesis, Groningen U. (2014), arXiv:1411.6888 [hep-th].",
+        "venue": "Groningen U.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "M. Özkan",
+          "Y. Pang",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1806.04179 [hep-th]",
+        "key": "6",
+        "page": 7,
+        "title": "JHEP 08, 035 (2018), arXiv:1806.04179 [hep-th].",
+        "venue": "JHEP",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "E. Bergshoeff",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1506.05949 [gr-qc]",
+        "key": "7",
+        "page": 7,
+        "title": "Int. J. Mod. Phys. D24, 1544015 (2015), arXiv:1506.05949 [gr-qc].",
+        "venue": "Int. J. Mod. Phys. D",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "S. de Haan",
+          "O. Hohm",
+          "W. Merbis",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1307.2774 [hep-th]",
+        "key": "8",
+        "page": 7,
+        "title": "Phys. Rev. Lett. 111, 111102 (2013), [Erratum: Phys. Rev. Lett.111,no.25,259902(2013)], arXiv:1307.2774 [hep-th].",
+        "venue": "Phys. Rev. Lett.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "J. D. Brown",
+          "M. Henneaux"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 7,
+        "title": "Commun. Math. Phys. 104, 207 (1986).",
+        "venue": "Commun. Math. Phys.",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "J. M. Maldacena"
+        ],
+        "doi": "arXiv: hep-th/9711200 [hep-th]",
+        "key": "10",
+        "page": 7,
+        "title": "Int. J. Theor. Phys. 38, 1113 (1999), [Adv. Theor. Math. Phys.2,231(1998)], arXiv: hep-th/9711200 [hep-th].",
+        "venue": "Int. J. Theor. Phys.",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "E. Witten"
+        ],
+        "doi": "arXiv: hep-th/9802150 [hep-th]",
+        "key": "11",
+        "page": 7,
+        "title": "Adv. Theor. Math. Phys. 2, 253 (1998), arXiv: hep-th/9802150 [hep-th].",
+        "venue": "Adv. Theor. Math. Phys.",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "E. Bergshoeff",
+          "O. Hohm",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1404.2867 [hep-th]",
+        "key": "12",
+        "page": 7,
+        "title": "Class. Quant. Grav. 31, 145008 (2014), arXiv:1404.2867 [hep-th].",
+        "venue": "Class. Quant. Grav.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "E. Witten"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 7,
+        "title": "Nucl. Phys. B311, 46 (1988).",
+        "venue": "Nucl. Phys. B",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "A. Achucarro",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 7,
+        "title": "Phys. Lett. B180, 89 (1986), [,732(1987)].",
+        "venue": "Phys. Lett. B",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "O. Hohm",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1402.1688 [hep-th]",
+        "key": "15",
+        "page": 8,
+        "title": "Proceedings of the 7th Aegean Summer School: Beyond Einstein’s theory of gravity. Modifications of Einstein’s Theory of Gravity at Large Distances.: Paros, Greece, September 23-28, 2013, Lect. Notes Phys. 892, 181 (2015), arXiv:1402.1688 [hep-th].",
+        "venue": "Lect. Notes Phys.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "M. Ozkan",
+          "Y. Pang",
+          "U. Zorba"
+        ],
+        "doi": "arXiv:1905.00438 [hep-th]",
+        "key": "16",
+        "page": 8,
+        "title": "Phys. Rev. Lett. 123, 031303 (2019), arXiv:1905.00438 [hep-th].",
+        "venue": "Phys. Rev. Lett.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "W. Merbis",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1909.11743 [hep-th]",
+        "key": "17",
+        "page": 8,
+        "title": "(2019), arXiv:1909.11743 [hep-th].",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "O. Hohm",
+          "A. Routh",
+          "P. K. Townsend",
+          "B. Zhang"
+        ],
+        "doi": "arXiv:1208.0038 [hep-th]",
+        "key": "18",
+        "page": 8,
+        "title": "Phys. Rev. D86, 084035 (2012), arXiv:1208.0038 [hep-th].",
+        "venue": "Phys. Rev. D",
+        "year": 2012
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15].",
+        "reference_key": "15",
+        "relation": "uses_method",
+        "why": "The paper builds its three-flavor model using the CS-like Lagrangian formalism introduced there."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Following the procedure introduced in [6], most general\nmodels in three-flavor theory have",
+        "reference_key": "6",
+        "relation": "extends",
+        "why": "It applies and generalizes the earlier procedure for constructing general massive-gravity models."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In this section we will\nfollow the method introduced in [18].",
+        "reference_key": "18",
+        "relation": "uses_method",
+        "why": "The Hamiltonian constraint and degree-of-freedom count follow this reference’s method."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "By the method introduced in [17] one can find,",
+        "reference_key": "17",
+        "relation": "uses_method",
+        "why": "The central-charge calculation is based on the method developed there."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+        "reference_key": "16",
+        "relation": "extends",
+        "why": "This paper explicitly extends the earlier lower-flavor boundary observation to the general n = 3 case."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "it can be concluded that no-ghost condition is K > 0 as one goes after the same\nanalysis of MMG in [12].",
+        "reference_key": "12",
+        "relation": "uses_method",
+        "why": "The no-ghost condition is treated by analogy with the known analysis of MMG."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "For instance, consider\nthe GMG Lagrangian [5],",
+        "reference_key": "5",
+        "relation": "uses_method",
+        "why": "GMG supplies a concrete example of how a higher-order Lagrangian can reduce to a lower-order model."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "The following relations which we refer to here as AdS conditions can be\nderived from equations of motion:",
+          "start_page": 1,
+          "start_text": "Unitarity flow in 2+1 dimensional massive gravity"
+        },
+        "summary": "Motivates the study of 3D massive gravity, introduces the most general three-flavor Chern–Simons-like model, and derives the linearized equations and AdS background conditions.",
+        "title": "Introduction and the three-flavor Chern–Simons-like model"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "It can be concluded that Chern–Simon\ntheories may exist on the boundaries which separate the\nghost and no-ghost regions on the parameter space.",
+          "start_page": 3,
+          "start_text": "Unitarity conditions"
+        },
+        "summary": "Derives boundary and bulk unitarity conditions and performs a Hamiltonian constraint analysis to count bulk degrees of freedom and identify ghost/no-ghost separation by Chern–Simons theories.",
+        "title": "Unitarity conditions and Hamiltonian analysis"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "The work of M.S.Z. and S.S. is partially supported by TUBITAK Grant No. 118F091.",
+          "start_page": 4,
+          "start_text": "UNITARITY FLOW"
+        },
+        "summary": "Studies the eight-dimensional parameter space, shows that det(g)=0 signals lower-flavor degeneration, and works through an example flow where a 3→2 transition occurs and the resulting equations reduce to Einstein–Cartan theory. It concludes that the general third-order CS-like theory has unitary and nonunitary regions separated by hypersurfaces, with lower-order theories appearing at the boundaries and Chern–Simons theories separating ghost and no-ghost regions.",
+        "title": "Unitarity flow, lower-flavor degeneration, and conclusions"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The document is a theoretical physics research article presenting derivations and a parameter-space unitarity analysis, not an experimental report or review.",
+      "value": "survey"
+    }
+  },
+  "pass1_check": {
+    "sites": 35,
+    "verbatim": 33,
+    "near": 2,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/type/value",
+      "action": "replace",
+      "value_json": "\"research_article\"",
+      "reason": "The paper is a theoretical physics research article, not a survey.",
+      "evidence": [
+        {
+          "quote": "In this work, the most general three-flavor case is analyzed.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/citations/19/context",
+      "action": "replace",
+      "value_json": "\"It can be concluded that no-ghost condition is K > 0 as one goes after the same\\nanalysis of MMG in [12].\"",
+      "reason": "The cited context is not verbatim because the paper begins the sentence with a capital 'It'.",
+      "evidence": [
+        {
+          "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same\nanalysis of MMG in [12].",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/relations/5/quote",
+      "action": "replace",
+      "value_json": "\"It can be concluded that no-ghost condition is K > 0 as one goes after the same\\nanalysis of MMG in [12].\"",
+      "reason": "The relation quote is not verbatim because the paper begins the sentence with a capital 'It'.",
+      "evidence": [
+        {
+          "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same\nanalysis of MMG in [12].",
+          "page": 3
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/type/value",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "value does not match the schema: : value is not one of the allowed values"
+    },
+    {
+      "index": 1,
+      "path": "/citations/19/context",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/relations/5/quote",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 35,
+    "verbatim": 33,
+    "near": 2,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity.\nResults show the conditions for finding the unitary regions on the parameter space. There exists\n(n − 1)th order theories on the boundary of a unitary nth order model on parameter space under\ncertain conditions, as the first example recently demonstrated from the bimetric generalization of\nexotic massive gravity. We investigated the mechanism that causes this type of transition for thirdorder models. Hamiltonian analysis of the theory also presents that ghost and no-ghost regions can\nbe separated by Chern–Simons theories.",
+      "admitted": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity.\nResults show the conditions for finding the unitary regions on the parameter space. There exists\n(n − 1)th order theories on the boundary of a unitary nth order model on parameter space under\ncertain conditions, as the first example recently demonstrated from the bimetric generalization of\nexotic massive gravity. We investigated the mechanism that causes this type of transition for thirdorder models. Hamiltonian analysis of the theory also presents that ghost and no-ghost regions can\nbe separated by Chern–Simons theories.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+      "admitted": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15].",
+      "admitted": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/replications/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+      "admitted": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Results show the conditions for finding the unitary regions on the parameter space. There exists\n(n − 1)th order theories on the boundary of a unitary nth order model on parameter space under\ncertain conditions, as the first example recently demonstrated from the bimetric generalization of\nexotic massive gravity.",
+      "admitted": "Results show the conditions for finding the unitary regions on the parameter space. There exists\n(n − 1)th order theories on the boundary of a unitary nth order model on parameter space under\ncertain conditions, as the first example recently demonstrated from the bimetric generalization of\nexotic massive gravity.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "Unitarity flow in 2+1 dimensional massive gravity\nSinan Sevim∗ and M. Salih Zöğ†\nDepartment of Physics, Istanbul Technical University,\nMaslak 34469 Istanbul, Turkey",
+      "admitted": "Unitarity flow in 2+1 dimensional massive gravity Sinan Sevim∗ and M. Salih Zöğ† Department of Physics, Istanbul Technical University, Maslak 34469 Istanbul, Turkey",
+      "similarity": 0.9565217391304348,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this work, the most general three-flavor case is analyzed.",
+      "admitted": "In this work, the most general three-flavor case is analyzed.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Here, we will investigate the general properties of the n = 3 model by means of\nbulk/boundary unitarity and local degrees of freedom.",
+      "admitted": "Here, we will investigate the general properties of the n = 3 model by means of\nbulk/boundary unitarity and local degrees of freedom.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "On the other hand, GR in three dimensions (3D) yields\na trivial theory without any local degree of freedom [1].",
+      "admitted": "On the other hand, GR in three dimensions (3D) yields\na trivial theory without any local degree of freedom [1].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "However, a degree of freedom is attainable by adding a\ngravitational Chern–Simons term to an Einstein–Hilbert\naction in 3D, which is called topological massive gravity\n(TMG) [2].",
+      "admitted": "However, a degree of freedom is attainable by adding a\ngravitational Chern–Simons term to an Einstein–Hilbert\naction in 3D, which is called topological massive gravity\n(TMG) [2].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "Another example, new massive gravity (NMG) [3], is a paritypreserving fourth-order model and its linearization gives\nthe Fierz–Pauli theory [4] with two massive graviton\nmodes with helicity ±2.",
+      "admitted": "Another example, new massive gravity (NMG) [3], is a paritypreserving fourth-order model and its linearization gives\nthe Fierz–Pauli theory [4] with two massive graviton\nmodes with helicity ±2.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "If one abandons the paritypreserving condition on NMG the theory can be extended\nto general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and\nNMG as a limit.",
+      "admitted": "If one abandons the paritypreserving condition on NMG the theory can be extended\nto general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and\nNMG as a limit.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "Other than NMG and GMG, there is\nanother fourth-order theory called exotic massive gravity\n[6], which is a parity-odd theory with an intriguing feature called third-way consistency [7].",
+      "admitted": "Other than NMG and GMG, there is\nanother fourth-order theory called exotic massive gravity\n[6], which is a parity-odd theory with an intriguing feature called third-way consistency [7].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "In the 3D case, the first-order formulation\nof the bimetric theory is known as zwei-dreibein gravity\n(ZDG) [8] that has a limiting case to NMG.",
+      "admitted": "In the 3D case, the first-order formulation\nof the bimetric theory is known as zwei-dreibein gravity\n(ZDG) [8] that has a limiting case to NMG.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "The relation has been shown that under certain conditions 3D\ngravity theory generates two copies of Virasoro algebra\non the boundary dual to the bulk theory [9].",
+      "admitted": "The relation has been shown that under certain conditions 3D\ngravity theory generates two copies of Virasoro algebra\non the boundary dual to the bulk theory [9].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "is also known as the AdS/CFT correspondence [10, 11].",
+      "admitted": "is also known as the AdS/CFT correspondence [10, 11].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG.",
+      "admitted": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "The nondynamical nature of GR in 3D permits it to\nbe seen as topological theory and hence a Chern–Simons\ngauge theory [13, 14].",
+      "admitted": "The nondynamical nature of GR in 3D permits it to\nbe seen as topological theory and hence a Chern–Simons\ngauge theory [13, 14].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15].",
+      "admitted": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "Following the procedure introduced in [6], most general\nmodels in three-flavor theory have",
+      "admitted": "Following the procedure introduced in [6], most general\nmodels in three-flavor theory have",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "However, MMG needs to redefine the\nspin connection Ω = ω + αf as in [12].",
+      "admitted": "However, MMG needs to redefine the\nspin connection Ω = ω + αf as in [12].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "repaired_local",
+      "original": "This can be tested through some of the well-known\n3D models, such as TMG [2] and MMG [12].",
+      "admitted": "parameter.This can be tested through some of the well-known 3D models, such as TMG [2] and MMG [12].",
+      "similarity": 0.9444444444444444,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "By the method introduced in [17] one can find,",
+      "admitted": "By the method introduced in [17] one can find,",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "In this section we will\nfollow the method introduced in [18].",
+      "admitted": "In this section we will\nfollow the method introduced in [18].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+      "admitted": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "For instance, consider\nthe GMG Lagrangian [5],",
+      "admitted": "For instance, consider\nthe GMG Lagrangian [5],",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "These hypersurfaces contain lower-order theories, as the first example recently demonstrated by [16].",
+      "admitted": "These hypersurfaces contain lower-order theories, as the first example recently demonstrated by [16].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "It can be concluded that no-ghost condition is K > 0 as one goes after the same\nanalysis of MMG in [12].",
+      "admitted": "It can be concluded that no-ghost condition is K > 0 as one goes after the same\nanalysis of MMG in [12].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15].",
+      "admitted": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Following the procedure introduced in [6], most general\nmodels in three-flavor theory have",
+      "admitted": "Following the procedure introduced in [6], most general\nmodels in three-flavor theory have",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "In this section we will\nfollow the method introduced in [18].",
+      "admitted": "In this section we will\nfollow the method introduced in [18].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "By the method introduced in [17] one can find,",
+      "admitted": "By the method introduced in [17] one can find,",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+      "admitted": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "It can be concluded that no-ghost condition is K > 0 as one goes after the same\nanalysis of MMG in [12].",
+      "admitted": "It can be concluded that no-ghost condition is K > 0 as one goes after the same\nanalysis of MMG in [12].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "For instance, consider\nthe GMG Lagrangian [5],",
+      "admitted": "For instance, consider\nthe GMG Lagrangian [5],",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 2,
+    "verbatim": 33
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We analyze the most general case of third-order Chern–Simons-like theories of massive 3D gravity.\nResults show the conditions for finding the unitary regions on the parameter space. There exists\n(n − 1)th order theories on the boundary of a unitary nth order model on parameter space under\ncertain conditions, as the first example recently demonstrated from the bimetric generalization of\nexotic massive gravity. We investigated the mechanism that causes this type of transition for thirdorder models. Hamiltonian analysis of the theory also presents that ghost and no-ghost regions can\nbe separated by Chern–Simons theories."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Ozkan et al., 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model."
+              }
+            ],
+            "reference_key": "16",
+            "why": "Their earlier example of an n→n−1 transition is the direct precedent this paper generalizes to third-order models."
+          },
+          {
+            "cited_work": "Bergshoeff et al., 2015",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15]."
+              }
+            ],
+            "reference_key": "15",
+            "why": "The paper adopts the CS-like Lagrangian formalism from this reference."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "Ozkan et al., 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model."
+              }
+            ],
+            "reference_key": "16",
+            "why": "It demonstrates the same lower-flavor boundary mechanism in the n = 3 case."
+          }
+        ],
+        "targets": []
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Results show the conditions for finding the unitary regions on the parameter space. There exists\n(n − 1)th order theories on the boundary of a unitary nth order model on parameter space under\ncertain conditions, as the first example recently demonstrated from the bimetric generalization of\nexotic massive gravity."
+          }
+        ],
+        "text": "The most general third-order Chern–Simons-like massive 3D gravity has unitary and nonunitary regions separated by seven-dimensional hypersurfaces, and at these boundaries the theory can degenerate into a lower-flavor model."
+      }
+    },
+    "citations": [
+      {
+        "context": "On the other hand, GR in three dimensions (3D) yields\na trivial theory without any local degree of freedom [1].",
+        "page": 1,
+        "reference_key": "1"
+      },
+      {
+        "context": "However, a degree of freedom is attainable by adding a\ngravitational Chern–Simons term to an Einstein–Hilbert\naction in 3D, which is called topological massive gravity\n(TMG) [2].",
+        "page": 1,
+        "reference_key": "2"
+      },
+      {
+        "context": "Another example, new massive gravity (NMG) [3], is a paritypreserving fourth-order model and its linearization gives\nthe Fierz–Pauli theory [4] with two massive graviton\nmodes with helicity ±2.",
+        "page": 1,
+        "reference_key": "3, 4"
+      },
+      {
+        "context": "If one abandons the paritypreserving condition on NMG the theory can be extended\nto general massive gravity (GMG) [5] that has ±2 helicity states with different masses and gives both TMG and\nNMG as a limit.",
+        "page": 1,
+        "reference_key": "5"
+      },
+      {
+        "context": "Other than NMG and GMG, there is\nanother fourth-order theory called exotic massive gravity\n[6], which is a parity-odd theory with an intriguing feature called third-way consistency [7].",
+        "page": 1,
+        "reference_key": "6, 7"
+      },
+      {
+        "context": "In the 3D case, the first-order formulation\nof the bimetric theory is known as zwei-dreibein gravity\n(ZDG) [8] that has a limiting case to NMG.",
+        "page": 1,
+        "reference_key": "8"
+      },
+      {
+        "context": "The relation has been shown that under certain conditions 3D\ngravity theory generates two copies of Virasoro algebra\non the boundary dual to the bulk theory [9].",
+        "page": 1,
+        "reference_key": "9"
+      },
+      {
+        "context": "is also known as the AdS/CFT correspondence [10, 11].",
+        "page": 1,
+        "reference_key": "10, 11"
+      },
+      {
+        "context": "Minimal massive gravity (MMG) [12] solved this problem in a novel manner by adding a specific combination of higher-order curvature terms to TMG.",
+        "page": 1,
+        "reference_key": "12"
+      },
+      {
+        "context": "The nondynamical nature of GR in 3D permits it to\nbe seen as topological theory and hence a Chern–Simons\ngauge theory [13, 14].",
+        "page": 1,
+        "reference_key": "13, 14"
+      },
+      {
+        "context": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15].",
+        "page": 2,
+        "reference_key": "15"
+      },
+      {
+        "context": "Following the procedure introduced in [6], most general\nmodels in three-flavor theory have",
+        "page": 2,
+        "reference_key": "6"
+      },
+      {
+        "context": "However, MMG needs to redefine the\nspin connection Ω = ω + αf as in [12].",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "parameter.This can be tested through some of the well-known 3D models, such as TMG [2] and MMG [12].",
+        "page": 3,
+        "reference_key": "2, 12"
+      },
+      {
+        "context": "By the method introduced in [17] one can find,",
+        "page": 3,
+        "reference_key": "17"
+      },
+      {
+        "context": "In this section we will\nfollow the method introduced in [18].",
+        "page": 3,
+        "reference_key": "18"
+      },
+      {
+        "context": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+        "page": 4,
+        "reference_key": "16"
+      },
+      {
+        "context": "For instance, consider\nthe GMG Lagrangian [5],",
+        "page": 4,
+        "reference_key": "5"
+      },
+      {
+        "context": "These hypersurfaces contain lower-order theories, as the first example recently demonstrated by [16].",
+        "page": 2,
+        "reference_key": "16"
+      },
+      {
+        "context": "It can be concluded that no-ghost condition is K > 0 as one goes after the same\nanalysis of MMG in [12].",
+        "page": 3,
+        "reference_key": "12"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Department of Physics, Istanbul Technical University,\nMaslak 34469 Istanbul, Turkey",
+          "name": "Sinan Sevim"
+        },
+        {
+          "affiliation": "Department of Physics, Istanbul Technical University,\nMaslak 34469 Istanbul, Turkey",
+          "name": "M. Salih Zöğ"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Unitarity flow in 2+1 dimensional massive gravity Sinan Sevim∗ and M. Salih Zöğ† Department of Physics, Istanbul Technical University, Maslak 34469 Istanbul, Turkey"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1912.04710v4[hep-th]8Oct2020",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Unitarity flow in 2+1 dimensional massive gravity",
+      "venue": null,
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this work, the most general three-flavor case is analyzed."
+        },
+        {
+          "page": 2,
+          "quote": "Here, we will investigate the general properties of the n = 3 model by means of\nbulk/boundary unitarity and local degrees of freedom."
+        }
+      ],
+      "text": "What are the bulk and boundary unitarity conditions for the most general third-order (three-flavor) Chern–Simons-like massive 3D gravity, and how do unitary regions flow into lower-order theories across degeneracies of the flavor metric?"
+    },
+    "references": [
+      {
+        "authors": [
+          "S. Deser",
+          "R. Jackiw",
+          "G. ’t Hooft"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 7,
+        "title": "Annals Phys. 152, 220 (1984).",
+        "venue": "Annals Phys.",
+        "year": 1984
+      },
+      {
+        "authors": [
+          "S. Deser",
+          "R. Jackiw",
+          "S. Templeton"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 7,
+        "title": "Annals Phys. 140, 372 (1982), [Annals Phys.281,409(2000)].",
+        "venue": "Annals Phys.",
+        "year": 1982
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "O. Hohm",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:0901.1766 [hep-th]",
+        "key": "3",
+        "page": 7,
+        "title": "Phys. Rev. Lett. 102, 201301 (2009), arXiv:0901.1766 [hep-th].",
+        "venue": "Phys. Rev. Lett.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "M. Fierz",
+          "W. Pauli"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 7,
+        "title": "Proc. Roy. Soc. Lond. A173, 211 (1939).",
+        "venue": "Proc. Roy. Soc. Lond. A",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "W. Merbis"
+        ],
+        "doi": "arXiv:1411.6888 [hep-th]",
+        "key": "5",
+        "page": 7,
+        "title": "Chern–Simons-like Theories of Gravity, Ph.D. thesis, Groningen U. (2014), arXiv:1411.6888 [hep-th].",
+        "venue": "Groningen U.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "M. Özkan",
+          "Y. Pang",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1806.04179 [hep-th]",
+        "key": "6",
+        "page": 7,
+        "title": "JHEP 08, 035 (2018), arXiv:1806.04179 [hep-th].",
+        "venue": "JHEP",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "E. Bergshoeff",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1506.05949 [gr-qc]",
+        "key": "7",
+        "page": 7,
+        "title": "Int. J. Mod. Phys. D24, 1544015 (2015), arXiv:1506.05949 [gr-qc].",
+        "venue": "Int. J. Mod. Phys. D",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "S. de Haan",
+          "O. Hohm",
+          "W. Merbis",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1307.2774 [hep-th]",
+        "key": "8",
+        "page": 7,
+        "title": "Phys. Rev. Lett. 111, 111102 (2013), [Erratum: Phys. Rev. Lett.111,no.25,259902(2013)], arXiv:1307.2774 [hep-th].",
+        "venue": "Phys. Rev. Lett.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "J. D. Brown",
+          "M. Henneaux"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 7,
+        "title": "Commun. Math. Phys. 104, 207 (1986).",
+        "venue": "Commun. Math. Phys.",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "J. M. Maldacena"
+        ],
+        "doi": "arXiv: hep-th/9711200 [hep-th]",
+        "key": "10",
+        "page": 7,
+        "title": "Int. J. Theor. Phys. 38, 1113 (1999), [Adv. Theor. Math. Phys.2,231(1998)], arXiv: hep-th/9711200 [hep-th].",
+        "venue": "Int. J. Theor. Phys.",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "E. Witten"
+        ],
+        "doi": "arXiv: hep-th/9802150 [hep-th]",
+        "key": "11",
+        "page": 7,
+        "title": "Adv. Theor. Math. Phys. 2, 253 (1998), arXiv: hep-th/9802150 [hep-th].",
+        "venue": "Adv. Theor. Math. Phys.",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "E. Bergshoeff",
+          "O. Hohm",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1404.2867 [hep-th]",
+        "key": "12",
+        "page": 7,
+        "title": "Class. Quant. Grav. 31, 145008 (2014), arXiv:1404.2867 [hep-th].",
+        "venue": "Class. Quant. Grav.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "E. Witten"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 7,
+        "title": "Nucl. Phys. B311, 46 (1988).",
+        "venue": "Nucl. Phys. B",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "A. Achucarro",
+          "P. K. Townsend"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 7,
+        "title": "Phys. Lett. B180, 89 (1986), [,732(1987)].",
+        "venue": "Phys. Lett. B",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "O. Hohm",
+          "W. Merbis",
+          "A. J. Routh",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1402.1688 [hep-th]",
+        "key": "15",
+        "page": 8,
+        "title": "Proceedings of the 7th Aegean Summer School: Beyond Einstein’s theory of gravity. Modifications of Einstein’s Theory of Gravity at Large Distances.: Paros, Greece, September 23-28, 2013, Lect. Notes Phys. 892, 181 (2015), arXiv:1402.1688 [hep-th].",
+        "venue": "Lect. Notes Phys.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "M. Ozkan",
+          "Y. Pang",
+          "U. Zorba"
+        ],
+        "doi": "arXiv:1905.00438 [hep-th]",
+        "key": "16",
+        "page": 8,
+        "title": "Phys. Rev. Lett. 123, 031303 (2019), arXiv:1905.00438 [hep-th].",
+        "venue": "Phys. Rev. Lett.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "E. A. Bergshoeff",
+          "W. Merbis",
+          "P. K. Townsend"
+        ],
+        "doi": "arXiv:1909.11743 [hep-th]",
+        "key": "17",
+        "page": 8,
+        "title": "(2019), arXiv:1909.11743 [hep-th].",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "O. Hohm",
+          "A. Routh",
+          "P. K. Townsend",
+          "B. Zhang"
+        ],
+        "doi": "arXiv:1208.0038 [hep-th]",
+        "key": "18",
+        "page": 8,
+        "title": "Phys. Rev. D86, 084035 (2012), arXiv:1208.0038 [hep-th].",
+        "venue": "Phys. Rev. D",
+        "year": 2012
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "One can construct the Lagrangian three-form with a flavor metric grs and a coefficient tensor frst as mentioned in [15].",
+        "reference_key": "15",
+        "relation": "uses_method",
+        "why": "The paper builds its three-flavor model using the CS-like Lagrangian formalism introduced there."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Following the procedure introduced in [6], most general\nmodels in three-flavor theory have",
+        "reference_key": "6",
+        "relation": "extends",
+        "why": "It applies and generalizes the earlier procedure for constructing general massive-gravity models."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In this section we will\nfollow the method introduced in [18].",
+        "reference_key": "18",
+        "relation": "uses_method",
+        "why": "The Hamiltonian constraint and degree-of-freedom count follow this reference’s method."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "By the method introduced in [17] one can find,",
+        "reference_key": "17",
+        "relation": "uses_method",
+        "why": "The central-charge calculation is based on the method developed there."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "As first discovered in [16],\nthis surface may contain an (n − 1)-flavor model.",
+        "reference_key": "16",
+        "relation": "extends",
+        "why": "This paper explicitly extends the earlier lower-flavor boundary observation to the general n = 3 case."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "It can be concluded that no-ghost condition is K > 0 as one goes after the same\nanalysis of MMG in [12].",
+        "reference_key": "12",
+        "relation": "uses_method",
+        "why": "The no-ghost condition is treated by analogy with the known analysis of MMG."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "For instance, consider\nthe GMG Lagrangian [5],",
+        "reference_key": "5",
+        "relation": "uses_method",
+        "why": "GMG supplies a concrete example of how a higher-order Lagrangian can reduce to a lower-order model."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "The following relations which we refer to here as AdS conditions can be\nderived from equations of motion:",
+          "start_page": 1,
+          "start_text": "Unitarity flow in 2+1 dimensional massive gravity"
+        },
+        "summary": "Motivates the study of 3D massive gravity, introduces the most general three-flavor Chern–Simons-like model, and derives the linearized equations and AdS background conditions.",
+        "title": "Introduction and the three-flavor Chern–Simons-like model"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "It can be concluded that Chern–Simon\ntheories may exist on the boundaries which separate the\nghost and no-ghost regions on the parameter space.",
+          "start_page": 3,
+          "start_text": "Unitarity conditions"
+        },
+        "summary": "Derives boundary and bulk unitarity conditions and performs a Hamiltonian constraint analysis to count bulk degrees of freedom and identify ghost/no-ghost separation by Chern–Simons theories.",
+        "title": "Unitarity conditions and Hamiltonian analysis"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "The work of M.S.Z. and S.S. is partially supported by TUBITAK Grant No. 118F091.",
+          "start_page": 4,
+          "start_text": "UNITARITY FLOW"
+        },
+        "summary": "Studies the eight-dimensional parameter space, shows that det(g)=0 signals lower-flavor degeneration, and works through an example flow where a 3→2 transition occurs and the resulting equations reduce to Einstein–Cartan theory. It concludes that the general third-order CS-like theory has unitary and nonunitary regions separated by hypersurfaces, with lower-order theories appearing at the boundaries and Chern–Simons theories separating ghost and no-ghost regions.",
+        "title": "Unitarity flow, lower-flavor degeneration, and conclusions"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The document is a theoretical physics research article presenting derivations and a parameter-space unitarity analysis, not an experimental report or review.",
+      "value": "survey"
+    }
+  }
+}

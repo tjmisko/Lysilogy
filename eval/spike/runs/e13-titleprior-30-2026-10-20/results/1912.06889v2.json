@@ -1,0 +1,2249 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T22:50:16.380290223Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1912.06889v2.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 9,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 10638,
+      "cached_tokens": 9600,
+      "completion_tokens": 14925,
+      "reasoning_tokens": 7086,
+      "cost_usd": 0.00645414,
+      "cost_source": "reported",
+      "latency_s": 118.403780919
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 15725,
+      "cached_tokens": 640,
+      "completion_tokens": 11454,
+      "reasoning_tokens": 10405,
+      "cost_usd": 0.006925268,
+      "cost_source": "reported",
+      "latency_s": 94.904950754
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 10263,
+      "cached_tokens": 0,
+      "completion_tokens": 7758,
+      "reasoning_tokens": 6609,
+      "cost_usd": 0.00469518,
+      "cost_source": "reported",
+      "latency_s": 116.611301504
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 36626,
+    "cached_tokens": 10240,
+    "completion_tokens": 34137,
+    "cost_usd": 0.018074588,
+    "model_latency_s": 329.920033177,
+    "wall_s": 332.180469369
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e13-titleprior-30-2026-10-20/results/1912.06889v2.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Neural network based word embeddings, such as Word2Vec and GloVe, are purely data driven in that they capture the distributional information about words from the training corpus. Past works have attempted to improve these embeddings by incorporating semantic knowledge from lexical resources like WordNet. Some techniques like retrofitting modify word embeddings in the post-processing stage while some others use a joint learning approach by modifying the objective function of neural networks. In this paper, we discuss two novel approaches for incorporating semantic knowledge into word embeddings. In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings. We propose a sprinkling technique to add semantic relations to the co-occurrence matrix directly before factorization. In the second approach, WordNet similarity scores are used to improve the retrofitting method. We evaluate the proposed methods in both intrinsic and extrinsic tasks and observe significant improvements over the baselines in many of the datasets."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Levy and Goldberg (2014)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings."
+              }
+            ],
+            "reference_key": "Levy and Goldberg, 2014",
+            "why": "The paper builds on the shifted PPMI/SVD matrix-factorization view of word embeddings."
+          },
+          {
+            "cited_work": "Chakraborti et al. (2006, 2007)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The sprinkling method introduced by Chakraborti et al., (2006) improves LSI by appending the class labels as extra features (terms) to the corresponding training documents."
+              }
+            ],
+            "reference_key": "Chakraborti et al., 2006",
+            "why": "It adapts the sprinkling idea from supervised LSI to lexical reachability in the SPPMI matrix."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Faruqui et al. (2014)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Second, we identify the weaknesses of the retrofitting model (Faruqui et al., 2014) and propose a few modifications that improves the performance."
+              }
+            ],
+            "reference_key": "Faruqui et al., 2014",
+            "why": "It modifies retrofitting by using WordNet similarity scores and multi-hop neighbors."
+          },
+          {
+            "cited_work": "Mrkšić et al. (2016)",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Whereas, the counterfitting approach, (Mrkšić et al., 2016) also tries to push the antonymous words away from each other."
+              }
+            ],
+            "reference_key": "Mrkšić et al., 2016",
+            "why": "The paper contrasts one-hop constraint methods with its use of multi-hop and weighted similarity."
+          },
+          {
+            "cited_work": "Vashishth et al. (2018)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "For extrinsic tasks, W-retrofitting showed comparable performance to the state-of-art SynGCN model, (Vashishth et al., 2018) inspite of SynGCN being a more sophisticated model with lots of parameters that constitute the weights of Graph Convolutional layers and linear layers of neural network used as well as many hyperparameters needed for training the neural network (such as number of GCN layers and their dimensions, learning rate, number of epochs, etc.)."
+              }
+            ],
+            "reference_key": "Vashishth et al., 2018",
+            "why": "It positions its lighter retrofitting method as competitive with this more complex graph-convolution baseline."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In this paper, we discuss two novel approaches for incorporating semantic knowledge into word embeddings."
+          }
+        ],
+        "text": "The paper proposes sprinkling lexical reachability into the SPPMI matrix and weighting retrofitting with WordNet similarity to improve word embeddings."
+      }
+    },
+    "citations": [
+      {
+        "context": "The paper cites Levy et al.'s work as inspiration for its SVD-based sprinkling approach.",
+        "page": 1,
+        "reference_key": "Levy and Goldberg, 2014"
+      },
+      {
+        "context": "The paper cites Faruqui et al. (2014) as the retrofitting baseline it modifies.",
+        "page": 1,
+        "reference_key": "Faruqui et al., 2014"
+      },
+      {
+        "context": "The paper cites Mikolov et al. (2013a) and Bengio et al. (2003) for prediction-based word embedding methods.",
+        "page": 1,
+        "reference_key": "Mikolov et al., 2013a"
+      },
+      {
+        "context": "The paper cites Levy and Goldberg (2014) for count-based matrix factorization methods.",
+        "page": 1,
+        "reference_key": "Levy and Goldberg, 2014"
+      },
+      {
+        "context": "The paper cites Faruqui et al. (2014) for retrofitting.",
+        "page": 2,
+        "reference_key": "Faruqui et al., 2014"
+      },
+      {
+        "context": "The paper cites Mrkšić et al. (2016) for counterfitting.",
+        "page": 2,
+        "reference_key": "Mrkšić et al., 2016"
+      },
+      {
+        "context": "The paper cites Chakraborti et al. (2006) for the sprinkling method.",
+        "page": 2,
+        "reference_key": "Chakraborti et al., 2006"
+      },
+      {
+        "context": "The paper cites Chakraborti et al. (2007) for adaptive sprinkling.",
+        "page": 2,
+        "reference_key": "Chakraborti et al., 2007"
+      },
+      {
+        "context": "The paper cites Levy and Goldberg (2014) and Mikolov et al. (2013a) for SPPMI factorization.",
+        "page": 2,
+        "reference_key": "Levy and Goldberg, 2014"
+      },
+      {
+        "context": "The paper cites Faruqui et al. (2014) for retrofitting.",
+        "page": 3,
+        "reference_key": "Faruqui et al., 2014"
+      },
+      {
+        "context": "The paper cites Miller (1995) and Ganitkevitch et al. (2013) for knowledge sources.",
+        "page": 3,
+        "reference_key": "Miller, 1995"
+      },
+      {
+        "context": "The paper cites Faruqui et al. (2014) for the PPDB knowledge source.",
+        "page": 4,
+        "reference_key": "Faruqui et al., 2014"
+      },
+      {
+        "context": "The paper cites Vashishth et al. (2018) for the SynGCN baseline.",
+        "page": 4,
+        "reference_key": "Vashishth et al., 2018"
+      },
+      {
+        "context": "The paper cites Vashishth et al. (2018) for extrinsic task architectures.",
+        "page": 4,
+        "reference_key": "Vashishth et al., 2018"
+      },
+      {
+        "context": "The paper cites Vashishth et al. (2018) for SynGCN performance.",
+        "page": 7,
+        "reference_key": "Vashishth et al., 2018"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Dept. of Computer Science, University of California, Los Angeles",
+          "name": "Aakash Srinivasan"
+        },
+        {
+          "affiliation": "Dept. of Computer Science and Engineering, Indian Institute of Technology Madras",
+          "name": "Harshavardhan Kamarthi"
+        },
+        {
+          "affiliation": "Dept. of Computer Science and Engineering, Indian Institute of Technology Madras",
+          "name": "Devi Ganesan"
+        },
+        {
+          "affiliation": "Dept. of Computer Science and Engineering, Indian Institute of Technology Madras",
+          "name": "Sutanu Chakraborti"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Integrating Lexical Knowledge in Word Embeddings using Sprinkling and Retrofitting"
+        },
+        {
+          "page": 1,
+          "quote": "Aakash Srinivasan1∗, Harshavardhan Kamarthi2∗, Devi Ganesan², Sutanu Chakraborti²"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1912.06889v2 [cs.CL] 23 Jan 2020",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Integrating Lexical Knowledge in Word Embeddings using Sprinkling and Retrofitting",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "We propose a sprinkling technique to add semantic relations to the co-occurrence matrix directly before factorization."
+        },
+        {
+          "page": 1,
+          "quote": "In the second approach, WordNet similarity scores are used to improve the retrofitting method."
+        }
+      ],
+      "text": "Can injecting lexical knowledge from WordNet and PPDB into the SPPMI matrix via sprinkling, and using WordNet similarity scores in retrofitting, improve intrinsic and extrinsic word embedding performance over distributional baselines?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Yoshua Bengio",
+          "Réjean Ducharme",
+          "Pascal Vincent",
+          "Christian Jauvin"
+        ],
+        "doi": null,
+        "key": "Bengio et al., 2003",
+        "page": 7,
+        "title": "A neural probabilistic language model",
+        "venue": "Journal of machine learning research",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Elia Bruni",
+          "Nam-Khanh Tran",
+          "Marco Baroni"
+        ],
+        "doi": null,
+        "key": "Bruni et al., 2014",
+        "page": 7,
+        "title": "Multimodal distributional semantics",
+        "venue": "Journal of Artificial Intelligence Research",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Sutanu Chakraborti",
+          "Robert Lothian",
+          "Nirmalie Wiratunga",
+          "Stuart Watt"
+        ],
+        "doi": null,
+        "key": "Chakraborti et al., 2006",
+        "page": 7,
+        "title": "Sprinkling: supervised latent semantic indexing",
+        "venue": "European Conference on Information Retrieval",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Sutanu Chakraborti",
+          "Rahman Mukras",
+          "Robert Lothian",
+          "Nirmalie Wiratunga",
+          "Stuart NK Watt",
+          "David J Harper"
+        ],
+        "doi": null,
+        "key": "Chakraborti et al., 2007",
+        "page": 7,
+        "title": "Supervised latent semantic indexing using adaptive sprinkling",
+        "venue": "IJCAI",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Jacob Devlin",
+          "Ming-Wei Chang",
+          "Kenton Lee",
+          "Kristina Toutanova"
+        ],
+        "doi": null,
+        "key": "Devlin et al., 2018",
+        "page": 7,
+        "title": "Bert: Pre-training of deep bidirectional transformers for language understanding",
+        "venue": "NAACL-HLT",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Manaal Faruqui",
+          "Jesse Dodge",
+          "Sujay K Jauhar",
+          "Chris Dyer",
+          "Eduard Hovy",
+          "Noah A Smith"
+        ],
+        "doi": null,
+        "key": "Faruqui et al., 2014",
+        "page": 7,
+        "title": "Retrofitting word vectors to semantic lexicons",
+        "venue": "arXiv preprint arXiv:1411.4166",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Lev Finkelstein",
+          "Evgeniy Gabrilovich",
+          "Yossi Matias",
+          "Ehud Rivlin",
+          "Zach Solan",
+          "Gadi Wolfman",
+          "Eytan Ruppin"
+        ],
+        "doi": null,
+        "key": "Finkelstein et al., 2002",
+        "page": 7,
+        "title": "Placing search in context: The concept revisited",
+        "venue": "ACM Transactions on information systems",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Daniel Fried",
+          "Kevin Duh"
+        ],
+        "doi": null,
+        "key": "Fried and Duh, 2014",
+        "page": 7,
+        "title": "Incorporating both distributional and relational semantics in word representations",
+        "venue": "arXiv preprint arXiv:1412.4369",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Juri Ganitkevitch",
+          "Benjamin Van Durme",
+          "Chris Callison-Burch"
+        ],
+        "doi": null,
+        "key": "Ganitkevitch et al., 2013",
+        "page": 8,
+        "title": "Ppdb: The paraphrase database",
+        "venue": "Proceedings of the 2013 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Felix Hill",
+          "Roi Reichart",
+          "Anna Korhonen"
+        ],
+        "doi": null,
+        "key": "Hill et al., 2015",
+        "page": 8,
+        "title": "Simlex-999: Evaluating semantic models with (genuine) similarity estimation",
+        "venue": "Computational Linguistics",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Stanisław Jastrzebski",
+          "Damian Leśniak",
+          "Wojciech Marian Czarnecki"
+        ],
+        "doi": null,
+        "key": "Jastrzebski et al., 2017",
+        "page": 8,
+        "title": "How to evaluate word embeddings? on importance of data efficiency and simple supervised tasks",
+        "venue": "arXiv preprint arXiv:1702.02170",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Jay J Jiang",
+          "David W Conrath"
+        ],
+        "doi": null,
+        "key": "Jiang and Conrath, 1997",
+        "page": 8,
+        "title": "Semantic similarity based on corpus statistics and lexical taxonomy",
+        "venue": "arXiv preprint cmp-lg/9709008",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Claudia Leacock",
+          "Martin Chodorow"
+        ],
+        "doi": null,
+        "key": "Leacock and Chodorow, 1998",
+        "page": 8,
+        "title": "Combining local context and wordnet similarity for word sense identification",
+        "venue": "WordNet: An electronic lexical database",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Kenton Lee",
+          "Luheng He",
+          "Luke S. Zettlemoyer"
+        ],
+        "doi": null,
+        "key": "Lee et al., 2018",
+        "page": 8,
+        "title": "Higher-order coreference resolution with coarse-to-fine inference",
+        "venue": "NAACL-HLT",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Omer Levy",
+          "Yoav Goldberg"
+        ],
+        "doi": null,
+        "key": "Levy and Goldberg, 2014",
+        "page": 8,
+        "title": "Neural word embedding as implicit matrix factorization",
+        "venue": "Advances in neural information processing systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Omer Levy",
+          "Yoav Goldberg",
+          "Ido Dagan"
+        ],
+        "doi": null,
+        "key": "Levy et al., 2015a",
+        "page": 8,
+        "title": "Improving distributional similarity with lessons learned from word embeddings",
+        "venue": "Transactions of the Association for Computational Linguistics",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Ran Levy",
+          "Liat Ein-Dor",
+          "Shay Hummel",
+          "Ruty Rinott",
+          "Noam Slonim"
+        ],
+        "doi": null,
+        "key": "Levy et al., 2015b",
+        "page": 8,
+        "title": "Tr9856: A multi-word term relatedness benchmark",
+        "venue": "Proceedings of the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International Joint Conference on Natural Language Processing (Volume 2: Short Papers)",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Dekang Lin et al."
+        ],
+        "doi": null,
+        "key": "Lin et al., 1998",
+        "page": 8,
+        "title": "An information-theoretic definition of similarity",
+        "venue": "Icml",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Tomas Mikolov",
+          "Kai Chen",
+          "Greg Corrado",
+          "Jeffrey Dean"
+        ],
+        "doi": null,
+        "key": "Mikolov et al., 2013a",
+        "page": 8,
+        "title": "Efficient estimation of word representations in vector space",
+        "venue": "arXiv preprint arXiv:1301.3781",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Tomas Mikolov",
+          "Wen-tau Yih",
+          "Geoffrey Zweig"
+        ],
+        "doi": null,
+        "key": "Mikolov et al., 2013b",
+        "page": 8,
+        "title": "Linguistic regularities in continuous space word representations",
+        "venue": "Proceedings of the 2013 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "George A Miller"
+        ],
+        "doi": null,
+        "key": "Miller, 1995",
+        "page": 8,
+        "title": "Wordnet: a lexical database for english",
+        "venue": "Communications of the ACM",
+        "year": 1995
+      },
+      {
+        "authors": [
+          "Nikola Mrkšić",
+          "Diarmuid O Séaghdha",
+          "Blaise Thomson",
+          "Milica Gašić",
+          "Lina Rojas-Barahona",
+          "Pei-Hao Su",
+          "David Vandyke",
+          "Tsung-Hsien Wen",
+          "Steve Young"
+        ],
+        "doi": null,
+        "key": "Mrkšić et al., 2016",
+        "page": 8,
+        "title": "Counter-fitting word vectors to linguistic constraints",
+        "venue": "arXiv preprint arXiv:1603.00892",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Jeffrey Pennington",
+          "Richard Socher",
+          "Christopher Manning"
+        ],
+        "doi": null,
+        "key": "Pennington et al., 2014",
+        "page": 8,
+        "title": "Glove: Global vectors for word representation",
+        "venue": "Proceedings of the 2014 conference on empirical methods in natural language processing (EMNLP)",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Matthew E Peters",
+          "Mark Neumann",
+          "Mohit Iyyer",
+          "Matt Gardner",
+          "Christopher Clark",
+          "Kenton Lee",
+          "Luke Zettlemoyer"
+        ],
+        "doi": null,
+        "key": "Peters et al., 2018",
+        "page": 8,
+        "title": "Deep contextualized word representations",
+        "venue": "arXiv preprint arXiv:1802.05365",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Kira Radinsky",
+          "Eugene Agichtein",
+          "Evgeniy Gabrilovich",
+          "Shaul Markovitch"
+        ],
+        "doi": null,
+        "key": "Radinsky et al., 2011",
+        "page": 8,
+        "title": "A word at a time: computing word relatedness using temporal semantic analysis",
+        "venue": "Proceedings of the 20th international conference on World wide web",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Nils Reimers",
+          "Iryna Gurevych"
+        ],
+        "doi": null,
+        "key": "Reimers and Gurevych, 2017",
+        "page": 8,
+        "title": "Reporting score distributions makes a difference: Performance study of lstm-networks for sequence tagging",
+        "venue": "EMNLP",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Herbert Rubenstein",
+          "John B Goodenough"
+        ],
+        "doi": null,
+        "key": "Rubenstein and Goodenough, 1965",
+        "page": 8,
+        "title": "Contextual correlates of synonymy",
+        "venue": "Communications of the ACM",
+        "year": 1965
+      },
+      {
+        "authors": [
+          "Erik F. Tjong Kim Sang",
+          "Fien De Meulder"
+        ],
+        "doi": null,
+        "key": "Sang and Meulder, 2003",
+        "page": 8,
+        "title": "Introduction to the conll-2003 shared task: Language-independent named entity recognition",
+        "venue": "ArXiv",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Thang Luong",
+          "Richard Socher",
+          "Christopher Manning"
+        ],
+        "doi": null,
+        "key": "Luong et al., 2013",
+        "page": 8,
+        "title": "Better word representations with recursive neural networks for morphology",
+        "venue": "Proceedings of the Seventeenth Conference on Computational Natural Language Learning",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. Mrvar V. Batagelj"
+        ],
+        "doi": null,
+        "key": "V. Batagelj, 2004",
+        "page": 8,
+        "title": "Wordnet transformed in pajek format",
+        "venue": "http://vlado.fmf.unilj.si/pub/networks/data./dic/wordnet/wordnet.htm",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Mitchell P. Marcus",
+          "Grace Kim",
+          "Mary Ann Marcinkiewicz",
+          "Robert MacIntyre",
+          "Ann Bies",
+          "Mark Ferguson",
+          "Karen Katz",
+          "Britta Schasberger"
+        ],
+        "doi": null,
+        "key": "Marcus et al., 1994",
+        "page": 8,
+        "title": "The penn treebank: Annotating predicate argument structure",
+        "venue": "HLT",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "Shikhar Vashishth",
+          "Manik Bhandari",
+          "Prateek Yadav",
+          "Piyush Rai",
+          "Chiranjib Bhattacharyya",
+          "Partha Pratim Talukdar"
+        ],
+        "doi": null,
+        "key": "Vashishth et al., 2018",
+        "page": 8,
+        "title": "Incorporating syntactic and semantic information in word embeddings using graph convolutional networks",
+        "venue": "ACL",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Zhibiao Wu",
+          "Martha Palmer"
+        ],
+        "doi": null,
+        "key": "Wu and Palmer, 1994",
+        "page": 9,
+        "title": "Verbs semantics and lexical selection",
+        "venue": "Proceedings of the 32nd annual meeting on Association for Computational Linguistics",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "Zhilin Yang",
+          "Zihang Dai",
+          "Yiming Yang",
+          "Jaime G. Carbonell",
+          "Ruslan Salakhutdinov",
+          "Quoc V. Le"
+        ],
+        "doi": null,
+        "key": "Yang et al., 2019",
+        "page": 9,
+        "title": "Xlnet: Generalized autoregressive pretraining for language understanding",
+        "venue": "ArXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Mo Yu",
+          "Mark Dredze"
+        ],
+        "doi": null,
+        "key": "Yu and Dredze, 2014",
+        "page": 9,
+        "title": "Improving lexical embeddings with semantic knowledge",
+        "venue": "Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers)",
+        "year": 2014
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings.",
+        "reference_key": "Levy and Goldberg, 2014",
+        "relation": "uses_method",
+        "why": "The proposed sprinkling method directly manipulates the SPPMI matrix, adopting the SVD factorization framework from Levy and Goldberg."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Second, we identify the weaknesses of the retrofitting model (Faruqui et al., 2014) and propose a few modifications that improves the performance.",
+        "reference_key": "Faruqui et al., 2014",
+        "relation": "extends",
+        "why": "The paper modifies retrofitting by replacing uniform weights with WordNet similarity scores and adding multi-hop neighbors."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "The sprinkling method introduced by Chakraborti et al., (2006) improves LSI by appending the class labels as extra features (terms) to the corresponding training documents.",
+        "reference_key": "Chakraborti et al., 2006",
+        "relation": "uses_method",
+        "why": "The paper borrows and adapts the sprinkling idea to inject lexical graph reachability into the word co-occurrence matrix."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "An extension of this method, called adaptive sprinkling (Chakraborti et al., 2007), allows to control the importance of specific class labels by appending them multiple times to the termdocument matrix.",
+        "reference_key": "Chakraborti et al., 2007",
+        "relation": "extends",
+        "why": "The DSS-PPMI variant adds the reachability matrix multiple times, mirroring adaptive sprinkling's repeated appending."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "The retrofitting method (Faruqui et al., 2014) derives similarity constraints from WordNet and other resources to pull similar words closer together.",
+        "reference_key": "Faruqui et al., 2014",
+        "relation": "contrasts",
+        "why": "The paper argues standard retrofitting uses only one-hop neighbors and uniform weights, whereas its W-Retrofitting uses multi-hop and similarity-based weights."
+      },
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "Whereas, the counterfitting approach, (Mrkšić et al., 2016) also tries to push the antonymous words away from each other.",
+        "reference_key": "Mrkšić et al., 2016",
+        "relation": "contrasts",
+        "why": "Counterfitting focuses on pushing antonyms apart, while this paper focuses on pulling semantically related words closer using weighted similarity."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "For extrinsic tasks, W-retrofitting showed comparable performance to the state-of-art SynGCN model, (Vashishth et al., 2018) inspite of SynGCN being a more sophisticated model with lots of parameters that constitute the weights of Graph Convolutional layers and linear layers of neural network used as well as many hyperparameters needed for training the neural network (such as number of GCN layers and their dimensions, learning rate, number of epochs, etc.).",
+        "reference_key": "Vashishth et al., 2018",
+        "relation": "compares",
+        "why": "The paper positions its lightweight retrofitting method against SynGCN, a more complex graph-based method that is a strong baseline."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "For instance, in case of double",
+          "start_page": 1,
+          "start_text": "Neural network based word embeddings, such"
+        },
+        "summary": "Motivates combining distributional embeddings with lexical knowledge, surveys prior post-processing and joint-learning approaches, and introduces the sprinkling idea from Chakraborti et al. that the paper adapts.",
+        "title": "Motivation, Related Work, and Sprinkling Foundations"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Further, we extend our method to consider nodes which are atmost 2 hops from given node when computing weights.",
+          "start_page": 2,
+          "start_text": "3 Proposed Models"
+        },
+        "summary": "Defines the two proposed methods: SS-PPMI/DSS-PPMI, which concatenate a lexical reachability matrix with the SPPMI matrix before SVD, and W-Retrofitting, which uses WordNet similarity scores and up to two-hop neighbors as weights in the retrofitting objective.",
+        "title": "Proposed Models: SS-PPMI/DSS-PPMI and W-Retrofitting"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "We directly report the available results from the original paper which uses same evaluation benchmarks.",
+          "start_page": 3,
+          "start_text": "4 Experimental Setup"
+        },
+        "summary": "Describes intrinsic word similarity and analogy evaluation, the WordNet and PPDB knowledge sources, embedding and training choices, and the GloVe, Retrofit, SPPMI, and SynGCN baselines; also sets up extrinsic POS and NER tasks.",
+        "title": "Experimental Setup, Knowledge Sources, and Baselines"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "In our sprinkling approach, we didn’t consider any importance weighting for different relations.",
+          "start_page": 4,
+          "start_text": "5 Results and Analysis"
+        },
+        "summary": "Reports and interprets results: reachability-only embeddings capture similarity but not relatedness; SS-PPMI/DSS-PPMI improve similarity and analogy; W-Retrofitting improves similarity and competes with SynGCN on extrinsic tasks; concludes with strengths and future directions.",
+        "title": "Results, Analysis, and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "Improving lexical embeddings with semantic knowledge. In Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers), volume 2, pages 545–550.",
+          "start_page": 7,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of cited works, including the foundational embedding, retrofitting, lexical knowledge, graph-based, and evaluation resources used throughout the paper.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It proposes two novel methods and empirically evaluates them on intrinsic and extrinsic tasks.",
+      "value": "method"
+    }
+  },
+  "pass1_check": {
+    "sites": 33,
+    "verbatim": 17,
+    "near": 1,
+    "missing": 15,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/citations/2/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "The cited discussion of prediction-based methods is on page 2, not page 1.",
+      "evidence": [
+        {
+          "quote": "Prediction-based methods such as skip-gram (Mikolov et al., 2013a) and CBOW (Bengio et al., 2003)",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/citations/3/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "The cited count-based matrix-factorization discussion is on page 2, not page 1.",
+      "evidence": [
+        {
+          "quote": "On the other hand, count-based methods derive a co-occurrence matrix of words in the corpus and use matrix factorization techniques like SVD to extract word representations (Levy and Goldberg, 2014).",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/sections/0/pages/end",
+      "action": "replace",
+      "value_json": "3",
+      "reason": "The Sprinkling discussion continues from page 2 onto page 3 before Section 3 begins.",
+      "evidence": [
+        {
+          "quote": "sprinkling, we append the class labels twice to the matrix thus improving the weakly supervised constraints imposed by class labels.",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/sections/0/source_span/end_page",
+      "action": "replace",
+      "value_json": "3",
+      "reason": "The Sprinkling discussion continues from page 2 onto page 3 before Section 3 begins.",
+      "evidence": [
+        {
+          "quote": "sprinkling, we append the class labels twice to the matrix thus improving the weakly supervised constraints imposed by class labels.",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/sections/0/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"sprinkling, we append the class labels twice to the matrix thus improving the weakly supervised constraints imposed by class labels.\"",
+      "reason": "The section ends after the continuation of the Sprinkling discussion on page 3.",
+      "evidence": [
+        {
+          "quote": "sprinkling, we append the class labels twice to the matrix thus improving the weakly supervised constraints imposed by class labels.",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/sections/1/pages/start",
+      "action": "replace",
+      "value_json": "3",
+      "reason": "Section 3 Proposed Models begins on page 3, not page 2.",
+      "evidence": [
+        {
+          "quote": "3 Proposed Models",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/sections/1/source_span/start_page",
+      "action": "replace",
+      "value_json": "3",
+      "reason": "Section 3 Proposed Models begins on page 3, not page 2.",
+      "evidence": [
+        {
+          "quote": "3 Proposed Models",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/sections/2/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"on CoNLL-2003 dataset (Sang and Meulder, 2003).\"",
+      "reason": "The Experimental Setup section ends after the NER setup, before Results and Analysis begins.",
+      "evidence": [
+        {
+          "quote": "on CoNLL-2003 dataset (Sang and Meulder, 2003).",
+          "page": 4
+        },
+        {
+          "quote": "5 Results and Analysis",
+          "page": 4
+        }
+      ]
+    },
+    {
+      "path": "/sections/3/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"Another direction of research we would like to explore is to study the improvements gained by using our proposed models to initialize the word embeddings before pre-training these models.\"",
+      "reason": "The Results, Analysis, and Conclusion section ends before the References, with the last conclusion sentence on page 7.",
+      "evidence": [
+        {
+          "quote": "Another direction of research we would like to explore is to study the improvements gained by using our proposed models to initialize the word embeddings before pre-training these models.",
+          "page": 7
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/citations/2/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/citations/3/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/sections/0/pages/end",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/sections/0/source_span/end_page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/sections/0/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 5,
+      "path": "/sections/1/pages/start",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 6,
+      "path": "/sections/1/source_span/start_page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 7,
+      "path": "/sections/2/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 8,
+      "path": "/sections/3/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 33,
+    "verbatim": 17,
+    "near": 1,
+    "missing": 15,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "Neural network based word embeddings, such as Word2Vec and GloVe, are purely data driven in that they capture the distributional information about words from the training corpus. Past works have attempted to improve these embeddings by incorporating semantic knowledge from lexical resources like WordNet. Some techniques like retrofitting modify word embeddings in the post-processing stage while some others use a joint learning approach by modifying the objective function of neural networks. In this paper, we discuss two novel approaches for incorporating semantic knowledge into word embeddings. In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings. We propose a sprinkling technique to add semantic relations to the co-occurrence matrix directly before factorization. In the second approach, WordNet similarity scores are used to improve the retrofitting method. We evaluate the proposed methods in both intrinsic and extrinsic tasks and observe significant improvements over the baselines in many of the datasets.",
+      "admitted": "Neural network based word embeddings, such as Word2Vec and GloVe, are purely data driven in that they capture the distributional information about words from the training corpus. Past works have attempted to improve these embeddings by incorporating semantic knowledge from lexical resources like WordNet. Some techniques like retrofitting modify word embeddings in the post-processing stage while some others use a joint learning approach by modifying the objective function of neural networks. In this paper, we discuss two novel approaches for incorporating semantic knowledge into word embeddings. In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings. We propose a sprinkling technique to add semantic relations to the co-occurrence matrix directly before factorization. In the second approach, WordNet similarity scores are used to improve the retrofitting method. We evaluate the proposed methods in both intrinsic and extrinsic tasks and observe significant improvements over the baselines in many of the datasets.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings.",
+      "admitted": "In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The sprinkling method introduced by Chakraborti et al., (2006) improves LSI by appending the class labels as extra features (terms) to the corresponding training documents.",
+      "admitted": "The sprinkling method introduced by Chakraborti et al., (2006) improves LSI by appending the class labels as extra features (terms) to the corresponding training documents.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Second, we identify the weaknesses of the retrofitting model (Faruqui et al., 2014) and propose a few modifications that improves the performance.",
+      "admitted": "Second, we identify the weaknesses of the retrofitting model (Faruqui et al., 2014) and propose a few modifications that improves the performance.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Whereas, the counterfitting approach, (Mrkšić et al., 2016) also tries to push the antonymous words away from each other.",
+      "admitted": "Whereas, the counterfitting approach, (Mrkšić et al., 2016) also tries to push the antonymous words away from each other.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "For extrinsic tasks, W-retrofitting showed comparable performance to the state-of-art SynGCN model, (Vashishth et al., 2018) inspite of SynGCN being a more sophisticated model with lots of parameters that constitute the weights of Graph Convolutional layers and linear layers of neural network used as well as many hyperparameters needed for training the neural network (such as number of GCN layers and their dimensions, learning rate, number of epochs, etc.).",
+      "admitted": "For extrinsic tasks, W-retrofitting showed comparable performance to the state-of-art SynGCN model, (Vashishth et al., 2018) inspite of SynGCN being a more sophisticated model with lots of parameters that constitute the weights of Graph Convolutional layers and linear layers of neural network used as well as many hyperparameters needed for training the neural network (such as number of GCN layers and their dimensions, learning rate, number of epochs, etc.).",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper, we discuss two novel approaches for incorporating semantic knowledge into word embeddings.",
+      "admitted": "In this paper, we discuss two novel approaches for incorporating semantic knowledge into word embeddings.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Integrating Lexical Knowledge in Word Embeddings using Sprinkling and Retrofitting",
+      "admitted": "Integrating Lexical Knowledge in Word Embeddings using Sprinkling and Retrofitting",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Aakash Srinivasan1∗, Harshavardhan Kamarthi2∗, Devi Ganesan², Sutanu Chakraborti²",
+      "admitted": "Aakash Srinivasan1∗, Harshavardhan Kamarthi2∗, Devi Ganesan², Sutanu Chakraborti²",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We propose a sprinkling technique to add semantic relations to the co-occurrence matrix directly before factorization.",
+      "admitted": "We propose a sprinkling technique to add semantic relations to the co-occurrence matrix directly before factorization.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/1/quote",
+      "status": "verbatim",
+      "original": "In the second approach, WordNet similarity scores are used to improve the retrofitting method.",
+      "admitted": "In the second approach, WordNet similarity scores are used to improve the retrofitting method.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "repaired_model",
+      "original": "The paper cites Levy et al.'s work as inspiration for its SVD-based sprinkling approach.",
+      "admitted": "In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings.",
+      "similarity": 0.2857142857142857,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "repaired_model",
+      "original": "The paper cites Faruqui et al. (2014) as the retrofitting baseline it modifies.",
+      "admitted": "Second, we identify the weaknesses of the retrofitting model (Faruqui et al., 2014) and propose a few modifications that improves the performance.",
+      "similarity": 0.46153846153846156,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "repaired_model",
+      "original": "The paper cites Mikolov et al. (2013a) and Bengio et al. (2003) for prediction-based word embedding methods.",
+      "admitted": "Prediction-based methods such as skipgram (Mikolov et al., 2013a) and CBOW (Bengio et al., 2003) use neural language modelling for predicting a given word given its context words (or vice-versa) and extract the learned weight vectors as word embeddings.",
+      "similarity": 0.47058823529411764,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "repaired_model",
+      "original": "The paper cites Levy and Goldberg (2014) for count-based matrix factorization methods.",
+      "admitted": "On the other hand, countbased methods derive a co-occurrence matrix of words in the corpus and use matrix factorization techniques like SVD to extract word representations (Levy and Goldberg, 2014).",
+      "similarity": 0.33333333333333337,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "repaired_model",
+      "original": "The paper cites Faruqui et al. (2014) for retrofitting.",
+      "admitted": "The retrofitting method (Faruqui et al., 2014) derives similarity constraints from WordNet and other resources to pull similar words closer together.",
+      "similarity": 0.5555555555555556,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "repaired_model",
+      "original": "The paper cites Mrkšić et al. (2016) for counterfitting.",
+      "admitted": "Whereas, the counterfitting approach, (Mrkšić et al., 2016) also tries to push the antonymous words away from each other.",
+      "similarity": 0.4444444444444444,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "repaired_model",
+      "original": "The paper cites Chakraborti et al. (2006) for the sprinkling method.",
+      "admitted": "The sprinkling method introduced by Chakraborti et al., (2006) improves LSI by appending the class labels as extra features (terms) to the corresponding training documents.",
+      "similarity": 0.36363636363636365,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "repaired_model",
+      "original": "The paper cites Chakraborti et al. (2007) for adaptive sprinkling.",
+      "admitted": "An extension of this method, called adaptive sprinkling (Chakraborti et al., 2007), allows to control the importance of specific class labels by appending them multiple times to the termdocument matrix.",
+      "similarity": 0.4,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "repaired_model",
+      "original": "The paper cites Levy and Goldberg (2014) and Mikolov et al. (2013a) for SPPMI factorization.",
+      "admitted": "In this approach, we take advantage of Levy and Goldberg’s work (2014) in which the authors have shown that the objective function used in Word2vec (Mikolov et al., 2013a) implicitly factorizes a Shifted PPMI (SPPMI) matrix.",
+      "similarity": 0.4,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "repaired_model",
+      "original": "The paper cites Faruqui et al. (2014) for retrofitting.",
+      "admitted": "Retrofitting was introduced by Faruqui et al., (2014) and is a method to add semantic information to pre-trained word vectors.",
+      "similarity": 0.5555555555555556,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "repaired_model",
+      "original": "The paper cites Miller (1995) and Ganitkevitch et al. (2013) for knowledge sources.",
+      "admitted": "We used two sources of semantic knowledge: WordNet (Miller, 1995) and PPDB (Ganitkevitch et al., 2013).",
+      "similarity": 0.46153846153846156,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "dropped",
+      "original": "The paper cites Faruqui et al. (2014) for the PPDB knowledge source.",
+      "admitted": null,
+      "similarity": 0.5,
+      "cited_page": 4,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "repaired_model",
+      "original": "The paper cites Vashishth et al. (2018) for the SynGCN baseline.",
+      "admitted": "4. SynGCN (Vashishth et al., 2018): This work uses Graph-convolution based methods to impart relational information between words and have shown state-of-art results in many benchmarks.",
+      "similarity": 0.4545454545454546,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "repaired_model",
+      "original": "The paper cites Vashishth et al. (2018) for extrinsic task architectures.",
+      "admitted": "The neural network architectures used for each of the tasks are same as that used in Vashishth et al., (2018).",
+      "similarity": 0.36363636363636365,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "repaired_model",
+      "original": "The paper cites Vashishth et al. (2018) for SynGCN performance.",
+      "admitted": "For extrinsic tasks, W-retrofitting showed comparable performance to the state-of-art SynGCN model, (Vashishth et al., 2018) inspite of Syn-GCN being a more sophisticated model with lots of parameters that constitute the weights of Graph Convolutional layers and linear layers of neural network used as well as many hyperparameters needed for training the neural network (such as number of GCN layers and their dimensions, learning rate, number of epochs, etc.).",
+      "similarity": 0.4,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings.",
+      "admitted": "In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Second, we identify the weaknesses of the retrofitting model (Faruqui et al., 2014) and propose a few modifications that improves the performance.",
+      "admitted": "Second, we identify the weaknesses of the retrofitting model (Faruqui et al., 2014) and propose a few modifications that improves the performance.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "The sprinkling method introduced by Chakraborti et al., (2006) improves LSI by appending the class labels as extra features (terms) to the corresponding training documents.",
+      "admitted": "The sprinkling method introduced by Chakraborti et al., (2006) improves LSI by appending the class labels as extra features (terms) to the corresponding training documents.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "An extension of this method, called adaptive sprinkling (Chakraborti et al., 2007), allows to control the importance of specific class labels by appending them multiple times to the termdocument matrix.",
+      "admitted": "An extension of this method, called adaptive sprinkling (Chakraborti et al., 2007), allows to control the importance of specific class labels by appending them multiple times to the termdocument matrix.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "The retrofitting method (Faruqui et al., 2014) derives similarity constraints from WordNet and other resources to pull similar words closer together.",
+      "admitted": "The retrofitting method (Faruqui et al., 2014) derives similarity constraints from WordNet and other resources to pull similar words closer together.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "repaired_local",
+      "original": "Whereas, the counterfitting approach, (Mrkšić et al., 2016) also tries to push the antonymous words away from each other.",
+      "admitted": "Whereas, the counterfitting approach, (Mrkšić et al., 2016) also tries to push the antonymous words away from each other.",
+      "similarity": 0.9473684210526316,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "For extrinsic tasks, W-retrofitting showed comparable performance to the state-of-art SynGCN model, (Vashishth et al., 2018) inspite of SynGCN being a more sophisticated model with lots of parameters that constitute the weights of Graph Convolutional layers and linear layers of neural network used as well as many hyperparameters needed for training the neural network (such as number of GCN layers and their dimensions, learning rate, number of epochs, etc.).",
+      "admitted": "For extrinsic tasks, W-retrofitting showed comparable performance to the state-of-art SynGCN model, (Vashishth et al., 2018) inspite of SynGCN being a more sophisticated model with lots of parameters that constitute the weights of Graph Convolutional layers and linear layers of neural network used as well as many hyperparameters needed for training the neural network (such as number of GCN layers and their dimensions, learning rate, number of epochs, etc.).",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    }
+  ],
+  "admission_counts": {
+    "dropped": 1,
+    "repaired_local": 1,
+    "repaired_model": 14,
+    "verbatim": 17
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Neural network based word embeddings, such as Word2Vec and GloVe, are purely data driven in that they capture the distributional information about words from the training corpus. Past works have attempted to improve these embeddings by incorporating semantic knowledge from lexical resources like WordNet. Some techniques like retrofitting modify word embeddings in the post-processing stage while some others use a joint learning approach by modifying the objective function of neural networks. In this paper, we discuss two novel approaches for incorporating semantic knowledge into word embeddings. In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings. We propose a sprinkling technique to add semantic relations to the co-occurrence matrix directly before factorization. In the second approach, WordNet similarity scores are used to improve the retrofitting method. We evaluate the proposed methods in both intrinsic and extrinsic tasks and observe significant improvements over the baselines in many of the datasets."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Levy and Goldberg (2014)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings."
+              }
+            ],
+            "reference_key": "Levy and Goldberg, 2014",
+            "why": "The paper builds on the shifted PPMI/SVD matrix-factorization view of word embeddings."
+          },
+          {
+            "cited_work": "Chakraborti et al. (2006, 2007)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The sprinkling method introduced by Chakraborti et al., (2006) improves LSI by appending the class labels as extra features (terms) to the corresponding training documents."
+              }
+            ],
+            "reference_key": "Chakraborti et al., 2006",
+            "why": "It adapts the sprinkling idea from supervised LSI to lexical reachability in the SPPMI matrix."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Faruqui et al. (2014)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Second, we identify the weaknesses of the retrofitting model (Faruqui et al., 2014) and propose a few modifications that improves the performance."
+              }
+            ],
+            "reference_key": "Faruqui et al., 2014",
+            "why": "It modifies retrofitting by using WordNet similarity scores and multi-hop neighbors."
+          },
+          {
+            "cited_work": "Mrkšić et al. (2016)",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Whereas, the counterfitting approach, (Mrkšić et al., 2016) also tries to push the antonymous words away from each other."
+              }
+            ],
+            "reference_key": "Mrkšić et al., 2016",
+            "why": "The paper contrasts one-hop constraint methods with its use of multi-hop and weighted similarity."
+          },
+          {
+            "cited_work": "Vashishth et al. (2018)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "For extrinsic tasks, W-retrofitting showed comparable performance to the state-of-art SynGCN model, (Vashishth et al., 2018) inspite of SynGCN being a more sophisticated model with lots of parameters that constitute the weights of Graph Convolutional layers and linear layers of neural network used as well as many hyperparameters needed for training the neural network (such as number of GCN layers and their dimensions, learning rate, number of epochs, etc.)."
+              }
+            ],
+            "reference_key": "Vashishth et al., 2018",
+            "why": "It positions its lighter retrofitting method as competitive with this more complex graph-convolution baseline."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In this paper, we discuss two novel approaches for incorporating semantic knowledge into word embeddings."
+          }
+        ],
+        "text": "The paper proposes sprinkling lexical reachability into the SPPMI matrix and weighting retrofitting with WordNet similarity to improve word embeddings."
+      }
+    },
+    "citations": [
+      {
+        "context": "In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings.",
+        "page": 1,
+        "reference_key": "Levy and Goldberg, 2014"
+      },
+      {
+        "context": "Second, we identify the weaknesses of the retrofitting model (Faruqui et al., 2014) and propose a few modifications that improves the performance.",
+        "page": 1,
+        "reference_key": "Faruqui et al., 2014"
+      },
+      {
+        "context": "Prediction-based methods such as skipgram (Mikolov et al., 2013a) and CBOW (Bengio et al., 2003) use neural language modelling for predicting a given word given its context words (or vice-versa) and extract the learned weight vectors as word embeddings.",
+        "page": 1,
+        "reference_key": "Mikolov et al., 2013a"
+      },
+      {
+        "context": "On the other hand, countbased methods derive a co-occurrence matrix of words in the corpus and use matrix factorization techniques like SVD to extract word representations (Levy and Goldberg, 2014).",
+        "page": 1,
+        "reference_key": "Levy and Goldberg, 2014"
+      },
+      {
+        "context": "The retrofitting method (Faruqui et al., 2014) derives similarity constraints from WordNet and other resources to pull similar words closer together.",
+        "page": 2,
+        "reference_key": "Faruqui et al., 2014"
+      },
+      {
+        "context": "Whereas, the counterfitting approach, (Mrkšić et al., 2016) also tries to push the antonymous words away from each other.",
+        "page": 2,
+        "reference_key": "Mrkšić et al., 2016"
+      },
+      {
+        "context": "The sprinkling method introduced by Chakraborti et al., (2006) improves LSI by appending the class labels as extra features (terms) to the corresponding training documents.",
+        "page": 2,
+        "reference_key": "Chakraborti et al., 2006"
+      },
+      {
+        "context": "An extension of this method, called adaptive sprinkling (Chakraborti et al., 2007), allows to control the importance of specific class labels by appending them multiple times to the termdocument matrix.",
+        "page": 2,
+        "reference_key": "Chakraborti et al., 2007"
+      },
+      {
+        "context": "In this approach, we take advantage of Levy and Goldberg’s work (2014) in which the authors have shown that the objective function used in Word2vec (Mikolov et al., 2013a) implicitly factorizes a Shifted PPMI (SPPMI) matrix.",
+        "page": 2,
+        "reference_key": "Levy and Goldberg, 2014"
+      },
+      {
+        "context": "Retrofitting was introduced by Faruqui et al., (2014) and is a method to add semantic information to pre-trained word vectors.",
+        "page": 3,
+        "reference_key": "Faruqui et al., 2014"
+      },
+      {
+        "context": "We used two sources of semantic knowledge: WordNet (Miller, 1995) and PPDB (Ganitkevitch et al., 2013).",
+        "page": 3,
+        "reference_key": "Miller, 1995"
+      },
+      {
+        "context": "4. SynGCN (Vashishth et al., 2018): This work uses Graph-convolution based methods to impart relational information between words and have shown state-of-art results in many benchmarks.",
+        "page": 4,
+        "reference_key": "Vashishth et al., 2018"
+      },
+      {
+        "context": "The neural network architectures used for each of the tasks are same as that used in Vashishth et al., (2018).",
+        "page": 4,
+        "reference_key": "Vashishth et al., 2018"
+      },
+      {
+        "context": "For extrinsic tasks, W-retrofitting showed comparable performance to the state-of-art SynGCN model, (Vashishth et al., 2018) inspite of Syn-GCN being a more sophisticated model with lots of parameters that constitute the weights of Graph Convolutional layers and linear layers of neural network used as well as many hyperparameters needed for training the neural network (such as number of GCN layers and their dimensions, learning rate, number of epochs, etc.).",
+        "page": 7,
+        "reference_key": "Vashishth et al., 2018"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Dept. of Computer Science, University of California, Los Angeles",
+          "name": "Aakash Srinivasan"
+        },
+        {
+          "affiliation": "Dept. of Computer Science and Engineering, Indian Institute of Technology Madras",
+          "name": "Harshavardhan Kamarthi"
+        },
+        {
+          "affiliation": "Dept. of Computer Science and Engineering, Indian Institute of Technology Madras",
+          "name": "Devi Ganesan"
+        },
+        {
+          "affiliation": "Dept. of Computer Science and Engineering, Indian Institute of Technology Madras",
+          "name": "Sutanu Chakraborti"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Integrating Lexical Knowledge in Word Embeddings using Sprinkling and Retrofitting"
+        },
+        {
+          "page": 1,
+          "quote": "Aakash Srinivasan1∗, Harshavardhan Kamarthi2∗, Devi Ganesan², Sutanu Chakraborti²"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1912.06889v2 [cs.CL] 23 Jan 2020",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Integrating Lexical Knowledge in Word Embeddings using Sprinkling and Retrofitting",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "We propose a sprinkling technique to add semantic relations to the co-occurrence matrix directly before factorization."
+        },
+        {
+          "page": 1,
+          "quote": "In the second approach, WordNet similarity scores are used to improve the retrofitting method."
+        }
+      ],
+      "text": "Can injecting lexical knowledge from WordNet and PPDB into the SPPMI matrix via sprinkling, and using WordNet similarity scores in retrofitting, improve intrinsic and extrinsic word embedding performance over distributional baselines?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Yoshua Bengio",
+          "Réjean Ducharme",
+          "Pascal Vincent",
+          "Christian Jauvin"
+        ],
+        "doi": null,
+        "key": "Bengio et al., 2003",
+        "page": 7,
+        "title": "A neural probabilistic language model",
+        "venue": "Journal of machine learning research",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Elia Bruni",
+          "Nam-Khanh Tran",
+          "Marco Baroni"
+        ],
+        "doi": null,
+        "key": "Bruni et al., 2014",
+        "page": 7,
+        "title": "Multimodal distributional semantics",
+        "venue": "Journal of Artificial Intelligence Research",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Sutanu Chakraborti",
+          "Robert Lothian",
+          "Nirmalie Wiratunga",
+          "Stuart Watt"
+        ],
+        "doi": null,
+        "key": "Chakraborti et al., 2006",
+        "page": 7,
+        "title": "Sprinkling: supervised latent semantic indexing",
+        "venue": "European Conference on Information Retrieval",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Sutanu Chakraborti",
+          "Rahman Mukras",
+          "Robert Lothian",
+          "Nirmalie Wiratunga",
+          "Stuart NK Watt",
+          "David J Harper"
+        ],
+        "doi": null,
+        "key": "Chakraborti et al., 2007",
+        "page": 7,
+        "title": "Supervised latent semantic indexing using adaptive sprinkling",
+        "venue": "IJCAI",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Jacob Devlin",
+          "Ming-Wei Chang",
+          "Kenton Lee",
+          "Kristina Toutanova"
+        ],
+        "doi": null,
+        "key": "Devlin et al., 2018",
+        "page": 7,
+        "title": "Bert: Pre-training of deep bidirectional transformers for language understanding",
+        "venue": "NAACL-HLT",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Manaal Faruqui",
+          "Jesse Dodge",
+          "Sujay K Jauhar",
+          "Chris Dyer",
+          "Eduard Hovy",
+          "Noah A Smith"
+        ],
+        "doi": null,
+        "key": "Faruqui et al., 2014",
+        "page": 7,
+        "title": "Retrofitting word vectors to semantic lexicons",
+        "venue": "arXiv preprint arXiv:1411.4166",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Lev Finkelstein",
+          "Evgeniy Gabrilovich",
+          "Yossi Matias",
+          "Ehud Rivlin",
+          "Zach Solan",
+          "Gadi Wolfman",
+          "Eytan Ruppin"
+        ],
+        "doi": null,
+        "key": "Finkelstein et al., 2002",
+        "page": 7,
+        "title": "Placing search in context: The concept revisited",
+        "venue": "ACM Transactions on information systems",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Daniel Fried",
+          "Kevin Duh"
+        ],
+        "doi": null,
+        "key": "Fried and Duh, 2014",
+        "page": 7,
+        "title": "Incorporating both distributional and relational semantics in word representations",
+        "venue": "arXiv preprint arXiv:1412.4369",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Juri Ganitkevitch",
+          "Benjamin Van Durme",
+          "Chris Callison-Burch"
+        ],
+        "doi": null,
+        "key": "Ganitkevitch et al., 2013",
+        "page": 8,
+        "title": "Ppdb: The paraphrase database",
+        "venue": "Proceedings of the 2013 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Felix Hill",
+          "Roi Reichart",
+          "Anna Korhonen"
+        ],
+        "doi": null,
+        "key": "Hill et al., 2015",
+        "page": 8,
+        "title": "Simlex-999: Evaluating semantic models with (genuine) similarity estimation",
+        "venue": "Computational Linguistics",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Stanisław Jastrzebski",
+          "Damian Leśniak",
+          "Wojciech Marian Czarnecki"
+        ],
+        "doi": null,
+        "key": "Jastrzebski et al., 2017",
+        "page": 8,
+        "title": "How to evaluate word embeddings? on importance of data efficiency and simple supervised tasks",
+        "venue": "arXiv preprint arXiv:1702.02170",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Jay J Jiang",
+          "David W Conrath"
+        ],
+        "doi": null,
+        "key": "Jiang and Conrath, 1997",
+        "page": 8,
+        "title": "Semantic similarity based on corpus statistics and lexical taxonomy",
+        "venue": "arXiv preprint cmp-lg/9709008",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Claudia Leacock",
+          "Martin Chodorow"
+        ],
+        "doi": null,
+        "key": "Leacock and Chodorow, 1998",
+        "page": 8,
+        "title": "Combining local context and wordnet similarity for word sense identification",
+        "venue": "WordNet: An electronic lexical database",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Kenton Lee",
+          "Luheng He",
+          "Luke S. Zettlemoyer"
+        ],
+        "doi": null,
+        "key": "Lee et al., 2018",
+        "page": 8,
+        "title": "Higher-order coreference resolution with coarse-to-fine inference",
+        "venue": "NAACL-HLT",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Omer Levy",
+          "Yoav Goldberg"
+        ],
+        "doi": null,
+        "key": "Levy and Goldberg, 2014",
+        "page": 8,
+        "title": "Neural word embedding as implicit matrix factorization",
+        "venue": "Advances in neural information processing systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Omer Levy",
+          "Yoav Goldberg",
+          "Ido Dagan"
+        ],
+        "doi": null,
+        "key": "Levy et al., 2015a",
+        "page": 8,
+        "title": "Improving distributional similarity with lessons learned from word embeddings",
+        "venue": "Transactions of the Association for Computational Linguistics",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Ran Levy",
+          "Liat Ein-Dor",
+          "Shay Hummel",
+          "Ruty Rinott",
+          "Noam Slonim"
+        ],
+        "doi": null,
+        "key": "Levy et al., 2015b",
+        "page": 8,
+        "title": "Tr9856: A multi-word term relatedness benchmark",
+        "venue": "Proceedings of the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International Joint Conference on Natural Language Processing (Volume 2: Short Papers)",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Dekang Lin et al."
+        ],
+        "doi": null,
+        "key": "Lin et al., 1998",
+        "page": 8,
+        "title": "An information-theoretic definition of similarity",
+        "venue": "Icml",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Tomas Mikolov",
+          "Kai Chen",
+          "Greg Corrado",
+          "Jeffrey Dean"
+        ],
+        "doi": null,
+        "key": "Mikolov et al., 2013a",
+        "page": 8,
+        "title": "Efficient estimation of word representations in vector space",
+        "venue": "arXiv preprint arXiv:1301.3781",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Tomas Mikolov",
+          "Wen-tau Yih",
+          "Geoffrey Zweig"
+        ],
+        "doi": null,
+        "key": "Mikolov et al., 2013b",
+        "page": 8,
+        "title": "Linguistic regularities in continuous space word representations",
+        "venue": "Proceedings of the 2013 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "George A Miller"
+        ],
+        "doi": null,
+        "key": "Miller, 1995",
+        "page": 8,
+        "title": "Wordnet: a lexical database for english",
+        "venue": "Communications of the ACM",
+        "year": 1995
+      },
+      {
+        "authors": [
+          "Nikola Mrkšić",
+          "Diarmuid O Séaghdha",
+          "Blaise Thomson",
+          "Milica Gašić",
+          "Lina Rojas-Barahona",
+          "Pei-Hao Su",
+          "David Vandyke",
+          "Tsung-Hsien Wen",
+          "Steve Young"
+        ],
+        "doi": null,
+        "key": "Mrkšić et al., 2016",
+        "page": 8,
+        "title": "Counter-fitting word vectors to linguistic constraints",
+        "venue": "arXiv preprint arXiv:1603.00892",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Jeffrey Pennington",
+          "Richard Socher",
+          "Christopher Manning"
+        ],
+        "doi": null,
+        "key": "Pennington et al., 2014",
+        "page": 8,
+        "title": "Glove: Global vectors for word representation",
+        "venue": "Proceedings of the 2014 conference on empirical methods in natural language processing (EMNLP)",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Matthew E Peters",
+          "Mark Neumann",
+          "Mohit Iyyer",
+          "Matt Gardner",
+          "Christopher Clark",
+          "Kenton Lee",
+          "Luke Zettlemoyer"
+        ],
+        "doi": null,
+        "key": "Peters et al., 2018",
+        "page": 8,
+        "title": "Deep contextualized word representations",
+        "venue": "arXiv preprint arXiv:1802.05365",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Kira Radinsky",
+          "Eugene Agichtein",
+          "Evgeniy Gabrilovich",
+          "Shaul Markovitch"
+        ],
+        "doi": null,
+        "key": "Radinsky et al., 2011",
+        "page": 8,
+        "title": "A word at a time: computing word relatedness using temporal semantic analysis",
+        "venue": "Proceedings of the 20th international conference on World wide web",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Nils Reimers",
+          "Iryna Gurevych"
+        ],
+        "doi": null,
+        "key": "Reimers and Gurevych, 2017",
+        "page": 8,
+        "title": "Reporting score distributions makes a difference: Performance study of lstm-networks for sequence tagging",
+        "venue": "EMNLP",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Herbert Rubenstein",
+          "John B Goodenough"
+        ],
+        "doi": null,
+        "key": "Rubenstein and Goodenough, 1965",
+        "page": 8,
+        "title": "Contextual correlates of synonymy",
+        "venue": "Communications of the ACM",
+        "year": 1965
+      },
+      {
+        "authors": [
+          "Erik F. Tjong Kim Sang",
+          "Fien De Meulder"
+        ],
+        "doi": null,
+        "key": "Sang and Meulder, 2003",
+        "page": 8,
+        "title": "Introduction to the conll-2003 shared task: Language-independent named entity recognition",
+        "venue": "ArXiv",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Thang Luong",
+          "Richard Socher",
+          "Christopher Manning"
+        ],
+        "doi": null,
+        "key": "Luong et al., 2013",
+        "page": 8,
+        "title": "Better word representations with recursive neural networks for morphology",
+        "venue": "Proceedings of the Seventeenth Conference on Computational Natural Language Learning",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. Mrvar V. Batagelj"
+        ],
+        "doi": null,
+        "key": "V. Batagelj, 2004",
+        "page": 8,
+        "title": "Wordnet transformed in pajek format",
+        "venue": "http://vlado.fmf.unilj.si/pub/networks/data./dic/wordnet/wordnet.htm",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Mitchell P. Marcus",
+          "Grace Kim",
+          "Mary Ann Marcinkiewicz",
+          "Robert MacIntyre",
+          "Ann Bies",
+          "Mark Ferguson",
+          "Karen Katz",
+          "Britta Schasberger"
+        ],
+        "doi": null,
+        "key": "Marcus et al., 1994",
+        "page": 8,
+        "title": "The penn treebank: Annotating predicate argument structure",
+        "venue": "HLT",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "Shikhar Vashishth",
+          "Manik Bhandari",
+          "Prateek Yadav",
+          "Piyush Rai",
+          "Chiranjib Bhattacharyya",
+          "Partha Pratim Talukdar"
+        ],
+        "doi": null,
+        "key": "Vashishth et al., 2018",
+        "page": 8,
+        "title": "Incorporating syntactic and semantic information in word embeddings using graph convolutional networks",
+        "venue": "ACL",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Zhibiao Wu",
+          "Martha Palmer"
+        ],
+        "doi": null,
+        "key": "Wu and Palmer, 1994",
+        "page": 9,
+        "title": "Verbs semantics and lexical selection",
+        "venue": "Proceedings of the 32nd annual meeting on Association for Computational Linguistics",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "Zhilin Yang",
+          "Zihang Dai",
+          "Yiming Yang",
+          "Jaime G. Carbonell",
+          "Ruslan Salakhutdinov",
+          "Quoc V. Le"
+        ],
+        "doi": null,
+        "key": "Yang et al., 2019",
+        "page": 9,
+        "title": "Xlnet: Generalized autoregressive pretraining for language understanding",
+        "venue": "ArXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Mo Yu",
+          "Mark Dredze"
+        ],
+        "doi": null,
+        "key": "Yu and Dredze, 2014",
+        "page": 9,
+        "title": "Improving lexical embeddings with semantic knowledge",
+        "venue": "Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers)",
+        "year": 2014
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings.",
+        "reference_key": "Levy and Goldberg, 2014",
+        "relation": "uses_method",
+        "why": "The proposed sprinkling method directly manipulates the SPPMI matrix, adopting the SVD factorization framework from Levy and Goldberg."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Second, we identify the weaknesses of the retrofitting model (Faruqui et al., 2014) and propose a few modifications that improves the performance.",
+        "reference_key": "Faruqui et al., 2014",
+        "relation": "extends",
+        "why": "The paper modifies retrofitting by replacing uniform weights with WordNet similarity scores and adding multi-hop neighbors."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "The sprinkling method introduced by Chakraborti et al., (2006) improves LSI by appending the class labels as extra features (terms) to the corresponding training documents.",
+        "reference_key": "Chakraborti et al., 2006",
+        "relation": "uses_method",
+        "why": "The paper borrows and adapts the sprinkling idea to inject lexical graph reachability into the word co-occurrence matrix."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "An extension of this method, called adaptive sprinkling (Chakraborti et al., 2007), allows to control the importance of specific class labels by appending them multiple times to the termdocument matrix.",
+        "reference_key": "Chakraborti et al., 2007",
+        "relation": "extends",
+        "why": "The DSS-PPMI variant adds the reachability matrix multiple times, mirroring adaptive sprinkling's repeated appending."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "The retrofitting method (Faruqui et al., 2014) derives similarity constraints from WordNet and other resources to pull similar words closer together.",
+        "reference_key": "Faruqui et al., 2014",
+        "relation": "contrasts",
+        "why": "The paper argues standard retrofitting uses only one-hop neighbors and uniform weights, whereas its W-Retrofitting uses multi-hop and similarity-based weights."
+      },
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "Whereas, the counterfitting approach, (Mrkšić et al., 2016) also tries to push the antonymous words away from each other.",
+        "reference_key": "Mrkšić et al., 2016",
+        "relation": "contrasts",
+        "why": "Counterfitting focuses on pushing antonyms apart, while this paper focuses on pulling semantically related words closer using weighted similarity."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "For extrinsic tasks, W-retrofitting showed comparable performance to the state-of-art SynGCN model, (Vashishth et al., 2018) inspite of SynGCN being a more sophisticated model with lots of parameters that constitute the weights of Graph Convolutional layers and linear layers of neural network used as well as many hyperparameters needed for training the neural network (such as number of GCN layers and their dimensions, learning rate, number of epochs, etc.).",
+        "reference_key": "Vashishth et al., 2018",
+        "relation": "compares",
+        "why": "The paper positions its lightweight retrofitting method against SynGCN, a more complex graph-based method that is a strong baseline."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "sprinkling, we append the class labels twice to the matrix thus improving the weakly supervised constraints imposed by class labels.",
+          "start_page": 1,
+          "start_text": "Neural network based word embeddings, such"
+        },
+        "summary": "Motivates combining distributional embeddings with lexical knowledge, surveys prior post-processing and joint-learning approaches, and introduces the sprinkling idea from Chakraborti et al. that the paper adapts.",
+        "title": "Motivation, Related Work, and Sprinkling Foundations"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Further, we extend our method to consider nodes which are atmost 2 hops from given node when computing weights.",
+          "start_page": 3,
+          "start_text": "3 Proposed Models"
+        },
+        "summary": "Defines the two proposed methods: SS-PPMI/DSS-PPMI, which concatenate a lexical reachability matrix with the SPPMI matrix before SVD, and W-Retrofitting, which uses WordNet similarity scores and up to two-hop neighbors as weights in the retrofitting objective.",
+        "title": "Proposed Models: SS-PPMI/DSS-PPMI and W-Retrofitting"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "on CoNLL-2003 dataset (Sang and Meulder, 2003).",
+          "start_page": 3,
+          "start_text": "4 Experimental Setup"
+        },
+        "summary": "Describes intrinsic word similarity and analogy evaluation, the WordNet and PPDB knowledge sources, embedding and training choices, and the GloVe, Retrofit, SPPMI, and SynGCN baselines; also sets up extrinsic POS and NER tasks.",
+        "title": "Experimental Setup, Knowledge Sources, and Baselines"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "Another direction of research we would like to explore is to study the improvements gained by using our proposed models to initialize the word embeddings before pre-training these models.",
+          "start_page": 4,
+          "start_text": "5 Results and Analysis"
+        },
+        "summary": "Reports and interprets results: reachability-only embeddings capture similarity but not relatedness; SS-PPMI/DSS-PPMI improve similarity and analogy; W-Retrofitting improves similarity and competes with SynGCN on extrinsic tasks; concludes with strengths and future directions.",
+        "title": "Results, Analysis, and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "Improving lexical embeddings with semantic knowledge. In Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers), volume 2, pages 545–550.",
+          "start_page": 7,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of cited works, including the foundational embedding, retrofitting, lexical knowledge, graph-based, and evaluation resources used throughout the paper.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It proposes two novel methods and empirically evaluates them on intrinsic and extrinsic tasks.",
+      "value": "method"
+    }
+  }
+}

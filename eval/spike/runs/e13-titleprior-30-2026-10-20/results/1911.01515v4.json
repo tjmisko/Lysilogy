@@ -1,0 +1,2729 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T22:45:07.369121610Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1911.01515v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 19,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 11187,
+      "cached_tokens": 10240,
+      "completion_tokens": 18834,
+      "reasoning_tokens": 11130,
+      "cost_usd": 0.008085868,
+      "cost_source": "reported",
+      "latency_s": 182.195495418
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 15523,
+      "cached_tokens": 384,
+      "completion_tokens": 12271,
+      "reasoning_tokens": 10469,
+      "cost_usd": 0.0072748928,
+      "cost_source": "reported",
+      "latency_s": 123.955674928
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 26710,
+    "cached_tokens": 10624,
+    "completion_tokens": 31105,
+    "cost_usd": 0.0153607608,
+    "model_latency_s": 306.151170346,
+    "wall_s": 308.999961374
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e13-titleprior-30-2026-10-20/results/1911.01515v4.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Can any secrets still be shed by that much studied, uniquely integrable,\nElliptic Billiard? Starting by examining the family of 3-periodic trajectories and\nthe loci of their Triangular Centers, one obtains a beautiful and variegated gallery\nof curves: ellipses, quartics, sextics, circles, and even a stationary point. Secondly,\none notices this family conserves an intriguing ratio: Inradius-to-Circumradius. In\nturn this implies three conservation corollaries: (i) the sum of bounce angle cosines,\n(ii) the product of excentral cosines, and (iii) the ratio of excentral-to-orbit areas.\nMonge’s Orthoptic Circle’s close relation to 4-periodic Billiard trajectories is well-known. Its geometry provided clues with which to generalize 3-periodic invariants\nto trajectories of an arbitrary number of edges. This was quite unexpected. Indeed,\nthe Elliptic Billiard did surprise us!"
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Connes and Zagier (2007)",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "Its connection with Billiards is remarkable [5]:"
+              }
+            ],
+            "reference_key": "5",
+            "why": "The paper anchors its N=4 and generalization intuition in the known Monge orthoptic circle connection with billiards."
+          },
+          {
+            "cited_work": "Garcia (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Barycenter [9, 25],"
+              }
+            ],
+            "reference_key": "9",
+            "why": "Prior results on elliptic loci of triangle centers provide the baseline that the paper extends."
+          },
+          {
+            "cited_work": "Romaskevich (2014)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Incenter [8, 23],"
+              }
+            ],
+            "reference_key": "23",
+            "why": "The incenter-locus proof is a prior result on which the paper's broader locus program builds."
+          },
+          {
+            "cited_work": "Tabachnikov (2005)",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "foci [4, 27])."
+              }
+            ],
+            "reference_key": "27",
+            "why": "The geometric billiards background and integrability framework are taken from this standard source."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Akopyan (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 15,
+                "quote": "It can also be proven that [1]:"
+              }
+            ],
+            "reference_key": "1",
+            "why": "The paper uses Akopyan's proofs for N>3 cosine product and area-ratio conservation as later confirmation of its numerical findings."
+          },
+          {
+            "cited_work": "Garcia, Reznik, and Koiller (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 6,
+                "quote": "Recently, the following was also proven [10]:"
+              }
+            ],
+            "reference_key": "10",
+            "why": "This in-preparation companion work is cited for several N=3 results, including the 9-point-circle locus and radius formulas."
+          },
+          {
+            "cited_work": "Romaskevich (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "This fact can be proven by an affine transformation [24] explained in Figure 11."
+              }
+            ],
+            "reference_key": "24",
+            "why": "The affine proof is the direct support for the stationary Mittenpunkt theorem."
+          },
+          {
+            "cited_work": "Tabachnikov (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 11,
+                "quote": "perimeter and angular momentum [16, 30], as follows:"
+              }
+            ],
+            "reference_key": "30",
+            "why": "Tabachnikov contributes proofs for the stationary circle radius and related N>3 invariants."
+          },
+          {
+            "cited_work": "Tabachnikov and Schwartz (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 15,
+                "quote": "A proof to this surprising fact has been kindly contributed [31]."
+              }
+            ],
+            "reference_key": "31",
+            "why": "This proof confirms the constant cosine sum for all N."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "At this point a remarkable object steps in, coaxing us into a breakthrough:"
+          }
+        ],
+        "text": "The elliptic billiard still yields surprising structures: its 3-periodic orbit family conserves r/R and related cosine/area quantities, and these phenomena generalize to N-periodic orbits via Monge’s Orthoptic Circle and tangential-polygon constructions."
+      }
+    },
+    "citations": [
+      {
+        "context": "It can also be proven that [1]:",
+        "page": 15,
+        "reference_key": "1"
+      },
+      {
+        "context": "Postscript: Elegant proofs for some of the N > 3 invariants have recently appeared [2, 3].",
+        "page": 18,
+        "reference_key": "2"
+      },
+      {
+        "context": "Postscript: Elegant proofs for some of the N > 3 invariants have recently appeared [2, 3].",
+        "page": 18,
+        "reference_key": "3"
+      },
+      {
+        "context": "foci [4, 27]).",
+        "page": 4,
+        "reference_key": "4"
+      },
+      {
+        "context": "Its connection with Billiards is remarkable [5]:",
+        "page": 5,
+        "reference_key": "5"
+      },
+      {
+        "context": "The EB can be regarded as a special case of Poncelet’s Porism\n[6], Figure 4.",
+        "page": 4,
+        "reference_key": "6"
+      },
+      {
+        "context": "Circumcenter [7, 9],",
+        "page": 2,
+        "reference_key": "7"
+      },
+      {
+        "context": "Incenter [8, 23],",
+        "page": 2,
+        "reference_key": "8"
+      },
+      {
+        "context": "Barycenter [9, 25],",
+        "page": 2,
+        "reference_key": "9"
+      },
+      {
+        "context": "Recently, the following was also proven [10]:",
+        "page": 6,
+        "reference_key": "10"
+      },
+      {
+        "context": "Luckily we were helped by generous mathematicians who contributed insights and\nproofs [1, 11, 16, 24, 30, 31], see Acknowledgements and [?].",
+        "page": 3,
+        "reference_key": "11"
+      },
+      {
+        "context": "alternate to [12] which required the Billiard’s foci.",
+        "page": 15,
+        "reference_key": "12"
+      },
+      {
+        "context": "the following is a known relation [13]:",
+        "page": 12,
+        "reference_key": "13"
+      },
+      {
+        "context": "to be integrable [14].",
+        "page": 4,
+        "reference_key": "14"
+      },
+      {
+        "context": "on Clark Kimberling’s Encyclopedia⁴ [15].",
+        "page": 2,
+        "reference_key": "15"
+      },
+      {
+        "context": "perimeter and angular momentum [16, 30], as follows:",
+        "page": 11,
+        "reference_key": "16"
+      },
+      {
+        "context": "Intouchpoints of the Anticomplementary Triangle: identical to the Billiard [17],",
+        "page": 9,
+        "reference_key": "17"
+      },
+      {
+        "context": "we built an interactive applet [18].",
+        "page": 2,
+        "reference_key": "18"
+      },
+      {
+        "context": "In 2011, we uploaded a video [19, pl#2] showing the family of 3-periodic trajectories",
+        "page": 2,
+        "reference_key": "19"
+      },
+      {
+        "context": "see our locus gallery [20].",
+        "page": 3,
+        "reference_key": "20"
+      },
+      {
+        "context": "website [21].",
+        "page": 17,
+        "reference_key": "21"
+      },
+      {
+        "context": "to the Billiard or its Caustic [22].",
+        "page": 3,
+        "reference_key": "22"
+      },
+      {
+        "context": "Incenter [8, 23],",
+        "page": 2,
+        "reference_key": "23"
+      },
+      {
+        "context": "This fact can be proven by an affine transformation [24] explained in Figure 11.",
+        "page": 9,
+        "reference_key": "24"
+      },
+      {
+        "context": "Barycenter [9, 25],",
+        "page": 2,
+        "reference_key": "25"
+      },
+      {
+        "context": "Such Billiards are also known to be integrable [26].",
+        "page": 17,
+        "reference_key": "26"
+      },
+      {
+        "context": "foci [4, 27]).",
+        "page": 4,
+        "reference_key": "27"
+      },
+      {
+        "context": "It turns out the above is a special case of Chasles’ Theorem [28].",
+        "page": 15,
+        "reference_key": "28"
+      },
+      {
+        "context": "Surprisingly this did hold, and a proof soon followed [29]:",
+        "page": 15,
+        "reference_key": "29"
+      },
+      {
+        "context": "perimeter and angular momentum [16, 30], as follows:",
+        "page": 11,
+        "reference_key": "30"
+      },
+      {
+        "context": "proofs [1, 11, 16, 24, 30, 31], see Acknowledgements and [?].",
+        "page": 3,
+        "reference_key": "31"
+      },
+      {
+        "context": "Euler Points [32].",
+        "page": 4,
+        "reference_key": "32"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Data Science Consulting",
+          "name": "Dan Reznik"
+        },
+        {
+          "affiliation": "Universidade Federal de Gois",
+          "name": "Ronaldo Garcia"
+        },
+        {
+          "affiliation": "Universidade Federal de Juiz de Fora",
+          "name": "Jair Koiller"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Can the Elliptic Billiard Still Surprise Us?"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1911.01515v4 [math.DS]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "arXiv:1911.01515v4 [math.DS] 4 Feb 2020",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Can any secrets still be shed by that much studied, uniquely integrable,"
+        }
+      ],
+      "text": "Can the elliptic billiard still surprise us, for example through new loci of triangular centers or conserved quantities for periodic orbit families?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Akopyan, A."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 18,
+        "title": "Proofs of constant cosine product, and area ratio for N > 3",
+        "venue": "Private Communication",
+        "year": null
+      },
+      {
+        "authors": [
+          "Akopyan, A.",
+          "Schwartz, R.",
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 18,
+        "title": "Billiards in ellipses revisited",
+        "venue": null,
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Bialy, M.",
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 18,
+        "title": "Dan Reznik’s identities and more",
+        "venue": null,
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Birkhoff, G."
+        ],
+        "doi": "10.1007/BF02421325",
+        "key": "4",
+        "page": 18,
+        "title": "On the periodic motions of dynamical systems",
+        "venue": "Acta Mathematica",
+        "year": 1927
+      },
+      {
+        "authors": [
+          "Connes, A.",
+          "Zagier, D."
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 18,
+        "title": "A property of parallelograms inscribed in ellipses",
+        "venue": "The American Mathematical Monthly",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Dragović, V.",
+          "Radnović, M."
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 18,
+        "title": "Poncelet Porisms and Beyond: Integrable Billiards, Hyperelliptic Jacobians and Pencils of Quadrics",
+        "venue": "Springer, Basel",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Fierobe, C."
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 18,
+        "title": "On the circumcenters of triangular orbits in elliptic billiard",
+        "venue": null,
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Garcia, R."
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 18,
+        "title": "Centers of inscribed circles in triangular orbits of an elliptic billiard",
+        "venue": null,
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Garcia, R."
+        ],
+        "doi": "10.1080/00029890.2019.1593087",
+        "key": "9",
+        "page": 19,
+        "title": "Elliptic billiards and ellipses associated to the 3-periodic orbits",
+        "venue": "American Mathematical Monthly",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Garcia, R.",
+          "Reznik, D.",
+          "Koiller, J."
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 19,
+        "title": "New properties of triangular orbits in elliptic billiards",
+        "venue": "In preparation",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Helman, M."
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 19,
+        "title": "The loci of Xi, i = 7, 40, 57, 63, 142, 144 are elliptic",
+        "venue": "Private Communication",
+        "year": null
+      },
+      {
+        "authors": [
+          "Himmelstrand, M.",
+          "Wiln, V.",
+          "Saprykina, M."
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 19,
+        "title": "A survey of dynamical billiards",
+        "venue": null,
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Johnson, R.A."
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 19,
+        "title": "Modern Geometry: An Elementary Treatise on the Geometry of the Triangle and the Circle",
+        "venue": "Houghton Mifflin, Boston, MA",
+        "year": 1929
+      },
+      {
+        "authors": [
+          "Jovanovi, B."
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 19,
+        "title": "What are completely integrable hamilton systems",
+        "venue": "The Teaching of Mathematics",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Kimberling, C."
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 19,
+        "title": "Encyclopedia of triangle centers",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Laurain, D."
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 19,
+        "title": "Formula for the radius of the orbits’ excentral cosine circle",
+        "venue": "Private Communication",
+        "year": null
+      },
+      {
+        "authors": [
+          "Minevich, I.",
+          "Morton, P."
+        ],
+        "doi": "10.1007/s00022-016-0350-2",
+        "key": "17",
+        "page": 19,
+        "title": "Synthetic foundations of cevian geometry, III: The generalized orthocenter",
+        "venue": "Journal of Geometry",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Reznik, D."
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 19,
+        "title": "Applet showing the locus of several triangular centers",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Reznik, D."
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 19,
+        "title": "YouTube playlist for mathematical intelligencer",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Reznik, D.",
+          "Garcia, R.",
+          "Koiller, J."
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 19,
+        "title": "Media for elliptic billards and family of orbits",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Reznik, D.",
+          "Garcia, R.",
+          "Koiller, J."
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 19,
+        "title": "New properties of triangular orbits in elliptic billiards (website)",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Reznik, D.",
+          "Garcia, R.",
+          "Koiller, J."
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 19,
+        "title": "Loci of triangular orbits in elliptic billiards",
+        "venue": "To appear",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Romaskevich, O."
+        ],
+        "doi": "10.4171/LEM/60-3/4-2",
+        "key": "23",
+        "page": 19,
+        "title": "On the incenters of triangular orbits on elliptic billiards",
+        "venue": "Enseign. Math.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Romaskevich, O."
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 19,
+        "title": "Proof the mittenpunkt is stationary",
+        "venue": "Private Communication",
+        "year": null
+      },
+      {
+        "authors": [
+          "Schwartz, R.",
+          "Tabachnikov, S."
+        ],
+        "doi": "10.1007/s00283-016-9622-9",
+        "key": "25",
+        "page": 19,
+        "title": "Centers of mass of Poncelet polygons, 200 years after",
+        "venue": "Math. Intelligencer",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 19,
+        "title": "Ellipsoids, complete integrability and hyperbolic geometry",
+        "venue": "Moscow Mathematical Journal",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Tabachnikov, S."
+        ],
+        "doi": "10.1090/stml/030",
+        "key": "27",
+        "page": 19,
+        "title": "Geometry and Billiards",
+        "venue": "American Mathematical Society, Providence, RI",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 19,
+        "title": "Projective configuration theorems: old wine into new wineskins",
+        "venue": "Springer Verlag",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 19,
+        "title": "Proof of expression for constant cosine sum for any n",
+        "venue": "Private Communication",
+        "year": null
+      },
+      {
+        "authors": [
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 19,
+        "title": "Proofs of stationary circle radius for N > 3",
+        "venue": "Private Communication",
+        "year": null
+      },
+      {
+        "authors": [
+          "Tabachnikov, S.",
+          "Schwartz, R."
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 19,
+        "title": "Proof of constant cosine sum N > 3",
+        "venue": "Private Communication",
+        "year": null
+      },
+      {
+        "authors": [
+          "Weisstein, E."
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 19,
+        "title": "Mathworld",
+        "venue": null,
+        "year": 2019
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "Its connection with Billiards is remarkable [5]:",
+        "reference_key": "5",
+        "relation": "background",
+        "why": "Monge’s orthoptic circle supplies the geometric bridge that motivates extending N=3 invariants toward N=4 and beyond."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Barycenter [9, 25],",
+        "reference_key": "9",
+        "relation": "background",
+        "why": "Prior elliptic-locus results for major triangle centers establish the phenomenon the paper revisits and generalizes."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Recently, the following was also proven [10]:",
+        "reference_key": "10",
+        "relation": "supports",
+        "why": "A companion proof supplies the 9-point-circle locus and other N=3 results used in the argument."
+      },
+      {
+        "confidence": "high",
+        "page": 9,
+        "quote": "This fact can be proven by an affine transformation [24] explained in Figure 11.",
+        "reference_key": "24",
+        "relation": "supports",
+        "why": "The affine proof directly establishes that the Mittenpunkt is stationary at the billiard center."
+      },
+      {
+        "confidence": "high",
+        "page": 15,
+        "quote": "A proof to this surprising fact has been kindly contributed [31].",
+        "reference_key": "31",
+        "relation": "supports",
+        "why": "This contributed proof confirms constant cosine sum for non-intersecting orbits for all N."
+      },
+      {
+        "confidence": "high",
+        "page": 15,
+        "quote": "It can also be proven that [1]:",
+        "reference_key": "1",
+        "relation": "supports",
+        "why": "Akopyan’s private communication confirms N>3 constant cosine product and area-ratio results."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "perimeter and angular momentum [16, 30], as follows:",
+        "reference_key": "30",
+        "relation": "supports",
+        "why": "Tabachnikov’s proof supports the stationary-circle radius formula and associated N>3 invariants."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Incenter [8, 23],",
+        "reference_key": "23",
+        "relation": "background",
+        "why": "The incenter-locus theorem is a key earlier surprise that makes the paper’s broader search credible."
+      },
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "Barycenter [9, 25],",
+        "reference_key": "25",
+        "relation": "background",
+        "why": "Poncelet-polygon center-of-mass results connect the elliptic-billiard family to broader Poncelet phenomena."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "foci [4, 27]).",
+        "reference_key": "27",
+        "relation": "background",
+        "why": "The standard geometry-and-billiards treatment supplies the integrability and Joachimsthal framework."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "this second exploratory cycle. Never could we anticipate the surprises still in store!",
+          "start_page": 1,
+          "start_text": "Can the Elliptic Billiard Still Surprise Us?"
+        },
+        "summary": "Introduces the paper’s motivating question and its experimental path from known N=3 locus surprises to the conserved r/R ratio and the Monge-circle breakthrough.",
+        "title": "Introduction and Experimental Discovery of New Invariants"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "Property 1 The family of N -periodic trajectories has constant perimeter L.",
+          "start_page": 4,
+          "start_text": "2 Integrability and Conservation"
+        },
+        "summary": "Formalizes the elliptic billiard as an integrable Hamiltonian system with Joachimsthal’s integral, the invariant γ, and constant perimeter for N-periodic families.",
+        "title": "Integrability, Joachimsthal’s Integral, and Constant Perimeter"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "Theorem 5 For the 3-periodic family, the Mittenpunkt X9 is stationary at the",
+          "start_page": 6,
+          "start_text": "3 Locus Pocus: Curves Galore"
+        },
+        "summary": "Maps the N=3 triangle-center and derived-triangle loci: elliptic loci of X1–X5, excenters, extouchpoints matching the caustic, Feuerbach-point behavior, and the stationary Mittenpunkt.",
+        "title": "N=3 Triangle-Center and Derived-Triangle Loci"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 10
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Corollary 4 A 3-periodic family conserves the Excentral-to-Orbit area ratio.",
+          "start_page": 10,
+          "start_text": "5 Constant Ratio of Radii"
+        },
+        "summary": "Derives the conserved inradius-to-circumradius ratio and its three corollaries: sum of cosines, product of excentral cosines, and excentral-to-orbit area ratio.",
+        "title": "Constant r/R Ratio and Cosine/Area Corollaries"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "This surprising phenomenon can be viewed here [19, pl#16,17].",
+          "start_page": 13,
+          "start_text": "6 A Circular Locus"
+        },
+        "summary": "Presents the N=3 circular locus theorem for Q1/Q2, identifying the circle with the Excentral Triangle’s Cosine Circle and giving its radius formula.",
+        "title": "Circular Locus at N=3"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "The construction of a circular locus for N = 5, 6. Video 1, Video 2 [19,",
+          "start_page": 14,
+          "start_text": "7 Monge Madness: onward to N>3"
+        },
+        "summary": "Generalizes the stationary point, extouchpoint/caustic relation, cosine sum and product, odd-N area ratio, and circular loci from N=3 to broader N-periodic orbit families.",
+        "title": "Generalization to N>3 via Monge Madness"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 17
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "Table 1: Quick-reference to videos mentioned in the paper.",
+          "start_page": 17,
+          "start_text": "8 Conclusion & Questions"
+        },
+        "summary": "Closes with open questions on algebraic loci, 3D analogues, self-intersecting orbits, Poncelet generalizations, spherical/ellipsoidal billiards, and product/area formulas, plus a quick-reference video index.",
+        "title": "Conclusion, Open Questions, and Video Index"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It reports new theorems, numerical experiments, and proofs about elliptic-billiard periodic orbits rather than surveying or reviewing the field.",
+      "value": "survey"
+    }
+  },
+  "pass1_check": {
+    "sites": 55,
+    "verbatim": 55,
+    "near": 0,
+    "missing": 0,
+    "wrong_page": 1
+  },
+  "corrections": [
+    {
+      "path": "/identity/title",
+      "action": "replace",
+      "value_json": "\"Can the Elliptic Billiard Still Surprise Us?\"",
+      "reason": "The draft stores the arXiv identifier as the title; the paper title is given on page 1.",
+      "evidence": [
+        {
+          "quote": "Can the Elliptic Billiard Still Surprise Us?",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/type/value",
+      "action": "replace",
+      "value_json": "\"research\"",
+      "reason": "The paper reports new theorems and proofs, not a survey.",
+      "evidence": [
+        {
+          "quote": "Theorem 12 The product of cosines for the Tangential Polygon of non-intersecting orbits for any N is conserved.",
+          "page": 15
+        }
+      ]
+    },
+    {
+      "path": "/citations/14/page",
+      "action": "replace",
+      "value_json": "3",
+      "reason": "Citation [15] appears on page 3, not page 2.",
+      "evidence": [
+        {
+          "quote": "on Clark Kimberling’s Encyclopedia⁴ [15].",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/sections/0/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"Section 8.1 provides a quick-reference and links to all videos mentioned below.\"",
+      "reason": "The Introduction section continues through page 3; the previous end text was from page 2.",
+      "evidence": [
+        {
+          "quote": "Section 8.1 provides a quick-reference and links to all videos mentioned below.",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/sections/2/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"The reader can easily observe the above with our applet [18].\"",
+      "reason": "Section 3 ends before the separate “A Point Locus” section, so its end text should not be the Mittenpunkt theorem.",
+      "evidence": [
+        {
+          "quote": "The reader can easily observe the above with our applet [18].",
+          "page": 9
+        }
+      ]
+    },
+    {
+      "path": "/sections/2/summary",
+      "action": "replace",
+      "value_json": "\"Maps the N=3 triangle-center and derived-triangle loci: elliptic loci of X1–X5, excenters, extouchpoints matching the caustic, and Feuerbach-point behavior.\"",
+      "reason": "The stationary Mittenpunkt belongs to the missing “A Point Locus” section, not to section 3.",
+      "evidence": [
+        {
+          "quote": "4 A Point Locus",
+          "page": 9
+        }
+      ]
+    },
+    {
+      "path": "/sections/3/pages/end",
+      "action": "replace",
+      "value_json": "13",
+      "reason": "The r/R and area-ratio section extends to page 13, where Corollary 4 appears.",
+      "evidence": [
+        {
+          "quote": "Corollary 4 A 3-periodic family conserves the Excentral-to-Orbit area ratio.",
+          "page": 13
+        }
+      ]
+    },
+    {
+      "path": "/sections/3/source_span/end_page",
+      "action": "replace",
+      "value_json": "13",
+      "reason": "The r/R and area-ratio section extends to page 13, where Corollary 4 appears.",
+      "evidence": [
+        {
+          "quote": "Corollary 4 A 3-periodic family conserves the Excentral-to-Orbit area ratio.",
+          "page": 13
+        }
+      ]
+    },
+    {
+      "path": "/sections",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft omits the paper’s section 4, “A Point Locus.” I cannot insert it in the correct position with the permitted operations.",
+      "evidence": [
+        {
+          "quote": "4 A Point Locus",
+          "page": 9
+        }
+      ]
+    },
+    {
+      "path": "/sections/5/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"The construction of a circular locus for N = 5, 6. Video 1, Video 2 [19, pl#20,21].\"",
+      "reason": "The draft end text is truncated and should include the full video citation.",
+      "evidence": [
+        {
+          "quote": "Fig. 16: The construction of a circular locus for N = 5, 6. Video 1, Video 2 [19, pl#20,21]",
+          "page": 16
+        }
+      ]
+    },
+    {
+      "path": "/references/0/year",
+      "action": "replace",
+      "value_json": "2019",
+      "reason": "The private communication year is given as 2019.",
+      "evidence": [
+        {
+          "quote": "Akopyan, A.: Proofs of constant cosine product, and area ratio for N > 3. Private Communication (August, 2019)",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "path": "/references/10/year",
+      "action": "replace",
+      "value_json": "2019",
+      "reason": "The private communication year is given as 2019.",
+      "evidence": [
+        {
+          "quote": "Helman, M.: The loci of Xi, i = 7, 40, 57, 63, 142, 144 are elliptic. Private Communication (August, 2019)",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "path": "/references/15/year",
+      "action": "replace",
+      "value_json": "2019",
+      "reason": "The private communication year is given as 2019.",
+      "evidence": [
+        {
+          "quote": "Laurain, D.: Formula for the radius of the orbits’ excentral cosine circle. Private Communication (August, 2019)",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "path": "/references/23/year",
+      "action": "replace",
+      "value_json": "2019",
+      "reason": "The private communication year is given as 2019.",
+      "evidence": [
+        {
+          "quote": "Romaskevich, O.: Proof the mittenpunkt is stationary. Private Communication (May, 2019)",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "path": "/references/28/year",
+      "action": "replace",
+      "value_json": "2019",
+      "reason": "The private communication year is given as 2019.",
+      "evidence": [
+        {
+          "quote": "Tabachnikov, S.: Proof of expression for constant cosine sum for any n. Private Communication (October, 2019)",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "path": "/references/29/year",
+      "action": "replace",
+      "value_json": "2019",
+      "reason": "The private communication year is given as 2019.",
+      "evidence": [
+        {
+          "quote": "Tabachnikov, S.: Proofs of stationary circle radius for N > 3. Private Communication (July, 2019)",
+          "page": 19
+        }
+      ]
+    },
+    {
+      "path": "/references/30/year",
+      "action": "replace",
+      "value_json": "2019",
+      "reason": "The private communication year is given as 2019.",
+      "evidence": [
+        {
+          "quote": "Tabachnikov, S., Schwartz, R.: Proof of constant cosine sum N > 3. Private Communication (July, 2019)",
+          "page": 19
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/title",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/type/value",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "value does not match the schema: : value is not one of the allowed values"
+    },
+    {
+      "index": 2,
+      "path": "/citations/14/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/sections/0/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/sections/2/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 5,
+      "path": "/sections/2/summary",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 6,
+      "path": "/sections/3/pages/end",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 7,
+      "path": "/sections/3/source_span/end_page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 8,
+      "path": "/sections",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 9,
+      "path": "/sections/5/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 10,
+      "path": "/references/0/year",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 11,
+      "path": "/references/10/year",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 12,
+      "path": "/references/15/year",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 13,
+      "path": "/references/23/year",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 14,
+      "path": "/references/28/year",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 15,
+      "path": "/references/29/year",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 16,
+      "path": "/references/30/year",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 55,
+    "verbatim": 55,
+    "near": 0,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "Can any secrets still be shed by that much studied, uniquely integrable,\nElliptic Billiard? Starting by examining the family of 3-periodic trajectories and\nthe loci of their Triangular Centers, one obtains a beautiful and variegated gallery\nof curves: ellipses, quartics, sextics, circles, and even a stationary point. Secondly,\none notices this family conserves an intriguing ratio: Inradius-to-Circumradius. In\nturn this implies three conservation corollaries: (i) the sum of bounce angle cosines,\n(ii) the product of excentral cosines, and (iii) the ratio of excentral-to-orbit areas.\nMonge’s Orthoptic Circle’s close relation to 4-periodic Billiard trajectories is well-known. Its geometry provided clues with which to generalize 3-periodic invariants\nto trajectories of an arbitrary number of edges. This was quite unexpected. Indeed,\nthe Elliptic Billiard did surprise us!",
+      "admitted": "Can any secrets still be shed by that much studied, uniquely integrable,\nElliptic Billiard? Starting by examining the family of 3-periodic trajectories and\nthe loci of their Triangular Centers, one obtains a beautiful and variegated gallery\nof curves: ellipses, quartics, sextics, circles, and even a stationary point. Secondly,\none notices this family conserves an intriguing ratio: Inradius-to-Circumradius. In\nturn this implies three conservation corollaries: (i) the sum of bounce angle cosines,\n(ii) the product of excentral cosines, and (iii) the ratio of excentral-to-orbit areas.\nMonge’s Orthoptic Circle’s close relation to 4-periodic Billiard trajectories is well-known. Its geometry provided clues with which to generalize 3-periodic invariants\nto trajectories of an arbitrary number of edges. This was quite unexpected. Indeed,\nthe Elliptic Billiard did surprise us!",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Its connection with Billiards is remarkable [5]:",
+      "admitted": "Its connection with Billiards is remarkable [5]:",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Barycenter [9, 25],",
+      "admitted": "Barycenter [9, 25],",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Incenter [8, 23],",
+      "admitted": "Incenter [8, 23],",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "foci [4, 27]).",
+      "admitted": "foci [4, 27]).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It can also be proven that [1]:",
+      "admitted": "It can also be proven that [1]:",
+      "similarity": null,
+      "cited_page": 15,
+      "matched_page": 15
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Recently, the following was also proven [10]:",
+      "admitted": "Recently, the following was also proven [10]:",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This fact can be proven by an affine transformation [24] explained in Figure 11.",
+      "admitted": "This fact can be proven by an affine transformation [24] explained in Figure 11.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "perimeter and angular momentum [16, 30], as follows:",
+      "admitted": "perimeter and angular momentum [16, 30], as follows:",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "A proof to this surprising fact has been kindly contributed [31].",
+      "admitted": "A proof to this surprising fact has been kindly contributed [31].",
+      "similarity": null,
+      "cited_page": 15,
+      "matched_page": 15
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "At this point a remarkable object steps in, coaxing us into a breakthrough:",
+      "admitted": "At this point a remarkable object steps in, coaxing us into a breakthrough:",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Can the Elliptic Billiard Still Surprise Us?",
+      "admitted": "Can the Elliptic Billiard Still Surprise Us?",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Can any secrets still be shed by that much studied, uniquely integrable,",
+      "admitted": "Can any secrets still be shed by that much studied, uniquely integrable,",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "It can also be proven that [1]:",
+      "admitted": "It can also be proven that [1]:",
+      "similarity": null,
+      "cited_page": 15,
+      "matched_page": 15
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "Postscript: Elegant proofs for some of the N > 3 invariants have recently appeared [2, 3].",
+      "admitted": "Postscript: Elegant proofs for some of the N > 3 invariants have recently appeared [2, 3].",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "Postscript: Elegant proofs for some of the N > 3 invariants have recently appeared [2, 3].",
+      "admitted": "Postscript: Elegant proofs for some of the N > 3 invariants have recently appeared [2, 3].",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "foci [4, 27]).",
+      "admitted": "foci [4, 27]).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "Its connection with Billiards is remarkable [5]:",
+      "admitted": "Its connection with Billiards is remarkable [5]:",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "The EB can be regarded as a special case of Poncelet’s Porism\n[6], Figure 4.",
+      "admitted": "The EB can be regarded as a special case of Poncelet’s Porism\n[6], Figure 4.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "Circumcenter [7, 9],",
+      "admitted": "Circumcenter [7, 9],",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "Incenter [8, 23],",
+      "admitted": "Incenter [8, 23],",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "Barycenter [9, 25],",
+      "admitted": "Barycenter [9, 25],",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "Recently, the following was also proven [10]:",
+      "admitted": "Recently, the following was also proven [10]:",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "Luckily we were helped by generous mathematicians who contributed insights and\nproofs [1, 11, 16, 24, 30, 31], see Acknowledgements and [?].",
+      "admitted": "Luckily we were helped by generous mathematicians who contributed insights and\nproofs [1, 11, 16, 24, 30, 31], see Acknowledgements and [?].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "alternate to [12] which required the Billiard’s foci.",
+      "admitted": "alternate to [12] which required the Billiard’s foci.",
+      "similarity": null,
+      "cited_page": 15,
+      "matched_page": 15
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "the following is a known relation [13]:",
+      "admitted": "the following is a known relation [13]:",
+      "similarity": null,
+      "cited_page": 12,
+      "matched_page": 12
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "to be integrable [14].",
+      "admitted": "to be integrable [14].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "on Clark Kimberling’s Encyclopedia⁴ [15].",
+      "admitted": "on Clark Kimberling’s Encyclopedia⁴ [15].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "perimeter and angular momentum [16, 30], as follows:",
+      "admitted": "perimeter and angular momentum [16, 30], as follows:",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "Intouchpoints of the Anticomplementary Triangle: identical to the Billiard [17],",
+      "admitted": "Intouchpoints of the Anticomplementary Triangle: identical to the Billiard [17],",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "we built an interactive applet [18].",
+      "admitted": "we built an interactive applet [18].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "In 2011, we uploaded a video [19, pl#2] showing the family of 3-periodic trajectories",
+      "admitted": "In 2011, we uploaded a video [19, pl#2] showing the family of 3-periodic trajectories",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "see our locus gallery [20].",
+      "admitted": "see our locus gallery [20].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "website [21].",
+      "admitted": "website [21].",
+      "similarity": null,
+      "cited_page": 17,
+      "matched_page": 17
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "to the Billiard or its Caustic [22].",
+      "admitted": "to the Billiard or its Caustic [22].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "Incenter [8, 23],",
+      "admitted": "Incenter [8, 23],",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "This fact can be proven by an affine transformation [24] explained in Figure 11.",
+      "admitted": "This fact can be proven by an affine transformation [24] explained in Figure 11.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "Barycenter [9, 25],",
+      "admitted": "Barycenter [9, 25],",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "verbatim",
+      "original": "Such Billiards are also known to be integrable [26].",
+      "admitted": "Such Billiards are also known to be integrable [26].",
+      "similarity": null,
+      "cited_page": 17,
+      "matched_page": 17
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "verbatim",
+      "original": "foci [4, 27]).",
+      "admitted": "foci [4, 27]).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "verbatim",
+      "original": "It turns out the above is a special case of Chasles’ Theorem [28].",
+      "admitted": "It turns out the above is a special case of Chasles’ Theorem [28].",
+      "similarity": null,
+      "cited_page": 15,
+      "matched_page": 15
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/28/context",
+      "status": "verbatim",
+      "original": "Surprisingly this did hold, and a proof soon followed [29]:",
+      "admitted": "Surprisingly this did hold, and a proof soon followed [29]:",
+      "similarity": null,
+      "cited_page": 15,
+      "matched_page": 15
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/29/context",
+      "status": "verbatim",
+      "original": "perimeter and angular momentum [16, 30], as follows:",
+      "admitted": "perimeter and angular momentum [16, 30], as follows:",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/30/context",
+      "status": "verbatim",
+      "original": "proofs [1, 11, 16, 24, 30, 31], see Acknowledgements and [?].",
+      "admitted": "proofs [1, 11, 16, 24, 30, 31], see Acknowledgements and [?].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/31/context",
+      "status": "verbatim",
+      "original": "Euler Points [32].",
+      "admitted": "Euler Points [32].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Its connection with Billiards is remarkable [5]:",
+      "admitted": "Its connection with Billiards is remarkable [5]:",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Barycenter [9, 25],",
+      "admitted": "Barycenter [9, 25],",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "Recently, the following was also proven [10]:",
+      "admitted": "Recently, the following was also proven [10]:",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "This fact can be proven by an affine transformation [24] explained in Figure 11.",
+      "admitted": "This fact can be proven by an affine transformation [24] explained in Figure 11.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "A proof to this surprising fact has been kindly contributed [31].",
+      "admitted": "A proof to this surprising fact has been kindly contributed [31].",
+      "similarity": null,
+      "cited_page": 15,
+      "matched_page": 15
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "It can also be proven that [1]:",
+      "admitted": "It can also be proven that [1]:",
+      "similarity": null,
+      "cited_page": 15,
+      "matched_page": 15
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "perimeter and angular momentum [16, 30], as follows:",
+      "admitted": "perimeter and angular momentum [16, 30], as follows:",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "Incenter [8, 23],",
+      "admitted": "Incenter [8, 23],",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "Barycenter [9, 25],",
+      "admitted": "Barycenter [9, 25],",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "verbatim",
+      "original": "foci [4, 27]).",
+      "admitted": "foci [4, 27]).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    }
+  ],
+  "admission_counts": {
+    "verbatim": 55
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Can any secrets still be shed by that much studied, uniquely integrable,\nElliptic Billiard? Starting by examining the family of 3-periodic trajectories and\nthe loci of their Triangular Centers, one obtains a beautiful and variegated gallery\nof curves: ellipses, quartics, sextics, circles, and even a stationary point. Secondly,\none notices this family conserves an intriguing ratio: Inradius-to-Circumradius. In\nturn this implies three conservation corollaries: (i) the sum of bounce angle cosines,\n(ii) the product of excentral cosines, and (iii) the ratio of excentral-to-orbit areas.\nMonge’s Orthoptic Circle’s close relation to 4-periodic Billiard trajectories is well-known. Its geometry provided clues with which to generalize 3-periodic invariants\nto trajectories of an arbitrary number of edges. This was quite unexpected. Indeed,\nthe Elliptic Billiard did surprise us!"
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Connes and Zagier (2007)",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "Its connection with Billiards is remarkable [5]:"
+              }
+            ],
+            "reference_key": "5",
+            "why": "The paper anchors its N=4 and generalization intuition in the known Monge orthoptic circle connection with billiards."
+          },
+          {
+            "cited_work": "Garcia (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Barycenter [9, 25],"
+              }
+            ],
+            "reference_key": "9",
+            "why": "Prior results on elliptic loci of triangle centers provide the baseline that the paper extends."
+          },
+          {
+            "cited_work": "Romaskevich (2014)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Incenter [8, 23],"
+              }
+            ],
+            "reference_key": "23",
+            "why": "The incenter-locus proof is a prior result on which the paper's broader locus program builds."
+          },
+          {
+            "cited_work": "Tabachnikov (2005)",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "foci [4, 27])."
+              }
+            ],
+            "reference_key": "27",
+            "why": "The geometric billiards background and integrability framework are taken from this standard source."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Akopyan (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 15,
+                "quote": "It can also be proven that [1]:"
+              }
+            ],
+            "reference_key": "1",
+            "why": "The paper uses Akopyan's proofs for N>3 cosine product and area-ratio conservation as later confirmation of its numerical findings."
+          },
+          {
+            "cited_work": "Garcia, Reznik, and Koiller (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 6,
+                "quote": "Recently, the following was also proven [10]:"
+              }
+            ],
+            "reference_key": "10",
+            "why": "This in-preparation companion work is cited for several N=3 results, including the 9-point-circle locus and radius formulas."
+          },
+          {
+            "cited_work": "Romaskevich (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "This fact can be proven by an affine transformation [24] explained in Figure 11."
+              }
+            ],
+            "reference_key": "24",
+            "why": "The affine proof is the direct support for the stationary Mittenpunkt theorem."
+          },
+          {
+            "cited_work": "Tabachnikov (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 11,
+                "quote": "perimeter and angular momentum [16, 30], as follows:"
+              }
+            ],
+            "reference_key": "30",
+            "why": "Tabachnikov contributes proofs for the stationary circle radius and related N>3 invariants."
+          },
+          {
+            "cited_work": "Tabachnikov and Schwartz (2019)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 15,
+                "quote": "A proof to this surprising fact has been kindly contributed [31]."
+              }
+            ],
+            "reference_key": "31",
+            "why": "This proof confirms the constant cosine sum for all N."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "At this point a remarkable object steps in, coaxing us into a breakthrough:"
+          }
+        ],
+        "text": "The elliptic billiard still yields surprising structures: its 3-periodic orbit family conserves r/R and related cosine/area quantities, and these phenomena generalize to N-periodic orbits via Monge’s Orthoptic Circle and tangential-polygon constructions."
+      }
+    },
+    "citations": [
+      {
+        "context": "It can also be proven that [1]:",
+        "page": 15,
+        "reference_key": "1"
+      },
+      {
+        "context": "Postscript: Elegant proofs for some of the N > 3 invariants have recently appeared [2, 3].",
+        "page": 18,
+        "reference_key": "2"
+      },
+      {
+        "context": "Postscript: Elegant proofs for some of the N > 3 invariants have recently appeared [2, 3].",
+        "page": 18,
+        "reference_key": "3"
+      },
+      {
+        "context": "foci [4, 27]).",
+        "page": 4,
+        "reference_key": "4"
+      },
+      {
+        "context": "Its connection with Billiards is remarkable [5]:",
+        "page": 5,
+        "reference_key": "5"
+      },
+      {
+        "context": "The EB can be regarded as a special case of Poncelet’s Porism\n[6], Figure 4.",
+        "page": 4,
+        "reference_key": "6"
+      },
+      {
+        "context": "Circumcenter [7, 9],",
+        "page": 2,
+        "reference_key": "7"
+      },
+      {
+        "context": "Incenter [8, 23],",
+        "page": 2,
+        "reference_key": "8"
+      },
+      {
+        "context": "Barycenter [9, 25],",
+        "page": 2,
+        "reference_key": "9"
+      },
+      {
+        "context": "Recently, the following was also proven [10]:",
+        "page": 6,
+        "reference_key": "10"
+      },
+      {
+        "context": "Luckily we were helped by generous mathematicians who contributed insights and\nproofs [1, 11, 16, 24, 30, 31], see Acknowledgements and [?].",
+        "page": 3,
+        "reference_key": "11"
+      },
+      {
+        "context": "alternate to [12] which required the Billiard’s foci.",
+        "page": 15,
+        "reference_key": "12"
+      },
+      {
+        "context": "the following is a known relation [13]:",
+        "page": 12,
+        "reference_key": "13"
+      },
+      {
+        "context": "to be integrable [14].",
+        "page": 4,
+        "reference_key": "14"
+      },
+      {
+        "context": "on Clark Kimberling’s Encyclopedia⁴ [15].",
+        "page": 3,
+        "reference_key": "15"
+      },
+      {
+        "context": "perimeter and angular momentum [16, 30], as follows:",
+        "page": 11,
+        "reference_key": "16"
+      },
+      {
+        "context": "Intouchpoints of the Anticomplementary Triangle: identical to the Billiard [17],",
+        "page": 9,
+        "reference_key": "17"
+      },
+      {
+        "context": "we built an interactive applet [18].",
+        "page": 2,
+        "reference_key": "18"
+      },
+      {
+        "context": "In 2011, we uploaded a video [19, pl#2] showing the family of 3-periodic trajectories",
+        "page": 2,
+        "reference_key": "19"
+      },
+      {
+        "context": "see our locus gallery [20].",
+        "page": 3,
+        "reference_key": "20"
+      },
+      {
+        "context": "website [21].",
+        "page": 17,
+        "reference_key": "21"
+      },
+      {
+        "context": "to the Billiard or its Caustic [22].",
+        "page": 3,
+        "reference_key": "22"
+      },
+      {
+        "context": "Incenter [8, 23],",
+        "page": 2,
+        "reference_key": "23"
+      },
+      {
+        "context": "This fact can be proven by an affine transformation [24] explained in Figure 11.",
+        "page": 9,
+        "reference_key": "24"
+      },
+      {
+        "context": "Barycenter [9, 25],",
+        "page": 2,
+        "reference_key": "25"
+      },
+      {
+        "context": "Such Billiards are also known to be integrable [26].",
+        "page": 17,
+        "reference_key": "26"
+      },
+      {
+        "context": "foci [4, 27]).",
+        "page": 4,
+        "reference_key": "27"
+      },
+      {
+        "context": "It turns out the above is a special case of Chasles’ Theorem [28].",
+        "page": 15,
+        "reference_key": "28"
+      },
+      {
+        "context": "Surprisingly this did hold, and a proof soon followed [29]:",
+        "page": 15,
+        "reference_key": "29"
+      },
+      {
+        "context": "perimeter and angular momentum [16, 30], as follows:",
+        "page": 11,
+        "reference_key": "30"
+      },
+      {
+        "context": "proofs [1, 11, 16, 24, 30, 31], see Acknowledgements and [?].",
+        "page": 3,
+        "reference_key": "31"
+      },
+      {
+        "context": "Euler Points [32].",
+        "page": 4,
+        "reference_key": "32"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Data Science Consulting",
+          "name": "Dan Reznik"
+        },
+        {
+          "affiliation": "Universidade Federal de Gois",
+          "name": "Ronaldo Garcia"
+        },
+        {
+          "affiliation": "Universidade Federal de Juiz de Fora",
+          "name": "Jair Koiller"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Can the Elliptic Billiard Still Surprise Us?"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1911.01515v4 [math.DS]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Can the Elliptic Billiard Still Surprise Us?",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Can any secrets still be shed by that much studied, uniquely integrable,"
+        }
+      ],
+      "text": "Can the elliptic billiard still surprise us, for example through new loci of triangular centers or conserved quantities for periodic orbit families?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Akopyan, A."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 18,
+        "title": "Proofs of constant cosine product, and area ratio for N > 3",
+        "venue": "Private Communication",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Akopyan, A.",
+          "Schwartz, R.",
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 18,
+        "title": "Billiards in ellipses revisited",
+        "venue": null,
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Bialy, M.",
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 18,
+        "title": "Dan Reznik’s identities and more",
+        "venue": null,
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Birkhoff, G."
+        ],
+        "doi": "10.1007/BF02421325",
+        "key": "4",
+        "page": 18,
+        "title": "On the periodic motions of dynamical systems",
+        "venue": "Acta Mathematica",
+        "year": 1927
+      },
+      {
+        "authors": [
+          "Connes, A.",
+          "Zagier, D."
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 18,
+        "title": "A property of parallelograms inscribed in ellipses",
+        "venue": "The American Mathematical Monthly",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Dragović, V.",
+          "Radnović, M."
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 18,
+        "title": "Poncelet Porisms and Beyond: Integrable Billiards, Hyperelliptic Jacobians and Pencils of Quadrics",
+        "venue": "Springer, Basel",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Fierobe, C."
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 18,
+        "title": "On the circumcenters of triangular orbits in elliptic billiard",
+        "venue": null,
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Garcia, R."
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 18,
+        "title": "Centers of inscribed circles in triangular orbits of an elliptic billiard",
+        "venue": null,
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Garcia, R."
+        ],
+        "doi": "10.1080/00029890.2019.1593087",
+        "key": "9",
+        "page": 19,
+        "title": "Elliptic billiards and ellipses associated to the 3-periodic orbits",
+        "venue": "American Mathematical Monthly",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Garcia, R.",
+          "Reznik, D.",
+          "Koiller, J."
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 19,
+        "title": "New properties of triangular orbits in elliptic billiards",
+        "venue": "In preparation",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Helman, M."
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 19,
+        "title": "The loci of Xi, i = 7, 40, 57, 63, 142, 144 are elliptic",
+        "venue": "Private Communication",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Himmelstrand, M.",
+          "Wiln, V.",
+          "Saprykina, M."
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 19,
+        "title": "A survey of dynamical billiards",
+        "venue": null,
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Johnson, R.A."
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 19,
+        "title": "Modern Geometry: An Elementary Treatise on the Geometry of the Triangle and the Circle",
+        "venue": "Houghton Mifflin, Boston, MA",
+        "year": 1929
+      },
+      {
+        "authors": [
+          "Jovanovi, B."
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 19,
+        "title": "What are completely integrable hamilton systems",
+        "venue": "The Teaching of Mathematics",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Kimberling, C."
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 19,
+        "title": "Encyclopedia of triangle centers",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Laurain, D."
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 19,
+        "title": "Formula for the radius of the orbits’ excentral cosine circle",
+        "venue": "Private Communication",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Minevich, I.",
+          "Morton, P."
+        ],
+        "doi": "10.1007/s00022-016-0350-2",
+        "key": "17",
+        "page": 19,
+        "title": "Synthetic foundations of cevian geometry, III: The generalized orthocenter",
+        "venue": "Journal of Geometry",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Reznik, D."
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 19,
+        "title": "Applet showing the locus of several triangular centers",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Reznik, D."
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 19,
+        "title": "YouTube playlist for mathematical intelligencer",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Reznik, D.",
+          "Garcia, R.",
+          "Koiller, J."
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 19,
+        "title": "Media for elliptic billards and family of orbits",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Reznik, D.",
+          "Garcia, R.",
+          "Koiller, J."
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 19,
+        "title": "New properties of triangular orbits in elliptic billiards (website)",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Reznik, D.",
+          "Garcia, R.",
+          "Koiller, J."
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 19,
+        "title": "Loci of triangular orbits in elliptic billiards",
+        "venue": "To appear",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Romaskevich, O."
+        ],
+        "doi": "10.4171/LEM/60-3/4-2",
+        "key": "23",
+        "page": 19,
+        "title": "On the incenters of triangular orbits on elliptic billiards",
+        "venue": "Enseign. Math.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Romaskevich, O."
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 19,
+        "title": "Proof the mittenpunkt is stationary",
+        "venue": "Private Communication",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Schwartz, R.",
+          "Tabachnikov, S."
+        ],
+        "doi": "10.1007/s00283-016-9622-9",
+        "key": "25",
+        "page": 19,
+        "title": "Centers of mass of Poncelet polygons, 200 years after",
+        "venue": "Math. Intelligencer",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 19,
+        "title": "Ellipsoids, complete integrability and hyperbolic geometry",
+        "venue": "Moscow Mathematical Journal",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Tabachnikov, S."
+        ],
+        "doi": "10.1090/stml/030",
+        "key": "27",
+        "page": 19,
+        "title": "Geometry and Billiards",
+        "venue": "American Mathematical Society, Providence, RI",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 19,
+        "title": "Projective configuration theorems: old wine into new wineskins",
+        "venue": "Springer Verlag",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 19,
+        "title": "Proof of expression for constant cosine sum for any n",
+        "venue": "Private Communication",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Tabachnikov, S."
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 19,
+        "title": "Proofs of stationary circle radius for N > 3",
+        "venue": "Private Communication",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Tabachnikov, S.",
+          "Schwartz, R."
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 19,
+        "title": "Proof of constant cosine sum N > 3",
+        "venue": "Private Communication",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Weisstein, E."
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 19,
+        "title": "Mathworld",
+        "venue": null,
+        "year": 2019
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "Its connection with Billiards is remarkable [5]:",
+        "reference_key": "5",
+        "relation": "background",
+        "why": "Monge’s orthoptic circle supplies the geometric bridge that motivates extending N=3 invariants toward N=4 and beyond."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Barycenter [9, 25],",
+        "reference_key": "9",
+        "relation": "background",
+        "why": "Prior elliptic-locus results for major triangle centers establish the phenomenon the paper revisits and generalizes."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Recently, the following was also proven [10]:",
+        "reference_key": "10",
+        "relation": "supports",
+        "why": "A companion proof supplies the 9-point-circle locus and other N=3 results used in the argument."
+      },
+      {
+        "confidence": "high",
+        "page": 9,
+        "quote": "This fact can be proven by an affine transformation [24] explained in Figure 11.",
+        "reference_key": "24",
+        "relation": "supports",
+        "why": "The affine proof directly establishes that the Mittenpunkt is stationary at the billiard center."
+      },
+      {
+        "confidence": "high",
+        "page": 15,
+        "quote": "A proof to this surprising fact has been kindly contributed [31].",
+        "reference_key": "31",
+        "relation": "supports",
+        "why": "This contributed proof confirms constant cosine sum for non-intersecting orbits for all N."
+      },
+      {
+        "confidence": "high",
+        "page": 15,
+        "quote": "It can also be proven that [1]:",
+        "reference_key": "1",
+        "relation": "supports",
+        "why": "Akopyan’s private communication confirms N>3 constant cosine product and area-ratio results."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "perimeter and angular momentum [16, 30], as follows:",
+        "reference_key": "30",
+        "relation": "supports",
+        "why": "Tabachnikov’s proof supports the stationary-circle radius formula and associated N>3 invariants."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Incenter [8, 23],",
+        "reference_key": "23",
+        "relation": "background",
+        "why": "The incenter-locus theorem is a key earlier surprise that makes the paper’s broader search credible."
+      },
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "Barycenter [9, 25],",
+        "reference_key": "25",
+        "relation": "background",
+        "why": "Poncelet-polygon center-of-mass results connect the elliptic-billiard family to broader Poncelet phenomena."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "foci [4, 27]).",
+        "reference_key": "27",
+        "relation": "background",
+        "why": "The standard geometry-and-billiards treatment supplies the integrability and Joachimsthal framework."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Section 8.1 provides a quick-reference and links to all videos mentioned below.",
+          "start_page": 1,
+          "start_text": "Can the Elliptic Billiard Still Surprise Us?"
+        },
+        "summary": "Introduces the paper’s motivating question and its experimental path from known N=3 locus surprises to the conserved r/R ratio and the Monge-circle breakthrough.",
+        "title": "Introduction and Experimental Discovery of New Invariants"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "Property 1 The family of N -periodic trajectories has constant perimeter L.",
+          "start_page": 4,
+          "start_text": "2 Integrability and Conservation"
+        },
+        "summary": "Formalizes the elliptic billiard as an integrable Hamiltonian system with Joachimsthal’s integral, the invariant γ, and constant perimeter for N-periodic families.",
+        "title": "Integrability, Joachimsthal’s Integral, and Constant Perimeter"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "The reader can easily observe the above with our applet [18].",
+          "start_page": 6,
+          "start_text": "3 Locus Pocus: Curves Galore"
+        },
+        "summary": "Maps the N=3 triangle-center and derived-triangle loci: elliptic loci of X1–X5, excenters, extouchpoints matching the caustic, and Feuerbach-point behavior.",
+        "title": "N=3 Triangle-Center and Derived-Triangle Loci"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 10
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Corollary 4 A 3-periodic family conserves the Excentral-to-Orbit area ratio.",
+          "start_page": 10,
+          "start_text": "5 Constant Ratio of Radii"
+        },
+        "summary": "Derives the conserved inradius-to-circumradius ratio and its three corollaries: sum of cosines, product of excentral cosines, and excentral-to-orbit area ratio.",
+        "title": "Constant r/R Ratio and Cosine/Area Corollaries"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "This surprising phenomenon can be viewed here [19, pl#16,17].",
+          "start_page": 13,
+          "start_text": "6 A Circular Locus"
+        },
+        "summary": "Presents the N=3 circular locus theorem for Q1/Q2, identifying the circle with the Excentral Triangle’s Cosine Circle and giving its radius formula.",
+        "title": "Circular Locus at N=3"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "The construction of a circular locus for N = 5, 6. Video 1, Video 2 [19, pl#20,21].",
+          "start_page": 14,
+          "start_text": "7 Monge Madness: onward to N>3"
+        },
+        "summary": "Generalizes the stationary point, extouchpoint/caustic relation, cosine sum and product, odd-N area ratio, and circular loci from N=3 to broader N-periodic orbit families.",
+        "title": "Generalization to N>3 via Monge Madness"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 17
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "Table 1: Quick-reference to videos mentioned in the paper.",
+          "start_page": 17,
+          "start_text": "8 Conclusion & Questions"
+        },
+        "summary": "Closes with open questions on algebraic loci, 3D analogues, self-intersecting orbits, Poncelet generalizations, spherical/ellipsoidal billiards, and product/area formulas, plus a quick-reference video index.",
+        "title": "Conclusion, Open Questions, and Video Index"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It reports new theorems, numerical experiments, and proofs about elliptic-billiard periodic orbits rather than surveying or reviewing the field.",
+      "value": "survey"
+    }
+  }
+}

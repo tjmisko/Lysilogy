@@ -1,0 +1,704 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T22:00:46.176565231Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Dijkstra - 1968 - GOTO Statements Considered Harmful.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 4,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 8008,
+      "cached_tokens": 7936,
+      "completion_tokens": 12334,
+      "reasoning_tokens": 10074,
+      "cost_usd": 0.0052236912,
+      "cost_source": "reported",
+      "latency_s": 157.147333669
+    },
+    {
+      "stage": "extract.sections.refine",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 7906,
+      "cached_tokens": 7040,
+      "completion_tokens": 1386,
+      "reasoning_tokens": 1162,
+      "cost_usd": 0.000732928,
+      "cost_source": "reported",
+      "latency_s": 22.32093301
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 9089,
+      "cached_tokens": 384,
+      "completion_tokens": 7570,
+      "reasoning_tokens": 7138,
+      "cost_usd": 0.0043997128,
+      "cost_source": "reported",
+      "latency_s": 100.064109187
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 3936,
+      "cached_tokens": 0,
+      "completion_tokens": 793,
+      "reasoning_tokens": 762,
+      "cost_usd": 0.0008841,
+      "cost_source": "reported",
+      "latency_s": 16.765771979
+    }
+  ],
+  "totals": {
+    "calls": 4,
+    "prompt_tokens": 28939,
+    "cached_tokens": 15360,
+    "completion_tokens": 22083,
+    "cost_usd": 0.011240432,
+    "model_latency_s": 296.298147845,
+    "wall_s": 297.198736526
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e12-refine-30-2026-10-20/results/dijkstra1968.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "The paper explores the pernicious effects of excessive use of the go to statement on programming quality and argues for its elimination. It observes that the quality of programmers decreases as the density of go to statements in their programs increases. The author contends that the go to statement should be abolished from all higher-level programming languages (excluding perhaps plain machine code), because it drastically complicates the task of understanding the progress of a process. By examining how processes are characterized using textual and dynamic indices, the paper shows that go to statements make it terribly hard to find a meaningful set of coordinates for describing process progress. The argument concludes that structured constructs like conditionals, procedures, and repetition clauses help maintain a manageable program state description, whereas the go to statement is too primitive and invites messy code. The paper also acknowledges influences and prior observations regarding the undesirability of the go to statement, citing work by Wirth and Hoare, and Böhm and Jacopini."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "1",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\""
+              }
+            ],
+            "reference_key": "1",
+            "why": "Dijkstra points to Wirth and Hoare's observation in the same direction, supporting case construction as superior to go to statements and switches."
+          },
+          {
+            "cited_work": "2",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement. The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended."
+              }
+            ],
+            "reference_key": "2",
+            "why": "Dijkstra acknowledges Böhm and Jacopini's proof of the logical superfluousness of the go to statement but warns that mechanical translation of arbitrary flow diagrams into jump-free ones is not advisable."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "go to statement",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The unbridled use of the go to statement has an immediate\nconsequence that it becomes terribly hard to find a meaningful set\nof coordinates in which to describe the process progress."
+              }
+            ],
+            "reference_key": "N/A",
+            "why": "The paper criticizes the unbridled use of the go to statement for making it terribly hard to find a meaningful set of coordinates to describe process progress."
+          },
+          {
+            "cited_work": "mechanical translation of arbitrary flow diagrams",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended."
+              }
+            ],
+            "reference_key": "2",
+            "why": "Dijkstra critiques the mechanical translation of arbitrary flow diagrams into jump-free ones, stating it is not to be recommended and that the resulting diagram cannot be expected to be more transparent than the original."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce."
+          }
+        ],
+        "text": "The quality of programmers is a decreasing function of the density of go to statements in the programs they produce, and the go to statement should therefore be abolished from all higher-level programming languages."
+      }
+    },
+    "citations": [
+      {
+        "context": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\"",
+        "page": 2,
+        "reference_key": "1"
+      },
+      {
+        "context": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement.",
+        "page": 2,
+        "reference_key": "2"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Technogogicag University, Eindhoven, The NegheHa~ds",
+          "name": "EDSGER Wo I)UKSTRA"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "EDSGER Wo I)UKSTRA\nTechnogogicag University\nEindhoven, The NegheHa~ds"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Go T o S t a t e m e n t\nConsidered Harmful",
+      "venue": "Technogogicag University, Eindhoven, The NegheHa~ds",
+      "year": 1968
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "what data do we\nhave to fix in order that we can redo the process until the very\nsame point?"
+        }
+      ],
+      "text": "How can the progress of a process be characterized so that its dynamic behavior is describable in a way that shortens the conceptual gap between the static program and the dynamic process?"
+    },
+    "references": [
+      {
+        "authors": [
+          "WIRTH, N.",
+          "HOARE, C. A. R."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 2,
+        "title": "A contribution to the development of ALGOL",
+        "venue": "Comm. ACM",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "BÖHM, CORRADO",
+          "JACOPINI, GUISEPPE"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 2,
+        "title": "Flow diagrams, Turing machines and languages with only two formation rules",
+        "venue": "Comm. ACM",
+        "year": 1966
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\"",
+        "reference_key": "1",
+        "relation": "supports",
+        "why": "Dijkstra cites Wirth and Hoare's remark in the same direction as his argument, noting that case construction mirrors the dynamic structure of a program more clearly than go to statements and switches, and eliminates the need for many labels."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement. The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended.",
+        "reference_key": "2",
+        "relation": "critiques",
+        "why": "Dijkstra acknowledges Böhm and Jacopini's proof of the logical superfluousness of the go to statement, but critiques the mechanical translation of arbitrary flow diagrams into jump-free ones as not to be recommended."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "EDSGER Wo I)UKSTRA\nTechnogogicag University\nEindhoven, The NegheHa~ds",
+          "start_page": 1,
+          "start_text": "Go T o S t a t e m e n t\nConsidered Harmful"
+        },
+        "summary": "The paper argues that the go to statement should be abolished from higher-level programming languages because its unbridled use makes it hard to find a meaningful coordinate system for describing the progress of a process. It contrasts the static program text with the dynamic process, introduces the idea of textual and dynamic indices, and contends that structured constructs like conditionals, procedures, and repetition clauses help maintain a manageable description, while go to statements destroy it.",
+        "title": "Go To Statement Considered Harmful"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The document is an editorial letter (it starts with \"EDITOR:\" and is a signed communication) addressing the undesirable effects of the go to statement.",
+      "value": "empirical"
+    }
+  },
+  "pass1_check": {
+    "sites": 12,
+    "verbatim": 11,
+    "near": 0,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/identity/title",
+      "action": "replace",
+      "value_json": "\"Go To Statement Considered Harmful\"",
+      "reason": "The title is the article title, not the OCR-spaced form.",
+      "evidence": [
+        {
+          "quote": "Go T o S t a t e m e n t\nConsidered Harmful",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/authors/0/name",
+      "action": "replace",
+      "value_json": "\"Edsger W. Dijkstra\"",
+      "reason": "Corrects the garbled author name for the signed article.",
+      "evidence": [
+        {
+          "quote": "EDSGER Wo I)UKSTRA\nTechnogogicag University\nEindhoven, The NegheHa~ds",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/identity/authors/0/affiliation",
+      "action": "replace",
+      "value_json": "\"Technological University, Eindhoven, The Netherlands\"",
+      "reason": "Corrects the OCR-garbled affiliation.",
+      "evidence": [
+        {
+          "quote": "EDSGER Wo I)UKSTRA\nTechnogogicag University\nEindhoven, The NegheHa~ds",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/identity/venue",
+      "action": "replace",
+      "value_json": "\"Communications of the ACM\"",
+      "reason": "The venue is the journal, not the author's university affiliation.",
+      "evidence": [
+        {
+          "quote": "Communieations of the ACM",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/type/value",
+      "action": "replace",
+      "value_json": "\"editorial\"",
+      "reason": "The article is an editorial letter, as indicated by the salutation and signed communication.",
+      "evidence": [
+        {
+          "quote": "EDITOR:",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/references/1/authors/1",
+      "action": "replace",
+      "value_json": "\"GIUSEPPE\"",
+      "reason": "Corrects the misspelled given name of the second author.",
+      "evidence": [
+        {
+          "quote": "B{JIH)d~ CORNADO,.aN[)J-kkCOP[N[, GUqSEPeE,.",
+          "page": 2
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/title",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/identity/authors/0/name",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/identity/authors/0/affiliation",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/identity/venue",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/type/value",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "value does not match the schema: : value is not one of the allowed values"
+    },
+    {
+      "index": 5,
+      "path": "/references/1/authors/1",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 12,
+    "verbatim": 11,
+    "near": 0,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "withdrawn",
+      "original": "The paper explores the pernicious effects of excessive use of the go to statement on programming quality and argues for its elimination. It observes that the quality of programmers decreases as the density of go to statements in their programs increases. The author contends that the go to statement should be abolished from all higher-level programming languages (excluding perhaps plain machine code), because it drastically complicates the task of understanding the progress of a process. By examining how processes are characterized using textual and dynamic indices, the paper shows that go to statements make it terribly hard to find a meaningful set of coordinates for describing process progress. The argument concludes that structured constructs like conditionals, procedures, and repetition clauses help maintain a manageable program state description, whereas the go to statement is too primitive and invites messy code. The paper also acknowledges influences and prior observations regarding the undesirability of the go to statement, citing work by Wirth and Hoare, and Böhm and Jacopini.",
+      "admitted": null,
+      "similarity": 0.1636363636363637,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\"",
+      "admitted": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\"",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement. The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended.",
+      "admitted": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement. The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The unbridled use of the go to statement has an immediate\nconsequence that it becomes terribly hard to find a meaningful set\nof coordinates in which to describe the process progress.",
+      "admitted": "The unbridled use of the go to statement has an immediate\nconsequence that it becomes terribly hard to find a meaningful set\nof coordinates in which to describe the process progress.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended.",
+      "admitted": "The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce.",
+      "admitted": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "EDSGER Wo I)UKSTRA\nTechnogogicag University\nEindhoven, The NegheHa~ds",
+      "admitted": "EDSGER Wo I)UKSTRA\nTechnogogicag University\nEindhoven, The NegheHa~ds",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "what data do we\nhave to fix in order that we can redo the process until the very\nsame point?",
+      "admitted": "what data do we\nhave to fix in order that we can redo the process until the very\nsame point?",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\"",
+      "admitted": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\"",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement.",
+      "admitted": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\"",
+      "admitted": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\"",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement. The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended.",
+      "admitted": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement. The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    }
+  ],
+  "admission_counts": {
+    "verbatim": 11,
+    "withdrawn": 1
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": null
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "1",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\""
+              }
+            ],
+            "reference_key": "1",
+            "why": "Dijkstra points to Wirth and Hoare's observation in the same direction, supporting case construction as superior to go to statements and switches."
+          },
+          {
+            "cited_work": "2",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement. The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended."
+              }
+            ],
+            "reference_key": "2",
+            "why": "Dijkstra acknowledges Böhm and Jacopini's proof of the logical superfluousness of the go to statement but warns that mechanical translation of arbitrary flow diagrams into jump-free ones is not advisable."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "go to statement",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The unbridled use of the go to statement has an immediate\nconsequence that it becomes terribly hard to find a meaningful set\nof coordinates in which to describe the process progress."
+              }
+            ],
+            "reference_key": "N/A",
+            "why": "The paper criticizes the unbridled use of the go to statement for making it terribly hard to find a meaningful set of coordinates to describe process progress."
+          },
+          {
+            "cited_work": "mechanical translation of arbitrary flow diagrams",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended."
+              }
+            ],
+            "reference_key": "2",
+            "why": "Dijkstra critiques the mechanical translation of arbitrary flow diagrams into jump-free ones, stating it is not to be recommended and that the resulting diagram cannot be expected to be more transparent than the original."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "the quality of programmers is a decreasing function of the\ndensity of go to statements in the programs they produce."
+          }
+        ],
+        "text": "The quality of programmers is a decreasing function of the density of go to statements in the programs they produce, and the go to statement should therefore be abolished from all higher-level programming languages."
+      }
+    },
+    "citations": [
+      {
+        "context": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\"",
+        "page": 2,
+        "reference_key": "1"
+      },
+      {
+        "context": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement.",
+        "page": 2,
+        "reference_key": "2"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Technological University, Eindhoven, The Netherlands",
+          "name": "Edsger W. Dijkstra"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "EDSGER Wo I)UKSTRA\nTechnogogicag University\nEindhoven, The NegheHa~ds"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Go To Statement Considered Harmful",
+      "venue": "Communications of the ACM",
+      "year": 1968
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "what data do we\nhave to fix in order that we can redo the process until the very\nsame point?"
+        }
+      ],
+      "text": "How can the progress of a process be characterized so that its dynamic behavior is describable in a way that shortens the conceptual gap between the static program and the dynamic process?"
+    },
+    "references": [
+      {
+        "authors": [
+          "WIRTH, N.",
+          "HOARE, C. A. R."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 2,
+        "title": "A contribution to the development of ALGOL",
+        "venue": "Comm. ACM",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "BÖHM, CORRADO",
+          "GIUSEPPE"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 2,
+        "title": "Flow diagrams, Turing machines and languages with only two formation rules",
+        "venue": "Comm. ACM",
+        "year": 1966
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In {t, See. 3.Z1.] Wirth and Hoare together\nmake a remark in the same direetion in motivating the case\neonstruetion: \"Like the conditional, it mirrors die dynamic\nstructure of a program more eleaHy than go to statements a~d\nswitches, s a d it eliminates the need for introducing a large number\nof labels i~ the program.\"",
+        "reference_key": "1",
+        "relation": "supports",
+        "why": "Dijkstra cites Wirth and Hoare's remark in the same direction as his argument, noting that case construction mirrors the dynamic structure of a program more clearly than go to statements and switches, and eliminates the need for many labels."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In!2] Guiseppe aaeopini seems to have proved the (togieM)\nsuperfluousness of the go to statement. The exercise to translate\nan arbitrary flow diagram more or tess meehanicMty into a jmnpless one, however, is not to be recommended.",
+        "reference_key": "2",
+        "relation": "critiques",
+        "why": "Dijkstra acknowledges Böhm and Jacopini's proof of the logical superfluousness of the go to statement, but critiques the mechanical translation of arbitrary flow diagrams into jump-free ones as not to be recommended."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "EDSGER Wo I)UKSTRA\nTechnogogicag University\nEindhoven, The NegheHa~ds",
+          "start_page": 1,
+          "start_text": "Go T o S t a t e m e n t\nConsidered Harmful"
+        },
+        "summary": "The paper argues that the go to statement should be abolished from higher-level programming languages because its unbridled use makes it hard to find a meaningful coordinate system for describing the progress of a process. It contrasts the static program text with the dynamic process, introduces the idea of textual and dynamic indices, and contends that structured constructs like conditionals, procedures, and repetition clauses help maintain a manageable description, while go to statements destroy it.",
+        "title": "Go To Statement Considered Harmful"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The document is an editorial letter (it starts with \"EDITOR:\" and is a signed communication) addressing the undesirable effects of the go to statement.",
+      "value": "empirical"
+    }
+  }
+}

@@ -1,0 +1,2922 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T22:56:24.978916570Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Christiano et al. - 2017 - Deep Reinforcement Learning from Human Preferences.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 17,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 14502,
+      "cached_tokens": 13568,
+      "completion_tokens": 22736,
+      "reasoning_tokens": 11036,
+      "cost_usd": 0.0097368656,
+      "cost_source": "reported",
+      "latency_s": 161.279893874
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 22560,
+      "cached_tokens": 384,
+      "completion_tokens": 10281,
+      "reasoning_tokens": 9984,
+      "cost_usd": 0.0074242728,
+      "cost_source": "reported",
+      "latency_s": 91.559049698
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 37062,
+    "cached_tokens": 13952,
+    "completion_tokens": 33017,
+    "cost_usd": 0.0171611384,
+    "model_latency_s": 252.838943572,
+    "wall_s": 256.602166465
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e13-titleprior-30-2026-10-20/results/christiano2017.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "For sophisticated reinforcement learning (RL) systems to interact usefully with real-world environments, we need to communicate complex goals to these systems. In this work, we explore goals defined in terms of (non-expert) human preferences between pairs of trajectory segments. We show that this approach can effectively solve complex RL tasks without access to the reward function, including Atari games and simulated robot locomotion, while providing feedback on less than 1% of our agent’s interactions with the environment. This reduces the cost of human oversight far enough that it can be practically applied to state-of-the-art RL systems. To demonstrate the flexibility of our approach, we show that we can successfully train complex novel behaviors with about an hour of human time. These behaviors and environments are considerably more complex than any which have been previously learned from human feedback."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Akrour et al., 2012; Akrour et al., 2014",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014)."
+              }
+            ],
+            "reference_key": "Akrour et al., 2012",
+            "why": "The paper follows the same basic preference-based reward-learning approach but scales it to deep RL, short trajectory clips, and modern algorithms."
+          },
+          {
+            "cited_work": "Wilson et al., 2012",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Our approach to feedback elicitation closely follows Wilson et al. (2012)."
+              }
+            ],
+            "reference_key": "Wilson et al., 2012",
+            "why": "It adopts Wilson-style trajectory preference elicitation but uses real non-expert feedback and complex tasks, unlike Wilson’s synthetic feedback and restricted models."
+          },
+          {
+            "cited_work": "Knox, 2012; Knox and Stone, 2013; MacGlashan et al., 2017; Pilarski et al., 2011",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly."
+              }
+            ],
+            "reference_key": "Knox, 2012",
+            "why": "It contrasts with human-feedback RL methods that require feedback during episodes or handle much simpler settings."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Wilson et al., 2012",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "It is not clear if the methods in Wilson et al. (2012) can be extended to complex tasks or if they can work with real human feedback."
+              }
+            ],
+            "reference_key": "Wilson et al., 2012",
+            "why": "The paper explicitly questions whether prior Wilson-style methods can extend to complex tasks or real human feedback."
+          },
+          {
+            "cited_work": "Akrour et al., 2012; Akrour et al., 2014",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "One notable difference is that Akrour et al. (2012) and Akrour et al. (2014) elicit preferences over whole trajectories rather than short clips."
+              }
+            ],
+            "reference_key": "Akrour et al., 2012",
+            "why": "The paper distinguishes its short-clip preferences and deep-RL scaling from prior whole-trajectory preference methods."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We show that this approach can effectively solve complex RL tasks without access to the reward function, including Atari games and simulated robot locomotion, while providing feedback on less than 1% of our agent’s interactions with the environment."
+          }
+        ],
+        "text": "The paper argues that deep RL agents can be trained from non-expert human preference comparisons between short trajectory segments by learning a reward model, rather than requiring a true reward function or demonstrations."
+      }
+    },
+    "citations": [
+      {
+        "context": "Recent success in scaling reinforcement learning (RL) to large problems has been driven in domains that have a well-specified reward function (Mnih et al., 2015, 2016; Silver et al., 2016).",
+        "page": 1,
+        "reference_key": "Mnih et al., 2015"
+      },
+      {
+        "context": "This difficulty underlies recent concerns about misalignment between our values and the objectives of our RL systems (Bostrom, 2014; Russell, 2016; Amodei et al., 2016).",
+        "page": 1,
+        "reference_key": "Bostrom, 2014"
+      },
+      {
+        "context": "If we have demonstrations of the desired task, we can extract a reward function using inverse reinforcement learning (Ng and Russell, 2000).",
+        "page": 1,
+        "reference_key": "Ng and Russell, 2000"
+      },
+      {
+        "context": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+        "page": 2,
+        "reference_key": "Bellemare et al., 2013"
+      },
+      {
+        "context": "A long line of work studies reinforcement learning from human ratings or rankings, including Akrour et al. (2011), Pilarski et al. (2011), Akrour et al. (2012), Wilson et al. (2012), Sugiyama et al. (2012), Wirth and Fürnkranz (2013), Daniel et al. (2015), El Asri et al. (2016), Wang et al. (2016), and Wirth et al. (2016).",
+        "page": 2,
+        "reference_key": "Akrour et al., 2011"
+      },
+      {
+        "context": "Other lines of research considers the general problem of reinforcement learning from preferences rather than absolute reward values (Fürnkranz et al., 2012; Akrour et al., 2014), and optimizing using human preferences in settings other than reinforcement learning (Machwe and Parmee, 2006; Secretan et al., 2008; Brochu et al., 2010; Sørensen et al., 2016).",
+        "page": 2,
+        "reference_key": "Fürnkranz et al., 2012"
+      },
+      {
+        "context": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014).",
+        "page": 2,
+        "reference_key": "Akrour et al., 2012"
+      },
+      {
+        "context": "One notable difference is that Akrour et al. (2012) and Akrour et al. (2014) elicit preferences over whole trajectories rather than short clips.",
+        "page": 3,
+        "reference_key": "Akrour et al., 2012"
+      },
+      {
+        "context": "Our approach to feedback elicitation closely follows Wilson et al. (2012).",
+        "page": 3,
+        "reference_key": "Wilson et al., 2012"
+      },
+      {
+        "context": "However, Wilson et al. (2012) assumes that the reward function is the distance to some unknown “target” policy (which is itself a linear function of hand-coded features).",
+        "page": 3,
+        "reference_key": "Wilson et al., 2012"
+      },
+      {
+        "context": "Their experiments involve “synthetic” human feedback which is drawn from their Bayesian model, while we perform experiments with feedback gathered from non-expert users.",
+        "page": 3,
+        "reference_key": "Wilson et al., 2012"
+      },
+      {
+        "context": "It is not clear if the methods in Wilson et al. (2012) can be extended to complex tasks or if they can work with real human feedback.",
+        "page": 3,
+        "reference_key": "Wilson et al., 2012"
+      },
+      {
+        "context": "MacGlashan et al. (2017), Pilarski et al. (2011), Knox and Stone (2009), and Knox (2012) perform experiments involving reinforcement learning from actual human feedback, although their algorithmic approach is less similar.",
+        "page": 3,
+        "reference_key": "MacGlashan et al., 2017"
+      },
+      {
+        "context": "In MacGlashan et al. (2017) and Pilarski et al. (2011), learning only occurs during episodes where the human trainer provides feedback.",
+        "page": 3,
+        "reference_key": "MacGlashan et al., 2017"
+      },
+      {
+        "context": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly.",
+        "page": 3,
+        "reference_key": "Knox, 2012"
+      },
+      {
+        "context": "Our work could also be seen of a specific instance of the cooperative inverse reinforcement learning framework (Hadfield-Menell et al., 2016).",
+        "page": 3,
+        "reference_key": "Hadfield-Menell et al., 2016"
+      },
+      {
+        "context": "This fits into a recent trend of scaling reward learning methods to large deep learning systems, for example inverse RL (Finn et al., 2016), imitation learning (Ho and Ermon, 2016; Stadie et al., 2017), semi-supervised skill generalization (Finn et al., 2017), and bootstrapping RL from demonstrations (Silver et al., 2016; Hester et al., 2017).",
+        "page": 3,
+        "reference_key": "Finn et al., 2016"
+      },
+      {
+        "context": "Our model based on trajectory segment comparisons is very similar to the trajectory preference queries used in Wilson et al. (2012), except that we don’t assume that we can reset the system to an arbitrary state² and so our segments generally begin from different states.",
+        "page": 4,
+        "reference_key": "Wilson et al., 2012"
+      },
+      {
+        "context": "This led us to focus on policy gradient methods, which have been applied successfully for such problems (Ho and Ermon, 2016).",
+        "page": 4,
+        "reference_key": "Ho and Ermon, 2016"
+      },
+      {
+        "context": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+        "page": 4,
+        "reference_key": "Mnih et al., 2016"
+      },
+      {
+        "context": "This follows the Bradley-Terry model (Bradley and Terry, 1952) for estimating score functions from pairwise preferences, and is the specialization of the Luce-Shephard choice rule (Luce, 2005; Shepard, 1957) to preferences over trajectory segments.",
+        "page": 5,
+        "reference_key": "Bradley and Terry, 1952"
+      },
+      {
+        "context": "It can be understood as equating rewards with a preference ranking scale analogous to the famous Elo ranking system developed for chess (Elo, 1978).",
+        "page": 5,
+        "reference_key": "Elo, 1978"
+      },
+      {
+        "context": "Ideally, we would want to query based on the expected value of information of the query (Akrour et al., 2012; Krueger et al., 2016), but we leave it to future work to explore this direction further.",
+        "page": 6,
+        "reference_key": "Akrour et al., 2012"
+      },
+      {
+        "context": "We implemented our algorithm in TensorFlow (Abadi et al., 2016).",
+        "page": 6,
+        "reference_key": "Abadi et al., 2016"
+      },
+      {
+        "context": "We interface with MuJoCo (Todorov et al., 2012) and the Arcade Learning Environment (Bellemare et al., 2013) through the OpenAI Gym (Brockman et al., 2016).",
+        "page": 6,
+        "reference_key": "Todorov et al., 2012"
+      },
+      {
+        "context": "The first tasks we consider are eight simulated robotics tasks, implemented in MuJoCo (Todorov et al., 2012), and included in OpenAI Gym (Brockman et al., 2016).",
+        "page": 6,
+        "reference_key": "Todorov et al., 2012"
+      },
+      {
+        "context": "The second set of tasks we consider is a set of seven Atari games in the Arcade Learning Environment (Bellemare et al., 2013), the same games presented in Mnih et al., 2013.",
+        "page": 7,
+        "reference_key": "Bellemare et al., 2013"
+      },
+      {
+        "context": "Of particular interest is the poor performance of offline reward predictor training; here we find that due to the nonstationarity of the occupancy distribution, the predictor captures only part of the true reward, and maximizing this partial reward can lead to bizarre behavior that is undesirable as measured by the true reward (Amodei et al., 2016).",
+        "page": 9,
+        "reference_key": "Amodei et al., 2016"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "OpenAI",
+          "name": "Paul F Christiano"
+        },
+        {
+          "affiliation": "DeepMind",
+          "name": "Miljan Martic"
+        },
+        {
+          "affiliation": "DeepMind",
+          "name": "Jan Leike"
+        },
+        {
+          "affiliation": "DeepMind",
+          "name": "Shane Legg"
+        },
+        {
+          "affiliation": "nottombrown@gmail.com",
+          "name": "Tom B Brown"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Dario Amodei"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Deep Reinforcement Learning\nfrom Human Preferences"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1706.03741v4 [stat.ML] 17 Feb 2023",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "arXiv:1706.03741v4 [stat.ML] 17 Feb 2023",
+      "venue": "arXiv",
+      "year": 2023
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this work, we explore goals defined in terms of (non-expert) human preferences between pairs of trajectory segments."
+        }
+      ],
+      "text": "Can complex reinforcement learning tasks and novel behaviors be learned from a small amount of non-expert human feedback consisting only of preferences between trajectory segments, without access to the true reward function?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Martin Abadi et al."
+        ],
+        "doi": null,
+        "key": "Abadi et al., 2016",
+        "page": 11,
+        "title": "Tensorflow: Large-scale machine learning on heterogeneous distributed systems.",
+        "venue": "arXiv preprint arXiv:1603.04467",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Riad Akrour",
+          "Marc Schoenauer",
+          "Michele Sebag"
+        ],
+        "doi": null,
+        "key": "Akrour et al., 2011",
+        "page": 11,
+        "title": "Preference-based policy learning.",
+        "venue": "Machine learning and knowledge discovery in databases, pages 12–27",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Riad Akrour",
+          "Marc Schoenauer",
+          "Michèle Sebag"
+        ],
+        "doi": null,
+        "key": "Akrour et al., 2012",
+        "page": 11,
+        "title": "April: Active preference learning-based reinforcement learning.",
+        "venue": "Joint European Conference on Machine Learning and Knowledge Discovery in Databases, pages 116–131",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Riad Akrour",
+          "Marc Schoenauer",
+          "Michèle Sebag",
+          "Jean-Christophe Souplet"
+        ],
+        "doi": null,
+        "key": "Akrour et al., 2014",
+        "page": 11,
+        "title": "Programming by feedback.",
+        "venue": "International Conference on Machine Learning, pages 1503–1511",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Dario Amodei",
+          "Chris Olah",
+          "Jacob Steinhardt",
+          "Paul Christiano",
+          "John Schulman",
+          "Dan Mané"
+        ],
+        "doi": null,
+        "key": "Amodei et al., 2016",
+        "page": 11,
+        "title": "Concrete problems in AI safety.",
+        "venue": "arXiv preprint arXiv:1606.06565",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Marc G Bellemare",
+          "Yavar Naddaf",
+          "Joel Veness",
+          "Michael Bowling"
+        ],
+        "doi": null,
+        "key": "Bellemare et al., 2013",
+        "page": 11,
+        "title": "The Arcade Learning Environment: An evaluation platform for general agents.",
+        "venue": "Journal of Artificial Intelligence Research, 47:253–279",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Nick Bostrom"
+        ],
+        "doi": null,
+        "key": "Bostrom, 2014",
+        "page": 11,
+        "title": "Superintelligence: Paths, Dangers, Strategies.",
+        "venue": "Oxford University Press",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ralph Allan Bradley",
+          "Milton E Terry"
+        ],
+        "doi": null,
+        "key": "Bradley and Terry, 1952",
+        "page": 11,
+        "title": "Rank analysis of incomplete block designs: I. The method of paired comparisons.",
+        "venue": "Biometrika, 39(3/4):324–345",
+        "year": 1952
+      },
+      {
+        "authors": [
+          "Eric Brochu",
+          "Tyson Brochu",
+          "Nando de Freitas"
+        ],
+        "doi": null,
+        "key": "Brochu et al., 2010",
+        "page": 11,
+        "title": "A bayesian interactive optimization approach to procedural animation design.",
+        "venue": "Proceedings of the 2010 ACM SIGGRAPH/Eurographics Symposium on Computer Animation, pages 103–112. Eurographics Association",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Greg Brockman",
+          "Vicki Cheung",
+          "Ludwig Pettersson",
+          "Jonas Schneider",
+          "John Schulman",
+          "Jie Tang",
+          "Wojciech Zaremba"
+        ],
+        "doi": null,
+        "key": "Brockman et al., 2016",
+        "page": 11,
+        "title": "OpenAI Gym.",
+        "venue": "arXiv preprint arXiv:1606.01540",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Christian Daniel",
+          "Malte Viering",
+          "Jan Metz",
+          "Oliver Kroemer",
+          "Jan Peters"
+        ],
+        "doi": null,
+        "key": "Daniel et al., 2014",
+        "page": 11,
+        "title": "Active reward learning.",
+        "venue": "Robotics: Science and Systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Christian Daniel",
+          "Oliver Kroemer",
+          "Malte Viering",
+          "Jan Metz",
+          "Jan Peters"
+        ],
+        "doi": null,
+        "key": "Daniel et al., 2015",
+        "page": 12,
+        "title": "Active reward learning with a novel acquisition function.",
+        "venue": "Autonomous Robots, 39(3):389–405",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Layla El Asri",
+          "Bilal Piot",
+          "Matthieu Geist",
+          "Romain Laroche",
+          "Olivier Pietquin"
+        ],
+        "doi": null,
+        "key": "El Asri et al., 2016",
+        "page": 12,
+        "title": "Score-based inverse reinforcement learning.",
+        "venue": "International Conference on Autonomous Agents and Multiagent Systems, pages 457–465",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Arpad Elo"
+        ],
+        "doi": null,
+        "key": "Elo, 1978",
+        "page": 12,
+        "title": "The Rating of Chessplayers, Past and Present.",
+        "venue": "Arco Pub.",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "Chelsea Finn",
+          "Sergey Levine",
+          "Pieter Abbeel"
+        ],
+        "doi": null,
+        "key": "Finn et al., 2016",
+        "page": 12,
+        "title": "Guided cost learning: Deep inverse optimal control via policy optimization.",
+        "venue": "International Conference on Machine Learning, volume 48",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Chelsea Finn",
+          "Tianhe Yu",
+          "Justin Fu",
+          "Pieter Abbeel",
+          "Sergey Levine"
+        ],
+        "doi": null,
+        "key": "Finn et al., 2017",
+        "page": 12,
+        "title": "Generalizing skills with semi-supervised reinforcement learning.",
+        "venue": "International Conference on Learning Representations",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Johannes Fürnkranz",
+          "Eyke Hüllermeier",
+          "Weiwei Cheng",
+          "Sang-Hyeun Park"
+        ],
+        "doi": null,
+        "key": "Fürnkranz et al., 2012",
+        "page": 12,
+        "title": "Preference-based reinforcement learning: A formal framework and a policy iteration algorithm.",
+        "venue": "Machine learning, 89(1-2):123–156",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Dylan Hadfield-Menell",
+          "Stuart Russell",
+          "Pieter Abbeel",
+          "Anca Dragan"
+        ],
+        "doi": null,
+        "key": "Hadfield-Menell et al., 2016",
+        "page": 12,
+        "title": "Cooperative inverse reinforcement learning.",
+        "venue": "Advances in Neural Information Processing Systems, pages 3909–3917",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Todd Hester",
+          "Matej Vecerik",
+          "Olivier Pietquin",
+          "Marc Lanctot",
+          "Tom Schaul",
+          "Bilal Piot",
+          "Andrew Sendonaris",
+          "Gabriel Dulac-Arnold",
+          "Ian Osband",
+          "John Agapiou",
+          "Joel Z Leibo",
+          "Audrunas Gruslys"
+        ],
+        "doi": null,
+        "key": "Hester et al., 2017",
+        "page": 12,
+        "title": "Learning from demonstrations for real world reinforcement learning.",
+        "venue": "arXiv preprint arXiv:1704.03732",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Jonathan Ho",
+          "Stefano Ermon"
+        ],
+        "doi": null,
+        "key": "Ho and Ermon, 2016",
+        "page": 12,
+        "title": "Generative adversarial imitation learning.",
+        "venue": "Advances in Neural Information Processing Systems, pages 4565–4573",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "W Bradley Knox",
+          "Peter Stone"
+        ],
+        "doi": null,
+        "key": "Knox and Stone, 2009",
+        "page": 12,
+        "title": "Interactively shaping agents via human reinforcement: The TAMER framework.",
+        "venue": "International Conference on Knowledge Capture, pages 9–16",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "W. Bradley Knox",
+          "Peter Stone"
+        ],
+        "doi": "978-1-4503-1965-2",
+        "key": "Knox and Stone, 2013",
+        "page": 12,
+        "title": "Learning non-myopically from human-generated reward.",
+        "venue": "IUI, pages 191–202. ACM",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "William Bradley Knox"
+        ],
+        "doi": null,
+        "key": "Knox, 2012",
+        "page": 12,
+        "title": "Learning from human-generated reward.",
+        "venue": "PhD thesis, University of Texas at Austin",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "David Krueger",
+          "Jan Leike",
+          "Owain Evans",
+          "John Salvatier"
+        ],
+        "doi": null,
+        "key": "Krueger et al., 2016",
+        "page": 12,
+        "title": "Active reinforcement learning: Observing rewards at a cost.",
+        "venue": "Future of Interactive Learning Machines, NIPS Workshop",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "R Duncan Luce"
+        ],
+        "doi": null,
+        "key": "Luce, 2005",
+        "page": 12,
+        "title": "Individual choice behavior: A theoretical analysis.",
+        "venue": "Courier Corporation",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "James MacGlashan",
+          "Mark K Ho",
+          "Robert Loftin",
+          "Bei Peng",
+          "David Roberts",
+          "Matthew E Taylor",
+          "Michael L Littman"
+        ],
+        "doi": null,
+        "key": "MacGlashan et al., 2017",
+        "page": 12,
+        "title": "Interactive learning from policy-dependent human feedback.",
+        "venue": "arXiv preprint arXiv:1701.06049",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "AT Machwe",
+          "IC Parmee"
+        ],
+        "doi": null,
+        "key": "Machwe and Parmee, 2006",
+        "page": 12,
+        "title": "Introducing machine learning within an interactive evolutionary design environment.",
+        "venue": "DS 36: Proceedings DESIGN 2006, the 9th International Design Conference, Dubrovnik, Croatia",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Volodymyr Mnih",
+          "Koray Kavukcuoglu",
+          "David Silver",
+          "Alex Graves",
+          "Ioannis Antonoglou",
+          "Daan Wierstra",
+          "Martin Riedmiller"
+        ],
+        "doi": null,
+        "key": "Mnih et al., 2013",
+        "page": 12,
+        "title": "Playing Atari with deep reinforcement learning.",
+        "venue": "arXiv preprint arXiv:1312.5602",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Volodymyr Mnih",
+          "Koray Kavukcuoglu",
+          "David Silver",
+          "Andrei A Rusu",
+          "Joel Veness",
+          "Marc G Bellemare",
+          "Alex Graves",
+          "Martin Riedmiller",
+          "Andreas K Fidjeland",
+          "Georg Ostrovski",
+          "Stig Petersen",
+          "Charles Beattie",
+          "Amir Sadik",
+          "Ioannis Antonoglou",
+          "Helen King",
+          "Dharshan Kumaran",
+          "Daan Wierstra",
+          "Shane Legg",
+          "Demis Hassabis"
+        ],
+        "doi": null,
+        "key": "Mnih et al., 2015",
+        "page": 12,
+        "title": "Human-level control through deep reinforcement learning.",
+        "venue": "Nature, 518(7540):529–533",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Volodymyr Mnih",
+          "Adria Puigdomenech Badia",
+          "Mehdi Mirza",
+          "Alex Graves",
+          "Timothy Lillicrap",
+          "Tim Harley",
+          "David Silver",
+          "Koray Kavukcuoglu"
+        ],
+        "doi": null,
+        "key": "Mnih et al., 2016",
+        "page": 13,
+        "title": "Asynchronous methods for deep reinforcement learning.",
+        "venue": "International Conference on Machine Learning, pages 1928–1937",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Andrew Y Ng",
+          "Stuart Russell"
+        ],
+        "doi": null,
+        "key": "Ng and Russell, 2000",
+        "page": 13,
+        "title": "Algorithms for inverse reinforcement learning.",
+        "venue": "International Conference on Machine learning, pages 663–670",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Patrick M Pilarski",
+          "Michael R Dawson",
+          "Thomas Degris",
+          "Farbod Fahimi",
+          "Jason P Carey",
+          "Richard Sutton"
+        ],
+        "doi": null,
+        "key": "Pilarski et al., 2011",
+        "page": 13,
+        "title": "Online human training of a myoelectric prosthesis controller via actor-critic reinforcement learning.",
+        "venue": "International Conference on Rehabilitation Robotics, pages 1–7",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Stuart Russell"
+        ],
+        "doi": null,
+        "key": "Russell, 2016",
+        "page": 13,
+        "title": "Should we fear supersmart robots?",
+        "venue": "Scientific American, 314(6):58",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "John Schulman",
+          "Sergey Levine",
+          "Pieter Abbeel",
+          "Michael I Jordan",
+          "Philipp Moritz"
+        ],
+        "doi": null,
+        "key": "Schulman et al., 2015",
+        "page": 13,
+        "title": "Trust region policy optimization.",
+        "venue": "International Conference on Machine Learning, pages 1889–1897",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jimmy Secretan",
+          "Nicholas Beato",
+          "David B D Ambrosio",
+          "Adelein Rodriguez",
+          "Adam Campbell",
+          "Kenneth O Stanley"
+        ],
+        "doi": null,
+        "key": "Secretan et al., 2008",
+        "page": 13,
+        "title": "Picbreeder: Evolving pictures collaboratively online.",
+        "venue": "Conference on Human Factors in Computing Systems, pages 1759–1768",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Roger N Shepard"
+        ],
+        "doi": null,
+        "key": "Shepard, 1957",
+        "page": 13,
+        "title": "Stimulus and response generalization: A stochastic model relating generalization to distance in psychological space.",
+        "venue": "Psychometrika, 22(4):325–345",
+        "year": 1957
+      },
+      {
+        "authors": [
+          "David Silver",
+          "Aja Huang",
+          "Chris J Maddison",
+          "Arthur Guez",
+          "Laurent Sifre",
+          "George Van Den Driessche",
+          "Julian Schrittwieser",
+          "Ioannis Antonoglou",
+          "Veda Panneershelvam",
+          "Marc Lanctot",
+          "Sander Dieleman",
+          "Dominik Grewe",
+          "John Nham",
+          "Nal Kalchbrenner",
+          "Ilya Sutskever",
+          "Timothy Lillicrap",
+          "Madeleine Leach",
+          "Koray Kavukcuoglu",
+          "Thore Graepel",
+          "Demis Hassabis"
+        ],
+        "doi": null,
+        "key": "Silver et al., 2016",
+        "page": 13,
+        "title": "Mastering the game of Go with deep neural networks and tree search.",
+        "venue": "Nature, 529(7587):484–489",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Patrikk D Sørensen",
+          "Jeppeh M Olsen",
+          "Sebastian Risi"
+        ],
+        "doi": null,
+        "key": "Sørensen et al., 2016",
+        "page": 13,
+        "title": "Breeding a diversity of super mario behaviors through interactive evolution.",
+        "venue": "Computational Intelligence and Games (CIG), 2016 IEEE Conference on, pages 1–7. IEEE",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Bradly C Stadie",
+          "Pieter Abbeel",
+          "Ilya Sutskever"
+        ],
+        "doi": null,
+        "key": "Stadie et al., 2017",
+        "page": 13,
+        "title": "Third-person imitation learning.",
+        "venue": "International Conference on Learning Representations",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Hiroaki Sugiyama",
+          "Toyomi Meguro",
+          "Yasuhiro Minami"
+        ],
+        "doi": null,
+        "key": "Sugiyama et al., 2012",
+        "page": 13,
+        "title": "Preference-learning based inverse reinforcement learning for dialog control.",
+        "venue": "INTERSPEECH, pages 222–225",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Emanuel Todorov",
+          "Tom Erez",
+          "Yuval Tassa"
+        ],
+        "doi": null,
+        "key": "Todorov et al., 2012",
+        "page": 13,
+        "title": "Mujoco: A physics engine for model-based control.",
+        "venue": "International Conference on Intelligent Robots and Systems, pages 5026–5033",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Sida I Wang",
+          "Percy Liang",
+          "Christopher D Manning"
+        ],
+        "doi": null,
+        "key": "Wang et al., 2016",
+        "page": 13,
+        "title": "Learning language games through interaction.",
+        "venue": "arXiv preprint arXiv:1606.02447",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Aaron Wilson",
+          "Alan Fern",
+          "Prasad Tadepalli"
+        ],
+        "doi": null,
+        "key": "Wilson et al., 2012",
+        "page": 13,
+        "title": "A Bayesian approach for policy learning from trajectory preference queries.",
+        "venue": "Advances in Neural Information Processing Systems, pages 1133–1141",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Christian Wirth",
+          "Johannes Fürnkranz"
+        ],
+        "doi": null,
+        "key": "Wirth and Fürnkranz, 2013",
+        "page": 13,
+        "title": "Preference-based reinforcement learning: A preliminary survey.",
+        "venue": "ECML/PKDD Workshop on Reinforcement Learning from Generalized Feedback: Beyond Numeric Rewards",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Christian Wirth",
+          "J Fürnkranz",
+          "Gerhard Neumann",
+          "et al."
+        ],
+        "doi": null,
+        "key": "Wirth et al., 2016",
+        "page": 13,
+        "title": "Model-free preference-based reinforcement learning.",
+        "venue": "AAAI, pages 2222–2228",
+        "year": 2016
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014).",
+        "reference_key": "Akrour et al., 2012",
+        "relation": "extends",
+        "why": "The paper adopts the same preference-based reward-learning approach but scales it to modern deep RL, nonlinear reward models, and short trajectory clips."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Our approach to feedback elicitation closely follows Wilson et al. (2012).",
+        "reference_key": "Wilson et al., 2012",
+        "relation": "extends",
+        "why": "It follows Wilson-style trajectory preference elicitation while extending it to real non-expert feedback and complex tasks."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Their experiments involve “synthetic” human feedback which is drawn from their Bayesian model, while we perform experiments with feedback gathered from non-expert users.",
+        "reference_key": "Wilson et al., 2012",
+        "relation": "contrasts",
+        "why": "The paper contrasts Wilson’s synthetic model-generated feedback with its own real non-expert human feedback."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In MacGlashan et al. (2017) and Pilarski et al. (2011), learning only occurs during episodes where the human trainer provides feedback.",
+        "reference_key": "MacGlashan et al., 2017",
+        "relation": "contrasts",
+        "why": "The paper argues that learning only during feedback episodes is infeasible for domains requiring thousands of hours of experience."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly.",
+        "reference_key": "Knox, 2012",
+        "relation": "contrasts",
+        "why": "TAMER is acknowledged as related reward learning but is limited to much simpler settings and faster policy learning."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Our work could also be seen of a specific instance of the cooperative inverse reinforcement learning framework (Hadfield-Menell et al., 2016).",
+        "reference_key": "Hadfield-Menell et al., 2016",
+        "relation": "supports",
+        "why": "The paper positions its human-preference setting as a specific instance of the cooperative inverse reinforcement learning framework."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "This follows the Bradley-Terry model (Bradley and Terry, 1952) for estimating score functions from pairwise preferences",
+        "reference_key": "Bradley and Terry, 1952",
+        "relation": "uses_method",
+        "why": "The reward predictor’s pairwise preference likelihood is derived from the Bradley-Terry model."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+        "reference_key": "Mnih et al., 2016",
+        "relation": "uses_method",
+        "why": "A2C is the RL algorithm used for Atari experiments."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+        "reference_key": "Schulman et al., 2015",
+        "relation": "uses_method",
+        "why": "TRPO is the RL algorithm used for simulated robotics experiments."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+        "reference_key": "Bellemare et al., 2013",
+        "relation": "uses_method",
+        "why": "The Atari benchmark domain comes from the Arcade Learning Environment."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+        "reference_key": "Todorov et al., 2012",
+        "relation": "uses_method",
+        "why": "The simulated robotics domain uses the MuJoCo physics simulator."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Our algorithm fits a reward function to the human’s preferences while simultaneously training a policy to optimize the current predicted reward function (see Figure 1).",
+          "start_page": 1,
+          "start_text": "For sophisticated reinforcement learning (RL) systems to interact usefully with real-world environments, we need to communicate complex goals to these systems."
+        },
+        "summary": "Motivates learning goals from human preferences instead of hand-specified reward functions and introduces the core reward-predictor plus RL policy loop.",
+        "title": "Problem and Approach"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Compared to all prior work, our key contribution is to scale human feedback up to deep reinforcement learning and to learn much more complex behaviors.",
+          "start_page": 2,
+          "start_text": "A long line of work studies reinforcement learning from human ratings or rankings, including Akrour et al. (2011), Pilarski et al. (2011), Akrour et al. (2012), Wilson et al. (2012), Sugiyama et al. (2012), Wirth and Fürnkranz (2013), Daniel et al. (2015), El Asri et al. (2016), Wang et al. (2016), and Wirth et al. (2016)."
+        },
+        "summary": "Places the method in preference-based RL, imitation/inverse RL, TAMER, and cooperative inverse RL, emphasizing the contribution of scaling to deep RL.",
+        "title": "Related Work and Positioning"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "We decide how to query preferences based on an approximation to the uncertainty in the reward function estimator, similar to Daniel et al. (2014): we sample a large number of pairs of trajectory segments of length k",
+          "start_page": 3,
+          "start_text": "We consider an agent interacting with an environment over a sequence of steps; at each time t the agent receives an observation ot ∈ O from the environment and then sends an action at ∈ A to the environment."
+        },
+        "summary": "Specifies the formal setting, evaluation criteria, asynchronous algorithm, preference elicitation, reward-model fitting with Bradley-Terry preferences, and uncertainty-based query selection.",
+        "title": "Method and Preliminaries"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "On most of the games real human feedback performs similar to or slightly worse than synthetic feedback with the same number of labels, and often comparably to synthetic feedback that has 40% fewer labels.",
+          "start_page": 6,
+          "start_text": "In our first set of experiments, we attempt to solve a range of benchmark tasks for deep RL without observing the true reward."
+        },
+        "summary": "Reports MuJoCo and Atari benchmarks comparing real human feedback, synthetic oracle feedback, and true-reward RL, with generally near-RL performance from a small amount of feedback.",
+        "title": "Benchmark RL Without True Rewards"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "Our main motivation for eliciting comparisons rather than absolute scores was that we found it much easier for humans to provide consistent comparisons than consistent absolute scores",
+          "start_page": 8,
+          "start_text": "The Hopper robot performing a sequence of backflips (see Figure 4). This behavior was trained using 900 queries in less than an hour."
+        },
+        "summary": "Demonstrates novel behaviors learned from preferences and ablates ensemble, online querying, regularization, segment length, and comparison-versus-target training.",
+        "title": "Novel Behaviors and Ablations"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 10
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "In the long run it would be desirable to make learning a task from human preferences no more difficult than learning it from a programmatic reward signal, ensuring that powerful RL systems can be applied in the service of complex human values rather than low-complexity goals.",
+          "start_page": 10,
+          "start_text": "Agent-environment interactions are often radically cheaper than human interaction."
+        },
+        "summary": "Concludes that learned reward models from human preferences cut interaction complexity by roughly three orders of magnitude and can extend deep RL toward complex human values.",
+        "title": "Discussion and Conclusions"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Christian Wirth, J Fürnkranz, Gerhard Neumann, et al. Model-free preference-based reinforcement learning. In AAAI, pages 2222–2228, 2016.",
+          "start_page": 11,
+          "start_text": "Martin Abadi et al. Tensorflow: Large-scale machine learning on heterogeneous distributed systems. arXiv preprint arXiv:1603.04467, 2016."
+        },
+        "summary": "Bibliography of works on deep RL, preference-based RL, imitation, inverse RL, human feedback, and related AI-safety and control topics.",
+        "title": "References"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Atari games include a visual display of the score, which in theory could be used to trivially infer the reward.",
+          "start_page": 14,
+          "start_text": "Many RL environments have termination conditions that depend on the behavior of the agent, such as ending an episode when the agent dies or falls over."
+        },
+        "summary": "Details experimental setup: removing termination-condition supervision, reward predictor architectures, labeling schedules, and Atari preprocessing.",
+        "title": "Experimental Details"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "Don’t worry about how the agent got into the situation it is in (for instance, it doesn’t matter if one agent has more lives, or is now on a more advanced level); just focus on what happens in the clip itself.",
+          "start_page": 15,
+          "start_text": "Look at the clips and select the one in which better things happen. Only decide on events you actually witness in the clip."
+        },
+        "summary": "Reproduces the instructions given to human contractors for MuJoCo and Atari labeling, including task-specific notions of good behavior and tie/can’t-tell rules.",
+        "title": "Contractor Instructions"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper presents a new deep-RL training method and reports extensive empirical experiments, ablations, and human-subject protocols.",
+      "value": "empirical"
+    }
+  },
+  "pass1_check": {
+    "sites": 48,
+    "verbatim": 48,
+    "near": 0,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/identity/title",
+      "action": "replace",
+      "value_json": "\"Deep Reinforcement Learning from Human Preferences\"",
+      "reason": "The draft title is the arXiv identifier/date line, not the paper title. The paper title is given on page 1.",
+      "evidence": [
+        {
+          "quote": "Deep Reinforcement Learning\nfrom Human Preferences",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/references/21/doi",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The value in the DOI field is an ISBN, not a DOI; the paper lists it as an ISBN.",
+      "evidence": [
+        {
+          "quote": "ISBN 978-1-4503-1965-2.",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "path": "/identity/authors/4/affiliation",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft uses an email address as Tom B Brown's affiliation, but the paper provides no affiliation for this author.",
+      "evidence": [
+        {
+          "quote": "Tom B Brown\nnottombrown@gmail.com",
+          "page": 1
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/title",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/references/21/doi",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 2,
+      "path": "/identity/authors/4/affiliation",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 48,
+    "verbatim": 48,
+    "near": 0,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "For sophisticated reinforcement learning (RL) systems to interact usefully with real-world environments, we need to communicate complex goals to these systems. In this work, we explore goals defined in terms of (non-expert) human preferences between pairs of trajectory segments. We show that this approach can effectively solve complex RL tasks without access to the reward function, including Atari games and simulated robot locomotion, while providing feedback on less than 1% of our agent’s interactions with the environment. This reduces the cost of human oversight far enough that it can be practically applied to state-of-the-art RL systems. To demonstrate the flexibility of our approach, we show that we can successfully train complex novel behaviors with about an hour of human time. These behaviors and environments are considerably more complex than any which have been previously learned from human feedback.",
+      "admitted": "For sophisticated reinforcement learning (RL) systems to interact usefully with real-world environments, we need to communicate complex goals to these systems. In this work, we explore goals defined in terms of (non-expert) human preferences between pairs of trajectory segments. We show that this approach can effectively solve complex RL tasks without access to the reward function, including Atari games and simulated robot locomotion, while providing feedback on less than 1% of our agent’s interactions with the environment. This reduces the cost of human oversight far enough that it can be practically applied to state-of-the-art RL systems. To demonstrate the flexibility of our approach, we show that we can successfully train complex novel behaviors with about an hour of human time. These behaviors and environments are considerably more complex than any which have been previously learned from human feedback.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014).",
+      "admitted": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our approach to feedback elicitation closely follows Wilson et al. (2012).",
+      "admitted": "Our approach to feedback elicitation closely follows Wilson et al. (2012).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly.",
+      "admitted": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It is not clear if the methods in Wilson et al. (2012) can be extended to complex tasks or if they can work with real human feedback.",
+      "admitted": "It is not clear if the methods in Wilson et al. (2012) can be extended to complex tasks or if they can work with real human feedback.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "One notable difference is that Akrour et al. (2012) and Akrour et al. (2014) elicit preferences over whole trajectories rather than short clips.",
+      "admitted": "One notable difference is that Akrour et al. (2012) and Akrour et al. (2014) elicit preferences over whole trajectories rather than short clips.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We show that this approach can effectively solve complex RL tasks without access to the reward function, including Atari games and simulated robot locomotion, while providing feedback on less than 1% of our agent’s interactions with the environment.",
+      "admitted": "We show that this approach can effectively solve complex RL tasks without access to the reward function, including Atari games and simulated robot locomotion, while providing feedback on less than 1% of our agent’s interactions with the environment.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Deep Reinforcement Learning\nfrom Human Preferences",
+      "admitted": "Deep Reinforcement Learning\nfrom Human Preferences",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this work, we explore goals defined in terms of (non-expert) human preferences between pairs of trajectory segments.",
+      "admitted": "In this work, we explore goals defined in terms of (non-expert) human preferences between pairs of trajectory segments.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "Recent success in scaling reinforcement learning (RL) to large problems has been driven in domains that have a well-specified reward function (Mnih et al., 2015, 2016; Silver et al., 2016).",
+      "admitted": "Recent success in scaling reinforcement learning (RL) to large problems has been driven in domains that have a well-specified reward function (Mnih et al., 2015, 2016; Silver et al., 2016).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "This difficulty underlies recent concerns about misalignment between our values and the objectives of our RL systems (Bostrom, 2014; Russell, 2016; Amodei et al., 2016).",
+      "admitted": "This difficulty underlies recent concerns about misalignment between our values and the objectives of our RL systems (Bostrom, 2014; Russell, 2016; Amodei et al., 2016).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "If we have demonstrations of the desired task, we can extract a reward function using inverse reinforcement learning (Ng and Russell, 2000).",
+      "admitted": "If we have demonstrations of the desired task, we can extract a reward function using inverse reinforcement learning (Ng and Russell, 2000).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+      "admitted": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "A long line of work studies reinforcement learning from human ratings or rankings, including Akrour et al. (2011), Pilarski et al. (2011), Akrour et al. (2012), Wilson et al. (2012), Sugiyama et al. (2012), Wirth and Fürnkranz (2013), Daniel et al. (2015), El Asri et al. (2016), Wang et al. (2016), and Wirth et al. (2016).",
+      "admitted": "A long line of work studies reinforcement learning from human ratings or rankings, including Akrour et al. (2011), Pilarski et al. (2011), Akrour et al. (2012), Wilson et al. (2012), Sugiyama et al. (2012), Wirth and Fürnkranz (2013), Daniel et al. (2015), El Asri et al. (2016), Wang et al. (2016), and Wirth et al. (2016).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "Other lines of research considers the general problem of reinforcement learning from preferences rather than absolute reward values (Fürnkranz et al., 2012; Akrour et al., 2014), and optimizing using human preferences in settings other than reinforcement learning (Machwe and Parmee, 2006; Secretan et al., 2008; Brochu et al., 2010; Sørensen et al., 2016).",
+      "admitted": "Other lines of research considers the general problem of reinforcement learning from preferences rather than absolute reward values (Fürnkranz et al., 2012; Akrour et al., 2014), and optimizing using human preferences in settings other than reinforcement learning (Machwe and Parmee, 2006; Secretan et al., 2008; Brochu et al., 2010; Sørensen et al., 2016).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014).",
+      "admitted": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "One notable difference is that Akrour et al. (2012) and Akrour et al. (2014) elicit preferences over whole trajectories rather than short clips.",
+      "admitted": "One notable difference is that Akrour et al. (2012) and Akrour et al. (2014) elicit preferences over whole trajectories rather than short clips.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "Our approach to feedback elicitation closely follows Wilson et al. (2012).",
+      "admitted": "Our approach to feedback elicitation closely follows Wilson et al. (2012).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "However, Wilson et al. (2012) assumes that the reward function is the distance to some unknown “target” policy (which is itself a linear function of hand-coded features).",
+      "admitted": "However, Wilson et al. (2012) assumes that the reward function is the distance to some unknown “target” policy (which is itself a linear function of hand-coded features).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "Their experiments involve “synthetic” human feedback which is drawn from their Bayesian model, while we perform experiments with feedback gathered from non-expert users.",
+      "admitted": "Their experiments involve “synthetic” human feedback which is drawn from their Bayesian model, while we perform experiments with feedback gathered from non-expert users.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "It is not clear if the methods in Wilson et al. (2012) can be extended to complex tasks or if they can work with real human feedback.",
+      "admitted": "It is not clear if the methods in Wilson et al. (2012) can be extended to complex tasks or if they can work with real human feedback.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "MacGlashan et al. (2017), Pilarski et al. (2011), Knox and Stone (2009), and Knox (2012) perform experiments involving reinforcement learning from actual human feedback, although their algorithmic approach is less similar.",
+      "admitted": "MacGlashan et al. (2017), Pilarski et al. (2011), Knox and Stone (2009), and Knox (2012) perform experiments involving reinforcement learning from actual human feedback, although their algorithmic approach is less similar.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "In MacGlashan et al. (2017) and Pilarski et al. (2011), learning only occurs during episodes where the human trainer provides feedback.",
+      "admitted": "In MacGlashan et al. (2017) and Pilarski et al. (2011), learning only occurs during episodes where the human trainer provides feedback.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly.",
+      "admitted": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "Our work could also be seen of a specific instance of the cooperative inverse reinforcement learning framework (Hadfield-Menell et al., 2016).",
+      "admitted": "Our work could also be seen of a specific instance of the cooperative inverse reinforcement learning framework (Hadfield-Menell et al., 2016).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "This fits into a recent trend of scaling reward learning methods to large deep learning systems, for example inverse RL (Finn et al., 2016), imitation learning (Ho and Ermon, 2016; Stadie et al., 2017), semi-supervised skill generalization (Finn et al., 2017), and bootstrapping RL from demonstrations (Silver et al., 2016; Hester et al., 2017).",
+      "admitted": "This fits into a recent trend of scaling reward learning methods to large deep learning systems, for example inverse RL (Finn et al., 2016), imitation learning (Ho and Ermon, 2016; Stadie et al., 2017), semi-supervised skill generalization (Finn et al., 2017), and bootstrapping RL from demonstrations (Silver et al., 2016; Hester et al., 2017).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "Our model based on trajectory segment comparisons is very similar to the trajectory preference queries used in Wilson et al. (2012), except that we don’t assume that we can reset the system to an arbitrary state² and so our segments generally begin from different states.",
+      "admitted": "Our model based on trajectory segment comparisons is very similar to the trajectory preference queries used in Wilson et al. (2012), except that we don’t assume that we can reset the system to an arbitrary state² and so our segments generally begin from different states.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "This led us to focus on policy gradient methods, which have been applied successfully for such problems (Ho and Ermon, 2016).",
+      "admitted": "This led us to focus on policy gradient methods, which have been applied successfully for such problems (Ho and Ermon, 2016).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+      "admitted": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "This follows the Bradley-Terry model (Bradley and Terry, 1952) for estimating score functions from pairwise preferences, and is the specialization of the Luce-Shephard choice rule (Luce, 2005; Shepard, 1957) to preferences over trajectory segments.",
+      "admitted": "This follows the Bradley-Terry model (Bradley and Terry, 1952) for estimating score functions from pairwise preferences, and is the specialization of the Luce-Shephard choice rule (Luce, 2005; Shepard, 1957) to preferences over trajectory segments.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "It can be understood as equating rewards with a preference ranking scale analogous to the famous Elo ranking system developed for chess (Elo, 1978).",
+      "admitted": "It can be understood as equating rewards with a preference ranking scale analogous to the famous Elo ranking system developed for chess (Elo, 1978).",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "Ideally, we would want to query based on the expected value of information of the query (Akrour et al., 2012; Krueger et al., 2016), but we leave it to future work to explore this direction further.",
+      "admitted": "Ideally, we would want to query based on the expected value of information of the query (Akrour et al., 2012; Krueger et al., 2016), but we leave it to future work to explore this direction further.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "We implemented our algorithm in TensorFlow (Abadi et al., 2016).",
+      "admitted": "We implemented our algorithm in TensorFlow (Abadi et al., 2016).",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "We interface with MuJoCo (Todorov et al., 2012) and the Arcade Learning Environment (Bellemare et al., 2013) through the OpenAI Gym (Brockman et al., 2016).",
+      "admitted": "We interface with MuJoCo (Todorov et al., 2012) and the Arcade Learning Environment (Bellemare et al., 2013) through the OpenAI Gym (Brockman et al., 2016).",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "verbatim",
+      "original": "The first tasks we consider are eight simulated robotics tasks, implemented in MuJoCo (Todorov et al., 2012), and included in OpenAI Gym (Brockman et al., 2016).",
+      "admitted": "The first tasks we consider are eight simulated robotics tasks, implemented in MuJoCo (Todorov et al., 2012), and included in OpenAI Gym (Brockman et al., 2016).",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "verbatim",
+      "original": "The second set of tasks we consider is a set of seven Atari games in the Arcade Learning Environment (Bellemare et al., 2013), the same games presented in Mnih et al., 2013.",
+      "admitted": "The second set of tasks we consider is a set of seven Atari games in the Arcade Learning Environment (Bellemare et al., 2013), the same games presented in Mnih et al., 2013.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "verbatim",
+      "original": "Of particular interest is the poor performance of offline reward predictor training; here we find that due to the nonstationarity of the occupancy distribution, the predictor captures only part of the true reward, and maximizing this partial reward can lead to bizarre behavior that is undesirable as measured by the true reward (Amodei et al., 2016).",
+      "admitted": "Of particular interest is the poor performance of offline reward predictor training; here we find that due to the nonstationarity of the occupancy distribution, the predictor captures only part of the true reward, and maximizing this partial reward can lead to bizarre behavior that is undesirable as measured by the true reward (Amodei et al., 2016).",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014).",
+      "admitted": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Our approach to feedback elicitation closely follows Wilson et al. (2012).",
+      "admitted": "Our approach to feedback elicitation closely follows Wilson et al. (2012).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "Their experiments involve “synthetic” human feedback which is drawn from their Bayesian model, while we perform experiments with feedback gathered from non-expert users.",
+      "admitted": "Their experiments involve “synthetic” human feedback which is drawn from their Bayesian model, while we perform experiments with feedback gathered from non-expert users.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "In MacGlashan et al. (2017) and Pilarski et al. (2011), learning only occurs during episodes where the human trainer provides feedback.",
+      "admitted": "In MacGlashan et al. (2017) and Pilarski et al. (2011), learning only occurs during episodes where the human trainer provides feedback.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly.",
+      "admitted": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "Our work could also be seen of a specific instance of the cooperative inverse reinforcement learning framework (Hadfield-Menell et al., 2016).",
+      "admitted": "Our work could also be seen of a specific instance of the cooperative inverse reinforcement learning framework (Hadfield-Menell et al., 2016).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "This follows the Bradley-Terry model (Bradley and Terry, 1952) for estimating score functions from pairwise preferences",
+      "admitted": "This follows the Bradley-Terry model (Bradley and Terry, 1952) for estimating score functions from pairwise preferences",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+      "admitted": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+      "admitted": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "verbatim",
+      "original": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+      "admitted": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/10/quote",
+      "status": "verbatim",
+      "original": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+      "admitted": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    }
+  ],
+  "admission_counts": {
+    "verbatim": 48
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "For sophisticated reinforcement learning (RL) systems to interact usefully with real-world environments, we need to communicate complex goals to these systems. In this work, we explore goals defined in terms of (non-expert) human preferences between pairs of trajectory segments. We show that this approach can effectively solve complex RL tasks without access to the reward function, including Atari games and simulated robot locomotion, while providing feedback on less than 1% of our agent’s interactions with the environment. This reduces the cost of human oversight far enough that it can be practically applied to state-of-the-art RL systems. To demonstrate the flexibility of our approach, we show that we can successfully train complex novel behaviors with about an hour of human time. These behaviors and environments are considerably more complex than any which have been previously learned from human feedback."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Akrour et al., 2012; Akrour et al., 2014",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014)."
+              }
+            ],
+            "reference_key": "Akrour et al., 2012",
+            "why": "The paper follows the same basic preference-based reward-learning approach but scales it to deep RL, short trajectory clips, and modern algorithms."
+          },
+          {
+            "cited_work": "Wilson et al., 2012",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Our approach to feedback elicitation closely follows Wilson et al. (2012)."
+              }
+            ],
+            "reference_key": "Wilson et al., 2012",
+            "why": "It adopts Wilson-style trajectory preference elicitation but uses real non-expert feedback and complex tasks, unlike Wilson’s synthetic feedback and restricted models."
+          },
+          {
+            "cited_work": "Knox, 2012; Knox and Stone, 2013; MacGlashan et al., 2017; Pilarski et al., 2011",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly."
+              }
+            ],
+            "reference_key": "Knox, 2012",
+            "why": "It contrasts with human-feedback RL methods that require feedback during episodes or handle much simpler settings."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Wilson et al., 2012",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "It is not clear if the methods in Wilson et al. (2012) can be extended to complex tasks or if they can work with real human feedback."
+              }
+            ],
+            "reference_key": "Wilson et al., 2012",
+            "why": "The paper explicitly questions whether prior Wilson-style methods can extend to complex tasks or real human feedback."
+          },
+          {
+            "cited_work": "Akrour et al., 2012; Akrour et al., 2014",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "One notable difference is that Akrour et al. (2012) and Akrour et al. (2014) elicit preferences over whole trajectories rather than short clips."
+              }
+            ],
+            "reference_key": "Akrour et al., 2012",
+            "why": "The paper distinguishes its short-clip preferences and deep-RL scaling from prior whole-trajectory preference methods."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We show that this approach can effectively solve complex RL tasks without access to the reward function, including Atari games and simulated robot locomotion, while providing feedback on less than 1% of our agent’s interactions with the environment."
+          }
+        ],
+        "text": "The paper argues that deep RL agents can be trained from non-expert human preference comparisons between short trajectory segments by learning a reward model, rather than requiring a true reward function or demonstrations."
+      }
+    },
+    "citations": [
+      {
+        "context": "Recent success in scaling reinforcement learning (RL) to large problems has been driven in domains that have a well-specified reward function (Mnih et al., 2015, 2016; Silver et al., 2016).",
+        "page": 1,
+        "reference_key": "Mnih et al., 2015"
+      },
+      {
+        "context": "This difficulty underlies recent concerns about misalignment between our values and the objectives of our RL systems (Bostrom, 2014; Russell, 2016; Amodei et al., 2016).",
+        "page": 1,
+        "reference_key": "Bostrom, 2014"
+      },
+      {
+        "context": "If we have demonstrations of the desired task, we can extract a reward function using inverse reinforcement learning (Ng and Russell, 2000).",
+        "page": 1,
+        "reference_key": "Ng and Russell, 2000"
+      },
+      {
+        "context": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+        "page": 2,
+        "reference_key": "Bellemare et al., 2013"
+      },
+      {
+        "context": "A long line of work studies reinforcement learning from human ratings or rankings, including Akrour et al. (2011), Pilarski et al. (2011), Akrour et al. (2012), Wilson et al. (2012), Sugiyama et al. (2012), Wirth and Fürnkranz (2013), Daniel et al. (2015), El Asri et al. (2016), Wang et al. (2016), and Wirth et al. (2016).",
+        "page": 2,
+        "reference_key": "Akrour et al., 2011"
+      },
+      {
+        "context": "Other lines of research considers the general problem of reinforcement learning from preferences rather than absolute reward values (Fürnkranz et al., 2012; Akrour et al., 2014), and optimizing using human preferences in settings other than reinforcement learning (Machwe and Parmee, 2006; Secretan et al., 2008; Brochu et al., 2010; Sørensen et al., 2016).",
+        "page": 2,
+        "reference_key": "Fürnkranz et al., 2012"
+      },
+      {
+        "context": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014).",
+        "page": 2,
+        "reference_key": "Akrour et al., 2012"
+      },
+      {
+        "context": "One notable difference is that Akrour et al. (2012) and Akrour et al. (2014) elicit preferences over whole trajectories rather than short clips.",
+        "page": 3,
+        "reference_key": "Akrour et al., 2012"
+      },
+      {
+        "context": "Our approach to feedback elicitation closely follows Wilson et al. (2012).",
+        "page": 3,
+        "reference_key": "Wilson et al., 2012"
+      },
+      {
+        "context": "However, Wilson et al. (2012) assumes that the reward function is the distance to some unknown “target” policy (which is itself a linear function of hand-coded features).",
+        "page": 3,
+        "reference_key": "Wilson et al., 2012"
+      },
+      {
+        "context": "Their experiments involve “synthetic” human feedback which is drawn from their Bayesian model, while we perform experiments with feedback gathered from non-expert users.",
+        "page": 3,
+        "reference_key": "Wilson et al., 2012"
+      },
+      {
+        "context": "It is not clear if the methods in Wilson et al. (2012) can be extended to complex tasks or if they can work with real human feedback.",
+        "page": 3,
+        "reference_key": "Wilson et al., 2012"
+      },
+      {
+        "context": "MacGlashan et al. (2017), Pilarski et al. (2011), Knox and Stone (2009), and Knox (2012) perform experiments involving reinforcement learning from actual human feedback, although their algorithmic approach is less similar.",
+        "page": 3,
+        "reference_key": "MacGlashan et al., 2017"
+      },
+      {
+        "context": "In MacGlashan et al. (2017) and Pilarski et al. (2011), learning only occurs during episodes where the human trainer provides feedback.",
+        "page": 3,
+        "reference_key": "MacGlashan et al., 2017"
+      },
+      {
+        "context": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly.",
+        "page": 3,
+        "reference_key": "Knox, 2012"
+      },
+      {
+        "context": "Our work could also be seen of a specific instance of the cooperative inverse reinforcement learning framework (Hadfield-Menell et al., 2016).",
+        "page": 3,
+        "reference_key": "Hadfield-Menell et al., 2016"
+      },
+      {
+        "context": "This fits into a recent trend of scaling reward learning methods to large deep learning systems, for example inverse RL (Finn et al., 2016), imitation learning (Ho and Ermon, 2016; Stadie et al., 2017), semi-supervised skill generalization (Finn et al., 2017), and bootstrapping RL from demonstrations (Silver et al., 2016; Hester et al., 2017).",
+        "page": 3,
+        "reference_key": "Finn et al., 2016"
+      },
+      {
+        "context": "Our model based on trajectory segment comparisons is very similar to the trajectory preference queries used in Wilson et al. (2012), except that we don’t assume that we can reset the system to an arbitrary state² and so our segments generally begin from different states.",
+        "page": 4,
+        "reference_key": "Wilson et al., 2012"
+      },
+      {
+        "context": "This led us to focus on policy gradient methods, which have been applied successfully for such problems (Ho and Ermon, 2016).",
+        "page": 4,
+        "reference_key": "Ho and Ermon, 2016"
+      },
+      {
+        "context": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+        "page": 4,
+        "reference_key": "Mnih et al., 2016"
+      },
+      {
+        "context": "This follows the Bradley-Terry model (Bradley and Terry, 1952) for estimating score functions from pairwise preferences, and is the specialization of the Luce-Shephard choice rule (Luce, 2005; Shepard, 1957) to preferences over trajectory segments.",
+        "page": 5,
+        "reference_key": "Bradley and Terry, 1952"
+      },
+      {
+        "context": "It can be understood as equating rewards with a preference ranking scale analogous to the famous Elo ranking system developed for chess (Elo, 1978).",
+        "page": 5,
+        "reference_key": "Elo, 1978"
+      },
+      {
+        "context": "Ideally, we would want to query based on the expected value of information of the query (Akrour et al., 2012; Krueger et al., 2016), but we leave it to future work to explore this direction further.",
+        "page": 6,
+        "reference_key": "Akrour et al., 2012"
+      },
+      {
+        "context": "We implemented our algorithm in TensorFlow (Abadi et al., 2016).",
+        "page": 6,
+        "reference_key": "Abadi et al., 2016"
+      },
+      {
+        "context": "We interface with MuJoCo (Todorov et al., 2012) and the Arcade Learning Environment (Bellemare et al., 2013) through the OpenAI Gym (Brockman et al., 2016).",
+        "page": 6,
+        "reference_key": "Todorov et al., 2012"
+      },
+      {
+        "context": "The first tasks we consider are eight simulated robotics tasks, implemented in MuJoCo (Todorov et al., 2012), and included in OpenAI Gym (Brockman et al., 2016).",
+        "page": 6,
+        "reference_key": "Todorov et al., 2012"
+      },
+      {
+        "context": "The second set of tasks we consider is a set of seven Atari games in the Arcade Learning Environment (Bellemare et al., 2013), the same games presented in Mnih et al., 2013.",
+        "page": 7,
+        "reference_key": "Bellemare et al., 2013"
+      },
+      {
+        "context": "Of particular interest is the poor performance of offline reward predictor training; here we find that due to the nonstationarity of the occupancy distribution, the predictor captures only part of the true reward, and maximizing this partial reward can lead to bizarre behavior that is undesirable as measured by the true reward (Amodei et al., 2016).",
+        "page": 9,
+        "reference_key": "Amodei et al., 2016"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "OpenAI",
+          "name": "Paul F Christiano"
+        },
+        {
+          "affiliation": "DeepMind",
+          "name": "Miljan Martic"
+        },
+        {
+          "affiliation": "DeepMind",
+          "name": "Jan Leike"
+        },
+        {
+          "affiliation": "DeepMind",
+          "name": "Shane Legg"
+        },
+        {
+          "affiliation": "nottombrown@gmail.com",
+          "name": "Tom B Brown"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Dario Amodei"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Deep Reinforcement Learning\nfrom Human Preferences"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1706.03741v4 [stat.ML] 17 Feb 2023",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Deep Reinforcement Learning from Human Preferences",
+      "venue": "arXiv",
+      "year": 2023
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this work, we explore goals defined in terms of (non-expert) human preferences between pairs of trajectory segments."
+        }
+      ],
+      "text": "Can complex reinforcement learning tasks and novel behaviors be learned from a small amount of non-expert human feedback consisting only of preferences between trajectory segments, without access to the true reward function?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Martin Abadi et al."
+        ],
+        "doi": null,
+        "key": "Abadi et al., 2016",
+        "page": 11,
+        "title": "Tensorflow: Large-scale machine learning on heterogeneous distributed systems.",
+        "venue": "arXiv preprint arXiv:1603.04467",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Riad Akrour",
+          "Marc Schoenauer",
+          "Michele Sebag"
+        ],
+        "doi": null,
+        "key": "Akrour et al., 2011",
+        "page": 11,
+        "title": "Preference-based policy learning.",
+        "venue": "Machine learning and knowledge discovery in databases, pages 12–27",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Riad Akrour",
+          "Marc Schoenauer",
+          "Michèle Sebag"
+        ],
+        "doi": null,
+        "key": "Akrour et al., 2012",
+        "page": 11,
+        "title": "April: Active preference learning-based reinforcement learning.",
+        "venue": "Joint European Conference on Machine Learning and Knowledge Discovery in Databases, pages 116–131",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Riad Akrour",
+          "Marc Schoenauer",
+          "Michèle Sebag",
+          "Jean-Christophe Souplet"
+        ],
+        "doi": null,
+        "key": "Akrour et al., 2014",
+        "page": 11,
+        "title": "Programming by feedback.",
+        "venue": "International Conference on Machine Learning, pages 1503–1511",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Dario Amodei",
+          "Chris Olah",
+          "Jacob Steinhardt",
+          "Paul Christiano",
+          "John Schulman",
+          "Dan Mané"
+        ],
+        "doi": null,
+        "key": "Amodei et al., 2016",
+        "page": 11,
+        "title": "Concrete problems in AI safety.",
+        "venue": "arXiv preprint arXiv:1606.06565",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Marc G Bellemare",
+          "Yavar Naddaf",
+          "Joel Veness",
+          "Michael Bowling"
+        ],
+        "doi": null,
+        "key": "Bellemare et al., 2013",
+        "page": 11,
+        "title": "The Arcade Learning Environment: An evaluation platform for general agents.",
+        "venue": "Journal of Artificial Intelligence Research, 47:253–279",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Nick Bostrom"
+        ],
+        "doi": null,
+        "key": "Bostrom, 2014",
+        "page": 11,
+        "title": "Superintelligence: Paths, Dangers, Strategies.",
+        "venue": "Oxford University Press",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ralph Allan Bradley",
+          "Milton E Terry"
+        ],
+        "doi": null,
+        "key": "Bradley and Terry, 1952",
+        "page": 11,
+        "title": "Rank analysis of incomplete block designs: I. The method of paired comparisons.",
+        "venue": "Biometrika, 39(3/4):324–345",
+        "year": 1952
+      },
+      {
+        "authors": [
+          "Eric Brochu",
+          "Tyson Brochu",
+          "Nando de Freitas"
+        ],
+        "doi": null,
+        "key": "Brochu et al., 2010",
+        "page": 11,
+        "title": "A bayesian interactive optimization approach to procedural animation design.",
+        "venue": "Proceedings of the 2010 ACM SIGGRAPH/Eurographics Symposium on Computer Animation, pages 103–112. Eurographics Association",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Greg Brockman",
+          "Vicki Cheung",
+          "Ludwig Pettersson",
+          "Jonas Schneider",
+          "John Schulman",
+          "Jie Tang",
+          "Wojciech Zaremba"
+        ],
+        "doi": null,
+        "key": "Brockman et al., 2016",
+        "page": 11,
+        "title": "OpenAI Gym.",
+        "venue": "arXiv preprint arXiv:1606.01540",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Christian Daniel",
+          "Malte Viering",
+          "Jan Metz",
+          "Oliver Kroemer",
+          "Jan Peters"
+        ],
+        "doi": null,
+        "key": "Daniel et al., 2014",
+        "page": 11,
+        "title": "Active reward learning.",
+        "venue": "Robotics: Science and Systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Christian Daniel",
+          "Oliver Kroemer",
+          "Malte Viering",
+          "Jan Metz",
+          "Jan Peters"
+        ],
+        "doi": null,
+        "key": "Daniel et al., 2015",
+        "page": 12,
+        "title": "Active reward learning with a novel acquisition function.",
+        "venue": "Autonomous Robots, 39(3):389–405",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Layla El Asri",
+          "Bilal Piot",
+          "Matthieu Geist",
+          "Romain Laroche",
+          "Olivier Pietquin"
+        ],
+        "doi": null,
+        "key": "El Asri et al., 2016",
+        "page": 12,
+        "title": "Score-based inverse reinforcement learning.",
+        "venue": "International Conference on Autonomous Agents and Multiagent Systems, pages 457–465",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Arpad Elo"
+        ],
+        "doi": null,
+        "key": "Elo, 1978",
+        "page": 12,
+        "title": "The Rating of Chessplayers, Past and Present.",
+        "venue": "Arco Pub.",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "Chelsea Finn",
+          "Sergey Levine",
+          "Pieter Abbeel"
+        ],
+        "doi": null,
+        "key": "Finn et al., 2016",
+        "page": 12,
+        "title": "Guided cost learning: Deep inverse optimal control via policy optimization.",
+        "venue": "International Conference on Machine Learning, volume 48",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Chelsea Finn",
+          "Tianhe Yu",
+          "Justin Fu",
+          "Pieter Abbeel",
+          "Sergey Levine"
+        ],
+        "doi": null,
+        "key": "Finn et al., 2017",
+        "page": 12,
+        "title": "Generalizing skills with semi-supervised reinforcement learning.",
+        "venue": "International Conference on Learning Representations",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Johannes Fürnkranz",
+          "Eyke Hüllermeier",
+          "Weiwei Cheng",
+          "Sang-Hyeun Park"
+        ],
+        "doi": null,
+        "key": "Fürnkranz et al., 2012",
+        "page": 12,
+        "title": "Preference-based reinforcement learning: A formal framework and a policy iteration algorithm.",
+        "venue": "Machine learning, 89(1-2):123–156",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Dylan Hadfield-Menell",
+          "Stuart Russell",
+          "Pieter Abbeel",
+          "Anca Dragan"
+        ],
+        "doi": null,
+        "key": "Hadfield-Menell et al., 2016",
+        "page": 12,
+        "title": "Cooperative inverse reinforcement learning.",
+        "venue": "Advances in Neural Information Processing Systems, pages 3909–3917",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Todd Hester",
+          "Matej Vecerik",
+          "Olivier Pietquin",
+          "Marc Lanctot",
+          "Tom Schaul",
+          "Bilal Piot",
+          "Andrew Sendonaris",
+          "Gabriel Dulac-Arnold",
+          "Ian Osband",
+          "John Agapiou",
+          "Joel Z Leibo",
+          "Audrunas Gruslys"
+        ],
+        "doi": null,
+        "key": "Hester et al., 2017",
+        "page": 12,
+        "title": "Learning from demonstrations for real world reinforcement learning.",
+        "venue": "arXiv preprint arXiv:1704.03732",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Jonathan Ho",
+          "Stefano Ermon"
+        ],
+        "doi": null,
+        "key": "Ho and Ermon, 2016",
+        "page": 12,
+        "title": "Generative adversarial imitation learning.",
+        "venue": "Advances in Neural Information Processing Systems, pages 4565–4573",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "W Bradley Knox",
+          "Peter Stone"
+        ],
+        "doi": null,
+        "key": "Knox and Stone, 2009",
+        "page": 12,
+        "title": "Interactively shaping agents via human reinforcement: The TAMER framework.",
+        "venue": "International Conference on Knowledge Capture, pages 9–16",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "W. Bradley Knox",
+          "Peter Stone"
+        ],
+        "doi": "978-1-4503-1965-2",
+        "key": "Knox and Stone, 2013",
+        "page": 12,
+        "title": "Learning non-myopically from human-generated reward.",
+        "venue": "IUI, pages 191–202. ACM",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "William Bradley Knox"
+        ],
+        "doi": null,
+        "key": "Knox, 2012",
+        "page": 12,
+        "title": "Learning from human-generated reward.",
+        "venue": "PhD thesis, University of Texas at Austin",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "David Krueger",
+          "Jan Leike",
+          "Owain Evans",
+          "John Salvatier"
+        ],
+        "doi": null,
+        "key": "Krueger et al., 2016",
+        "page": 12,
+        "title": "Active reinforcement learning: Observing rewards at a cost.",
+        "venue": "Future of Interactive Learning Machines, NIPS Workshop",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "R Duncan Luce"
+        ],
+        "doi": null,
+        "key": "Luce, 2005",
+        "page": 12,
+        "title": "Individual choice behavior: A theoretical analysis.",
+        "venue": "Courier Corporation",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "James MacGlashan",
+          "Mark K Ho",
+          "Robert Loftin",
+          "Bei Peng",
+          "David Roberts",
+          "Matthew E Taylor",
+          "Michael L Littman"
+        ],
+        "doi": null,
+        "key": "MacGlashan et al., 2017",
+        "page": 12,
+        "title": "Interactive learning from policy-dependent human feedback.",
+        "venue": "arXiv preprint arXiv:1701.06049",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "AT Machwe",
+          "IC Parmee"
+        ],
+        "doi": null,
+        "key": "Machwe and Parmee, 2006",
+        "page": 12,
+        "title": "Introducing machine learning within an interactive evolutionary design environment.",
+        "venue": "DS 36: Proceedings DESIGN 2006, the 9th International Design Conference, Dubrovnik, Croatia",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Volodymyr Mnih",
+          "Koray Kavukcuoglu",
+          "David Silver",
+          "Alex Graves",
+          "Ioannis Antonoglou",
+          "Daan Wierstra",
+          "Martin Riedmiller"
+        ],
+        "doi": null,
+        "key": "Mnih et al., 2013",
+        "page": 12,
+        "title": "Playing Atari with deep reinforcement learning.",
+        "venue": "arXiv preprint arXiv:1312.5602",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Volodymyr Mnih",
+          "Koray Kavukcuoglu",
+          "David Silver",
+          "Andrei A Rusu",
+          "Joel Veness",
+          "Marc G Bellemare",
+          "Alex Graves",
+          "Martin Riedmiller",
+          "Andreas K Fidjeland",
+          "Georg Ostrovski",
+          "Stig Petersen",
+          "Charles Beattie",
+          "Amir Sadik",
+          "Ioannis Antonoglou",
+          "Helen King",
+          "Dharshan Kumaran",
+          "Daan Wierstra",
+          "Shane Legg",
+          "Demis Hassabis"
+        ],
+        "doi": null,
+        "key": "Mnih et al., 2015",
+        "page": 12,
+        "title": "Human-level control through deep reinforcement learning.",
+        "venue": "Nature, 518(7540):529–533",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Volodymyr Mnih",
+          "Adria Puigdomenech Badia",
+          "Mehdi Mirza",
+          "Alex Graves",
+          "Timothy Lillicrap",
+          "Tim Harley",
+          "David Silver",
+          "Koray Kavukcuoglu"
+        ],
+        "doi": null,
+        "key": "Mnih et al., 2016",
+        "page": 13,
+        "title": "Asynchronous methods for deep reinforcement learning.",
+        "venue": "International Conference on Machine Learning, pages 1928–1937",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Andrew Y Ng",
+          "Stuart Russell"
+        ],
+        "doi": null,
+        "key": "Ng and Russell, 2000",
+        "page": 13,
+        "title": "Algorithms for inverse reinforcement learning.",
+        "venue": "International Conference on Machine learning, pages 663–670",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Patrick M Pilarski",
+          "Michael R Dawson",
+          "Thomas Degris",
+          "Farbod Fahimi",
+          "Jason P Carey",
+          "Richard Sutton"
+        ],
+        "doi": null,
+        "key": "Pilarski et al., 2011",
+        "page": 13,
+        "title": "Online human training of a myoelectric prosthesis controller via actor-critic reinforcement learning.",
+        "venue": "International Conference on Rehabilitation Robotics, pages 1–7",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Stuart Russell"
+        ],
+        "doi": null,
+        "key": "Russell, 2016",
+        "page": 13,
+        "title": "Should we fear supersmart robots?",
+        "venue": "Scientific American, 314(6):58",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "John Schulman",
+          "Sergey Levine",
+          "Pieter Abbeel",
+          "Michael I Jordan",
+          "Philipp Moritz"
+        ],
+        "doi": null,
+        "key": "Schulman et al., 2015",
+        "page": 13,
+        "title": "Trust region policy optimization.",
+        "venue": "International Conference on Machine Learning, pages 1889–1897",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jimmy Secretan",
+          "Nicholas Beato",
+          "David B D Ambrosio",
+          "Adelein Rodriguez",
+          "Adam Campbell",
+          "Kenneth O Stanley"
+        ],
+        "doi": null,
+        "key": "Secretan et al., 2008",
+        "page": 13,
+        "title": "Picbreeder: Evolving pictures collaboratively online.",
+        "venue": "Conference on Human Factors in Computing Systems, pages 1759–1768",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Roger N Shepard"
+        ],
+        "doi": null,
+        "key": "Shepard, 1957",
+        "page": 13,
+        "title": "Stimulus and response generalization: A stochastic model relating generalization to distance in psychological space.",
+        "venue": "Psychometrika, 22(4):325–345",
+        "year": 1957
+      },
+      {
+        "authors": [
+          "David Silver",
+          "Aja Huang",
+          "Chris J Maddison",
+          "Arthur Guez",
+          "Laurent Sifre",
+          "George Van Den Driessche",
+          "Julian Schrittwieser",
+          "Ioannis Antonoglou",
+          "Veda Panneershelvam",
+          "Marc Lanctot",
+          "Sander Dieleman",
+          "Dominik Grewe",
+          "John Nham",
+          "Nal Kalchbrenner",
+          "Ilya Sutskever",
+          "Timothy Lillicrap",
+          "Madeleine Leach",
+          "Koray Kavukcuoglu",
+          "Thore Graepel",
+          "Demis Hassabis"
+        ],
+        "doi": null,
+        "key": "Silver et al., 2016",
+        "page": 13,
+        "title": "Mastering the game of Go with deep neural networks and tree search.",
+        "venue": "Nature, 529(7587):484–489",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Patrikk D Sørensen",
+          "Jeppeh M Olsen",
+          "Sebastian Risi"
+        ],
+        "doi": null,
+        "key": "Sørensen et al., 2016",
+        "page": 13,
+        "title": "Breeding a diversity of super mario behaviors through interactive evolution.",
+        "venue": "Computational Intelligence and Games (CIG), 2016 IEEE Conference on, pages 1–7. IEEE",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Bradly C Stadie",
+          "Pieter Abbeel",
+          "Ilya Sutskever"
+        ],
+        "doi": null,
+        "key": "Stadie et al., 2017",
+        "page": 13,
+        "title": "Third-person imitation learning.",
+        "venue": "International Conference on Learning Representations",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Hiroaki Sugiyama",
+          "Toyomi Meguro",
+          "Yasuhiro Minami"
+        ],
+        "doi": null,
+        "key": "Sugiyama et al., 2012",
+        "page": 13,
+        "title": "Preference-learning based inverse reinforcement learning for dialog control.",
+        "venue": "INTERSPEECH, pages 222–225",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Emanuel Todorov",
+          "Tom Erez",
+          "Yuval Tassa"
+        ],
+        "doi": null,
+        "key": "Todorov et al., 2012",
+        "page": 13,
+        "title": "Mujoco: A physics engine for model-based control.",
+        "venue": "International Conference on Intelligent Robots and Systems, pages 5026–5033",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Sida I Wang",
+          "Percy Liang",
+          "Christopher D Manning"
+        ],
+        "doi": null,
+        "key": "Wang et al., 2016",
+        "page": 13,
+        "title": "Learning language games through interaction.",
+        "venue": "arXiv preprint arXiv:1606.02447",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Aaron Wilson",
+          "Alan Fern",
+          "Prasad Tadepalli"
+        ],
+        "doi": null,
+        "key": "Wilson et al., 2012",
+        "page": 13,
+        "title": "A Bayesian approach for policy learning from trajectory preference queries.",
+        "venue": "Advances in Neural Information Processing Systems, pages 1133–1141",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Christian Wirth",
+          "Johannes Fürnkranz"
+        ],
+        "doi": null,
+        "key": "Wirth and Fürnkranz, 2013",
+        "page": 13,
+        "title": "Preference-based reinforcement learning: A preliminary survey.",
+        "venue": "ECML/PKDD Workshop on Reinforcement Learning from Generalized Feedback: Beyond Numeric Rewards",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Christian Wirth",
+          "J Fürnkranz",
+          "Gerhard Neumann",
+          "et al."
+        ],
+        "doi": null,
+        "key": "Wirth et al., 2016",
+        "page": 13,
+        "title": "Model-free preference-based reinforcement learning.",
+        "venue": "AAAI, pages 2222–2228",
+        "year": 2016
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Our algorithm follows the same basic approach as Akrour et al. (2012) and Akrour et al. (2014).",
+        "reference_key": "Akrour et al., 2012",
+        "relation": "extends",
+        "why": "The paper adopts the same preference-based reward-learning approach but scales it to modern deep RL, nonlinear reward models, and short trajectory clips."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Our approach to feedback elicitation closely follows Wilson et al. (2012).",
+        "reference_key": "Wilson et al., 2012",
+        "relation": "extends",
+        "why": "It follows Wilson-style trajectory preference elicitation while extending it to real non-expert feedback and complex tasks."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Their experiments involve “synthetic” human feedback which is drawn from their Bayesian model, while we perform experiments with feedback gathered from non-expert users.",
+        "reference_key": "Wilson et al., 2012",
+        "relation": "contrasts",
+        "why": "The paper contrasts Wilson’s synthetic model-generated feedback with its own real non-expert human feedback."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In MacGlashan et al. (2017) and Pilarski et al. (2011), learning only occurs during episodes where the human trainer provides feedback.",
+        "reference_key": "MacGlashan et al., 2017",
+        "relation": "contrasts",
+        "why": "The paper argues that learning only during feedback episodes is infeasible for domains requiring thousands of hours of experience."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "TAMER (Knox, 2012; Knox and Stone, 2013) also learn a reward function, however they consider much simpler settings where the desired policy can be learned relatively quickly.",
+        "reference_key": "Knox, 2012",
+        "relation": "contrasts",
+        "why": "TAMER is acknowledged as related reward learning but is limited to much simpler settings and faster policy learning."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Our work could also be seen of a specific instance of the cooperative inverse reinforcement learning framework (Hadfield-Menell et al., 2016).",
+        "reference_key": "Hadfield-Menell et al., 2016",
+        "relation": "supports",
+        "why": "The paper positions its human-preference setting as a specific instance of the cooperative inverse reinforcement learning framework."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "This follows the Bradley-Terry model (Bradley and Terry, 1952) for estimating score functions from pairwise preferences",
+        "reference_key": "Bradley and Terry, 1952",
+        "relation": "uses_method",
+        "why": "The reward predictor’s pairwise preference likelihood is derived from the Bradley-Terry model."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+        "reference_key": "Mnih et al., 2016",
+        "relation": "uses_method",
+        "why": "A2C is the RL algorithm used for Atari experiments."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In this paper, we use advantage actor-critic (A2C; Mnih et al., 2016) to play Atari games, and trust region policy optimization (TRPO; Schulman et al., 2015) to perform simulated robotics tasks.",
+        "reference_key": "Schulman et al., 2015",
+        "relation": "uses_method",
+        "why": "TRPO is the RL algorithm used for simulated robotics experiments."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+        "reference_key": "Bellemare et al., 2013",
+        "relation": "uses_method",
+        "why": "The Atari benchmark domain comes from the Arcade Learning Environment."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Our experiments take place in two domains: Atari games in the Arcade Learning Environment (Bellemare et al., 2013), and robotics tasks in the physics simulator MuJoCo (Todorov et al., 2012).",
+        "reference_key": "Todorov et al., 2012",
+        "relation": "uses_method",
+        "why": "The simulated robotics domain uses the MuJoCo physics simulator."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Our algorithm fits a reward function to the human’s preferences while simultaneously training a policy to optimize the current predicted reward function (see Figure 1).",
+          "start_page": 1,
+          "start_text": "For sophisticated reinforcement learning (RL) systems to interact usefully with real-world environments, we need to communicate complex goals to these systems."
+        },
+        "summary": "Motivates learning goals from human preferences instead of hand-specified reward functions and introduces the core reward-predictor plus RL policy loop.",
+        "title": "Problem and Approach"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Compared to all prior work, our key contribution is to scale human feedback up to deep reinforcement learning and to learn much more complex behaviors.",
+          "start_page": 2,
+          "start_text": "A long line of work studies reinforcement learning from human ratings or rankings, including Akrour et al. (2011), Pilarski et al. (2011), Akrour et al. (2012), Wilson et al. (2012), Sugiyama et al. (2012), Wirth and Fürnkranz (2013), Daniel et al. (2015), El Asri et al. (2016), Wang et al. (2016), and Wirth et al. (2016)."
+        },
+        "summary": "Places the method in preference-based RL, imitation/inverse RL, TAMER, and cooperative inverse RL, emphasizing the contribution of scaling to deep RL.",
+        "title": "Related Work and Positioning"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "We decide how to query preferences based on an approximation to the uncertainty in the reward function estimator, similar to Daniel et al. (2014): we sample a large number of pairs of trajectory segments of length k",
+          "start_page": 3,
+          "start_text": "We consider an agent interacting with an environment over a sequence of steps; at each time t the agent receives an observation ot ∈ O from the environment and then sends an action at ∈ A to the environment."
+        },
+        "summary": "Specifies the formal setting, evaluation criteria, asynchronous algorithm, preference elicitation, reward-model fitting with Bradley-Terry preferences, and uncertainty-based query selection.",
+        "title": "Method and Preliminaries"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "On most of the games real human feedback performs similar to or slightly worse than synthetic feedback with the same number of labels, and often comparably to synthetic feedback that has 40% fewer labels.",
+          "start_page": 6,
+          "start_text": "In our first set of experiments, we attempt to solve a range of benchmark tasks for deep RL without observing the true reward."
+        },
+        "summary": "Reports MuJoCo and Atari benchmarks comparing real human feedback, synthetic oracle feedback, and true-reward RL, with generally near-RL performance from a small amount of feedback.",
+        "title": "Benchmark RL Without True Rewards"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "Our main motivation for eliciting comparisons rather than absolute scores was that we found it much easier for humans to provide consistent comparisons than consistent absolute scores",
+          "start_page": 8,
+          "start_text": "The Hopper robot performing a sequence of backflips (see Figure 4). This behavior was trained using 900 queries in less than an hour."
+        },
+        "summary": "Demonstrates novel behaviors learned from preferences and ablates ensemble, online querying, regularization, segment length, and comparison-versus-target training.",
+        "title": "Novel Behaviors and Ablations"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 10
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "In the long run it would be desirable to make learning a task from human preferences no more difficult than learning it from a programmatic reward signal, ensuring that powerful RL systems can be applied in the service of complex human values rather than low-complexity goals.",
+          "start_page": 10,
+          "start_text": "Agent-environment interactions are often radically cheaper than human interaction."
+        },
+        "summary": "Concludes that learned reward models from human preferences cut interaction complexity by roughly three orders of magnitude and can extend deep RL toward complex human values.",
+        "title": "Discussion and Conclusions"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Christian Wirth, J Fürnkranz, Gerhard Neumann, et al. Model-free preference-based reinforcement learning. In AAAI, pages 2222–2228, 2016.",
+          "start_page": 11,
+          "start_text": "Martin Abadi et al. Tensorflow: Large-scale machine learning on heterogeneous distributed systems. arXiv preprint arXiv:1603.04467, 2016."
+        },
+        "summary": "Bibliography of works on deep RL, preference-based RL, imitation, inverse RL, human feedback, and related AI-safety and control topics.",
+        "title": "References"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Atari games include a visual display of the score, which in theory could be used to trivially infer the reward.",
+          "start_page": 14,
+          "start_text": "Many RL environments have termination conditions that depend on the behavior of the agent, such as ending an episode when the agent dies or falls over."
+        },
+        "summary": "Details experimental setup: removing termination-condition supervision, reward predictor architectures, labeling schedules, and Atari preprocessing.",
+        "title": "Experimental Details"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "Don’t worry about how the agent got into the situation it is in (for instance, it doesn’t matter if one agent has more lives, or is now on a more advanced level); just focus on what happens in the clip itself.",
+          "start_page": 15,
+          "start_text": "Look at the clips and select the one in which better things happen. Only decide on events you actually witness in the clip."
+        },
+        "summary": "Reproduces the instructions given to human contractors for MuJoCo and Atari labeling, including task-specific notions of good behavior and tie/can’t-tell rules.",
+        "title": "Contractor Instructions"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper presents a new deep-RL training method and reports extensive empirical experiments, ablations, and human-subject protocols.",
+      "value": "empirical"
+    }
+  }
+}

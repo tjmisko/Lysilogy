@@ -1,0 +1,3433 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T22:59:41.245542196Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Kaplan et al. - 2020 - Scaling Laws for Neural Language Models.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 30,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 98192,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 24767,
+      "cached_tokens": 23808,
+      "completion_tokens": 26406,
+      "reasoning_tokens": 13301,
+      "cost_usd": 0.0113247736,
+      "cost_source": "reported",
+      "latency_s": 198.290727236
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 33237,
+      "cached_tokens": 512,
+      "completion_tokens": 11490,
+      "reasoning_tokens": 11010,
+      "cost_usd": 0.0094094504,
+      "cost_source": "reported",
+      "latency_s": 98.028440188
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 58004,
+    "cached_tokens": 24320,
+    "completion_tokens": 37896,
+    "cost_usd": 0.020734224000000002,
+    "model_latency_s": 296.319167424,
+    "wall_s": 302.430402339
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e13-titleprior-30-2026-10-20/results/kaplan2020.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We study empirical scaling laws for language model performance on the cross-entropy loss. The loss scales as a power-law with model size, dataset size, and the amount of compute used for training, with some trends spanning more than seven orders of magnitude. Other architectural details such as network width or depth have minimal effects within a wide range. Simple equations govern the dependence of overfitting on model/dataset size and the dependence of training speed on model size. These relationships allow us to determine the optimal allocation of a fixed compute budget. Larger models are significantly more sampleefficient, such that optimally compute-efficient training involves training very large models on a relatively modest amount of data and stopping significantly before convergence."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Transformer and WebText2/GPT-2",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18]."
+              },
+              {
+                "page": 6,
+                "quote": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257."
+              }
+            ],
+            "reference_key": "[VSP+17, LSP+18, RWC+19, SHB15]",
+            "why": "It builds directly on the Transformer architecture and uses the WebText2/GPT-2 dataset and tokenizer as the empirical base."
+          },
+          {
+            "cited_work": "large-batch training theory",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 12,
+                "quote": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:"
+              }
+            ],
+            "reference_key": "[MKAT18]",
+            "why": "It adopts the critical-batch-size and gradient-noise-scale framework to correct training-step and compute trends."
+          },
+          {
+            "cited_work": "prior scaling-law studies",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 18,
+                "quote": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling."
+              }
+            ],
+            "reference_key": "[HNA+17, HAD19, RRBS19b]",
+            "why": "It extends and contrasts with earlier empirical scaling work, especially on dataset-versus-model-size scaling."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "learning-curve and overfitting trends",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 11,
+                "quote": "We obtain an excellent fit, with the exception of the runs where the dataset has been reduced by a factor of 1024, to about 2 × 107 tokens."
+              }
+            ],
+            "reference_key": "[KAB18]",
+            "why": "It fits a unified L(N,D) form across many model and dataset sizes rather than replicating a prior exact result."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "architecture-shape importance",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 8,
+                "quote": "Transformer performance depends very weakly on the shape parameters nlayer, nheads, and dff when we hold the total non-embedding parameter count N fixed."
+              }
+            ],
+            "reference_key": "[VWB16]",
+            "why": "It argues scale dominates shape, in contrast to work emphasizing architectural hyperparameters such as depth or width."
+          },
+          {
+            "cited_work": "convergence-trained models",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Convergence is inefficient: When working within a fixed compute budget C but without any other restrictions on the model size N or available data D, we attain optimal performance by training very large models and stopping significantly short of convergence (see Figure 3)."
+              }
+            ],
+            "reference_key": "[RWC+19]",
+            "why": "It critiques the common practice of training smaller models to convergence instead of using compute-efficient early-stopped large models."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We study empirical scaling laws for language model performance on the cross-entropy loss."
+          }
+        ],
+        "text": "Language model cross-entropy loss follows precise power laws in model size, dataset size, and training compute, so larger models trained far short of convergence are the most compute-efficient."
+      }
+    },
+    "citations": [
+      {
+        "context": "Deep learning has recently seen rapid progress in language modeling, with state of the art models [RNSS18, DCLT18, YDY+19, LOG+19, RSR+19] approaching human-level performance on many specific tasks [WPN+19], including the composition of coherent multi-paragraph prompted text samples [RWC+19].",
+        "page": 2,
+        "reference_key": "[RNSS18, DCLT18, YDY+19, LOG+19, RSR+19]"
+      },
+      {
+        "context": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+        "page": 2,
+        "reference_key": "[VSP+17, LSP+18]"
+      },
+      {
+        "context": "Optimal batch size: The ideal batch size for training these models is roughly a power of the loss only, and continues to be determinable by measuring the gradient noise scale [MKAT18]; it is roughly 1-2 million tokens at convergence for the largest models we can train.",
+        "page": 3,
+        "reference_key": "[MKAT18]"
+      },
+      {
+        "context": "They depend very weakly on model shape and other Transformer hyperparameters (depth, width, number of self-attention heads), with specific numerical values associated with the Webtext2 training set [RWC+19].",
+        "page": 5,
+        "reference_key": "[RWC+19]"
+      },
+      {
+        "context": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+        "page": 5,
+        "reference_key": "[MKAT18]"
+      },
+      {
+        "context": "We also make some brief comparisons to LSTMs and recurrent Transformers [DGV+18].",
+        "page": 6,
+        "reference_key": "[DGV+18]"
+      },
+      {
+        "context": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257.",
+        "page": 6,
+        "reference_key": "[RWC+19, SHB15]"
+      },
+      {
+        "context": "We primarily train decoder-only [LSP+18, RNSS18] Transformer [VSP+17] models, though we also train LSTM models and Universal Transformers [DGV+18] for comparison.",
+        "page": 6,
+        "reference_key": "[LSP+18, RNSS18, VSP+17, DGV+18]"
+      },
+      {
+        "context": "Independence of nlayers would follow if deeper Transformers effectively behave as ensembles of shallower models, as has been suggested for ResNets [VWB16].",
+        "page": 8,
+        "reference_key": "[VWB16]"
+      },
+      {
+        "context": "This suggests that the embedding matrix can be made smaller without impacting performance, as has been seen in recent work [LCG+19].",
+        "page": 9,
+        "reference_key": "[LCG+19]"
+      },
+      {
+        "context": "We also compare the performance of standard Transformers to recurrent Transformers [DGV+18] in Figure 17 in the appendix.",
+        "page": 9,
+        "reference_key": "[DGV+18]"
+      },
+      {
+        "context": "Overfitting should be related to the variance or the signal-to-noise ratio of the dataset [AS17], and this scales as 1/D.",
+        "page": 11,
+        "reference_key": "[AS17]"
+      },
+      {
+        "context": "A simple empirical theory for the batch size dependence of training was developed in [MKAT18] (see also [SLA+18, ZLN+19]).",
+        "page": 12,
+        "reference_key": "[MKAT18, SLA+18, ZLN+19]"
+      },
+      {
+        "context": "So the predictions of [MKAT18] continue to hold for Transformer language models.",
+        "page": 13,
+        "reference_key": "[MKAT18]"
+      },
+      {
+        "context": "Power laws can arise from a wide variety of sources [THK18].",
+        "page": 18,
+        "reference_key": "[THK18]"
+      },
+      {
+        "context": "Power-law scalings with model and dataset size in density estimation [Was06] and in random forest models [Bia12] may be connected with our results.",
+        "page": 18,
+        "reference_key": "[Was06, Bia12]"
+      },
+      {
+        "context": "Some early [BB01, Goo01] work found power-law scalings between performance and dataset size.",
+        "page": 18,
+        "reference_key": "[BB01, Goo01]"
+      },
+      {
+        "context": "More recent work [HNA+17, HAD19] also investigated scaling between model size and data size; their work is perhaps the closest to ours in the literature⁸.",
+        "page": 18,
+        "reference_key": "[HNA+17, HAD19]"
+      },
+      {
+        "context": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling.",
+        "page": 18,
+        "reference_key": "[HNA+17]"
+      },
+      {
+        "context": "There are some parallels between our findings on optimal allocation of compute and [Kom19], including power-law learning curves.",
+        "page": 18,
+        "reference_key": "[Kom19]"
+      },
+      {
+        "context": "EfficientNets [TL19] also appear to obey an approximate power-law relation between accuracy and model size.",
+        "page": 18,
+        "reference_key": "[TL19]"
+      },
+      {
+        "context": "Very recent work [RRBS19b] studies scaling with both dataset size and model size for a variety of datasets, and fits an ansatz similar to ours.",
+        "page": 18,
+        "reference_key": "[RRBS19b]"
+      },
+      {
+        "context": "EfficientNet [TL19] advocates scaling depth and width exponentially (with different coefficients) for optimal performance of image models, resulting in a power-law scaling of width as a function of depth.",
+        "page": 18,
+        "reference_key": "[TL19]"
+      },
+      {
+        "context": "In [VWB16] it was argued that deep models can function as ensembles of shallower models, which could potentially explain this finding.",
+        "page": 18,
+        "reference_key": "[VWB16]"
+      },
+      {
+        "context": "Earlier work [ZK16] has compared width and depth, and found that wide ResNets can outperform deep ResNets on image classification.",
+        "page": 18,
+        "reference_key": "[ZK16]"
+      },
+      {
+        "context": "Various works [AS17, BHMM18] have investigated generalization in highly overparameterized models, finding a “jamming transition” [GJS+19] when the model size reaches the dataset size (this may require training many orders of magnitude beyond typical practice, and in particular does not use early stopping).",
+        "page": 18,
+        "reference_key": "[AS17, BHMM18, GJS+19]"
+      },
+      {
+        "context": "Expansions in the model size, particularly at large width [JGH18, LXS+19], may provide a useful framework for thinking about some of our scaling relations.",
+        "page": 18,
+        "reference_key": "[JGH18, LXS+19]"
+      },
+      {
+        "context": "Our results on optimization, such as the shape of learning curves, can likely be explained using a noisy quadratic model, which can provide quite accurate predictions [ZLN+19] in realistic settings.",
+        "page": 18,
+        "reference_key": "[ZLN+19]"
+      },
+      {
+        "context": "Making this connection quantitative will require a characterization of the Hessian spectrum [Pap18, GKX19, GARD18].",
+        "page": 18,
+        "reference_key": "[Pap18, GKX19, GARD18]"
+      },
+      {
+        "context": "After this work was completed, [RRBS19a] also appeared, which makes similar predictions for the dependence of loss on both model and dataset size.",
+        "page": 18,
+        "reference_key": "[RRBS19a]"
+      },
+      {
+        "context": "Deep models can be trained using pipelining [HCC+18], which splits parameters depth-wise between devices, but eventually requires increased batch sizes as more devices are used.",
+        "page": 19,
+        "reference_key": "[HCC+18]"
+      },
+      {
+        "context": "Wide networks on the other hand are more amenable to parallelization [SCP+18], since large layers can be split between multiple workers with less serial dependency.",
+        "page": 19,
+        "reference_key": "[SCP+18]"
+      },
+      {
+        "context": "Sparsity [CGRS19, GRK17] or branching (e.g. [KSH12]) may allow for even faster training of large networks through increased model parallelism.",
+        "page": 19,
+        "reference_key": "[CGRS19, GRK17, KSH12]"
+      },
+      {
+        "context": "And using methods like [WRH17, WYL19], which grow networks as they train, it might be possible to remain on the compute-efficient frontier for an entire training run.",
+        "page": 19,
+        "reference_key": "[WRH17, WYL19]"
+      },
+      {
+        "context": "This may be a consequence of underlying power-law correlations in language [EP94, ACDE12, LT16], or a more general feature of the model architecture and optimization.",
+        "page": 25,
+        "reference_key": "[EP94, ACDE12, LT16]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Johns Hopkins University, OpenAI",
+          "name": "Jared Kaplan"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Sam McCandlish"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Tom Henighan"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Tom B. Brown"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Benjamin Chess"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Rewon Child"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Scott Gray"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Alec Radford"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Jeffrey Wu"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Dario Amodei"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Scaling Laws for Neural Language Models"
+        },
+        {
+          "page": 1,
+          "quote": "Jared Kaplan ∗"
+        },
+        {
+          "page": 1,
+          "quote": "Sam McCandlish∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:2001.08361v1 [cs.LG]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "arXiv:2001.08361v1 [cs.LG] 23 Jan 2020",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "One might expect language modeling performance to depend on model architecture, the size of neural models, the computing power used to train them, and the data available for this training process. In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18]."
+        }
+      ],
+      "text": "How does language-model cross-entropy loss scale with non-embedding parameter count, dataset size, training compute, and training time, and what allocation of a fixed compute budget is optimal?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Eduardo G Altmann",
+          "Giampaolo Cristadoro",
+          "Mirko Degli Esposti"
+        ],
+        "doi": null,
+        "key": "[ACDE12]",
+        "page": 25,
+        "title": "On the origin of longrange correlations in texts",
+        "venue": "Proceedings of the National Academy of Sciences",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Madhu S. Advani",
+          "Andrew M. Saxe"
+        ],
+        "doi": null,
+        "key": "[AS17]",
+        "page": 18,
+        "title": "High-dimensional dynamics of generalization error in neural networks",
+        "venue": "arXiv",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Michele Banko",
+          "Eric Brill"
+        ],
+        "doi": null,
+        "key": "[BB01]",
+        "page": 18,
+        "title": "Scaling to very very large corpora for natural language disambiguation",
+        "venue": "Proceedings of the 39th annual meeting on association for computational linguistics",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Mikhail Belkin",
+          "Daniel Hsu",
+          "Siyuan Ma",
+          "Soumik Mandal"
+        ],
+        "doi": null,
+        "key": "[BHMM18]",
+        "page": 18,
+        "title": "Reconciling modern machine learning and the bias-variance trade-off",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "GÃŠrard Biau"
+        ],
+        "doi": null,
+        "key": "[Bia12]",
+        "page": 18,
+        "title": "Analysis of a random forests model",
+        "venue": "Journal of Machine Learning Research",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Rewon Child",
+          "Scott Gray",
+          "Alec Radford",
+          "Ilya Sutskever"
+        ],
+        "doi": null,
+        "key": "[CGRS19]",
+        "page": 19,
+        "title": "Generating long sequences with sparse transformers",
+        "venue": "CoRR",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Jacob Devlin",
+          "Ming-Wei Chang",
+          "Kenton Lee",
+          "Kristina Toutanova"
+        ],
+        "doi": null,
+        "key": "[DCLT18]",
+        "page": 2,
+        "title": "Bert: Pre-training of deep bidirectional transformers for language understanding",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Mostafa Dehghani",
+          "Stephan Gouws",
+          "Oriol Vinyals",
+          "Jakob Uszkoreit",
+          "Lukasz Kaiser"
+        ],
+        "doi": null,
+        "key": "[DGV+18]",
+        "page": 6,
+        "title": "Universal transformers",
+        "venue": "CoRR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Werner Ebeling",
+          "Thorsten Pöschel"
+        ],
+        "doi": null,
+        "key": "[EP94]",
+        "page": 25,
+        "title": "Entropy and long-range correlations in literary english",
+        "venue": "EPL (Europhysics Letters)",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "The Common Crawl Foundation"
+        ],
+        "doi": null,
+        "key": "[Fou]",
+        "page": 7,
+        "title": "Common crawl",
+        "venue": "http://commoncrawl.org",
+        "year": null
+      },
+      {
+        "authors": [
+          "Guy Gur-Ari",
+          "Daniel A. Roberts",
+          "Ethan Dyer"
+        ],
+        "doi": null,
+        "key": "[GARD18]",
+        "page": 18,
+        "title": "Gradient descent happens in a tiny subspace",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Mario Geiger",
+          "Arthur Jacot",
+          "Stefano Spigler",
+          "Franck Gabriel",
+          "Levent Sagun",
+          "Stéphane d’Ascoli",
+          "Giulio Biroli",
+          "Clément Hongler",
+          "Matthieu Wyart"
+        ],
+        "doi": null,
+        "key": "[GJS+19]",
+        "page": 18,
+        "title": "Scaling description of generalization with number of parameters in deep learning",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Behrooz Ghorbani",
+          "Shankar Krishnan",
+          "Ying Xiao"
+        ],
+        "doi": null,
+        "key": "[GKX19]",
+        "page": 18,
+        "title": "An investigation into neural net optimization via hessian eigenvalue density",
+        "venue": "CoRR",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Joshua Goodman"
+        ],
+        "doi": null,
+        "key": "[Goo01]",
+        "page": 18,
+        "title": "A bit of progress in language modeling",
+        "venue": "CoRR",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Scott Gray",
+          "Alec Radford",
+          "Diederik P Kingma"
+        ],
+        "doi": null,
+        "key": "[GRK17]",
+        "page": 19,
+        "title": "Gpu kernels for block-sparse weights",
+        "venue": "openai.com",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Joel Hestness",
+          "Newsha Ardalani",
+          "Gregory Diamos"
+        ],
+        "doi": "10.1145/3293883.3295710",
+        "key": "[HAD19]",
+        "page": 18,
+        "title": "Beyond human-level accuracy: Computational challenges in deep learning",
+        "venue": "Proceedings of the 24th Symposium on Principles and Practice of Parallel Programming, PPoPP ’19",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Yanping Huang",
+          "Yonglong Cheng",
+          "Dehao Chen",
+          "HyoukJoong Lee",
+          "Jiquan Ngiam",
+          "Quoc V. Le",
+          "Zhifeng Chen"
+        ],
+        "doi": null,
+        "key": "[HCC+18]",
+        "page": 19,
+        "title": "Gpipe: Efficient training of giant neural networks using pipeline parallelism",
+        "venue": "CoRR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Joel Hestness",
+          "Sharan Narang",
+          "Newsha Ardalani",
+          "Gregory Diamos",
+          "Heewoo Jun",
+          "Hassan Kianinejad",
+          "Md. Mostofa Ali Patwary",
+          "Yang Yang",
+          "Yanqi Zhou"
+        ],
+        "doi": null,
+        "key": "[HNA+17]",
+        "page": 18,
+        "title": "Deep learning scaling is predictable, empirically",
+        "venue": "arXiv",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Arthur Jacot",
+          "Franck Gabriel",
+          "Clément Hongler"
+        ],
+        "doi": null,
+        "key": "[JGH18]",
+        "page": 18,
+        "title": "Neural tangent kernel: Convergence and generalization in neural networks",
+        "venue": "Advances in neural information processing systems",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Diederik P. Kingma",
+          "Jimmy Ba"
+        ],
+        "doi": null,
+        "key": "[KB14]",
+        "page": 7,
+        "title": "Adam: A method for stochastic optimization",
+        "venue": "arXiv",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Aran Komatsuzaki"
+        ],
+        "doi": null,
+        "key": "[Kom19]",
+        "page": 18,
+        "title": "One epoch is all you need",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Alex Krizhevsky",
+          "Ilya Sutskever",
+          "Geoffrey E. Hinton"
+        ],
+        "doi": null,
+        "key": "[KSH12]",
+        "page": 19,
+        "title": "Imagenet classification with deep convolutional neural networks",
+        "venue": "Proceedings of the 25th International Conference on Neural Information Processing Systems - Volume 1, NIPS’12",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Zhenzhong Lan",
+          "Mingda Chen",
+          "Sebastian Goodman",
+          "Kevin Gimpel",
+          "Piyush Sharma",
+          "Radu Soricut"
+        ],
+        "doi": null,
+        "key": "[LCG+19]",
+        "page": 9,
+        "title": "Albert: A lite bert for self-supervised learning of language representations",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Yinhan Liu",
+          "Myle Ott",
+          "Naman Goyal",
+          "Jingfei Du",
+          "Mandar Joshi",
+          "Danqi Chen",
+          "Omer Levy",
+          "Mike Lewis",
+          "Luke Zettlemoyer",
+          "Veselin Stoyanov"
+        ],
+        "doi": null,
+        "key": "[LOG+19]",
+        "page": 2,
+        "title": "Roberta: A robustly optimized BERT pretraining approach",
+        "venue": "CoRR",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Peter J. Liu",
+          "Mohammad Saleh",
+          "Etienne Pot",
+          "Ben Goodrich",
+          "Ryan Sepassi",
+          "Lukasz Kaiser",
+          "Noam Shazeer"
+        ],
+        "doi": null,
+        "key": "[LSP+18]",
+        "page": 2,
+        "title": "Generating wikipedia by summarizing long sequences",
+        "venue": "arXiv:1801.10198 [cs]",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Henry W Lin",
+          "Max Tegmark"
+        ],
+        "doi": null,
+        "key": "[LT16]",
+        "page": 25,
+        "title": "Criticality in formal languages and statistical physics",
+        "venue": "arXiv preprint",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Jaehoon Lee",
+          "Lechao Xiao",
+          "Samuel S. Schoenholz",
+          "Yasaman Bahri",
+          "Roman Novak",
+          "Jascha Sohl-Dickstein",
+          "Jeffrey Pennington"
+        ],
+        "doi": null,
+        "key": "[LXS+19]",
+        "page": 18,
+        "title": "Wide neural networks of any depth evolve as linear models under gradient descent",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Sam McCandlish",
+          "Jared Kaplan",
+          "Dario Amodei",
+          "OpenAI Dota Team"
+        ],
+        "doi": null,
+        "key": "[MKAT18]",
+        "page": 6,
+        "title": "An empirical model of large-batch training",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Vardan Papyan"
+        ],
+        "doi": null,
+        "key": "[Pap18]",
+        "page": 18,
+        "title": "The full spectrum of deep net hessians at scale: Dynamics with sample size",
+        "venue": "CoRR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Alec Radford",
+          "Karthik Narasimhan",
+          "Tim Salimans",
+          "Ilya Sutskever"
+        ],
+        "doi": null,
+        "key": "[RNSS18]",
+        "page": 2,
+        "title": "Improving language understanding by generative pre-training",
+        "venue": "https://s3-us-west-2. amazonaws. com/openaiassets/research-covers/languageunsupervised/language understanding paper. pdf",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Jonathan S. Rosenfeld",
+          "Amir Rosenfeld",
+          "Yonatan Belinkov",
+          "Nir Shavit"
+        ],
+        "doi": null,
+        "key": "[RRBS19a]",
+        "page": 18,
+        "title": "A constructive prediction of the generalization error across scales",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Jonathan S. Rosenfeld",
+          "Amir Rosenfeld",
+          "Yonatan Belinkov",
+          "Nir Shavit"
+        ],
+        "doi": null,
+        "key": "[RRBS19b]",
+        "page": 18,
+        "title": "A constructive prediction of the generalization error across scales",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Colin Raffel",
+          "Noam Shazeer",
+          "Adam Roberts",
+          "Katherine Lee",
+          "Sharan Narang",
+          "Michael Matena",
+          "Yanqi Zhou",
+          "Wei Li",
+          "Peter J. Liu"
+        ],
+        "doi": null,
+        "key": "[RSR+19]",
+        "page": 2,
+        "title": "Exploring the limits of transfer learning with a unified text-to-text transformer",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Alec Radford",
+          "Jeff Wu",
+          "Rewon Child",
+          "David Luan",
+          "Dario Amodei",
+          "Ilya Sutskever"
+        ],
+        "doi": null,
+        "key": "[RWC+19]",
+        "page": 2,
+        "title": "Language models are unsupervised multitask learners",
+        "venue": "openai.com",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Noam Shazeer",
+          "Youlong Cheng",
+          "Niki Parmar",
+          "Dustin Tran",
+          "Ashish Vaswani",
+          "Penporn Koanantakool",
+          "Peter Hawkins",
+          "HyoukJoong Lee",
+          "Mingsheng Hong",
+          "Cliff Young",
+          "Ryan Sepassi",
+          "Blake Hechtman"
+        ],
+        "doi": null,
+        "key": "[SCP+18]",
+        "page": 19,
+        "title": "Mesh-tensorflow: Deep learning for supercomputers",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Rico Sennrich",
+          "Barry Haddow",
+          "Alexandra Birch"
+        ],
+        "doi": null,
+        "key": "[SHB15]",
+        "page": 6,
+        "title": "Neural machine translation of rare words with subword units",
+        "venue": "CoRR",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Christopher J. Shallue",
+          "Jaehoon Lee",
+          "Joe Antognini",
+          "Jascha Sohl-Dickstein",
+          "Roy Frostig",
+          "George E. Dahl"
+        ],
+        "doi": null,
+        "key": "[SLA+18]",
+        "page": 12,
+        "title": "Measuring the effects of data parallelism on neural network training",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Noam Shazeer",
+          "Mitchell Stern"
+        ],
+        "doi": null,
+        "key": "[SS18]",
+        "page": 7,
+        "title": "Adafactor: Adaptive learning rates with sublinear memory cost",
+        "venue": "CoRR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Stefan Thurner",
+          "Rudolf Hanel",
+          "Peter Klimek"
+        ],
+        "doi": null,
+        "key": "[THK18]",
+        "page": 18,
+        "title": "Introduction to the theory of complex systems",
+        "venue": "Oxford University Press",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Mingxing Tan",
+          "Quoc V. Le"
+        ],
+        "doi": null,
+        "key": "[TL19]",
+        "page": 18,
+        "title": "Efficientnet: Rethinking model scaling for convolutional neural networks",
+        "venue": "CoRR",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Ashish Vaswani",
+          "Noam Shazeer",
+          "Niki Parmar",
+          "Jakob Uszkoreit",
+          "Llion Jones",
+          "Aidan N Gomez",
+          "Ł ukasz Kaiser",
+          "Illia Polosukhin"
+        ],
+        "doi": null,
+        "key": "[VSP+17]",
+        "page": 2,
+        "title": "Attention is all you need",
+        "venue": "Advances in Neural Information Processing Systems 30",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Andreas Veit",
+          "Michael Wilber",
+          "Serge Belongie"
+        ],
+        "doi": null,
+        "key": "[VWB16]",
+        "page": 8,
+        "title": "Residual networks behave like ensembles of relatively shallow networks",
+        "venue": "arXiv",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Larry Wasserman"
+        ],
+        "doi": null,
+        "key": "[Was06]",
+        "page": 18,
+        "title": "All of nonparametric statistics",
+        "venue": "Springer Science & Business Media",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Alex Wang",
+          "Yada Pruksachatkun",
+          "Nikita Nangia",
+          "Amanpreet Singh",
+          "Julian Michael",
+          "Felix Hill",
+          "Omer Levy",
+          "Samuel R. Bowman"
+        ],
+        "doi": null,
+        "key": "[WPN+19]",
+        "page": 2,
+        "title": "Superglue: A stickier benchmark for general-purpose language understanding systems",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Yu-Xiong Wang",
+          "Deva Ramanan",
+          "Martial Hebert"
+        ],
+        "doi": "10.1109/cvpr.2017.323",
+        "key": "[WRH17]",
+        "page": 19,
+        "title": "Growing a brain: Fine-tuning by increasing model capacity",
+        "venue": "2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR)",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Wei Wen",
+          "Feng Yan",
+          "Hai Li"
+        ],
+        "doi": null,
+        "key": "[WYL19]",
+        "page": 19,
+        "title": "Autogrow: Automatic layer growing in deep convolutional networks",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Zhilin Yang",
+          "Zihang Dai",
+          "Yiming Yang",
+          "Jaime Carbonell",
+          "Ruslan Salakhutdinov",
+          "Quoc V. Le"
+        ],
+        "doi": null,
+        "key": "[YDY+19]",
+        "page": 2,
+        "title": "Xlnet: Generalized autoregressive pretraining for language understanding",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Sergey Zagoruyko",
+          "Nikos Komodakis"
+        ],
+        "doi": "10.5244/c.30.87",
+        "key": "[ZK16]",
+        "page": 18,
+        "title": "Wide residual networks",
+        "venue": "Procedings of the British Machine Vision Conference 2016",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Yukun Zhu",
+          "Ryan Kiros",
+          "Rich Zemel",
+          "Ruslan Salakhutdinov",
+          "Raquel Urtasun",
+          "Antonio Torralba",
+          "Sanja Fidler"
+        ],
+        "doi": "10.1109/iccv.2015.11",
+        "key": "[ZKZ+15]",
+        "page": 7,
+        "title": "Aligning books and movies: Towards story-like visual explanations by watching movies and reading books",
+        "venue": "2015 IEEE International Conference on Computer Vision (ICCV)",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Guodong Zhang",
+          "Lala Li",
+          "Zachary Nado",
+          "James Martens",
+          "Sushant Sachdeva",
+          "George E. Dahl",
+          "Christopher J. Shallue",
+          "Roger B. Grosse"
+        ],
+        "doi": null,
+        "key": "[ZLN+19]",
+        "page": 12,
+        "title": "Which algorithmic choices matter at which batch sizes? insights from a noisy quadratic model",
+        "venue": "CoRR",
+        "year": 2019
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 12,
+        "quote": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+        "reference_key": "[MKAT18]",
+        "relation": "uses_method",
+        "why": "The paper adopts the critical-batch-size and gradient-noise-scale framework to adjust training steps and compute for optimal allocation."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+        "reference_key": "[VSP+17]",
+        "relation": "uses_method",
+        "why": "It studies Transformer language models, making the Transformer architecture the empirical object of the scaling laws."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257.",
+        "reference_key": "[RWC+19]",
+        "relation": "uses_data",
+        "why": "It uses WebText2, an extension of the WebText dataset, and GPT-2 tokenization for all main experiments."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "We primarily train decoder-only [LSP+18, RNSS18] Transformer [VSP+17] models, though we also train LSTM models and Universal Transformers [DGV+18] for comparison.",
+        "reference_key": "[DGV+18]",
+        "relation": "compares",
+        "why": "It compares standard Transformers with Universal/recurrent Transformers as an architectural alternative."
+      },
+      {
+        "confidence": "high",
+        "page": 18,
+        "quote": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling.",
+        "reference_key": "[HNA+17]",
+        "relation": "contrasts",
+        "why": "It directly contrasts its sub-linear dataset-size scaling with the super-linear scaling reported by prior work."
+      },
+      {
+        "confidence": "high",
+        "page": 18,
+        "quote": "Very recent work [RRBS19b] studies scaling with both dataset size and model size for a variety of datasets, and fits an ansatz similar to ours.",
+        "reference_key": "[RRBS19b]",
+        "relation": "extends",
+        "why": "It extends a similar scaling ansatz across dataset size and model size to language-model loss and compute allocation."
+      },
+      {
+        "confidence": "medium",
+        "page": 18,
+        "quote": "EfficientNets [TL19] also appear to obey an approximate power-law relation between accuracy and model size.",
+        "reference_key": "[TL19]",
+        "relation": "compares",
+        "why": "It compares its language-model scaling laws with EfficientNet's approximate power-law model-size scaling."
+      },
+      {
+        "confidence": "medium",
+        "page": 11,
+        "quote": "Overfitting should be related to the variance or the signal-to-noise ratio of the dataset [AS17], and this scales as 1/D.",
+        "reference_key": "[AS17]",
+        "relation": "uses_method",
+        "why": "It motivates the 1/D overfitting term using earlier analysis of variance and generalization error in wide networks."
+      },
+      {
+        "confidence": "medium",
+        "page": 18,
+        "quote": "Our results on optimization, such as the shape of learning curves, can likely be explained using a noisy quadratic model, which can provide quite accurate predictions [ZLN+19] in realistic settings.",
+        "reference_key": "[ZLN+19]",
+        "relation": "uses_method",
+        "why": "It suggests the noisy quadratic model as a possible explanation for learning-curve shapes and optimization scaling."
+      },
+      {
+        "confidence": "medium",
+        "page": 8,
+        "quote": "Independence of nlayers would follow if deeper Transformers effectively behave as ensembles of shallower models, as has been suggested for ResNets [VWB16].",
+        "reference_key": "[VWB16]",
+        "relation": "uses_method",
+        "why": "It borrows the ensemble-of-shallower-models interpretation to explain weak dependence on depth."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Sample efficiency: Large models are more sample-efficient than small models, reaching the same level of performance with fewer optimization steps (Figure 2) and using fewer data points (Figure 4).",
+          "start_page": 1,
+          "start_text": "Scaling Laws for Neural Language Models"
+        },
+        "summary": "Introduces the empirical scaling-law agenda for Transformer language models and states the headline claims: scale matters much more than shape, loss follows smooth power laws, overfitting and training are predictable, and compute-efficient training favors very large models trained short of convergence.",
+        "title": "Introduction and Headline Findings"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "• αX – power-law exponents for the scaling of the loss as L(X) ∝ 1/XαX where X can be any of N, D, C, S, B, Cmin.",
+          "start_page": 4,
+          "start_text": "The test loss of a Transformer trained to autoregressively model language can be predicted using a power-law when performance is limited by only either the number of non-embedding parameters N, the dataset size D, or the optimally allocated compute budget Cmin (see Figure 1):"
+        },
+        "summary": "Presents the paper's central equations for L(N), L(D), L(Cmin), Bcrit(L), combined L(N,D) and L(N,Smin), optimal allocation exponents, and the notation used throughout.",
+        "title": "Core Scaling Laws and Notation"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "• Batch size (219 for most runs, but we also vary it to measure the critical batch size)",
+          "start_page": 6,
+          "start_text": "We parameterize the Transformer architecture using hyperparameters nlayer (number of layers), dmodel (dimension of the residual stream), dff (dimension of the intermediate feed-forward layer), dattn (dimension of the attention output), and nheads (number of attention heads per layer)."
+        },
+        "summary": "Explains Transformer parameter and compute accounting, the training procedure, and the WebText2 dataset construction used for the empirical scaling experiments.",
+        "title": "Methods, Compute Accounting, and Data"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "We see that the loss on these other data distributions improves smoothly with model size, in direct parallel with the improvement on WebText2.",
+          "start_page": 8,
+          "start_text": "Transformer performance depends very weakly on the shape parameters nlayer, nheads, and dff when we hold the total non-embedding parameter count N fixed."
+        },
+        "summary": "Shows weak dependence on Transformer shape, clean L(N) scaling when embeddings are excluded, LSTM and Universal Transformer comparisons, and smooth generalization to other text distributions.",
+        "title": "Shape Independence and Model-Size Scaling"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "We obtain an excellent fit, with the exception of the runs where the dataset has been reduced by a factor of 1024, to about 2 × 107 tokens.",
+          "start_page": 9,
+          "start_text": "We display empirical trends for the test loss as a function of dataset size D (in tokens) and training compute C in Figure 1."
+        },
+        "summary": "Derives dataset-size and compute power laws, proposes the combined L(N,D) overfitting law, and fits the model/data-size tradeoff that controls overfitting.",
+        "title": "Dataset Size, Compute, and Overfitting"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "With these parameters, we obtain the learning curve fits in Figure 4.",
+          "start_page": 12,
+          "start_text": "A simple empirical theory for the batch size dependence of training was developed in [MKAT18] (see also [SLA+18, ZLN+19])."
+        },
+        "summary": "Introduces the critical batch size, defines Smin and Cmin-adjusted training steps and compute, and fits learning curves as L(N,Smin).",
+        "title": "Critical Batch Size and Training-Time Scaling"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "If we cannot increase the model size beyond N ∗ without qualitatively different data requirements, perhaps this means that once we reach ∗ Cmin and N ∗, we have extracted all of the reliable information available in natural language data.",
+          "start_page": 14,
+          "start_text": "We displayed the empirical trend of performance as a function of the computation used during training in the top-right of Figure 1."
+        },
+        "summary": "Determines the compute-efficient frontier: optimal model size grows rapidly, batch size and steps grow slowly, and data grows modestly; then identifies a predicted intersection where scaling laws must break down or level off.",
+        "title": "Optimal Compute Allocation and Predicted Limits"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "Big models may be more important than big data.",
+          "start_page": 18,
+          "start_text": "Power laws can arise from a wide variety of sources [THK18]."
+        },
+        "summary": "Places the work relative to scaling, generalization, and efficient-modeling literature, then discusses broader implications for sample efficiency, model parallelism, and qualitative emergence.",
+        "title": "Related Work and Discussion"
+      },
+      {
+        "pages": {
+          "end": 22,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 22,
+          "end_text": "So that compute-efficient training uses 7.7x fewer parameter updates, 2.7x more parameters, and 65% less compute to reach the same loss.",
+          "start_page": 20,
+          "start_text": "For easier reference, we provide a summary below of the key trends described throughout the paper."
+        },
+        "summary": "Summarizes power laws in tables, derives the compute-efficient frontier, compares efficient to convergence-oriented training, and lists caveats.",
+        "title": "Appendices: Derivations, Efficient Frontier, Caveats"
+      },
+      {
+        "pages": {
+          "end": 25,
+          "start": 23
+        },
+        "source_span": {
+          "end_page": 25,
+          "end_text": "This also suggests that further improvements should be possible with much larger models trained on large contexts.",
+          "start_page": 23,
+          "start_text": "In section 5.3 we described the result shown in Figure 16, which provides a prediction for a lower bound on the early stopping step."
+        },
+        "summary": "Presents supplemental evidence on early stopping, Universal Transformers, critical batch-size scans, sample efficiency, and per-token context-position scaling.",
+        "title": "Supplemental Experiments: Stopping, Batch, Sample Efficiency, Context"
+      },
+      {
+        "pages": {
+          "end": 27,
+          "start": 25
+        },
+        "source_span": {
+          "end_page": 27,
+          "end_text": "We observe no effect of depth on generalization; generalization performance depends primarily on training distribution performance.",
+          "start_page": 25,
+          "start_text": "We experimented with a variety of learning rates and schedules."
+        },
+        "summary": "Shows learning-rate schedules are mostly irrelevant, power laws fit better than logarithmic forms, and generalization to other distributions does not depend on depth when parameter count is fixed.",
+        "title": "Supplemental: Learning Rates, Fit Quality, Depth"
+      },
+      {
+        "pages": {
+          "end": 30,
+          "start": 28
+        },
+        "source_span": {
+          "end_page": 30,
+          "end_text": "[ZLN+19] Guodong Zhang, Lala Li, Zachary Nado, James Martens, Sushant Sachdeva, George E. Dahl, Christopher J. Shallue, and Roger B. Grosse. Which algorithmic choices matter at which batch sizes? insights from a noisy quadratic model. CoRR, abs/1907.04164, 2019, 1907.04164. URL http://arxiv.org/abs/1907.04164. 12, 18",
+          "start_page": 28,
+          "start_text": "References"
+        },
+        "summary": "Bibliography for the paper, included as an optional navigation unit rather than a substantive argument section.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper reports empirical fits and theoretical derivations of power-law scaling relationships for Transformer language models, supported by many training runs and figures.",
+      "value": "empirical"
+    }
+  },
+  "pass1_check": {
+    "sites": 58,
+    "verbatim": 57,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 2
+  },
+  "corrections": [
+    {
+      "path": "/identity/title",
+      "action": "replace",
+      "value_json": "\"Scaling Laws for Neural Language Models\"",
+      "reason": "The draft title is the arXiv identifier/date line, not the paper title.",
+      "evidence": [
+        {
+          "quote": "Scaling Laws for Neural Language Models",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/card/position/predecessors/1/evidence/0/page",
+      "action": "replace",
+      "value_json": "5",
+      "reason": "This quote appears on page 5, not page 12.",
+      "evidence": [
+        {
+          "quote": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "path": "/relations/0/page",
+      "action": "replace",
+      "value_json": "5",
+      "reason": "This quote appears on page 5, not page 12.",
+      "evidence": [
+        {
+          "quote": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "path": "/sections/6/pages/end",
+      "action": "replace",
+      "value_json": "18",
+      "reason": "The section's final quoted text is on page 18, not page 17.",
+      "evidence": [
+        {
+          "quote": "If we cannot increase the model size beyond N ∗ without qualitatively different data requirements, perhaps this means that once we reach",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "path": "/sections/6/source_span/end_page",
+      "action": "replace",
+      "value_json": "18",
+      "reason": "The section's final quoted text is on page 18, not page 17.",
+      "evidence": [
+        {
+          "quote": "If we cannot increase the model size beyond N ∗ without qualitatively different data requirements, perhaps this means that once we reach",
+          "page": 18
+        }
+      ]
+    },
+    {
+      "path": "/card/position/replications/0/reference_key",
+      "action": "flag",
+      "value_json": null,
+      "reason": "[KAB18] is not a reference in the paper and the cited quote does not mention it.",
+      "evidence": [
+        {
+          "quote": "We obtain an excellent fit, with the exception of the runs where the dataset has been reduced by a factor of 1024, to about 2 × 107 tokens.",
+          "page": 11
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/title",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/card/position/predecessors/1/evidence/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/relations/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/sections/6/pages/end",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/sections/6/source_span/end_page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 5,
+      "path": "/card/position/replications/0/reference_key",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 58,
+    "verbatim": 57,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We study empirical scaling laws for language model performance on the cross-entropy loss. The loss scales as a power-law with model size, dataset size, and the amount of compute used for training, with some trends spanning more than seven orders of magnitude. Other architectural details such as network width or depth have minimal effects within a wide range. Simple equations govern the dependence of overfitting on model/dataset size and the dependence of training speed on model size. These relationships allow us to determine the optimal allocation of a fixed compute budget. Larger models are significantly more sampleefficient, such that optimally compute-efficient training involves training very large models on a relatively modest amount of data and stopping significantly before convergence.",
+      "admitted": "We study empirical scaling laws for language model performance on the cross-entropy loss. The loss scales as a power-law with model size, dataset size, and the amount of compute used for training, with some trends spanning more than seven orders of magnitude. Other architectural details such as network width or depth have minimal effects within a wide range. Simple equations govern the dependence of overfitting on model/dataset size and the dependence of training speed on model size. These relationships allow us to determine the optimal allocation of a fixed compute budget. Larger models are significantly more sampleefficient, such that optimally compute-efficient training involves training very large models on a relatively modest amount of data and stopping significantly before convergence.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+      "admitted": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/1/quote",
+      "status": "verbatim",
+      "original": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257.",
+      "admitted": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+      "admitted": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling.",
+      "admitted": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/replications/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We obtain an excellent fit, with the exception of the runs where the dataset has been reduced by a factor of 1024, to about 2 × 107 tokens.",
+      "admitted": "We obtain an excellent fit, with the exception of the runs where the dataset has been reduced by a factor of 1024, to about 2 × 107 tokens.",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Transformer performance depends very weakly on the shape parameters nlayer, nheads, and dff when we hold the total non-embedding parameter count N fixed.",
+      "admitted": "Transformer performance depends very weakly on the shape parameters nlayer, nheads, and dff when we hold the total non-embedding parameter count N fixed.",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Convergence is inefficient: When working within a fixed compute budget C but without any other restrictions on the model size N or available data D, we attain optimal performance by training very large models and stopping significantly short of convergence (see Figure 3).",
+      "admitted": "Convergence is inefficient: When working within a fixed compute budget C but without any other restrictions on the model size N or available data D, we attain optimal performance by training very large models and stopping significantly short of convergence (see Figure 3).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We study empirical scaling laws for language model performance on the cross-entropy loss.",
+      "admitted": "We study empirical scaling laws for language model performance on the cross-entropy loss.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Scaling Laws for Neural Language Models",
+      "admitted": "Scaling Laws for Neural Language Models",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Jared Kaplan ∗",
+      "admitted": "Jared Kaplan ∗",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/2/quote",
+      "status": "verbatim",
+      "original": "Sam McCandlish∗",
+      "admitted": "Sam McCandlish∗",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "One might expect language modeling performance to depend on model architecture, the size of neural models, the computing power used to train them, and the data available for this training process. In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+      "admitted": "One might expect language modeling performance to depend on model architecture, the size of neural models, the computing power used to train them, and the data available for this training process. In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "Deep learning has recently seen rapid progress in language modeling, with state of the art models [RNSS18, DCLT18, YDY+19, LOG+19, RSR+19] approaching human-level performance on many specific tasks [WPN+19], including the composition of coherent multi-paragraph prompted text samples [RWC+19].",
+      "admitted": "Deep learning has recently seen rapid progress in language modeling, with state of the art models [RNSS18, DCLT18, YDY+19, LOG+19, RSR+19] approaching human-level performance on many specific tasks [WPN+19], including the composition of coherent multi-paragraph prompted text samples [RWC+19].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+      "admitted": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "Optimal batch size: The ideal batch size for training these models is roughly a power of the loss only, and continues to be determinable by measuring the gradient noise scale [MKAT18]; it is roughly 1-2 million tokens at convergence for the largest models we can train.",
+      "admitted": "Optimal batch size: The ideal batch size for training these models is roughly a power of the loss only, and continues to be determinable by measuring the gradient noise scale [MKAT18]; it is roughly 1-2 million tokens at convergence for the largest models we can train.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "repaired_local",
+      "original": "They depend very weakly on model shape and other Transformer hyperparameters (depth, width, number of self-attention heads), with specific numerical values associated with the Webtext2 training set [RWC+19].",
+      "admitted": "They depend very weakly on model shape and other Transformer hyperparameters (depth, width, number of self-attention heads), with specific numerical values associated with the Webtext2",
+      "similarity": 0.8928571428571429,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+      "admitted": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "We also make some brief comparisons to LSTMs and recurrent Transformers [DGV+18].",
+      "admitted": "We also make some brief comparisons to LSTMs and recurrent Transformers [DGV+18].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257.",
+      "admitted": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "We primarily train decoder-only [LSP+18, RNSS18] Transformer [VSP+17] models, though we also train LSTM models and Universal Transformers [DGV+18] for comparison.",
+      "admitted": "We primarily train decoder-only [LSP+18, RNSS18] Transformer [VSP+17] models, though we also train LSTM models and Universal Transformers [DGV+18] for comparison.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "Independence of nlayers would follow if deeper Transformers effectively behave as ensembles of shallower models, as has been suggested for ResNets [VWB16].",
+      "admitted": "Independence of nlayers would follow if deeper Transformers effectively behave as ensembles of shallower models, as has been suggested for ResNets [VWB16].",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "This suggests that the embedding matrix can be made smaller without impacting performance, as has been seen in recent work [LCG+19].",
+      "admitted": "This suggests that the embedding matrix can be made smaller without impacting performance, as has been seen in recent work [LCG+19].",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "We also compare the performance of standard Transformers to recurrent Transformers [DGV+18] in Figure 17 in the appendix.",
+      "admitted": "We also compare the performance of standard Transformers to recurrent Transformers [DGV+18] in Figure 17 in the appendix.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "Overfitting should be related to the variance or the signal-to-noise ratio of the dataset [AS17], and this scales as 1/D.",
+      "admitted": "Overfitting should be related to the variance or the signal-to-noise ratio of the dataset [AS17], and this scales as 1/D.",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "A simple empirical theory for the batch size dependence of training was developed in [MKAT18] (see also [SLA+18, ZLN+19]).",
+      "admitted": "A simple empirical theory for the batch size dependence of training was developed in [MKAT18] (see also [SLA+18, ZLN+19]).",
+      "similarity": null,
+      "cited_page": 12,
+      "matched_page": 12
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "So the predictions of [MKAT18] continue to hold for Transformer language models.",
+      "admitted": "So the predictions of [MKAT18] continue to hold for Transformer language models.",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "Power laws can arise from a wide variety of sources [THK18].",
+      "admitted": "Power laws can arise from a wide variety of sources [THK18].",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "Power-law scalings with model and dataset size in density estimation [Was06] and in random forest models [Bia12] may be connected with our results.",
+      "admitted": "Power-law scalings with model and dataset size in density estimation [Was06] and in random forest models [Bia12] may be connected with our results.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "Some early [BB01, Goo01] work found power-law scalings between performance and dataset size.",
+      "admitted": "Some early [BB01, Goo01] work found power-law scalings between performance and dataset size.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "More recent work [HNA+17, HAD19] also investigated scaling between model size and data size; their work is perhaps the closest to ours in the literature⁸.",
+      "admitted": "More recent work [HNA+17, HAD19] also investigated scaling between model size and data size; their work is perhaps the closest to ours in the literature⁸.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling.",
+      "admitted": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "There are some parallels between our findings on optimal allocation of compute and [Kom19], including power-law learning curves.",
+      "admitted": "There are some parallels between our findings on optimal allocation of compute and [Kom19], including power-law learning curves.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "EfficientNets [TL19] also appear to obey an approximate power-law relation between accuracy and model size.",
+      "admitted": "EfficientNets [TL19] also appear to obey an approximate power-law relation between accuracy and model size.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "Very recent work [RRBS19b] studies scaling with both dataset size and model size for a variety of datasets, and fits an ansatz similar to ours.",
+      "admitted": "Very recent work [RRBS19b] studies scaling with both dataset size and model size for a variety of datasets, and fits an ansatz similar to ours.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "EfficientNet [TL19] advocates scaling depth and width exponentially (with different coefficients) for optimal performance of image models, resulting in a power-law scaling of width as a function of depth.",
+      "admitted": "EfficientNet [TL19] advocates scaling depth and width exponentially (with different coefficients) for optimal performance of image models, resulting in a power-law scaling of width as a function of depth.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "In [VWB16] it was argued that deep models can function as ensembles of shallower models, which could potentially explain this finding.",
+      "admitted": "In [VWB16] it was argued that deep models can function as ensembles of shallower models, which could potentially explain this finding.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "Earlier work [ZK16] has compared width and depth, and found that wide ResNets can outperform deep ResNets on image classification.",
+      "admitted": "Earlier work [ZK16] has compared width and depth, and found that wide ResNets can outperform deep ResNets on image classification.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "verbatim",
+      "original": "Various works [AS17, BHMM18] have investigated generalization in highly overparameterized models, finding a “jamming transition” [GJS+19] when the model size reaches the dataset size (this may require training many orders of magnitude beyond typical practice, and in particular does not use early stopping).",
+      "admitted": "Various works [AS17, BHMM18] have investigated generalization in highly overparameterized models, finding a “jamming transition” [GJS+19] when the model size reaches the dataset size (this may require training many orders of magnitude beyond typical practice, and in particular does not use early stopping).",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "verbatim",
+      "original": "Expansions in the model size, particularly at large width [JGH18, LXS+19], may provide a useful framework for thinking about some of our scaling relations.",
+      "admitted": "Expansions in the model size, particularly at large width [JGH18, LXS+19], may provide a useful framework for thinking about some of our scaling relations.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "verbatim",
+      "original": "Our results on optimization, such as the shape of learning curves, can likely be explained using a noisy quadratic model, which can provide quite accurate predictions [ZLN+19] in realistic settings.",
+      "admitted": "Our results on optimization, such as the shape of learning curves, can likely be explained using a noisy quadratic model, which can provide quite accurate predictions [ZLN+19] in realistic settings.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/28/context",
+      "status": "verbatim",
+      "original": "Making this connection quantitative will require a characterization of the Hessian spectrum [Pap18, GKX19, GARD18].",
+      "admitted": "Making this connection quantitative will require a characterization of the Hessian spectrum [Pap18, GKX19, GARD18].",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/29/context",
+      "status": "verbatim",
+      "original": "After this work was completed, [RRBS19a] also appeared, which makes similar predictions for the dependence of loss on both model and dataset size.",
+      "admitted": "After this work was completed, [RRBS19a] also appeared, which makes similar predictions for the dependence of loss on both model and dataset size.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/30/context",
+      "status": "verbatim",
+      "original": "Deep models can be trained using pipelining [HCC+18], which splits parameters depth-wise between devices, but eventually requires increased batch sizes as more devices are used.",
+      "admitted": "Deep models can be trained using pipelining [HCC+18], which splits parameters depth-wise between devices, but eventually requires increased batch sizes as more devices are used.",
+      "similarity": null,
+      "cited_page": 19,
+      "matched_page": 19
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/31/context",
+      "status": "verbatim",
+      "original": "Wide networks on the other hand are more amenable to parallelization [SCP+18], since large layers can be split between multiple workers with less serial dependency.",
+      "admitted": "Wide networks on the other hand are more amenable to parallelization [SCP+18], since large layers can be split between multiple workers with less serial dependency.",
+      "similarity": null,
+      "cited_page": 19,
+      "matched_page": 19
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/32/context",
+      "status": "verbatim",
+      "original": "Sparsity [CGRS19, GRK17] or branching (e.g. [KSH12]) may allow for even faster training of large networks through increased model parallelism.",
+      "admitted": "Sparsity [CGRS19, GRK17] or branching (e.g. [KSH12]) may allow for even faster training of large networks through increased model parallelism.",
+      "similarity": null,
+      "cited_page": 19,
+      "matched_page": 19
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/33/context",
+      "status": "verbatim",
+      "original": "And using methods like [WRH17, WYL19], which grow networks as they train, it might be possible to remain on the compute-efficient frontier for an entire training run.",
+      "admitted": "And using methods like [WRH17, WYL19], which grow networks as they train, it might be possible to remain on the compute-efficient frontier for an entire training run.",
+      "similarity": null,
+      "cited_page": 19,
+      "matched_page": 19
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/34/context",
+      "status": "verbatim",
+      "original": "This may be a consequence of underlying power-law correlations in language [EP94, ACDE12, LT16], or a more general feature of the model architecture and optimization.",
+      "admitted": "This may be a consequence of underlying power-law correlations in language [EP94, ACDE12, LT16], or a more general feature of the model architecture and optimization.",
+      "similarity": null,
+      "cited_page": 25,
+      "matched_page": 25
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+      "admitted": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+      "admitted": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257.",
+      "admitted": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "We primarily train decoder-only [LSP+18, RNSS18] Transformer [VSP+17] models, though we also train LSTM models and Universal Transformers [DGV+18] for comparison.",
+      "admitted": "We primarily train decoder-only [LSP+18, RNSS18] Transformer [VSP+17] models, though we also train LSTM models and Universal Transformers [DGV+18] for comparison.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling.",
+      "admitted": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "Very recent work [RRBS19b] studies scaling with both dataset size and model size for a variety of datasets, and fits an ansatz similar to ours.",
+      "admitted": "Very recent work [RRBS19b] studies scaling with both dataset size and model size for a variety of datasets, and fits an ansatz similar to ours.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "EfficientNets [TL19] also appear to obey an approximate power-law relation between accuracy and model size.",
+      "admitted": "EfficientNets [TL19] also appear to obey an approximate power-law relation between accuracy and model size.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "Overfitting should be related to the variance or the signal-to-noise ratio of the dataset [AS17], and this scales as 1/D.",
+      "admitted": "Overfitting should be related to the variance or the signal-to-noise ratio of the dataset [AS17], and this scales as 1/D.",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "Our results on optimization, such as the shape of learning curves, can likely be explained using a noisy quadratic model, which can provide quite accurate predictions [ZLN+19] in realistic settings.",
+      "admitted": "Our results on optimization, such as the shape of learning curves, can likely be explained using a noisy quadratic model, which can provide quite accurate predictions [ZLN+19] in realistic settings.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "verbatim",
+      "original": "Independence of nlayers would follow if deeper Transformers effectively behave as ensembles of shallower models, as has been suggested for ResNets [VWB16].",
+      "admitted": "Independence of nlayers would follow if deeper Transformers effectively behave as ensembles of shallower models, as has been suggested for ResNets [VWB16].",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 1,
+    "verbatim": 57
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We study empirical scaling laws for language model performance on the cross-entropy loss. The loss scales as a power-law with model size, dataset size, and the amount of compute used for training, with some trends spanning more than seven orders of magnitude. Other architectural details such as network width or depth have minimal effects within a wide range. Simple equations govern the dependence of overfitting on model/dataset size and the dependence of training speed on model size. These relationships allow us to determine the optimal allocation of a fixed compute budget. Larger models are significantly more sampleefficient, such that optimally compute-efficient training involves training very large models on a relatively modest amount of data and stopping significantly before convergence."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Transformer and WebText2/GPT-2",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18]."
+              },
+              {
+                "page": 6,
+                "quote": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257."
+              }
+            ],
+            "reference_key": "[VSP+17, LSP+18, RWC+19, SHB15]",
+            "why": "It builds directly on the Transformer architecture and uses the WebText2/GPT-2 dataset and tokenizer as the empirical base."
+          },
+          {
+            "cited_work": "large-batch training theory",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:"
+              }
+            ],
+            "reference_key": "[MKAT18]",
+            "why": "It adopts the critical-batch-size and gradient-noise-scale framework to correct training-step and compute trends."
+          },
+          {
+            "cited_work": "prior scaling-law studies",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 18,
+                "quote": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling."
+              }
+            ],
+            "reference_key": "[HNA+17, HAD19, RRBS19b]",
+            "why": "It extends and contrasts with earlier empirical scaling work, especially on dataset-versus-model-size scaling."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "learning-curve and overfitting trends",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 11,
+                "quote": "We obtain an excellent fit, with the exception of the runs where the dataset has been reduced by a factor of 1024, to about 2 × 107 tokens."
+              }
+            ],
+            "reference_key": "[KAB18]",
+            "why": "It fits a unified L(N,D) form across many model and dataset sizes rather than replicating a prior exact result."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "architecture-shape importance",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 8,
+                "quote": "Transformer performance depends very weakly on the shape parameters nlayer, nheads, and dff when we hold the total non-embedding parameter count N fixed."
+              }
+            ],
+            "reference_key": "[VWB16]",
+            "why": "It argues scale dominates shape, in contrast to work emphasizing architectural hyperparameters such as depth or width."
+          },
+          {
+            "cited_work": "convergence-trained models",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Convergence is inefficient: When working within a fixed compute budget C but without any other restrictions on the model size N or available data D, we attain optimal performance by training very large models and stopping significantly short of convergence (see Figure 3)."
+              }
+            ],
+            "reference_key": "[RWC+19]",
+            "why": "It critiques the common practice of training smaller models to convergence instead of using compute-efficient early-stopped large models."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We study empirical scaling laws for language model performance on the cross-entropy loss."
+          }
+        ],
+        "text": "Language model cross-entropy loss follows precise power laws in model size, dataset size, and training compute, so larger models trained far short of convergence are the most compute-efficient."
+      }
+    },
+    "citations": [
+      {
+        "context": "Deep learning has recently seen rapid progress in language modeling, with state of the art models [RNSS18, DCLT18, YDY+19, LOG+19, RSR+19] approaching human-level performance on many specific tasks [WPN+19], including the composition of coherent multi-paragraph prompted text samples [RWC+19].",
+        "page": 2,
+        "reference_key": "[RNSS18, DCLT18, YDY+19, LOG+19, RSR+19]"
+      },
+      {
+        "context": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+        "page": 2,
+        "reference_key": "[VSP+17, LSP+18]"
+      },
+      {
+        "context": "Optimal batch size: The ideal batch size for training these models is roughly a power of the loss only, and continues to be determinable by measuring the gradient noise scale [MKAT18]; it is roughly 1-2 million tokens at convergence for the largest models we can train.",
+        "page": 3,
+        "reference_key": "[MKAT18]"
+      },
+      {
+        "context": "They depend very weakly on model shape and other Transformer hyperparameters (depth, width, number of self-attention heads), with specific numerical values associated with the Webtext2",
+        "page": 5,
+        "reference_key": "[RWC+19]"
+      },
+      {
+        "context": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+        "page": 5,
+        "reference_key": "[MKAT18]"
+      },
+      {
+        "context": "We also make some brief comparisons to LSTMs and recurrent Transformers [DGV+18].",
+        "page": 6,
+        "reference_key": "[DGV+18]"
+      },
+      {
+        "context": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257.",
+        "page": 6,
+        "reference_key": "[RWC+19, SHB15]"
+      },
+      {
+        "context": "We primarily train decoder-only [LSP+18, RNSS18] Transformer [VSP+17] models, though we also train LSTM models and Universal Transformers [DGV+18] for comparison.",
+        "page": 6,
+        "reference_key": "[LSP+18, RNSS18, VSP+17, DGV+18]"
+      },
+      {
+        "context": "Independence of nlayers would follow if deeper Transformers effectively behave as ensembles of shallower models, as has been suggested for ResNets [VWB16].",
+        "page": 8,
+        "reference_key": "[VWB16]"
+      },
+      {
+        "context": "This suggests that the embedding matrix can be made smaller without impacting performance, as has been seen in recent work [LCG+19].",
+        "page": 9,
+        "reference_key": "[LCG+19]"
+      },
+      {
+        "context": "We also compare the performance of standard Transformers to recurrent Transformers [DGV+18] in Figure 17 in the appendix.",
+        "page": 9,
+        "reference_key": "[DGV+18]"
+      },
+      {
+        "context": "Overfitting should be related to the variance or the signal-to-noise ratio of the dataset [AS17], and this scales as 1/D.",
+        "page": 11,
+        "reference_key": "[AS17]"
+      },
+      {
+        "context": "A simple empirical theory for the batch size dependence of training was developed in [MKAT18] (see also [SLA+18, ZLN+19]).",
+        "page": 12,
+        "reference_key": "[MKAT18, SLA+18, ZLN+19]"
+      },
+      {
+        "context": "So the predictions of [MKAT18] continue to hold for Transformer language models.",
+        "page": 13,
+        "reference_key": "[MKAT18]"
+      },
+      {
+        "context": "Power laws can arise from a wide variety of sources [THK18].",
+        "page": 18,
+        "reference_key": "[THK18]"
+      },
+      {
+        "context": "Power-law scalings with model and dataset size in density estimation [Was06] and in random forest models [Bia12] may be connected with our results.",
+        "page": 18,
+        "reference_key": "[Was06, Bia12]"
+      },
+      {
+        "context": "Some early [BB01, Goo01] work found power-law scalings between performance and dataset size.",
+        "page": 18,
+        "reference_key": "[BB01, Goo01]"
+      },
+      {
+        "context": "More recent work [HNA+17, HAD19] also investigated scaling between model size and data size; their work is perhaps the closest to ours in the literature⁸.",
+        "page": 18,
+        "reference_key": "[HNA+17, HAD19]"
+      },
+      {
+        "context": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling.",
+        "page": 18,
+        "reference_key": "[HNA+17]"
+      },
+      {
+        "context": "There are some parallels between our findings on optimal allocation of compute and [Kom19], including power-law learning curves.",
+        "page": 18,
+        "reference_key": "[Kom19]"
+      },
+      {
+        "context": "EfficientNets [TL19] also appear to obey an approximate power-law relation between accuracy and model size.",
+        "page": 18,
+        "reference_key": "[TL19]"
+      },
+      {
+        "context": "Very recent work [RRBS19b] studies scaling with both dataset size and model size for a variety of datasets, and fits an ansatz similar to ours.",
+        "page": 18,
+        "reference_key": "[RRBS19b]"
+      },
+      {
+        "context": "EfficientNet [TL19] advocates scaling depth and width exponentially (with different coefficients) for optimal performance of image models, resulting in a power-law scaling of width as a function of depth.",
+        "page": 18,
+        "reference_key": "[TL19]"
+      },
+      {
+        "context": "In [VWB16] it was argued that deep models can function as ensembles of shallower models, which could potentially explain this finding.",
+        "page": 18,
+        "reference_key": "[VWB16]"
+      },
+      {
+        "context": "Earlier work [ZK16] has compared width and depth, and found that wide ResNets can outperform deep ResNets on image classification.",
+        "page": 18,
+        "reference_key": "[ZK16]"
+      },
+      {
+        "context": "Various works [AS17, BHMM18] have investigated generalization in highly overparameterized models, finding a “jamming transition” [GJS+19] when the model size reaches the dataset size (this may require training many orders of magnitude beyond typical practice, and in particular does not use early stopping).",
+        "page": 18,
+        "reference_key": "[AS17, BHMM18, GJS+19]"
+      },
+      {
+        "context": "Expansions in the model size, particularly at large width [JGH18, LXS+19], may provide a useful framework for thinking about some of our scaling relations.",
+        "page": 18,
+        "reference_key": "[JGH18, LXS+19]"
+      },
+      {
+        "context": "Our results on optimization, such as the shape of learning curves, can likely be explained using a noisy quadratic model, which can provide quite accurate predictions [ZLN+19] in realistic settings.",
+        "page": 18,
+        "reference_key": "[ZLN+19]"
+      },
+      {
+        "context": "Making this connection quantitative will require a characterization of the Hessian spectrum [Pap18, GKX19, GARD18].",
+        "page": 18,
+        "reference_key": "[Pap18, GKX19, GARD18]"
+      },
+      {
+        "context": "After this work was completed, [RRBS19a] also appeared, which makes similar predictions for the dependence of loss on both model and dataset size.",
+        "page": 18,
+        "reference_key": "[RRBS19a]"
+      },
+      {
+        "context": "Deep models can be trained using pipelining [HCC+18], which splits parameters depth-wise between devices, but eventually requires increased batch sizes as more devices are used.",
+        "page": 19,
+        "reference_key": "[HCC+18]"
+      },
+      {
+        "context": "Wide networks on the other hand are more amenable to parallelization [SCP+18], since large layers can be split between multiple workers with less serial dependency.",
+        "page": 19,
+        "reference_key": "[SCP+18]"
+      },
+      {
+        "context": "Sparsity [CGRS19, GRK17] or branching (e.g. [KSH12]) may allow for even faster training of large networks through increased model parallelism.",
+        "page": 19,
+        "reference_key": "[CGRS19, GRK17, KSH12]"
+      },
+      {
+        "context": "And using methods like [WRH17, WYL19], which grow networks as they train, it might be possible to remain on the compute-efficient frontier for an entire training run.",
+        "page": 19,
+        "reference_key": "[WRH17, WYL19]"
+      },
+      {
+        "context": "This may be a consequence of underlying power-law correlations in language [EP94, ACDE12, LT16], or a more general feature of the model architecture and optimization.",
+        "page": 25,
+        "reference_key": "[EP94, ACDE12, LT16]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Johns Hopkins University, OpenAI",
+          "name": "Jared Kaplan"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Sam McCandlish"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Tom Henighan"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Tom B. Brown"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Benjamin Chess"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Rewon Child"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Scott Gray"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Alec Radford"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Jeffrey Wu"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "Dario Amodei"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Scaling Laws for Neural Language Models"
+        },
+        {
+          "page": 1,
+          "quote": "Jared Kaplan ∗"
+        },
+        {
+          "page": 1,
+          "quote": "Sam McCandlish∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:2001.08361v1 [cs.LG]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Scaling Laws for Neural Language Models",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "One might expect language modeling performance to depend on model architecture, the size of neural models, the computing power used to train them, and the data available for this training process. In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18]."
+        }
+      ],
+      "text": "How does language-model cross-entropy loss scale with non-embedding parameter count, dataset size, training compute, and training time, and what allocation of a fixed compute budget is optimal?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Eduardo G Altmann",
+          "Giampaolo Cristadoro",
+          "Mirko Degli Esposti"
+        ],
+        "doi": null,
+        "key": "[ACDE12]",
+        "page": 25,
+        "title": "On the origin of longrange correlations in texts",
+        "venue": "Proceedings of the National Academy of Sciences",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Madhu S. Advani",
+          "Andrew M. Saxe"
+        ],
+        "doi": null,
+        "key": "[AS17]",
+        "page": 18,
+        "title": "High-dimensional dynamics of generalization error in neural networks",
+        "venue": "arXiv",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Michele Banko",
+          "Eric Brill"
+        ],
+        "doi": null,
+        "key": "[BB01]",
+        "page": 18,
+        "title": "Scaling to very very large corpora for natural language disambiguation",
+        "venue": "Proceedings of the 39th annual meeting on association for computational linguistics",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Mikhail Belkin",
+          "Daniel Hsu",
+          "Siyuan Ma",
+          "Soumik Mandal"
+        ],
+        "doi": null,
+        "key": "[BHMM18]",
+        "page": 18,
+        "title": "Reconciling modern machine learning and the bias-variance trade-off",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "GÃŠrard Biau"
+        ],
+        "doi": null,
+        "key": "[Bia12]",
+        "page": 18,
+        "title": "Analysis of a random forests model",
+        "venue": "Journal of Machine Learning Research",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Rewon Child",
+          "Scott Gray",
+          "Alec Radford",
+          "Ilya Sutskever"
+        ],
+        "doi": null,
+        "key": "[CGRS19]",
+        "page": 19,
+        "title": "Generating long sequences with sparse transformers",
+        "venue": "CoRR",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Jacob Devlin",
+          "Ming-Wei Chang",
+          "Kenton Lee",
+          "Kristina Toutanova"
+        ],
+        "doi": null,
+        "key": "[DCLT18]",
+        "page": 2,
+        "title": "Bert: Pre-training of deep bidirectional transformers for language understanding",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Mostafa Dehghani",
+          "Stephan Gouws",
+          "Oriol Vinyals",
+          "Jakob Uszkoreit",
+          "Lukasz Kaiser"
+        ],
+        "doi": null,
+        "key": "[DGV+18]",
+        "page": 6,
+        "title": "Universal transformers",
+        "venue": "CoRR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Werner Ebeling",
+          "Thorsten Pöschel"
+        ],
+        "doi": null,
+        "key": "[EP94]",
+        "page": 25,
+        "title": "Entropy and long-range correlations in literary english",
+        "venue": "EPL (Europhysics Letters)",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "The Common Crawl Foundation"
+        ],
+        "doi": null,
+        "key": "[Fou]",
+        "page": 7,
+        "title": "Common crawl",
+        "venue": "http://commoncrawl.org",
+        "year": null
+      },
+      {
+        "authors": [
+          "Guy Gur-Ari",
+          "Daniel A. Roberts",
+          "Ethan Dyer"
+        ],
+        "doi": null,
+        "key": "[GARD18]",
+        "page": 18,
+        "title": "Gradient descent happens in a tiny subspace",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Mario Geiger",
+          "Arthur Jacot",
+          "Stefano Spigler",
+          "Franck Gabriel",
+          "Levent Sagun",
+          "Stéphane d’Ascoli",
+          "Giulio Biroli",
+          "Clément Hongler",
+          "Matthieu Wyart"
+        ],
+        "doi": null,
+        "key": "[GJS+19]",
+        "page": 18,
+        "title": "Scaling description of generalization with number of parameters in deep learning",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Behrooz Ghorbani",
+          "Shankar Krishnan",
+          "Ying Xiao"
+        ],
+        "doi": null,
+        "key": "[GKX19]",
+        "page": 18,
+        "title": "An investigation into neural net optimization via hessian eigenvalue density",
+        "venue": "CoRR",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Joshua Goodman"
+        ],
+        "doi": null,
+        "key": "[Goo01]",
+        "page": 18,
+        "title": "A bit of progress in language modeling",
+        "venue": "CoRR",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Scott Gray",
+          "Alec Radford",
+          "Diederik P Kingma"
+        ],
+        "doi": null,
+        "key": "[GRK17]",
+        "page": 19,
+        "title": "Gpu kernels for block-sparse weights",
+        "venue": "openai.com",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Joel Hestness",
+          "Newsha Ardalani",
+          "Gregory Diamos"
+        ],
+        "doi": "10.1145/3293883.3295710",
+        "key": "[HAD19]",
+        "page": 18,
+        "title": "Beyond human-level accuracy: Computational challenges in deep learning",
+        "venue": "Proceedings of the 24th Symposium on Principles and Practice of Parallel Programming, PPoPP ’19",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Yanping Huang",
+          "Yonglong Cheng",
+          "Dehao Chen",
+          "HyoukJoong Lee",
+          "Jiquan Ngiam",
+          "Quoc V. Le",
+          "Zhifeng Chen"
+        ],
+        "doi": null,
+        "key": "[HCC+18]",
+        "page": 19,
+        "title": "Gpipe: Efficient training of giant neural networks using pipeline parallelism",
+        "venue": "CoRR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Joel Hestness",
+          "Sharan Narang",
+          "Newsha Ardalani",
+          "Gregory Diamos",
+          "Heewoo Jun",
+          "Hassan Kianinejad",
+          "Md. Mostofa Ali Patwary",
+          "Yang Yang",
+          "Yanqi Zhou"
+        ],
+        "doi": null,
+        "key": "[HNA+17]",
+        "page": 18,
+        "title": "Deep learning scaling is predictable, empirically",
+        "venue": "arXiv",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Arthur Jacot",
+          "Franck Gabriel",
+          "Clément Hongler"
+        ],
+        "doi": null,
+        "key": "[JGH18]",
+        "page": 18,
+        "title": "Neural tangent kernel: Convergence and generalization in neural networks",
+        "venue": "Advances in neural information processing systems",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Diederik P. Kingma",
+          "Jimmy Ba"
+        ],
+        "doi": null,
+        "key": "[KB14]",
+        "page": 7,
+        "title": "Adam: A method for stochastic optimization",
+        "venue": "arXiv",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Aran Komatsuzaki"
+        ],
+        "doi": null,
+        "key": "[Kom19]",
+        "page": 18,
+        "title": "One epoch is all you need",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Alex Krizhevsky",
+          "Ilya Sutskever",
+          "Geoffrey E. Hinton"
+        ],
+        "doi": null,
+        "key": "[KSH12]",
+        "page": 19,
+        "title": "Imagenet classification with deep convolutional neural networks",
+        "venue": "Proceedings of the 25th International Conference on Neural Information Processing Systems - Volume 1, NIPS’12",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Zhenzhong Lan",
+          "Mingda Chen",
+          "Sebastian Goodman",
+          "Kevin Gimpel",
+          "Piyush Sharma",
+          "Radu Soricut"
+        ],
+        "doi": null,
+        "key": "[LCG+19]",
+        "page": 9,
+        "title": "Albert: A lite bert for self-supervised learning of language representations",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Yinhan Liu",
+          "Myle Ott",
+          "Naman Goyal",
+          "Jingfei Du",
+          "Mandar Joshi",
+          "Danqi Chen",
+          "Omer Levy",
+          "Mike Lewis",
+          "Luke Zettlemoyer",
+          "Veselin Stoyanov"
+        ],
+        "doi": null,
+        "key": "[LOG+19]",
+        "page": 2,
+        "title": "Roberta: A robustly optimized BERT pretraining approach",
+        "venue": "CoRR",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Peter J. Liu",
+          "Mohammad Saleh",
+          "Etienne Pot",
+          "Ben Goodrich",
+          "Ryan Sepassi",
+          "Lukasz Kaiser",
+          "Noam Shazeer"
+        ],
+        "doi": null,
+        "key": "[LSP+18]",
+        "page": 2,
+        "title": "Generating wikipedia by summarizing long sequences",
+        "venue": "arXiv:1801.10198 [cs]",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Henry W Lin",
+          "Max Tegmark"
+        ],
+        "doi": null,
+        "key": "[LT16]",
+        "page": 25,
+        "title": "Criticality in formal languages and statistical physics",
+        "venue": "arXiv preprint",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Jaehoon Lee",
+          "Lechao Xiao",
+          "Samuel S. Schoenholz",
+          "Yasaman Bahri",
+          "Roman Novak",
+          "Jascha Sohl-Dickstein",
+          "Jeffrey Pennington"
+        ],
+        "doi": null,
+        "key": "[LXS+19]",
+        "page": 18,
+        "title": "Wide neural networks of any depth evolve as linear models under gradient descent",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Sam McCandlish",
+          "Jared Kaplan",
+          "Dario Amodei",
+          "OpenAI Dota Team"
+        ],
+        "doi": null,
+        "key": "[MKAT18]",
+        "page": 6,
+        "title": "An empirical model of large-batch training",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Vardan Papyan"
+        ],
+        "doi": null,
+        "key": "[Pap18]",
+        "page": 18,
+        "title": "The full spectrum of deep net hessians at scale: Dynamics with sample size",
+        "venue": "CoRR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Alec Radford",
+          "Karthik Narasimhan",
+          "Tim Salimans",
+          "Ilya Sutskever"
+        ],
+        "doi": null,
+        "key": "[RNSS18]",
+        "page": 2,
+        "title": "Improving language understanding by generative pre-training",
+        "venue": "https://s3-us-west-2. amazonaws. com/openaiassets/research-covers/languageunsupervised/language understanding paper. pdf",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Jonathan S. Rosenfeld",
+          "Amir Rosenfeld",
+          "Yonatan Belinkov",
+          "Nir Shavit"
+        ],
+        "doi": null,
+        "key": "[RRBS19a]",
+        "page": 18,
+        "title": "A constructive prediction of the generalization error across scales",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Jonathan S. Rosenfeld",
+          "Amir Rosenfeld",
+          "Yonatan Belinkov",
+          "Nir Shavit"
+        ],
+        "doi": null,
+        "key": "[RRBS19b]",
+        "page": 18,
+        "title": "A constructive prediction of the generalization error across scales",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Colin Raffel",
+          "Noam Shazeer",
+          "Adam Roberts",
+          "Katherine Lee",
+          "Sharan Narang",
+          "Michael Matena",
+          "Yanqi Zhou",
+          "Wei Li",
+          "Peter J. Liu"
+        ],
+        "doi": null,
+        "key": "[RSR+19]",
+        "page": 2,
+        "title": "Exploring the limits of transfer learning with a unified text-to-text transformer",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Alec Radford",
+          "Jeff Wu",
+          "Rewon Child",
+          "David Luan",
+          "Dario Amodei",
+          "Ilya Sutskever"
+        ],
+        "doi": null,
+        "key": "[RWC+19]",
+        "page": 2,
+        "title": "Language models are unsupervised multitask learners",
+        "venue": "openai.com",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Noam Shazeer",
+          "Youlong Cheng",
+          "Niki Parmar",
+          "Dustin Tran",
+          "Ashish Vaswani",
+          "Penporn Koanantakool",
+          "Peter Hawkins",
+          "HyoukJoong Lee",
+          "Mingsheng Hong",
+          "Cliff Young",
+          "Ryan Sepassi",
+          "Blake Hechtman"
+        ],
+        "doi": null,
+        "key": "[SCP+18]",
+        "page": 19,
+        "title": "Mesh-tensorflow: Deep learning for supercomputers",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Rico Sennrich",
+          "Barry Haddow",
+          "Alexandra Birch"
+        ],
+        "doi": null,
+        "key": "[SHB15]",
+        "page": 6,
+        "title": "Neural machine translation of rare words with subword units",
+        "venue": "CoRR",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Christopher J. Shallue",
+          "Jaehoon Lee",
+          "Joe Antognini",
+          "Jascha Sohl-Dickstein",
+          "Roy Frostig",
+          "George E. Dahl"
+        ],
+        "doi": null,
+        "key": "[SLA+18]",
+        "page": 12,
+        "title": "Measuring the effects of data parallelism on neural network training",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Noam Shazeer",
+          "Mitchell Stern"
+        ],
+        "doi": null,
+        "key": "[SS18]",
+        "page": 7,
+        "title": "Adafactor: Adaptive learning rates with sublinear memory cost",
+        "venue": "CoRR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Stefan Thurner",
+          "Rudolf Hanel",
+          "Peter Klimek"
+        ],
+        "doi": null,
+        "key": "[THK18]",
+        "page": 18,
+        "title": "Introduction to the theory of complex systems",
+        "venue": "Oxford University Press",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Mingxing Tan",
+          "Quoc V. Le"
+        ],
+        "doi": null,
+        "key": "[TL19]",
+        "page": 18,
+        "title": "Efficientnet: Rethinking model scaling for convolutional neural networks",
+        "venue": "CoRR",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Ashish Vaswani",
+          "Noam Shazeer",
+          "Niki Parmar",
+          "Jakob Uszkoreit",
+          "Llion Jones",
+          "Aidan N Gomez",
+          "Ł ukasz Kaiser",
+          "Illia Polosukhin"
+        ],
+        "doi": null,
+        "key": "[VSP+17]",
+        "page": 2,
+        "title": "Attention is all you need",
+        "venue": "Advances in Neural Information Processing Systems 30",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Andreas Veit",
+          "Michael Wilber",
+          "Serge Belongie"
+        ],
+        "doi": null,
+        "key": "[VWB16]",
+        "page": 8,
+        "title": "Residual networks behave like ensembles of relatively shallow networks",
+        "venue": "arXiv",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Larry Wasserman"
+        ],
+        "doi": null,
+        "key": "[Was06]",
+        "page": 18,
+        "title": "All of nonparametric statistics",
+        "venue": "Springer Science & Business Media",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Alex Wang",
+          "Yada Pruksachatkun",
+          "Nikita Nangia",
+          "Amanpreet Singh",
+          "Julian Michael",
+          "Felix Hill",
+          "Omer Levy",
+          "Samuel R. Bowman"
+        ],
+        "doi": null,
+        "key": "[WPN+19]",
+        "page": 2,
+        "title": "Superglue: A stickier benchmark for general-purpose language understanding systems",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Yu-Xiong Wang",
+          "Deva Ramanan",
+          "Martial Hebert"
+        ],
+        "doi": "10.1109/cvpr.2017.323",
+        "key": "[WRH17]",
+        "page": 19,
+        "title": "Growing a brain: Fine-tuning by increasing model capacity",
+        "venue": "2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR)",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Wei Wen",
+          "Feng Yan",
+          "Hai Li"
+        ],
+        "doi": null,
+        "key": "[WYL19]",
+        "page": 19,
+        "title": "Autogrow: Automatic layer growing in deep convolutional networks",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Zhilin Yang",
+          "Zihang Dai",
+          "Yiming Yang",
+          "Jaime Carbonell",
+          "Ruslan Salakhutdinov",
+          "Quoc V. Le"
+        ],
+        "doi": null,
+        "key": "[YDY+19]",
+        "page": 2,
+        "title": "Xlnet: Generalized autoregressive pretraining for language understanding",
+        "venue": "arXiv",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Sergey Zagoruyko",
+          "Nikos Komodakis"
+        ],
+        "doi": "10.5244/c.30.87",
+        "key": "[ZK16]",
+        "page": 18,
+        "title": "Wide residual networks",
+        "venue": "Procedings of the British Machine Vision Conference 2016",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Yukun Zhu",
+          "Ryan Kiros",
+          "Rich Zemel",
+          "Ruslan Salakhutdinov",
+          "Raquel Urtasun",
+          "Antonio Torralba",
+          "Sanja Fidler"
+        ],
+        "doi": "10.1109/iccv.2015.11",
+        "key": "[ZKZ+15]",
+        "page": 7,
+        "title": "Aligning books and movies: Towards story-like visual explanations by watching movies and reading books",
+        "venue": "2015 IEEE International Conference on Computer Vision (ICCV)",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Guodong Zhang",
+          "Lala Li",
+          "Zachary Nado",
+          "James Martens",
+          "Sushant Sachdeva",
+          "George E. Dahl",
+          "Christopher J. Shallue",
+          "Roger B. Grosse"
+        ],
+        "doi": null,
+        "key": "[ZLN+19]",
+        "page": 12,
+        "title": "Which algorithmic choices matter at which batch sizes? insights from a noisy quadratic model",
+        "venue": "CoRR",
+        "year": 2019
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "The critical batch size, which determines the speed/efficiency tradeoff for data parallelism ([MKAT18]), also roughly obeys a power law in L:",
+        "reference_key": "[MKAT18]",
+        "relation": "uses_method",
+        "why": "The paper adopts the critical-batch-size and gradient-noise-scale framework to adjust training steps and compute for optimal allocation."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In this work we will empirically investigate the dependence of language modeling loss on all of these factors, focusing on the Transformer architecture [VSP+17, LSP+18].",
+        "reference_key": "[VSP+17]",
+        "relation": "uses_method",
+        "why": "It studies Transformer language models, making the Transformer architecture the empirical object of the scaling laws."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "We train language models on WebText2, an extended version of the WebText [RWC+19] dataset, tokenized using byte-pair encoding [SHB15] with a vocabulary size nvocab = 50257.",
+        "reference_key": "[RWC+19]",
+        "relation": "uses_data",
+        "why": "It uses WebText2, an extension of the WebText dataset, and GPT-2 tokenization for all main experiments."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "We primarily train decoder-only [LSP+18, RNSS18] Transformer [VSP+17] models, though we also train LSTM models and Universal Transformers [DGV+18] for comparison.",
+        "reference_key": "[DGV+18]",
+        "relation": "compares",
+        "why": "It compares standard Transformers with Universal/recurrent Transformers as an architectural alternative."
+      },
+      {
+        "confidence": "high",
+        "page": 18,
+        "quote": "Note, however, that [HNA+17] found super-linear scaling of dataset size with model size, whereas we find a sub-linear scaling.",
+        "reference_key": "[HNA+17]",
+        "relation": "contrasts",
+        "why": "It directly contrasts its sub-linear dataset-size scaling with the super-linear scaling reported by prior work."
+      },
+      {
+        "confidence": "high",
+        "page": 18,
+        "quote": "Very recent work [RRBS19b] studies scaling with both dataset size and model size for a variety of datasets, and fits an ansatz similar to ours.",
+        "reference_key": "[RRBS19b]",
+        "relation": "extends",
+        "why": "It extends a similar scaling ansatz across dataset size and model size to language-model loss and compute allocation."
+      },
+      {
+        "confidence": "medium",
+        "page": 18,
+        "quote": "EfficientNets [TL19] also appear to obey an approximate power-law relation between accuracy and model size.",
+        "reference_key": "[TL19]",
+        "relation": "compares",
+        "why": "It compares its language-model scaling laws with EfficientNet's approximate power-law model-size scaling."
+      },
+      {
+        "confidence": "medium",
+        "page": 11,
+        "quote": "Overfitting should be related to the variance or the signal-to-noise ratio of the dataset [AS17], and this scales as 1/D.",
+        "reference_key": "[AS17]",
+        "relation": "uses_method",
+        "why": "It motivates the 1/D overfitting term using earlier analysis of variance and generalization error in wide networks."
+      },
+      {
+        "confidence": "medium",
+        "page": 18,
+        "quote": "Our results on optimization, such as the shape of learning curves, can likely be explained using a noisy quadratic model, which can provide quite accurate predictions [ZLN+19] in realistic settings.",
+        "reference_key": "[ZLN+19]",
+        "relation": "uses_method",
+        "why": "It suggests the noisy quadratic model as a possible explanation for learning-curve shapes and optimization scaling."
+      },
+      {
+        "confidence": "medium",
+        "page": 8,
+        "quote": "Independence of nlayers would follow if deeper Transformers effectively behave as ensembles of shallower models, as has been suggested for ResNets [VWB16].",
+        "reference_key": "[VWB16]",
+        "relation": "uses_method",
+        "why": "It borrows the ensemble-of-shallower-models interpretation to explain weak dependence on depth."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Sample efficiency: Large models are more sample-efficient than small models, reaching the same level of performance with fewer optimization steps (Figure 2) and using fewer data points (Figure 4).",
+          "start_page": 1,
+          "start_text": "Scaling Laws for Neural Language Models"
+        },
+        "summary": "Introduces the empirical scaling-law agenda for Transformer language models and states the headline claims: scale matters much more than shape, loss follows smooth power laws, overfitting and training are predictable, and compute-efficient training favors very large models trained short of convergence.",
+        "title": "Introduction and Headline Findings"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "• αX – power-law exponents for the scaling of the loss as L(X) ∝ 1/XαX where X can be any of N, D, C, S, B, Cmin.",
+          "start_page": 4,
+          "start_text": "The test loss of a Transformer trained to autoregressively model language can be predicted using a power-law when performance is limited by only either the number of non-embedding parameters N, the dataset size D, or the optimally allocated compute budget Cmin (see Figure 1):"
+        },
+        "summary": "Presents the paper's central equations for L(N), L(D), L(Cmin), Bcrit(L), combined L(N,D) and L(N,Smin), optimal allocation exponents, and the notation used throughout.",
+        "title": "Core Scaling Laws and Notation"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "• Batch size (219 for most runs, but we also vary it to measure the critical batch size)",
+          "start_page": 6,
+          "start_text": "We parameterize the Transformer architecture using hyperparameters nlayer (number of layers), dmodel (dimension of the residual stream), dff (dimension of the intermediate feed-forward layer), dattn (dimension of the attention output), and nheads (number of attention heads per layer)."
+        },
+        "summary": "Explains Transformer parameter and compute accounting, the training procedure, and the WebText2 dataset construction used for the empirical scaling experiments.",
+        "title": "Methods, Compute Accounting, and Data"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "We see that the loss on these other data distributions improves smoothly with model size, in direct parallel with the improvement on WebText2.",
+          "start_page": 8,
+          "start_text": "Transformer performance depends very weakly on the shape parameters nlayer, nheads, and dff when we hold the total non-embedding parameter count N fixed."
+        },
+        "summary": "Shows weak dependence on Transformer shape, clean L(N) scaling when embeddings are excluded, LSTM and Universal Transformer comparisons, and smooth generalization to other text distributions.",
+        "title": "Shape Independence and Model-Size Scaling"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "We obtain an excellent fit, with the exception of the runs where the dataset has been reduced by a factor of 1024, to about 2 × 107 tokens.",
+          "start_page": 9,
+          "start_text": "We display empirical trends for the test loss as a function of dataset size D (in tokens) and training compute C in Figure 1."
+        },
+        "summary": "Derives dataset-size and compute power laws, proposes the combined L(N,D) overfitting law, and fits the model/data-size tradeoff that controls overfitting.",
+        "title": "Dataset Size, Compute, and Overfitting"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "With these parameters, we obtain the learning curve fits in Figure 4.",
+          "start_page": 12,
+          "start_text": "A simple empirical theory for the batch size dependence of training was developed in [MKAT18] (see also [SLA+18, ZLN+19])."
+        },
+        "summary": "Introduces the critical batch size, defines Smin and Cmin-adjusted training steps and compute, and fits learning curves as L(N,Smin).",
+        "title": "Critical Batch Size and Training-Time Scaling"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "If we cannot increase the model size beyond N ∗ without qualitatively different data requirements, perhaps this means that once we reach ∗ Cmin and N ∗, we have extracted all of the reliable information available in natural language data.",
+          "start_page": 14,
+          "start_text": "We displayed the empirical trend of performance as a function of the computation used during training in the top-right of Figure 1."
+        },
+        "summary": "Determines the compute-efficient frontier: optimal model size grows rapidly, batch size and steps grow slowly, and data grows modestly; then identifies a predicted intersection where scaling laws must break down or level off.",
+        "title": "Optimal Compute Allocation and Predicted Limits"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "Big models may be more important than big data.",
+          "start_page": 18,
+          "start_text": "Power laws can arise from a wide variety of sources [THK18]."
+        },
+        "summary": "Places the work relative to scaling, generalization, and efficient-modeling literature, then discusses broader implications for sample efficiency, model parallelism, and qualitative emergence.",
+        "title": "Related Work and Discussion"
+      },
+      {
+        "pages": {
+          "end": 22,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 22,
+          "end_text": "So that compute-efficient training uses 7.7x fewer parameter updates, 2.7x more parameters, and 65% less compute to reach the same loss.",
+          "start_page": 20,
+          "start_text": "For easier reference, we provide a summary below of the key trends described throughout the paper."
+        },
+        "summary": "Summarizes power laws in tables, derives the compute-efficient frontier, compares efficient to convergence-oriented training, and lists caveats.",
+        "title": "Appendices: Derivations, Efficient Frontier, Caveats"
+      },
+      {
+        "pages": {
+          "end": 25,
+          "start": 23
+        },
+        "source_span": {
+          "end_page": 25,
+          "end_text": "This also suggests that further improvements should be possible with much larger models trained on large contexts.",
+          "start_page": 23,
+          "start_text": "In section 5.3 we described the result shown in Figure 16, which provides a prediction for a lower bound on the early stopping step."
+        },
+        "summary": "Presents supplemental evidence on early stopping, Universal Transformers, critical batch-size scans, sample efficiency, and per-token context-position scaling.",
+        "title": "Supplemental Experiments: Stopping, Batch, Sample Efficiency, Context"
+      },
+      {
+        "pages": {
+          "end": 27,
+          "start": 25
+        },
+        "source_span": {
+          "end_page": 27,
+          "end_text": "We observe no effect of depth on generalization; generalization performance depends primarily on training distribution performance.",
+          "start_page": 25,
+          "start_text": "We experimented with a variety of learning rates and schedules."
+        },
+        "summary": "Shows learning-rate schedules are mostly irrelevant, power laws fit better than logarithmic forms, and generalization to other distributions does not depend on depth when parameter count is fixed.",
+        "title": "Supplemental: Learning Rates, Fit Quality, Depth"
+      },
+      {
+        "pages": {
+          "end": 30,
+          "start": 28
+        },
+        "source_span": {
+          "end_page": 30,
+          "end_text": "[ZLN+19] Guodong Zhang, Lala Li, Zachary Nado, James Martens, Sushant Sachdeva, George E. Dahl, Christopher J. Shallue, and Roger B. Grosse. Which algorithmic choices matter at which batch sizes? insights from a noisy quadratic model. CoRR, abs/1907.04164, 2019, 1907.04164. URL http://arxiv.org/abs/1907.04164. 12, 18",
+          "start_page": 28,
+          "start_text": "References"
+        },
+        "summary": "Bibliography for the paper, included as an optional navigation unit rather than a substantive argument section.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper reports empirical fits and theoretical derivations of power-law scaling relationships for Transformer language models, supported by many training runs and figures.",
+      "value": "empirical"
+    }
+  }
+}

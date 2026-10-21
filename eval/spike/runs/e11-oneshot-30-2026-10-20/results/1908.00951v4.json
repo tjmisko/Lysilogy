@@ -1,0 +1,3002 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T20:38:14.136476883Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1908.00951v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 15,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 15886,
+      "cached_tokens": 256,
+      "completion_tokens": 24646,
+      "reasoning_tokens": 13288,
+      "cost_usd": 0.0125405952,
+      "cost_source": "reported",
+      "latency_s": 221.382228661
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 23841,
+      "cached_tokens": 384,
+      "completion_tokens": 9331,
+      "reasoning_tokens": 9110,
+      "cost_usd": 0.0072046128,
+      "cost_source": "reported",
+      "latency_s": 97.931963847
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 39727,
+    "cached_tokens": 640,
+    "completion_tokens": 33977,
+    "cost_usd": 0.019745208,
+    "model_latency_s": 319.314192508,
+    "wall_s": 324.512440149
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e11-oneshot-30-2026-10-20/results/1908.00951v4.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We consider the problem of fast time-series data clustering. Building on previous work modeling the correlation-based Hamiltonian of spin variables we present an updated fast non-expensive Agglomerative Likelihood Clustering algorithm (ALC). The method replaces the optimized genetic algorithm based approach (f-SPC) with an agglomerative recursive merging framework inspired by previous work in Econophysics and Community Detection. The method is tested on noisy synthetic correlated time-series data-sets with built-in cluster structure to demonstrate that the algorithm produces meaningful non-trivial results. We apply it to time-series data-sets as large as 20,000 assets and we argue that ALC can reduce compute time costs and resource usage cost for large scale clustering for time-series applications while being serialized, and hence has no obvious parallelization requirement. The algorithm can be an effective choice for state-detection for online learning in a fast non-linear data environment because the algorithm requires no prior information about the number of clusters."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Giada and Marsili [11, 12]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12]."
+              }
+            ],
+            "reference_key": "[11, 12]",
+            "why": "It uses the Giada-Marsili likelihood and the Merging Algorithm as the methodological baseline."
+          },
+          {
+            "cited_work": "Noh [31]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to."
+              }
+            ],
+            "reference_key": "[31]",
+            "why": "It builds on the Noh ansatz as the generative intuition for correlation-based clustering."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "Marsili and Giada [12]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Here we will make the choice of the modified Giada-Marsili likelihood function, and then using Case 2 from the Merging Algorithm (Eqn. (6))."
+              }
+            ],
+            "reference_key": "[12]",
+            "why": "It re-implements the Merging Algorithm using Case 2 for the likelihood change."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "f-SPC [47]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times."
+              }
+            ],
+            "reference_key": "[47]",
+            "why": "It positions ALC as an alternative to f-SPC with lower compute cost and equal or better cluster configurations."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times."
+          }
+        ],
+        "text": "ALC is a fast, serial agglomerative likelihood clustering algorithm that replaces genetic-algorithm f-SPC and recovers equal or better time-series cluster configurations with lower compute cost."
+      }
+    },
+    "citations": [
+      {
+        "context": "The problem of unsupervised statistical learning in the context of financial market data was explored in prior work.",
+        "page": 1,
+        "reference_key": "[47]"
+      },
+      {
+        "context": "Previous cases studies include data clustering of stocks [47] and gene data in [12], temporal states of financial markets [23], and state-detection for adaptive machine learning in trading [15].",
+        "page": 1,
+        "reference_key": "[47]"
+      },
+      {
+        "context": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+        "page": 1,
+        "reference_key": "[47]"
+      },
+      {
+        "context": "The algorithm is in spirit similar to network science community detection algorithms [4, 36].",
+        "page": 1,
+        "reference_key": "[4, 36]"
+      },
+      {
+        "context": "For a review on the last 20 years on financial market correlation based data clustering see [25], more generally on data clustering see [17], and particularly on time-series clustering see [1, 22].",
+        "page": 1,
+        "reference_key": "[25]"
+      },
+      {
+        "context": "In order to map correlation matrices into adjacency matrices a threshold is often applied [30, 41, 48].",
+        "page": 1,
+        "reference_key": "[30, 41, 48]"
+      },
+      {
+        "context": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+        "page": 1,
+        "reference_key": "[31]"
+      },
+      {
+        "context": "it has the benefit of being less computationally expensive than the Parallelized Genetic Algorithms (PGAs) previously implemented in [15, 16, 47].",
+        "page": 1,
+        "reference_key": "[15, 16, 47]"
+      },
+      {
+        "context": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to.",
+        "page": 2,
+        "reference_key": "[31]"
+      },
+      {
+        "context": "In turn, this generative model can be iteratively nested within a more complex set of independent hierarchies as expanded out through the unexplained noise terms in the presence of top-down and bottom-up causal relationships [40, 43].",
+        "page": 2,
+        "reference_key": "[40, 43]"
+      },
+      {
+        "context": "We introduce a Dirac delta function⁴ to model the probability of observing data in a configuration S close to criticality[26]:",
+        "page": 2,
+        "reference_key": "[26]"
+      },
+      {
+        "context": "The log-likelihood derived from P can be thought of the Hamiltonian of this Potts system [44]:",
+        "page": 2,
+        "reference_key": "[44]"
+      },
+      {
+        "context": "Second, it is adaptive: the number of clusters is not given as an input, unlike K-MEANS [38] or similar algorithms.",
+        "page": 2,
+        "reference_key": "[38]"
+      },
+      {
+        "context": "As such the algorithm competes with the likes of DBSCAN [7, 20] and HDBSCAN [6, 27].",
+        "page": 2,
+        "reference_key": "[7, 20]"
+      },
+      {
+        "context": "The so called “Louvain” algorithm [4] is agglomerative and can then be argued to implement the later bottom-up approach to “community detection” on networks.",
+        "page": 3,
+        "reference_key": "[4]"
+      },
+      {
+        "context": "It is in spirit very similar to the Merging Algorithm (MR) developed by Marsili and Giada in [12].",
+        "page": 3,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "Our previously implemented methods were based broadly on efficient implementations that streamlined PGA optimization frameworks, e.g. those proposed in [15, 16, 47] allow for all sorts of mutations.",
+        "page": 3,
+        "reference_key": "[15, 16, 47]"
+      },
+      {
+        "context": "The f-SPC algorithm [47] secured additional computational advantages within this PGA framework by being able to exclude a computationally expensive mutation constraint within the genetic programming framework used in [15, 16].",
+        "page": 3,
+        "reference_key": "[47]"
+      },
+      {
+        "context": "This can be mitigated by using GPUs as in [15].",
+        "page": 3,
+        "reference_key": "[15]"
+      },
+      {
+        "context": "Marsili and Giada define two cases for ∆Lc [12]:",
+        "page": 3,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4].",
+        "page": 3,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "Here we simply use the student-t distribution because stock returns distributions are known to be fat-tailed [10, 13].",
+        "page": 4,
+        "reference_key": "[10, 13]"
+      },
+      {
+        "context": "Correlation matrices are readily directly used in Markowitz’s portfolio optimization [19, 49] or indirectly via clustering using methods such as hierarchical risk parity [35].",
+        "page": 5,
+        "reference_key": "[19, 49]"
+      },
+      {
+        "context": "Here the value 0.3 is an approximation to the average stock market average correlation [34].",
+        "page": 6,
+        "reference_key": "[34]"
+      },
+      {
+        "context": "Here each of the size and length pairs was simulated a hundred times, and the Adjusted Rand Index (ARI) [37] between the ground truth and the model’s output was averaged (See Table (IV)).",
+        "page": 6,
+        "reference_key": "[37]"
+      },
+      {
+        "context": "However, in the high-frequency domain one is more directly concerned about the applicability of sample estimated correlations that do not deal with the impact of discretization [33].",
+        "page": 6,
+        "reference_key": "[33]"
+      },
+      {
+        "context": "The final step is similar to the thresholding method used in the original Super-Paramagnetic Clustering (SPC) algorithm proposed by Blatt et al. [3]6.",
+        "page": 7,
+        "reference_key": "[3]"
+      },
+      {
+        "context": "In particular, an important related problem in financial time-series clustering is that of clustering correlation matrices with a block hierarchical structure [24, 40, 41].",
+        "page": 8,
+        "reference_key": "[24, 40, 41]"
+      },
+      {
+        "context": "There are many ways of parameterizing such nested linear models, and in fact this is just a special case of the more general model of Tumminello et al. [40].",
+        "page": 8,
+        "reference_key": "[40]"
+      },
+      {
+        "context": "The appeal of ALC class of clustering algorithms is its ability to consistently outperform the f-SPC algorithm[47] while being generally robust to noise.",
+        "page": 10,
+        "reference_key": "[47]"
+      },
+      {
+        "context": "Fig. 7a shows that ALC recovers clustering solutions of better quality if we use the likelihood as a quality function as was argued in [12].",
+        "page": 10,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "We compared the algorithm’s runtime to the previous f-SPC and HDBSCAN [27].",
+        "page": 10,
+        "reference_key": "[27]"
+      },
+      {
+        "context": "Crucially, it should also be noted that the Louvain algorithm exists in multiple faster versions than the original implementation use in the current algorithm [9, 32, 39]",
+        "page": 12,
+        "reference_key": "[9, 32, 39]"
+      },
+      {
+        "context": "This motivates alternative modeling with distributions which capture additional stylized fact [10, 13].",
+        "page": 12,
+        "reference_key": "[10, 13]"
+      },
+      {
+        "context": "Alternatives such as the information theoretic Mutual Information have previously been used directly on financial data time-series [8, 14].",
+        "page": 12,
+        "reference_key": "[8, 14]"
+      },
+      {
+        "context": "Here we provide ALC’s pseudocode which: 1.) generates clustering candidates, 2.) evaluates the likelihood of the candidate configurations Lc [11] using Eqn. (7), and then 3.) selects the best candidates and discards the others.",
+        "page": 14,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "Algorithm 1 Pseudo-code for a ALC implementation (Sec. (III)), and “alc.py” in [45]",
+        "page": 14,
+        "reference_key": "[45]"
+      },
+      {
+        "context": "The Noh Ansatz [11, 31] offers a powerful stochastic process model for clustering purposes.",
+        "page": 14,
+        "reference_key": "[11, 31]"
+      },
+      {
+        "context": "Implementation of Noh Ansatz model of correlated time-series (See code at [46])",
+        "page": 14,
+        "reference_key": "[46]"
+      },
+      {
+        "context": "Noise due to the estimation of the correlation matrix are typically cleaned to a certain extent using Random Matrix Theory methods [5, 42]",
+        "page": 14,
+        "reference_key": "[5, 42]"
+      },
+      {
+        "context": "The result is the UMAP [28] 2D embed of 3000 correlated time-series sorted within 10 clusters.",
+        "page": 15,
+        "reference_key": "[28]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Department of Statistical Sciences, University of Cape Town, Rondebosch 7701, South Africa",
+          "name": "Lionel Yelibi"
+        },
+        {
+          "affiliation": "Department of Statistical Sciences, University of Cape Town, Rondebosch 7701, South Africa",
+          "name": "Tim Gebbie"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Agglomerative Likelihood Clustering"
+        },
+        {
+          "page": 1,
+          "quote": "Lionel Yelibi∗ and Tim Gebbie†"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1908.00951v4 [q-fin.CP]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Agglomerative Likelihood Clustering",
+      "venue": "arXiv",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times."
+        }
+      ],
+      "text": "Can a fast serial agglomerative likelihood clustering algorithm improve on f-SPC for large time-series data by reducing compute cost while recovering or improving cluster configurations without prior cluster-number information?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Aghabozorgi, S.",
+          "Shirkhorshidi, A. S.",
+          "Wah, T. Y."
+        ],
+        "doi": null,
+        "key": "[1]",
+        "page": 12,
+        "title": "Time-series clustering – A decade review",
+        "venue": "Information Systems, 53:16–38",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Blatt, M.",
+          "Wiseman, S.",
+          "Domany, E."
+        ],
+        "doi": null,
+        "key": "[2]",
+        "page": 12,
+        "title": "Superparamagnetic Clustering of Data",
+        "venue": "Phys. Rev. Lett., 76(18):3251–3254",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "Blatt, M.",
+          "Wiseman, S.",
+          "Domany, E."
+        ],
+        "doi": null,
+        "key": "[3]",
+        "page": 12,
+        "title": "Data Clustering Using a Model Granular Magnet",
+        "venue": "Neural Computation, 9(8):1805–1842",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Blondel, V. D.",
+          "Guillaume, J.-L.",
+          "Lambiotte, R.",
+          "Lefebvre, E."
+        ],
+        "doi": null,
+        "key": "[4]",
+        "page": 12,
+        "title": "Fast unfolding of communities in large networks",
+        "venue": "Journal of Statistical Mechanics: Theory and Experiment, 2008(10):P10008",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Bun, J.",
+          "Bouchaud, J.-P.",
+          "Potters, M."
+        ],
+        "doi": null,
+        "key": "[5]",
+        "page": 12,
+        "title": "Cleaning large correlation matrices: Tools from Random Matrix Theory",
+        "venue": "Physics Reports, 666:1–109",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Campello, R. J. G. B.",
+          "Moulavi, D.",
+          "Sander, J."
+        ],
+        "doi": null,
+        "key": "[6]",
+        "page": 12,
+        "title": "Density-Based Clustering Based on Hierarchical Density Estimates",
+        "venue": "In Pei, J., Tseng, V. S., Cao, L., Motoda, H., and Xu, G., editors, Advances in Knowledge Discovery and Data Mining, Lecture Notes in Computer Science, pages 160–172, Berlin, Heidelberg. Springer.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Ester, M.",
+          "Kriegel, H.-P.",
+          "Sander, J.",
+          "Xu, X."
+        ],
+        "doi": null,
+        "key": "[7]",
+        "page": 13,
+        "title": "A Density-based Algorithm for Discovering Clusters a Density-based Algorithm for Discovering Clusters in Large Spatial Databases with Noise",
+        "venue": "In Proceedings of the Second International Conference on Knowledge Discovery and Data Mining, KDD’96, pages 226–231. AAAI Press.",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "Fiedor, P."
+        ],
+        "doi": null,
+        "key": "[8]",
+        "page": 13,
+        "title": "Networks in financial markets based on the mutual information rate",
+        "venue": "Phys. Rev. E, 89(5):052801",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Fontolan, F."
+        ],
+        "doi": null,
+        "key": "[9]",
+        "page": 13,
+        "title": "Modularity Based Community Detection on the GPU",
+        "venue": "Bachelors Thesis, Università Ca’ Foscari Venezia.",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Gabaix, X.",
+          "Gopikrishnan, P.",
+          "Plerou, V.",
+          "Stanley, H. E."
+        ],
+        "doi": null,
+        "key": "[10]",
+        "page": 13,
+        "title": "A theory of power-law distributions in financial market fluctuations",
+        "venue": "Nature, 423(6937):267–270",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Giada, L.",
+          "Marsili, M."
+        ],
+        "doi": null,
+        "key": "[11]",
+        "page": 13,
+        "title": "Data clustering and noise undressing of correlation matrices",
+        "venue": "Phys. Rev. E, 63(6):061101",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Giada, L.",
+          "Marsili, M."
+        ],
+        "doi": null,
+        "key": "[12]",
+        "page": 13,
+        "title": "Algorithms of maximum likelihood data clustering with applications",
+        "venue": "Physica A: Statistical Mechanics and its Applications, 315(3):650 – 664",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Gopikrishnan, P.",
+          "Meyer, M.",
+          "Amaral, L.",
+          "Stanley, H."
+        ],
+        "doi": null,
+        "key": "[13]",
+        "page": 13,
+        "title": "Inverse cubic law for the distribution of stock price variations",
+        "venue": "Eur. Phys. J. B, 3(2):139–140",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Guo, X.",
+          "Zhang, H.",
+          "Tian, T."
+        ],
+        "doi": null,
+        "key": "[14]",
+        "page": 13,
+        "title": "Development of stock correlation networks using mutual information and financial big data",
+        "venue": "PLOS ONE, 13(4):e0195941",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Hendricks, D.",
+          "Gebbie, T.",
+          "Wilcox, D."
+        ],
+        "doi": null,
+        "key": "[15]",
+        "page": 13,
+        "title": "Detecting intraday financial market states using temporal clustering",
+        "venue": "Quantitative Finance, 16(11):1657–1678",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Hendricks, D.",
+          "Gebbie, T.",
+          "Wilcox, D."
+        ],
+        "doi": null,
+        "key": "[16]",
+        "page": 13,
+        "title": "High-speed detection of emergent market clustering via an unsupervised parallel genetic algorithm",
+        "venue": "South African Journal of Science, 112(1/2):9",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Jain, A. K."
+        ],
+        "doi": null,
+        "key": "[17]",
+        "page": 13,
+        "title": "Data clustering: 50 years beyond K-means",
+        "venue": "Pattern Recognition Letters, 31(8):651 – 666",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Javed, M. A.",
+          "Younis, M. S.",
+          "Latif, S.",
+          "Qadir, J.",
+          "Baig, A."
+        ],
+        "doi": null,
+        "key": "[18]",
+        "page": 13,
+        "title": "Community detection in networks: A multidisciplinary review",
+        "venue": "Journal of Network and Computer Applications, 108:87–111",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Kalayci, C. B.",
+          "Ertenlice, O.",
+          "Akbay, M. A."
+        ],
+        "doi": null,
+        "key": "[19]",
+        "page": 13,
+        "title": "A comprehensive review of deterministic models and applications for mean-variance portfolio optimization",
+        "venue": "Expert Systems with Applications, 125:345–368",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Khan, K.",
+          "Rehman, S. U.",
+          "Aziz, K.",
+          "Fong, S.",
+          "Sarasvady, S."
+        ],
+        "doi": null,
+        "key": "[20]",
+        "page": 13,
+        "title": "DBSCAN: Past, present and future",
+        "venue": "In The Fifth International Conference on the Applications of Digital Information and Web Technologies (ICADIWT 2014), pages 232–238.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Kim, J.",
+          "Lee, W.",
+          "Song, J. J.",
+          "Lee, S.-B."
+        ],
+        "doi": null,
+        "key": "[21]",
+        "page": 13,
+        "title": "Optimized combinatorial clustering for stochastic processes",
+        "venue": "Cluster Comput, 20(2):1135–1148",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Liao, T. W."
+        ],
+        "doi": null,
+        "key": "[22]",
+        "page": 13,
+        "title": "Clustering of time series data—a survey",
+        "venue": "Pattern Recognition, 38(11):1857–1874",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Marsili, M."
+        ],
+        "doi": null,
+        "key": "[23]",
+        "page": 13,
+        "title": "Dissecting financial markets: sectors and states",
+        "venue": "Quantitative Finance, 2(4):297–302",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Marti, G.",
+          "Andler, S.",
+          "Nielsen, F.",
+          "Donnat, P."
+        ],
+        "doi": null,
+        "key": "[24]",
+        "page": 13,
+        "title": "Clustering Financial Time Series: How Long is Enough?",
+        "venue": "In Proceedings of the Twenty-Fifth International Joint Conference on Artificial Intelligence, IJCAI’16, pages 2583–2589. AAAI Press. event-place: New York, New York, USA.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Marti, G.",
+          "Nielsen, F.",
+          "Bińkowski, M.",
+          "Donnat, P."
+        ],
+        "doi": null,
+        "key": "[25]",
+        "page": 13,
+        "title": "A review of two decades of correlations, hierarchies, networks and clustering in financial markets",
+        "venue": "arXiv preprint arXiv:1703.00485",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Mastromatteo, I.",
+          "Marsili, M."
+        ],
+        "doi": null,
+        "key": "[26]",
+        "page": 13,
+        "title": "On the criticality of inferred models",
+        "venue": "Journal of Statistical Mechanics: Theory and Experiment, 2011(10):P10012",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "McInnes, L.",
+          "Healy, J.",
+          "Astels, S."
+        ],
+        "doi": null,
+        "key": "[27]",
+        "page": 13,
+        "title": "hdbscan: Hierarchical density based clustering",
+        "venue": "Journal of Open Source Software, 2(11):205",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "McInnes, L.",
+          "Healy, J.",
+          "Saul, N.",
+          "Groibberger, L."
+        ],
+        "doi": null,
+        "key": "[28]",
+        "page": 13,
+        "title": "UMAP: Uniform Manifold Approximation and Projection",
+        "venue": "The Journal of Open Source Software, 3(29):861",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Murtagh, F.",
+          "Contreras, P."
+        ],
+        "doi": null,
+        "key": "[29]",
+        "page": 13,
+        "title": "Algorithms for hierarchical clustering: an overview",
+        "venue": "WIREs Data Mining and Knowledge Discovery, 2(1):86–97",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Namaki, A.",
+          "Shirazi, A. H.",
+          "Raei, R.",
+          "Jafari, G. R."
+        ],
+        "doi": null,
+        "key": "[30]",
+        "page": 13,
+        "title": "Network analysis of a financial market based on genuine correlation and threshold method",
+        "venue": "Physica A: Statistical Mechanics and its Applications, 390(21):3835–3841",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Noh, J. D."
+        ],
+        "doi": null,
+        "key": "[31]",
+        "page": 13,
+        "title": "Model for correlations in stock markets",
+        "venue": "Phys. Rev. E, 61(5):5981–5982",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Ozaki, N.",
+          "Tezuka, H.",
+          "Inaba, M."
+        ],
+        "doi": null,
+        "key": "[32]",
+        "page": 13,
+        "title": "A Simple Acceleration Method for the Louvain Algorithm",
+        "venue": "undefined.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Pedregosa, F.",
+          "Varoquaux, G.",
+          "Gramfort, A.",
+          "Michel, V.",
+          "Thirion, B.",
+          "Grisel, O.",
+          "Blondel, M.",
+          "Prettenhofer, P.",
+          "Weiss, R.",
+          "Dubourg, V.",
+          "Vanderplas, J.",
+          "Passos, A.",
+          "Cournapeau, D.",
+          "Brucher, M.",
+          "Perrot, M.",
+          "Duchesnay, E."
+        ],
+        "doi": null,
+        "key": "[33]",
+        "page": 13,
+        "title": "Scikit-learn: Machine Learning in Python",
+        "venue": "Journal of Machine Learning Research, 12:2825–2830",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Pollet, J. M.",
+          "Wilson, M."
+        ],
+        "doi": null,
+        "key": "[34]",
+        "page": 13,
+        "title": "Average correlation and stock market returns",
+        "venue": "Journal of Financial Economics, 96(3):364–380",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Prado, M. L. d."
+        ],
+        "doi": null,
+        "key": "[35]",
+        "page": 13,
+        "title": "Building Diversified Portfolios that Outperform Out of Sample",
+        "venue": "The Journal of Portfolio Management, 42(4):59–69",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Ronhovde, P.",
+          "Nussinov, Z."
+        ],
+        "doi": null,
+        "key": "[36]",
+        "page": 13,
+        "title": "Local resolution-limit-free Potts model for community detection",
+        "venue": "Phys. Rev. E, 81(4):046114",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Santos, J. M.",
+          "Embrechts, M."
+        ],
+        "doi": null,
+        "key": "[37]",
+        "page": 13,
+        "title": "On the Use of the Adjusted Rand Index as a Metric for Evaluating Supervised Classification",
+        "venue": "In ICANN 2009. Lecture Notes in Computer Science, vol 5769., In: Alippi C., Polycarpou M., Panayiotou C., Ellinas G. (eds) Artificial Neural Networks – ICANN 2009. Springer, Berlin, Heidelberg.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Steinley, D."
+        ],
+        "doi": null,
+        "key": "[38]",
+        "page": 13,
+        "title": "K-means clustering: A half-century synthesis",
+        "venue": "British Journal of Mathematical and Statistical Psychology, 59(1):1–34",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Traag, V. A."
+        ],
+        "doi": null,
+        "key": "[39]",
+        "page": 13,
+        "title": "Faster unfolding of communities: Speeding up the Louvain algorithm",
+        "venue": "Phys. Rev. E, 92(3):032801",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Tumminello, M.",
+          "Lillo, F.",
+          "Mantegna, R. N."
+        ],
+        "doi": null,
+        "key": "[40]",
+        "page": 13,
+        "title": "Hierarchically nested factor model from multivariate data",
+        "venue": "EPL, 78(3):30006",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Tumminello, M.",
+          "Lillo, F.",
+          "Mantegna, R. N."
+        ],
+        "doi": null,
+        "key": "[41]",
+        "page": 13,
+        "title": "Correlation, hierarchies, and networks in financial markets",
+        "venue": "Journal of Economic Behavior & Organization, 75(1):40–58",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Wilcox, D.",
+          "Gebbie, T."
+        ],
+        "doi": null,
+        "key": "[42]",
+        "page": 13,
+        "title": "An analysis of cross-correlations in an emerging market",
+        "venue": "Physica A: Statistical Mechanics and its Applications, 375(2):584 – 598",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Wilcox, D.",
+          "Gebbie, T."
+        ],
+        "doi": null,
+        "key": "[43]",
+        "page": 14,
+        "title": "Hierarchical Causality in Financial Economics",
+        "venue": "https://ssrn.com/abstract=2544327.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Wu, F. Y."
+        ],
+        "doi": null,
+        "key": "[44]",
+        "page": 14,
+        "title": "The Potts model",
+        "venue": "Rev. Mod. Phys., 54(1):235–268",
+        "year": 1982
+      },
+      {
+        "authors": [
+          "Yelibi, L."
+        ],
+        "doi": null,
+        "key": "[45]",
+        "page": 14,
+        "title": "Agglomerative Likelihood Clustering",
+        "venue": "https://github.com/lyelibi/ALC.",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Yelibi, L."
+        ],
+        "doi": null,
+        "key": "[46]",
+        "page": 14,
+        "title": "One Factor Timeseries Model",
+        "venue": "https://github.com/lyelibi/timeseries gen.",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Yelibi, L.",
+          "Gebbie, T."
+        ],
+        "doi": null,
+        "key": "[47]",
+        "page": 14,
+        "title": "Fast Super-Paramagnetic Clustering",
+        "venue": "Physica A: Statistical Mechanics and its Applications, 551:124049",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Zalesky, A.",
+          "Fornito, A.",
+          "Bullmore, E."
+        ],
+        "doi": null,
+        "key": "[48]",
+        "page": 14,
+        "title": "On the use of correlation as a measure of network connectivity",
+        "venue": "NeuroImage, 60(4):2096–2106",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Zhang, Y.",
+          "Li, X.",
+          "Guo, S."
+        ],
+        "doi": null,
+        "key": "[49]",
+        "page": 14,
+        "title": "Portfolio selection problems with Markowitz’s mean–variance framework: a review of literature",
+        "venue": "Fuzzy Optim Decis Making, 17(2):125–158",
+        "year": 2018
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+        "reference_key": "[47]",
+        "relation": "contrasts",
+        "why": "The paper positions ALC explicitly as an alternative to f-SPC with reduced compute cost."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+        "reference_key": "[11, 12]",
+        "relation": "extends",
+        "why": "It takes the Giada-Marsili MLE clustering approach and recasts it in an agglomerative algorithm."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to.",
+        "reference_key": "[31]",
+        "relation": "uses_method",
+        "why": "It adopts the Noh ansatz as the underlying generative model for time-series correlation structure."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4].",
+        "reference_key": "[4]",
+        "relation": "uses_method",
+        "why": "It borrows the greedy community-detection move-generation idea from Louvain-style agglomeration."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Here we will make the choice of the modified Giada-Marsili likelihood function, and then using Case 2 from the Merging Algorithm (Eqn. (6)).",
+        "reference_key": "[12]",
+        "relation": "extends",
+        "why": "It directly reuses the Giada-Marsili likelihood and Case 2 merging criterion."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Here each of the size and length pairs was simulated a hundred times, and the Adjusted Rand Index (ARI) [37] between the ground truth and the model’s output was averaged (See Table (IV)).",
+        "reference_key": "[37]",
+        "relation": "uses_method",
+        "why": "It uses the Adjusted Rand Index as the benchmark metric for clustering quality."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "The final step is similar to the thresholding method used in the original Super-Paramagnetic Clustering (SPC) algorithm proposed by Blatt et al. [3]6.",
+        "reference_key": "[3]",
+        "relation": "extends",
+        "why": "Its bootstrap thresholding step is explicitly modeled on the original SPC thresholding idea."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "There are many ways of parameterizing such nested linear models, and in fact this is just a special case of the more general model of Tumminello et al. [40].",
+        "reference_key": "[40]",
+        "relation": "extends",
+        "why": "Its hierarchical factor model is presented as a special case of the more general Tumminello et al. nested model."
+      },
+      {
+        "confidence": "high",
+        "page": 10,
+        "quote": "Finally, HDBSCAN which we believe the natural alternative to ALC as a hierarchical and density based clustering method, is more optimized than our algorithm, and would thus be currently preferable for extreme large data-sets.",
+        "reference_key": "[27]",
+        "relation": "contrasts",
+        "why": "It compares ALC directly against HDBSCAN as the natural alternative and notes HDBSCAN's speed advantage for extreme scale."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "There are advantages to this method relative to most industry standard alternatives: First, that Lc is completely dependent on Cij, and the dimensionality of the data-set only plays a part in computing Cij. Second, it is adaptive: the number of clusters is not given as an input, unlike K-MEANS [38] or similar algorithms.",
+          "start_page": 1,
+          "start_text": "Agglomerative Likelihood Clustering"
+        },
+        "summary": "Establishes the need for fast unsupervised time-series clustering, introduces ALC as a replacement for f-SPC, and presents the Noh ansatz and Giada-Marsili likelihood model.",
+        "title": "Introduction and the Giada-Marsili Likelihood Model"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "The main routine of agglomerative likelihood clustering algorithm for time-series clustering consists of merging clusters to find a maximum increase in likelihood",
+          "start_page": 3,
+          "start_text": "To build a fast general bottom-up merging algorithm we again start with all N spins in N cluster, but we iteratively merge clusters in a greedy fashion."
+        },
+        "summary": "Describes the greedy bottom-up merging method, the modified Giada-Marsili likelihood for individual clusters, the Case 2 ΔLc criterion, and the tracker/correlation matrix updates.",
+        "title": "Greedy Agglomerative Likelihood Clustering"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "We have empirically confirmed in Table IV that this will deteriorate the algorithms performance.",
+          "start_page": 4,
+          "start_text": "First, we start testing our algorithm on random uncorrelated data “white noise”."
+        },
+        "summary": "Tests ALC on synthetic uncorrelated and Student-t correlated time-series, varies N, D, and gs, and benchmarks cluster quality against HDBSCAN using ARI.",
+        "title": "Synthetic-Data Validation and ARI Benchmarks"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "The bootstrap method applied to a similar case with N =2000, n = 200, and series length of 20 (See green curve in Fig. (3b)) yields an ARI higher than 0.8 after 750 iterations thus demonstrating the usefulness of the method when dealing with large data-sets and short time-series.",
+          "start_page": 6,
+          "start_text": "Here we provide a way to mediate the influence of noise using bootstrapping."
+        },
+        "summary": "Introduces the bootstrap resampling and filtered-correlation procedure for low signal-to-noise data, including pij, ordinal filtering, threshold choices, and ARI convergence results.",
+        "title": "Bootstrap Filtering for Low Signal-to-Noise"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "ALC seems to also be 20% more robust to noise.",
+          "start_page": 8,
+          "start_text": "ALC is efficient at clustering systems of correlated time-series generated using a single factor model when compared to HDBSCAN, but the likelihood model used is one explicitly derived using a single factor."
+        },
+        "summary": "Extends testing to hierarchically nested block correlation models, compares ALC and HDBSCAN on recovering nested versus merged clusters, and reports ALC's noise robustness.",
+        "title": "Hierarchical Block Correlation Robustness"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 10
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "This feature may make the algorithm appropriate for state-detection for online learning in a fast-big-data environment.",
+          "start_page": 10,
+          "start_text": "The appeal of ALC class of clustering algorithms is its ability to consistently outperform the f-SPC algorithm[47] while being generally robust to noise."
+        },
+        "summary": "Reports runtime scaling, compares ALC with f-SPC and HDBSCAN, summarizes advantages and limitations, and points to future work in online learning and alternative similarity measures.",
+        "title": "Performance, Discussion, and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "[49] Zhang, Y., Li, X., and Guo, S. (2018). Portfolio selection problems with Markowitz’s mean–variance framework: a review of literature. Fuzzy Optim Decis Making, 17(2):125–158.",
+          "start_page": 12,
+          "start_text": "[1] Aghabozorgi, S., Shirkhorshidi, A. S., and Wah, T. Y. (2015). Time-series clustering – A decade review. Information Systems, 53:16–38."
+        },
+        "summary": "Bibliography and reference list for prior clustering, econophysics, network-science, and financial time-series work.",
+        "title": "References"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "The result is the UMAP [28] 2D embed of 3000 correlated time-series sorted within 10 clusters.",
+          "start_page": 14,
+          "start_text": "Here we provide ALC’s pseudocode which: 1.) generates clustering candidates, 2.) evaluates the likelihood of the candidate configurations Lc [11] using Eqn. (7), and then 3.) selects the best candidates and discards the others."
+        },
+        "summary": "Appendices give the ALC pseudocode and the Noh-ansatz synthetic data-generation procedure, including Tables 1–2 and UMAP visualization.",
+        "title": "Appendices: ALC Pseudocode and Synthetic Data Generation"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It presents a new clustering algorithm and empirically benchmarks it on synthetic and real data.",
+      "value": "survey"
+    }
+  },
+  "pass1_check": {
+    "sites": 59,
+    "verbatim": 58,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 3
+  },
+  "corrections": [
+    {
+      "path": "/type/value",
+      "action": "replace",
+      "value_json": "\"research\"",
+      "reason": "The paper presents a new clustering algorithm and empirical benchmarks, not a survey.",
+      "evidence": [
+        {
+          "quote": "Building on previous work modeling the correlation-based Hamiltonian of spin variables we present an updated fast non-expensive Agglomerative Likelihood Clustering algorithm (ALC).",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/sections/5/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"Finally we believe it is possible to upgrade ALC with more efficient coding, and superior modifications to the optimization scheme itself similar to recent Louvain’s implementations.\"",
+      "reason": "The listed end_text is from page 10, not the end of the performance/discussion/conclusion section on page 12.",
+      "evidence": [
+        {
+          "quote": "Finally we believe it is possible to upgrade ALC with more efficient coding, and superior modifications to the optimization scheme itself similar to recent Louvain’s implementations.",
+          "page": 12
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/type/value",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "value does not match the schema: : value is not one of the allowed values"
+    },
+    {
+      "index": 1,
+      "path": "/sections/5/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 59,
+    "verbatim": 58,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 3
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We consider the problem of fast time-series data clustering. Building on previous work modeling the correlation-based Hamiltonian of spin variables we present an updated fast non-expensive Agglomerative Likelihood Clustering algorithm (ALC). The method replaces the optimized genetic algorithm based approach (f-SPC) with an agglomerative recursive merging framework inspired by previous work in Econophysics and Community Detection. The method is tested on noisy synthetic correlated time-series data-sets with built-in cluster structure to demonstrate that the algorithm produces meaningful non-trivial results. We apply it to time-series data-sets as large as 20,000 assets and we argue that ALC can reduce compute time costs and resource usage cost for large scale clustering for time-series applications while being serialized, and hence has no obvious parallelization requirement. The algorithm can be an effective choice for state-detection for online learning in a fast non-linear data environment because the algorithm requires no prior information about the number of clusters.",
+      "admitted": "We consider the problem of fast time-series data clustering. Building on previous work modeling the correlation-based Hamiltonian of spin variables we present an updated fast non-expensive Agglomerative Likelihood Clustering algorithm (ALC). The method replaces the optimized genetic algorithm based approach (f-SPC) with an agglomerative recursive merging framework inspired by previous work in Econophysics and Community Detection. The method is tested on noisy synthetic correlated time-series data-sets with built-in cluster structure to demonstrate that the algorithm produces meaningful non-trivial results. We apply it to time-series data-sets as large as 20,000 assets and we argue that ALC can reduce compute time costs and resource usage cost for large scale clustering for time-series applications while being serialized, and hence has no obvious parallelization requirement. The algorithm can be an effective choice for state-detection for online learning in a fast non-linear data environment because the algorithm requires no prior information about the number of clusters.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+      "admitted": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to.",
+      "admitted": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/replications/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Here we will make the choice of the modified Giada-Marsili likelihood function, and then using Case 2 from the Merging Algorithm (Eqn. (6)).",
+      "admitted": "Here we will make the choice of the modified Giada-Marsili likelihood function, and then using Case 2 from the Merging Algorithm (Eqn. (6)).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "admitted": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "admitted": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Agglomerative Likelihood Clustering",
+      "admitted": "Agglomerative Likelihood Clustering",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Lionel Yelibi∗ and Tim Gebbie†",
+      "admitted": "Lionel Yelibi∗ and Tim Gebbie†",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "admitted": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "The problem of unsupervised statistical learning in the context of financial market data was explored in prior work.",
+      "admitted": "The problem of unsupervised statistical learning in the context of financial market data was explored in prior work.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "Previous cases studies include data clustering of stocks [47] and gene data in [12], temporal states of financial markets [23], and state-detection for adaptive machine learning in trading [15].",
+      "admitted": "Previous cases studies include data clustering of stocks [47] and gene data in [12], temporal states of financial markets [23], and state-detection for adaptive machine learning in trading [15].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "admitted": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "The algorithm is in spirit similar to network science community detection algorithms [4, 36].",
+      "admitted": "The algorithm is in spirit similar to network science community detection algorithms [4, 36].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "For a review on the last 20 years on financial market correlation based data clustering see [25], more generally on data clustering see [17], and particularly on time-series clustering see [1, 22].",
+      "admitted": "For a review on the last 20 years on financial market correlation based data clustering see [25], more generally on data clustering see [17], and particularly on time-series clustering see [1, 22].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "In order to map correlation matrices into adjacency matrices a threshold is often applied [30, 41, 48].",
+      "admitted": "In order to map correlation matrices into adjacency matrices a threshold is often applied [30, 41, 48].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+      "admitted": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "it has the benefit of being less computationally expensive than the Parallelized Genetic Algorithms (PGAs) previously implemented in [15, 16, 47].",
+      "admitted": "it has the benefit of being less computationally expensive than the Parallelized Genetic Algorithms (PGAs) previously implemented in [15, 16, 47].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to.",
+      "admitted": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "In turn, this generative model can be iteratively nested within a more complex set of independent hierarchies as expanded out through the unexplained noise terms in the presence of top-down and bottom-up causal relationships [40, 43].",
+      "admitted": "In turn, this generative model can be iteratively nested within a more complex set of independent hierarchies as expanded out through the unexplained noise terms in the presence of top-down and bottom-up causal relationships [40, 43].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "We introduce a Dirac delta function⁴ to model the probability of observing data in a configuration S close to criticality[26]:",
+      "admitted": "We introduce a Dirac delta function⁴ to model the probability of observing data in a configuration S close to criticality[26]:",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "The log-likelihood derived from P can be thought of the Hamiltonian of this Potts system [44]:",
+      "admitted": "The log-likelihood derived from P can be thought of the Hamiltonian of this Potts system [44]:",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "Second, it is adaptive: the number of clusters is not given as an input, unlike K-MEANS [38] or similar algorithms.",
+      "admitted": "Second, it is adaptive: the number of clusters is not given as an input, unlike K-MEANS [38] or similar algorithms.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "As such the algorithm competes with the likes of DBSCAN [7, 20] and HDBSCAN [6, 27].",
+      "admitted": "As such the algorithm competes with the likes of DBSCAN [7, 20] and HDBSCAN [6, 27].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "The so called “Louvain” algorithm [4] is agglomerative and can then be argued to implement the later bottom-up approach to “community detection” on networks.",
+      "admitted": "The so called “Louvain” algorithm [4] is agglomerative and can then be argued to implement the later bottom-up approach to “community detection” on networks.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "repaired_local",
+      "original": "It is in spirit very similar to the Merging Algorithm (MR) developed by Marsili and Giada in [12].",
+      "admitted": "3 is in spirit very similar to the Merging Algorithm (MR) developed by Marsili and Giada in [12].",
+      "similarity": 0.9444444444444444,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "Our previously implemented methods were based broadly on efficient implementations that streamlined PGA optimization frameworks, e.g. those proposed in [15, 16, 47] allow for all sorts of mutations.",
+      "admitted": "Our previously implemented methods were based broadly on efficient implementations that streamlined PGA optimization frameworks, e.g. those proposed in [15, 16, 47] allow for all sorts of mutations.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "The f-SPC algorithm [47] secured additional computational advantages within this PGA framework by being able to exclude a computationally expensive mutation constraint within the genetic programming framework used in [15, 16].",
+      "admitted": "The f-SPC algorithm [47] secured additional computational advantages within this PGA framework by being able to exclude a computationally expensive mutation constraint within the genetic programming framework used in [15, 16].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "This can be mitigated by using GPUs as in [15].",
+      "admitted": "This can be mitigated by using GPUs as in [15].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "Marsili and Giada define two cases for ∆Lc [12]:",
+      "admitted": "Marsili and Giada define two cases for ∆Lc [12]:",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4].",
+      "admitted": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "Here we simply use the student-t distribution because stock returns distributions are known to be fat-tailed [10, 13].",
+      "admitted": "Here we simply use the student-t distribution because stock returns distributions are known to be fat-tailed [10, 13].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "Correlation matrices are readily directly used in Markowitz’s portfolio optimization [19, 49] or indirectly via clustering using methods such as hierarchical risk parity [35].",
+      "admitted": "Correlation matrices are readily directly used in Markowitz’s portfolio optimization [19, 49] or indirectly via clustering using methods such as hierarchical risk parity [35].",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "Here the value 0.3 is an approximation to the average stock market average correlation [34].",
+      "admitted": "Here the value 0.3 is an approximation to the average stock market average correlation [34].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "Here each of the size and length pairs was simulated a hundred times, and the Adjusted Rand Index (ARI) [37] between the ground truth and the model’s output was averaged (See Table (IV)).",
+      "admitted": "Here each of the size and length pairs was simulated a hundred times, and the Adjusted Rand Index (ARI) [37] between the ground truth and the model’s output was averaged (See Table (IV)).",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "verbatim",
+      "original": "However, in the high-frequency domain one is more directly concerned about the applicability of sample estimated correlations that do not deal with the impact of discretization [33].",
+      "admitted": "However, in the high-frequency domain one is more directly concerned about the applicability of sample estimated correlations that do not deal with the impact of discretization [33].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "verbatim",
+      "original": "The final step is similar to the thresholding method used in the original Super-Paramagnetic Clustering (SPC) algorithm proposed by Blatt et al. [3]6.",
+      "admitted": "The final step is similar to the thresholding method used in the original Super-Paramagnetic Clustering (SPC) algorithm proposed by Blatt et al. [3]6.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "verbatim",
+      "original": "In particular, an important related problem in financial time-series clustering is that of clustering correlation matrices with a block hierarchical structure [24, 40, 41].",
+      "admitted": "In particular, an important related problem in financial time-series clustering is that of clustering correlation matrices with a block hierarchical structure [24, 40, 41].",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/28/context",
+      "status": "verbatim",
+      "original": "There are many ways of parameterizing such nested linear models, and in fact this is just a special case of the more general model of Tumminello et al. [40].",
+      "admitted": "There are many ways of parameterizing such nested linear models, and in fact this is just a special case of the more general model of Tumminello et al. [40].",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/29/context",
+      "status": "verbatim",
+      "original": "The appeal of ALC class of clustering algorithms is its ability to consistently outperform the f-SPC algorithm[47] while being generally robust to noise.",
+      "admitted": "The appeal of ALC class of clustering algorithms is its ability to consistently outperform the f-SPC algorithm[47] while being generally robust to noise.",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/30/context",
+      "status": "verbatim",
+      "original": "Fig. 7a shows that ALC recovers clustering solutions of better quality if we use the likelihood as a quality function as was argued in [12].",
+      "admitted": "Fig. 7a shows that ALC recovers clustering solutions of better quality if we use the likelihood as a quality function as was argued in [12].",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/31/context",
+      "status": "verbatim",
+      "original": "We compared the algorithm’s runtime to the previous f-SPC and HDBSCAN [27].",
+      "admitted": "We compared the algorithm’s runtime to the previous f-SPC and HDBSCAN [27].",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/32/context",
+      "status": "verbatim",
+      "original": "Crucially, it should also be noted that the Louvain algorithm exists in multiple faster versions than the original implementation use in the current algorithm [9, 32, 39]",
+      "admitted": "Crucially, it should also be noted that the Louvain algorithm exists in multiple faster versions than the original implementation use in the current algorithm [9, 32, 39]",
+      "similarity": null,
+      "cited_page": 12,
+      "matched_page": 12
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/33/context",
+      "status": "verbatim",
+      "original": "This motivates alternative modeling with distributions which capture additional stylized fact [10, 13].",
+      "admitted": "This motivates alternative modeling with distributions which capture additional stylized fact [10, 13].",
+      "similarity": null,
+      "cited_page": 12,
+      "matched_page": 12
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/34/context",
+      "status": "verbatim",
+      "original": "Alternatives such as the information theoretic Mutual Information have previously been used directly on financial data time-series [8, 14].",
+      "admitted": "Alternatives such as the information theoretic Mutual Information have previously been used directly on financial data time-series [8, 14].",
+      "similarity": null,
+      "cited_page": 12,
+      "matched_page": 12
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/35/context",
+      "status": "verbatim",
+      "original": "Here we provide ALC’s pseudocode which: 1.) generates clustering candidates, 2.) evaluates the likelihood of the candidate configurations Lc [11] using Eqn. (7), and then 3.) selects the best candidates and discards the others.",
+      "admitted": "Here we provide ALC’s pseudocode which: 1.) generates clustering candidates, 2.) evaluates the likelihood of the candidate configurations Lc [11] using Eqn. (7), and then 3.) selects the best candidates and discards the others.",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/36/context",
+      "status": "verbatim",
+      "original": "Algorithm 1 Pseudo-code for a ALC implementation (Sec. (III)), and “alc.py” in [45]",
+      "admitted": "Algorithm 1 Pseudo-code for a ALC implementation (Sec. (III)), and “alc.py” in [45]",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/37/context",
+      "status": "verbatim",
+      "original": "The Noh Ansatz [11, 31] offers a powerful stochastic process model for clustering purposes.",
+      "admitted": "The Noh Ansatz [11, 31] offers a powerful stochastic process model for clustering purposes.",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/38/context",
+      "status": "verbatim",
+      "original": "Implementation of Noh Ansatz model of correlated time-series (See code at [46])",
+      "admitted": "Implementation of Noh Ansatz model of correlated time-series (See code at [46])",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/39/context",
+      "status": "verbatim",
+      "original": "Noise due to the estimation of the correlation matrix are typically cleaned to a certain extent using Random Matrix Theory methods [5, 42]",
+      "admitted": "Noise due to the estimation of the correlation matrix are typically cleaned to a certain extent using Random Matrix Theory methods [5, 42]",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/40/context",
+      "status": "verbatim",
+      "original": "The result is the UMAP [28] 2D embed of 3000 correlated time-series sorted within 10 clusters.",
+      "admitted": "The result is the UMAP [28] 2D embed of 3000 correlated time-series sorted within 10 clusters.",
+      "similarity": null,
+      "cited_page": 15,
+      "matched_page": 15
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "admitted": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+      "admitted": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to.",
+      "admitted": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4].",
+      "admitted": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Here we will make the choice of the modified Giada-Marsili likelihood function, and then using Case 2 from the Merging Algorithm (Eqn. (6)).",
+      "admitted": "Here we will make the choice of the modified Giada-Marsili likelihood function, and then using Case 2 from the Merging Algorithm (Eqn. (6)).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "Here each of the size and length pairs was simulated a hundred times, and the Adjusted Rand Index (ARI) [37] between the ground truth and the model’s output was averaged (See Table (IV)).",
+      "admitted": "Here each of the size and length pairs was simulated a hundred times, and the Adjusted Rand Index (ARI) [37] between the ground truth and the model’s output was averaged (See Table (IV)).",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "The final step is similar to the thresholding method used in the original Super-Paramagnetic Clustering (SPC) algorithm proposed by Blatt et al. [3]6.",
+      "admitted": "The final step is similar to the thresholding method used in the original Super-Paramagnetic Clustering (SPC) algorithm proposed by Blatt et al. [3]6.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "There are many ways of parameterizing such nested linear models, and in fact this is just a special case of the more general model of Tumminello et al. [40].",
+      "admitted": "There are many ways of parameterizing such nested linear models, and in fact this is just a special case of the more general model of Tumminello et al. [40].",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 9
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "Finally, HDBSCAN which we believe the natural alternative to ALC as a hierarchical and density based clustering method, is more optimized than our algorithm, and would thus be currently preferable for extreme large data-sets.",
+      "admitted": "Finally, HDBSCAN which we believe the natural alternative to ALC as a hierarchical and density based clustering method, is more optimized than our algorithm, and would thus be currently preferable for extreme large data-sets.",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 1,
+    "verbatim": 58
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We consider the problem of fast time-series data clustering. Building on previous work modeling the correlation-based Hamiltonian of spin variables we present an updated fast non-expensive Agglomerative Likelihood Clustering algorithm (ALC). The method replaces the optimized genetic algorithm based approach (f-SPC) with an agglomerative recursive merging framework inspired by previous work in Econophysics and Community Detection. The method is tested on noisy synthetic correlated time-series data-sets with built-in cluster structure to demonstrate that the algorithm produces meaningful non-trivial results. We apply it to time-series data-sets as large as 20,000 assets and we argue that ALC can reduce compute time costs and resource usage cost for large scale clustering for time-series applications while being serialized, and hence has no obvious parallelization requirement. The algorithm can be an effective choice for state-detection for online learning in a fast non-linear data environment because the algorithm requires no prior information about the number of clusters."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Giada and Marsili [11, 12]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12]."
+              }
+            ],
+            "reference_key": "[11, 12]",
+            "why": "It uses the Giada-Marsili likelihood and the Merging Algorithm as the methodological baseline."
+          },
+          {
+            "cited_work": "Noh [31]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to."
+              }
+            ],
+            "reference_key": "[31]",
+            "why": "It builds on the Noh ansatz as the generative intuition for correlation-based clustering."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "Marsili and Giada [12]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Here we will make the choice of the modified Giada-Marsili likelihood function, and then using Case 2 from the Merging Algorithm (Eqn. (6))."
+              }
+            ],
+            "reference_key": "[12]",
+            "why": "It re-implements the Merging Algorithm using Case 2 for the likelihood change."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "f-SPC [47]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times."
+              }
+            ],
+            "reference_key": "[47]",
+            "why": "It positions ALC as an alternative to f-SPC with lower compute cost and equal or better cluster configurations."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times."
+          }
+        ],
+        "text": "ALC is a fast, serial agglomerative likelihood clustering algorithm that replaces genetic-algorithm f-SPC and recovers equal or better time-series cluster configurations with lower compute cost."
+      }
+    },
+    "citations": [
+      {
+        "context": "The problem of unsupervised statistical learning in the context of financial market data was explored in prior work.",
+        "page": 1,
+        "reference_key": "[47]"
+      },
+      {
+        "context": "Previous cases studies include data clustering of stocks [47] and gene data in [12], temporal states of financial markets [23], and state-detection for adaptive machine learning in trading [15].",
+        "page": 1,
+        "reference_key": "[47]"
+      },
+      {
+        "context": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+        "page": 1,
+        "reference_key": "[47]"
+      },
+      {
+        "context": "The algorithm is in spirit similar to network science community detection algorithms [4, 36].",
+        "page": 1,
+        "reference_key": "[4, 36]"
+      },
+      {
+        "context": "For a review on the last 20 years on financial market correlation based data clustering see [25], more generally on data clustering see [17], and particularly on time-series clustering see [1, 22].",
+        "page": 1,
+        "reference_key": "[25]"
+      },
+      {
+        "context": "In order to map correlation matrices into adjacency matrices a threshold is often applied [30, 41, 48].",
+        "page": 1,
+        "reference_key": "[30, 41, 48]"
+      },
+      {
+        "context": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+        "page": 1,
+        "reference_key": "[31]"
+      },
+      {
+        "context": "it has the benefit of being less computationally expensive than the Parallelized Genetic Algorithms (PGAs) previously implemented in [15, 16, 47].",
+        "page": 1,
+        "reference_key": "[15, 16, 47]"
+      },
+      {
+        "context": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to.",
+        "page": 2,
+        "reference_key": "[31]"
+      },
+      {
+        "context": "In turn, this generative model can be iteratively nested within a more complex set of independent hierarchies as expanded out through the unexplained noise terms in the presence of top-down and bottom-up causal relationships [40, 43].",
+        "page": 2,
+        "reference_key": "[40, 43]"
+      },
+      {
+        "context": "We introduce a Dirac delta function⁴ to model the probability of observing data in a configuration S close to criticality[26]:",
+        "page": 2,
+        "reference_key": "[26]"
+      },
+      {
+        "context": "The log-likelihood derived from P can be thought of the Hamiltonian of this Potts system [44]:",
+        "page": 2,
+        "reference_key": "[44]"
+      },
+      {
+        "context": "Second, it is adaptive: the number of clusters is not given as an input, unlike K-MEANS [38] or similar algorithms.",
+        "page": 2,
+        "reference_key": "[38]"
+      },
+      {
+        "context": "As such the algorithm competes with the likes of DBSCAN [7, 20] and HDBSCAN [6, 27].",
+        "page": 2,
+        "reference_key": "[7, 20]"
+      },
+      {
+        "context": "The so called “Louvain” algorithm [4] is agglomerative and can then be argued to implement the later bottom-up approach to “community detection” on networks.",
+        "page": 2,
+        "reference_key": "[4]"
+      },
+      {
+        "context": "3 is in spirit very similar to the Merging Algorithm (MR) developed by Marsili and Giada in [12].",
+        "page": 3,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "Our previously implemented methods were based broadly on efficient implementations that streamlined PGA optimization frameworks, e.g. those proposed in [15, 16, 47] allow for all sorts of mutations.",
+        "page": 3,
+        "reference_key": "[15, 16, 47]"
+      },
+      {
+        "context": "The f-SPC algorithm [47] secured additional computational advantages within this PGA framework by being able to exclude a computationally expensive mutation constraint within the genetic programming framework used in [15, 16].",
+        "page": 3,
+        "reference_key": "[47]"
+      },
+      {
+        "context": "This can be mitigated by using GPUs as in [15].",
+        "page": 3,
+        "reference_key": "[15]"
+      },
+      {
+        "context": "Marsili and Giada define two cases for ∆Lc [12]:",
+        "page": 3,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4].",
+        "page": 3,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "Here we simply use the student-t distribution because stock returns distributions are known to be fat-tailed [10, 13].",
+        "page": 4,
+        "reference_key": "[10, 13]"
+      },
+      {
+        "context": "Correlation matrices are readily directly used in Markowitz’s portfolio optimization [19, 49] or indirectly via clustering using methods such as hierarchical risk parity [35].",
+        "page": 5,
+        "reference_key": "[19, 49]"
+      },
+      {
+        "context": "Here the value 0.3 is an approximation to the average stock market average correlation [34].",
+        "page": 6,
+        "reference_key": "[34]"
+      },
+      {
+        "context": "Here each of the size and length pairs was simulated a hundred times, and the Adjusted Rand Index (ARI) [37] between the ground truth and the model’s output was averaged (See Table (IV)).",
+        "page": 6,
+        "reference_key": "[37]"
+      },
+      {
+        "context": "However, in the high-frequency domain one is more directly concerned about the applicability of sample estimated correlations that do not deal with the impact of discretization [33].",
+        "page": 6,
+        "reference_key": "[33]"
+      },
+      {
+        "context": "The final step is similar to the thresholding method used in the original Super-Paramagnetic Clustering (SPC) algorithm proposed by Blatt et al. [3]6.",
+        "page": 7,
+        "reference_key": "[3]"
+      },
+      {
+        "context": "In particular, an important related problem in financial time-series clustering is that of clustering correlation matrices with a block hierarchical structure [24, 40, 41].",
+        "page": 8,
+        "reference_key": "[24, 40, 41]"
+      },
+      {
+        "context": "There are many ways of parameterizing such nested linear models, and in fact this is just a special case of the more general model of Tumminello et al. [40].",
+        "page": 9,
+        "reference_key": "[40]"
+      },
+      {
+        "context": "The appeal of ALC class of clustering algorithms is its ability to consistently outperform the f-SPC algorithm[47] while being generally robust to noise.",
+        "page": 10,
+        "reference_key": "[47]"
+      },
+      {
+        "context": "Fig. 7a shows that ALC recovers clustering solutions of better quality if we use the likelihood as a quality function as was argued in [12].",
+        "page": 10,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "We compared the algorithm’s runtime to the previous f-SPC and HDBSCAN [27].",
+        "page": 10,
+        "reference_key": "[27]"
+      },
+      {
+        "context": "Crucially, it should also be noted that the Louvain algorithm exists in multiple faster versions than the original implementation use in the current algorithm [9, 32, 39]",
+        "page": 12,
+        "reference_key": "[9, 32, 39]"
+      },
+      {
+        "context": "This motivates alternative modeling with distributions which capture additional stylized fact [10, 13].",
+        "page": 12,
+        "reference_key": "[10, 13]"
+      },
+      {
+        "context": "Alternatives such as the information theoretic Mutual Information have previously been used directly on financial data time-series [8, 14].",
+        "page": 12,
+        "reference_key": "[8, 14]"
+      },
+      {
+        "context": "Here we provide ALC’s pseudocode which: 1.) generates clustering candidates, 2.) evaluates the likelihood of the candidate configurations Lc [11] using Eqn. (7), and then 3.) selects the best candidates and discards the others.",
+        "page": 14,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "Algorithm 1 Pseudo-code for a ALC implementation (Sec. (III)), and “alc.py” in [45]",
+        "page": 14,
+        "reference_key": "[45]"
+      },
+      {
+        "context": "The Noh Ansatz [11, 31] offers a powerful stochastic process model for clustering purposes.",
+        "page": 14,
+        "reference_key": "[11, 31]"
+      },
+      {
+        "context": "Implementation of Noh Ansatz model of correlated time-series (See code at [46])",
+        "page": 14,
+        "reference_key": "[46]"
+      },
+      {
+        "context": "Noise due to the estimation of the correlation matrix are typically cleaned to a certain extent using Random Matrix Theory methods [5, 42]",
+        "page": 14,
+        "reference_key": "[5, 42]"
+      },
+      {
+        "context": "The result is the UMAP [28] 2D embed of 3000 correlated time-series sorted within 10 clusters.",
+        "page": 15,
+        "reference_key": "[28]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Department of Statistical Sciences, University of Cape Town, Rondebosch 7701, South Africa",
+          "name": "Lionel Yelibi"
+        },
+        {
+          "affiliation": "Department of Statistical Sciences, University of Cape Town, Rondebosch 7701, South Africa",
+          "name": "Tim Gebbie"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Agglomerative Likelihood Clustering"
+        },
+        {
+          "page": 1,
+          "quote": "Lionel Yelibi∗ and Tim Gebbie†"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1908.00951v4 [q-fin.CP]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Agglomerative Likelihood Clustering",
+      "venue": "arXiv",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times."
+        }
+      ],
+      "text": "Can a fast serial agglomerative likelihood clustering algorithm improve on f-SPC for large time-series data by reducing compute cost while recovering or improving cluster configurations without prior cluster-number information?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Aghabozorgi, S.",
+          "Shirkhorshidi, A. S.",
+          "Wah, T. Y."
+        ],
+        "doi": null,
+        "key": "[1]",
+        "page": 12,
+        "title": "Time-series clustering – A decade review",
+        "venue": "Information Systems, 53:16–38",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Blatt, M.",
+          "Wiseman, S.",
+          "Domany, E."
+        ],
+        "doi": null,
+        "key": "[2]",
+        "page": 12,
+        "title": "Superparamagnetic Clustering of Data",
+        "venue": "Phys. Rev. Lett., 76(18):3251–3254",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "Blatt, M.",
+          "Wiseman, S.",
+          "Domany, E."
+        ],
+        "doi": null,
+        "key": "[3]",
+        "page": 12,
+        "title": "Data Clustering Using a Model Granular Magnet",
+        "venue": "Neural Computation, 9(8):1805–1842",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Blondel, V. D.",
+          "Guillaume, J.-L.",
+          "Lambiotte, R.",
+          "Lefebvre, E."
+        ],
+        "doi": null,
+        "key": "[4]",
+        "page": 12,
+        "title": "Fast unfolding of communities in large networks",
+        "venue": "Journal of Statistical Mechanics: Theory and Experiment, 2008(10):P10008",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Bun, J.",
+          "Bouchaud, J.-P.",
+          "Potters, M."
+        ],
+        "doi": null,
+        "key": "[5]",
+        "page": 12,
+        "title": "Cleaning large correlation matrices: Tools from Random Matrix Theory",
+        "venue": "Physics Reports, 666:1–109",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Campello, R. J. G. B.",
+          "Moulavi, D.",
+          "Sander, J."
+        ],
+        "doi": null,
+        "key": "[6]",
+        "page": 12,
+        "title": "Density-Based Clustering Based on Hierarchical Density Estimates",
+        "venue": "In Pei, J., Tseng, V. S., Cao, L., Motoda, H., and Xu, G., editors, Advances in Knowledge Discovery and Data Mining, Lecture Notes in Computer Science, pages 160–172, Berlin, Heidelberg. Springer.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Ester, M.",
+          "Kriegel, H.-P.",
+          "Sander, J.",
+          "Xu, X."
+        ],
+        "doi": null,
+        "key": "[7]",
+        "page": 13,
+        "title": "A Density-based Algorithm for Discovering Clusters a Density-based Algorithm for Discovering Clusters in Large Spatial Databases with Noise",
+        "venue": "In Proceedings of the Second International Conference on Knowledge Discovery and Data Mining, KDD’96, pages 226–231. AAAI Press.",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "Fiedor, P."
+        ],
+        "doi": null,
+        "key": "[8]",
+        "page": 13,
+        "title": "Networks in financial markets based on the mutual information rate",
+        "venue": "Phys. Rev. E, 89(5):052801",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Fontolan, F."
+        ],
+        "doi": null,
+        "key": "[9]",
+        "page": 13,
+        "title": "Modularity Based Community Detection on the GPU",
+        "venue": "Bachelors Thesis, Università Ca’ Foscari Venezia.",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Gabaix, X.",
+          "Gopikrishnan, P.",
+          "Plerou, V.",
+          "Stanley, H. E."
+        ],
+        "doi": null,
+        "key": "[10]",
+        "page": 13,
+        "title": "A theory of power-law distributions in financial market fluctuations",
+        "venue": "Nature, 423(6937):267–270",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Giada, L.",
+          "Marsili, M."
+        ],
+        "doi": null,
+        "key": "[11]",
+        "page": 13,
+        "title": "Data clustering and noise undressing of correlation matrices",
+        "venue": "Phys. Rev. E, 63(6):061101",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Giada, L.",
+          "Marsili, M."
+        ],
+        "doi": null,
+        "key": "[12]",
+        "page": 13,
+        "title": "Algorithms of maximum likelihood data clustering with applications",
+        "venue": "Physica A: Statistical Mechanics and its Applications, 315(3):650 – 664",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Gopikrishnan, P.",
+          "Meyer, M.",
+          "Amaral, L.",
+          "Stanley, H."
+        ],
+        "doi": null,
+        "key": "[13]",
+        "page": 13,
+        "title": "Inverse cubic law for the distribution of stock price variations",
+        "venue": "Eur. Phys. J. B, 3(2):139–140",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Guo, X.",
+          "Zhang, H.",
+          "Tian, T."
+        ],
+        "doi": null,
+        "key": "[14]",
+        "page": 13,
+        "title": "Development of stock correlation networks using mutual information and financial big data",
+        "venue": "PLOS ONE, 13(4):e0195941",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Hendricks, D.",
+          "Gebbie, T.",
+          "Wilcox, D."
+        ],
+        "doi": null,
+        "key": "[15]",
+        "page": 13,
+        "title": "Detecting intraday financial market states using temporal clustering",
+        "venue": "Quantitative Finance, 16(11):1657–1678",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Hendricks, D.",
+          "Gebbie, T.",
+          "Wilcox, D."
+        ],
+        "doi": null,
+        "key": "[16]",
+        "page": 13,
+        "title": "High-speed detection of emergent market clustering via an unsupervised parallel genetic algorithm",
+        "venue": "South African Journal of Science, 112(1/2):9",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Jain, A. K."
+        ],
+        "doi": null,
+        "key": "[17]",
+        "page": 13,
+        "title": "Data clustering: 50 years beyond K-means",
+        "venue": "Pattern Recognition Letters, 31(8):651 – 666",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Javed, M. A.",
+          "Younis, M. S.",
+          "Latif, S.",
+          "Qadir, J.",
+          "Baig, A."
+        ],
+        "doi": null,
+        "key": "[18]",
+        "page": 13,
+        "title": "Community detection in networks: A multidisciplinary review",
+        "venue": "Journal of Network and Computer Applications, 108:87–111",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Kalayci, C. B.",
+          "Ertenlice, O.",
+          "Akbay, M. A."
+        ],
+        "doi": null,
+        "key": "[19]",
+        "page": 13,
+        "title": "A comprehensive review of deterministic models and applications for mean-variance portfolio optimization",
+        "venue": "Expert Systems with Applications, 125:345–368",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Khan, K.",
+          "Rehman, S. U.",
+          "Aziz, K.",
+          "Fong, S.",
+          "Sarasvady, S."
+        ],
+        "doi": null,
+        "key": "[20]",
+        "page": 13,
+        "title": "DBSCAN: Past, present and future",
+        "venue": "In The Fifth International Conference on the Applications of Digital Information and Web Technologies (ICADIWT 2014), pages 232–238.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Kim, J.",
+          "Lee, W.",
+          "Song, J. J.",
+          "Lee, S.-B."
+        ],
+        "doi": null,
+        "key": "[21]",
+        "page": 13,
+        "title": "Optimized combinatorial clustering for stochastic processes",
+        "venue": "Cluster Comput, 20(2):1135–1148",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Liao, T. W."
+        ],
+        "doi": null,
+        "key": "[22]",
+        "page": 13,
+        "title": "Clustering of time series data—a survey",
+        "venue": "Pattern Recognition, 38(11):1857–1874",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Marsili, M."
+        ],
+        "doi": null,
+        "key": "[23]",
+        "page": 13,
+        "title": "Dissecting financial markets: sectors and states",
+        "venue": "Quantitative Finance, 2(4):297–302",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "Marti, G.",
+          "Andler, S.",
+          "Nielsen, F.",
+          "Donnat, P."
+        ],
+        "doi": null,
+        "key": "[24]",
+        "page": 13,
+        "title": "Clustering Financial Time Series: How Long is Enough?",
+        "venue": "In Proceedings of the Twenty-Fifth International Joint Conference on Artificial Intelligence, IJCAI’16, pages 2583–2589. AAAI Press. event-place: New York, New York, USA.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Marti, G.",
+          "Nielsen, F.",
+          "Bińkowski, M.",
+          "Donnat, P."
+        ],
+        "doi": null,
+        "key": "[25]",
+        "page": 13,
+        "title": "A review of two decades of correlations, hierarchies, networks and clustering in financial markets",
+        "venue": "arXiv preprint arXiv:1703.00485",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Mastromatteo, I.",
+          "Marsili, M."
+        ],
+        "doi": null,
+        "key": "[26]",
+        "page": 13,
+        "title": "On the criticality of inferred models",
+        "venue": "Journal of Statistical Mechanics: Theory and Experiment, 2011(10):P10012",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "McInnes, L.",
+          "Healy, J.",
+          "Astels, S."
+        ],
+        "doi": null,
+        "key": "[27]",
+        "page": 13,
+        "title": "hdbscan: Hierarchical density based clustering",
+        "venue": "Journal of Open Source Software, 2(11):205",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "McInnes, L.",
+          "Healy, J.",
+          "Saul, N.",
+          "Groibberger, L."
+        ],
+        "doi": null,
+        "key": "[28]",
+        "page": 13,
+        "title": "UMAP: Uniform Manifold Approximation and Projection",
+        "venue": "The Journal of Open Source Software, 3(29):861",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Murtagh, F.",
+          "Contreras, P."
+        ],
+        "doi": null,
+        "key": "[29]",
+        "page": 13,
+        "title": "Algorithms for hierarchical clustering: an overview",
+        "venue": "WIREs Data Mining and Knowledge Discovery, 2(1):86–97",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Namaki, A.",
+          "Shirazi, A. H.",
+          "Raei, R.",
+          "Jafari, G. R."
+        ],
+        "doi": null,
+        "key": "[30]",
+        "page": 13,
+        "title": "Network analysis of a financial market based on genuine correlation and threshold method",
+        "venue": "Physica A: Statistical Mechanics and its Applications, 390(21):3835–3841",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Noh, J. D."
+        ],
+        "doi": null,
+        "key": "[31]",
+        "page": 13,
+        "title": "Model for correlations in stock markets",
+        "venue": "Phys. Rev. E, 61(5):5981–5982",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Ozaki, N.",
+          "Tezuka, H.",
+          "Inaba, M."
+        ],
+        "doi": null,
+        "key": "[32]",
+        "page": 13,
+        "title": "A Simple Acceleration Method for the Louvain Algorithm",
+        "venue": "undefined.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Pedregosa, F.",
+          "Varoquaux, G.",
+          "Gramfort, A.",
+          "Michel, V.",
+          "Thirion, B.",
+          "Grisel, O.",
+          "Blondel, M.",
+          "Prettenhofer, P.",
+          "Weiss, R.",
+          "Dubourg, V.",
+          "Vanderplas, J.",
+          "Passos, A.",
+          "Cournapeau, D.",
+          "Brucher, M.",
+          "Perrot, M.",
+          "Duchesnay, E."
+        ],
+        "doi": null,
+        "key": "[33]",
+        "page": 13,
+        "title": "Scikit-learn: Machine Learning in Python",
+        "venue": "Journal of Machine Learning Research, 12:2825–2830",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Pollet, J. M.",
+          "Wilson, M."
+        ],
+        "doi": null,
+        "key": "[34]",
+        "page": 13,
+        "title": "Average correlation and stock market returns",
+        "venue": "Journal of Financial Economics, 96(3):364–380",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Prado, M. L. d."
+        ],
+        "doi": null,
+        "key": "[35]",
+        "page": 13,
+        "title": "Building Diversified Portfolios that Outperform Out of Sample",
+        "venue": "The Journal of Portfolio Management, 42(4):59–69",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Ronhovde, P.",
+          "Nussinov, Z."
+        ],
+        "doi": null,
+        "key": "[36]",
+        "page": 13,
+        "title": "Local resolution-limit-free Potts model for community detection",
+        "venue": "Phys. Rev. E, 81(4):046114",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Santos, J. M.",
+          "Embrechts, M."
+        ],
+        "doi": null,
+        "key": "[37]",
+        "page": 13,
+        "title": "On the Use of the Adjusted Rand Index as a Metric for Evaluating Supervised Classification",
+        "venue": "In ICANN 2009. Lecture Notes in Computer Science, vol 5769., In: Alippi C., Polycarpou M., Panayiotou C., Ellinas G. (eds) Artificial Neural Networks – ICANN 2009. Springer, Berlin, Heidelberg.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Steinley, D."
+        ],
+        "doi": null,
+        "key": "[38]",
+        "page": 13,
+        "title": "K-means clustering: A half-century synthesis",
+        "venue": "British Journal of Mathematical and Statistical Psychology, 59(1):1–34",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Traag, V. A."
+        ],
+        "doi": null,
+        "key": "[39]",
+        "page": 13,
+        "title": "Faster unfolding of communities: Speeding up the Louvain algorithm",
+        "venue": "Phys. Rev. E, 92(3):032801",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Tumminello, M.",
+          "Lillo, F.",
+          "Mantegna, R. N."
+        ],
+        "doi": null,
+        "key": "[40]",
+        "page": 13,
+        "title": "Hierarchically nested factor model from multivariate data",
+        "venue": "EPL, 78(3):30006",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Tumminello, M.",
+          "Lillo, F.",
+          "Mantegna, R. N."
+        ],
+        "doi": null,
+        "key": "[41]",
+        "page": 13,
+        "title": "Correlation, hierarchies, and networks in financial markets",
+        "venue": "Journal of Economic Behavior & Organization, 75(1):40–58",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Wilcox, D.",
+          "Gebbie, T."
+        ],
+        "doi": null,
+        "key": "[42]",
+        "page": 13,
+        "title": "An analysis of cross-correlations in an emerging market",
+        "venue": "Physica A: Statistical Mechanics and its Applications, 375(2):584 – 598",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Wilcox, D.",
+          "Gebbie, T."
+        ],
+        "doi": null,
+        "key": "[43]",
+        "page": 14,
+        "title": "Hierarchical Causality in Financial Economics",
+        "venue": "https://ssrn.com/abstract=2544327.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Wu, F. Y."
+        ],
+        "doi": null,
+        "key": "[44]",
+        "page": 14,
+        "title": "The Potts model",
+        "venue": "Rev. Mod. Phys., 54(1):235–268",
+        "year": 1982
+      },
+      {
+        "authors": [
+          "Yelibi, L."
+        ],
+        "doi": null,
+        "key": "[45]",
+        "page": 14,
+        "title": "Agglomerative Likelihood Clustering",
+        "venue": "https://github.com/lyelibi/ALC.",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Yelibi, L."
+        ],
+        "doi": null,
+        "key": "[46]",
+        "page": 14,
+        "title": "One Factor Timeseries Model",
+        "venue": "https://github.com/lyelibi/timeseries gen.",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Yelibi, L.",
+          "Gebbie, T."
+        ],
+        "doi": null,
+        "key": "[47]",
+        "page": 14,
+        "title": "Fast Super-Paramagnetic Clustering",
+        "venue": "Physica A: Statistical Mechanics and its Applications, 551:124049",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Zalesky, A.",
+          "Fornito, A.",
+          "Bullmore, E."
+        ],
+        "doi": null,
+        "key": "[48]",
+        "page": 14,
+        "title": "On the use of correlation as a measure of network connectivity",
+        "venue": "NeuroImage, 60(4):2096–2106",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Zhang, Y.",
+          "Li, X.",
+          "Guo, S."
+        ],
+        "doi": null,
+        "key": "[49]",
+        "page": 14,
+        "title": "Portfolio selection problems with Markowitz’s mean–variance framework: a review of literature",
+        "venue": "Fuzzy Optim Decis Making, 17(2):125–158",
+        "year": 2018
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+        "reference_key": "[47]",
+        "relation": "contrasts",
+        "why": "The paper positions ALC explicitly as an alternative to f-SPC with reduced compute cost."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+        "reference_key": "[11, 12]",
+        "relation": "extends",
+        "why": "It takes the Giada-Marsili MLE clustering approach and recasts it in an agglomerative algorithm."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "The spectral analysis of stock market correlation matrices provides an intuition taking the form of the Noh ansatz [31]: that there exists a hierarchical structure in financial markets where individuals stocks are subcomponents of larger groups of assets, and each asset’s individual returns is influenced by the collection of assets it belongs to.",
+        "reference_key": "[31]",
+        "relation": "uses_method",
+        "why": "It adopts the Noh ansatz as the underlying generative model for time-series correlation structure."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4].",
+        "reference_key": "[4]",
+        "relation": "uses_method",
+        "why": "It borrows the greedy community-detection move-generation idea from Louvain-style agglomeration."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Here we will make the choice of the modified Giada-Marsili likelihood function, and then using Case 2 from the Merging Algorithm (Eqn. (6)).",
+        "reference_key": "[12]",
+        "relation": "extends",
+        "why": "It directly reuses the Giada-Marsili likelihood and Case 2 merging criterion."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Here each of the size and length pairs was simulated a hundred times, and the Adjusted Rand Index (ARI) [37] between the ground truth and the model’s output was averaged (See Table (IV)).",
+        "reference_key": "[37]",
+        "relation": "uses_method",
+        "why": "It uses the Adjusted Rand Index as the benchmark metric for clustering quality."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "The final step is similar to the thresholding method used in the original Super-Paramagnetic Clustering (SPC) algorithm proposed by Blatt et al. [3]6.",
+        "reference_key": "[3]",
+        "relation": "extends",
+        "why": "Its bootstrap thresholding step is explicitly modeled on the original SPC thresholding idea."
+      },
+      {
+        "confidence": "high",
+        "page": 9,
+        "quote": "There are many ways of parameterizing such nested linear models, and in fact this is just a special case of the more general model of Tumminello et al. [40].",
+        "reference_key": "[40]",
+        "relation": "extends",
+        "why": "Its hierarchical factor model is presented as a special case of the more general Tumminello et al. nested model."
+      },
+      {
+        "confidence": "high",
+        "page": 10,
+        "quote": "Finally, HDBSCAN which we believe the natural alternative to ALC as a hierarchical and density based clustering method, is more optimized than our algorithm, and would thus be currently preferable for extreme large data-sets.",
+        "reference_key": "[27]",
+        "relation": "contrasts",
+        "why": "It compares ALC directly against HDBSCAN as the natural alternative and notes HDBSCAN's speed advantage for extreme scale."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "There are advantages to this method relative to most industry standard alternatives: First, that Lc is completely dependent on Cij, and the dimensionality of the data-set only plays a part in computing Cij. Second, it is adaptive: the number of clusters is not given as an input, unlike K-MEANS [38] or similar algorithms.",
+          "start_page": 1,
+          "start_text": "Agglomerative Likelihood Clustering"
+        },
+        "summary": "Establishes the need for fast unsupervised time-series clustering, introduces ALC as a replacement for f-SPC, and presents the Noh ansatz and Giada-Marsili likelihood model.",
+        "title": "Introduction and the Giada-Marsili Likelihood Model"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "The main routine of agglomerative likelihood clustering algorithm for time-series clustering consists of merging clusters to find a maximum increase in likelihood",
+          "start_page": 3,
+          "start_text": "To build a fast general bottom-up merging algorithm we again start with all N spins in N cluster, but we iteratively merge clusters in a greedy fashion."
+        },
+        "summary": "Describes the greedy bottom-up merging method, the modified Giada-Marsili likelihood for individual clusters, the Case 2 ΔLc criterion, and the tracker/correlation matrix updates.",
+        "title": "Greedy Agglomerative Likelihood Clustering"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "We have empirically confirmed in Table IV that this will deteriorate the algorithms performance.",
+          "start_page": 4,
+          "start_text": "First, we start testing our algorithm on random uncorrelated data “white noise”."
+        },
+        "summary": "Tests ALC on synthetic uncorrelated and Student-t correlated time-series, varies N, D, and gs, and benchmarks cluster quality against HDBSCAN using ARI.",
+        "title": "Synthetic-Data Validation and ARI Benchmarks"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "The bootstrap method applied to a similar case with N =2000, n = 200, and series length of 20 (See green curve in Fig. (3b)) yields an ARI higher than 0.8 after 750 iterations thus demonstrating the usefulness of the method when dealing with large data-sets and short time-series.",
+          "start_page": 6,
+          "start_text": "Here we provide a way to mediate the influence of noise using bootstrapping."
+        },
+        "summary": "Introduces the bootstrap resampling and filtered-correlation procedure for low signal-to-noise data, including pij, ordinal filtering, threshold choices, and ARI convergence results.",
+        "title": "Bootstrap Filtering for Low Signal-to-Noise"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "ALC seems to also be 20% more robust to noise.",
+          "start_page": 8,
+          "start_text": "ALC is efficient at clustering systems of correlated time-series generated using a single factor model when compared to HDBSCAN, but the likelihood model used is one explicitly derived using a single factor."
+        },
+        "summary": "Extends testing to hierarchically nested block correlation models, compares ALC and HDBSCAN on recovering nested versus merged clusters, and reports ALC's noise robustness.",
+        "title": "Hierarchical Block Correlation Robustness"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 10
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Finally we believe it is possible to upgrade ALC with more efficient coding, and superior modifications to the optimization scheme itself similar to recent Louvain’s implementations.",
+          "start_page": 10,
+          "start_text": "The appeal of ALC class of clustering algorithms is its ability to consistently outperform the f-SPC algorithm[47] while being generally robust to noise."
+        },
+        "summary": "Reports runtime scaling, compares ALC with f-SPC and HDBSCAN, summarizes advantages and limitations, and points to future work in online learning and alternative similarity measures.",
+        "title": "Performance, Discussion, and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "[49] Zhang, Y., Li, X., and Guo, S. (2018). Portfolio selection problems with Markowitz’s mean–variance framework: a review of literature. Fuzzy Optim Decis Making, 17(2):125–158.",
+          "start_page": 12,
+          "start_text": "[1] Aghabozorgi, S., Shirkhorshidi, A. S., and Wah, T. Y. (2015). Time-series clustering – A decade review. Information Systems, 53:16–38."
+        },
+        "summary": "Bibliography and reference list for prior clustering, econophysics, network-science, and financial time-series work.",
+        "title": "References"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "The result is the UMAP [28] 2D embed of 3000 correlated time-series sorted within 10 clusters.",
+          "start_page": 14,
+          "start_text": "Here we provide ALC’s pseudocode which: 1.) generates clustering candidates, 2.) evaluates the likelihood of the candidate configurations Lc [11] using Eqn. (7), and then 3.) selects the best candidates and discards the others."
+        },
+        "summary": "Appendices give the ALC pseudocode and the Noh-ansatz synthetic data-generation procedure, including Tables 1–2 and UMAP visualization.",
+        "title": "Appendices: ALC Pseudocode and Synthetic Data Generation"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It presents a new clustering algorithm and empirically benchmarks it on synthetic and real data.",
+      "value": "survey"
+    }
+  }
+}

@@ -1,0 +1,2529 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T20:43:05.868946936Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1909.06187v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 22,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 74192,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 18903,
+      "cached_tokens": 256,
+      "completion_tokens": 17751,
+      "reasoning_tokens": 7950,
+      "cost_usd": 0.0100670752,
+      "cost_source": "reported",
+      "latency_s": 163.769771489
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 25515,
+      "cached_tokens": 384,
+      "completion_tokens": 12280,
+      "reasoning_tokens": 11946,
+      "cost_usd": 0.0086775528,
+      "cost_source": "reported",
+      "latency_s": 141.518991277
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 44418,
+    "cached_tokens": 640,
+    "completion_tokens": 30031,
+    "cost_usd": 0.018744628,
+    "model_latency_s": 305.288762766,
+    "wall_s": 308.838953061
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e11-oneshot-30-2026-10-20/results/1909.06187v4.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Generalized uncertainty principle puts forward the existence of the shortest distances and/or maximum momentum at the Planck scale for consideration. In this article, we investigate the solutions of a two-dimensional Duffin-Kemmer-Petiau (DKP) oscillator within an external magnetic field in a minimal length (ML) scale. First, we obtain the eigensolutions in ordinary quantum mechanics. Then, we examine the DKP oscillator in the presence of an ML for the spin-zero and spin-one sectors. We determine an energy eigenvalue equation in both cases with the corresponding eigenfunctions in the non-relativistic limit. We show that in the ordinary quantum mechanic limit, where the ML correction vanishes, the energy eigenvalue equations become identical with the habitual quantum mechanical ones. Finally, we employ the Euler-Mclaurin summation formula and obtain the thermodynamic functions of the DKP oscillator in the high-temperature scale."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Boumali et al. 2013",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "This result is in agreement with [37]."
+              }
+            ],
+            "reference_key": "37",
+            "why": "It extends the OQM DKP oscillator with magnetic field to the minimal-length case and checks reduction to the earlier OQM result."
+          },
+          {
+            "cited_work": "Wu et al. 2017",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 10,
+                "quote": "Moreover, in another limit, where the external magnetic field does not exist, the cyclotron frequency vanishes and the energy eigenvalue function becomes identical to the one given in Eq. (34) in [56]."
+              }
+            ],
+            "reference_key": "56",
+            "why": "Its minimal-length energy result reduces to an existing GUP DKP oscillator result when the magnetic field is removed."
+          },
+          {
+            "cited_work": "Falek et al.",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "Instead of following that ansatz, we examine the spin-one case in another formalism as given in [38–40]."
+              }
+            ],
+            "reference_key": "38–40",
+            "why": "It adopts the alternative spin-one formalism and non-relativistic limit from this line of work rather than the common ansatz."
+          },
+          {
+            "cited_work": "Jana et al. 2009",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "Then, we follow the paper of Jana et al. [26]."
+              }
+            ],
+            "reference_key": "26",
+            "why": "It uses Jana et al.'s transformation of the minimal-length differential equation into a Schrödinger-type equation."
+          },
+          {
+            "cited_work": "Pacheco et al. 2003/2014",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 12,
+                "quote": "We establish the thermodynamic ensemble by considering the states with positive eigenvalues out of all values in the energy spectrum, because we do not accept the negative energy states as physical states since they are not bounded from below. Thus, we guarantee that the stability of the ensemble [53]."
+              }
+            ],
+            "reference_key": "52, 53",
+            "why": "Its thermodynamic treatment follows the canonical-ensemble style used for Dirac-oscillator thermodynamics."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "common spin-one ansatz in DKP oscillator papers",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 6,
+                "quote": "Moreover, without giving any arguments nor physical justifications they made an ansatz and assumed that Ψ1 = Ψ2 ="
+              }
+            ],
+            "reference_key": "37, 56",
+            "why": "The paper criticizes the unjustified reduction of the spin-one case to the spin-zero equation and instead treats spin-one with a different formalism."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Finally, we employ the Euler-Mclaurin summation formula and obtain the thermodynamic functions of the DKP oscillator in the high-temperature scale."
+          }
+        ],
+        "text": "A two-dimensional DKP oscillator in an external magnetic field and minimal-length quantum mechanics has modified spin-zero and spin-one energy spectra and high-temperature thermodynamic functions that reduce to ordinary quantum mechanics when the minimal-length parameter vanishes."
+      }
+    },
+    "citations": [
+      {
+        "context": "introduction",
+        "page": 2,
+        "reference_key": "1–6,"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Laboratory of Applied and Theoretical Physics, Larbi Tebessi University, 12000 Tebessa, Algeria",
+          "name": "Houcine Aounallah"
+        },
+        {
+          "affiliation": "Department of Physics, Akdeniz University, Campus 07058 Antalya, Turkey; Department of Physics, University of Hradec Králové, Rokitanského 62, 500 03 Hradec Králové, Czechia",
+          "name": "Bekir Can Lütfüoğlu"
+        },
+        {
+          "affiliation": "Department of Physics, University of Hradec Králové, Rokitanského 62, 500 03 Hradec Králové, Czechia",
+          "name": "Jan Kříž"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Thermal properties of a two-dimensional Duffin-Kemmer-Petiau oscillator under an\nexternal magnetic field in the presence of a minimal length\nHoucine Aounallah,1, ∗ Bekir Can Lütfüoğlu,2, 3, † and Jan Křı́ž3, ‡"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1909.06187v4",
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Thermal properties of a two-dimensional Duffin-Kemmer-Petiau oscillator under an external magnetic field in the presence of a minimal length",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 3,
+          "quote": "To our knowledge, the solutions of a two-dimensional DKP oscillator under an external magnetic field in the presence of the ML has not been discussed with the statistical point of view. Our main motivation is to obtain the modification of the thermodynamic functions."
+        }
+      ],
+      "text": "How do an external magnetic field and a minimal-length scale modify the energy eigenvalues and thermodynamic functions of a two-dimensional Duffin-Kemmer-Petiau oscillator, and do the results reduce to ordinary quantum mechanics when the minimal-length parameter vanishes?"
+    },
+    "references": [
+      {
+        "authors": [
+          "W.S. Chung",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 16,
+        "title": "Eur. Phys. J. C 79, 213, (2019).",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "P. Bosso"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 17,
+        "title": "Phys. Rev. D 97, 126010, (2018).",
+        "venue": "Phys. Rev. D",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "P. Bosso",
+          "O. Obregón"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 17,
+        "title": "Class. Quantum Grav. 37, 045003, (2020).",
+        "venue": "Class. Quantum Grav.",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "C. Villalpando",
+          "S.K. Modak"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 17,
+        "title": "Phys. Rev. D 100, 024054, (2019).",
+        "venue": "Phys. Rev. D",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "L. Xiang",
+          "Y. Ling",
+          "Y.-G. Shen",
+          "C.-Z. Liu",
+          "H.-S. He",
+          "L.-F. Xu"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 17,
+        "title": "Ann. Phys. 396, 334, (2018).",
+        "venue": "Ann. Phys.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "S. Saghafi",
+          "K. Nozari"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 17,
+        "title": "Int. J. Geom. Methods Mod. Phys., 14, 1750164, (2017).",
+        "venue": "Int. J. Geom. Methods Mod. Phys.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "A. Kempf"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 17,
+        "title": "J. Math. Phys. 35, 4483, (1994).",
+        "venue": "J. Math. Phys.",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "A. Kempf",
+          "G. Mangano",
+          "R. B. Mann"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 17,
+        "title": "Phys. Rev. D 52, 1108, (1995).",
+        "venue": "Phys. Rev. D",
+        "year": 1995
+      },
+      {
+        "authors": [
+          "H. Hinrichsen",
+          "A. Kempf"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 17,
+        "title": "J. Math. Phys. 37, 2121, (1996).",
+        "venue": "J. Math. Phys.",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "A. Kempf"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 17,
+        "title": "J. Phys. A: Math. Gen. 30, 2093, (1997).",
+        "venue": "J. Phys. A: Math. Gen.",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "M. Merad",
+          "F. Zeroual",
+          "M. Falek"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 17,
+        "title": "Mod. Phys. Lett. A 27, 1250080, (2012).",
+        "venue": "Mod. Phys. Lett. A",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "V.H. Badalov",
+          "B. Baris",
+          "K. Uzun"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 17,
+        "title": "Mod. Phys. Lett. A 34, 1950107, (2019).",
+        "venue": "Mod. Phys. Lett. A",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y. Li",
+          "D. Zhao",
+          "Q. Wang"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 17,
+        "title": "J. Math. Phys. 60, 041501, (2019).",
+        "venue": "J. Math. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B.C. Lütfüoğlu",
+          "F. Akdeniz",
+          "O. Bayrak"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 17,
+        "title": "J. Math. Phys. 57, 032103, (2016).",
+        "venue": "J. Math. Phys.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "H. Hassanabadi",
+          "E. Maghsoodi",
+          "A.N. Ikot",
+          "S. Zarrinkamar"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2013, 923686, (2013).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "H. Hassanabadi",
+          "Z. Molaee",
+          "S. Zarrinkamar"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2014, 459345, (2014).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "S. Haouat"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 17,
+        "title": "Phys. Lett. B 729, 33, (2014).",
+        "venue": "Phys. Lett. B",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "A. Bhat",
+          "S. Dey",
+          "M. Faizal",
+          "C.G. Hou",
+          "W. Zhao"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 17,
+        "title": "Phys. Lett. B 770, 325, (2017).",
+        "venue": "Phys. Lett. B",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "S.A. Khorram-Hosseini",
+          "H. Panahi",
+          "S. Zarrinkamar"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 17,
+        "title": "Eur. Phys. J. Plus 134, 541, (2019).",
+        "venue": "Eur. Phys. J. Plus",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B.C. Lütfüoğlu",
+          "A.N. Ikot",
+          "U.S. Okorie",
+          "A.T. Ngiangia"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 17,
+        "title": "Commun. Theor. Phys. 71, 1127, (2019).",
+        "venue": "Commun. Theor. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B.C. Lütfüoğlu"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 17,
+        "title": "Commun. Theor. Phys. 71, 267, (2019).",
+        "venue": "Commun. Theor. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M. Hosseini",
+          "H. Hassanabadi",
+          "S. Hassanabadi",
+          "P. Sedaghatnia"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 17,
+        "title": "Int. J. Geom. Methods Mod. Phys., 16, 1950054, (2019).",
+        "venue": "Int. J. Geom. Methods Mod. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "A. Arda",
+          "R. Sever"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 17,
+        "title": "Eur. Phys. J. Plus 134, 29, (2019).",
+        "venue": "Eur. Phys. J. Plus",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "R.R.S. Oliveira",
+          "R.V. Maluf",
+          "C.A.S. Almeida"
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 17,
+        "title": "Ann. Phys. 400, 1, (2019).",
+        "venue": "Ann. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "O. Yesiltas"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 17,
+        "title": "Eur. Phys. J. Plus 134, 331, (2019).",
+        "venue": "Eur. Phys. J. Plus",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "T. K. Jana",
+          "P. Roy"
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 17,
+        "title": "Phys. Lett. A 373, 1239, (2009).",
+        "venue": "Phys. Lett. A",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "A. Boumali",
+          "Z. Selama"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 17,
+        "title": "Phys. Part. Nucl. Lett. 2018, 473, (2018).",
+        "venue": "Phys. Part. Nucl. Lett.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "I.L. Elviyanti",
+          "B.B. Pratiwi",
+          "A. Suparmi",
+          "C.Cari"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 17,
+        "title": "Adv. Math. Phys. 2018, 9658679, (2018).",
+        "venue": "Adv. Math. Phys.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "L. Menculini",
+          "O. Panella",
+          "P. Roy"
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 17,
+        "title": "Phys. Rev. D 87, 065017, (2013).",
+        "venue": "Phys. Rev. D",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "P. Pedram",
+          "M. Amirfakhrian",
+          "H. Shababi"
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 17,
+        "title": "Int. J. Mod. Phys. D 24, 1550016, (2015).",
+        "venue": "Int. J. Mod. Phys. D",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "A.N. Ikot",
+          "H.P. Obong",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 17,
+        "title": "Chin. Phys. Lett. 32, 030201, (2015).",
+        "venue": "Chin. Phys. Lett.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "B. Hamil",
+          "M. Merad"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 17,
+        "title": "Few-Body Syst. 60, 36, (2019).",
+        "venue": "Few-Body Syst.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "G. Petiau"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 17,
+        "title": "Acad. R. Belg. Cl. Sci. Mém. Collect. 8, 16, (1936).",
+        "venue": "Acad. R. Belg. Cl. Sci. Mém. Collect.",
+        "year": 1936
+      },
+      {
+        "authors": [
+          "R. J.Duffin"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 17,
+        "title": "Phys. Rev. 54, 1114, (1939).",
+        "venue": "Phys. Rev.",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "N. Kemmer"
+        ],
+        "doi": null,
+        "key": "35",
+        "page": 17,
+        "title": "Proc. R. Soc. A 166, 127, (1938).",
+        "venue": "Proc. R. Soc. A",
+        "year": 1938
+      },
+      {
+        "authors": [
+          "N. Kemmer"
+        ],
+        "doi": null,
+        "key": "36",
+        "page": 17,
+        "title": "Proc. R. Soc. A 173, 91, (1939).",
+        "venue": "Proc. R. Soc. A",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "A. Boumali",
+          "L. Chetouani",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "37",
+        "page": 17,
+        "title": "Can. J. Phys. 91, 1, (2013).",
+        "venue": "Can. J. Phys.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "M. Falek",
+          "M. Merad"
+        ],
+        "doi": null,
+        "key": "38",
+        "page": 17,
+        "title": "J. Math Phys 51, 033516, (2010).",
+        "venue": "J. Math Phys",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "M. Falek",
+          "M. Merad",
+          "M. Moumni"
+        ],
+        "doi": null,
+        "key": "39",
+        "page": 17,
+        "title": "J. Math. Phys. 60, 013505, (2019).",
+        "venue": "J. Math. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M. Falek",
+          "M. Merad",
+          "T. Birkandan"
+        ],
+        "doi": null,
+        "key": "40",
+        "page": 17,
+        "title": "J. Math. Phys. 58, 023501, (2017).",
+        "venue": "J. Math. Phys.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "A. Boumali",
+          "H. Aounallah"
+        ],
+        "doi": null,
+        "key": "41",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2018, 1031763, (2018).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "H. Aounallah",
+          "A. Boumali"
+        ],
+        "doi": null,
+        "key": "42",
+        "page": 17,
+        "title": "Phys. Part. Nucl. Lett. 16, 195, (2019).",
+        "venue": "Phys. Part. Nucl. Lett.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M. Hosseinpour",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "43",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2019, 295354, (2019).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B.Q. Wang",
+          "Z.W. Long",
+          "C.Y. Long",
+          "S.R. Wu"
+        ],
+        "doi": null,
+        "key": "44",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2017, 2843020, (2017).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "B.Q. Wang",
+          "Z.W. Long",
+          "C.Y. Long",
+          "S.R. Wu"
+        ],
+        "doi": null,
+        "key": "45",
+        "page": 17,
+        "title": "Chin. Phys. B 27, 010301, (2018).",
+        "venue": "Chin. Phys. B",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "M.A. Hun",
+          "N. Candemir"
+        ],
+        "doi": null,
+        "key": "46",
+        "page": 17,
+        "title": "Int. J. Mod. Phys. A 34, 1950056, (2019).",
+        "venue": "Int. J. Mod. Phys. A",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "J. Lunardi"
+        ],
+        "doi": null,
+        "key": "47",
+        "page": 17,
+        "title": "J. Math. Phys. 58, 123501, (2017).",
+        "venue": "J. Math. Phys.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Y. Chargui"
+        ],
+        "doi": null,
+        "key": "48",
+        "page": 17,
+        "title": "Phys. Lett. A 382, 949, (2018).",
+        "venue": "Phys. Lett. A",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "W.S. Chung",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "49",
+        "page": 17,
+        "title": "Int. J. Theor. Phys. 58, 2267, (2019).",
+        "venue": "Int. J. Theor. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "S. Sargolzaeipor",
+          "H. Hassanabadi",
+          "W.S. Chung"
+        ],
+        "doi": null,
+        "key": "50",
+        "page": 17,
+        "title": "Can. J. Phys. 96, 25, (2018).",
+        "venue": "Can. J. Phys.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "A.N. Ikot",
+          "U.S. Okorie",
+          "C.A. Onate",
+          "M.C. Onyeaju",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "51",
+        "page": 17,
+        "title": "Can. J. Phys. 97, 1161, (2019).",
+        "venue": "Can. J. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M.H. Pacheco",
+          "R.R. Landim",
+          "C.A.S. Almeida"
+        ],
+        "doi": null,
+        "key": "52",
+        "page": 17,
+        "title": "Phys. Lett. A 311, 93, (2003).",
+        "venue": "Phys. Lett. A",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "M.H. Pacheco",
+          "R.V. Maluf",
+          "C.A.S. Almeida"
+        ],
+        "doi": null,
+        "key": "53",
+        "page": 17,
+        "title": "EPL 108, 10005, (2014).",
+        "venue": "EPL",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "K. Nouicer"
+        ],
+        "doi": null,
+        "key": "54",
+        "page": 17,
+        "title": "J. Phys. A: Math. Gen. 39, 5125, (2006).",
+        "venue": "J. Phys. A: Math. Gen.",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "B. Hamil",
+          "M. Merad"
+        ],
+        "doi": null,
+        "key": "55",
+        "page": 17,
+        "title": "Eur. Phys. J. Plus. 133, 174, (2018).",
+        "venue": "Eur. Phys. J. Plus.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "S.R. Wu",
+          "Z.W. Long",
+          "C.Y. Long",
+          "B.Q. Wang",
+          "Y. Liu"
+        ],
+        "doi": null,
+        "key": "56",
+        "page": 17,
+        "title": "Eur. Phys. J. Plus 132, 186, (2017).",
+        "venue": "Eur. Phys. J. Plus",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "A. Boumali",
+          "L. Chetouani",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "57",
+        "page": 17,
+        "title": "Acta Phys. Pol. B 47, 2067, (2016).",
+        "venue": "Acta Phys. Pol. B",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "A. Boumali",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "58",
+        "page": 17,
+        "title": "Z. Naturforsch. 70, 619, (2015).",
+        "venue": "Z. Naturforsch.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "M. Abramowitz",
+          "I.A. Stegun"
+        ],
+        "doi": null,
+        "key": "59",
+        "page": 17,
+        "title": "Handbook of Mathematical Functions with formulas, Dover, New York (1972).",
+        "venue": "Dover, New York",
+        "year": 1972
+      },
+      {
+        "authors": [
+          "A. Valentim",
+          "K. Bakke",
+          "J.A. Plascak"
+        ],
+        "doi": null,
+        "key": "60",
+        "page": 17,
+        "title": "Eur. J. Phys. 40, 045101, (2019).",
+        "venue": "Eur. J. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Z. Wang",
+          "Z.W. Long",
+          "C.Y. Long",
+          "W. Zhang"
+        ],
+        "doi": null,
+        "key": "61",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2015, 901675, (2015).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "A. Boumali"
+        ],
+        "doi": null,
+        "key": "62",
+        "page": 17,
+        "title": "Z. Naturforsch. A. 70, 867, (2015).",
+        "venue": "Z. Naturforsch. A.",
+        "year": 2015
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "This result is in agreement with [37].",
+        "reference_key": "37",
+        "relation": "extends",
+        "why": "The paper extends the earlier DKP-oscillator solution with a magnetic field to the minimal-length setting and checks that the OQM limit agrees."
+      },
+      {
+        "confidence": "high",
+        "page": 10,
+        "quote": "Moreover, in another limit, where the external magnetic field does not exist, the cyclotron frequency vanishes and the energy eigenvalue function becomes identical to the one given in Eq. (34) in [56].",
+        "reference_key": "56",
+        "relation": "extends",
+        "why": "It reproduces the earlier GUP DKP-oscillator result as a special case without the external magnetic field."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "Instead of following that ansatz, we examine the spin-one case in another formalism as given in [38–40].",
+        "reference_key": "38–40",
+        "relation": "uses_method",
+        "why": "The spin-one treatment adopts the alternative formalism and non-relativistic approach from these works."
+      },
+      {
+        "confidence": "high",
+        "page": 9,
+        "quote": "Then, we follow the paper of Jana et al. [26].",
+        "reference_key": "26",
+        "relation": "uses_method",
+        "why": "The minimal-length differential equation is transformed into a Schrödinger-type equation using Jana et al.'s method."
+      },
+      {
+        "confidence": "high",
+        "page": 12,
+        "quote": "We employ the Euler-Mclaurin summation formula to compute the partition function as done in [39, 40, 54].",
+        "reference_key": "39, 40, 54",
+        "relation": "uses_method",
+        "why": "The high-temperature thermodynamic partition function is computed with the same Euler-Maclaurin summation strategy."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "βk =  03×3 03×3 03×3 iKjT 03×3 03×3 sj3×3 0̌3×1T 0j3×3 −s3×3 03×3 0̌3×1 0j1×3 0̌1×3 0̌1×3 0  ,",
+          "start_page": 2,
+          "start_text": "During recent years, the number of extensive research subjected to the Generalized Uncertainty Principle (GUP) in quantum mechanics [1], quantum electrodynamics [2], quantum cosmology [3], quantum gravity [4], black-hole physics [5], and its thermodynamics [6] have increased."
+        },
+        "summary": "Reviews the motivation for generalized uncertainty principle/minimal length in quantum mechanics, quantum gravity, and thermal physics; then introduces the DKP equation and its five- and ten-dimensional irreducible representations for spin-zero and spin-one particles.",
+        "title": "Introduction and DKP formalism"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "This result corrects the typo of Eq. (48) in [37].",
+          "start_page": 4,
+          "start_text": "In this section, we formulate the DKP oscillator and investigate its solution for spin-zero and spin-one particles in OQM limit."
+        },
+        "summary": "Solves the spin-zero DKP oscillator in ordinary quantum mechanics with a magnetic field, derives the coupled equations and momentum-space polar-coordinate equation, obtains the energy spectrum and wave function, and takes the non-relativistic limit.",
+        "title": "OQM spin-zero DKP oscillator"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "We conclude that the energy spectrum function in the spin-one case differs from the spin-zero case in the nonrelativistic limit.",
+          "start_page": 6,
+          "start_text": "In the spin-one case, unlike the spin-zero case, we use another non-trivial irreducible representation of the DKP algebra where β matrices are defined with 10 × 10 matrices."
+        },
+        "summary": "Treats the spin-one DKP oscillator in ordinary quantum mechanics. It notes that the usual ansatz makes spin-one equivalent to spin-zero, rejects that as unjustified, and instead uses an alternative vector-scalar formalism to derive a non-relativistic energy spectrum that differs from the spin-zero case.",
+        "title": "OQM spin-one DKP oscillator"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "RL ΛN n, m = h 1 2 4mωω i βM . (Ω)2 2n + m + 1 + m2 + 1 − 2 Ω2",
+          "start_page": 8,
+          "start_text": "In the ML formalism, we consider the modified Heisenberg algebra generated by the coordinate, X̂i, and the momentum, P̂i, operators which satisfy the algebra given in Eqs. (1), (2), and (3)."
+        },
+        "summary": "Applies the minimal-length modified Heisenberg algebra to the spin-zero DKP oscillator. It derives the modified differential equation, uses Jana et al.'s transformation and hypergeometric methods, obtains the minimal-length energy spectrum, and gives the non-relativistic limit and OQM check.",
+        "title": "Minimal-length spin-zero DKP oscillator"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Note that, when β = 0, the result becomes identical to the OQM result, which is given in Eq. (78).",
+          "start_page": 11,
+          "start_text": "In this subsection, we examine the DKP oscillator for a spin-one particle in the ML formalism in the non-relativistic limit."
+        },
+        "summary": "Extends the alternative spin-one treatment to the minimal-length formalism in the non-relativistic limit, derives the modified radial equation, hypergeometric solution, quantization condition, and final energy eigenvalue expression, and verifies the ordinary quantum mechanics limit.",
+        "title": "Minimal-length spin-one DKP oscillator"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Cv = 2kB 1 +    ω Ω − 1 2   Mc2 kB T ~Ω + ω Ω − 1 2  −1  − 2    ω Ω − 1 2   Mc2 kB T ~Ω + ω Ω − 1 2  −2     .",
+          "start_page": 12,
+          "start_text": "In this section, we investigate the statistical properties of the two-dimensional DKP oscillator that is under the effect of an external magnetic field in the presence of an ML."
+        },
+        "summary": "Derives high-temperature thermodynamic functions for the spin-zero DKP oscillator using the canonical partition function and Euler-Maclaurin summation. It gives the Helmholtz free energy, entropy, internal energy, and specific heat, then presents their ordinary quantum mechanics limits and a scalar-bosonic-oscillator limit.",
+        "title": "Thermodynamic functions"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "When we considered a stronger external magnetic field, we observed a smaller peak value at a higher temperature.",
+          "start_page": 15,
+          "start_text": "In all thermodynamic functions, we observe a critical value of the temperature, Tc, where the thermal behaviors alter."
+        },
+        "summary": "Discusses the critical temperature below which the Euler-Maclaurin high-temperature treatment fails, interprets the plotted thermodynamic functions versus temperature and magnetic-field strength, and concludes by summarizing the derivation, reduction to OQM, and magnetic-field effects on the thermal quantities.",
+        "title": "Critical temperature, plots, and conclusion"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "[62] A. Boumali, Z. Naturforsch. A. 70, 867, (2015).",
+          "start_page": 16,
+          "start_text": "[1] W.S. Chung, H. Hassanabadi, Eur. Phys. J. C 79, 213, (2019)."
+        },
+        "summary": "Bibliography of cited works in order from [1] through [62]. Use as a navigation aid only; it is not part of the substantive argument.",
+        "title": "References"
+      },
+      {
+        "pages": {
+          "end": 22,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 22,
+          "end_text": "FIG. 5: The behavior of the specific heat function of the DKP oscillator versus the reduced temperature for different values of the minimal length parameter.",
+          "start_page": 18,
+          "start_text": "FIG. 1: Low temperature behavior of the Helmholtz free energy function in the OQM limit."
+        },
+        "summary": "Figure gallery: low-temperature Helmholtz free energy and high-temperature plots of Helmholtz free energy, entropy, internal energy, and specific heat for β = 0, 0.005, and 0.5, each with three cyclotron-frequency choices.",
+        "title": "Figures: thermodynamic behavior"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a theoretical physics research article that derives energy spectra and thermodynamic functions.",
+      "value": "theory"
+    }
+  },
+  "pass1_check": {
+    "sites": 16,
+    "verbatim": 15,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 3
+  },
+  "corrections": [
+    {
+      "path": "/card/position/predecessors/0/evidence/0/page",
+      "action": "replace",
+      "value_json": "6",
+      "reason": "The cited sentence appears on page 6, not page 5.",
+      "evidence": [
+        {
+          "quote": "This result is in agreement with [37].",
+          "page": 6
+        }
+      ]
+    },
+    {
+      "path": "/relations/0/page",
+      "action": "replace",
+      "value_json": "6",
+      "reason": "The cited sentence appears on page 6, not page 5.",
+      "evidence": [
+        {
+          "quote": "This result is in agreement with [37].",
+          "page": 6
+        }
+      ]
+    },
+    {
+      "path": "/relations/4/page",
+      "action": "replace",
+      "value_json": "13",
+      "reason": "This sentence appears on page 13, not page 12.",
+      "evidence": [
+        {
+          "quote": "We employ the Euler-Mclaurin summation formula to compute the partition function as done in [39, 40, 54].",
+          "page": 13
+        }
+      ]
+    },
+    {
+      "path": "/sections/3/pages/end",
+      "action": "replace",
+      "value_json": "10",
+      "reason": "The ML spin-zero section ends before the spin-one ML section, which begins on page 11.",
+      "evidence": [
+        {
+          "quote": "B. Case of the spin-one particle",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "path": "/sections/3/source_span/end_page",
+      "action": "replace",
+      "value_json": "10",
+      "reason": "The ML spin-zero section ends before the spin-one ML section, which begins on page 11.",
+      "evidence": [
+        {
+          "quote": "B. Case of the spin-one particle",
+          "page": 11
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/card/position/predecessors/0/evidence/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/relations/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/relations/4/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/sections/3/pages/end",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/sections/3/source_span/end_page",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 16,
+    "verbatim": 15,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "Generalized uncertainty principle puts forward the existence of the shortest distances and/or maximum momentum at the Planck scale for consideration. In this article, we investigate the solutions of a two-dimensional Duffin-Kemmer-Petiau (DKP) oscillator within an external magnetic field in a minimal length (ML) scale. First, we obtain the eigensolutions in ordinary quantum mechanics. Then, we examine the DKP oscillator in the presence of an ML for the spin-zero and spin-one sectors. We determine an energy eigenvalue equation in both cases with the corresponding eigenfunctions in the non-relativistic limit. We show that in the ordinary quantum mechanic limit, where the ML correction vanishes, the energy eigenvalue equations become identical with the habitual quantum mechanical ones. Finally, we employ the Euler-Mclaurin summation formula and obtain the thermodynamic functions of the DKP oscillator in the high-temperature scale.",
+      "admitted": "Generalized uncertainty principle puts forward the existence of the shortest distances and/or maximum momentum at the Planck scale for consideration. In this article, we investigate the solutions of a two-dimensional Duffin-Kemmer-Petiau (DKP) oscillator within an external magnetic field in a minimal length (ML) scale. First, we obtain the eigensolutions in ordinary quantum mechanics. Then, we examine the DKP oscillator in the presence of an ML for the spin-zero and spin-one sectors. We determine an energy eigenvalue equation in both cases with the corresponding eigenfunctions in the non-relativistic limit. We show that in the ordinary quantum mechanic limit, where the ML correction vanishes, the energy eigenvalue equations become identical with the habitual quantum mechanical ones. Finally, we employ the Euler-Mclaurin summation formula and obtain the thermodynamic functions of the DKP oscillator in the high-temperature scale.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This result is in agreement with [37].",
+      "admitted": "This result is in agreement with [37].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Moreover, in another limit, where the external magnetic field does not exist, the cyclotron frequency vanishes and the energy eigenvalue function becomes identical to the one given in Eq. (34) in [56].",
+      "admitted": "Moreover, in another limit, where the external magnetic field does not exist, the cyclotron frequency vanishes and the energy eigenvalue function becomes identical to the one given in Eq. (34) in [56].",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Instead of following that ansatz, we examine the spin-one case in another formalism as given in [38–40].",
+      "admitted": "Instead of following that ansatz, we examine the spin-one case in another formalism as given in [38–40].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Then, we follow the paper of Jana et al. [26].",
+      "admitted": "Then, we follow the paper of Jana et al. [26].",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We establish the thermodynamic ensemble by considering the states with positive eigenvalues out of all values in the energy spectrum, because we do not accept the negative energy states as physical states since they are not bounded from below. Thus, we guarantee that the stability of the ensemble [53].",
+      "admitted": "We establish the thermodynamic ensemble by considering the states with positive eigenvalues out of all values in the energy spectrum, because we do not accept the negative energy states as physical states since they are not bounded from below. Thus, we guarantee that the stability of the ensemble [53].",
+      "similarity": null,
+      "cited_page": 12,
+      "matched_page": 12
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Moreover, without giving any arguments nor physical justifications they made an ansatz and assumed that Ψ1 = Ψ2 =",
+      "admitted": "Moreover, without giving any arguments nor physical justifications they made an ansatz and assumed that Ψ1 = Ψ2 =",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Finally, we employ the Euler-Mclaurin summation formula and obtain the thermodynamic functions of the DKP oscillator in the high-temperature scale.",
+      "admitted": "Finally, we employ the Euler-Mclaurin summation formula and obtain the thermodynamic functions of the DKP oscillator in the high-temperature scale.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "Thermal properties of a two-dimensional Duffin-Kemmer-Petiau oscillator under an\nexternal magnetic field in the presence of a minimal length\nHoucine Aounallah,1, ∗ Bekir Can Lütfüoğlu,2, 3, † and Jan Křı́ž3, ‡",
+      "admitted": "Thermal properties of a two-dimensional Duffin-Kemmer-Petiau oscillator under an external magnetic field in the presence of a minimal length Houcine Aounallah,1, ∗ Bekir Can Lütfüoğlu,2, 3, † and Jan Křı́ž3,",
+      "similarity": 0.9642857142857143,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "To our knowledge, the solutions of a two-dimensional DKP oscillator under an external magnetic field in the presence of the ML has not been discussed with the statistical point of view. Our main motivation is to obtain the modification of the thermodynamic functions.",
+      "admitted": "To our knowledge, the solutions of a two-dimensional DKP oscillator under an external magnetic field in the presence of the ML has not been discussed with the statistical point of view. Our main motivation is to obtain the modification of the thermodynamic functions.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "introduction",
+      "admitted": "introduction",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "This result is in agreement with [37].",
+      "admitted": "This result is in agreement with [37].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Moreover, in another limit, where the external magnetic field does not exist, the cyclotron frequency vanishes and the energy eigenvalue function becomes identical to the one given in Eq. (34) in [56].",
+      "admitted": "Moreover, in another limit, where the external magnetic field does not exist, the cyclotron frequency vanishes and the energy eigenvalue function becomes identical to the one given in Eq. (34) in [56].",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "Instead of following that ansatz, we examine the spin-one case in another formalism as given in [38–40].",
+      "admitted": "Instead of following that ansatz, we examine the spin-one case in another formalism as given in [38–40].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "Then, we follow the paper of Jana et al. [26].",
+      "admitted": "Then, we follow the paper of Jana et al. [26].",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "We employ the Euler-Mclaurin summation formula to compute the partition function as done in [39, 40, 54].",
+      "admitted": "We employ the Euler-Mclaurin summation formula to compute the partition function as done in [39, 40, 54].",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 1,
+    "verbatim": 15
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Generalized uncertainty principle puts forward the existence of the shortest distances and/or maximum momentum at the Planck scale for consideration. In this article, we investigate the solutions of a two-dimensional Duffin-Kemmer-Petiau (DKP) oscillator within an external magnetic field in a minimal length (ML) scale. First, we obtain the eigensolutions in ordinary quantum mechanics. Then, we examine the DKP oscillator in the presence of an ML for the spin-zero and spin-one sectors. We determine an energy eigenvalue equation in both cases with the corresponding eigenfunctions in the non-relativistic limit. We show that in the ordinary quantum mechanic limit, where the ML correction vanishes, the energy eigenvalue equations become identical with the habitual quantum mechanical ones. Finally, we employ the Euler-Mclaurin summation formula and obtain the thermodynamic functions of the DKP oscillator in the high-temperature scale."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Boumali et al. 2013",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 6,
+                "quote": "This result is in agreement with [37]."
+              }
+            ],
+            "reference_key": "37",
+            "why": "It extends the OQM DKP oscillator with magnetic field to the minimal-length case and checks reduction to the earlier OQM result."
+          },
+          {
+            "cited_work": "Wu et al. 2017",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 10,
+                "quote": "Moreover, in another limit, where the external magnetic field does not exist, the cyclotron frequency vanishes and the energy eigenvalue function becomes identical to the one given in Eq. (34) in [56]."
+              }
+            ],
+            "reference_key": "56",
+            "why": "Its minimal-length energy result reduces to an existing GUP DKP oscillator result when the magnetic field is removed."
+          },
+          {
+            "cited_work": "Falek et al.",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "Instead of following that ansatz, we examine the spin-one case in another formalism as given in [38–40]."
+              }
+            ],
+            "reference_key": "38–40",
+            "why": "It adopts the alternative spin-one formalism and non-relativistic limit from this line of work rather than the common ansatz."
+          },
+          {
+            "cited_work": "Jana et al. 2009",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "Then, we follow the paper of Jana et al. [26]."
+              }
+            ],
+            "reference_key": "26",
+            "why": "It uses Jana et al.'s transformation of the minimal-length differential equation into a Schrödinger-type equation."
+          },
+          {
+            "cited_work": "Pacheco et al. 2003/2014",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 12,
+                "quote": "We establish the thermodynamic ensemble by considering the states with positive eigenvalues out of all values in the energy spectrum, because we do not accept the negative energy states as physical states since they are not bounded from below. Thus, we guarantee that the stability of the ensemble [53]."
+              }
+            ],
+            "reference_key": "52, 53",
+            "why": "Its thermodynamic treatment follows the canonical-ensemble style used for Dirac-oscillator thermodynamics."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "common spin-one ansatz in DKP oscillator papers",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 6,
+                "quote": "Moreover, without giving any arguments nor physical justifications they made an ansatz and assumed that Ψ1 = Ψ2 ="
+              }
+            ],
+            "reference_key": "37, 56",
+            "why": "The paper criticizes the unjustified reduction of the spin-one case to the spin-zero equation and instead treats spin-one with a different formalism."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Finally, we employ the Euler-Mclaurin summation formula and obtain the thermodynamic functions of the DKP oscillator in the high-temperature scale."
+          }
+        ],
+        "text": "A two-dimensional DKP oscillator in an external magnetic field and minimal-length quantum mechanics has modified spin-zero and spin-one energy spectra and high-temperature thermodynamic functions that reduce to ordinary quantum mechanics when the minimal-length parameter vanishes."
+      }
+    },
+    "citations": [
+      {
+        "context": "introduction",
+        "page": 2,
+        "reference_key": "1–6,"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Laboratory of Applied and Theoretical Physics, Larbi Tebessi University, 12000 Tebessa, Algeria",
+          "name": "Houcine Aounallah"
+        },
+        {
+          "affiliation": "Department of Physics, Akdeniz University, Campus 07058 Antalya, Turkey; Department of Physics, University of Hradec Králové, Rokitanského 62, 500 03 Hradec Králové, Czechia",
+          "name": "Bekir Can Lütfüoğlu"
+        },
+        {
+          "affiliation": "Department of Physics, University of Hradec Králové, Rokitanského 62, 500 03 Hradec Králové, Czechia",
+          "name": "Jan Kříž"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Thermal properties of a two-dimensional Duffin-Kemmer-Petiau oscillator under an external magnetic field in the presence of a minimal length Houcine Aounallah,1, ∗ Bekir Can Lütfüoğlu,2, 3, † and Jan Křı́ž3,"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1909.06187v4",
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Thermal properties of a two-dimensional Duffin-Kemmer-Petiau oscillator under an external magnetic field in the presence of a minimal length",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 3,
+          "quote": "To our knowledge, the solutions of a two-dimensional DKP oscillator under an external magnetic field in the presence of the ML has not been discussed with the statistical point of view. Our main motivation is to obtain the modification of the thermodynamic functions."
+        }
+      ],
+      "text": "How do an external magnetic field and a minimal-length scale modify the energy eigenvalues and thermodynamic functions of a two-dimensional Duffin-Kemmer-Petiau oscillator, and do the results reduce to ordinary quantum mechanics when the minimal-length parameter vanishes?"
+    },
+    "references": [
+      {
+        "authors": [
+          "W.S. Chung",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 16,
+        "title": "Eur. Phys. J. C 79, 213, (2019).",
+        "venue": null,
+        "year": 2019
+      },
+      {
+        "authors": [
+          "P. Bosso"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 17,
+        "title": "Phys. Rev. D 97, 126010, (2018).",
+        "venue": "Phys. Rev. D",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "P. Bosso",
+          "O. Obregón"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 17,
+        "title": "Class. Quantum Grav. 37, 045003, (2020).",
+        "venue": "Class. Quantum Grav.",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "C. Villalpando",
+          "S.K. Modak"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 17,
+        "title": "Phys. Rev. D 100, 024054, (2019).",
+        "venue": "Phys. Rev. D",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "L. Xiang",
+          "Y. Ling",
+          "Y.-G. Shen",
+          "C.-Z. Liu",
+          "H.-S. He",
+          "L.-F. Xu"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 17,
+        "title": "Ann. Phys. 396, 334, (2018).",
+        "venue": "Ann. Phys.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "S. Saghafi",
+          "K. Nozari"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 17,
+        "title": "Int. J. Geom. Methods Mod. Phys., 14, 1750164, (2017).",
+        "venue": "Int. J. Geom. Methods Mod. Phys.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "A. Kempf"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 17,
+        "title": "J. Math. Phys. 35, 4483, (1994).",
+        "venue": "J. Math. Phys.",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "A. Kempf",
+          "G. Mangano",
+          "R. B. Mann"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 17,
+        "title": "Phys. Rev. D 52, 1108, (1995).",
+        "venue": "Phys. Rev. D",
+        "year": 1995
+      },
+      {
+        "authors": [
+          "H. Hinrichsen",
+          "A. Kempf"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 17,
+        "title": "J. Math. Phys. 37, 2121, (1996).",
+        "venue": "J. Math. Phys.",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "A. Kempf"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 17,
+        "title": "J. Phys. A: Math. Gen. 30, 2093, (1997).",
+        "venue": "J. Phys. A: Math. Gen.",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "M. Merad",
+          "F. Zeroual",
+          "M. Falek"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 17,
+        "title": "Mod. Phys. Lett. A 27, 1250080, (2012).",
+        "venue": "Mod. Phys. Lett. A",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "V.H. Badalov",
+          "B. Baris",
+          "K. Uzun"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 17,
+        "title": "Mod. Phys. Lett. A 34, 1950107, (2019).",
+        "venue": "Mod. Phys. Lett. A",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y. Li",
+          "D. Zhao",
+          "Q. Wang"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 17,
+        "title": "J. Math. Phys. 60, 041501, (2019).",
+        "venue": "J. Math. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B.C. Lütfüoğlu",
+          "F. Akdeniz",
+          "O. Bayrak"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 17,
+        "title": "J. Math. Phys. 57, 032103, (2016).",
+        "venue": "J. Math. Phys.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "H. Hassanabadi",
+          "E. Maghsoodi",
+          "A.N. Ikot",
+          "S. Zarrinkamar"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2013, 923686, (2013).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "H. Hassanabadi",
+          "Z. Molaee",
+          "S. Zarrinkamar"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2014, 459345, (2014).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "S. Haouat"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 17,
+        "title": "Phys. Lett. B 729, 33, (2014).",
+        "venue": "Phys. Lett. B",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "A. Bhat",
+          "S. Dey",
+          "M. Faizal",
+          "C.G. Hou",
+          "W. Zhao"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 17,
+        "title": "Phys. Lett. B 770, 325, (2017).",
+        "venue": "Phys. Lett. B",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "S.A. Khorram-Hosseini",
+          "H. Panahi",
+          "S. Zarrinkamar"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 17,
+        "title": "Eur. Phys. J. Plus 134, 541, (2019).",
+        "venue": "Eur. Phys. J. Plus",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B.C. Lütfüoğlu",
+          "A.N. Ikot",
+          "U.S. Okorie",
+          "A.T. Ngiangia"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 17,
+        "title": "Commun. Theor. Phys. 71, 1127, (2019).",
+        "venue": "Commun. Theor. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B.C. Lütfüoğlu"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 17,
+        "title": "Commun. Theor. Phys. 71, 267, (2019).",
+        "venue": "Commun. Theor. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M. Hosseini",
+          "H. Hassanabadi",
+          "S. Hassanabadi",
+          "P. Sedaghatnia"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 17,
+        "title": "Int. J. Geom. Methods Mod. Phys., 16, 1950054, (2019).",
+        "venue": "Int. J. Geom. Methods Mod. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "A. Arda",
+          "R. Sever"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 17,
+        "title": "Eur. Phys. J. Plus 134, 29, (2019).",
+        "venue": "Eur. Phys. J. Plus",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "R.R.S. Oliveira",
+          "R.V. Maluf",
+          "C.A.S. Almeida"
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 17,
+        "title": "Ann. Phys. 400, 1, (2019).",
+        "venue": "Ann. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "O. Yesiltas"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 17,
+        "title": "Eur. Phys. J. Plus 134, 331, (2019).",
+        "venue": "Eur. Phys. J. Plus",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "T. K. Jana",
+          "P. Roy"
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 17,
+        "title": "Phys. Lett. A 373, 1239, (2009).",
+        "venue": "Phys. Lett. A",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "A. Boumali",
+          "Z. Selama"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 17,
+        "title": "Phys. Part. Nucl. Lett. 2018, 473, (2018).",
+        "venue": "Phys. Part. Nucl. Lett.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "I.L. Elviyanti",
+          "B.B. Pratiwi",
+          "A. Suparmi",
+          "C.Cari"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 17,
+        "title": "Adv. Math. Phys. 2018, 9658679, (2018).",
+        "venue": "Adv. Math. Phys.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "L. Menculini",
+          "O. Panella",
+          "P. Roy"
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 17,
+        "title": "Phys. Rev. D 87, 065017, (2013).",
+        "venue": "Phys. Rev. D",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "P. Pedram",
+          "M. Amirfakhrian",
+          "H. Shababi"
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 17,
+        "title": "Int. J. Mod. Phys. D 24, 1550016, (2015).",
+        "venue": "Int. J. Mod. Phys. D",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "A.N. Ikot",
+          "H.P. Obong",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 17,
+        "title": "Chin. Phys. Lett. 32, 030201, (2015).",
+        "venue": "Chin. Phys. Lett.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "B. Hamil",
+          "M. Merad"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 17,
+        "title": "Few-Body Syst. 60, 36, (2019).",
+        "venue": "Few-Body Syst.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "G. Petiau"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 17,
+        "title": "Acad. R. Belg. Cl. Sci. Mém. Collect. 8, 16, (1936).",
+        "venue": "Acad. R. Belg. Cl. Sci. Mém. Collect.",
+        "year": 1936
+      },
+      {
+        "authors": [
+          "R. J.Duffin"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 17,
+        "title": "Phys. Rev. 54, 1114, (1939).",
+        "venue": "Phys. Rev.",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "N. Kemmer"
+        ],
+        "doi": null,
+        "key": "35",
+        "page": 17,
+        "title": "Proc. R. Soc. A 166, 127, (1938).",
+        "venue": "Proc. R. Soc. A",
+        "year": 1938
+      },
+      {
+        "authors": [
+          "N. Kemmer"
+        ],
+        "doi": null,
+        "key": "36",
+        "page": 17,
+        "title": "Proc. R. Soc. A 173, 91, (1939).",
+        "venue": "Proc. R. Soc. A",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "A. Boumali",
+          "L. Chetouani",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "37",
+        "page": 17,
+        "title": "Can. J. Phys. 91, 1, (2013).",
+        "venue": "Can. J. Phys.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "M. Falek",
+          "M. Merad"
+        ],
+        "doi": null,
+        "key": "38",
+        "page": 17,
+        "title": "J. Math Phys 51, 033516, (2010).",
+        "venue": "J. Math Phys",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "M. Falek",
+          "M. Merad",
+          "M. Moumni"
+        ],
+        "doi": null,
+        "key": "39",
+        "page": 17,
+        "title": "J. Math. Phys. 60, 013505, (2019).",
+        "venue": "J. Math. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M. Falek",
+          "M. Merad",
+          "T. Birkandan"
+        ],
+        "doi": null,
+        "key": "40",
+        "page": 17,
+        "title": "J. Math. Phys. 58, 023501, (2017).",
+        "venue": "J. Math. Phys.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "A. Boumali",
+          "H. Aounallah"
+        ],
+        "doi": null,
+        "key": "41",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2018, 1031763, (2018).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "H. Aounallah",
+          "A. Boumali"
+        ],
+        "doi": null,
+        "key": "42",
+        "page": 17,
+        "title": "Phys. Part. Nucl. Lett. 16, 195, (2019).",
+        "venue": "Phys. Part. Nucl. Lett.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M. Hosseinpour",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "43",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2019, 295354, (2019).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B.Q. Wang",
+          "Z.W. Long",
+          "C.Y. Long",
+          "S.R. Wu"
+        ],
+        "doi": null,
+        "key": "44",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2017, 2843020, (2017).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "B.Q. Wang",
+          "Z.W. Long",
+          "C.Y. Long",
+          "S.R. Wu"
+        ],
+        "doi": null,
+        "key": "45",
+        "page": 17,
+        "title": "Chin. Phys. B 27, 010301, (2018).",
+        "venue": "Chin. Phys. B",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "M.A. Hun",
+          "N. Candemir"
+        ],
+        "doi": null,
+        "key": "46",
+        "page": 17,
+        "title": "Int. J. Mod. Phys. A 34, 1950056, (2019).",
+        "venue": "Int. J. Mod. Phys. A",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "J. Lunardi"
+        ],
+        "doi": null,
+        "key": "47",
+        "page": 17,
+        "title": "J. Math. Phys. 58, 123501, (2017).",
+        "venue": "J. Math. Phys.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Y. Chargui"
+        ],
+        "doi": null,
+        "key": "48",
+        "page": 17,
+        "title": "Phys. Lett. A 382, 949, (2018).",
+        "venue": "Phys. Lett. A",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "W.S. Chung",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "49",
+        "page": 17,
+        "title": "Int. J. Theor. Phys. 58, 2267, (2019).",
+        "venue": "Int. J. Theor. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "S. Sargolzaeipor",
+          "H. Hassanabadi",
+          "W.S. Chung"
+        ],
+        "doi": null,
+        "key": "50",
+        "page": 17,
+        "title": "Can. J. Phys. 96, 25, (2018).",
+        "venue": "Can. J. Phys.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "A.N. Ikot",
+          "U.S. Okorie",
+          "C.A. Onate",
+          "M.C. Onyeaju",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "51",
+        "page": 17,
+        "title": "Can. J. Phys. 97, 1161, (2019).",
+        "venue": "Can. J. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M.H. Pacheco",
+          "R.R. Landim",
+          "C.A.S. Almeida"
+        ],
+        "doi": null,
+        "key": "52",
+        "page": 17,
+        "title": "Phys. Lett. A 311, 93, (2003).",
+        "venue": "Phys. Lett. A",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "M.H. Pacheco",
+          "R.V. Maluf",
+          "C.A.S. Almeida"
+        ],
+        "doi": null,
+        "key": "53",
+        "page": 17,
+        "title": "EPL 108, 10005, (2014).",
+        "venue": "EPL",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "K. Nouicer"
+        ],
+        "doi": null,
+        "key": "54",
+        "page": 17,
+        "title": "J. Phys. A: Math. Gen. 39, 5125, (2006).",
+        "venue": "J. Phys. A: Math. Gen.",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "B. Hamil",
+          "M. Merad"
+        ],
+        "doi": null,
+        "key": "55",
+        "page": 17,
+        "title": "Eur. Phys. J. Plus. 133, 174, (2018).",
+        "venue": "Eur. Phys. J. Plus.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "S.R. Wu",
+          "Z.W. Long",
+          "C.Y. Long",
+          "B.Q. Wang",
+          "Y. Liu"
+        ],
+        "doi": null,
+        "key": "56",
+        "page": 17,
+        "title": "Eur. Phys. J. Plus 132, 186, (2017).",
+        "venue": "Eur. Phys. J. Plus",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "A. Boumali",
+          "L. Chetouani",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "57",
+        "page": 17,
+        "title": "Acta Phys. Pol. B 47, 2067, (2016).",
+        "venue": "Acta Phys. Pol. B",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "A. Boumali",
+          "H. Hassanabadi"
+        ],
+        "doi": null,
+        "key": "58",
+        "page": 17,
+        "title": "Z. Naturforsch. 70, 619, (2015).",
+        "venue": "Z. Naturforsch.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "M. Abramowitz",
+          "I.A. Stegun"
+        ],
+        "doi": null,
+        "key": "59",
+        "page": 17,
+        "title": "Handbook of Mathematical Functions with formulas, Dover, New York (1972).",
+        "venue": "Dover, New York",
+        "year": 1972
+      },
+      {
+        "authors": [
+          "A. Valentim",
+          "K. Bakke",
+          "J.A. Plascak"
+        ],
+        "doi": null,
+        "key": "60",
+        "page": 17,
+        "title": "Eur. J. Phys. 40, 045101, (2019).",
+        "venue": "Eur. J. Phys.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Z. Wang",
+          "Z.W. Long",
+          "C.Y. Long",
+          "W. Zhang"
+        ],
+        "doi": null,
+        "key": "61",
+        "page": 17,
+        "title": "Adv. High Energy Phys. 2015, 901675, (2015).",
+        "venue": "Adv. High Energy Phys.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "A. Boumali"
+        ],
+        "doi": null,
+        "key": "62",
+        "page": 17,
+        "title": "Z. Naturforsch. A. 70, 867, (2015).",
+        "venue": "Z. Naturforsch. A.",
+        "year": 2015
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "This result is in agreement with [37].",
+        "reference_key": "37",
+        "relation": "extends",
+        "why": "The paper extends the earlier DKP-oscillator solution with a magnetic field to the minimal-length setting and checks that the OQM limit agrees."
+      },
+      {
+        "confidence": "high",
+        "page": 10,
+        "quote": "Moreover, in another limit, where the external magnetic field does not exist, the cyclotron frequency vanishes and the energy eigenvalue function becomes identical to the one given in Eq. (34) in [56].",
+        "reference_key": "56",
+        "relation": "extends",
+        "why": "It reproduces the earlier GUP DKP-oscillator result as a special case without the external magnetic field."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "Instead of following that ansatz, we examine the spin-one case in another formalism as given in [38–40].",
+        "reference_key": "38–40",
+        "relation": "uses_method",
+        "why": "The spin-one treatment adopts the alternative formalism and non-relativistic approach from these works."
+      },
+      {
+        "confidence": "high",
+        "page": 9,
+        "quote": "Then, we follow the paper of Jana et al. [26].",
+        "reference_key": "26",
+        "relation": "uses_method",
+        "why": "The minimal-length differential equation is transformed into a Schrödinger-type equation using Jana et al.'s method."
+      },
+      {
+        "confidence": "high",
+        "page": 13,
+        "quote": "We employ the Euler-Mclaurin summation formula to compute the partition function as done in [39, 40, 54].",
+        "reference_key": "39, 40, 54",
+        "relation": "uses_method",
+        "why": "The high-temperature thermodynamic partition function is computed with the same Euler-Maclaurin summation strategy."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "βk =  03×3 03×3 03×3 iKjT 03×3 03×3 sj3×3 0̌3×1T 0j3×3 −s3×3 03×3 0̌3×1 0j1×3 0̌1×3 0̌1×3 0  ,",
+          "start_page": 2,
+          "start_text": "During recent years, the number of extensive research subjected to the Generalized Uncertainty Principle (GUP) in quantum mechanics [1], quantum electrodynamics [2], quantum cosmology [3], quantum gravity [4], black-hole physics [5], and its thermodynamics [6] have increased."
+        },
+        "summary": "Reviews the motivation for generalized uncertainty principle/minimal length in quantum mechanics, quantum gravity, and thermal physics; then introduces the DKP equation and its five- and ten-dimensional irreducible representations for spin-zero and spin-one particles.",
+        "title": "Introduction and DKP formalism"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "This result corrects the typo of Eq. (48) in [37].",
+          "start_page": 4,
+          "start_text": "In this section, we formulate the DKP oscillator and investigate its solution for spin-zero and spin-one particles in OQM limit."
+        },
+        "summary": "Solves the spin-zero DKP oscillator in ordinary quantum mechanics with a magnetic field, derives the coupled equations and momentum-space polar-coordinate equation, obtains the energy spectrum and wave function, and takes the non-relativistic limit.",
+        "title": "OQM spin-zero DKP oscillator"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "We conclude that the energy spectrum function in the spin-one case differs from the spin-zero case in the nonrelativistic limit.",
+          "start_page": 6,
+          "start_text": "In the spin-one case, unlike the spin-zero case, we use another non-trivial irreducible representation of the DKP algebra where β matrices are defined with 10 × 10 matrices."
+        },
+        "summary": "Treats the spin-one DKP oscillator in ordinary quantum mechanics. It notes that the usual ansatz makes spin-one equivalent to spin-zero, rejects that as unjustified, and instead uses an alternative vector-scalar formalism to derive a non-relativistic energy spectrum that differs from the spin-zero case.",
+        "title": "OQM spin-one DKP oscillator"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "RL ΛN n, m = h 1 2 4mωω i βM . (Ω)2 2n + m + 1 + m2 + 1 − 2 Ω2",
+          "start_page": 8,
+          "start_text": "In the ML formalism, we consider the modified Heisenberg algebra generated by the coordinate, X̂i, and the momentum, P̂i, operators which satisfy the algebra given in Eqs. (1), (2), and (3)."
+        },
+        "summary": "Applies the minimal-length modified Heisenberg algebra to the spin-zero DKP oscillator. It derives the modified differential equation, uses Jana et al.'s transformation and hypergeometric methods, obtains the minimal-length energy spectrum, and gives the non-relativistic limit and OQM check.",
+        "title": "Minimal-length spin-zero DKP oscillator"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Note that, when β = 0, the result becomes identical to the OQM result, which is given in Eq. (78).",
+          "start_page": 11,
+          "start_text": "In this subsection, we examine the DKP oscillator for a spin-one particle in the ML formalism in the non-relativistic limit."
+        },
+        "summary": "Extends the alternative spin-one treatment to the minimal-length formalism in the non-relativistic limit, derives the modified radial equation, hypergeometric solution, quantization condition, and final energy eigenvalue expression, and verifies the ordinary quantum mechanics limit.",
+        "title": "Minimal-length spin-one DKP oscillator"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Cv = 2kB 1 +    ω Ω − 1 2   Mc2 kB T ~Ω + ω Ω − 1 2  −1  − 2    ω Ω − 1 2   Mc2 kB T ~Ω + ω Ω − 1 2  −2     .",
+          "start_page": 12,
+          "start_text": "In this section, we investigate the statistical properties of the two-dimensional DKP oscillator that is under the effect of an external magnetic field in the presence of an ML."
+        },
+        "summary": "Derives high-temperature thermodynamic functions for the spin-zero DKP oscillator using the canonical partition function and Euler-Maclaurin summation. It gives the Helmholtz free energy, entropy, internal energy, and specific heat, then presents their ordinary quantum mechanics limits and a scalar-bosonic-oscillator limit.",
+        "title": "Thermodynamic functions"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "When we considered a stronger external magnetic field, we observed a smaller peak value at a higher temperature.",
+          "start_page": 15,
+          "start_text": "In all thermodynamic functions, we observe a critical value of the temperature, Tc, where the thermal behaviors alter."
+        },
+        "summary": "Discusses the critical temperature below which the Euler-Maclaurin high-temperature treatment fails, interprets the plotted thermodynamic functions versus temperature and magnetic-field strength, and concludes by summarizing the derivation, reduction to OQM, and magnetic-field effects on the thermal quantities.",
+        "title": "Critical temperature, plots, and conclusion"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "[62] A. Boumali, Z. Naturforsch. A. 70, 867, (2015).",
+          "start_page": 16,
+          "start_text": "[1] W.S. Chung, H. Hassanabadi, Eur. Phys. J. C 79, 213, (2019)."
+        },
+        "summary": "Bibliography of cited works in order from [1] through [62]. Use as a navigation aid only; it is not part of the substantive argument.",
+        "title": "References"
+      },
+      {
+        "pages": {
+          "end": 22,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 22,
+          "end_text": "FIG. 5: The behavior of the specific heat function of the DKP oscillator versus the reduced temperature for different values of the minimal length parameter.",
+          "start_page": 18,
+          "start_text": "FIG. 1: Low temperature behavior of the Helmholtz free energy function in the OQM limit."
+        },
+        "summary": "Figure gallery: low-temperature Helmholtz free energy and high-temperature plots of Helmholtz free energy, entropy, internal energy, and specific heat for β = 0, 0.005, and 0.5, each with three cyclotron-frequency choices.",
+        "title": "Figures: thermodynamic behavior"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a theoretical physics research article that derives energy spectra and thermodynamic functions.",
+      "value": "theory"
+    }
+  }
+}
