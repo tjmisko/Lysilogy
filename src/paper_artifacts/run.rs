@@ -749,6 +749,11 @@ async fn core_pass(
         &sections_guidance(resources.paper.pages.len()),
     );
     let mut parts = vec![ContentPart::Text(prompt)];
+    if let Some(title) = likely_title(resources) {
+        parts.push(ContentPart::Text(format!(
+            "Authoritative title from the largest heading on page 1: {title}. Return this exact string as `identity.title`; never use a cite-as or accepted-for-publication title."
+        )));
+    }
     parts.extend(text.iter().cloned());
     session
         .call::<Value>(
@@ -972,6 +977,20 @@ async fn run_plan(
                 session.fail(&call.name, None, error.to_string(), None);
                 continue;
             }
+        }
+        if call.fields.iter().any(|field| field == "identity")
+            && let Some(title) = likely_title(resources)
+        {
+            parts.push(ContentPart::Text(format!(
+                "Authoritative title from the largest heading on page 1: {title}. Return this exact string as `identity.title`; never use a cite-as or accepted-for-publication title."
+            )));
+        }
+        if call.include_draft
+            && let Some(current) = draft_subset(&draft, &call.fields)
+        {
+            parts.push(ContentPart::Text(format!(
+                "The current draft for these fields is:\n{current}\nMerge and adjust this draft to the target range; do not start over."
+            )));
         }
         parts.push(ContentPart::Text(instruction));
         let model = plan.model_for(call);
@@ -1224,12 +1243,48 @@ fn merge_properties(base: &mut Value, extra: &str) {
 }
 
 /// The sectioning policy plus a page-count budget, for `{{sections}}`.
+/// The largest text line on page 1, a deterministic title candidate.
+fn likely_title(resources: &PageResources) -> Option<String> {
+    let page = resources.paper.layout.pages.first()?;
+    let mut lines = std::collections::BTreeMap::<u32, (f32, Vec<&str>)>::new();
+    for token in &page.tokens {
+        let Some(rect) = token.rects.first() else {
+            continue;
+        };
+        let entry = lines.entry(token.line).or_insert((0.0, Vec::new()));
+        entry.0 = entry.0.max(rect.y_max - rect.y_min);
+        entry.1.push(&token.text);
+    }
+    lines
+        .into_values()
+        .filter_map(|(height, words)| {
+            let title = words.join(" ");
+            let lowered = title.to_lowercase();
+            (!lowered.contains("cite") && !lowered.contains("accepted for publication"))
+                .then_some((height, title))
+        })
+        .max_by(|left, right| left.0.total_cmp(&right.0))
+        .map(|(_, title)| title)
+        .filter(|title| !title.trim().is_empty())
+}
+
+/// The current draft values for the fields a call asks for.
+fn draft_subset(draft: &serde_json::Map<String, Value>, fields: &[String]) -> Option<Value> {
+    let mut subset = serde_json::Map::new();
+    for field in fields {
+        if let Some(value) = draft.get(field) {
+            subset.insert(field.clone(), value.clone());
+        }
+    }
+    (!subset.is_empty()).then_some(Value::Object(subset))
+}
+
 fn sections_guidance(page_count: usize) -> String {
     let pages = page_count.max(1);
-    let lower = pages.div_ceil(2);
-    let upper = pages.saturating_mul(2).div_ceil(3).max(lower);
+    let lower = pages.div_ceil(4);
+    let upper = pages.div_ceil(2).max(lower);
     format!(
-        "{SECTIONS_POLICY}\nThis PDF contains {pages} pages. Start by considering roughly {lower}\u{2013}{upper} substantive reading units, then adjust for actual topic boundaries and subtract references, appendices, or adjacent articles from the main-text budget. This is a planning guide, not a quota or a reason to drop content."
+        "{SECTIONS_POLICY}\nThis PDF contains {pages} pages. A useful map is usually about {lower}\u{2013}{upper} substantive reading units, so each unit covers roughly 2\u{2013}3 pages of content. Prefer the smaller number: merge adjacent units that answer the same question before splitting a topic. References, appendices, and adjacent articles are not part of the main-text budget. This is a planning guide, not a quota or a reason to drop content."
     )
 }
 
@@ -1871,9 +1926,9 @@ mod tests {
 
     #[test]
     fn should_state_a_page_budget_in_the_section_guidance() {
-        let guidance = sections_guidance(2);
-        assert!(guidance.contains("This PDF contains 2 pages"));
-        assert!(guidance.contains("1\u{2013}2 substantive reading units"));
+        let guidance = sections_guidance(8);
+        assert!(guidance.contains("This PDF contains 8 pages"));
+        assert!(guidance.contains("2\u{2013}4 substantive reading units"));
         assert!(guidance.starts_with(SECTIONS_POLICY));
     }
 
@@ -1908,6 +1963,7 @@ mod tests {
                 effort: crate::paper_artifacts::config::Effort::Low,
                 model: None,
                 max_tokens,
+                include_draft: false,
                 scope: None,
             }
         };
@@ -1945,6 +2001,7 @@ mod tests {
             effort: crate::paper_artifacts::config::Effort::Low,
             model: None,
             max_tokens: None,
+            include_draft: false,
             scope: None,
         };
         let schema = call_schema(&call);

@@ -82,6 +82,9 @@ pub struct Call {
     /// The most output tokens for this call; defaults by field kind.
     #[serde(default)]
     pub max_tokens: Option<u32>,
+    /// Send the current draft of this call's fields with the paper.
+    #[serde(default)]
+    pub include_draft: bool,
     /// `all`, `front`, or `firstN`, e.g. `first3`.
     #[serde(default)]
     pub scope: Option<String>,

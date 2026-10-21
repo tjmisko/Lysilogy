@@ -1,6 +1,6 @@
 Build a reading map of coherent, digestible topics, not a table of contents.
 
-- Aim for 1–5 pages of actual content per unit, usually 1–2 pages. Prefer a small number of useful reading chunks. Count the content occupied: two short fragments on opposite sides of a page break are not two pages of reading.
+- Aim for 1–5 pages of actual content per unit, usually 2–3 pages. Prefer a small number of useful reading chunks over many fine-grained ones; if two adjacent units answer the same question, they are one unit. Count the content occupied: two short fragments on opposite sides of a page break are not two pages of reading.
 - Choose topic boundaries first. Keep a parent topic's introduction, mechanisms, variants, examples, and qualifications together when they fit within this range. A printed subheading is evidence of internal structure, not a demand for another map region.
 - For example, “Extremal Goodhart”, “Extremal Goodhart — Model Insufficiency”, and “Extremal Goodhart — Change in Regime” should be ONE unit titled “Extremal Goodhart”. Explain the two mechanisms and their difference inside its digest; do not give the parent introduction a separate sliver.
 - Likewise, keep a short methods setup with its method, an experiment with its ablations, and an argument with its examples. Merge only adjacent material that answers the same clear question. Do not combine unrelated major topics just to hit a page target.
