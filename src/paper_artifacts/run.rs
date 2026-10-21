@@ -72,8 +72,8 @@ const OBJECTS_MAX_TOKENS: u32 = 32_768;
 const REPAIR_MAX_TOKENS: u32 = 32_768;
 const FEATURE_MAX_TOKENS: u32 = 24_576;
 
-/// How many times a call whose answer hit the length limit is retried.
-const LENGTH_ATTEMPTS: u32 = 2;
+/// How many times a call is tried when the provider drops or cuts the answer.
+const CALL_ATTEMPTS: u32 = 2;
 
 /// The most pages sent with a repair request.
 const REPAIR_PAGE_LIMIT: usize = 10;
@@ -399,23 +399,29 @@ impl<'a> Session<'a> {
             let completion = match openrouter::complete(&self.client, self.ledger, &request).await {
                 Ok(completion) => completion,
                 Err(error) => {
+                    if attempt < CALL_ATTEMPTS && self.within_budget(stage) {
+                        attempt += 1;
+                        continue;
+                    }
                     self.fail(stage, chunk, error.to_string(), None);
                     return None;
                 }
             };
             let parsed = completion.parsed;
             self.record_call(stage, &parsed, completion.latency, max_tokens);
-            if parsed.finish_reason.as_deref() == Some("length") {
-                if attempt < LENGTH_ATTEMPTS && self.within_budget(stage) {
+            let dropped = parsed.content.trim().is_empty()
+                || matches!(parsed.finish_reason.as_deref(), Some("length" | "error"));
+            if dropped {
+                if attempt < CALL_ATTEMPTS && self.within_budget(stage) {
                     attempt += 1;
                     continue;
                 }
-                self.fail(
-                    stage,
-                    chunk,
-                    "output was cut off at the length limit".to_owned(),
-                    Some(&parsed.content),
-                );
+                let reason = if parsed.finish_reason.as_deref() == Some("length") {
+                    "output was cut off at the length limit"
+                } else {
+                    "the provider returned no complete answer"
+                };
+                self.fail(stage, chunk, reason.to_owned(), Some(&parsed.content));
                 return None;
             }
             return match serde_json::from_str(&parsed.content) {
