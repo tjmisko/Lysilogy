@@ -1,0 +1,543 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T00:04:19.943092373Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1908.00951v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 15,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 15789,
+      "cached_tokens": 0,
+      "completion_tokens": 16917,
+      "reasoning_tokens": 15317,
+      "cost_usd": 0.013721922,
+      "cost_source": "reported",
+      "latency_s": 104.451881627
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 16781,
+      "cached_tokens": 768,
+      "completion_tokens": 4313,
+      "reasoning_tokens": 3882,
+      "cost_usd": 0.009984108,
+      "cost_source": "reported",
+      "latency_s": 22.948219536
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 32570,
+    "cached_tokens": 768,
+    "completion_tokens": 21230,
+    "cost_usd": 0.02370603,
+    "model_latency_s": 127.400101163,
+    "wall_s": 130.816549218
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e6-30-2026-10-20/results/1908.00951v4.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We consider the problem of fast time-series data clustering. Building on previous work modeling the correlation-based Hamiltonian of spin variables we present an updated fast non-expensive Agglomerative Likelihood Clustering algorithm (ALC). The method replaces the optimized genetic algorithm based approach (f-SPC) with an agglomerative recursive merging framework inspired by previous work in Econophysics and Community Detection. The method is tested on noisy synthetic correlated time-series data-sets with built-in cluster structure to demonstrate that the algorithm produces meaningful non-trivial results. We apply it to time-series data-sets as large as 20,000 assets and we argue that ALC can reduce compute time costs and resource usage cost for large scale clustering for time-series applications while being serialized, and hence has no obvious parallelization requirement. The algorithm can be an effective choice for state-detection for online learning in a fast non-linear data environment because the algorithm requires no prior information about the number of clusters."
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Giada and Marsili [11, 12]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12]."
+              }
+            ],
+            "reference_key": "Giada-Marsili maximum likelihood model and Noh ansatz",
+            "why": "ALC maximizes a modified Giada-Marsili likelihood derived from the Noh ansatz generative model."
+          },
+          {
+            "cited_work": "Marsili and Giada [12]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "It is in spirit very similar to the Merging Algorithm (MR) developed by Marsili and Giada in [12]."
+              }
+            ],
+            "reference_key": "Marsili and Giada Merging Algorithm",
+            "why": "It implements a bottom-up greedy merging scheme inspired by the earlier Merging Algorithm."
+          },
+          {
+            "cited_work": "Blondel et al. [4] and Javed et al. [18]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4]."
+              }
+            ],
+            "reference_key": "Louvain/community detection",
+            "why": "Its move-generation and tracker design are inspired by Louvain-style agglomerative community detection."
+          },
+          {
+            "cited_work": "Yelibi and Gebbie [47]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The performance enhancement arises from being able serialize the algorithm into a brute-force search across cluster configurations so as to avoid unnecessary computational expense of genetic algorithm used in, e.g. the f-SPC implementation."
+              }
+            ],
+            "reference_key": "f-SPC / PGA genetic algorithms",
+            "why": "It replaces genetic-algorithm optimization with a serial brute-force greedy search to avoid path dependence and parallelization overhead."
+          },
+          {
+            "cited_work": "Campello et al. [6] and McInnes et al. [27]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "As such the algorithm competes with the likes of DBSCAN [7, 20] and HDBSCAN [6, 27]."
+              }
+            ],
+            "reference_key": "HDBSCAN",
+            "why": "It is compared to HDBSCAN and is argued to be more robust when clusters are less dense and noisier, though HDBSCAN is faster on very large data."
+          },
+          {
+            "cited_work": "Namaki et al. [30], Tumminello et al. [41], Zalesky et al. [48]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Our approach differs from threshold based approaches in that it is a faithful data clustering model which works with dense correlation matrices – this can make it appropriate for complex systems in noisy environments but without the arbitrariness of threshold choice."
+              }
+            ],
+            "reference_key": "threshold-based network community detection",
+            "why": "The paper argues threshold choice is arbitrary and adds noise, while ALC works with dense correlation matrices."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times."
+          }
+        ],
+        "text": "Agglomerative Likelihood Clustering (ALC) is a fast, serial, non-parametric clustering algorithm that recovers meaningful cluster configurations in noisy correlated time-series data while reducing compute cost relative to genetic-algorithm-based f-SPC and remaining competitive with HDBSCAN in low-density/noisy regimes."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Agglomerative Likelihood Clustering"
+        },
+        {
+          "page": 1,
+          "quote": "Lionel Yelibi∗ and Tim Gebbie†"
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:1908.00951v4[q-fin.CP]5Oct2021"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1908.00951v4",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Agglomerative Likelihood Clustering",
+      "venue": "arXiv",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "medium",
+      "evidence": [],
+      "text": "Can an agglomerative likelihood clustering algorithm quickly and accurately cluster large, noisy time-series data without prior knowledge of the number of clusters, and how does it compare to f-SPC and HDBSCAN?"
+    },
+    "references": [],
+    "relations": [],
+    "sections": [],
+    "type": {
+      "confidence": "high",
+      "reason": "The file is a PDF research paper presenting the Agglomerative Likelihood Clustering algorithm, including theory, experiments, comparisons, references, and appendices.",
+      "value": "resource"
+    }
+  },
+  "pass1_check": {
+    "sites": 11,
+    "verbatim": 10,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/identity/authors",
+      "action": "add",
+      "value_json": "\"Lionel Yelibi\"",
+      "reason": "The draft's authors array is empty, but the paper's byline gives two authors. Add the first author.",
+      "evidence": [
+        {
+          "quote": "Lionel Yelibi∗ and Tim Gebbie†",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/authors",
+      "action": "add",
+      "value_json": "\"Tim Gebbie\"",
+      "reason": "Add the second author from the byline.",
+      "evidence": [
+        {
+          "quote": "Lionel Yelibi∗ and Tim Gebbie†",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/references",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft has an empty references array, but the paper contains a full bibliography of 49 numbered references ([1]–[49]) spanning pages 12–14. These are entirely missing from the draft.",
+      "evidence": [
+        {
+          "quote": "[5] Bun, J., Bouchaud, J.-P., and Potters, M. (2017). Cleaning large correlation matrices: Tools from Random Matrix Theory. Physics Reports, 666:1–109.",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "path": "/card/position/targets/1/evidence/0/page",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The quoted string \"It is in spirit very similar to the Merging Algorithm (MR) developed by Marsili and Giada in [12].\" straddles the page 2/3 boundary; the clause \"is in spirit very similar...\" is on page 3, while only \"It\" appears at the end of page 2. As attributed to page 2 the quote is not verbatim on that page.",
+      "evidence": [
+        {
+          "quote": "The so called “Louvain” algorithm [4] is agglomerative",
+          "page": 2
+        },
+        {
+          "quote": "is in spirit very similar to the Merging Algorithm (MR) developed by Marsili and Giada in [12].",
+          "page": 3
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/authors",
+      "action": "add",
+      "status": "rejected",
+      "reason": "value does not match the schema: : expected type \"object\", got string"
+    },
+    {
+      "index": 1,
+      "path": "/identity/authors",
+      "action": "add",
+      "status": "rejected",
+      "reason": "value does not match the schema: : expected type \"object\", got string"
+    },
+    {
+      "index": 2,
+      "path": "/references",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 3,
+      "path": "/card/position/targets/1/evidence/0/page",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 11,
+    "verbatim": 10,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We consider the problem of fast time-series data clustering. Building on previous work modeling the correlation-based Hamiltonian of spin variables we present an updated fast non-expensive Agglomerative Likelihood Clustering algorithm (ALC). The method replaces the optimized genetic algorithm based approach (f-SPC) with an agglomerative recursive merging framework inspired by previous work in Econophysics and Community Detection. The method is tested on noisy synthetic correlated time-series data-sets with built-in cluster structure to demonstrate that the algorithm produces meaningful non-trivial results. We apply it to time-series data-sets as large as 20,000 assets and we argue that ALC can reduce compute time costs and resource usage cost for large scale clustering for time-series applications while being serialized, and hence has no obvious parallelization requirement. The algorithm can be an effective choice for state-detection for online learning in a fast non-linear data environment because the algorithm requires no prior information about the number of clusters.",
+      "admitted": "We consider the problem of fast time-series data clustering. Building on previous work modeling the correlation-based Hamiltonian of spin variables we present an updated fast non-expensive Agglomerative Likelihood Clustering algorithm (ALC). The method replaces the optimized genetic algorithm based approach (f-SPC) with an agglomerative recursive merging framework inspired by previous work in Econophysics and Community Detection. The method is tested on noisy synthetic correlated time-series data-sets with built-in cluster structure to demonstrate that the algorithm produces meaningful non-trivial results. We apply it to time-series data-sets as large as 20,000 assets and we argue that ALC can reduce compute time costs and resource usage cost for large scale clustering for time-series applications while being serialized, and hence has no obvious parallelization requirement. The algorithm can be an effective choice for state-detection for online learning in a fast non-linear data environment because the algorithm requires no prior information about the number of clusters.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+      "admitted": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "It is in spirit very similar to the Merging Algorithm (MR) developed by Marsili and Giada in [12].",
+      "admitted": "3 is in spirit very similar to the Merging Algorithm (MR) developed by Marsili and Giada in [12].",
+      "similarity": 0.9444444444444444,
+      "cited_page": 2,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4].",
+      "admitted": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The performance enhancement arises from being able serialize the algorithm into a brute-force search across cluster configurations so as to avoid unnecessary computational expense of genetic algorithm used in, e.g. the f-SPC implementation.",
+      "admitted": "The performance enhancement arises from being able serialize the algorithm into a brute-force search across cluster configurations so as to avoid unnecessary computational expense of genetic algorithm used in, e.g. the f-SPC implementation.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "As such the algorithm competes with the likes of DBSCAN [7, 20] and HDBSCAN [6, 27].",
+      "admitted": "As such the algorithm competes with the likes of DBSCAN [7, 20] and HDBSCAN [6, 27].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/5/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our approach differs from threshold based approaches in that it is a faithful data clustering model which works with dense correlation matrices – this can make it appropriate for complex systems in noisy environments but without the arbitrariness of threshold choice.",
+      "admitted": "Our approach differs from threshold based approaches in that it is a faithful data clustering model which works with dense correlation matrices – this can make it appropriate for complex systems in noisy environments but without the arbitrariness of threshold choice.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "admitted": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Agglomerative Likelihood Clustering",
+      "admitted": "Agglomerative Likelihood Clustering",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Lionel Yelibi∗ and Tim Gebbie†",
+      "admitted": "Lionel Yelibi∗ and Tim Gebbie†",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/2/quote",
+      "status": "verbatim",
+      "original": "arXiv:1908.00951v4[q-fin.CP]5Oct2021",
+      "admitted": "arXiv:1908.00951v4[q-fin.CP]5Oct2021",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 1,
+    "verbatim": 10
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We consider the problem of fast time-series data clustering. Building on previous work modeling the correlation-based Hamiltonian of spin variables we present an updated fast non-expensive Agglomerative Likelihood Clustering algorithm (ALC). The method replaces the optimized genetic algorithm based approach (f-SPC) with an agglomerative recursive merging framework inspired by previous work in Econophysics and Community Detection. The method is tested on noisy synthetic correlated time-series data-sets with built-in cluster structure to demonstrate that the algorithm produces meaningful non-trivial results. We apply it to time-series data-sets as large as 20,000 assets and we argue that ALC can reduce compute time costs and resource usage cost for large scale clustering for time-series applications while being serialized, and hence has no obvious parallelization requirement. The algorithm can be an effective choice for state-detection for online learning in a fast non-linear data environment because the algorithm requires no prior information about the number of clusters."
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Giada and Marsili [11, 12]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Here, we again exploit the Noh Ansatz [31] and the Maximum Likelihood Estimation (MLE) approach first introduced by Giada and Marsili [11, 12]."
+              }
+            ],
+            "reference_key": "Giada-Marsili maximum likelihood model and Noh ansatz",
+            "why": "ALC maximizes a modified Giada-Marsili likelihood derived from the Noh ansatz generative model."
+          },
+          {
+            "cited_work": "Marsili and Giada [12]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "3 is in spirit very similar to the Merging Algorithm (MR) developed by Marsili and Giada in [12]."
+              }
+            ],
+            "reference_key": "Marsili and Giada Merging Algorithm",
+            "why": "It implements a bottom-up greedy merging scheme inspired by the earlier Merging Algorithm."
+          },
+          {
+            "cited_work": "Blondel et al. [4] and Javed et al. [18]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "The implementation we adopt to generate the moves is inspired by innovations made in community detection methods, i.e. community detection [18] algorithms such as the “Louvain algorithm” [4]."
+              }
+            ],
+            "reference_key": "Louvain/community detection",
+            "why": "Its move-generation and tracker design are inspired by Louvain-style agglomerative community detection."
+          },
+          {
+            "cited_work": "Yelibi and Gebbie [47]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The performance enhancement arises from being able serialize the algorithm into a brute-force search across cluster configurations so as to avoid unnecessary computational expense of genetic algorithm used in, e.g. the f-SPC implementation."
+              }
+            ],
+            "reference_key": "f-SPC / PGA genetic algorithms",
+            "why": "It replaces genetic-algorithm optimization with a serial brute-force greedy search to avoid path dependence and parallelization overhead."
+          },
+          {
+            "cited_work": "Campello et al. [6] and McInnes et al. [27]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "As such the algorithm competes with the likes of DBSCAN [7, 20] and HDBSCAN [6, 27]."
+              }
+            ],
+            "reference_key": "HDBSCAN",
+            "why": "It is compared to HDBSCAN and is argued to be more robust when clusters are less dense and noisier, though HDBSCAN is faster on very large data."
+          },
+          {
+            "cited_work": "Namaki et al. [30], Tumminello et al. [41], Zalesky et al. [48]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Our approach differs from threshold based approaches in that it is a faithful data clustering model which works with dense correlation matrices – this can make it appropriate for complex systems in noisy environments but without the arbitrariness of threshold choice."
+              }
+            ],
+            "reference_key": "threshold-based network community detection",
+            "why": "The paper argues threshold choice is arbitrary and adds noise, while ALC works with dense correlation matrices."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times."
+          }
+        ],
+        "text": "Agglomerative Likelihood Clustering (ALC) is a fast, serial, non-parametric clustering algorithm that recovers meaningful cluster configurations in noisy correlated time-series data while reducing compute cost relative to genetic-algorithm-based f-SPC and remaining competitive with HDBSCAN in low-density/noisy regimes."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Agglomerative Likelihood Clustering"
+        },
+        {
+          "page": 1,
+          "quote": "Lionel Yelibi∗ and Tim Gebbie†"
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:1908.00951v4[q-fin.CP]5Oct2021"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1908.00951v4",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Agglomerative Likelihood Clustering",
+      "venue": "arXiv",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "medium",
+      "evidence": [],
+      "text": "Can an agglomerative likelihood clustering algorithm quickly and accurately cluster large, noisy time-series data without prior knowledge of the number of clusters, and how does it compare to f-SPC and HDBSCAN?"
+    },
+    "references": [],
+    "relations": [],
+    "sections": [],
+    "type": {
+      "confidence": "high",
+      "reason": "The file is a PDF research paper presenting the Agglomerative Likelihood Clustering algorithm, including theory, experiments, comparisons, references, and appendices.",
+      "value": "resource"
+    }
+  }
+}

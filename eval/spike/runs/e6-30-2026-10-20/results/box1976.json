@@ -1,0 +1,831 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T00:23:01.283214550Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Box - 1976 - Science and Statistics.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 10,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 12230,
+      "cached_tokens": 256,
+      "completion_tokens": 14728,
+      "reasoning_tokens": 12127,
+      "cost_usd": 0.021267336,
+      "cost_source": "reported",
+      "latency_s": 47.368526682
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 13829,
+      "cached_tokens": 768,
+      "completion_tokens": 4563,
+      "reasoning_tokens": 3770,
+      "cost_usd": 0.009398508,
+      "cost_source": "reported",
+      "latency_s": 23.099473477
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 5843,
+      "cached_tokens": 0,
+      "completion_tokens": 1153,
+      "reasoning_tokens": 932,
+      "cost_usd": 0.0031365,
+      "cost_source": "reported",
+      "latency_s": 16.499361172
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 31902,
+    "cached_tokens": 1024,
+    "completion_tokens": 20444,
+    "cost_usd": 0.033802344,
+    "model_latency_s": 86.967361331,
+    "wall_s": 89.708116759
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e6-30-2026-10-20/results/box1976.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 2,
+      "text": "Aspects of scientific method are discussed: In particular, its representation as a motivated iteration in which, in succession, practice\nconfronts theory, and theory, practice. Rapid progress requires sufficient flexibility to profit from such confrontations, and the ability\nto devise parsimonious but effective models, to worry selectively\nabout model inadequacies and to employ mathematics skillfully but\nappropriately. The development of statistical methods at Rothamsted\nExperimental Station by Sir Ronald Fisher is used to illustrate these\nthemes."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Fisher, R.A., Statistical Methods for Research Workers, 1925/1970",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "His first example is\nintroduced as follows [12, p. 25]: \"Figure 1 represents\nthe growth of a baby weighed to the nearest ounce at\nequal intervals from birth.\""
+              }
+            ],
+            "reference_key": "[12]",
+            "why": "Box uses Fisher's baby-weight example to show how practical data generated Fisher's statistical teaching."
+          },
+          {
+            "cited_work": "Fisher, R.A., The Design of Experiments, 1935/1966",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "of Chapter II of Fisher's book The Design of Experiments [11, p. 11]: \"A lady declares that by tasting a cup\nof tea... she can discriminate whether the milk or the\ntea infusion was first added to the cup."
+              }
+            ],
+            "reference_key": "[11]",
+            "why": "The tea-tasting story illustrates Fisher turning an everyday incident into a design-of-experiments problem."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Fisher, R.A., \"Studies in Crop Variation I\"",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "In \"Studies in Crop Variation I\" [7], Fisher\nbegins by presenting a workmanlike discussion, which\nlasts for twelve pages, of the responses to the thirteen\ndifferent manures revealed by his analysis of the Broadbalk data."
+              }
+            ],
+            "reference_key": "[7]",
+            "why": "The example anchors the paper's account of Fisher moving from Broadbalk manure data to orthogonal polynomials and residual analysis."
+          },
+          {
+            "cited_work": "Fisher, R.A. and MacKenzie, W.A., \"Studies in Crop Variation II\"",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 6,
+                "quote": "The analysis of variance, hinted at earlier, appears here for\nthe first time in its completeness."
+              }
+            ],
+            "reference_key": "[13]",
+            "why": "Box treats this paper as the first complete appearance of analysis of variance, despite its flawed split-plot analysis."
+          },
+          {
+            "cited_work": "Gosset, W.S., Letters from W.S. Gosset to R.A. Fisher",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 6,
+                "quote": "Fisher later notes\nGosset's \"suggesting that I should start designing experiments\" [15, summary of Letter No. 29]."
+              }
+            ],
+            "reference_key": "[15]",
+            "why": "Gosset's letter is used as evidence that Fisher was prompted to move from analyzing data to designing experiments."
+          },
+          {
+            "cited_work": "Russell, E. John, \"Field Experiments: How They Are Made and What They Are\"",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 8,
+                "quote": "In spite of all this in 1926 the Director of Rothamsted,\nSir John Russell, wrote a paper [16] in the Journal of\nthe Ministry of Agriculture about agricultural experimentation which almost totally ignored the ideas of his\nproteg6."
+              }
+            ],
+            "reference_key": "[16]",
+            "why": "Box uses Russell's paper as an example of resistance to Fisher's new experimental-design ideas."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "One important idea is that science is a means whereby\nlearning is achieved, not by mere theoretical speculation"
+          }
+        ],
+        "text": "Scientific and statistical progress is achieved through a motivated iteration between theory and practice, and Fisher's Rothamsted work shows both the power of that closed loop and the dangers of open-loop cookbookery and mathematistry."
+      }
+    },
+    "citations": [
+      {
+        "context": "Theory-practice iteration is linked to Box's earlier work.",
+        "page": 2,
+        "reference_key": "[1, 2]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "University of Wisconsin, Madison, WI 53706",
+          "name": "George E. P. Box"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Science and Statistics\nAuthor(s): George E. P. Box"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Science and Statistics",
+      "venue": "Journal of the American Statistical Association",
+      "year": null
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "One important idea is that science is a means whereby\nlearning is achieved, not by mere theoretical speculation"
+        }
+      ],
+      "text": "How does scientific-statistical learning occur through the iteration of theory and practice, and what does Fisher's career at Rothamsted teach about the conditions that foster or block such progress?"
+    },
+    "references": [
+      {
+        "authors": [
+          "George E. P. Box"
+        ],
+        "doi": null,
+        "key": "Box1976",
+        "page": 1,
+        "title": "Science and Statistics",
+        "venue": "Journal of the American Statistical Association",
+        "year": null
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "His first example is\nintroduced as follows [12, p. 25]: \"Figure 1 represents\nthe growth of a baby weighed to the nearest ounce at\nequal intervals from birth.\"",
+        "reference_key": "[12]",
+        "relation": "uses_data",
+        "why": "Box uses Fisher's baby-weight example to show how practical data generated Fisher's statistical teaching."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "of Chapter II of Fisher's book The Design of Experiments [11, p. 11]: \"A lady declares that by tasting a cup\nof tea... she can discriminate whether the milk or the\ntea infusion was first added to the cup.",
+        "reference_key": "[11]",
+        "relation": "uses_data",
+        "why": "The tea-tasting story illustrates Fisher turning an everyday incident into a design-of-experiments problem."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In \"Studies in Crop Variation I\" [7], Fisher\nbegins by presenting a workmanlike discussion, which\nlasts for twelve pages, of the responses to the thirteen\ndifferent manures revealed by his analysis of the Broadbalk data.",
+        "reference_key": "[7]",
+        "relation": "uses_data",
+        "why": "The example anchors the paper's account of Fisher moving from Broadbalk manure data to orthogonal polynomials and residual analysis."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "The analysis of variance, hinted at earlier, appears here for\nthe first time in its completeness.",
+        "reference_key": "[13]",
+        "relation": "uses_data",
+        "why": "Box treats this paper as the first complete appearance of analysis of variance, despite its flawed split-plot analysis."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Fisher later notes\nGosset's \"suggesting that I should start designing experiments\" [15, summary of Letter No. 29].",
+        "reference_key": "[15]",
+        "relation": "uses_data",
+        "why": "Gosset's letter is used as evidence that Fisher was prompted to move from analyzing data to designing experiments."
+      },
+      {
+        "confidence": "medium",
+        "page": 8,
+        "quote": "In spite of all this in 1926 the Director of Rothamsted,\nSir John Russell, wrote a paper [16] in the Journal of\nthe Ministry of Agriculture about agricultural experimentation which almost totally ignored the ideas of his\nproteg6.",
+        "reference_key": "[16]",
+        "relation": "uses_data",
+        "why": "Box uses Russell's paper as an example of resistance to Fisher's new experimental-design ideas."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "Wold, H., \"Nonlinear Estimation by Iterative Least Squares\nProcedures,\" in F.N. David, ed., Research Papers in Statistics,\nFestschrift for J. Neyman, New York: John Wiley & Sons,\nInc., 1966, 411-44.",
+          "start_page": 9,
+          "start_text": "REFERENCES"
+        },
+        "summary": "The bibliography lists 18 numbered sources cited in Box's argument, including Fisher's methodological and applied papers, Gosset's letters, Russell's agricultural writings, and works by Box, Cochran, and Wold.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The first page identifies it as an article in the Journal of the American Statistical Association, and the byline footnote says it is the written version of the R.A. Fisher Memorial Lecture.",
+      "value": "survey"
+    }
+  },
+  "pass1_check": {
+    "sites": 17,
+    "verbatim": 11,
+    "near": 3,
+    "missing": 3,
+    "wrong_page": 2
+  },
+  "corrections": [
+    {
+      "path": "/identity/year",
+      "action": "replace",
+      "value_json": "\"1976\"",
+      "reason": "The publication year is null but the paper states Dec. 1976 (Vol. 71, No. 356).",
+      "evidence": [
+        {
+          "quote": "Source: Journal of the American Statistical Association, Vol. 71, No. 356 (Dec., 1976), pp.\n791-799",
+          "page": 1
+        },
+        {
+          "quote": "December 1976, Volume 71, Number 356",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/references/0/year",
+      "action": "replace",
+      "value_json": "\"1976\"",
+      "reason": "The Box1976 reference entry has year null; the paper is dated 1976.",
+      "evidence": [
+        {
+          "quote": "Source: Journal of the American Statistical Association, Vol. 71, No. 356 (Dec., 1976), pp.\n791-799",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/relations/4/page",
+      "action": "replace",
+      "value_json": "7",
+      "reason": "This \"Fisher later notes Gosset's ...\" passage appears on page 7, not page 6.",
+      "evidence": [
+        {
+          "quote": "Fisher later notes\nGosset's \"suggesting that I should start designing experiments\" [15, summary of Letter No. 29].",
+          "page": 7
+        }
+      ]
+    },
+    {
+      "path": "/card/position/targets/2/evidence/0/page",
+      "action": "replace",
+      "value_json": "7",
+      "reason": "The quoted evidence for the [15] target is on page 7, not page 6.",
+      "evidence": [
+        {
+          "quote": "Fisher later notes\nGosset's \"suggesting that I should start designing experiments\" [15, summary of Letter No. 29].",
+          "page": 7
+        }
+      ]
+    },
+    {
+      "path": "/references",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The references array contains only a single entry that is the paper itself (Box1976, \"Science and Statistics\"), whereas the paper's bibliography lists 18 numbered works ([1]-[18]) on pages 9-10. The cited works are missing and the self-entry appears invented.",
+      "evidence": [
+        {
+          "quote": "[1] Box, G.E.P. and Tiao, G.C., Bayesian Inference in Statistical\nAnalysis, Reading, Mass.: Addison-Wesley Publishing Co.,\n1973.",
+          "page": 9
+        },
+        {
+          "quote": "[18] Wold, H., \"Nonlinear Estimation by Iterative Least Squares\nProcedures,\" in F.N. David, ed., Research Papers in Statistics,\nFestschrift for J. Neyman, New York: John Wiley & Sons,\nInc., 1966, 411-44.",
+          "page": 10
+        }
+      ]
+    },
+    {
+      "path": "/sections",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The sections array lists only a \"References\" section (pages 9-10), but the paper has numbered sections: 1. Introduction, 2. Aspects of Scientific Method, 3. Fisher-A Scientist, 4. Perils of the Open Loop, and 5. Conclusion (pages 2-9).",
+      "evidence": [
+        {
+          "quote": "3. FISHER-A SCIENTIST",
+          "page": 3
+        },
+        {
+          "quote": "5. CONCLUSION",
+          "page": 9
+        }
+      ]
+    },
+    {
+      "path": "/type/value",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The type value \"survey\" conflicts with the entry's own reason (\"identifies it as an article\") and the source is a JASA research article / memorial lecture, not a survey.",
+      "evidence": [
+        {
+          "quote": "Source: Journal of the American Statistical Association, Vol. 71, No. 356 (Dec., 1976), pp.\n791-799",
+          "page": 1
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/year",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "value does not match the schema: : expected type [\"integer\",\"null\"], got string"
+    },
+    {
+      "index": 1,
+      "path": "/references/0/year",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "value does not match the schema: : expected type [\"integer\",\"null\"], got string"
+    },
+    {
+      "index": 2,
+      "path": "/relations/4/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/card/position/targets/2/evidence/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/references",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 5,
+      "path": "/sections",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 6,
+      "path": "/type/value",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 17,
+    "verbatim": 11,
+    "near": 3,
+    "missing": 3,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "repaired_local",
+      "original": "Aspects of scientific method are discussed: In particular, its representation as a motivated iteration in which, in succession, practice\nconfronts theory, and theory, practice. Rapid progress requires sufficient flexibility to profit from such confrontations, and the ability\nto devise parsimonious but effective models, to worry selectively\nabout model inadequacies and to employ mathematics skillfully but\nappropriately. The development of statistical methods at Rothamsted\nExperimental Station by Sir Ronald Fisher is used to illustrate these\nthemes.",
+      "admitted": "Aspects of scientific method are discussed: In particular, its representation as a motivated iteration in which, in succession, practice confronts theory, and theory, practice. Rapid progress requires sufficient flexibility to profit from such confrontations, and the ability to devise parsimonious but effective models, to worry selectively about model inadequacies and to employ mathematics skillfully but appropriately. The development of statistical methods at Rothamsted Experimental Station by Sir Ronald Fisher is used to illustrate these",
+      "similarity": 0.9866666666666667,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "His first example is\nintroduced as follows [12, p. 25]: \"Figure 1 represents\nthe growth of a baby weighed to the nearest ounce at\nequal intervals from birth.\"",
+      "admitted": "His first example is\nintroduced as follows [12, p. 25]: \"Figure 1 represents\nthe growth of a baby weighed to the nearest ounce at\nequal intervals from birth.\"",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "of Chapter II of Fisher's book The Design of Experiments [11, p. 11]: \"A lady declares that by tasting a cup\nof tea... she can discriminate whether the milk or the\ntea infusion was first added to the cup.",
+      "admitted": "of Chapter II of Fisher's book The Design of Experiments [11, p. 11]: \"A lady declares that by tasting a cup\nof tea... she can discriminate whether the milk or the\ntea infusion was first added to the cup.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "dropped",
+      "original": "In \"Studies in Crop Variation I\" [7], Fisher\nbegins by presenting a workmanlike discussion, which\nlasts for twelve pages, of the responses to the thirteen\ndifferent manures revealed by his analysis of the Broadbalk data.",
+      "admitted": null,
+      "similarity": 0.7714285714285715,
+      "cited_page": 4,
+      "matched_page": null
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The analysis of variance, hinted at earlier, appears here for\nthe first time in its completeness.",
+      "admitted": "The analysis of variance, hinted at earlier, appears here for\nthe first time in its completeness.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Fisher later notes\nGosset's \"suggesting that I should start designing experiments\" [15, summary of Letter No. 29].",
+      "admitted": "Fisher later notes\nGosset's \"suggesting that I should start designing experiments\" [15, summary of Letter No. 29].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In spite of all this in 1926 the Director of Rothamsted,\nSir John Russell, wrote a paper [16] in the Journal of\nthe Ministry of Agriculture about agricultural experimentation which almost totally ignored the ideas of his\nproteg6.",
+      "admitted": "In spite of all this in 1926 the Director of Rothamsted,\nSir John Russell, wrote a paper [16] in the Journal of\nthe Ministry of Agriculture about agricultural experimentation which almost totally ignored the ideas of his\nproteg6.",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "One important idea is that science is a means whereby\nlearning is achieved, not by mere theoretical speculation",
+      "admitted": "proOne important idea is that science is a means whereby learning is achieved, not by mere theoretical speculation",
+      "similarity": 0.9444444444444444,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Science and Statistics\nAuthor(s): George E. P. Box",
+      "admitted": "Science and Statistics\nAuthor(s): George E. P. Box",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "One important idea is that science is a means whereby\nlearning is achieved, not by mere theoretical speculation",
+      "admitted": "proOne important idea is that science is a means whereby learning is achieved, not by mere theoretical speculation",
+      "similarity": 0.9444444444444444,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "withdrawn",
+      "original": "Theory-practice iteration is linked to Box's earlier work.",
+      "admitted": null,
+      "similarity": 0.5,
+      "cited_page": 2,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "His first example is\nintroduced as follows [12, p. 25]: \"Figure 1 represents\nthe growth of a baby weighed to the nearest ounce at\nequal intervals from birth.\"",
+      "admitted": "His first example is\nintroduced as follows [12, p. 25]: \"Figure 1 represents\nthe growth of a baby weighed to the nearest ounce at\nequal intervals from birth.\"",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "of Chapter II of Fisher's book The Design of Experiments [11, p. 11]: \"A lady declares that by tasting a cup\nof tea... she can discriminate whether the milk or the\ntea infusion was first added to the cup.",
+      "admitted": "of Chapter II of Fisher's book The Design of Experiments [11, p. 11]: \"A lady declares that by tasting a cup\nof tea... she can discriminate whether the milk or the\ntea infusion was first added to the cup.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "dropped",
+      "original": "In \"Studies in Crop Variation I\" [7], Fisher\nbegins by presenting a workmanlike discussion, which\nlasts for twelve pages, of the responses to the thirteen\ndifferent manures revealed by his analysis of the Broadbalk data.",
+      "admitted": null,
+      "similarity": 0.7714285714285715,
+      "cited_page": 4,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "The analysis of variance, hinted at earlier, appears here for\nthe first time in its completeness.",
+      "admitted": "The analysis of variance, hinted at earlier, appears here for\nthe first time in its completeness.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Fisher later notes\nGosset's \"suggesting that I should start designing experiments\" [15, summary of Letter No. 29].",
+      "admitted": "Fisher later notes\nGosset's \"suggesting that I should start designing experiments\" [15, summary of Letter No. 29].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "In spite of all this in 1926 the Director of Rothamsted,\nSir John Russell, wrote a paper [16] in the Journal of\nthe Ministry of Agriculture about agricultural experimentation which almost totally ignored the ideas of his\nproteg6.",
+      "admitted": "In spite of all this in 1926 the Director of Rothamsted,\nSir John Russell, wrote a paper [16] in the Journal of\nthe Ministry of Agriculture about agricultural experimentation which almost totally ignored the ideas of his\nproteg6.",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    }
+  ],
+  "admission_counts": {
+    "dropped": 2,
+    "repaired_local": 3,
+    "verbatim": 11,
+    "withdrawn": 1
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 2,
+      "text": "Aspects of scientific method are discussed: In particular, its representation as a motivated iteration in which, in succession, practice confronts theory, and theory, practice. Rapid progress requires sufficient flexibility to profit from such confrontations, and the ability to devise parsimonious but effective models, to worry selectively about model inadequacies and to employ mathematics skillfully but appropriately. The development of statistical methods at Rothamsted Experimental Station by Sir Ronald Fisher is used to illustrate these"
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Fisher, R.A., Statistical Methods for Research Workers, 1925/1970",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "His first example is\nintroduced as follows [12, p. 25]: \"Figure 1 represents\nthe growth of a baby weighed to the nearest ounce at\nequal intervals from birth.\""
+              }
+            ],
+            "reference_key": "[12]",
+            "why": "Box uses Fisher's baby-weight example to show how practical data generated Fisher's statistical teaching."
+          },
+          {
+            "cited_work": "Fisher, R.A., The Design of Experiments, 1935/1966",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "of Chapter II of Fisher's book The Design of Experiments [11, p. 11]: \"A lady declares that by tasting a cup\nof tea... she can discriminate whether the milk or the\ntea infusion was first added to the cup."
+              }
+            ],
+            "reference_key": "[11]",
+            "why": "The tea-tasting story illustrates Fisher turning an everyday incident into a design-of-experiments problem."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Fisher, R.A., \"Studies in Crop Variation I\"",
+            "confidence": "high",
+            "evidence": [],
+            "reference_key": "[7]",
+            "why": "The example anchors the paper's account of Fisher moving from Broadbalk manure data to orthogonal polynomials and residual analysis."
+          },
+          {
+            "cited_work": "Fisher, R.A. and MacKenzie, W.A., \"Studies in Crop Variation II\"",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 6,
+                "quote": "The analysis of variance, hinted at earlier, appears here for\nthe first time in its completeness."
+              }
+            ],
+            "reference_key": "[13]",
+            "why": "Box treats this paper as the first complete appearance of analysis of variance, despite its flawed split-plot analysis."
+          },
+          {
+            "cited_work": "Gosset, W.S., Letters from W.S. Gosset to R.A. Fisher",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "Fisher later notes\nGosset's \"suggesting that I should start designing experiments\" [15, summary of Letter No. 29]."
+              }
+            ],
+            "reference_key": "[15]",
+            "why": "Gosset's letter is used as evidence that Fisher was prompted to move from analyzing data to designing experiments."
+          },
+          {
+            "cited_work": "Russell, E. John, \"Field Experiments: How They Are Made and What They Are\"",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 8,
+                "quote": "In spite of all this in 1926 the Director of Rothamsted,\nSir John Russell, wrote a paper [16] in the Journal of\nthe Ministry of Agriculture about agricultural experimentation which almost totally ignored the ideas of his\nproteg6."
+              }
+            ],
+            "reference_key": "[16]",
+            "why": "Box uses Russell's paper as an example of resistance to Fisher's new experimental-design ideas."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "proOne important idea is that science is a means whereby learning is achieved, not by mere theoretical speculation"
+          }
+        ],
+        "text": "Scientific and statistical progress is achieved through a motivated iteration between theory and practice, and Fisher's Rothamsted work shows both the power of that closed loop and the dangers of open-loop cookbookery and mathematistry."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "University of Wisconsin, Madison, WI 53706",
+          "name": "George E. P. Box"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Science and Statistics\nAuthor(s): George E. P. Box"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Science and Statistics",
+      "venue": "Journal of the American Statistical Association",
+      "year": null
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "proOne important idea is that science is a means whereby learning is achieved, not by mere theoretical speculation"
+        }
+      ],
+      "text": "How does scientific-statistical learning occur through the iteration of theory and practice, and what does Fisher's career at Rothamsted teach about the conditions that foster or block such progress?"
+    },
+    "references": [
+      {
+        "authors": [
+          "George E. P. Box"
+        ],
+        "doi": null,
+        "key": "Box1976",
+        "page": 1,
+        "title": "Science and Statistics",
+        "venue": "Journal of the American Statistical Association",
+        "year": null
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "His first example is\nintroduced as follows [12, p. 25]: \"Figure 1 represents\nthe growth of a baby weighed to the nearest ounce at\nequal intervals from birth.\"",
+        "reference_key": "[12]",
+        "relation": "uses_data",
+        "why": "Box uses Fisher's baby-weight example to show how practical data generated Fisher's statistical teaching."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "of Chapter II of Fisher's book The Design of Experiments [11, p. 11]: \"A lady declares that by tasting a cup\nof tea... she can discriminate whether the milk or the\ntea infusion was first added to the cup.",
+        "reference_key": "[11]",
+        "relation": "uses_data",
+        "why": "The tea-tasting story illustrates Fisher turning an everyday incident into a design-of-experiments problem."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "The analysis of variance, hinted at earlier, appears here for\nthe first time in its completeness.",
+        "reference_key": "[13]",
+        "relation": "uses_data",
+        "why": "Box treats this paper as the first complete appearance of analysis of variance, despite its flawed split-plot analysis."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "Fisher later notes\nGosset's \"suggesting that I should start designing experiments\" [15, summary of Letter No. 29].",
+        "reference_key": "[15]",
+        "relation": "uses_data",
+        "why": "Gosset's letter is used as evidence that Fisher was prompted to move from analyzing data to designing experiments."
+      },
+      {
+        "confidence": "medium",
+        "page": 8,
+        "quote": "In spite of all this in 1926 the Director of Rothamsted,\nSir John Russell, wrote a paper [16] in the Journal of\nthe Ministry of Agriculture about agricultural experimentation which almost totally ignored the ideas of his\nproteg6.",
+        "reference_key": "[16]",
+        "relation": "uses_data",
+        "why": "Box uses Russell's paper as an example of resistance to Fisher's new experimental-design ideas."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "Wold, H., \"Nonlinear Estimation by Iterative Least Squares\nProcedures,\" in F.N. David, ed., Research Papers in Statistics,\nFestschrift for J. Neyman, New York: John Wiley & Sons,\nInc., 1966, 411-44.",
+          "start_page": 9,
+          "start_text": "REFERENCES"
+        },
+        "summary": "The bibliography lists 18 numbered sources cited in Box's argument, including Fisher's methodological and applied papers, Gosset's letters, Russell's agricultural writings, and works by Box, Cochran, and Wold.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The first page identifies it as an article in the Journal of the American Statistical Association, and the byline footnote says it is the written version of the R.A. Fisher Memorial Lecture.",
+      "value": "survey"
+    }
+  }
+}

@@ -1,0 +1,1969 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T00:14:55.225219886Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/2001.11761v3.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 8,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 9212,
+      "cached_tokens": 0,
+      "completion_tokens": 12976,
+      "reasoning_tokens": 7066,
+      "cost_usd": 0.0183348,
+      "cost_source": "reported",
+      "latency_s": 35.522910117
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 13158,
+      "cached_tokens": 768,
+      "completion_tokens": 7842,
+      "reasoning_tokens": 7319,
+      "cost_usd": 0.013132008,
+      "cost_source": "reported",
+      "latency_s": 127.613918437
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 3901,
+      "cached_tokens": 0,
+      "completion_tokens": 2663,
+      "reasoning_tokens": 2593,
+      "cost_usd": 0.0043659,
+      "cost_source": "reported",
+      "latency_s": 8.088550577
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 26271,
+    "cached_tokens": 768,
+    "completion_tokens": 23481,
+    "cost_usd": 0.035832708,
+    "model_latency_s": 171.225379131,
+    "wall_s": 173.258739339
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e6-30-2026-10-20/results/2001.11761v3.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Decoding and reconstructing images from brain imaging data is a research area of high interest. Recent progress in deep generative neural networks has introduced new opportunities to tackle this problem. Here, we employ a recently proposed large-scale bi-directional generative adversarial network, called BigBiGAN, to decode and reconstruct natural scenes from fMRI patterns. BigBiGAN converts images into a 120-dimensional latent space which encodes class and attribute information together, and can also reconstruct images based on their latent vectors. We computed a linear mapping between fMRI data, acquired over images from 150 different categories of ImageNet, and their corresponding BigBiGAN latent vectors. Then, we applied this mapping to the fMRI activity patterns obtained from 50 new test images from 50 unseen categories in order to retrieve their latent vectors, and reconstruct the corresponding images. Pairwise image decoding from the predicted latent vectors was highly accurate (84%). Moreover, qualitative and quantitative assessments revealed that the resulting image reconstructions were visually plausible, successfully captured many attributes of the original images, and had high perceptual similarity with the original content. This method establishes a new state-of-the-art for fMRI-based natural image reconstruction, and can be flexibly updated to take into account any future improvements in generative models of natural scene images."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "[5]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11]."
+              },
+              {
+                "page": 2,
+                "quote": "Then, similar to [5], they converted the fMRI patterns to the VAE’s latent space through linear mapping."
+              }
+            ],
+            "reference_key": "[5]",
+            "why": "It adapts the linear latent-space mapping approach from prior VAE-based face reconstruction to natural scenes using a new generative model."
+          },
+          {
+            "cited_work": "[6], [7], [10]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10]."
+              },
+              {
+                "page": 6,
+                "quote": "Although our reconstructions are not a perfect match to the input image, they show the clearest resolution, details, and naturalness, and display high-level similarity to the input image."
+              }
+            ],
+            "reference_key": "[6], [7], [10]",
+            "why": "It contrasts its high-level, naturalistic reconstructions with prior methods that often produce blurry or semantically ambiguous results."
+          },
+          {
+            "cited_work": "[11]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11]."
+              }
+            ],
+            "reference_key": "[11]",
+            "why": "It uses BigBiGAN’s 120-dimensional latent space and generator as the core generative model for reconstruction."
+          },
+          {
+            "cited_work": "[13]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In this paper, we used open-source fMRI data provided by [13]."
+              }
+            ],
+            "reference_key": "[13]",
+            "why": "It uses the open-source fMRI dataset for training and test images."
+          },
+          {
+            "cited_work": "[19]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "In this paper, Inception-V3 [19] was the DCN of our choice, with the outputs of its last inception block (after concatenation of its branches) defining our high-level representational space."
+              }
+            ],
+            "reference_key": "[19]",
+            "why": "It uses Inception-V3 representations to compute the high-level perceptual similarity measure."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "[12]",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In another study [12], authors used a VAE for reconstructing naturalistic movie stimuli."
+              }
+            ],
+            "reference_key": "[12]",
+            "why": "It revisits the VAE latent-space approach for naturalistic stimuli but replaces the VAE with BigBiGAN."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "[6], [7], [10]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10]."
+              }
+            ],
+            "reference_key": "[6], [7], [10]",
+            "why": "They are the main prior natural-image reconstruction methods used for comparison."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "This method establishes a new state-of-the-art for fMRI-based natural image reconstruction, and can be flexibly updated to take into account any future improvements in generative models of natural scene images."
+          },
+          {
+            "page": 4,
+            "quote": "Using BigBiGAN’s generator (or the PCA inverse transform), we could reconstruct an estimate of the test images from the latent vectors obtained by the brain decoder (W T)."
+          }
+        ],
+        "text": "A linear mapping from fMRI patterns to BigBiGAN’s 120-D latent space, followed by BigBiGAN’s generator, can reconstruct natural scenes from brain activity more plausibly at the high level than prior methods."
+      }
+    },
+    "citations": [
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[1]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[2]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[3]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[4]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[5]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[6], [7], [8], [9], [10]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "Previous Works",
+        "page": 2,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "Previous Works",
+        "page": 2,
+        "reference_key": "[6]"
+      },
+      {
+        "context": "Previous Works",
+        "page": 2,
+        "reference_key": "[7]"
+      },
+      {
+        "context": "Previous Works",
+        "page": 2,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "Previous Works",
+        "page": 2,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 3,
+        "reference_key": "[5]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 3,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 3,
+        "reference_key": "[14], [15]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 3,
+        "reference_key": "[5], [16], [12]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 4,
+        "reference_key": "[13], [17], [18]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 4,
+        "reference_key": "[19]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 4,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "Results",
+        "page": 4,
+        "reference_key": "[6], [7], [10]"
+      },
+      {
+        "context": "Discussion",
+        "page": 7,
+        "reference_key": "[6], [7], [10]"
+      },
+      {
+        "context": "Discussion",
+        "page": 7,
+        "reference_key": "[15]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "CerCo, CNRS, Toulouse, France",
+          "name": "Milad Mozafari"
+        },
+        {
+          "affiliation": "CerCo, CNRS and ANITI, Université de Toulouse, Toulouse, France",
+          "name": "Leila Reddy"
+        },
+        {
+          "affiliation": "CerCo, CNRS and ANITI, Université de Toulouse, Toulouse, France",
+          "name": "Rufin VanRullen"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Reconstructing Natural Scenes from fMRI Patterns using BigBiGAN"
+        },
+        {
+          "page": 1,
+          "quote": "Milad Mozafari Leila Reddy∗ Rufin VanRullen∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:2001.11761v3[cs.CV]7Dec2020",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Reconstructing Natural Scenes from fMRI Patterns using BigBiGAN",
+      "venue": null,
+      "year": null
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Here, we employ a recently proposed large-scale bi-directional generative adversarial network, called BigBiGAN, to decode and reconstruct natural scenes from fMRI patterns."
+        },
+        {
+          "page": 4,
+          "quote": "Using BigBiGAN’s generator (or the PCA inverse transform), we could reconstruct an estimate of the test images from the latent vectors obtained by the brain decoder (W T)."
+        }
+      ],
+      "text": "Can natural scenes be decoded and reconstructed from fMRI patterns by mapping brain activity to BigBiGAN latent vectors and using its generator?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Y. Miyawaki",
+          "H. Uchida",
+          "O. Yamashita",
+          "M.-a. Sato",
+          "Y. Morito",
+          "H. C. Tanabe",
+          "N. Sadato",
+          "Y. Kamitani"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 7,
+        "title": "Visual image reconstruction from human brain activity using a combination of multiscale local image decoders",
+        "venue": "Neuron",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "K. N. Kay",
+          "T. Naselaris",
+          "R. J. Prenger",
+          "J. L. Gallant"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 8,
+        "title": "Identifying natural images from human brain activity",
+        "venue": "Nature",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "T. Naselaris",
+          "R. J. Prenger",
+          "K. N. Kay",
+          "M. Oliver",
+          "J. L. Gallant"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 8,
+        "title": "Bayesian reconstruction of natural images from human brain activity",
+        "venue": "Neuron",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "M. A. van Gerven",
+          "F. P. de Lange",
+          "T. Heskes"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 8,
+        "title": "Neural decoding with hierarchical generative models",
+        "venue": "Neural computation",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "R. VanRullen",
+          "L. Reddy"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 8,
+        "title": "Reconstructing faces from fmri patterns using deep generative neural networks",
+        "venue": "Communications biology",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "G. Shen",
+          "T. Horikawa",
+          "K. Majima",
+          "Y. Kamitani"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 8,
+        "title": "Deep image reconstruction from human brain activity",
+        "venue": "PLoS computational biology",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "R. Beliy",
+          "G. Gaziv",
+          "A. Hoogi",
+          "F. Strappini",
+          "T. Golan",
+          "M. Irani"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 8,
+        "title": "From voxels to pixels and back: Self-supervision in natural-image reconstruction from fmri",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "G. St-Yves",
+          "T. Naselaris"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 8,
+        "title": "Generative adversarial networks conditioned on brain activity reconstruct seen images",
+        "venue": "2018 IEEE International Conference on Systems, Man, and Cybernetics (SMC)",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "K. Seeliger",
+          "U. Güçlü",
+          "L. Ambrogioni",
+          "Y. Güçlütürk",
+          "M. A. van Gerven"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 8,
+        "title": "Generative adversarial networks for reconstructing natural images from brain activity",
+        "venue": "NeuroImage",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Z. Ren",
+          "J. Li",
+          "X. Xue",
+          "X. Li",
+          "F. Yang",
+          "Z. Jiao",
+          "X. Gao"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 8,
+        "title": "Reconstructing perceived images from brain activity by visuallyguided cognitive representation and adversarial learning",
+        "venue": "arXiv preprint arXiv:1906.12181",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "J. Donahue",
+          "K. Simonyan"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 8,
+        "title": "Large scale adversarial representation learning",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "K. Han",
+          "H. Wen",
+          "J. Shi",
+          "K.-H. Lu",
+          "Y. Zhang",
+          "Z. Liu"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 8,
+        "title": "Variational autoencoder: An unsupervised model for modeling and decoding fmri activity in visual cortex",
+        "venue": "bioRxiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "T. Horikawa",
+          "Y. Kamitani"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 8,
+        "title": "Generic decoding of seen and imagined objects using hierarchical visual features",
+        "venue": "Nature communications",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "J. Donahue",
+          "P. Krähenbühl",
+          "T. Darrell"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 8,
+        "title": "Adversarial feature learning",
+        "venue": "arXiv preprint arXiv:1605.09782",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "A. Brock",
+          "J. Donahue",
+          "K. Simonyan"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 8,
+        "title": "Large scale gan training for high fidelity natural image synthesis",
+        "venue": "arXiv preprint arXiv:1809.11096",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "A. S. Cowen",
+          "M. M. Chun",
+          "B. A. Kuhl"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 8,
+        "title": "Neural portraits of perception: reconstructing face images from evoked brain activity",
+        "venue": "Neuroimage",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "S.-M. Khaligh-Razavi",
+          "N. Kriegeskorte"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 8,
+        "title": "Deep supervised, but not unsupervised, models may explain it cortical representation",
+        "venue": "PLoS computational biology",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "R. M. Cichy",
+          "A. Khosla",
+          "D. Pantazis",
+          "A. Torralba",
+          "A. Oliva"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 8,
+        "title": "Comparison of deep neural networks to spatio-temporal cortical dynamics of human visual object recognition reveals hierarchical correspondence",
+        "venue": "Scientific reports",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "C. Szegedy",
+          "V. Vanhoucke",
+          "S. Ioffe",
+          "J. Shlens",
+          "Z. Wojna"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 8,
+        "title": "Rethinking the inception architecture for computer vision",
+        "venue": "Proceedings of the IEEE conference on computer vision and pattern recognition",
+        "year": 2016
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+        "reference_key": "[5]",
+        "relation": "extends",
+        "why": "The paper explicitly transfers the earlier VAE-based face-reconstruction idea to natural scenes using BigBiGAN."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+        "reference_key": "[11]",
+        "relation": "uses_method",
+        "why": "BigBiGAN supplies the latent space and generator that the proposed decoding method depends on."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10].",
+        "reference_key": "[6], [7], [10]",
+        "relation": "compares",
+        "why": "These are the main competing natural-image reconstruction methods against which the proposed method is evaluated."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In this paper, we used open-source fMRI data provided by [13].",
+        "reference_key": "[13]",
+        "relation": "uses_data",
+        "why": "The open-source fMRI dataset is the source of training and test brain responses."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In this paper, Inception-V3 [19] was the DCN of our choice, with the outputs of its last inception block (after concatenation of its branches) defining our high-level representational space.",
+        "reference_key": "[19]",
+        "relation": "uses_method",
+        "why": "Inception-V3 representations define the high-level similarity measure used to evaluate reconstructions."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In another study [12], authors used a VAE for reconstructing naturalistic movie stimuli.",
+        "reference_key": "[12]",
+        "relation": "contrasts",
+        "why": "This prior VAE approach for naturalistic movies is contrasted with the BigBiGAN-based method for natural scenes."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "It is a successor of the BiGAN bi-directional GAN [14], but adopting the generator and discriminator architectures from the more recent BigGAN [15].",
+        "reference_key": "[14], [15]",
+        "relation": "uses_method",
+        "why": "These works define the architectural lineage of BigBiGAN that the paper adopts."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Despite these promising results on faces, dealing with natural images remains a hard challenge.",
+          "start_page": 1,
+          "start_text": "Abstract—Decoding and reconstructing images from brain imaging data is a research area of high interest."
+        },
+        "summary": "The paper motivates fMRI-based natural-image reconstruction, surveys prior methods from binary stimuli through deep generative models, and frames the proposed BigBiGAN approach as a way to move beyond pixel-level or blurry reconstructions.",
+        "title": "Motivation and Prior fMRI Reconstruction Methods"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "It took around 16 hours to compute the linear mapping (GLM on the training data) for all subjects, while the encoding and image reconstructions with BigBiGAN took only a few seconds.",
+          "start_page": 2,
+          "start_text": "III. MATERIALS AND METHODS"
+        },
+        "summary": "This unit covers the fMRI dataset and preprocessing, the BigBiGAN model and its latent space, the PCA baseline, the linear encoding/decoding pipeline for predicting latent vectors, and computational efficiency.",
+        "title": "Materials and Methods: fMRI Data, Models, and Decoding Pipeline"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "The other three methods suffered to varying degrees from ambiguous reconstructions (notably, without any clearly discernible object), although they did much better in estimating low-level attributes of the images, with the best performance obtained by Ren et al.",
+          "start_page": 4,
+          "start_text": "IV. RESULTS"
+        },
+        "summary": "The results show reconstructed images across subjects and compare BigBiGAN against Shen et al., Beliy et al., Ren et al., and the eigen-image PCA baseline. It also reports quantitative low-level and high-level similarity measures.",
+        "title": "Image Reconstruction Results and Comparative Evaluation"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "This again suggests that PCA mostly depends on low-level features, whereas the BigBiGAN brain decoder can benefit from low-level information as well as high-level image attributes.",
+          "start_page": 7,
+          "start_text": "V. DISCUSSION"
+        },
+        "summary": "This final unit discusses the method’s limits and future improvements and reports region-wise decoding accuracy, showing BigBiGAN’s advantage in higher visual areas while PCA does better in V1 and V2.",
+        "title": "Regional Decoding Accuracy and Discussion"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It presents a new method, experiments on fMRI data, and quantitative/qualitative comparisons.",
+      "value": "method"
+    }
+  },
+  "pass1_check": {
+    "sites": 45,
+    "verbatim": 43,
+    "near": 1,
+    "missing": 1,
+    "wrong_page": 12
+  },
+  "corrections": [
+    {
+      "path": "/identity/year",
+      "action": "replace",
+      "value_json": "2020",
+      "reason": "The draft leaves the year null, but the paper itself gives the formal citation year as 2020.",
+      "evidence": [
+        {
+          "quote": "M. Mozafari, L. Reddy and R. VanRullen, “Reconstructing Natural Scenes from fMRI Patterns using BigBiGAN,” 2020 International Joint Conference on Neural Networks (IJCNN), Glasgow, United Kingdom, 2020, pp. 1-8, doi: 10.1109/IJCNN48605.2020.9206960",
+          "page": 1
+        },
+        {
+          "quote": "This manuscript is accepted to IEEE International Joint Conference on Neural Networks (IJCNN).",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/venue",
+      "action": "replace",
+      "value_json": "\"International Joint Conference on Neural Networks (IJCNN)\"",
+      "reason": "The draft leaves the venue null, but the paper states it was accepted/cited at IJCNN.",
+      "evidence": [
+        {
+          "quote": "2020 International Joint Conference on Neural Networks (IJCNN), Glasgow, United Kingdom, 2020, pp. 1-8, doi: 10.1109/IJCNN48605.2020.9206960",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/publication_state",
+      "action": "replace",
+      "value_json": "\"published\"",
+      "reason": "The paper is not merely a preprint: it is accepted and formally citable at IJCNN with page numbers and a DOI.",
+      "evidence": [
+        {
+          "quote": "This manuscript is accepted to IEEE International Joint Conference on Neural Networks (IJCNN). Please cite it as:",
+          "page": 1
+        },
+        {
+          "quote": "2020 International Joint Conference on Neural Networks (IJCNN), Glasgow, United Kingdom, 2020, pp. 1-8, doi: 10.1109/IJCNN48605.2020.9206960",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/identifiers/doi",
+      "action": "replace",
+      "value_json": "\"10.1109/IJCNN48605.2020.9206960\"",
+      "reason": "The draft sets doi to null, but the paper provides the DOI 10.1109/IJCNN48605.2020.9206960.",
+      "evidence": [
+        {
+          "quote": "doi: 10.1109/IJCNN48605.2020.9206960 (https://ieeexplore.ieee.org/document/9206960).",
+          "page": 1
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/year",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/identity/venue",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/identity/publication_state",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/identity/identifiers/doi",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 45,
+    "verbatim": 43,
+    "near": 1,
+    "missing": 1,
+    "wrong_page": 12
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "repaired_local",
+      "original": "Decoding and reconstructing images from brain imaging data is a research area of high interest. Recent progress in deep generative neural networks has introduced new opportunities to tackle this problem. Here, we employ a recently proposed large-scale bi-directional generative adversarial network, called BigBiGAN, to decode and reconstruct natural scenes from fMRI patterns. BigBiGAN converts images into a 120-dimensional latent space which encodes class and attribute information together, and can also reconstruct images based on their latent vectors. We computed a linear mapping between fMRI data, acquired over images from 150 different categories of ImageNet, and their corresponding BigBiGAN latent vectors. Then, we applied this mapping to the fMRI activity patterns obtained from 50 new test images from 50 unseen categories in order to retrieve their latent vectors, and reconstruct the corresponding images. Pairwise image decoding from the predicted latent vectors was highly accurate (84%). Moreover, qualitative and quantitative assessments revealed that the resulting image reconstructions were visually plausible, successfully captured many attributes of the original images, and had high perceptual similarity with the original content. This method establishes a new state-of-the-art for fMRI-based natural image reconstruction, and can be flexibly updated to take into account any future improvements in generative models of natural scene images.",
+      "admitted": "Abstract—Decoding and reconstructing images from brain imaging data is a research area of high interest. Recent progress in deep generative neural networks has introduced new opportunities to tackle this problem. Here, we employ a recently proposed large-scale bi-directional generative adversarial network, called BigBiGAN, to decode and reconstruct natural scenes from fMRI patterns. BigBiGAN converts images into a 120-dimensional latent space which encodes class and attribute information together, and can also reconstruct images based on their latent vectors. We computed a linear mapping between fMRI data, acquired over images from 150 different categories of ImageNet, and their corresponding BigBiGAN latent vectors. Then, we applied this mapping to the fMRI activity patterns obtained from 50 new test images from 50 unseen categories in order to retrieve their latent vectors, and reconstruct the corresponding images. Pairwise image decoding from the predicted latent vectors was highly accurate (84%). Moreover, qualitative and quantitative assessments revealed that the resulting image reconstructions were visually plausible, successfully captured many attributes of the original images, and had high perceptual similarity with the original content. This method establishes a new state-of-theart for fMRI-based natural image reconstruction, and can be flexibly updated to take into account any future improvements in generative models of natural scene images.",
+      "similarity": 0.9951219512195122,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+      "admitted": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/1/quote",
+      "status": "dropped",
+      "original": "Then, similar to [5], they converted the fMRI patterns to the VAE’s latent space through linear mapping.",
+      "admitted": null,
+      "similarity": 0.7058823529411764,
+      "cited_page": 2,
+      "matched_page": null
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10].",
+      "admitted": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Although our reconstructions are not a perfect match to the input image, they show the clearest resolution, details, and naturalness, and display high-level similarity to the input image.",
+      "admitted": "Although our reconstructions are not a perfect match to the input image, they show the clearest resolution, details, and naturalness, and display high-level similarity to the input image.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+      "admitted": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper, we used open-source fMRI data provided by [13].",
+      "admitted": "In this paper, we used open-source fMRI data provided by [13].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper, Inception-V3 [19] was the DCN of our choice, with the outputs of its last inception block (after concatenation of its branches) defining our high-level representational space.",
+      "admitted": "In this paper, Inception-V3 [19] was the DCN of our choice, with the outputs of its last inception block (after concatenation of its branches) defining our high-level representational space.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/replications/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In another study [12], authors used a VAE for reconstructing naturalistic movie stimuli.",
+      "admitted": "In another study [12], authors used a VAE for reconstructing naturalistic movie stimuli.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10].",
+      "admitted": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This method establishes a new state-of-the-art for fMRI-based natural image reconstruction, and can be flexibly updated to take into account any future improvements in generative models of natural scene images.",
+      "admitted": "This method establishes a new state-of-the-art for fMRI-based natural image reconstruction, and can be flexibly updated to take into account any future improvements in generative models of natural scene images.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Using BigBiGAN’s generator (or the PCA inverse transform), we could reconstruct an estimate of the test images from the latent vectors obtained by the brain decoder (W T).",
+      "admitted": "Using BigBiGAN’s generator (or the PCA inverse transform), we could reconstruct an estimate of the test images from the latent vectors obtained by the brain decoder (W T).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Reconstructing Natural Scenes from fMRI Patterns using BigBiGAN",
+      "admitted": "Reconstructing Natural Scenes from fMRI Patterns using BigBiGAN",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Milad Mozafari Leila Reddy∗ Rufin VanRullen∗",
+      "admitted": "Milad Mozafari Leila Reddy∗ Rufin VanRullen∗",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Here, we employ a recently proposed large-scale bi-directional generative adversarial network, called BigBiGAN, to decode and reconstruct natural scenes from fMRI patterns.",
+      "admitted": "Here, we employ a recently proposed large-scale bi-directional generative adversarial network, called BigBiGAN, to decode and reconstruct natural scenes from fMRI patterns.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Using BigBiGAN’s generator (or the PCA inverse transform), we could reconstruct an estimate of the test images from the latent vectors obtained by the brain decoder (W T).",
+      "admitted": "Using BigBiGAN’s generator (or the PCA inverse transform), we could reconstruct an estimate of the test images from the latent vectors obtained by the brain decoder (W T).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "Previous Works",
+      "admitted": "Previous Works",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "Previous Works",
+      "admitted": "Previous Works",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "Previous Works",
+      "admitted": "Previous Works",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "Previous Works",
+      "admitted": "Previous Works",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "Previous Works",
+      "admitted": "Previous Works",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "Materials and Methods",
+      "admitted": "Materials and Methods",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "Materials and Methods",
+      "admitted": "Materials and Methods",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "Materials and Methods",
+      "admitted": "Materials and Methods",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "Materials and Methods",
+      "admitted": "Materials and Methods",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "Materials and Methods",
+      "admitted": "Materials and Methods",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "Materials and Methods",
+      "admitted": "Materials and Methods",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "Materials and Methods",
+      "admitted": "Materials and Methods",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "Results",
+      "admitted": "Results",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "Discussion",
+      "admitted": "Discussion",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "Discussion",
+      "admitted": "Discussion",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+      "admitted": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+      "admitted": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10].",
+      "admitted": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "In this paper, we used open-source fMRI data provided by [13].",
+      "admitted": "In this paper, we used open-source fMRI data provided by [13].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "In this paper, Inception-V3 [19] was the DCN of our choice, with the outputs of its last inception block (after concatenation of its branches) defining our high-level representational space.",
+      "admitted": "In this paper, Inception-V3 [19] was the DCN of our choice, with the outputs of its last inception block (after concatenation of its branches) defining our high-level representational space.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "In another study [12], authors used a VAE for reconstructing naturalistic movie stimuli.",
+      "admitted": "In another study [12], authors used a VAE for reconstructing naturalistic movie stimuli.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "It is a successor of the BiGAN bi-directional GAN [14], but adopting the generator and discriminator architectures from the more recent BigGAN [15].",
+      "admitted": "It is a successor of the BiGAN bi-directional GAN [14], but adopting the generator and discriminator architectures from the more recent BigGAN [15].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    }
+  ],
+  "admission_counts": {
+    "dropped": 1,
+    "repaired_local": 1,
+    "verbatim": 43
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Abstract—Decoding and reconstructing images from brain imaging data is a research area of high interest. Recent progress in deep generative neural networks has introduced new opportunities to tackle this problem. Here, we employ a recently proposed large-scale bi-directional generative adversarial network, called BigBiGAN, to decode and reconstruct natural scenes from fMRI patterns. BigBiGAN converts images into a 120-dimensional latent space which encodes class and attribute information together, and can also reconstruct images based on their latent vectors. We computed a linear mapping between fMRI data, acquired over images from 150 different categories of ImageNet, and their corresponding BigBiGAN latent vectors. Then, we applied this mapping to the fMRI activity patterns obtained from 50 new test images from 50 unseen categories in order to retrieve their latent vectors, and reconstruct the corresponding images. Pairwise image decoding from the predicted latent vectors was highly accurate (84%). Moreover, qualitative and quantitative assessments revealed that the resulting image reconstructions were visually plausible, successfully captured many attributes of the original images, and had high perceptual similarity with the original content. This method establishes a new state-of-theart for fMRI-based natural image reconstruction, and can be flexibly updated to take into account any future improvements in generative models of natural scene images."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "[5]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11]."
+              }
+            ],
+            "reference_key": "[5]",
+            "why": "It adapts the linear latent-space mapping approach from prior VAE-based face reconstruction to natural scenes using a new generative model."
+          },
+          {
+            "cited_work": "[6], [7], [10]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10]."
+              },
+              {
+                "page": 6,
+                "quote": "Although our reconstructions are not a perfect match to the input image, they show the clearest resolution, details, and naturalness, and display high-level similarity to the input image."
+              }
+            ],
+            "reference_key": "[6], [7], [10]",
+            "why": "It contrasts its high-level, naturalistic reconstructions with prior methods that often produce blurry or semantically ambiguous results."
+          },
+          {
+            "cited_work": "[11]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11]."
+              }
+            ],
+            "reference_key": "[11]",
+            "why": "It uses BigBiGAN’s 120-dimensional latent space and generator as the core generative model for reconstruction."
+          },
+          {
+            "cited_work": "[13]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In this paper, we used open-source fMRI data provided by [13]."
+              }
+            ],
+            "reference_key": "[13]",
+            "why": "It uses the open-source fMRI dataset for training and test images."
+          },
+          {
+            "cited_work": "[19]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "In this paper, Inception-V3 [19] was the DCN of our choice, with the outputs of its last inception block (after concatenation of its branches) defining our high-level representational space."
+              }
+            ],
+            "reference_key": "[19]",
+            "why": "It uses Inception-V3 representations to compute the high-level perceptual similarity measure."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "[12]",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In another study [12], authors used a VAE for reconstructing naturalistic movie stimuli."
+              }
+            ],
+            "reference_key": "[12]",
+            "why": "It revisits the VAE latent-space approach for naturalistic stimuli but replaces the VAE with BigBiGAN."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "[6], [7], [10]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10]."
+              }
+            ],
+            "reference_key": "[6], [7], [10]",
+            "why": "They are the main prior natural-image reconstruction methods used for comparison."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "This method establishes a new state-of-the-art for fMRI-based natural image reconstruction, and can be flexibly updated to take into account any future improvements in generative models of natural scene images."
+          },
+          {
+            "page": 4,
+            "quote": "Using BigBiGAN’s generator (or the PCA inverse transform), we could reconstruct an estimate of the test images from the latent vectors obtained by the brain decoder (W T)."
+          }
+        ],
+        "text": "A linear mapping from fMRI patterns to BigBiGAN’s 120-D latent space, followed by BigBiGAN’s generator, can reconstruct natural scenes from brain activity more plausibly at the high level than prior methods."
+      }
+    },
+    "citations": [
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[1]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[2]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[3]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[4]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[5]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[6], [7], [8], [9], [10]"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "Previous Works",
+        "page": 1,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "Previous Works",
+        "page": 1,
+        "reference_key": "[6]"
+      },
+      {
+        "context": "Previous Works",
+        "page": 1,
+        "reference_key": "[7]"
+      },
+      {
+        "context": "Previous Works",
+        "page": 1,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "Previous Works",
+        "page": 1,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 2,
+        "reference_key": "[5]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 2,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 2,
+        "reference_key": "[14], [15]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 2,
+        "reference_key": "[5], [16], [12]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 2,
+        "reference_key": "[13], [17], [18]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 2,
+        "reference_key": "[19]"
+      },
+      {
+        "context": "Materials and Methods",
+        "page": 2,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "Results",
+        "page": 4,
+        "reference_key": "[6], [7], [10]"
+      },
+      {
+        "context": "Discussion",
+        "page": 7,
+        "reference_key": "[6], [7], [10]"
+      },
+      {
+        "context": "Discussion",
+        "page": 7,
+        "reference_key": "[15]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "CerCo, CNRS, Toulouse, France",
+          "name": "Milad Mozafari"
+        },
+        {
+          "affiliation": "CerCo, CNRS and ANITI, Université de Toulouse, Toulouse, France",
+          "name": "Leila Reddy"
+        },
+        {
+          "affiliation": "CerCo, CNRS and ANITI, Université de Toulouse, Toulouse, France",
+          "name": "Rufin VanRullen"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Reconstructing Natural Scenes from fMRI Patterns using BigBiGAN"
+        },
+        {
+          "page": 1,
+          "quote": "Milad Mozafari Leila Reddy∗ Rufin VanRullen∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:2001.11761v3[cs.CV]7Dec2020",
+        "doi": "10.1109/IJCNN48605.2020.9206960"
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Reconstructing Natural Scenes from fMRI Patterns using BigBiGAN",
+      "venue": "International Joint Conference on Neural Networks (IJCNN)",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Here, we employ a recently proposed large-scale bi-directional generative adversarial network, called BigBiGAN, to decode and reconstruct natural scenes from fMRI patterns."
+        },
+        {
+          "page": 4,
+          "quote": "Using BigBiGAN’s generator (or the PCA inverse transform), we could reconstruct an estimate of the test images from the latent vectors obtained by the brain decoder (W T)."
+        }
+      ],
+      "text": "Can natural scenes be decoded and reconstructed from fMRI patterns by mapping brain activity to BigBiGAN latent vectors and using its generator?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Y. Miyawaki",
+          "H. Uchida",
+          "O. Yamashita",
+          "M.-a. Sato",
+          "Y. Morito",
+          "H. C. Tanabe",
+          "N. Sadato",
+          "Y. Kamitani"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 7,
+        "title": "Visual image reconstruction from human brain activity using a combination of multiscale local image decoders",
+        "venue": "Neuron",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "K. N. Kay",
+          "T. Naselaris",
+          "R. J. Prenger",
+          "J. L. Gallant"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 8,
+        "title": "Identifying natural images from human brain activity",
+        "venue": "Nature",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "T. Naselaris",
+          "R. J. Prenger",
+          "K. N. Kay",
+          "M. Oliver",
+          "J. L. Gallant"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 8,
+        "title": "Bayesian reconstruction of natural images from human brain activity",
+        "venue": "Neuron",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "M. A. van Gerven",
+          "F. P. de Lange",
+          "T. Heskes"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 8,
+        "title": "Neural decoding with hierarchical generative models",
+        "venue": "Neural computation",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "R. VanRullen",
+          "L. Reddy"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 8,
+        "title": "Reconstructing faces from fmri patterns using deep generative neural networks",
+        "venue": "Communications biology",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "G. Shen",
+          "T. Horikawa",
+          "K. Majima",
+          "Y. Kamitani"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 8,
+        "title": "Deep image reconstruction from human brain activity",
+        "venue": "PLoS computational biology",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "R. Beliy",
+          "G. Gaziv",
+          "A. Hoogi",
+          "F. Strappini",
+          "T. Golan",
+          "M. Irani"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 8,
+        "title": "From voxels to pixels and back: Self-supervision in natural-image reconstruction from fmri",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "G. St-Yves",
+          "T. Naselaris"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 8,
+        "title": "Generative adversarial networks conditioned on brain activity reconstruct seen images",
+        "venue": "2018 IEEE International Conference on Systems, Man, and Cybernetics (SMC)",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "K. Seeliger",
+          "U. Güçlü",
+          "L. Ambrogioni",
+          "Y. Güçlütürk",
+          "M. A. van Gerven"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 8,
+        "title": "Generative adversarial networks for reconstructing natural images from brain activity",
+        "venue": "NeuroImage",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Z. Ren",
+          "J. Li",
+          "X. Xue",
+          "X. Li",
+          "F. Yang",
+          "Z. Jiao",
+          "X. Gao"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 8,
+        "title": "Reconstructing perceived images from brain activity by visuallyguided cognitive representation and adversarial learning",
+        "venue": "arXiv preprint arXiv:1906.12181",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "J. Donahue",
+          "K. Simonyan"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 8,
+        "title": "Large scale adversarial representation learning",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "K. Han",
+          "H. Wen",
+          "J. Shi",
+          "K.-H. Lu",
+          "Y. Zhang",
+          "Z. Liu"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 8,
+        "title": "Variational autoencoder: An unsupervised model for modeling and decoding fmri activity in visual cortex",
+        "venue": "bioRxiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "T. Horikawa",
+          "Y. Kamitani"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 8,
+        "title": "Generic decoding of seen and imagined objects using hierarchical visual features",
+        "venue": "Nature communications",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "J. Donahue",
+          "P. Krähenbühl",
+          "T. Darrell"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 8,
+        "title": "Adversarial feature learning",
+        "venue": "arXiv preprint arXiv:1605.09782",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "A. Brock",
+          "J. Donahue",
+          "K. Simonyan"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 8,
+        "title": "Large scale gan training for high fidelity natural image synthesis",
+        "venue": "arXiv preprint arXiv:1809.11096",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "A. S. Cowen",
+          "M. M. Chun",
+          "B. A. Kuhl"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 8,
+        "title": "Neural portraits of perception: reconstructing face images from evoked brain activity",
+        "venue": "Neuroimage",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "S.-M. Khaligh-Razavi",
+          "N. Kriegeskorte"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 8,
+        "title": "Deep supervised, but not unsupervised, models may explain it cortical representation",
+        "venue": "PLoS computational biology",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "R. M. Cichy",
+          "A. Khosla",
+          "D. Pantazis",
+          "A. Torralba",
+          "A. Oliva"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 8,
+        "title": "Comparison of deep neural networks to spatio-temporal cortical dynamics of human visual object recognition reveals hierarchical correspondence",
+        "venue": "Scientific reports",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "C. Szegedy",
+          "V. Vanhoucke",
+          "S. Ioffe",
+          "J. Shlens",
+          "Z. Wojna"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 8,
+        "title": "Rethinking the inception architecture for computer vision",
+        "venue": "Proceedings of the IEEE conference on computer vision and pattern recognition",
+        "year": 2016
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+        "reference_key": "[5]",
+        "relation": "extends",
+        "why": "The paper explicitly transfers the earlier VAE-based face-reconstruction idea to natural scenes using BigBiGAN."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Inspired by [5], we propose a method to reconstruct natural scenes from fMRI data using a recently proposed large-scale bi-directional generative adversarial network, called BigBi-GAN [11].",
+        "reference_key": "[11]",
+        "relation": "uses_method",
+        "why": "BigBiGAN supplies the latent space and generator that the proposed decoding method depends on."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Here, we compare our reconstructions to three recent works by Shen et al. [6], Beliy et al. [7], and Ren et al. [10].",
+        "reference_key": "[6], [7], [10]",
+        "relation": "compares",
+        "why": "These are the main competing natural-image reconstruction methods against which the proposed method is evaluated."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In this paper, we used open-source fMRI data provided by [13].",
+        "reference_key": "[13]",
+        "relation": "uses_data",
+        "why": "The open-source fMRI dataset is the source of training and test brain responses."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In this paper, Inception-V3 [19] was the DCN of our choice, with the outputs of its last inception block (after concatenation of its branches) defining our high-level representational space.",
+        "reference_key": "[19]",
+        "relation": "uses_method",
+        "why": "Inception-V3 representations define the high-level similarity measure used to evaluate reconstructions."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In another study [12], authors used a VAE for reconstructing naturalistic movie stimuli.",
+        "reference_key": "[12]",
+        "relation": "contrasts",
+        "why": "This prior VAE approach for naturalistic movies is contrasted with the BigBiGAN-based method for natural scenes."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "It is a successor of the BiGAN bi-directional GAN [14], but adopting the generator and discriminator architectures from the more recent BigGAN [15].",
+        "reference_key": "[14], [15]",
+        "relation": "uses_method",
+        "why": "These works define the architectural lineage of BigBiGAN that the paper adopts."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Despite these promising results on faces, dealing with natural images remains a hard challenge.",
+          "start_page": 1,
+          "start_text": "Abstract—Decoding and reconstructing images from brain imaging data is a research area of high interest."
+        },
+        "summary": "The paper motivates fMRI-based natural-image reconstruction, surveys prior methods from binary stimuli through deep generative models, and frames the proposed BigBiGAN approach as a way to move beyond pixel-level or blurry reconstructions.",
+        "title": "Motivation and Prior fMRI Reconstruction Methods"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "It took around 16 hours to compute the linear mapping (GLM on the training data) for all subjects, while the encoding and image reconstructions with BigBiGAN took only a few seconds.",
+          "start_page": 2,
+          "start_text": "III. MATERIALS AND METHODS"
+        },
+        "summary": "This unit covers the fMRI dataset and preprocessing, the BigBiGAN model and its latent space, the PCA baseline, the linear encoding/decoding pipeline for predicting latent vectors, and computational efficiency.",
+        "title": "Materials and Methods: fMRI Data, Models, and Decoding Pipeline"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "The other three methods suffered to varying degrees from ambiguous reconstructions (notably, without any clearly discernible object), although they did much better in estimating low-level attributes of the images, with the best performance obtained by Ren et al.",
+          "start_page": 4,
+          "start_text": "IV. RESULTS"
+        },
+        "summary": "The results show reconstructed images across subjects and compare BigBiGAN against Shen et al., Beliy et al., Ren et al., and the eigen-image PCA baseline. It also reports quantitative low-level and high-level similarity measures.",
+        "title": "Image Reconstruction Results and Comparative Evaluation"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "This again suggests that PCA mostly depends on low-level features, whereas the BigBiGAN brain decoder can benefit from low-level information as well as high-level image attributes.",
+          "start_page": 7,
+          "start_text": "V. DISCUSSION"
+        },
+        "summary": "This final unit discusses the method’s limits and future improvements and reports region-wise decoding accuracy, showing BigBiGAN’s advantage in higher visual areas while PCA does better in V1 and V2.",
+        "title": "Regional Decoding Accuracy and Discussion"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It presents a new method, experiments on fMRI data, and quantitative/qualitative comparisons.",
+      "value": "method"
+    }
+  }
+}
