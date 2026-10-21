@@ -133,6 +133,22 @@ over-segmentation; E9 measured 0.586 with -0.9 under-segmentation on different
 hosts. Coverage swings with them (0.83 vs 0.70). Section quality is
 provider-sensitive, and page coverage is not a stable metric.
 
+## E10 — pinned provider, all 30 complete
+
+The retry now covers provider errors and dropped answers, and the host is pinned
+to DeepInfra fp8, chosen with the new `scripts/spike/providers.py` inspector
+($0.42/$0.14 per million, 100% uptime, json+reasoning). The combined core
+finishes **30 of 30** for $0.686 ($0.023/paper).
+
+Identity: 29/30 exact, authors set and matchable 30/30, abstract 26/26. The one
+miss is again the cite-as title on `1803.07954v4`; the same paper matched in E7
+on a different host, so the prompt rule is not sufficient there.
+
+Sections: pinning lifted IoU to 0.790 and coverage to 0.958, from 0.586/0.697
+unpinned. The remaining defect is granularity — 152 predicted units against 85
+truth (+6.7), heavy over-segmentation. Provider stability fixed the metric
+noise; merging units to the audited size is the next change.
+
 ## Cohort change
 
 The sample grows from 20 to 30: the frozen 20 (bulk arXiv) are kept, and 10
