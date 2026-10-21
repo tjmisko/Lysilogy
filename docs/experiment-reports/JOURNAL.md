@@ -2,7 +2,9 @@
 
 Status: 2026-10-19. A running index of the spike: each experiment, the one
 question it asked, what it changed, what it taught, and where the numbers live.
-The linked reports carry the detail; this file is the timeline.
+The linked reports carry the detail; this file is the timeline. The narrative
+version is
+[2026-10-20-extraction-spike-retrospective.md](2026-10-20-extraction-spike-retrospective.md).
 
 | # | Question | Change held | Verdict | Record |
 | --- | --- | --- | --- | --- |
