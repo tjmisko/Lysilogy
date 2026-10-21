@@ -124,14 +124,14 @@ def score_identity(artifacts, oracle):
         title = identity.get("title") or ""
         result["title_exact"] = compact(title) == compact(oracle["title"])
         result["title_f1"] = round(token_f1(title, oracle["title"]), 4)
-        result["title_matchable"] = similar(title, oracle["title"]) >= 0.95
+        result["title_matchable"] = result["title_exact"] or similar(title, oracle["title"]) >= 0.95
     if oracle.get("authors"):
         predicted = [name_key(author_name(author)) for author in identity.get("authors") or []]
         truth = [name_key(name) for name in oracle["authors"]]
         overlap = sum((Counter(predicted) & Counter(truth)).values())
         result["authors_ordered_exact"] = predicted == truth
         result["authors_set_exact"] = Counter(predicted) == Counter(truth)
-        result["authors_matchable"] = authors_match(identity.get("authors") or [], oracle["authors"])
+        result["authors_matchable"] = result["authors_set_exact"] or authors_match(identity.get("authors") or [], oracle["authors"])
         result["authors_f1"] = round(2 * overlap / (len(predicted) + len(truth)), 4) if predicted or truth else 1.0
         result["authors_count_error"] = len(predicted) - len(truth)
     if oracle.get("abstract"):
