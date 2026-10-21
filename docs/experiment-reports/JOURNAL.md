@@ -100,6 +100,22 @@ at $1.18. Extraction is no longer the bottleneck; provider selection is.
 Watch item: `autor2013` returned the running-head title `The China Syndrome`
 without its subtitle, and `1908.00951v4` returned empty authors. Both completed.
 
+## E7 — robust routing
+
+The provider policy now sorts by price, requires parameter support, allows
+fallbacks, caps price (`prompt 0.5`, `completion 2.0` USD/M), prefers 20 tok/s
+and 60 s latency, and skips low-bit quantization. Relace was rate-limited, so
+routing fell back to Together and finished 28 of 30 (E6: 22 of 30).
+
+Identity is now 28/30 exact and 28/30 matchable; the only misses are the two
+loop failures (`0812.5080v5`, `amodei2016`). On completed papers identity is
+28/28 both ways. Section over-segmentation improved to +1.4 units (99 predicted
+vs 85 truth, IoU 0.669), from +3.7 in E3.
+
+Cost rose to $1.67 for the cohort because Together is roughly ten times Relace.
+The fallback buys completion, not cheapness; the cost model should assume a
+cheap host when available and a ~$1.2/M fallback when not.
+
 ## Cohort change
 
 The sample grows from 20 to 30: the frozen 20 (bulk arXiv) are kept, and 10
