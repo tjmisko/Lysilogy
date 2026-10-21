@@ -149,6 +149,21 @@ unpinned. The remaining defect is granularity — 152 predicted units against 85
 truth (+6.7), heavy over-segmentation. Provider stability fixed the metric
 noise; merging units to the audited size is the next change.
 
+## E11–E13 — section granularity and the title prior
+
+- The guidance now targets `ceil(pages/4)–ceil(pages/2)` units (each roughly
+2–3 pages) instead of `pages/2–2*pages/3`. Over-segmentation collapsed: 152
+units to 91 across the 30 (audited 85), and section IoU rose 0.790 to 0.866.
+- A deterministic title prior (the largest page-1 heading after skipping
+cite-as and accepted-for-publication lines) is sent for identity calls and
+stated as authoritative. Identity reached **30/30 exact**, including
+`1803.07954v4`.
+- A multi-turn refine call (`include_draft`) lifts section IoU only 0.866 to
+0.883 while costing about 40% more and not helping identity. Keep the one-shot.
+
+Best run `e13-titleprior-30-2026-10-20`: 30/30, identity 1.00, sections IoU
+0.866 with 91 vs 85 units, $0.50 ($0.017/paper).
+
 ## Cohort change
 
 The sample grows from 20 to 30: the frozen 20 (bulk arXiv) are kept, and 10
