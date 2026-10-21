@@ -1,0 +1,1097 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T06:16:46.812500412Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Amodei et al. - 2016 - Concrete Problems in AI Safety.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 29,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 95192,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 26068,
+      "cached_tokens": 256,
+      "completion_tokens": 9726,
+      "reasoning_tokens": 5316,
+      "cost_usd": 0.0076996752,
+      "cost_source": "reported",
+      "latency_s": 124.003537978
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 28811,
+      "cached_tokens": 384,
+      "completion_tokens": 6546,
+      "reasoning_tokens": 5709,
+      "cost_usd": 0.0067307128,
+      "cost_source": "reported",
+      "latency_s": 224.659965289
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 54879,
+    "cached_tokens": 640,
+    "completion_tokens": 16272,
+    "cost_usd": 0.014430387999999999,
+    "model_latency_s": 348.663503267,
+    "wall_s": 354.108703705
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e10-pinned-30-2026-10-20/results/amodei2016.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "existing machine learning safety, robustness, risk-sensitivity, and safe exploration literature",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below."
+              }
+            ],
+            "reference_key": "genre",
+            "why": "The paper explicitly builds on and reviews prior ML accident-related research."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "extreme speculative discussions of superintelligent agents",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27]. However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents"
+              }
+            ],
+            "reference_key": "rhetorical",
+            "why": "The authors contrast their concrete, ML-focused framing with speculative superintelligence scenarios."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”)."
+          }
+        ],
+        "text": "The paper argues that AI accident risk should be studied as concrete, experimentally tractable machine-learning problems—especially value specification errors, limited oversight, and unsafe learning—rather than only as speculative superintelligence concerns."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "",
+          "name": "Dario Amodei"
+        },
+        {
+          "affiliation": "",
+          "name": "Chris Olah"
+        },
+        {
+          "affiliation": "",
+          "name": "Jacob Steinhardt"
+        },
+        {
+          "affiliation": "",
+          "name": "John Schulman"
+        },
+        {
+          "affiliation": "",
+          "name": "Paul Christiano"
+        },
+        {
+          "affiliation": "",
+          "name": "Dan Mané"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Concrete Problems in AI Safety"
+        },
+        {
+          "page": 1,
+          "quote": "Dario Amodei∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1606.06565v2 [cs.AI]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Concrete Problems in AI Safety",
+      "venue": "arXiv",
+      "year": 2016
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems."
+        }
+      ],
+      "text": "How can the machine learning community identify and address practical accident risks in AI systems arising from mis-specified objectives, expensive oversight, unsafe exploration, and distributional shift?"
+    },
+    "references": [],
+    "relations": [],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below.",
+          "start_page": 1,
+          "start_text": "Concrete Problems in AI Safety"
+        },
+        "summary": "Introduces the paper’s central concern: accidents in machine learning systems, defined as unintended and harmful behavior from poor design, and frames them as concrete technical problems rather than only long-term speculation.",
+        "title": "Introduction: Accidents in Machine Learning Systems"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "Together, we believe these trends suggest an increasing role for research on accidents.",
+          "start_page": 2,
+          "start_text": "Very broadly, an accident can be described as a situation where a human designer had in mind a certain (perhaps informally specified) objective or task, but the system that was designed and deployed for that task produced harmful and unexpected results."
+        },
+        "summary": "Lays out the five-problem taxonomy and illustrates each with a cleaning-robot example, then identifies reinforcement learning, complex agents/environments, and autonomy as trends that increase accident relevance.",
+        "title": "Overview of Five Safety Problems and Driving Trends"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "A successful approach might be transferable across tasks, and thus help to counteract one of the general mechanisms that produces wrong objective functions.",
+          "start_page": 4,
+          "start_text": "Avoiding Negative Side Effects"
+        },
+        "summary": "Defines negative side effects as harmful collateral changes from optimizing a task-specific objective, and introduces impact regularizers, including naive state-distance and baseline-policy comparisons.",
+        "title": "Negative Side Effects: Problem and Impact Regularization"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "If we can successfully regularize agents in toy environments, the next step might be to move to real environments, where we expect complexity to be higher and bad side effects to be more varied.",
+          "start_page": 5,
+          "start_text": "Learn an Impact Regularizer: An alternative, more flexible approach is to learn (rather than define) a generalized impact regularizer via training over many tasks."
+        },
+        "summary": "Surveys additional side-effect mitigations—learned impact regularizers, influence penalties, multi-agent approaches, reward uncertainty—and closes with proposed toy-environment experiments.",
+        "title": "Negative Side Effects: Learned Regularizers, Influence, and Experiments"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "This particular failure mode is often called “wireheading” [49, 127, 42, 67, 165].",
+          "start_page": 7,
+          "start_text": "Avoiding Reward Hacking"
+        },
+        "summary": "Defines reward hacking and details mechanisms: partially observed goals, complicated systems, abstract rewards, Goodhart’s law, feedback loops, and environmental embedding/wireheading.",
+        "title": "Reward Hacking: Definition and Failure Modes"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "Given the predominantly theoretical focus on this problem to date, designing experiments that could induce the problem and test solutions might improve the relevance and clarity of this topic.",
+          "start_page": 9,
+          "start_text": "Adversarial Reward Functions: In some sense, the problem is that the ML system has an adversarial relationship with its reward function"
+        },
+        "summary": "Presents mitigation strategies for reward hacking, including adversarial reward functions, model lookahead, adversarial blinding, careful engineering, reward capping, counterexample resistance, multiple rewards, reward pretraining, variable indifference, and trip wires.",
+        "title": "Reward Hacking: Mitigations and Design Strategies"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "The goal would be to develop generalizable learning strategies that succeed at optimizing external objectives in a wide range of environments, while avoiding being fooled by delusion boxes that arise naturally in many diverse ways.",
+          "start_page": 11,
+          "start_text": "Potential Experiments: A possible promising avenue of approach would be more realistic versions of the “delusion box” environment described by [127]"
+        },
+        "summary": "Proposes delusion-box environments and rich simulations as experimental testbeds for inducing and resisting reward hacking.",
+        "title": "Reward Hacking: Potential Experiments"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "The challenge is to make use of the unlabelled episodes to accelerate learning, ideally learning almost as quickly and robustly as if all episodes had been labeled.",
+          "start_page": 11,
+          "start_text": "Scalable Oversight"
+        },
+        "summary": "Introduces scalable oversight as the problem of evaluating a complex true objective too rarely, and formalizes it via semi-supervised reinforcement learning with sparse reward labels.",
+        "title": "Scalable Oversight: Semi-Supervised RL Formulation"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Robot locomotion or industrial control tasks might be a natural candidate for such experiments.",
+          "start_page": 12,
+          "start_text": "We can imagine many possible approaches to semi-supervised RL. For example:"
+        },
+        "summary": "Discusses semi-supervised RL approaches—reward learning, active learning, unsupervised value iteration/model learning—and alternative scalable oversight via distant supervision and hierarchical RL, then suggests experiments.",
+        "title": "Scalable Oversight: Approaches and Experiments"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Training RL agents (particularly robots) in simulated environments is already quite common, so advances in “exploration-focused simulation” could be easily incorporated into current workflows.",
+          "start_page": 14,
+          "start_text": "Safe Exploration"
+        },
+        "summary": "Defines safe exploration and reviews risk-sensitive criteria, demonstrations/apprenticeship learning, and simulated exploration as ways to reduce catastrophic exploratory actions.",
+        "title": "Safe Exploration: Problem, Risk Sensitivity, and Simulation"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "Such a suite of environments might serve a benchmarking role similar to that of the bAbI tasks [163], with the eventual goal being to develop a single architecture that can learn to avoid catastrophes in all environments in the suite.",
+          "start_page": 15,
+          "start_text": "Bounded Exploration: If we know that a certain portion of state space is safe, and that even the worst action within it can be recovered from or bounded in harm, we can allow the agent to run freely within those bounds."
+        },
+        "summary": "Covers bounded exploration, trusted policy oversight, human oversight, and benchmark-suite experiments for safe exploration.",
+        "title": "Safe Exploration: Bounded Policies, Oversight, and Benchmarks"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "All of the approaches so far rely on the covariate shift assumption, which is very strong and is also untestable; the latter property is particularly problematic from a safety perspective, since it could lead to silent failures in a machine learning system.",
+          "start_page": 16,
+          "start_text": "Robustness to Distributional Change"
+        },
+        "summary": "Frames robustness to distributional shift, distinguishes train distribution p0 from test distribution p∗, and reviews well-specified-model approaches: importance weighting, marginal likelihood, and expressive model families.",
+        "title": "Distributional Shift: Well-Specified Model Approaches"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 17
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "Instead of assuming independence, another assumption is that the errors are Gaussian conditioned on the true output y, in which case estimating the risk reduces to estimating a Gaussian mixture model [18].",
+          "start_page": 17,
+          "start_text": "Partially specified models: method of moments, unsupervised risk estimation, causal identification, and limited-information maximum likelihood."
+        },
+        "summary": "Explains partially specified models, generalized method of moments, unsupervised risk estimation, and error-distribution modeling as alternatives when full model specification is infeasible.",
+        "title": "Distributional Shift: Partially Specified Models"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "Reachability analysis [93, 100] and model repair [58] provide other avenues for obtaining better contracts — in reachability analysis, we optimize performance subject to the condition that a safe region can always be reached by a known conservative policy, and in model repair we alter a trained model to ensure that certain desired safety properties hold.",
+          "start_page": 18,
+          "start_text": "Training on multiple distributions."
+        },
+        "summary": "Discusses training on multiple distributions, how to respond when out-of-distribution, and unifying views from counterfactual reasoning and machine learning with contracts.",
+        "title": "Distributional Shift: Multiple Distributions, Response, and Contracts"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 19
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "In addition, it is probably still important to be able to predict when inputs are too novel to admit good predictions.",
+          "start_page": 19,
+          "start_text": "Summary. There are a variety of approaches to building machine learning systems that robustly perform well when deployed on novel test distributions."
+        },
+        "summary": "Summarizes the distributional-shift approaches and their tradeoffs: well-specified models, partially specified models, and multi-distribution training.",
+        "title": "Distributional Shift: Summary of Approaches"
+      },
+      {
+        "pages": {
+          "end": 20,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 20,
+          "end_text": "Note that estimating performance on novel distributions has additional practical value in allowing us to then potentially adapt the model to that new situation.",
+          "start_page": 20,
+          "start_text": "Potential Experiments: Speech systems frequently exhibit poor calibration when they go out-of-distribution, so a speech system that “knows when it is uncertain” could be one possible demonstration project."
+        },
+        "summary": "Proposes speech-system calibration under distributional shift as a concrete demonstration project and argues for estimating model performance on novel distributions.",
+        "title": "Distributional Shift: Potential Experiments"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "We believe that research on these topics has both urgency and great promise, and that fruitful intersection is likely to exist between these topics and the topics we discuss in this paper.",
+          "start_page": 20,
+          "start_text": "Related Efforts"
+        },
+        "summary": "Briefly maps related communities and adjacent safety topics: cyber-physical systems, futurist AI safety, other calls for work, privacy, fairness, security, abuse, transparency, and policy.",
+        "title": "Related Efforts and Adjacent Safety Topics"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 21
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "While many current-day safety problems can and have been handled with ad hoc fixes or case-by-case rules, we believe that the increasing trend towards end-to-end, fully autonomous systems points towards the need for a unified approach to prevent these systems from causing unintended harm.",
+          "start_page": 21,
+          "start_text": "This paper analyzed the problem of accidents in machine learning systems and particularly reinforcement learning agents"
+        },
+        "summary": "Concludes that accident prevention is a concrete threat and calls for a principled, forward-looking safety approach as autonomous systems become more powerful.",
+        "title": "Conclusion"
+      },
+      {
+        "pages": {
+          "end": 29,
+          "start": 22
+        },
+        "source_span": {
+          "end_page": 29,
+          "end_text": "[170] Yuchen Zhang et al. “Spectral methods meet EM: A provably optimal algorithm for crowdsourcing”. In: Advances in neural information processing systems. 2014, pp. 1260–1268.",
+          "start_page": 22,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of cited works.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper is a position/review-style overview that frames five practical research problems and reviews prior work and suggested directions, rather than presenting a single new theorem or experiment.",
+      "value": "position"
+    }
+  },
+  "pass1_check": {
+    "sites": 7,
+    "verbatim": 7,
+    "near": 0,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/identity/authors/0/affiliation",
+      "action": "replace",
+      "value_json": "\"Google Brain\"",
+      "reason": "The paper lists Dario Amodei’s affiliation as Google Brain.",
+      "evidence": [
+        {
+          "quote": "Dario Amodei∗\nGoogle Brain",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/authors/1/affiliation",
+      "action": "replace",
+      "value_json": "\"Google Brain\"",
+      "reason": "The paper lists Chris Olah’s affiliation as Google Brain.",
+      "evidence": [
+        {
+          "quote": "Chris Olah∗\nGoogle Brain",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/authors/2/affiliation",
+      "action": "replace",
+      "value_json": "\"Stanford University\"",
+      "reason": "The paper lists Jacob Steinhardt’s affiliation as Stanford University.",
+      "evidence": [
+        {
+          "quote": "Jacob Steinhardt\nStanford University",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/authors/3/affiliation",
+      "action": "replace",
+      "value_json": "\"OpenAI\"",
+      "reason": "The paper lists John Schulman’s affiliation as OpenAI.",
+      "evidence": [
+        {
+          "quote": "John Schulman\nOpenAI",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/authors/4/affiliation",
+      "action": "replace",
+      "value_json": "\"UC Berkeley\"",
+      "reason": "The paper lists Paul Christiano’s affiliation as UC Berkeley.",
+      "evidence": [
+        {
+          "quote": "Paul Christiano\nUC Berkeley",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/authors/5/affiliation",
+      "action": "replace",
+      "value_json": "\"Google Brain\"",
+      "reason": "The paper lists Dan Mané’s affiliation as Google Brain.",
+      "evidence": [
+        {
+          "quote": "Dan Mané\nGoogle Brain",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/sections/0/source_span/start_text",
+      "action": "replace",
+      "value_json": "\"The last few years have seen rapid progress on long-standing, difficult problems in machine learning and artificial intelligence (AI), in areas as diverse as computer vision [82], video game playing [102], autonomous vehicles [86], and Go [140].\"",
+      "reason": "The Introduction section begins with this sentence, not with the paper title.",
+      "evidence": [
+        {
+          "quote": "The last few years have seen rapid progress on long-standing, difficult problems in machine learning and artificial intelligence (AI), in areas as diverse as computer vision [82], video game playing [102], autonomous vehicles [86], and Go [140].",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/sections/1/source_span/start_text",
+      "action": "replace",
+      "value_json": "\"Very broadly, an accident can be described as a situation where a human designer had in mind a certain (perhaps informally specified) objective or task, but the system that was designed and deployed for that task produced harmful and unexpected results..\"",
+      "reason": "The paper has a double period after “results”; the draft quote is not verbatim.",
+      "evidence": [
+        {
+          "quote": "Very broadly, an accident can be described as a situation where a human designer had in mind a certain (perhaps informally specified) objective or task, but the system that was designed and deployed for that task produced harmful and unexpected results..",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/references",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The paper contains a full bibliography, but the draft’s references array is empty; the reference schema is not available to reconstruct entries safely.",
+      "evidence": [
+        {
+          "quote": "References\n[1] Martin Abadi et al. “Deep Learning with Differential Privacy”. In: (in press (2016)).",
+          "page": 22
+        }
+      ]
+    },
+    {
+      "path": "/citations",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The paper contains in-text citations, but the draft’s citations array is empty; the citation schema is not available to reconstruct entries safely.",
+      "evidence": [
+        {
+          "quote": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27].",
+          "page": 2
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/authors/0/affiliation",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/identity/authors/1/affiliation",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/identity/authors/2/affiliation",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/identity/authors/3/affiliation",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/identity/authors/4/affiliation",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 5,
+      "path": "/identity/authors/5/affiliation",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "evidence is not in the source"
+    },
+    {
+      "index": 6,
+      "path": "/sections/0/source_span/start_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 7,
+      "path": "/sections/1/source_span/start_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 8,
+      "path": "/references",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 9,
+      "path": "/citations",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 7,
+    "verbatim": 7,
+    "near": 0,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI.",
+      "admitted": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below.",
+      "admitted": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27]. However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents",
+      "admitted": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27]. However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”).",
+      "admitted": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Concrete Problems in AI Safety",
+      "admitted": "Concrete Problems in AI Safety",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Dario Amodei∗",
+      "admitted": "Dario Amodei∗",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems.",
+      "admitted": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    }
+  ],
+  "admission_counts": {
+    "verbatim": 7
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "existing machine learning safety, robustness, risk-sensitivity, and safe exploration literature",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below."
+              }
+            ],
+            "reference_key": "genre",
+            "why": "The paper explicitly builds on and reviews prior ML accident-related research."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "extreme speculative discussions of superintelligent agents",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27]. However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents"
+              }
+            ],
+            "reference_key": "rhetorical",
+            "why": "The authors contrast their concrete, ML-focused framing with speculative superintelligence scenarios."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”)."
+          }
+        ],
+        "text": "The paper argues that AI accident risk should be studied as concrete, experimentally tractable machine-learning problems—especially value specification errors, limited oversight, and unsafe learning—rather than only as speculative superintelligence concerns."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Google Brain",
+          "name": "Dario Amodei"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Chris Olah"
+        },
+        {
+          "affiliation": "Stanford University",
+          "name": "Jacob Steinhardt"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "John Schulman"
+        },
+        {
+          "affiliation": "UC Berkeley",
+          "name": "Paul Christiano"
+        },
+        {
+          "affiliation": "",
+          "name": "Dan Mané"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Concrete Problems in AI Safety"
+        },
+        {
+          "page": 1,
+          "quote": "Dario Amodei∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1606.06565v2 [cs.AI]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Concrete Problems in AI Safety",
+      "venue": "arXiv",
+      "year": 2016
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems."
+        }
+      ],
+      "text": "How can the machine learning community identify and address practical accident risks in AI systems arising from mis-specified objectives, expensive oversight, unsafe exploration, and distributional shift?"
+    },
+    "references": [],
+    "relations": [],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below.",
+          "start_page": 1,
+          "start_text": "The last few years have seen rapid progress on long-standing, difficult problems in machine learning and artificial intelligence (AI), in areas as diverse as computer vision [82], video game playing [102], autonomous vehicles [86], and Go [140]."
+        },
+        "summary": "Introduces the paper’s central concern: accidents in machine learning systems, defined as unintended and harmful behavior from poor design, and frames them as concrete technical problems rather than only long-term speculation.",
+        "title": "Introduction: Accidents in Machine Learning Systems"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "Together, we believe these trends suggest an increasing role for research on accidents.",
+          "start_page": 2,
+          "start_text": "Very broadly, an accident can be described as a situation where a human designer had in mind a certain (perhaps informally specified) objective or task, but the system that was designed and deployed for that task produced harmful and unexpected results.."
+        },
+        "summary": "Lays out the five-problem taxonomy and illustrates each with a cleaning-robot example, then identifies reinforcement learning, complex agents/environments, and autonomy as trends that increase accident relevance.",
+        "title": "Overview of Five Safety Problems and Driving Trends"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "A successful approach might be transferable across tasks, and thus help to counteract one of the general mechanisms that produces wrong objective functions.",
+          "start_page": 4,
+          "start_text": "Avoiding Negative Side Effects"
+        },
+        "summary": "Defines negative side effects as harmful collateral changes from optimizing a task-specific objective, and introduces impact regularizers, including naive state-distance and baseline-policy comparisons.",
+        "title": "Negative Side Effects: Problem and Impact Regularization"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "If we can successfully regularize agents in toy environments, the next step might be to move to real environments, where we expect complexity to be higher and bad side effects to be more varied.",
+          "start_page": 5,
+          "start_text": "Learn an Impact Regularizer: An alternative, more flexible approach is to learn (rather than define) a generalized impact regularizer via training over many tasks."
+        },
+        "summary": "Surveys additional side-effect mitigations—learned impact regularizers, influence penalties, multi-agent approaches, reward uncertainty—and closes with proposed toy-environment experiments.",
+        "title": "Negative Side Effects: Learned Regularizers, Influence, and Experiments"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "This particular failure mode is often called “wireheading” [49, 127, 42, 67, 165].",
+          "start_page": 7,
+          "start_text": "Avoiding Reward Hacking"
+        },
+        "summary": "Defines reward hacking and details mechanisms: partially observed goals, complicated systems, abstract rewards, Goodhart’s law, feedback loops, and environmental embedding/wireheading.",
+        "title": "Reward Hacking: Definition and Failure Modes"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "Given the predominantly theoretical focus on this problem to date, designing experiments that could induce the problem and test solutions might improve the relevance and clarity of this topic.",
+          "start_page": 9,
+          "start_text": "Adversarial Reward Functions: In some sense, the problem is that the ML system has an adversarial relationship with its reward function"
+        },
+        "summary": "Presents mitigation strategies for reward hacking, including adversarial reward functions, model lookahead, adversarial blinding, careful engineering, reward capping, counterexample resistance, multiple rewards, reward pretraining, variable indifference, and trip wires.",
+        "title": "Reward Hacking: Mitigations and Design Strategies"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "The goal would be to develop generalizable learning strategies that succeed at optimizing external objectives in a wide range of environments, while avoiding being fooled by delusion boxes that arise naturally in many diverse ways.",
+          "start_page": 11,
+          "start_text": "Potential Experiments: A possible promising avenue of approach would be more realistic versions of the “delusion box” environment described by [127]"
+        },
+        "summary": "Proposes delusion-box environments and rich simulations as experimental testbeds for inducing and resisting reward hacking.",
+        "title": "Reward Hacking: Potential Experiments"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "The challenge is to make use of the unlabelled episodes to accelerate learning, ideally learning almost as quickly and robustly as if all episodes had been labeled.",
+          "start_page": 11,
+          "start_text": "Scalable Oversight"
+        },
+        "summary": "Introduces scalable oversight as the problem of evaluating a complex true objective too rarely, and formalizes it via semi-supervised reinforcement learning with sparse reward labels.",
+        "title": "Scalable Oversight: Semi-Supervised RL Formulation"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Robot locomotion or industrial control tasks might be a natural candidate for such experiments.",
+          "start_page": 12,
+          "start_text": "We can imagine many possible approaches to semi-supervised RL. For example:"
+        },
+        "summary": "Discusses semi-supervised RL approaches—reward learning, active learning, unsupervised value iteration/model learning—and alternative scalable oversight via distant supervision and hierarchical RL, then suggests experiments.",
+        "title": "Scalable Oversight: Approaches and Experiments"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Training RL agents (particularly robots) in simulated environments is already quite common, so advances in “exploration-focused simulation” could be easily incorporated into current workflows.",
+          "start_page": 14,
+          "start_text": "Safe Exploration"
+        },
+        "summary": "Defines safe exploration and reviews risk-sensitive criteria, demonstrations/apprenticeship learning, and simulated exploration as ways to reduce catastrophic exploratory actions.",
+        "title": "Safe Exploration: Problem, Risk Sensitivity, and Simulation"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "Such a suite of environments might serve a benchmarking role similar to that of the bAbI tasks [163], with the eventual goal being to develop a single architecture that can learn to avoid catastrophes in all environments in the suite.",
+          "start_page": 15,
+          "start_text": "Bounded Exploration: If we know that a certain portion of state space is safe, and that even the worst action within it can be recovered from or bounded in harm, we can allow the agent to run freely within those bounds."
+        },
+        "summary": "Covers bounded exploration, trusted policy oversight, human oversight, and benchmark-suite experiments for safe exploration.",
+        "title": "Safe Exploration: Bounded Policies, Oversight, and Benchmarks"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "All of the approaches so far rely on the covariate shift assumption, which is very strong and is also untestable; the latter property is particularly problematic from a safety perspective, since it could lead to silent failures in a machine learning system.",
+          "start_page": 16,
+          "start_text": "Robustness to Distributional Change"
+        },
+        "summary": "Frames robustness to distributional shift, distinguishes train distribution p0 from test distribution p∗, and reviews well-specified-model approaches: importance weighting, marginal likelihood, and expressive model families.",
+        "title": "Distributional Shift: Well-Specified Model Approaches"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 17
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "Instead of assuming independence, another assumption is that the errors are Gaussian conditioned on the true output y, in which case estimating the risk reduces to estimating a Gaussian mixture model [18].",
+          "start_page": 17,
+          "start_text": "Partially specified models: method of moments, unsupervised risk estimation, causal identification, and limited-information maximum likelihood."
+        },
+        "summary": "Explains partially specified models, generalized method of moments, unsupervised risk estimation, and error-distribution modeling as alternatives when full model specification is infeasible.",
+        "title": "Distributional Shift: Partially Specified Models"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "Reachability analysis [93, 100] and model repair [58] provide other avenues for obtaining better contracts — in reachability analysis, we optimize performance subject to the condition that a safe region can always be reached by a known conservative policy, and in model repair we alter a trained model to ensure that certain desired safety properties hold.",
+          "start_page": 18,
+          "start_text": "Training on multiple distributions."
+        },
+        "summary": "Discusses training on multiple distributions, how to respond when out-of-distribution, and unifying views from counterfactual reasoning and machine learning with contracts.",
+        "title": "Distributional Shift: Multiple Distributions, Response, and Contracts"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 19
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "In addition, it is probably still important to be able to predict when inputs are too novel to admit good predictions.",
+          "start_page": 19,
+          "start_text": "Summary. There are a variety of approaches to building machine learning systems that robustly perform well when deployed on novel test distributions."
+        },
+        "summary": "Summarizes the distributional-shift approaches and their tradeoffs: well-specified models, partially specified models, and multi-distribution training.",
+        "title": "Distributional Shift: Summary of Approaches"
+      },
+      {
+        "pages": {
+          "end": 20,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 20,
+          "end_text": "Note that estimating performance on novel distributions has additional practical value in allowing us to then potentially adapt the model to that new situation.",
+          "start_page": 20,
+          "start_text": "Potential Experiments: Speech systems frequently exhibit poor calibration when they go out-of-distribution, so a speech system that “knows when it is uncertain” could be one possible demonstration project."
+        },
+        "summary": "Proposes speech-system calibration under distributional shift as a concrete demonstration project and argues for estimating model performance on novel distributions.",
+        "title": "Distributional Shift: Potential Experiments"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "We believe that research on these topics has both urgency and great promise, and that fruitful intersection is likely to exist between these topics and the topics we discuss in this paper.",
+          "start_page": 20,
+          "start_text": "Related Efforts"
+        },
+        "summary": "Briefly maps related communities and adjacent safety topics: cyber-physical systems, futurist AI safety, other calls for work, privacy, fairness, security, abuse, transparency, and policy.",
+        "title": "Related Efforts and Adjacent Safety Topics"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 21
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "While many current-day safety problems can and have been handled with ad hoc fixes or case-by-case rules, we believe that the increasing trend towards end-to-end, fully autonomous systems points towards the need for a unified approach to prevent these systems from causing unintended harm.",
+          "start_page": 21,
+          "start_text": "This paper analyzed the problem of accidents in machine learning systems and particularly reinforcement learning agents"
+        },
+        "summary": "Concludes that accident prevention is a concrete threat and calls for a principled, forward-looking safety approach as autonomous systems become more powerful.",
+        "title": "Conclusion"
+      },
+      {
+        "pages": {
+          "end": 29,
+          "start": 22
+        },
+        "source_span": {
+          "end_page": 29,
+          "end_text": "[170] Yuchen Zhang et al. “Spectral methods meet EM: A provably optimal algorithm for crowdsourcing”. In: Advances in neural information processing systems. 2014, pp. 1260–1268.",
+          "start_page": 22,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of cited works.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper is a position/review-style overview that frames five practical research problems and reviews prior work and suggested directions, rather than presenting a single new theorem or experiment.",
+      "value": "position"
+    }
+  }
+}

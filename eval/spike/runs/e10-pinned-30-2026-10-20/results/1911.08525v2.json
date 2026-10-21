@@ -1,0 +1,1777 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T06:01:28.146107858Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1911.08525v2.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 8,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 7736,
+      "cached_tokens": 256,
+      "completion_tokens": 16922,
+      "reasoning_tokens": 11670,
+      "cost_usd": 0.0081555152,
+      "cost_source": "reported",
+      "latency_s": 194.836499458
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 10682,
+      "cached_tokens": 384,
+      "completion_tokens": 19412,
+      "reasoning_tokens": 18901,
+      "cost_usd": 0.0095963728,
+      "cost_source": "reported",
+      "latency_s": 267.023377456
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 3130,
+      "cached_tokens": 0,
+      "completion_tokens": 241,
+      "reasoning_tokens": 161,
+      "cost_usd": 0.00053942,
+      "cost_source": "reported",
+      "latency_s": 5.839047848
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 21548,
+    "cached_tokens": 640,
+    "completion_tokens": 36575,
+    "cost_usd": 0.018291308,
+    "model_latency_s": 467.698924762,
+    "wall_s": 469.134333947
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e10-pinned-30-2026-10-20/results/1911.08525v2.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "low",
+      "page": 1,
+      "text": "The vacuum expectation values of conserved currents play an essential role in the generalized\nhydrodynamics of integrable quantum field theories. We use analytic continuation to extend these\nresults for the excited state expectation values in a finite volume. Our formulas are valid for\ndiagonally scattering theories and incorporate all finite size corrections."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Castro-Alvaredo et al., 2016",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In the generalized hydrodynamics of integrable models [1] conservation laws"
+              }
+            ],
+            "reference_key": "1",
+            "why": "The paper builds on the generalized-hydrodynamics conservation-law framework for integrable models."
+          },
+          {
+            "cited_work": "Zamolodchikov, 1990",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]"
+              }
+            ],
+            "reference_key": "10",
+            "why": "It uses the thermodynamic Bethe ansatz to define the occupation-number and source terms."
+          },
+          {
+            "cited_work": "Leclair and Mussardo, 1999",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]"
+              }
+            ],
+            "reference_key": "11",
+            "why": "It builds on the Leclair-Mussardo form-factor formula to connect the thermal-channel results to the finite-volume setting."
+          },
+          {
+            "cited_work": "Dorey and Tateo, 1996",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations."
+              }
+            ],
+            "reference_key": "14",
+            "why": "It adopts the analytic-continuation construction of excited-state TBA equations."
+          },
+          {
+            "cited_work": "Bajnok and Smirnov, 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing."
+              }
+            ],
+            "reference_key": "16",
+            "why": "It uses the sinh-Gordon finite-volume excited-state analysis as the precedent for replacing the pairing."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "Pozsgay, 2013",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17]."
+              }
+            ],
+            "reference_key": "17",
+            "why": "The paper checks its formulas against the excited-state form-factor/LM approach."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "Borsi et al., 2019; Pozsgay, 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "This formula agrees with the recent direct calculations in [8, 9]."
+              }
+            ],
+            "reference_key": "8,9",
+            "why": "The new formula extends earlier direct Bethe-ansatz current calculations by including all finite-size corrections."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We use analytic continuation to extend these results for the excited state expectation values in a finite volume."
+          },
+          {
+            "page": 7,
+            "quote": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species."
+          }
+        ],
+        "text": "Exact finite-volume excited-state expectation values of conserved currents in diagonally scattering integrable quantum field theories can be obtained by analytically continuing the generalized-hydrodynamics/TBA results and replacing the thermal pairing with one that includes discrete physical-particle residues, thereby incorporating all finite-size corrections."
+      }
+    },
+    "citations": [
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "1,2"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "2,3,4,5"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "1,6,7"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "8,9"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "1"
+      },
+      {
+        "context": "Vacuum expectation values of conserved currents",
+        "page": 2,
+        "reference_key": "1"
+      },
+      {
+        "context": "Vacuum expectation values of conserved currents",
+        "page": 2,
+        "reference_key": "10"
+      },
+      {
+        "context": "Vacuum expectation values of conserved currents",
+        "page": 2,
+        "reference_key": "1"
+      },
+      {
+        "context": "Vacuum expectation values of conserved currents",
+        "page": 2,
+        "reference_key": "11"
+      },
+      {
+        "context": "Vacuum expectation values of conserved currents",
+        "page": 3,
+        "reference_key": "12,13"
+      },
+      {
+        "context": "Excited state expectation values of conserved currents",
+        "page": 4,
+        "reference_key": "14"
+      },
+      {
+        "context": "Excited state expectation values of conserved currents",
+        "page": 4,
+        "reference_key": "15"
+      },
+      {
+        "context": "Excited state expectation values of conserved currents",
+        "page": 4,
+        "reference_key": "16"
+      },
+      {
+        "context": "Checks and finite-volume formulas",
+        "page": 7,
+        "reference_key": "8,9"
+      },
+      {
+        "context": "Checks and finite-volume formulas",
+        "page": 7,
+        "reference_key": "17"
+      },
+      {
+        "context": "Checks and finite-volume formulas",
+        "page": 7,
+        "reference_key": "17"
+      },
+      {
+        "context": "Conclusions",
+        "page": 7,
+        "reference_key": "18"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Wigner Research Centre for Physics",
+          "name": "Zoltan Bajnok"
+        },
+        {
+          "affiliation": "Roland Eötvös University",
+          "name": "Istvan Vona"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Exact finite volume expectation values of conserved currents"
+        },
+        {
+          "page": 1,
+          "quote": "Zoltan Bajnok¹, Istvan Vona1,2"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1911.08525v2 [hep-th]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Exact finite volume expectation values of conserved currents",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The aim of our paper is to provide a simple derivation of this result and to extend it in order to incorporate all the finite size corrections."
+        },
+        {
+          "page": 1,
+          "quote": "As a result we describe exactly the finite volume excited state expectation values of conserved currents."
+        }
+      ],
+      "text": "How can the exact finite-volume excited-state expectation values of conserved currents be derived, including all finite-size corrections, in diagonally scattering integrable quantum field theories?"
+    },
+    "references": [
+      {
+        "authors": [
+          "O. A. Castro-Alvaredo",
+          "B. Doyon",
+          "T. Yoshimura"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 8,
+        "title": "Emergent hydrodynamics in integrable quantum systems out of equilibrium",
+        "venue": "Phys. Rev. X6 no. 4",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "R. A. Janik",
+          "A. Wereszczynski"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 8,
+        "title": "HHL correlators, orbit averaging and form factors",
+        "venue": "JHEP 09",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "L. Hollo",
+          "Y. Jiang",
+          "A. Petrovskii"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 8,
+        "title": "Diagonal Form Factors and Heavy-Heavy-Light Three-Point Functions at Weak Coupling",
+        "venue": "JHEP 09",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Y. Jiang",
+          "A. Petrovskii"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 8,
+        "title": "Diagonal form factors and hexagon form factors",
+        "venue": "JHEP 07",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Y. Jiang"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 8,
+        "title": "Diagonal Form Factors and Hexagon Form Factors II. Non-BPS Light Operator",
+        "venue": "JHEP 01",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "B. Bertini",
+          "M. Collura",
+          "J. De Nardis",
+          "M. Fagotti"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 8,
+        "title": "Transport in Out-of-Equilibrium XXZ Chains: Exact Profiles of Charges and Currents",
+        "venue": "Phys. Rev. Lett. 117 no. 20",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "D.-L. Vu",
+          "T. Yoshimura"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 8,
+        "title": "Equations of state in generalized hydrodynamics",
+        "venue": "SciPost Phys. 6 no. 2",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M. Borsi",
+          "B. Pozsgay",
+          "L. Pristyak"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 8,
+        "title": "Current operators in Bethe Ansatz and Generalized Hydrodynamics: An exact quantum/classical correspondence",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "B. Pozsgay"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 8,
+        "title": "Current operators in integrable spin chains: lessons from long range deformations",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "A. B. Zamolodchikov"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 8,
+        "title": "Thermodynamic Bethe Ansatz in Relativistic Models. Scaling Three State Potts and Lee-Yang Models",
+        "venue": "Nucl. Phys. B342",
+        "year": 1990
+      },
+      {
+        "authors": [
+          "A. Leclair",
+          "G. Mussardo"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 8,
+        "title": "Finite temperature correlation functions in integrable QFT",
+        "venue": "Nucl. Phys. B552",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "C. Ahn",
+          "Z. Bajnok",
+          "D. Bombardelli",
+          "R. I. Nepomechie"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 8,
+        "title": "TBA, NLO Luscher correction, and double wrapping in twisted AdS/CFT",
+        "venue": "JHEP 12",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "G. Hernandez-Chifflet",
+          "S. Negro",
+          "A. Sfondrini"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 8,
+        "title": "Flow equations for generalised T T̄ deformations",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "P. Dorey",
+          "R. Tateo"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 8,
+        "title": "Excited states by analytic continuation of TBA equations",
+        "venue": "Nucl. Phys. B482",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "A. George"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 8,
+        "title": "From defects to boundaries",
+        "venue": "Int. J. Mod. Phys. A21",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "F. Smirnov"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 8,
+        "title": "Diagonal finite volume matrix elements in the sinh-Gordon model",
+        "venue": "Nucl. Phys. B945",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B. Pozsgay"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 8,
+        "title": "Form factor approach to diagonal finite volume matrix elements in Integrable QFT",
+        "venue": "JHEP 07",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. Hegedus"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 8,
+        "title": "Lattice approach to finite volume form-factors of the Massive Thirring (Sine-Gordon) model",
+        "venue": "JHEP 08",
+        "year": 2017
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In the generalized hydrodynamics of integrable models [1] conservation laws",
+        "reference_key": "1",
+        "relation": "uses_method",
+        "why": "The paper starts from and analytically continues the generalized-hydrodynamics conservation-law framework."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+        "reference_key": "10",
+        "relation": "uses_method",
+        "why": "The paper uses the TBA equation to define occupation numbers and excited-state source terms."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+        "reference_key": "11",
+        "relation": "uses_method",
+        "why": "The paper uses the Leclair-Mussardo form-factor formula as a bridge to finite-volume expectation values."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+        "reference_key": "14",
+        "relation": "uses_method",
+        "why": "The paper adopts the analytic continuation of TBA equations to construct excited states."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+        "reference_key": "16",
+        "relation": "uses_method",
+        "why": "The paper uses the sinh-Gordon precedent that the analytic-continuation effects can be absorbed into a modified pairing."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "This formula agrees with the recent direct calculations in [8, 9].",
+        "reference_key": "8,9",
+        "relation": "extends",
+        "why": "The paper agrees with and extends earlier direct Bethe-ansatz current calculations by adding all finite-size corrections."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+        "reference_key": "17",
+        "relation": "compares",
+        "why": "The paper validates its finite-volume formulas against the excited-state form-factor/LM approach."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+        "reference_key": "18",
+        "relation": "contrasts",
+        "why": "The paper contrasts its diagonally scattering results with the non-diagonal sine-Gordon topological-current case."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "In the following we generalize these results for finite volume excited states.",
+          "start_page": 1,
+          "start_text": "Exact finite volume expectation values of conserved currents"
+        },
+        "summary": "Introduces the finite-volume current problem and reviews the generalized-hydrodynamics/TBA machinery for vacuum expectation values.",
+        "title": "Vacuum Currents in Generalized Hydrodynamics"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "These are the main results of the paper. Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details.",
+          "start_page": 4,
+          "start_text": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations."
+        },
+        "summary": "Constructs excited-state TBA equations by analytic continuation and conjectures the new pairing with discrete residue terms.",
+        "title": "Excited-State Analytic Continuation and the New Pairing"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "In the finite volume channel the quasi-particle arguments of the connected form factors should be shifted, similarly how (19) is shifted compared to (12), while the discrete rapidities take their physical values.",
+          "start_page": 5,
+          "start_text": "As a start we separate the contribution of the physical particles and the quasi-particles."
+        },
+        "summary": "Separates physical-particle and quasi-particle contributions, introduces the Gaudin matrix, and derives exact finite-volume diagonal matrix elements for charges and currents.",
+        "title": "Separating Particles and Deriving Finite-Volume Formulas"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+          "start_page": 7,
+          "start_text": "In the following we elaborate further on these results."
+        },
+        "summary": "Checks the formulas against sinh-Gordon and LM results, recovers the asymptotic Gaudin-matrix limit, and outlines extensions to non-diagonal theories.",
+        "title": "Checks, Asymptotics, and Conclusions"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "[18] A. Hegedus, “Lattice approach to finite volume form-factors of the Massive Thirring (Sine-Gordon) model,” JHEP 08 (2017) 059, arXiv:1705.00319 [hep-th].",
+          "start_page": 8,
+          "start_text": "References"
+        },
+        "summary": "Bibliography for the paper, with 18 entries in citation order.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a theoretical physics research paper presenting a derivation and checks of exact finite-volume formulas for integrable quantum field theories.",
+      "value": "theory"
+    }
+  },
+  "pass1_check": {
+    "sites": 39,
+    "verbatim": 36,
+    "near": 0,
+    "missing": 3,
+    "wrong_page": 3
+  },
+  "corrections": [
+    {
+      "path": "/identity/authors/1/affiliation",
+      "action": "replace",
+      "value_json": "\"Wigner Research Centre for Physics and Roland Eötvös University\"",
+      "reason": "Istvan Vona is affiliated with both Wigner Research Centre for Physics and Roland Eötvös University, but the draft lists only the latter.",
+      "evidence": [
+        {
+          "quote": "Zoltan Bajnok¹, Istvan Vona1,2",
+          "page": 1
+        },
+        {
+          "quote": "1. Wigner Research Centre for Physics",
+          "page": 1
+        },
+        {
+          "quote": "2. Roland Eötvös University,",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/citations/7/page",
+      "action": "replace",
+      "value_json": "3",
+      "reason": "The second citation to reference [1] appears on page 3, not page 2.",
+      "evidence": [
+        {
+          "quote": "From relativistic invariance it follows [1] that the current expectation values take the form",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/citations/8/page",
+      "action": "replace",
+      "value_json": "3",
+      "reason": "The citation to reference [11] appears on page 3, not page 2.",
+      "evidence": [
+        {
+          "quote": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/citations/9/context",
+      "action": "replace",
+      "value_json": "\"Vacuum expectation values of conserved currents\"",
+      "reason": "The [12,13] citation on page 3 occurs before the excited-state section, so its context is the vacuum expectation values section.",
+      "evidence": [
+        {
+          "quote": "twisted boundary conditions by the conserved charges [12, 13]",
+          "page": 3
+        },
+        {
+          "quote": "Excited state expectation values of conserved currents",
+          "page": 4
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/authors/1/affiliation",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/citations/7/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/citations/8/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/citations/9/context",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 39,
+    "verbatim": 36,
+    "near": 0,
+    "missing": 3,
+    "wrong_page": 5
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "The vacuum expectation values of conserved currents play an essential role in the generalized\nhydrodynamics of integrable quantum field theories. We use analytic continuation to extend these\nresults for the excited state expectation values in a finite volume. Our formulas are valid for\ndiagonally scattering theories and incorporate all finite size corrections.",
+      "admitted": "The vacuum expectation values of conserved currents play an essential role in the generalized\nhydrodynamics of integrable quantum field theories. We use analytic continuation to extend these\nresults for the excited state expectation values in a finite volume. Our formulas are valid for\ndiagonally scattering theories and incorporate all finite size corrections.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In the generalized hydrodynamics of integrable models [1] conservation laws",
+      "admitted": "In the generalized hydrodynamics of integrable models [1] conservation laws",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+      "admitted": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+      "admitted": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "admitted": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+      "admitted": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/replications/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "admitted": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This formula agrees with the recent direct calculations in [8, 9].",
+      "admitted": "This formula agrees with the recent direct calculations in [8, 9].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We use analytic continuation to extend these results for the excited state expectation values in a finite volume.",
+      "admitted": "We use analytic continuation to extend these results for the excited state expectation values in a finite volume.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species.",
+      "admitted": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Exact finite volume expectation values of conserved currents",
+      "admitted": "Exact finite volume expectation values of conserved currents",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Zoltan Bajnok¹, Istvan Vona1,2",
+      "admitted": "Zoltan Bajnok¹, Istvan Vona1,2",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The aim of our paper is to provide a simple derivation of this result and to extend it in order to incorporate all the finite size corrections.",
+      "admitted": "The aim of our paper is to provide a simple derivation of this result and to extend it in order to incorporate all the finite size corrections.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/1/quote",
+      "status": "verbatim",
+      "original": "As a result we describe exactly the finite volume excited state expectation values of conserved currents.",
+      "admitted": "As a result we describe exactly the finite volume excited state expectation values of conserved currents.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "Introduction",
+      "admitted": "Introduction",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "Vacuum expectation values of conserved currents",
+      "admitted": "Vacuum expectation values of conserved currents",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "Vacuum expectation values of conserved currents",
+      "admitted": "Vacuum expectation values of conserved currents",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "Vacuum expectation values of conserved currents",
+      "admitted": "Vacuum expectation values of conserved currents",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "Vacuum expectation values of conserved currents",
+      "admitted": "Vacuum expectation values of conserved currents",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "Vacuum expectation values of conserved currents",
+      "admitted": "Vacuum expectation values of conserved currents",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "Excited state expectation values of conserved currents",
+      "admitted": "Excited state expectation values of conserved currents",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "Excited state expectation values of conserved currents",
+      "admitted": "Excited state expectation values of conserved currents",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "Excited state expectation values of conserved currents",
+      "admitted": "Excited state expectation values of conserved currents",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "withdrawn",
+      "original": "Checks and finite-volume formulas",
+      "admitted": null,
+      "similarity": 0.5,
+      "cited_page": 7,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "withdrawn",
+      "original": "Checks and finite-volume formulas",
+      "admitted": null,
+      "similarity": 0.5,
+      "cited_page": 7,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "withdrawn",
+      "original": "Checks and finite-volume formulas",
+      "admitted": null,
+      "similarity": 0.5,
+      "cited_page": 7,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "Conclusions",
+      "admitted": "Conclusions",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "In the generalized hydrodynamics of integrable models [1] conservation laws",
+      "admitted": "In the generalized hydrodynamics of integrable models [1] conservation laws",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+      "admitted": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+      "admitted": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "admitted": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+      "admitted": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "This formula agrees with the recent direct calculations in [8, 9].",
+      "admitted": "This formula agrees with the recent direct calculations in [8, 9].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "admitted": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+      "admitted": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    }
+  ],
+  "admission_counts": {
+    "verbatim": 36,
+    "withdrawn": 3
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "low",
+      "page": 1,
+      "text": "The vacuum expectation values of conserved currents play an essential role in the generalized\nhydrodynamics of integrable quantum field theories. We use analytic continuation to extend these\nresults for the excited state expectation values in a finite volume. Our formulas are valid for\ndiagonally scattering theories and incorporate all finite size corrections."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Castro-Alvaredo et al., 2016",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In the generalized hydrodynamics of integrable models [1] conservation laws"
+              }
+            ],
+            "reference_key": "1",
+            "why": "The paper builds on the generalized-hydrodynamics conservation-law framework for integrable models."
+          },
+          {
+            "cited_work": "Zamolodchikov, 1990",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]"
+              }
+            ],
+            "reference_key": "10",
+            "why": "It uses the thermodynamic Bethe ansatz to define the occupation-number and source terms."
+          },
+          {
+            "cited_work": "Leclair and Mussardo, 1999",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]"
+              }
+            ],
+            "reference_key": "11",
+            "why": "It builds on the Leclair-Mussardo form-factor formula to connect the thermal-channel results to the finite-volume setting."
+          },
+          {
+            "cited_work": "Dorey and Tateo, 1996",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations."
+              }
+            ],
+            "reference_key": "14",
+            "why": "It adopts the analytic-continuation construction of excited-state TBA equations."
+          },
+          {
+            "cited_work": "Bajnok and Smirnov, 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing."
+              }
+            ],
+            "reference_key": "16",
+            "why": "It uses the sinh-Gordon finite-volume excited-state analysis as the precedent for replacing the pairing."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "Pozsgay, 2013",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17]."
+              }
+            ],
+            "reference_key": "17",
+            "why": "The paper checks its formulas against the excited-state form-factor/LM approach."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "Borsi et al., 2019; Pozsgay, 2019",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "This formula agrees with the recent direct calculations in [8, 9]."
+              }
+            ],
+            "reference_key": "8,9",
+            "why": "The new formula extends earlier direct Bethe-ansatz current calculations by including all finite-size corrections."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We use analytic continuation to extend these results for the excited state expectation values in a finite volume."
+          },
+          {
+            "page": 7,
+            "quote": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species."
+          }
+        ],
+        "text": "Exact finite-volume excited-state expectation values of conserved currents in diagonally scattering integrable quantum field theories can be obtained by analytically continuing the generalized-hydrodynamics/TBA results and replacing the thermal pairing with one that includes discrete physical-particle residues, thereby incorporating all finite-size corrections."
+      }
+    },
+    "citations": [
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "1,2"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "2,3,4,5"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "1,6,7"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "8,9"
+      },
+      {
+        "context": "Introduction",
+        "page": 1,
+        "reference_key": "1"
+      },
+      {
+        "context": "Vacuum expectation values of conserved currents",
+        "page": 2,
+        "reference_key": "1"
+      },
+      {
+        "context": "Vacuum expectation values of conserved currents",
+        "page": 2,
+        "reference_key": "10"
+      },
+      {
+        "context": "Vacuum expectation values of conserved currents",
+        "page": 1,
+        "reference_key": "1"
+      },
+      {
+        "context": "Vacuum expectation values of conserved currents",
+        "page": 1,
+        "reference_key": "11"
+      },
+      {
+        "context": "Vacuum expectation values of conserved currents",
+        "page": 1,
+        "reference_key": "12,13"
+      },
+      {
+        "context": "Excited state expectation values of conserved currents",
+        "page": 4,
+        "reference_key": "14"
+      },
+      {
+        "context": "Excited state expectation values of conserved currents",
+        "page": 4,
+        "reference_key": "15"
+      },
+      {
+        "context": "Excited state expectation values of conserved currents",
+        "page": 4,
+        "reference_key": "16"
+      },
+      {
+        "context": "Conclusions",
+        "page": 7,
+        "reference_key": "18"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Wigner Research Centre for Physics",
+          "name": "Zoltan Bajnok"
+        },
+        {
+          "affiliation": "Wigner Research Centre for Physics and Roland Eötvös University",
+          "name": "Istvan Vona"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Exact finite volume expectation values of conserved currents"
+        },
+        {
+          "page": 1,
+          "quote": "Zoltan Bajnok¹, Istvan Vona1,2"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1911.08525v2 [hep-th]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Exact finite volume expectation values of conserved currents",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The aim of our paper is to provide a simple derivation of this result and to extend it in order to incorporate all the finite size corrections."
+        },
+        {
+          "page": 1,
+          "quote": "As a result we describe exactly the finite volume excited state expectation values of conserved currents."
+        }
+      ],
+      "text": "How can the exact finite-volume excited-state expectation values of conserved currents be derived, including all finite-size corrections, in diagonally scattering integrable quantum field theories?"
+    },
+    "references": [
+      {
+        "authors": [
+          "O. A. Castro-Alvaredo",
+          "B. Doyon",
+          "T. Yoshimura"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 8,
+        "title": "Emergent hydrodynamics in integrable quantum systems out of equilibrium",
+        "venue": "Phys. Rev. X6 no. 4",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "R. A. Janik",
+          "A. Wereszczynski"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 8,
+        "title": "HHL correlators, orbit averaging and form factors",
+        "venue": "JHEP 09",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "L. Hollo",
+          "Y. Jiang",
+          "A. Petrovskii"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 8,
+        "title": "Diagonal Form Factors and Heavy-Heavy-Light Three-Point Functions at Weak Coupling",
+        "venue": "JHEP 09",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Y. Jiang",
+          "A. Petrovskii"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 8,
+        "title": "Diagonal form factors and hexagon form factors",
+        "venue": "JHEP 07",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Y. Jiang"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 8,
+        "title": "Diagonal Form Factors and Hexagon Form Factors II. Non-BPS Light Operator",
+        "venue": "JHEP 01",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "B. Bertini",
+          "M. Collura",
+          "J. De Nardis",
+          "M. Fagotti"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 8,
+        "title": "Transport in Out-of-Equilibrium XXZ Chains: Exact Profiles of Charges and Currents",
+        "venue": "Phys. Rev. Lett. 117 no. 20",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "D.-L. Vu",
+          "T. Yoshimura"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 8,
+        "title": "Equations of state in generalized hydrodynamics",
+        "venue": "SciPost Phys. 6 no. 2",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M. Borsi",
+          "B. Pozsgay",
+          "L. Pristyak"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 8,
+        "title": "Current operators in Bethe Ansatz and Generalized Hydrodynamics: An exact quantum/classical correspondence",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "B. Pozsgay"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 8,
+        "title": "Current operators in integrable spin chains: lessons from long range deformations",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "A. B. Zamolodchikov"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 8,
+        "title": "Thermodynamic Bethe Ansatz in Relativistic Models. Scaling Three State Potts and Lee-Yang Models",
+        "venue": "Nucl. Phys. B342",
+        "year": 1990
+      },
+      {
+        "authors": [
+          "A. Leclair",
+          "G. Mussardo"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 8,
+        "title": "Finite temperature correlation functions in integrable QFT",
+        "venue": "Nucl. Phys. B552",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "C. Ahn",
+          "Z. Bajnok",
+          "D. Bombardelli",
+          "R. I. Nepomechie"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 8,
+        "title": "TBA, NLO Luscher correction, and double wrapping in twisted AdS/CFT",
+        "venue": "JHEP 12",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "G. Hernandez-Chifflet",
+          "S. Negro",
+          "A. Sfondrini"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 8,
+        "title": "Flow equations for generalised T T̄ deformations",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "P. Dorey",
+          "R. Tateo"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 8,
+        "title": "Excited states by analytic continuation of TBA equations",
+        "venue": "Nucl. Phys. B482",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "A. George"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 8,
+        "title": "From defects to boundaries",
+        "venue": "Int. J. Mod. Phys. A21",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "F. Smirnov"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 8,
+        "title": "Diagonal finite volume matrix elements in the sinh-Gordon model",
+        "venue": "Nucl. Phys. B945",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B. Pozsgay"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 8,
+        "title": "Form factor approach to diagonal finite volume matrix elements in Integrable QFT",
+        "venue": "JHEP 07",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. Hegedus"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 8,
+        "title": "Lattice approach to finite volume form-factors of the Massive Thirring (Sine-Gordon) model",
+        "venue": "JHEP 08",
+        "year": 2017
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In the generalized hydrodynamics of integrable models [1] conservation laws",
+        "reference_key": "1",
+        "relation": "uses_method",
+        "why": "The paper starts from and analytically continues the generalized-hydrodynamics conservation-law framework."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+        "reference_key": "10",
+        "relation": "uses_method",
+        "why": "The paper uses the TBA equation to define occupation numbers and excited-state source terms."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+        "reference_key": "11",
+        "relation": "uses_method",
+        "why": "The paper uses the Leclair-Mussardo form-factor formula as a bridge to finite-volume expectation values."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+        "reference_key": "14",
+        "relation": "uses_method",
+        "why": "The paper adopts the analytic continuation of TBA equations to construct excited states."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+        "reference_key": "16",
+        "relation": "uses_method",
+        "why": "The paper uses the sinh-Gordon precedent that the analytic-continuation effects can be absorbed into a modified pairing."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "This formula agrees with the recent direct calculations in [8, 9].",
+        "reference_key": "8,9",
+        "relation": "extends",
+        "why": "The paper agrees with and extends earlier direct Bethe-ansatz current calculations by adding all finite-size corrections."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+        "reference_key": "17",
+        "relation": "compares",
+        "why": "The paper validates its finite-volume formulas against the excited-state form-factor/LM approach."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+        "reference_key": "18",
+        "relation": "contrasts",
+        "why": "The paper contrasts its diagonally scattering results with the non-diagonal sine-Gordon topological-current case."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "In the following we generalize these results for finite volume excited states.",
+          "start_page": 1,
+          "start_text": "Exact finite volume expectation values of conserved currents"
+        },
+        "summary": "Introduces the finite-volume current problem and reviews the generalized-hydrodynamics/TBA machinery for vacuum expectation values.",
+        "title": "Vacuum Currents in Generalized Hydrodynamics"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "These are the main results of the paper. Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details.",
+          "start_page": 4,
+          "start_text": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations."
+        },
+        "summary": "Constructs excited-state TBA equations by analytic continuation and conjectures the new pairing with discrete residue terms.",
+        "title": "Excited-State Analytic Continuation and the New Pairing"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "In the finite volume channel the quasi-particle arguments of the connected form factors should be shifted, similarly how (19) is shifted compared to (12), while the discrete rapidities take their physical values.",
+          "start_page": 5,
+          "start_text": "As a start we separate the contribution of the physical particles and the quasi-particles."
+        },
+        "summary": "Separates physical-particle and quasi-particle contributions, introduces the Gaudin matrix, and derives exact finite-volume diagonal matrix elements for charges and currents.",
+        "title": "Separating Particles and Deriving Finite-Volume Formulas"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+          "start_page": 7,
+          "start_text": "In the following we elaborate further on these results."
+        },
+        "summary": "Checks the formulas against sinh-Gordon and LM results, recovers the asymptotic Gaudin-matrix limit, and outlines extensions to non-diagonal theories.",
+        "title": "Checks, Asymptotics, and Conclusions"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "[18] A. Hegedus, “Lattice approach to finite volume form-factors of the Massive Thirring (Sine-Gordon) model,” JHEP 08 (2017) 059, arXiv:1705.00319 [hep-th].",
+          "start_page": 8,
+          "start_text": "References"
+        },
+        "summary": "Bibliography for the paper, with 18 entries in citation order.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a theoretical physics research paper presenting a derivation and checks of exact finite-volume formulas for integrable quantum field theories.",
+      "value": "theory"
+    }
+  }
+}
