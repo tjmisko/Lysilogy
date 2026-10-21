@@ -116,6 +116,23 @@ Cost rose to $1.67 for the cohort because Together is roughly ten times Relace.
 The fallback buys completion, not cheapness; the cost model should assume a
 cheap host when available and a ~$1.2/M fallback when not.
 
+## E8/E9 — loops are stochastic; retry and routing fix them
+
+Decomposition does not fix loops. `fanout.json` on the two loopers completed,
+but the full-30 fanout moved the loops to tiny fields — `identity`, `abstract`,
+`card` — and finished 25 of 30. The loop follows the model, not the task size.
+
+A bounded retry (two attempts on a length finish) plus robust routing does fix
+them: the combined core finishes 29 of 30 with identity 29/30 exact and
+matchable, and abstract 26/26 (1.00). The one miss (`shannon1948`) is a provider
+stream error truncated mid-JSON, not a loop; the retry covers length at present,
+not provider errors.
+
+Sections are now the weak and unstable field. E7 measured IoU 0.669 with +1.4
+over-segmentation; E9 measured 0.586 with -0.9 under-segmentation on different
+hosts. Coverage swings with them (0.83 vs 0.70). Section quality is
+provider-sensitive, and page coverage is not a stable metric.
+
 ## Cohort change
 
 The sample grows from 20 to 30: the frozen 20 (bulk arXiv) are kept, and 10
