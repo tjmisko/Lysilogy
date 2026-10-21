@@ -72,6 +72,9 @@ const OBJECTS_MAX_TOKENS: u32 = 32_768;
 const REPAIR_MAX_TOKENS: u32 = 32_768;
 const FEATURE_MAX_TOKENS: u32 = 24_576;
 
+/// How many times a call whose answer hit the length limit is retried.
+const LENGTH_ATTEMPTS: u32 = 2;
+
 /// The most pages sent with a repair request.
 const REPAIR_PAGE_LIMIT: usize = 10;
 
@@ -391,35 +394,42 @@ impl<'a> Session<'a> {
             reasoning: Some(reasoning),
             provider_order: &self.providers,
         };
-        let completion = match openrouter::complete(&self.client, self.ledger, &request).await {
-            Ok(completion) => completion,
-            Err(error) => {
-                self.fail(stage, chunk, error.to_string(), None);
-                return None;
-            }
-        };
-        let parsed = completion.parsed;
-        self.record_call(stage, &parsed, completion.latency, max_tokens);
-        if parsed.finish_reason.as_deref() == Some("length") {
-            self.fail(
-                stage,
-                chunk,
-                "output was cut off at the length limit".to_owned(),
-                Some(&parsed.content),
-            );
-            return None;
-        }
-        match serde_json::from_str(&parsed.content) {
-            Ok(value) => Some(value),
-            Err(error) => {
+        let mut attempt = 1;
+        loop {
+            let completion = match openrouter::complete(&self.client, self.ledger, &request).await {
+                Ok(completion) => completion,
+                Err(error) => {
+                    self.fail(stage, chunk, error.to_string(), None);
+                    return None;
+                }
+            };
+            let parsed = completion.parsed;
+            self.record_call(stage, &parsed, completion.latency, max_tokens);
+            if parsed.finish_reason.as_deref() == Some("length") {
+                if attempt < LENGTH_ATTEMPTS && self.within_budget(stage) {
+                    attempt += 1;
+                    continue;
+                }
                 self.fail(
                     stage,
                     chunk,
-                    format!("output does not match the schema: {error}"),
+                    "output was cut off at the length limit".to_owned(),
                     Some(&parsed.content),
                 );
-                None
+                return None;
             }
+            return match serde_json::from_str(&parsed.content) {
+                Ok(value) => Some(value),
+                Err(error) => {
+                    self.fail(
+                        stage,
+                        chunk,
+                        format!("output does not match the schema: {error}"),
+                        Some(&parsed.content),
+                    );
+                    None
+                }
+            };
         }
     }
 
