@@ -21,6 +21,14 @@ pub const OPENROUTER_URL: &str = "https://openrouter.ai/api/v1/chat/completions"
 /// The model used when a caller names none.
 pub const DEFAULT_MODEL: &str = "deepseek/deepseek-v4.1-flash";
 
+// Routing policy: cheapest endpoint that supports the request, falls back when a
+// host is rate-limited, stays under a price ceiling, and skips low-bit
+// quantization. Prices are USD per million tokens.
+const PROVIDER_MAX_PROMPT_PRICE: &str = "0.5";
+const PROVIDER_MAX_COMPLETION_PRICE: &str = "2.0";
+const PROVIDER_MIN_THROUGHPUT: f64 = 20.0;
+const PROVIDER_MAX_LATENCY_S: f64 = 60.0;
+
 /// One part of the user message.
 #[derive(Clone, Debug)]
 pub enum ContentPart {
@@ -149,17 +157,28 @@ pub fn request_body(request: &ChatRequest<'_>) -> Value {
     if let Some(effort) = request.reasoning {
         body["reasoning"] = effort.to_body();
     }
+    let mut provider = json!({
+        "require_parameters": true,
+        "allow_fallbacks": true,
+        "max_price": {
+            "prompt": PROVIDER_MAX_PROMPT_PRICE,
+            "completion": PROVIDER_MAX_COMPLETION_PRICE,
+        },
+        "preferred_min_throughput": PROVIDER_MIN_THROUGHPUT,
+        "preferred_max_latency": PROVIDER_MAX_LATENCY_S,
+        "quantizations": ["fp8", "mxfp8", "fp16", "bf16", "fp32", "unknown"],
+    });
     if request.provider_order.is_empty() {
-        body["provider"] = json!({"require_parameters": true});
+        provider["sort"] = json!("price");
     } else {
         let order: Vec<String> = request
             .provider_order
             .iter()
             .map(|provider| provider.trim().to_ascii_lowercase())
             .collect();
-        body["provider"] =
-            json!({"order": order, "allow_fallbacks": false, "require_parameters": true});
+        provider["order"] = json!(order);
     }
+    body["provider"] = provider;
     body
 }
 
@@ -516,12 +535,13 @@ mod tests {
             provider_order: &pinned,
         });
         assert_eq!(body["provider"]["order"][0], "deepseek");
-        assert_eq!(body["provider"]["allow_fallbacks"], false);
+        assert_eq!(body["provider"]["allow_fallbacks"], true);
         assert_eq!(body["provider"]["require_parameters"], true);
+        assert!(body["provider"].get("sort").is_none());
     }
 
     #[test]
-    fn should_require_parameter_support_when_no_provider_is_pinned() {
+    fn should_route_cheap_with_a_price_ceiling_when_no_provider_is_pinned() {
         let schema = schema();
         let parts = [ContentPart::Text("hello".to_owned())];
         let body = request_body(&ChatRequest {
@@ -533,8 +553,17 @@ mod tests {
             reasoning: None,
             provider_order: &[],
         });
-        assert_eq!(body["provider"]["require_parameters"], true);
-        assert!(body["provider"].get("order").is_none());
+        let provider = &body["provider"];
+        assert_eq!(provider["sort"], "price");
+        assert_eq!(provider["allow_fallbacks"], true);
+        assert_eq!(provider["require_parameters"], true);
+        assert_eq!(provider["max_price"]["completion"], "2.0");
+        assert!(provider.get("order").is_none());
+        assert!(
+            provider["quantizations"]
+                .as_array()
+                .is_some_and(|q| q.contains(&json!("fp8")))
+        );
     }
 
     #[test]
