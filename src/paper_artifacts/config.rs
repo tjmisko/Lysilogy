@@ -14,6 +14,8 @@
 //! }
 //! ```
 
+use std::collections::{BTreeMap, BTreeSet};
+
 use serde::Deserialize;
 
 use crate::{
@@ -88,6 +90,9 @@ pub struct Call {
     /// `all`, `front`, or `firstN`, e.g. `first3`.
     #[serde(default)]
     pub scope: Option<String>,
+    /// Names of calls that must finish before this one starts.
+    #[serde(default)]
+    pub requires: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq)]
@@ -158,6 +163,15 @@ impl RunConfig {
     pub fn parse(text: &str) -> Result<Self> {
         let config: Self = serde_json::from_str(text)
             .map_err(|error| Error::InvalidRequest(format!("invalid run config: {error}")))?;
+        let mut names = BTreeSet::new();
+        for call in &config.calls {
+            if !names.insert(call.name.as_str()) {
+                return Err(Error::InvalidRequest(format!(
+                    "duplicate call name '{}'",
+                    call.name
+                )));
+            }
+        }
         for call in &config.calls {
             if call.fields.is_empty() {
                 return Err(Error::InvalidRequest(format!(
@@ -173,8 +187,84 @@ impl RunConfig {
                     )));
                 }
             }
+            for require in &call.requires {
+                if require == &call.name {
+                    return Err(Error::InvalidRequest(format!(
+                        "call '{}' requires itself",
+                        call.name
+                    )));
+                }
+                if !names.contains(require.as_str()) {
+                    return Err(Error::InvalidRequest(format!(
+                        "call '{}' requires unknown call '{require}'",
+                        call.name
+                    )));
+                }
+            }
+        }
+        if config.has_cycle() {
+            return Err(Error::InvalidRequest(
+                "the call graph has a cycle".to_owned(),
+            ));
         }
         Ok(config)
+    }
+
+    /// The direct dependencies of each call, including the producers of the
+    /// fields an `include_draft` call re-reads.
+    #[must_use]
+    pub fn dependencies(&self) -> BTreeMap<&str, Vec<&str>> {
+        let mut dependencies = BTreeMap::new();
+        for call in &self.calls {
+            let mut deps: Vec<&str> = call.requires.iter().map(String::as_str).collect();
+            if call.include_draft {
+                for other in &self.calls {
+                    if other.name != call.name
+                        && call.fields.iter().any(|field| other.fields.contains(field))
+                    {
+                        deps.push(other.name.as_str());
+                    }
+                }
+            }
+            deps.sort_unstable();
+            deps.dedup();
+            dependencies.insert(call.name.as_str(), deps);
+        }
+        dependencies
+    }
+
+    fn has_cycle(&self) -> bool {
+        let dependencies = self.dependencies();
+        let mut indegree: BTreeMap<&str, usize> = self
+            .calls
+            .iter()
+            .map(|call| (call.name.as_str(), 0))
+            .collect();
+        let mut edges: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+        for (name, deps) in &dependencies {
+            for dep in deps {
+                *indegree.entry(name).or_default() += 1;
+                edges.entry(dep).or_default().push(name);
+            }
+        }
+        let mut ready: Vec<&str> = indegree
+            .iter()
+            .filter(|(_, degree)| **degree == 0)
+            .map(|(name, _)| *name)
+            .collect();
+        let mut seen = 0;
+        while let Some(name) = ready.pop() {
+            seen += 1;
+            for next in edges.get(name).into_iter().flatten() {
+                if let Some(degree) = indegree.get_mut(next) {
+                    *degree -= 1;
+                    if *degree == 0 {
+                        ready.push(next);
+                    }
+                }
+            }
+        }
+        seen != self.calls.len()
     }
 
     /// The model id for one call, resolving tier names.
@@ -258,5 +348,59 @@ mod tests {
         assert_eq!(scope_pages(Some("all")), None);
         assert_eq!(scope_pages(Some("front")), Some(1));
         assert_eq!(scope_pages(Some("first3")), Some(3));
+    }
+
+    #[test]
+    fn should_order_explicit_and_include_draft_dependencies() {
+        let config = RunConfig::parse(
+            r#"{"calls":[
+                {"name":"core","fields":["sections","card"]},
+                {"name":"refine","fields":["sections"],"include_draft":true},
+                {"name":"glossary","fields":["glossary"],"requires":["core"]}
+            ]}"#,
+        )
+        .expect("config");
+        let dependencies = config.dependencies();
+        assert!(dependencies["core"].is_empty());
+        assert_eq!(dependencies["refine"], vec!["core"]);
+        assert_eq!(dependencies["glossary"], vec!["core"]);
+    }
+
+    #[test]
+    fn should_reject_unknown_self_and_cyclic_requires() {
+        assert!(
+            RunConfig::parse(
+                r#"{"calls":[{"name":"a","fields":["sections"],"requires":["missing"]}]}"#
+            )
+            .is_err()
+        );
+        assert!(
+            RunConfig::parse(
+                r#"{"calls":[{"name":"a","fields":["sections"],"requires":["a"]}]}"#
+            )
+            .is_err()
+        );
+        assert!(
+            RunConfig::parse(
+                r#"{"calls":[
+                    {"name":"a","fields":["sections"],"requires":["b"]},
+                    {"name":"b","fields":["card"],"requires":["a"]}
+                ]}"#
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn should_reject_a_duplicate_call_name() {
+        assert!(
+            RunConfig::parse(
+                r#"{"calls":[
+                    {"name":"a","fields":["sections"]},
+                    {"name":"a","fields":["card"]}
+                ]}"#
+            )
+            .is_err()
+        );
     }
 }
