@@ -9,7 +9,7 @@ use std::collections::{HashMap, HashSet};
 use chrono::{DateTime, Utc};
 use lysilogy_core::{
     BlobId, Document, DocumentId, DocumentVersionId, ScannedFile, SourceRecordId, WorkId,
-    WorkLinkMethod, WorkspaceId,
+    WorkLinkMethod, WorkVersionId, WorkspaceId,
 };
 use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, PgPool, Row};
@@ -17,8 +17,8 @@ use uuid::Uuid;
 
 use crate::Result;
 
-const DOCUMENT_COLUMNS: &str = "id, workspace_id, work_id, work_link_method, \
-     work_link_detail, relative_path, created_at, updated_at";
+const DOCUMENT_COLUMNS: &str = "id, workspace_id, work_id, work_version_id, \
+     work_link_method, work_link_detail, relative_path, created_at, updated_at";
 
 /// Outcome counts from reconciling a library scan against stored documents.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -138,12 +138,29 @@ impl DocumentRepository {
     /// record how the link was established.
     pub async fn set_work(&self, document_id: DocumentId, work_id: Option<WorkId>) -> Result<()> {
         sqlx::query(
-            "update reader.document set work_id = $2, work_link_method = null, \
-                 work_link_source_record_id = null, work_link_detail = null, \
-                 work_linked_at = null, updated_at = now() where id = $1",
+            "update reader.document set work_id = $2, work_version_id = null, \
+                 work_link_method = null, work_link_source_record_id = null, \
+                 work_link_detail = null, work_linked_at = null, updated_at = now() \
+             where id = $1",
         )
         .bind(document_id.as_uuid())
         .bind(work_id.map(WorkId::as_uuid))
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// Set or clear the held manifestation of a document.
+    pub async fn set_work_version(
+        &self,
+        document_id: DocumentId,
+        version_id: Option<WorkVersionId>,
+    ) -> Result<()> {
+        sqlx::query(
+            "update reader.document set work_version_id = $2, updated_at = now() where id = $1",
+        )
+        .bind(document_id.as_uuid())
+        .bind(version_id.map(WorkVersionId::as_uuid))
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -548,6 +565,9 @@ fn document_from_row(row: &PgRow) -> Result<Document> {
         work_id: row
             .try_get::<Option<Uuid>, _>("work_id")?
             .map(WorkId::from_uuid),
+        work_version_id: row
+            .try_get::<Option<Uuid>, _>("work_version_id")?
+            .map(WorkVersionId::from_uuid),
         work_link_method: row
             .try_get::<Option<String>, _>("work_link_method")?
             .map(|method| method.parse())

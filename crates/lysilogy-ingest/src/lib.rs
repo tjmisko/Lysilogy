@@ -17,6 +17,7 @@ pub mod literature;
 pub mod local_evidence;
 pub mod openalex;
 pub mod prominence;
+pub mod reference;
 pub mod scan;
 pub mod title_match;
 

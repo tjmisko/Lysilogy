@@ -47,4 +47,4 @@ pub use state::{
     Visibility, WorkKind, WorkLinkMethod, WorkMark,
 };
 pub use title::{title_key, title_similarity};
-pub use work::{Work, WorkIdentifier, WorkVersion};
+pub use work::{Work, WorkIdentifier, WorkVersion, WorkVersionIdentifier};

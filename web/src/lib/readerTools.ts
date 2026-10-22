@@ -13,14 +13,26 @@ export type ReferenceConnection = {
   connector: string; limitation: string;
   evidence: Array<{ paper_id: string; source_page: number; quote: string }>;
 };
+export type ResolvedCandidate = {
+  title: string; authors: string[]; year: number | null; venue: string | null;
+  doi: string | null; arxiv_id: string | null; source: string; source_id: string; score: number;
+};
+export type ReferenceResolution = {
+  state: "resolved" | "ambiguous" | "unresolved";
+  method: string | null; confidence: number | null;
+  work_id: string | null; work_version_id: string | null;
+  candidates: ResolvedCandidate[]; resolved_at: string;
+};
 export type SavedReference = {
   id: string; citation: string; source_page: number | null; note: string; created_at: string;
   candidate: { title: string; landing_url: string | null; pdf_url: string | null; explanation: string } | null;
+  resolution: ReferenceResolution | null;
   linked_paper_id: string | null; connection: ReferenceConnection | null; question: string | null;
 };
 export type ToolAction =
   | { kind: "supercut"; format: CutFormat }
   | { kind: "find_reference"; reference_id: string }
+  | { kind: "resolve_references"; reference_ids: string[] }
   | { kind: "connect_reference"; reference_id: string; question: string };
 export type ToolJob = {
   id: string; action: ToolAction; provider: AnalysisProvider;

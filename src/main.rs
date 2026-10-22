@@ -31,7 +31,12 @@ use lysilogy_ingest::field_model::{FieldHarvestSummary, FieldOptions};
 use lysilogy_ingest::labels::{LabelOptions, LabelSummary};
 use lysilogy_ingest::literature::{LiteratureStatus, LiteratureSummary};
 use lysilogy_ingest::local_evidence::LocalEvidenceSummary;
+use lysilogy_ingest::openalex::ReqwestTransport;
 use lysilogy_ingest::prominence::RefreshSummary;
+use lysilogy_ingest::reference::{
+    CandidateRecord, CrossrefRegistry, MatchDecision, OpenAlexRegistry, ReferenceRecord,
+    SemanticScholarRegistry, resolve,
+};
 use tokio::{sync::Semaphore, task::JoinSet};
 use tracing_subscriber::EnvFilter;
 
@@ -269,6 +274,14 @@ enum Command {
     Convert {
         /// Paper ID or an unambiguous title fragment.
         query: String,
+    },
+    /// Resolve one printed reference against `OpenAlex`, Crossref, and Semantic Scholar.
+    ResolveReference {
+        /// The printed reference, quoted.
+        reference: String,
+        /// Emit the full resolution, including candidates and registry errors.
+        #[arg(long)]
+        json: bool,
     },
     /// Link one paper to its Work and ingest what it cites (needs `LYSILOGY_DATABASE_URL`).
     Lit {
@@ -608,6 +621,9 @@ async fn run(cli: Cli) -> Result<()> {
             let id = resolve_paper(&state, &query).await?;
             print!("{}", state.markdown(&id).await?);
             Ok(())
+        }
+        Command::ResolveReference { reference, json } => {
+            resolve_reference_command(&reference, json).await
         }
         Command::Lit {
             paper,
@@ -1280,6 +1296,61 @@ async fn ingest(
 }
 
 /// What `lit` does beyond the provider flow.
+async fn resolve_reference_command(reference: &str, json: bool) -> Result<()> {
+    let record = ReferenceRecord::from_raw(reference);
+    let openalex = OpenAlexRegistry::new(ReqwestTransport::from_environment()?);
+    let crossref = CrossrefRegistry::new(ReqwestTransport::from_environment()?);
+    let semantic_scholar = SemanticScholarRegistry::new(ReqwestTransport::from_environment()?);
+    let resolution = resolve(&[&openalex, &crossref, &semantic_scholar], &record).await;
+    if json {
+        println!("{}", serde_json::to_string_pretty(&resolution)?);
+        return Ok(());
+    }
+    println!("Printed: {}", record.raw);
+    if let Some(title) = &record.title {
+        println!("  title: {title}");
+    }
+    if let Some(year) = record.year {
+        println!("  year: {year}");
+    }
+    for search in &resolution.searches {
+        match &search.error {
+            Some(error) => println!("  {:<18} error: {error}", search.registry),
+            None => println!(
+                "  {:<18} {} candidates",
+                search.registry,
+                search.candidates.len()
+            ),
+        }
+    }
+    match &resolution.decision {
+        MatchDecision::Accepted { candidate, score } => {
+            print_candidate(
+                "accepted: ",
+                &resolution.candidates[*candidate],
+                score.total,
+            );
+        }
+        MatchDecision::Ambiguous { candidates, scores } => {
+            println!("ambiguous: {} candidates", candidates.len());
+            for (index, score) in candidates.iter().zip(scores) {
+                print_candidate("  - ", &resolution.candidates[*index], score.total);
+            }
+        }
+        MatchDecision::Rejected(reason) => println!("rejected: {}", reason.as_str()),
+    }
+    Ok(())
+}
+
+fn print_candidate(prefix: &str, candidate: &CandidateRecord, score: f64) {
+    println!(
+        "{prefix}{} ({} {}) score {score:.3}",
+        candidate.title.as_deref().unwrap_or("<untitled>"),
+        candidate.source,
+        candidate.source_id
+    );
+}
+
 struct LiteratureRun {
     local: bool,
     labels: Option<LabelRun>,
@@ -2126,8 +2197,8 @@ async fn audit_command(
             targets.push((paper.id, paper.metadata.title));
         }
     } else {
-        let query = query
-            .ok_or_else(|| Error::InvalidRequest("provide a paper or pass --all".into()))?;
+        let query =
+            query.ok_or_else(|| Error::InvalidRequest("provide a paper or pass --all".into()))?;
         let id = resolve_paper(state, &query).await?;
         let title = state
             .library()
@@ -2327,6 +2398,7 @@ mod tests {
             resolutions: lysilogy_ingest::local_evidence::ResolutionCounts {
                 identifier: 5,
                 title_match: 30,
+                fuzzy_match: 0,
                 local_stub: 11,
                 reused: 0,
             },

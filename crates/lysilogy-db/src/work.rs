@@ -1,8 +1,10 @@
 //! Persistence for bibliographic [`Work`]s, their identifiers, and field claims.
 
+use chrono::{Datelike, NaiveDate};
 use lysilogy_core::{
-    IdentifierId, IdentifierScheme, IdentifierStatus, ParseStateError, SourceRecordId, Visibility,
-    Work, WorkId, WorkIdentifier, WorkKind, title_key,
+    IdentifierId, IdentifierScheme, IdentifierStatus, ParseStateError, SourceRecordId, VersionKind,
+    Visibility, Work, WorkId, WorkIdentifier, WorkKind, WorkVersion, WorkVersionId,
+    WorkVersionIdentifier, title_key,
 };
 use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, PgPool, Row};
@@ -53,11 +55,20 @@ impl WorkRepository {
     }
 
     /// Find the Work that currently owns an active identifier.
+    ///
+    /// Version-level schemes (DOI, arXiv, PMID, ISBN, URL) are looked up on
+    /// version identifiers; Work anchors on the Work's own identifiers.
     pub async fn find_by_identifier(
         &self,
         scheme: IdentifierScheme,
         value: &str,
     ) -> Result<Option<Work>> {
+        if scheme.is_version_level() {
+            return Ok(self
+                .find_by_version_identifier(scheme, value)
+                .await?
+                .map(|(work, _)| work));
+        }
         let row = sqlx::query(&format!(
             "select {WORK_COLUMNS} from graph.work w \
              join graph.work_identifier i on i.work_id = w.id \
@@ -97,6 +108,11 @@ impl WorkRepository {
         kind: WorkKind,
         source_record_id: Option<SourceRecordId>,
     ) -> Result<(Work, bool)> {
+        if scheme.is_version_level() {
+            return self
+                .resolve_or_create_version(scheme, value, kind, source_record_id)
+                .await;
+        }
         if let Some(work) = self.find_by_identifier(scheme, value).await? {
             return Ok((work, false));
         }
@@ -151,6 +167,11 @@ impl WorkRepository {
         source_record_id: Option<SourceRecordId>,
         status: IdentifierStatus,
     ) -> Result<Option<WorkIdentifier>> {
+        if scheme.is_version_level() {
+            return self
+                .add_version_identifier_for_work(work_id, scheme, value, source_record_id, status)
+                .await;
+        }
         let row = sqlx::query(
             "insert into graph.work_identifier \
                  (work_id, scheme, value_normalized, source_record_id, status) \
@@ -169,6 +190,9 @@ impl WorkRepository {
     }
 
     /// A Work's active identifiers, ordered by scheme then age.
+    ///
+    /// Version-level identifiers from every version are included as well, so a
+    /// caller sees the Work's full identity in one list.
     pub async fn active_identifiers(&self, work_id: WorkId) -> Result<Vec<WorkIdentifier>> {
         let rows = sqlx::query(
             "select id, work_id, scheme, value_normalized, source_record_id, status, created_at \
@@ -178,7 +202,286 @@ impl WorkRepository {
         .bind(work_id.as_uuid())
         .fetch_all(&self.pool)
         .await?;
-        rows.iter().map(identifier_from_row).collect()
+        let mut identifiers: Vec<WorkIdentifier> = rows
+            .iter()
+            .map(identifier_from_row)
+            .collect::<Result<_>>()?;
+        let version_rows = sqlx::query(
+            "select i.id, i.scheme, i.value_normalized, i.source_record_id, i.status, i.created_at \
+             from graph.work_version_identifier i \
+             join graph.work_version v on v.id = i.version_id \
+             where v.work_id = $1 and i.status = 'active' \
+             order by i.scheme, i.created_at, i.id",
+        )
+        .bind(work_id.as_uuid())
+        .fetch_all(&self.pool)
+        .await?;
+        for row in &version_rows {
+            identifiers.push(WorkIdentifier {
+                id: IdentifierId::from_uuid(row.try_get("id")?),
+                work_id,
+                scheme: parse_state(&row.try_get::<String, _>("scheme")?)?,
+                value_normalized: row.try_get("value_normalized")?,
+                source_record_id: row
+                    .try_get::<Option<Uuid>, _>("source_record_id")?
+                    .map(SourceRecordId::from_uuid),
+                status: parse_state(&row.try_get::<String, _>("status")?)?,
+                created_at: row.try_get("created_at")?,
+            });
+        }
+        identifiers.sort_by(|left, right| {
+            left.scheme
+                .as_str()
+                .cmp(right.scheme.as_str())
+                .then_with(|| left.created_at.cmp(&right.created_at))
+                .then_with(|| left.id.as_uuid().cmp(&right.id.as_uuid()))
+        });
+        Ok(identifiers)
+    }
+
+    /// A Work's versions, oldest first.
+    pub async fn versions(&self, work_id: WorkId) -> Result<Vec<WorkVersion>> {
+        let rows = sqlx::query(
+            "select id, work_id, version_kind, version_label, published_date, date_state, \
+                    created_at from graph.work_version where work_id = $1 \
+             order by created_at, id",
+        )
+        .bind(work_id.as_uuid())
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter().map(version_from_row).collect()
+    }
+
+    /// Create one manifestation of a Work.
+    pub async fn create_version(
+        &self,
+        work_id: WorkId,
+        version_kind: VersionKind,
+        version_label: Option<&str>,
+        published_date: Option<NaiveDate>,
+    ) -> Result<WorkVersion> {
+        let row = sqlx::query(
+            "insert into graph.work_version (work_id, version_kind, version_label, published_date) \
+             values ($1, $2, $3, $4) \
+             returning id, work_id, version_kind, version_label, published_date, date_state, \
+                       created_at",
+        )
+        .bind(work_id.as_uuid())
+        .bind(version_kind.as_str())
+        .bind(version_label)
+        .bind(published_date)
+        .fetch_one(&self.pool)
+        .await?;
+        version_from_row(&row)
+    }
+
+    /// A version's active identifiers, ordered by scheme then age.
+    pub async fn version_identifiers(
+        &self,
+        version_id: WorkVersionId,
+    ) -> Result<Vec<WorkVersionIdentifier>> {
+        let rows = sqlx::query(
+            "select id, version_id, scheme, value_normalized, source_record_id, status, created_at \
+             from graph.work_version_identifier where version_id = $1 and status = 'active' \
+             order by scheme, created_at, id",
+        )
+        .bind(version_id.as_uuid())
+        .fetch_all(&self.pool)
+        .await?;
+        rows.iter().map(version_identifier_from_row).collect()
+    }
+
+    /// Attach a version-level identifier. Returns `None` if an active claim
+    /// already owns that exact identifier.
+    pub async fn add_version_identifier(
+        &self,
+        version_id: WorkVersionId,
+        scheme: IdentifierScheme,
+        value: &str,
+        source_record_id: Option<SourceRecordId>,
+        status: IdentifierStatus,
+    ) -> Result<Option<WorkVersionIdentifier>> {
+        let row = sqlx::query(
+            "insert into graph.work_version_identifier \
+                 (version_id, scheme, value_normalized, source_record_id, status) \
+             values ($1, $2, $3, $4, $5) \
+             on conflict (scheme, value_normalized) where status = 'active' do nothing \
+             returning id, version_id, scheme, value_normalized, source_record_id, status, created_at",
+        )
+        .bind(version_id.as_uuid())
+        .bind(scheme.as_str())
+        .bind(value)
+        .bind(source_record_id.map(SourceRecordId::as_uuid))
+        .bind(status.as_str())
+        .fetch_optional(&self.pool)
+        .await?;
+        row.as_ref().map(version_identifier_from_row).transpose()
+    }
+
+    /// Find the Work and version that own an active version identifier.
+    pub async fn find_by_version_identifier(
+        &self,
+        scheme: IdentifierScheme,
+        value: &str,
+    ) -> Result<Option<(Work, WorkVersion)>> {
+        let row = sqlx::query(&format!(
+            "select {WORK_COLUMNS}, v.id as version_id, v.version_kind, v.version_label, \
+                    v.published_date, v.date_state, v.created_at as version_created_at \
+             from graph.work_version_identifier i \
+             join graph.work_version v on v.id = i.version_id \
+             join graph.work w on w.id = v.work_id \
+             where i.scheme = $1 and i.value_normalized = $2 and i.status = 'active' \
+             limit 1"
+        ))
+        .bind(scheme.as_str())
+        .bind(value)
+        .fetch_optional(&self.pool)
+        .await?;
+        let Some(row) = row else {
+            return Ok(None);
+        };
+        let work = work_from_row(&row)?;
+        let version = WorkVersion {
+            id: WorkVersionId::from_uuid(row.try_get("version_id")?),
+            work_id: work.id,
+            version_kind: parse_state(&row.try_get::<String, _>("version_kind")?)?,
+            version_label: row.try_get("version_label")?,
+            published_date: row.try_get("published_date")?,
+            date_state: parse_state(&row.try_get::<String, _>("date_state")?)?,
+            created_at: row.try_get("version_created_at")?,
+        };
+        Ok(Some((work, version)))
+    }
+
+    /// Select the display year from versions: the published version's year
+    /// when one exists, otherwise the earliest known version year.
+    pub async fn recompute_display_year(&self, work_id: WorkId) -> Result<Option<i32>> {
+        let rows = sqlx::query(
+            "select version_kind, published_date from graph.work_version where work_id = $1",
+        )
+        .bind(work_id.as_uuid())
+        .fetch_all(&self.pool)
+        .await?;
+        let mut published: Option<i32> = None;
+        let mut earliest: Option<i32> = None;
+        for row in &rows {
+            let kind: String = row.try_get("version_kind")?;
+            let Some(year) = row
+                .try_get::<Option<NaiveDate>, _>("published_date")?
+                .map(|date| date.year())
+            else {
+                continue;
+            };
+            if kind == "published" {
+                published = Some(published.map_or(year, |current| current.min(year)));
+            }
+            earliest = Some(earliest.map_or(year, |current| current.min(year)));
+        }
+        let chosen = published.or(earliest);
+        if let Some(year) = chosen {
+            sqlx::query(
+                "update graph.work set display_year = $2, year_state = 'known', \
+                     updated_at = now() where id = $1",
+            )
+            .bind(work_id.as_uuid())
+            .bind(year)
+            .execute(&self.pool)
+            .await?;
+        }
+        Ok(chosen)
+    }
+
+    /// Create a version-level identifier for a Work, making a version if needed.
+    async fn add_version_identifier_for_work(
+        &self,
+        work_id: WorkId,
+        scheme: IdentifierScheme,
+        value: &str,
+        source_record_id: Option<SourceRecordId>,
+        status: IdentifierStatus,
+    ) -> Result<Option<WorkIdentifier>> {
+        let version = self.default_version(work_id).await?;
+        let inserted = self
+            .add_version_identifier(version.id, scheme, value, source_record_id, status)
+            .await?;
+        Ok(inserted.map(|identifier| WorkIdentifier {
+            id: identifier.id,
+            work_id,
+            scheme: identifier.scheme,
+            value_normalized: identifier.value_normalized,
+            source_record_id: identifier.source_record_id,
+            status: identifier.status,
+            created_at: identifier.created_at,
+        }))
+    }
+
+    /// A Work's first version, or a fresh one when it has none.
+    async fn default_version(&self, work_id: WorkId) -> Result<WorkVersion> {
+        if let Some(version) = self.versions(work_id).await?.into_iter().next() {
+            return Ok(version);
+        }
+        self.create_version(work_id, VersionKind::Unknown, Some("default"), None)
+            .await
+    }
+
+    /// Find or create a Work for a version-level identifier.
+    async fn resolve_or_create_version(
+        &self,
+        scheme: IdentifierScheme,
+        value: &str,
+        kind: WorkKind,
+        source_record_id: Option<SourceRecordId>,
+    ) -> Result<(Work, bool)> {
+        if let Some((work, _)) = self.find_by_version_identifier(scheme, value).await? {
+            return Ok((work, false));
+        }
+        let mut transaction = self.pool.begin().await?;
+        let row = sqlx::query(
+            "insert into graph.work (kind) values ($1) \
+             returning id, kind, visibility, display_title, title_state, display_year, \
+                       year_state, display_authors, authors_state, created_at, updated_at",
+        )
+        .bind(kind.as_str())
+        .fetch_one(&mut *transaction)
+        .await?;
+        let work = work_from_row(&row)?;
+        let version_row = sqlx::query(
+            "insert into graph.work_version (work_id, version_kind, version_label) \
+             values ($1, $2, 'default') \
+             returning id, work_id, version_kind, version_label, published_date, date_state, \
+                       created_at",
+        )
+        .bind(work.id.as_uuid())
+        .bind(version_kind_for_scheme(scheme).as_str())
+        .fetch_one(&mut *transaction)
+        .await?;
+        let version = version_from_row(&version_row)?;
+        let inserted = sqlx::query(
+            "insert into graph.work_version_identifier \
+                 (version_id, scheme, value_normalized, source_record_id) \
+             values ($1, $2, $3, $4) \
+             on conflict (scheme, value_normalized) where status = 'active' do nothing \
+             returning id",
+        )
+        .bind(version.id.as_uuid())
+        .bind(scheme.as_str())
+        .bind(value)
+        .bind(source_record_id.map(SourceRecordId::as_uuid))
+        .fetch_optional(&mut *transaction)
+        .await?;
+        if inserted.is_none() {
+            transaction.rollback().await?;
+            let existing = self
+                .find_by_version_identifier(scheme, value)
+                .await?
+                .map(|(work, _)| work)
+                .ok_or_else(|| {
+                    DbError::Conflict("identifier conflict without a surviving Work".into())
+                })?;
+            return Ok((existing, false));
+        }
+        transaction.commit().await?;
+        Ok((work, true))
     }
 
     /// Set the selected display title and mark the title known.
@@ -531,6 +834,18 @@ async fn move_work_content(
         .bind(into_id)
         .execute(&mut *transaction)
         .await?;
+    sqlx::query(
+        "delete from graph.work_version_identifier f using graph.work_version fv \
+         where f.version_id = fv.id and fv.work_id = $1 and exists ( \
+             select 1 from graph.work_version_identifier i \
+             join graph.work_version iv on iv.id = i.version_id \
+             where iv.work_id = $2 and i.scheme = f.scheme \
+               and i.value_normalized = f.value_normalized)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *transaction)
+    .await?;
     sqlx::query("update graph.work_version set work_id = $2 where work_id = $1")
         .bind(from_id)
         .bind(into_id)
@@ -703,6 +1018,44 @@ fn identifier_from_row(row: &PgRow) -> Result<WorkIdentifier> {
     Ok(WorkIdentifier {
         id: IdentifierId::from_uuid(row.try_get("id")?),
         work_id: WorkId::from_uuid(row.try_get("work_id")?),
+        scheme: parse_state(&row.try_get::<String, _>("scheme")?)?,
+        value_normalized: row.try_get("value_normalized")?,
+        source_record_id: row
+            .try_get::<Option<Uuid>, _>("source_record_id")?
+            .map(SourceRecordId::from_uuid),
+        status: parse_state(&row.try_get::<String, _>("status")?)?,
+        created_at: row.try_get("created_at")?,
+    })
+}
+
+fn version_from_row(row: &PgRow) -> Result<WorkVersion> {
+    Ok(WorkVersion {
+        id: WorkVersionId::from_uuid(row.try_get("id")?),
+        work_id: WorkId::from_uuid(row.try_get("work_id")?),
+        version_kind: parse_state(&row.try_get::<String, _>("version_kind")?)?,
+        version_label: row.try_get("version_label")?,
+        published_date: row.try_get("published_date")?,
+        date_state: parse_state(&row.try_get::<String, _>("date_state")?)?,
+        created_at: row.try_get("created_at")?,
+    })
+}
+
+const fn version_kind_for_scheme(scheme: IdentifierScheme) -> VersionKind {
+    match scheme {
+        IdentifierScheme::Arxiv => VersionKind::Preprint,
+        IdentifierScheme::Doi | IdentifierScheme::Pmid | IdentifierScheme::Isbn => {
+            VersionKind::Published
+        }
+        IdentifierScheme::Openalex | IdentifierScheme::SemanticScholar | IdentifierScheme::Url => {
+            VersionKind::Unknown
+        }
+    }
+}
+
+fn version_identifier_from_row(row: &PgRow) -> Result<WorkVersionIdentifier> {
+    Ok(WorkVersionIdentifier {
+        id: IdentifierId::from_uuid(row.try_get("id")?),
+        version_id: WorkVersionId::from_uuid(row.try_get("version_id")?),
         scheme: parse_state(&row.try_get::<String, _>("scheme")?)?,
         value_normalized: row.try_get("value_normalized")?,
         source_record_id: row
@@ -1237,19 +1590,23 @@ mod tests {
                 .expect("claims");
         assert_eq!(claims, 1);
         let identifiers: Vec<String> = sqlx::query_scalar(
-            "select value_normalized from graph.work_identifier where work_id = $1 order by 1",
+            "select i.value_normalized from graph.work_version_identifier i \
+             join graph.work_version v on v.id = i.version_id \
+             where v.work_id = $1 order by 1",
         )
         .bind(target.as_uuid())
         .fetch_all(&pool)
         .await
         .expect("identifiers");
         assert_eq!(identifiers.len(), 2);
-        let leftover: i64 =
-            sqlx::query_scalar("select count(*) from graph.work_identifier where work_id = $1")
-                .bind(stub.as_uuid())
-                .fetch_one(&pool)
-                .await
-                .expect("leftover");
+        let leftover: i64 = sqlx::query_scalar(
+            "select count(*) from graph.work_version_identifier i \
+             join graph.work_version v on v.id = i.version_id where v.work_id = $1",
+        )
+        .bind(stub.as_uuid())
+        .fetch_one(&pool)
+        .await
+        .expect("leftover");
         assert_eq!(leftover, 0);
 
         let decisions: i64 = sqlx::query_scalar(
