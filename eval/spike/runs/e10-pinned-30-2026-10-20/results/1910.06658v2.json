@@ -1,0 +1,3342 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T05:58:59.358739379Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1910.06658v2.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 14,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 10665,
+      "cached_tokens": 256,
+      "completion_tokens": 18861,
+      "reasoning_tokens": 9566,
+      "cost_usd": 0.0093799552,
+      "cost_source": "reported",
+      "latency_s": 143.781361636
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 16586,
+      "cached_tokens": 384,
+      "completion_tokens": 10786,
+      "reasoning_tokens": 9940,
+      "cost_usd": 0.0068000128,
+      "cost_source": "reported",
+      "latency_s": 147.744960216
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 9012,
+      "cached_tokens": 0,
+      "completion_tokens": 11867,
+      "reasoning_tokens": 8877,
+      "cost_usd": 0.00624582,
+      "cost_source": "reported",
+      "latency_s": 149.358983488
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 36263,
+    "cached_tokens": 640,
+    "completion_tokens": 41514,
+    "cost_usd": 0.022425788,
+    "model_latency_s": 440.88530534000006,
+    "wall_s": 443.864002878
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e10-pinned-30-2026-10-20/results/1910.06658v2.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories. The TNG framework represents the environment as a directed graph composed of deep neural networks. Each vertex of the graph corresponds to a trajectory and is represented by a trajectory identification classifier and a trajectory imitation controller. For trajectory following, we propose the novel use of neural object detection architectures. The edges of TNG correspond to intersections between trajectories and are all represented by a classifier. We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Bojarski et al. [10]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network."
+              }
+            ],
+            "reference_key": "[10]",
+            "why": "Identifies the regression controller and percentage-autonomy measure as the baseline the paper builds on and then contrasts with its object-detection alternative."
+          },
+          {
+            "cited_work": "Osa et al. [18]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Trained according to behaviour cloning [18], the regression controller is a neural network model:"
+              }
+            ],
+            "reference_key": "[18]",
+            "why": "Uses behaviour cloning as the framing for the regression controller."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Gupta et al. [11]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "Reinforcement learning-based methods such as [11] are dependent on high amounts of resources for training its joint architecture since it needs to tune the parameters by interacting with a well-mapped, photo-realistic environment."
+              }
+            ],
+            "reference_key": "[11]",
+            "why": "Critiques end-to-end/reinforcement-learning navigation for resource demands and hard assumptions."
+          },
+          {
+            "cited_work": "Savinov et al. [13]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "[13] relies on self-supervised learning but no real-world demonstrations have been shown in the work."
+              }
+            ],
+            "reference_key": "[13]",
+            "why": "Contrasts its real-world evaluation with semi-parametric topological memory's lack of real-world demonstrations."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation."
+          }
+        ],
+        "text": "A topological navigation graph can compose non-goal-directed imitation-learning trajectory controllers, especially a novel object-detection-based controller, into a goal-directed robot navigation system for environments made of intersecting trajectories."
+      }
+    },
+    "citations": [
+      {
+        "context": "Introduction uses probabilistic-geometric navigation as the mainstream comparison.",
+        "page": 1,
+        "reference_key": "[1, 2, 3, 4]"
+      },
+      {
+        "context": "Introduction states imitation and adaptivity are crucial for human navigation learning.",
+        "page": 1,
+        "reference_key": "[5]"
+      },
+      {
+        "context": "Introduction states children connect basic behaviours to reach increasingly complex goals.",
+        "page": 1,
+        "reference_key": "[6]"
+      },
+      {
+        "context": "Introduction surveys three decades of artificial neural networks for autonomous mobility.",
+        "page": 1,
+        "reference_key": "[7, 8, 9, 10, 11, 12, 13]"
+      },
+      {
+        "context": "Introduction gives examples: behaviour cloning and CNNs for road autonomy.",
+        "page": 1,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "Introduction gives examples: transfer learning from simulator to real vehicle.",
+        "page": 1,
+        "reference_key": "[14]"
+      },
+      {
+        "context": "Introduction gives examples: neural architecture for conditional imitation learning.",
+        "page": 1,
+        "reference_key": "[15]"
+      },
+      {
+        "context": "Introduction gives examples: self-supervised navigation policies.",
+        "page": 1,
+        "reference_key": "[16]"
+      },
+      {
+        "context": "Introduction gives examples: recurrent neural network solution demonstrated on real cars.",
+        "page": 1,
+        "reference_key": "[17]"
+      },
+      {
+        "context": "Introduction notes increasing popularity of imitation learning for robot autonomy.",
+        "page": 1,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "Introduction notes many imitation learning algorithms are not goal directed by design.",
+        "page": 2,
+        "reference_key": "[10, 14, 19]"
+      },
+      {
+        "context": "Contributions mention evaluation using Neurotechnology's SentiBotics mobile robot development kit.",
+        "page": 2,
+        "reference_key": "[20]"
+      },
+      {
+        "context": "Trajectory imitation controllers have a long history and remain actively researched.",
+        "page": 2,
+        "reference_key": "[7]"
+      },
+      {
+        "context": "Trajectory imitation research is currently active across multiple cited works.",
+        "page": 2,
+        "reference_key": "[10, 21, 15, 16, 22, 14]"
+      },
+      {
+        "context": "Regression controller is derived from prior CNN motor-command regression work.",
+        "page": 2,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "Regression controller is trained according to behaviour cloning.",
+        "page": 3,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "MLP component citation.",
+        "page": 3,
+        "reference_key": "[23]"
+      },
+      {
+        "context": "CNN encoder examples include ResNet.",
+        "page": 3,
+        "reference_key": "[24]"
+      },
+      {
+        "context": "CNN encoder examples include MobileNetV2.",
+        "page": 3,
+        "reference_key": "[25]"
+      },
+      {
+        "context": "Fixed encoder weights are pre-trained on ImageNet classification.",
+        "page": 3,
+        "reference_key": "[26]"
+      },
+      {
+        "context": "Ridge regression loss follows the cited ridge regression reference.",
+        "page": 3,
+        "reference_key": "[27]"
+      },
+      {
+        "context": "Adam optimisation algorithm is used to optimise the loss.",
+        "page": 3,
+        "reference_key": "[28]"
+      },
+      {
+        "context": "The paper compares its training strategy with similar work that optimises all parameters.",
+        "page": 3,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "Dataset aggregation and augmentation follow insights from conditional imitation learning.",
+        "page": 3,
+        "reference_key": "[15]"
+      },
+      {
+        "context": "Dataset aggregation uses DAgger.",
+        "page": 3,
+        "reference_key": "[29]"
+      },
+      {
+        "context": "Cascading errors in imitation learning controllers are cited.",
+        "page": 3,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "Offline evaluation over test loss may not correlate with execution performance.",
+        "page": 3,
+        "reference_key": "[30]"
+      },
+      {
+        "context": "Object-detection-based controller uses RetinaNet.",
+        "page": 3,
+        "reference_key": "[31]"
+      },
+      {
+        "context": "The approach is conceptually similar to a deep object centric policy work.",
+        "page": 3,
+        "reference_key": "[22]"
+      },
+      {
+        "context": "Object detector is pre-trained on COCO.",
+        "page": 4,
+        "reference_key": "[32]"
+      },
+      {
+        "context": "Detected bounding box center is coupled with a PID controller.",
+        "page": 4,
+        "reference_key": "[33]"
+      },
+      {
+        "context": "Related work: cognitive mapping and planning advances previous approaches.",
+        "page": 4,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "Related work: semi-parametric topological memory maps environment on a non-parametric graph.",
+        "page": 4,
+        "reference_key": "[13]"
+      },
+      {
+        "context": "Related work: learning deployable navigation policies at kilometer scale from a single traversal.",
+        "page": 4,
+        "reference_key": "[34]"
+      },
+      {
+        "context": "End-to-end learning can require large datasets and longer training.",
+        "page": 5,
+        "reference_key": "[35]"
+      },
+      {
+        "context": "Reinforcement-learning navigation such as cognitive mapping and planning depends on high resources.",
+        "page": 5,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "One-shot reinforcement learning is used to reduce resource-heavy learning.",
+        "page": 5,
+        "reference_key": "[36]"
+      },
+      {
+        "context": "Dijkstra's algorithm is cited for shortest path computation.",
+        "page": 5,
+        "reference_key": "[37]"
+      },
+      {
+        "context": "Cross entropy loss is optimised for classifier training.",
+        "page": 6,
+        "reference_key": "[23]"
+      },
+      {
+        "context": "Encoder is pre-trained on ImageNet classification.",
+        "page": 6,
+        "reference_key": "[26]"
+      },
+      {
+        "context": "MobileNetV2 is selected for embedded inference speed.",
+        "page": 6,
+        "reference_key": "[25]"
+      },
+      {
+        "context": "Intersection recognition engine derives from find-object.",
+        "page": 6,
+        "reference_key": "[38]"
+      },
+      {
+        "context": "Intersection recognition uses FAST corners.",
+        "page": 6,
+        "reference_key": "[39]"
+      },
+      {
+        "context": "Intersection recognition uses BRIEF features.",
+        "page": 6,
+        "reference_key": "[40]"
+      },
+      {
+        "context": "Implementation uses SentiBotics Navigation SDK 3.0.",
+        "page": 6,
+        "reference_key": "[20]"
+      },
+      {
+        "context": "Percentage autonomy is used as a controller quality measure.",
+        "page": 7,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "TNG is contrasted with metric models such as ORB-SLAM and cognitive mapping.",
+        "page": 9,
+        "reference_key": "[2, 11, 3]"
+      },
+      {
+        "context": "TNG is contrasted with topological approaches such as SPTM.",
+        "page": 9,
+        "reference_key": "[13, 41, 34]"
+      },
+      {
+        "context": "TNG is contrasted with hybrid metric-topological approaches.",
+        "page": 9,
+        "reference_key": "[42, 43]"
+      },
+      {
+        "context": "TNG is compared as interpretable at system level versus entirely black-box models.",
+        "page": 12,
+        "reference_key": "[11]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Povilas Daniušis"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Shubham Juneja"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Lukas Valatka"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Linas Petkevičius"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Povilas Daniušis†"
+        },
+        {
+          "page": 1,
+          "quote": "Shubham Juneja"
+        },
+        {
+          "page": 1,
+          "quote": "Lukas Valatka‡"
+        },
+        {
+          "page": 1,
+          "quote": "Linas Petkevičius"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1910.06658v2[cs.RO]",
+        "doi": "https://doi.org/10.1007/s10514-021-09980-x"
+      },
+      "publication_state": "preprint",
+      "subtitle": "A Preprint",
+      "title": "Topological Navigation Graph Framework",
+      "venue": "Autonomous Robots",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation."
+        },
+        {
+          "page": 2,
+          "quote": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components."
+        }
+      ],
+      "text": "Can non-goal-directed reactive trajectory imitation controllers be composed into a goal-directed autonomous robot navigation system, and can an object-detection-based trajectory controller improve robustness over a CNN regression controller?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Sebastian Thrun",
+          "Wolfram Burgard",
+          "Dieter Fox"
+        ],
+        "doi": "",
+        "key": "1",
+        "page": 13,
+        "title": "Probabilistic robotics",
+        "venue": "MIT press",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Raul Mur-Artal",
+          "J Montiel",
+          "Juan Tardos"
+        ],
+        "doi": "",
+        "key": "2",
+        "page": 13,
+        "title": "Orb-slam: a versatile and accurate monocular slam system",
+        "venue": "IEEE Trans. Robot.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jakob Engel",
+          "Daniel Cremers"
+        ],
+        "doi": "",
+        "key": "3",
+        "page": 13,
+        "title": "Lsd-slam: Large-scale direct monocular slam",
+        "venue": "In ECCV",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "C. Cadena",
+          "L. Carlone",
+          "H. Carrillo",
+          "Y. Latif",
+          "D. Scaramuzza",
+          "J. Neira",
+          "I. Reid",
+          "J.J. Leonard"
+        ],
+        "doi": "",
+        "key": "4",
+        "page": 13,
+        "title": "Past, present, and future of simultaneous localization and mapping: Towards the robust-perception age",
+        "venue": "IEEE Trans. Robot.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Samuel J Gershman",
+          "Eric J Horvitz",
+          "Joshua B Tenenbaum"
+        ],
+        "doi": "",
+        "key": "5",
+        "page": 13,
+        "title": "Computational rationality: A converging paradigm for intelligence in brains, minds, and machines",
+        "venue": "Science",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Cecilia I Calero",
+          "Diego E Shalom",
+          "Elizabeth S Spelke",
+          "Mariano Sigman"
+        ],
+        "doi": "",
+        "key": "6",
+        "page": 13,
+        "title": "Language, gesture, and judgment: Children’s paths to abstract geometry",
+        "venue": "J. Exp. Child Psychol.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Dean Pomerleau"
+        ],
+        "doi": "",
+        "key": "7",
+        "page": 13,
+        "title": "Alvinn: An autonomous land vehicle in a neural network",
+        "venue": "NIPS",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "Philippe Gaussier",
+          "Stéphane Zrehen"
+        ],
+        "doi": "",
+        "key": "8",
+        "page": 13,
+        "title": "Perac: A neural architecture to control artificial animals",
+        "venue": "Robot. Auton. Syst.",
+        "year": 1995
+      },
+      {
+        "authors": [
+          "Y. LeCun",
+          "E. Cosatto",
+          "J. Ben",
+          "U. Muller",
+          "B. Flepp"
+        ],
+        "doi": "",
+        "key": "9",
+        "page": 13,
+        "title": "Dave: Autonomous off-road vehicle control using end-to-end learning",
+        "venue": "Technical Report DARPA-IPTO Final Report, Courant Institute/CBLL",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Mariusz Bojarski",
+          "Davide Del Testa",
+          "Daniel Dworakowski",
+          "Bernhard Firner",
+          "Beat Flepp",
+          "Prasoon Goyal",
+          "Lawrence D. Jackel",
+          "Mathew Monfort",
+          "Urs Muller",
+          "Jiakai Zhang",
+          "Xin Zhang",
+          "Jake Zhao",
+          "Karol Zieba"
+        ],
+        "doi": "",
+        "key": "10",
+        "page": 13,
+        "title": "End to end learning for self-driving cars",
+        "venue": "CoRR",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "S. Gupta",
+          "J. Davidson",
+          "S. Levine",
+          "R. Sukthankar",
+          "J. Malik"
+        ],
+        "doi": "",
+        "key": "11",
+        "page": 13,
+        "title": "Cognitive mapping and planning for visual navigation",
+        "venue": "Proc. IEEE Comput. Soc. Conf. Comput. Vis. Pattern Recognit.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Andrea Banino",
+          "Caswell Barry",
+          "Benigno Uria",
+          "Charles Blundell",
+          "Timothy Lillicrap",
+          "Piotr Mirowski",
+          "Alexander Pritzel",
+          "Martin J Chadwick",
+          "Thomas Degris",
+          "Joseph Modayil",
+          "et al."
+        ],
+        "doi": "",
+        "key": "12",
+        "page": 13,
+        "title": "Vector-based navigation using grid-like representations in artificial agents",
+        "venue": "Nature",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Nikolay Savinov",
+          "Alexey Dosovitskiy",
+          "Vladlen Koltun"
+        ],
+        "doi": "",
+        "key": "13",
+        "page": 13,
+        "title": "Semi-parametric topological memory for navigation",
+        "venue": "ICLR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Alex Bewley",
+          "Jessica Rigley",
+          "Yuxuan Liu",
+          "Jeffrey Hawke",
+          "Richard Shen",
+          "Vinh-Dieu Lam",
+          "Alex Kendall"
+        ],
+        "doi": "",
+        "key": "14",
+        "page": 13,
+        "title": "Learning to drive from simulation without real world labels",
+        "venue": "ICRA",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Felipe Codevilla",
+          "Matthias Miiller",
+          "Antonio López",
+          "Vladlen Koltun",
+          "Alexey Dosovitskiy"
+        ],
+        "doi": "",
+        "key": "15",
+        "page": 13,
+        "title": "End-to-end driving via conditional imitation learning",
+        "venue": "ICRA",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Deepak Pathak",
+          "Parsa Mahmoudieh",
+          "Guanghao Luo",
+          "Pulkit Agrawal",
+          "Dian Chen",
+          "Yide Shentu",
+          "Evan Shelhamer",
+          "Jitendra Malik",
+          "Alexei A. Efros",
+          "Trevor Darrell"
+        ],
+        "doi": "",
+        "key": "16",
+        "page": 13,
+        "title": "Zero-shot visual imitation",
+        "venue": "ICLR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Mayank Bansal",
+          "Alex Krizhevsky",
+          "Abhijit S. Ogale"
+        ],
+        "doi": "",
+        "key": "17",
+        "page": 13,
+        "title": "Chauffeurnet: Learning to drive by imitating the best and synthesizing the worst",
+        "venue": "ArXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "T. Osa",
+          "J. Pajarinen",
+          "G. Neumann",
+          "J.A. Bagnell",
+          "P. Abbeel",
+          "J. Peters"
+        ],
+        "doi": "",
+        "key": "18",
+        "page": 13,
+        "title": "An algorithmic perspective on imitation learning",
+        "venue": "Found. Trends Robot.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Jonathan Ho",
+          "Stefano Ermon"
+        ],
+        "doi": "",
+        "key": "19",
+        "page": 13,
+        "title": "Generative adversarial imitation learning",
+        "venue": "NIPS",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Neurotechnology"
+        ],
+        "doi": "",
+        "key": "20",
+        "page": 13,
+        "title": "SentiBotics Navigation SDK 3.0",
+        "venue": "https://www.neurotechnology.com/sentibotics-navigation.html",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "A. Kuefler",
+          "J. Morton",
+          "T. Wheeler",
+          "M. Kochenderfer"
+        ],
+        "doi": "",
+        "key": "21",
+        "page": 13,
+        "title": "Imitating driver behavior with generative adversarial networks",
+        "venue": "IV",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Dequan Wang",
+          "Coline Devin",
+          "Qi-Zhi Cai",
+          "Fisher Yu",
+          "Trevor Darrell"
+        ],
+        "doi": "",
+        "key": "22",
+        "page": 13,
+        "title": "Deep object centric policies for autonomous driving",
+        "venue": "CoRR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Kevin P. Murphy"
+        ],
+        "doi": "",
+        "key": "23",
+        "page": 13,
+        "title": "Machine learning: a probabilistic perspective",
+        "venue": "MIT Press",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "K. He",
+          "X. Zhang",
+          "S. Ren",
+          "J. Sun"
+        ],
+        "doi": "",
+        "key": "24",
+        "page": 13,
+        "title": "Deep residual learning for image recognition",
+        "venue": "Proc. IEEE Comput. Soc. Conf. Comput. Vis. Pattern Recognit.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "M. Sandler",
+          "A. Howard",
+          "M. Zhu",
+          "A. Zhmoginov",
+          "L. Chen"
+        ],
+        "doi": "",
+        "key": "25",
+        "page": 13,
+        "title": "Mobilenetv2: Inverted residuals and linear bottlenecks",
+        "venue": "Proc. IEEE Comput. Soc. Conf. Comput. Vis. Pattern Recognit.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Jia Deng",
+          "Wei Dong",
+          "Richard Socher",
+          "Li-Jia Li",
+          "Kai Li",
+          "Li Fei-Fei"
+        ],
+        "doi": "",
+        "key": "26",
+        "page": 13,
+        "title": "Imagenet: A large-scale hierarchical image database",
+        "venue": "Proc. IEEE Comput. Soc. Conf. Comput. Vis. Pattern Recognit.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Jerome Friedman",
+          "Trevor Hastie",
+          "Robert Tibshirani"
+        ],
+        "doi": "",
+        "key": "27",
+        "page": 13,
+        "title": "The elements of statistical learning, volume 1",
+        "venue": "Springer series in statistics New York",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Diederik P. Kingma",
+          "Jimmy Ba"
+        ],
+        "doi": "",
+        "key": "28",
+        "page": 13,
+        "title": "Adam: A method for stochastic optimization",
+        "venue": "ICLR",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Stephane Ross",
+          "Geoffrey J. Gordon",
+          "J Andrew Bagnell"
+        ],
+        "doi": "",
+        "key": "29",
+        "page": 13,
+        "title": "A reduction of imitation learning and structured prediction to no-regret online learning",
+        "venue": "J. Mach. Learn. Res.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Felipe Codevilla",
+          "Antonio López",
+          "Vladlen Koltun",
+          "Alexey Dosovitskiy"
+        ],
+        "doi": "",
+        "key": "30",
+        "page": 14,
+        "title": "On offline evaluation of vision-based driving models",
+        "venue": "ECCV",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Tsung-Yi Lin",
+          "Priya Goyal",
+          "Ross Girshick",
+          "Kaiming He",
+          "Piotr Dollar"
+        ],
+        "doi": "",
+        "key": "31",
+        "page": 14,
+        "title": "Focal loss for dense object detection",
+        "venue": "ICCV",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Tsung-Yi Lin",
+          "Michael Maire",
+          "Serge Belongie",
+          "James Hays",
+          "Pietro Perona",
+          "Deva Ramanan",
+          "Piotr Dollár",
+          "C Lawrence Zitnick"
+        ],
+        "doi": "",
+        "key": "32",
+        "page": 14,
+        "title": "Microsoft coco: Common objects in context",
+        "venue": "Comput. Vis. ECCV",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Karl Johan Aström",
+          "Richard M Murray"
+        ],
+        "doi": "",
+        "key": "33",
+        "page": 14,
+        "title": "Feedback systems: an introduction for scientists and engineers",
+        "venue": "Princeton university press",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Jake Bruce",
+          "Niko Sünderhauf",
+          "Piotr W. Mirowski",
+          "Raia Hadsell",
+          "Michael Milford"
+        ],
+        "doi": "",
+        "key": "34",
+        "page": 14,
+        "title": "Learning deployable navigation policies at kilometer scale from a single traversal",
+        "venue": "CoRL",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Tobias Glasmachers"
+        ],
+        "doi": "",
+        "key": "35",
+        "page": 14,
+        "title": "Limits of end-to-end learning",
+        "venue": "JMLR",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Jake Bruce",
+          "Niko Sünderhauf",
+          "Piotr Mirowski",
+          "Raia Hadsell",
+          "Michael Milford"
+        ],
+        "doi": "",
+        "key": "36",
+        "page": 14,
+        "title": "One-shot reinforcement learning for robot navigation with interactive replay",
+        "venue": "arXiv preprint arXiv:1711.10137",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Steven M. LaValle"
+        ],
+        "doi": "",
+        "key": "37",
+        "page": 14,
+        "title": "Planning Algorithms",
+        "venue": "Cambridge University Press",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "M. Labbé"
+        ],
+        "doi": "",
+        "key": "38",
+        "page": 14,
+        "title": "Find-object",
+        "venue": "http://introlab.github.io/find-object",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Edward Rosten",
+          "Tom Drummond"
+        ],
+        "doi": "",
+        "key": "39",
+        "page": 14,
+        "title": "Machine learning for high-speed corner detection",
+        "venue": "Comput. Vis. ECCV",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Michael Calonder",
+          "Vincent Lepetit",
+          "Christoph Strecha",
+          "Pascal Fua"
+        ],
+        "doi": "",
+        "key": "40",
+        "page": 14,
+        "title": "Brief: Binary robust independent elementary features",
+        "venue": "Comput. Vis. ECCV",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Friedrich Fraundorfer",
+          "Chris Engels",
+          "David Nistér"
+        ],
+        "doi": "",
+        "key": "41",
+        "page": 14,
+        "title": "Topological mapping, localization and navigation using image collections",
+        "venue": "IROS",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Sebastian Thrun"
+        ],
+        "doi": "",
+        "key": "42",
+        "page": 14,
+        "title": "Learning metric-topological maps for indoor mobile robot navigation",
+        "venue": "Artif. Intell.",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "M. J. Milford",
+          "G. F. Wyeth"
+        ],
+        "doi": "",
+        "key": "43",
+        "page": 14,
+        "title": "Mapping a suburb with a single camera using a biologically inspired slam system",
+        "venue": "IEEE Trans. Robot.",
+        "year": 2008
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+        "reference_key": "[10]",
+        "relation": "extends",
+        "why": "The regression controller is derived from CNN motor-command regression and then extended by the paper's object-detection alternative."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+        "reference_key": "[15]",
+        "relation": "uses_method",
+        "why": "The authors adopt dataset aggregation and augmentation inspired by conditional imitation learning."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In order to solve the aforementioned problems, we utilize the RetinaNet object detection architecture [31].",
+        "reference_key": "[31]",
+        "relation": "uses_method",
+        "why": "RetinaNet is the object detection backbone for the new trajectory controller."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Conceptually, our approach is similar to that of [22].",
+        "reference_key": "[22]",
+        "relation": "extends",
+        "why": "The object-detection-based controller is conceptually similar to deep object-centric policies but adapted to detect direction of movement."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "Reinforcement learning-based methods such as [11] are dependent on high amounts of resources for training its joint architecture since it needs to tune the parameters by interacting with a well-mapped, photo-realistic environment.",
+        "reference_key": "[11]",
+        "relation": "critiques",
+        "why": "The paper critiques end-to-end reinforcement learning navigation for resource demands and unrealistic assumptions."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "[13] relies on self-supervised learning but no real-world demonstrations have been shown in the work.",
+        "reference_key": "[13]",
+        "relation": "contrasts",
+        "why": "The paper contrasts its real-world evaluation with prior topological navigation work lacking real-world demonstrations."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Our implementation of trajectory imitation controllers and TNG is performed with the use of Neurotechnology’s SentiBotics Navigation SDK 3.0 [20].",
+        "reference_key": "[20]",
+        "relation": "uses_method",
+        "why": "The implementation depends on the SentiBotics SDK and robot platform."
+      },
+      {
+        "confidence": "high",
+        "page": 12,
+        "quote": "Although the TNG framework is composed of \"black box\" modules, its operation is transparent and easily interpretable at the system level, which can also be regarded as a practical advantage, compared to entirely \"black box\" models (e.g. [11]).",
+        "reference_key": "[11]",
+        "relation": "contrasts",
+        "why": "TNG is positioned as interpretable at the system level in contrast to entirely black-box models."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 1,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 1,
+          "end_text": "SentiBotics.",
+          "start_page": 1,
+          "start_text": "Topological Navigation Graph Framework"
+        },
+        "summary": "Title, authorship, abstract, and introduction motivating TNG as a way to turn non-goal-directed imitation-learning controllers into goal-directed navigation.",
+        "title": "Abstract and Introduction"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "We empirically identified several limitations in the aforementioned approach.",
+          "start_page": 2,
+          "start_text": "with a demonstration using real cars."
+        },
+        "summary": "Formalises trajectory imitation learning, presents the regression controller derived from CNN motor-command regression, and lists its sensitivity, environmental-change, and offline-evaluation limitations.",
+        "title": "Regression Trajectory Imitation Controller"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "which adds the possibility of avoiding potentially incorrect decisions.",
+          "start_page": 3,
+          "start_text": "In order to solve the aforementioned problems"
+        },
+        "summary": "Introduces the object-detection-based controller: bounding boxes encode direction of movement, a PID controller centres the detected box, and the design recovers from larger rotational errors.",
+        "title": "Object-Detection-Based Trajectory Imitation Controller"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "Here, ψ are corresponding parameters.",
+          "start_page": 4,
+          "start_text": "In this section, we review similar work"
+        },
+        "summary": "Reviews related topological, metric, and reinforcement-learning navigation work; then defines TNG as a directed graph of trajectory controllers, trajectory classifiers, and intersection classifiers for localisation and path execution.",
+        "title": "Topological Navigation Graph Framework"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "The output of the PID controller is also clipped to the range of the SentiBotics control pad command.",
+          "start_page": 6,
+          "start_text": "Trajectory classifiers g(X|φi) are constructed"
+        },
+        "summary": "Implementation details for TNG classifiers, intersection recognition, goal-reaching function, regression controller, and object-detection controller.",
+        "title": "TNG Implementation Details"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "which is not the case for the regression controller [30], this can be further investigated in future work.",
+          "start_page": 6,
+          "start_text": "Empirical Evaluation"
+        },
+        "summary": "Evaluates the two trajectory imitation controllers across three real and one simulated environment using percentage autonomy, before and after a four-week interval; finds the object-detection controller degrades less under environmental change.",
+        "title": "Controller Evaluation"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "Figure 12: Results of autonomous navigation from trajectory T5 to the goals from the remaining trajectories (T1,T2,T3,T4).",
+          "start_page": 9,
+          "start_text": "Experiments with TNG"
+        },
+        "summary": "Builds TNG over five office trajectories T1-T5, runs goal-directed navigation episodes between trajectory pairs, and reports percentage autonomy and travel distance alongside result images.",
+        "title": "TNG Navigation Experiments"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "optimising TNG by adding a fully automatic environment graph construction capability and extending it with a hierarchical component.",
+          "start_page": 12,
+          "start_text": "Although the TNG framework is composed"
+        },
+        "summary": "Discusses TNG's modularity and system-level interpretability, then notes its geometric sub-optimality, need for separable intersecting trajectories, and substantial human data/graph-design effort; concludes and states future work.",
+        "title": "Discussion, Limitations, and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "IEEE Trans. Robot., 24(5):1038–1053, Oct 2008.",
+          "start_page": 13,
+          "start_text": "[1] Sebastian Thrun"
+        },
+        "summary": "Bibliography of cited works from probabilistic robotics and SLAM through imitation learning, object detection, topological memory, and TNG-related navigation.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a research preprint that proposes the TNG framework and reports simulated and real-world robot navigation experiments.",
+      "value": "empirical"
+    }
+  },
+  "pass1_check": {
+    "sites": 70,
+    "verbatim": 20,
+    "near": 1,
+    "missing": 49,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/card/citations/9/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "Citation [18] appears on page 2, not page 1.",
+      "evidence": [
+        {
+          "quote": "These works, in various aspects, also rely on imitation learning, which highlights a tendency that, by benefiting from the current renaissance of connectionist systems, imitation learning is becoming an increasingly popular robot autonomy research direction [18].",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/card/references/0/page",
+      "action": "replace",
+      "value_json": "12",
+      "reason": "Reference [1] begins on page 12.",
+      "evidence": [
+        {
+          "quote": "[1] Sebastian Thrun, Wolfram Burgard, and Dieter Fox. Probabilistic robotics. MIT press, 2005.",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "path": "/card/references/1/page",
+      "action": "replace",
+      "value_json": "12",
+      "reason": "Reference [2] begins on page 12.",
+      "evidence": [
+        {
+          "quote": "[2] Raul Mur-Artal, J Montiel, and Juan Tardos. Orb-slam: a versatile and accurate monocular slam system. IEEE Trans. Robot., 31:1147 – 1163, 10 2015.",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "path": "/card/references/2/page",
+      "action": "replace",
+      "value_json": "12",
+      "reason": "Reference [3] begins on page 12.",
+      "evidence": [
+        {
+          "quote": "[3] Jakob Engel and Daniel Cremers. Lsd-slam: Large-scale direct monocular slam. In In ECCV, pages 834–849, 2014.",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "path": "/card/references/3/page",
+      "action": "replace",
+      "value_json": "12",
+      "reason": "Reference [4] begins on page 12.",
+      "evidence": [
+        {
+          "quote": "[4] C. Cadena, L. Carlone, H. Carrillo, Y. Latif, D. Scaramuzza, J. Neira, I. Reid, and J.J. Leonard. Past, present, and future of simultaneous localization and mapping: Towards the robust-perception age. IEEE Trans. Robot., 32(6):1309–1332, 2016.",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "path": "/card/references/4/page",
+      "action": "replace",
+      "value_json": "12",
+      "reason": "Reference [5] begins on page 12.",
+      "evidence": [
+        {
+          "quote": "[5] Samuel J Gershman, Eric J Horvitz, and Joshua B Tenenbaum. Computational rationality: A converging paradigm for intelligence in brains, minds, and machines. Science, 349(6245):273–278, 2015.",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "path": "/card/references/5/page",
+      "action": "replace",
+      "value_json": "12",
+      "reason": "Reference [6] begins on page 12.",
+      "evidence": [
+        {
+          "quote": "[6] Cecilia I Calero, Diego E Shalom, Elizabeth S Spelke, and Mariano Sigman. Language, gesture, and judgment: Children’s paths to abstract geometry. J. Exp. Child Psychol., 177:70–85, 2019.",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "path": "/card/sections/8/pages/start",
+      "action": "replace",
+      "value_json": "12",
+      "reason": "The reference section starts on page 12, not page 13.",
+      "evidence": [
+        {
+          "quote": "[1] Sebastian Thrun, Wolfram Burgard, and Dieter Fox. Probabilistic robotics. MIT press, 2005.",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "path": "/card/sections/8/source_span/start_page",
+      "action": "replace",
+      "value_json": "12",
+      "reason": "The reference section start page is 12, not 13.",
+      "evidence": [
+        {
+          "quote": "[1] Sebastian Thrun, Wolfram Burgard, and Dieter Fox. Probabilistic robotics. MIT press, 2005.",
+          "page": 12
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/card/citations/9/page",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "path does not exist"
+    },
+    {
+      "index": 1,
+      "path": "/card/references/0/page",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "path does not exist"
+    },
+    {
+      "index": 2,
+      "path": "/card/references/1/page",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "path does not exist"
+    },
+    {
+      "index": 3,
+      "path": "/card/references/2/page",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "path does not exist"
+    },
+    {
+      "index": 4,
+      "path": "/card/references/3/page",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "path does not exist"
+    },
+    {
+      "index": 5,
+      "path": "/card/references/4/page",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "path does not exist"
+    },
+    {
+      "index": 6,
+      "path": "/card/references/5/page",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "path does not exist"
+    },
+    {
+      "index": 7,
+      "path": "/card/sections/8/pages/start",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "path does not exist"
+    },
+    {
+      "index": 8,
+      "path": "/card/sections/8/source_span/start_page",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "path does not exist"
+    }
+  ],
+  "pass2_check": {
+    "sites": 70,
+    "verbatim": 20,
+    "near": 1,
+    "missing": 49,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories. The TNG framework represents the environment as a directed graph composed of deep neural networks. Each vertex of the graph corresponds to a trajectory and is represented by a trajectory identification classifier and a trajectory imitation controller. For trajectory following, we propose the novel use of neural object detection architectures. The edges of TNG correspond to intersections between trajectories and are all represented by a classifier. We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation.",
+      "admitted": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories. The TNG framework represents the environment as a directed graph composed of deep neural networks. Each vertex of the graph corresponds to a trajectory and is represented by a trajectory identification classifier and a trajectory imitation controller. For trajectory following, we propose the novel use of neural object detection architectures. The edges of TNG correspond to intersections between trajectories and are all represented by a classifier. We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+      "admitted": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Trained according to behaviour cloning [18], the regression controller is a neural network model:",
+      "admitted": "Trained according to behaviour cloning [18], the regression controller is a neural network model:",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Reinforcement learning-based methods such as [11] are dependent on high amounts of resources for training its joint architecture since it needs to tune the parameters by interacting with a well-mapped, photo-realistic environment.",
+      "admitted": "Reinforcement learning-based methods such as [11] are dependent on high amounts of resources for training its joint architecture since it needs to tune the parameters by interacting with a well-mapped, photo-realistic environment.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "[13] relies on self-supervised learning but no real-world demonstrations have been shown in the work.",
+      "admitted": "[13] relies on self-supervised learning but no real-world demonstrations have been shown in the work.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation.",
+      "admitted": "We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Povilas Daniušis†",
+      "admitted": "Povilas Daniušis†",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Shubham Juneja",
+      "admitted": "Shubham Juneja",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/2/quote",
+      "status": "verbatim",
+      "original": "Lukas Valatka‡",
+      "admitted": "Lukas Valatka‡",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/3/quote",
+      "status": "verbatim",
+      "original": "Linas Petkevičius",
+      "admitted": "Linas Petkevičius",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation.",
+      "admitted": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/1/quote",
+      "status": "verbatim",
+      "original": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components.",
+      "admitted": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "repaired_model",
+      "original": "Introduction uses probabilistic-geometric navigation as the mainstream comparison.",
+      "admitted": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+      "similarity": 0.25,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "repaired_model",
+      "original": "Introduction states imitation and adaptivity are crucial for human navigation learning.",
+      "admitted": "On the other side, when humans learn various complex sensorimotor behaviours, including the skill to navigate, adaptivity and imitation play crucial roles [5].",
+      "similarity": 0.2727272727272727,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "repaired_model",
+      "original": "Introduction states children connect basic behaviours to reach increasingly complex goals.",
+      "admitted": "Once children learn several basic behaviours, they soon figure out how to connect them in order to reach different, increasingly complex goals [6].",
+      "similarity": 0.36363636363636365,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "repaired_model",
+      "original": "Introduction surveys three decades of artificial neural networks for autonomous mobility.",
+      "admitted": "For more than three decades, artificial neural networks have been utilised to build autonomous mobility systems or their components [7, 8, 9, 10, 11, 12, 13].",
+      "similarity": 0.4545454545454546,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "repaired_model",
+      "original": "Introduction gives examples: behaviour cloning and CNNs for road autonomy.",
+      "admitted": "For example, [10] applies behaviour cloning and modern convolutional neural networks (CNNs), achieving vehicle autonomy on real roads",
+      "similarity": 0.30000000000000004,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "repaired_model",
+      "original": "Introduction gives examples: transfer learning from simulator to real vehicle.",
+      "admitted": "[14] describes a transfer learning architecture for learning to drive a real vehicle solely in a simulator",
+      "similarity": 0.30000000000000004,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "repaired_model",
+      "original": "Introduction gives examples: neural architecture for conditional imitation learning.",
+      "admitted": "[15] contributes a neural architecture for conditional imitation learning",
+      "similarity": 0.6666666666666667,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "repaired_model",
+      "original": "Introduction gives examples: self-supervised navigation policies.",
+      "admitted": "[16] introduces a method to learn navigation policies from self-supervision",
+      "similarity": 0.33333333333333337,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "dropped",
+      "original": "Introduction gives examples: recurrent neural network solution demonstrated on real cars.",
+      "admitted": null,
+      "similarity": 0.2727272727272727,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "repaired_model",
+      "original": "Introduction notes increasing popularity of imitation learning for robot autonomy.",
+      "admitted": "These works, in various aspects, also rely on imitation learning, which highlights a tendency that, by benefiting from the current renaissance of connectionist systems, imitation learning is becoming an increasingly popular robot autonomy research direction [18].",
+      "similarity": 0.30000000000000004,
+      "cited_page": 1,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "repaired_model",
+      "original": "Introduction notes many imitation learning algorithms are not goal directed by design.",
+      "admitted": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+      "similarity": 0.5,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "repaired_model",
+      "original": "Contributions mention evaluation using Neurotechnology's SentiBotics mobile robot development kit.",
+      "admitted": "The main contributions of this study include the TNG framework, the application of neural object detection architectures to obtain more robust trajectory imitation, and the experimental evaluation of the suggested algorithms both in a simulator and the real world by using Neurotechnology’s SentiBotics mobile robot development kit [20].",
+      "similarity": 0.7,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "repaired_model",
+      "original": "Trajectory imitation controllers have a long history and remain actively researched.",
+      "admitted": "The problem of learning imitation controllers has a long history [7] and is currently being actively researched [10, 21, 15, 16, 22, 14].",
+      "similarity": 0.4545454545454546,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "repaired_model",
+      "original": "Trajectory imitation research is currently active across multiple cited works.",
+      "admitted": "The problem of learning imitation controllers has a long history [7] and is currently being actively researched [10, 21, 15, 16, 22, 14].",
+      "similarity": 0.19999999999999996,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "repaired_model",
+      "original": "Regression controller is derived from prior CNN motor-command regression work.",
+      "admitted": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+      "similarity": 0.30000000000000004,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "repaired_local",
+      "original": "Regression controller is trained according to behaviour cloning.",
+      "admitted": "Regression Controller Trained according to behaviour cloning",
+      "similarity": 0.875,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "repaired_model",
+      "original": "MLP component citation.",
+      "admitted": "where fMLP is a multilayer perceptron (MLP) [23]",
+      "similarity": 0.33333333333333337,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "repaired_model",
+      "original": "CNN encoder examples include ResNet.",
+      "admitted": "fCNN is fixed a CNN encoder (e.g. ResNet [24] or MobilenetV2 [25])",
+      "similarity": 0.6,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "repaired_model",
+      "original": "CNN encoder examples include MobileNetV2.",
+      "admitted": "fCNN is fixed a CNN encoder (e.g. ResNet [24] or MobilenetV2 [25])",
+      "similarity": 0.4,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "repaired_model",
+      "original": "Fixed encoder weights are pre-trained on ImageNet classification.",
+      "admitted": "with fixed weights ξˆ pre-trained on ImageNet [26] classification task",
+      "similarity": 0.625,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "repaired_model",
+      "original": "Ridge regression loss follows the cited ridge regression reference.",
+      "admitted": "Having a training set we obtain parameter estimate θ̂ by minimising the loss function of the ridge regression [27]:",
+      "similarity": 0.33333333333333337,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "repaired_model",
+      "original": "Adam optimisation algorithm is used to optimise the loss.",
+      "admitted": "We optimise (2) with the Adam optimisation algorithm [28].",
+      "similarity": 0.33333333333333337,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "repaired_model",
+      "original": "The paper compares its training strategy with similar work that optimises all parameters.",
+      "admitted": "As compared to similar work by [10], where the entire parameter set is optimised, our approach helps to reduce the training duration without affecting the performance.",
+      "similarity": 0.23076923076923073,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "repaired_model",
+      "original": "Dataset aggregation and augmentation follow insights from conditional imitation learning.",
+      "admitted": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+      "similarity": 0.30000000000000004,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "repaired_model",
+      "original": "Dataset aggregation uses DAgger.",
+      "admitted": "dataset aggregation (DAgger [29])",
+      "similarity": 0.75,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "repaired_model",
+      "original": "Cascading errors in imitation learning controllers are cited.",
+      "admitted": "slight deviations from the trajectory may cause cascading errors [18] and eventually drive the robot out of the trajectory with no possibility of self-recovery.",
+      "similarity": 0.25,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "repaired_model",
+      "original": "Offline evaluation over test loss may not correlate with execution performance.",
+      "admitted": "the trajectory following performance during execution does not necessarily correlate with the value of offline evaluation over the test set using the loss function [30]",
+      "similarity": 0.2727272727272727,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "repaired_model",
+      "original": "Object-detection-based controller uses RetinaNet.",
+      "admitted": "In order to solve the aforementioned problems, we utilize the RetinaNet object detection architecture [31].",
+      "similarity": 0.5,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/28/context",
+      "status": "repaired_model",
+      "original": "The approach is conceptually similar to a deep object centric policy work.",
+      "admitted": "Conceptually, our approach is similar to that of [22].",
+      "similarity": 0.33333333333333337,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/29/context",
+      "status": "repaired_model",
+      "original": "Object detector is pre-trained on COCO.",
+      "admitted": "The model used for training is pre-trained on the COCO dataset [32] over the object detection task.",
+      "similarity": 0.5,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/30/context",
+      "status": "repaired_model",
+      "original": "Detected bounding box center is coupled with a PID controller.",
+      "admitted": "During controller execution, the output of the object detector (i.e. coordinates of the bounding box showing the direction of movement) is coupled with a PID controller [33] to centre a detected bounding box, resulting in trajectory imitation.",
+      "similarity": 0.6,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/31/context",
+      "status": "repaired_model",
+      "original": "Related work: cognitive mapping and planning advances previous approaches.",
+      "admitted": "The work from [11], which includes a mapper and a planner, advances previous approaches.",
+      "similarity": 0.4444444444444444,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/32/context",
+      "status": "repaired_model",
+      "original": "Related work: semi-parametric topological memory maps environment on a non-parametric graph.",
+      "admitted": "Another approach [13], proposes a semi-parametric topological memory (SPTM) architecture for navigation, where the environment is mapped on a non-parametric graph, in which every position is a node.",
+      "similarity": 0.36363636363636365,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/33/context",
+      "status": "repaired_model",
+      "original": "Related work: learning deployable navigation policies at kilometer scale from a single traversal.",
+      "admitted": "[34] attempts to tackle the challenge of learning goal-directed policies from data representing a single traversal in an environment spanning over 2 kilometres.",
+      "similarity": 0.8461538461538461,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/34/context",
+      "status": "repaired_model",
+      "original": "End-to-end learning can require large datasets and longer training.",
+      "admitted": "Whilst end-to-end learning can simultaneously tune the entire architecture’s parameter set, this advantage often comes at the cost of requiring large datasets and longer training durations [35].",
+      "similarity": 0.5555555555555556,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/35/context",
+      "status": "repaired_model",
+      "original": "Reinforcement-learning navigation such as cognitive mapping and planning depends on high resources.",
+      "admitted": "Reinforcement learning-based methods such as [11] are dependent on high amounts of resources for training its joint architecture since it needs to tune the parameters by interacting with a well-mapped, photo-realistic environment.",
+      "similarity": 0.33333333333333337,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/36/context",
+      "status": "repaired_model",
+      "original": "One-shot reinforcement learning is used to reduce resource-heavy learning.",
+      "admitted": "While [34] is also a reinforcement-learning-based method, to reduce the resource-heavy factor it leverages the method with one-shot reinforcement learning [36].",
+      "similarity": 0.33333333333333337,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/37/context",
+      "status": "repaired_model",
+      "original": "Dijkstra's algorithm is cited for shortest path computation.",
+      "admitted": "After the shortest path in the TNG between current and target vertices is computed (e.g. by Dijkstra’s algorithm [37])",
+      "similarity": 0.25,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/38/context",
+      "status": "repaired_model",
+      "original": "Cross entropy loss is optimised for classifier training.",
+      "admitted": "The parameters of the classification network, θ, are optimised by minimising cross entropy loss [23]",
+      "similarity": 0.375,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/39/context",
+      "status": "repaired_model",
+      "original": "Encoder is pre-trained on ImageNet classification.",
+      "admitted": "the parameters of the encoder network, ˆ ξ, are pre-trained on the ImageNet [26] classification task and kept fixed during training of trajectory imitation controller.",
+      "similarity": 0.5,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/40/context",
+      "status": "repaired_model",
+      "original": "MobileNetV2 is selected for embedded inference speed.",
+      "admitted": "We select MobileNetV2 [25] because it allows us to achieve an acceptable execution speed using low cost embedded neural network inference hardware⁴.",
+      "similarity": 0.1428571428571429,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/41/context",
+      "status": "repaired_model",
+      "original": "Intersection recognition engine derives from find-object.",
+      "admitted": "we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+      "similarity": 0.5,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/42/context",
+      "status": "repaired_model",
+      "original": "Intersection recognition uses FAST corners.",
+      "admitted": "using FAST corners [39] and BRIEF features [40] as descriptors",
+      "similarity": 0.4,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/43/context",
+      "status": "repaired_model",
+      "original": "Intersection recognition uses BRIEF features.",
+      "admitted": "using FAST corners [39] and BRIEF features [40] as descriptors",
+      "similarity": 0.4,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/44/context",
+      "status": "repaired_model",
+      "original": "Implementation uses SentiBotics Navigation SDK 3.0.",
+      "admitted": "Our implementation of trajectory imitation controllers and TNG is performed with the use of Neurotechnology’s SentiBotics Navigation SDK 3.0 [20].",
+      "similarity": 0.6666666666666667,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/45/context",
+      "status": "repaired_model",
+      "original": "Percentage autonomy is used as a controller quality measure.",
+      "admitted": "To compare the performance of trajectory imitation controllers we use percentage autonomy [10] as a controller quality measure:",
+      "similarity": 0.7777777777777778,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/46/context",
+      "status": "repaired_model",
+      "original": "TNG is contrasted with metric models such as ORB-SLAM and cognitive mapping.",
+      "admitted": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map",
+      "similarity": 0.33333333333333337,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/47/context",
+      "status": "repaired_model",
+      "original": "TNG is contrasted with topological approaches such as SPTM.",
+      "admitted": "or to other topological (e.g. [13, 41, 34])",
+      "similarity": 0.33333333333333337,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/48/context",
+      "status": "repaired_model",
+      "original": "TNG is contrasted with hybrid metric-topological approaches.",
+      "admitted": "or hybrid (e.g. [42, 43]) approaches",
+      "similarity": 0.4285714285714286,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/49/context",
+      "status": "withdrawn",
+      "original": "TNG is compared as interpretable at system level versus entirely black-box models.",
+      "admitted": null,
+      "similarity": 0.25,
+      "cited_page": 12,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+      "admitted": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+      "admitted": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "In order to solve the aforementioned problems, we utilize the RetinaNet object detection architecture [31].",
+      "admitted": "In order to solve the aforementioned problems, we utilize the RetinaNet object detection architecture [31].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "Conceptually, our approach is similar to that of [22].",
+      "admitted": "Conceptually, our approach is similar to that of [22].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Reinforcement learning-based methods such as [11] are dependent on high amounts of resources for training its joint architecture since it needs to tune the parameters by interacting with a well-mapped, photo-realistic environment.",
+      "admitted": "Reinforcement learning-based methods such as [11] are dependent on high amounts of resources for training its joint architecture since it needs to tune the parameters by interacting with a well-mapped, photo-realistic environment.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "[13] relies on self-supervised learning but no real-world demonstrations have been shown in the work.",
+      "admitted": "[13] relies on self-supervised learning but no real-world demonstrations have been shown in the work.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "Our implementation of trajectory imitation controllers and TNG is performed with the use of Neurotechnology’s SentiBotics Navigation SDK 3.0 [20].",
+      "admitted": "Our implementation of trajectory imitation controllers and TNG is performed with the use of Neurotechnology’s SentiBotics Navigation SDK 3.0 [20].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "Although the TNG framework is composed of \"black box\" modules, its operation is transparent and easily interpretable at the system level, which can also be regarded as a practical advantage, compared to entirely \"black box\" models (e.g. [11]).",
+      "admitted": "Although the TNG framework is composed of \"black box\" modules, its operation is transparent and easily interpretable at the system level, which can also be regarded as a practical advantage, compared to entirely \"black box\" models (e.g. [11]).",
+      "similarity": null,
+      "cited_page": 12,
+      "matched_page": 12
+    }
+  ],
+  "admission_counts": {
+    "dropped": 1,
+    "repaired_local": 1,
+    "repaired_model": 47,
+    "verbatim": 20,
+    "withdrawn": 1
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories. The TNG framework represents the environment as a directed graph composed of deep neural networks. Each vertex of the graph corresponds to a trajectory and is represented by a trajectory identification classifier and a trajectory imitation controller. For trajectory following, we propose the novel use of neural object detection architectures. The edges of TNG correspond to intersections between trajectories and are all represented by a classifier. We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Bojarski et al. [10]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network."
+              }
+            ],
+            "reference_key": "[10]",
+            "why": "Identifies the regression controller and percentage-autonomy measure as the baseline the paper builds on and then contrasts with its object-detection alternative."
+          },
+          {
+            "cited_work": "Osa et al. [18]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Trained according to behaviour cloning [18], the regression controller is a neural network model:"
+              }
+            ],
+            "reference_key": "[18]",
+            "why": "Uses behaviour cloning as the framing for the regression controller."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Gupta et al. [11]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "Reinforcement learning-based methods such as [11] are dependent on high amounts of resources for training its joint architecture since it needs to tune the parameters by interacting with a well-mapped, photo-realistic environment."
+              }
+            ],
+            "reference_key": "[11]",
+            "why": "Critiques end-to-end/reinforcement-learning navigation for resource demands and hard assumptions."
+          },
+          {
+            "cited_work": "Savinov et al. [13]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "[13] relies on self-supervised learning but no real-world demonstrations have been shown in the work."
+              }
+            ],
+            "reference_key": "[13]",
+            "why": "Contrasts its real-world evaluation with semi-parametric topological memory's lack of real-world demonstrations."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation."
+          }
+        ],
+        "text": "A topological navigation graph can compose non-goal-directed imitation-learning trajectory controllers, especially a novel object-detection-based controller, into a goal-directed robot navigation system for environments made of intersecting trajectories."
+      }
+    },
+    "citations": [
+      {
+        "context": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+        "page": 1,
+        "reference_key": "[1, 2, 3, 4]"
+      },
+      {
+        "context": "On the other side, when humans learn various complex sensorimotor behaviours, including the skill to navigate, adaptivity and imitation play crucial roles [5].",
+        "page": 1,
+        "reference_key": "[5]"
+      },
+      {
+        "context": "Once children learn several basic behaviours, they soon figure out how to connect them in order to reach different, increasingly complex goals [6].",
+        "page": 1,
+        "reference_key": "[6]"
+      },
+      {
+        "context": "For more than three decades, artificial neural networks have been utilised to build autonomous mobility systems or their components [7, 8, 9, 10, 11, 12, 13].",
+        "page": 1,
+        "reference_key": "[7, 8, 9, 10, 11, 12, 13]"
+      },
+      {
+        "context": "For example, [10] applies behaviour cloning and modern convolutional neural networks (CNNs), achieving vehicle autonomy on real roads",
+        "page": 1,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "[14] describes a transfer learning architecture for learning to drive a real vehicle solely in a simulator",
+        "page": 1,
+        "reference_key": "[14]"
+      },
+      {
+        "context": "[15] contributes a neural architecture for conditional imitation learning",
+        "page": 1,
+        "reference_key": "[15]"
+      },
+      {
+        "context": "[16] introduces a method to learn navigation policies from self-supervision",
+        "page": 1,
+        "reference_key": "[16]"
+      },
+      {
+        "context": "These works, in various aspects, also rely on imitation learning, which highlights a tendency that, by benefiting from the current renaissance of connectionist systems, imitation learning is becoming an increasingly popular robot autonomy research direction [18].",
+        "page": 2,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+        "page": 2,
+        "reference_key": "[10, 14, 19]"
+      },
+      {
+        "context": "The main contributions of this study include the TNG framework, the application of neural object detection architectures to obtain more robust trajectory imitation, and the experimental evaluation of the suggested algorithms both in a simulator and the real world by using Neurotechnology’s SentiBotics mobile robot development kit [20].",
+        "page": 2,
+        "reference_key": "[20]"
+      },
+      {
+        "context": "The problem of learning imitation controllers has a long history [7] and is currently being actively researched [10, 21, 15, 16, 22, 14].",
+        "page": 2,
+        "reference_key": "[7]"
+      },
+      {
+        "context": "The problem of learning imitation controllers has a long history [7] and is currently being actively researched [10, 21, 15, 16, 22, 14].",
+        "page": 2,
+        "reference_key": "[10, 21, 15, 16, 22, 14]"
+      },
+      {
+        "context": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+        "page": 2,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "Regression Controller Trained according to behaviour cloning",
+        "page": 3,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "where fMLP is a multilayer perceptron (MLP) [23]",
+        "page": 3,
+        "reference_key": "[23]"
+      },
+      {
+        "context": "fCNN is fixed a CNN encoder (e.g. ResNet [24] or MobilenetV2 [25])",
+        "page": 3,
+        "reference_key": "[24]"
+      },
+      {
+        "context": "fCNN is fixed a CNN encoder (e.g. ResNet [24] or MobilenetV2 [25])",
+        "page": 3,
+        "reference_key": "[25]"
+      },
+      {
+        "context": "with fixed weights ξˆ pre-trained on ImageNet [26] classification task",
+        "page": 3,
+        "reference_key": "[26]"
+      },
+      {
+        "context": "Having a training set we obtain parameter estimate θ̂ by minimising the loss function of the ridge regression [27]:",
+        "page": 3,
+        "reference_key": "[27]"
+      },
+      {
+        "context": "We optimise (2) with the Adam optimisation algorithm [28].",
+        "page": 3,
+        "reference_key": "[28]"
+      },
+      {
+        "context": "As compared to similar work by [10], where the entire parameter set is optimised, our approach helps to reduce the training duration without affecting the performance.",
+        "page": 3,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+        "page": 3,
+        "reference_key": "[15]"
+      },
+      {
+        "context": "dataset aggregation (DAgger [29])",
+        "page": 3,
+        "reference_key": "[29]"
+      },
+      {
+        "context": "slight deviations from the trajectory may cause cascading errors [18] and eventually drive the robot out of the trajectory with no possibility of self-recovery.",
+        "page": 3,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "the trajectory following performance during execution does not necessarily correlate with the value of offline evaluation over the test set using the loss function [30]",
+        "page": 3,
+        "reference_key": "[30]"
+      },
+      {
+        "context": "In order to solve the aforementioned problems, we utilize the RetinaNet object detection architecture [31].",
+        "page": 3,
+        "reference_key": "[31]"
+      },
+      {
+        "context": "Conceptually, our approach is similar to that of [22].",
+        "page": 3,
+        "reference_key": "[22]"
+      },
+      {
+        "context": "The model used for training is pre-trained on the COCO dataset [32] over the object detection task.",
+        "page": 4,
+        "reference_key": "[32]"
+      },
+      {
+        "context": "During controller execution, the output of the object detector (i.e. coordinates of the bounding box showing the direction of movement) is coupled with a PID controller [33] to centre a detected bounding box, resulting in trajectory imitation.",
+        "page": 4,
+        "reference_key": "[33]"
+      },
+      {
+        "context": "The work from [11], which includes a mapper and a planner, advances previous approaches.",
+        "page": 4,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "Another approach [13], proposes a semi-parametric topological memory (SPTM) architecture for navigation, where the environment is mapped on a non-parametric graph, in which every position is a node.",
+        "page": 4,
+        "reference_key": "[13]"
+      },
+      {
+        "context": "[34] attempts to tackle the challenge of learning goal-directed policies from data representing a single traversal in an environment spanning over 2 kilometres.",
+        "page": 4,
+        "reference_key": "[34]"
+      },
+      {
+        "context": "Whilst end-to-end learning can simultaneously tune the entire architecture’s parameter set, this advantage often comes at the cost of requiring large datasets and longer training durations [35].",
+        "page": 5,
+        "reference_key": "[35]"
+      },
+      {
+        "context": "Reinforcement learning-based methods such as [11] are dependent on high amounts of resources for training its joint architecture since it needs to tune the parameters by interacting with a well-mapped, photo-realistic environment.",
+        "page": 5,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "While [34] is also a reinforcement-learning-based method, to reduce the resource-heavy factor it leverages the method with one-shot reinforcement learning [36].",
+        "page": 5,
+        "reference_key": "[36]"
+      },
+      {
+        "context": "After the shortest path in the TNG between current and target vertices is computed (e.g. by Dijkstra’s algorithm [37])",
+        "page": 5,
+        "reference_key": "[37]"
+      },
+      {
+        "context": "The parameters of the classification network, θ, are optimised by minimising cross entropy loss [23]",
+        "page": 6,
+        "reference_key": "[23]"
+      },
+      {
+        "context": "the parameters of the encoder network, ˆ ξ, are pre-trained on the ImageNet [26] classification task and kept fixed during training of trajectory imitation controller.",
+        "page": 6,
+        "reference_key": "[26]"
+      },
+      {
+        "context": "We select MobileNetV2 [25] because it allows us to achieve an acceptable execution speed using low cost embedded neural network inference hardware⁴.",
+        "page": 6,
+        "reference_key": "[25]"
+      },
+      {
+        "context": "we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+        "page": 6,
+        "reference_key": "[38]"
+      },
+      {
+        "context": "using FAST corners [39] and BRIEF features [40] as descriptors",
+        "page": 6,
+        "reference_key": "[39]"
+      },
+      {
+        "context": "using FAST corners [39] and BRIEF features [40] as descriptors",
+        "page": 6,
+        "reference_key": "[40]"
+      },
+      {
+        "context": "Our implementation of trajectory imitation controllers and TNG is performed with the use of Neurotechnology’s SentiBotics Navigation SDK 3.0 [20].",
+        "page": 6,
+        "reference_key": "[20]"
+      },
+      {
+        "context": "To compare the performance of trajectory imitation controllers we use percentage autonomy [10] as a controller quality measure:",
+        "page": 7,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map",
+        "page": 9,
+        "reference_key": "[2, 11, 3]"
+      },
+      {
+        "context": "or to other topological (e.g. [13, 41, 34])",
+        "page": 9,
+        "reference_key": "[13, 41, 34]"
+      },
+      {
+        "context": "or hybrid (e.g. [42, 43]) approaches",
+        "page": 9,
+        "reference_key": "[42, 43]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Povilas Daniušis"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Shubham Juneja"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Lukas Valatka"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Linas Petkevičius"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Povilas Daniušis†"
+        },
+        {
+          "page": 1,
+          "quote": "Shubham Juneja"
+        },
+        {
+          "page": 1,
+          "quote": "Lukas Valatka‡"
+        },
+        {
+          "page": 1,
+          "quote": "Linas Petkevičius"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1910.06658v2[cs.RO]",
+        "doi": "https://doi.org/10.1007/s10514-021-09980-x"
+      },
+      "publication_state": "preprint",
+      "subtitle": "A Preprint",
+      "title": "Topological Navigation Graph Framework",
+      "venue": "Autonomous Robots",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation."
+        },
+        {
+          "page": 2,
+          "quote": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components."
+        }
+      ],
+      "text": "Can non-goal-directed reactive trajectory imitation controllers be composed into a goal-directed autonomous robot navigation system, and can an object-detection-based trajectory controller improve robustness over a CNN regression controller?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Sebastian Thrun",
+          "Wolfram Burgard",
+          "Dieter Fox"
+        ],
+        "doi": "",
+        "key": "1",
+        "page": 13,
+        "title": "Probabilistic robotics",
+        "venue": "MIT press",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Raul Mur-Artal",
+          "J Montiel",
+          "Juan Tardos"
+        ],
+        "doi": "",
+        "key": "2",
+        "page": 13,
+        "title": "Orb-slam: a versatile and accurate monocular slam system",
+        "venue": "IEEE Trans. Robot.",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jakob Engel",
+          "Daniel Cremers"
+        ],
+        "doi": "",
+        "key": "3",
+        "page": 13,
+        "title": "Lsd-slam: Large-scale direct monocular slam",
+        "venue": "In ECCV",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "C. Cadena",
+          "L. Carlone",
+          "H. Carrillo",
+          "Y. Latif",
+          "D. Scaramuzza",
+          "J. Neira",
+          "I. Reid",
+          "J.J. Leonard"
+        ],
+        "doi": "",
+        "key": "4",
+        "page": 13,
+        "title": "Past, present, and future of simultaneous localization and mapping: Towards the robust-perception age",
+        "venue": "IEEE Trans. Robot.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Samuel J Gershman",
+          "Eric J Horvitz",
+          "Joshua B Tenenbaum"
+        ],
+        "doi": "",
+        "key": "5",
+        "page": 13,
+        "title": "Computational rationality: A converging paradigm for intelligence in brains, minds, and machines",
+        "venue": "Science",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Cecilia I Calero",
+          "Diego E Shalom",
+          "Elizabeth S Spelke",
+          "Mariano Sigman"
+        ],
+        "doi": "",
+        "key": "6",
+        "page": 13,
+        "title": "Language, gesture, and judgment: Children’s paths to abstract geometry",
+        "venue": "J. Exp. Child Psychol.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Dean Pomerleau"
+        ],
+        "doi": "",
+        "key": "7",
+        "page": 13,
+        "title": "Alvinn: An autonomous land vehicle in a neural network",
+        "venue": "NIPS",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "Philippe Gaussier",
+          "Stéphane Zrehen"
+        ],
+        "doi": "",
+        "key": "8",
+        "page": 13,
+        "title": "Perac: A neural architecture to control artificial animals",
+        "venue": "Robot. Auton. Syst.",
+        "year": 1995
+      },
+      {
+        "authors": [
+          "Y. LeCun",
+          "E. Cosatto",
+          "J. Ben",
+          "U. Muller",
+          "B. Flepp"
+        ],
+        "doi": "",
+        "key": "9",
+        "page": 13,
+        "title": "Dave: Autonomous off-road vehicle control using end-to-end learning",
+        "venue": "Technical Report DARPA-IPTO Final Report, Courant Institute/CBLL",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Mariusz Bojarski",
+          "Davide Del Testa",
+          "Daniel Dworakowski",
+          "Bernhard Firner",
+          "Beat Flepp",
+          "Prasoon Goyal",
+          "Lawrence D. Jackel",
+          "Mathew Monfort",
+          "Urs Muller",
+          "Jiakai Zhang",
+          "Xin Zhang",
+          "Jake Zhao",
+          "Karol Zieba"
+        ],
+        "doi": "",
+        "key": "10",
+        "page": 13,
+        "title": "End to end learning for self-driving cars",
+        "venue": "CoRR",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "S. Gupta",
+          "J. Davidson",
+          "S. Levine",
+          "R. Sukthankar",
+          "J. Malik"
+        ],
+        "doi": "",
+        "key": "11",
+        "page": 13,
+        "title": "Cognitive mapping and planning for visual navigation",
+        "venue": "Proc. IEEE Comput. Soc. Conf. Comput. Vis. Pattern Recognit.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Andrea Banino",
+          "Caswell Barry",
+          "Benigno Uria",
+          "Charles Blundell",
+          "Timothy Lillicrap",
+          "Piotr Mirowski",
+          "Alexander Pritzel",
+          "Martin J Chadwick",
+          "Thomas Degris",
+          "Joseph Modayil",
+          "et al."
+        ],
+        "doi": "",
+        "key": "12",
+        "page": 13,
+        "title": "Vector-based navigation using grid-like representations in artificial agents",
+        "venue": "Nature",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Nikolay Savinov",
+          "Alexey Dosovitskiy",
+          "Vladlen Koltun"
+        ],
+        "doi": "",
+        "key": "13",
+        "page": 13,
+        "title": "Semi-parametric topological memory for navigation",
+        "venue": "ICLR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Alex Bewley",
+          "Jessica Rigley",
+          "Yuxuan Liu",
+          "Jeffrey Hawke",
+          "Richard Shen",
+          "Vinh-Dieu Lam",
+          "Alex Kendall"
+        ],
+        "doi": "",
+        "key": "14",
+        "page": 13,
+        "title": "Learning to drive from simulation without real world labels",
+        "venue": "ICRA",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Felipe Codevilla",
+          "Matthias Miiller",
+          "Antonio López",
+          "Vladlen Koltun",
+          "Alexey Dosovitskiy"
+        ],
+        "doi": "",
+        "key": "15",
+        "page": 13,
+        "title": "End-to-end driving via conditional imitation learning",
+        "venue": "ICRA",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Deepak Pathak",
+          "Parsa Mahmoudieh",
+          "Guanghao Luo",
+          "Pulkit Agrawal",
+          "Dian Chen",
+          "Yide Shentu",
+          "Evan Shelhamer",
+          "Jitendra Malik",
+          "Alexei A. Efros",
+          "Trevor Darrell"
+        ],
+        "doi": "",
+        "key": "16",
+        "page": 13,
+        "title": "Zero-shot visual imitation",
+        "venue": "ICLR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Mayank Bansal",
+          "Alex Krizhevsky",
+          "Abhijit S. Ogale"
+        ],
+        "doi": "",
+        "key": "17",
+        "page": 13,
+        "title": "Chauffeurnet: Learning to drive by imitating the best and synthesizing the worst",
+        "venue": "ArXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "T. Osa",
+          "J. Pajarinen",
+          "G. Neumann",
+          "J.A. Bagnell",
+          "P. Abbeel",
+          "J. Peters"
+        ],
+        "doi": "",
+        "key": "18",
+        "page": 13,
+        "title": "An algorithmic perspective on imitation learning",
+        "venue": "Found. Trends Robot.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Jonathan Ho",
+          "Stefano Ermon"
+        ],
+        "doi": "",
+        "key": "19",
+        "page": 13,
+        "title": "Generative adversarial imitation learning",
+        "venue": "NIPS",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Neurotechnology"
+        ],
+        "doi": "",
+        "key": "20",
+        "page": 13,
+        "title": "SentiBotics Navigation SDK 3.0",
+        "venue": "https://www.neurotechnology.com/sentibotics-navigation.html",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "A. Kuefler",
+          "J. Morton",
+          "T. Wheeler",
+          "M. Kochenderfer"
+        ],
+        "doi": "",
+        "key": "21",
+        "page": 13,
+        "title": "Imitating driver behavior with generative adversarial networks",
+        "venue": "IV",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Dequan Wang",
+          "Coline Devin",
+          "Qi-Zhi Cai",
+          "Fisher Yu",
+          "Trevor Darrell"
+        ],
+        "doi": "",
+        "key": "22",
+        "page": 13,
+        "title": "Deep object centric policies for autonomous driving",
+        "venue": "CoRR",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Kevin P. Murphy"
+        ],
+        "doi": "",
+        "key": "23",
+        "page": 13,
+        "title": "Machine learning: a probabilistic perspective",
+        "venue": "MIT Press",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "K. He",
+          "X. Zhang",
+          "S. Ren",
+          "J. Sun"
+        ],
+        "doi": "",
+        "key": "24",
+        "page": 13,
+        "title": "Deep residual learning for image recognition",
+        "venue": "Proc. IEEE Comput. Soc. Conf. Comput. Vis. Pattern Recognit.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "M. Sandler",
+          "A. Howard",
+          "M. Zhu",
+          "A. Zhmoginov",
+          "L. Chen"
+        ],
+        "doi": "",
+        "key": "25",
+        "page": 13,
+        "title": "Mobilenetv2: Inverted residuals and linear bottlenecks",
+        "venue": "Proc. IEEE Comput. Soc. Conf. Comput. Vis. Pattern Recognit.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Jia Deng",
+          "Wei Dong",
+          "Richard Socher",
+          "Li-Jia Li",
+          "Kai Li",
+          "Li Fei-Fei"
+        ],
+        "doi": "",
+        "key": "26",
+        "page": 13,
+        "title": "Imagenet: A large-scale hierarchical image database",
+        "venue": "Proc. IEEE Comput. Soc. Conf. Comput. Vis. Pattern Recognit.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Jerome Friedman",
+          "Trevor Hastie",
+          "Robert Tibshirani"
+        ],
+        "doi": "",
+        "key": "27",
+        "page": 13,
+        "title": "The elements of statistical learning, volume 1",
+        "venue": "Springer series in statistics New York",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Diederik P. Kingma",
+          "Jimmy Ba"
+        ],
+        "doi": "",
+        "key": "28",
+        "page": 13,
+        "title": "Adam: A method for stochastic optimization",
+        "venue": "ICLR",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Stephane Ross",
+          "Geoffrey J. Gordon",
+          "J Andrew Bagnell"
+        ],
+        "doi": "",
+        "key": "29",
+        "page": 13,
+        "title": "A reduction of imitation learning and structured prediction to no-regret online learning",
+        "venue": "J. Mach. Learn. Res.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Felipe Codevilla",
+          "Antonio López",
+          "Vladlen Koltun",
+          "Alexey Dosovitskiy"
+        ],
+        "doi": "",
+        "key": "30",
+        "page": 14,
+        "title": "On offline evaluation of vision-based driving models",
+        "venue": "ECCV",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Tsung-Yi Lin",
+          "Priya Goyal",
+          "Ross Girshick",
+          "Kaiming He",
+          "Piotr Dollar"
+        ],
+        "doi": "",
+        "key": "31",
+        "page": 14,
+        "title": "Focal loss for dense object detection",
+        "venue": "ICCV",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Tsung-Yi Lin",
+          "Michael Maire",
+          "Serge Belongie",
+          "James Hays",
+          "Pietro Perona",
+          "Deva Ramanan",
+          "Piotr Dollár",
+          "C Lawrence Zitnick"
+        ],
+        "doi": "",
+        "key": "32",
+        "page": 14,
+        "title": "Microsoft coco: Common objects in context",
+        "venue": "Comput. Vis. ECCV",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Karl Johan Aström",
+          "Richard M Murray"
+        ],
+        "doi": "",
+        "key": "33",
+        "page": 14,
+        "title": "Feedback systems: an introduction for scientists and engineers",
+        "venue": "Princeton university press",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Jake Bruce",
+          "Niko Sünderhauf",
+          "Piotr W. Mirowski",
+          "Raia Hadsell",
+          "Michael Milford"
+        ],
+        "doi": "",
+        "key": "34",
+        "page": 14,
+        "title": "Learning deployable navigation policies at kilometer scale from a single traversal",
+        "venue": "CoRL",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Tobias Glasmachers"
+        ],
+        "doi": "",
+        "key": "35",
+        "page": 14,
+        "title": "Limits of end-to-end learning",
+        "venue": "JMLR",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Jake Bruce",
+          "Niko Sünderhauf",
+          "Piotr Mirowski",
+          "Raia Hadsell",
+          "Michael Milford"
+        ],
+        "doi": "",
+        "key": "36",
+        "page": 14,
+        "title": "One-shot reinforcement learning for robot navigation with interactive replay",
+        "venue": "arXiv preprint arXiv:1711.10137",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Steven M. LaValle"
+        ],
+        "doi": "",
+        "key": "37",
+        "page": 14,
+        "title": "Planning Algorithms",
+        "venue": "Cambridge University Press",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "M. Labbé"
+        ],
+        "doi": "",
+        "key": "38",
+        "page": 14,
+        "title": "Find-object",
+        "venue": "http://introlab.github.io/find-object",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Edward Rosten",
+          "Tom Drummond"
+        ],
+        "doi": "",
+        "key": "39",
+        "page": 14,
+        "title": "Machine learning for high-speed corner detection",
+        "venue": "Comput. Vis. ECCV",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Michael Calonder",
+          "Vincent Lepetit",
+          "Christoph Strecha",
+          "Pascal Fua"
+        ],
+        "doi": "",
+        "key": "40",
+        "page": 14,
+        "title": "Brief: Binary robust independent elementary features",
+        "venue": "Comput. Vis. ECCV",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Friedrich Fraundorfer",
+          "Chris Engels",
+          "David Nistér"
+        ],
+        "doi": "",
+        "key": "41",
+        "page": 14,
+        "title": "Topological mapping, localization and navigation using image collections",
+        "venue": "IROS",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Sebastian Thrun"
+        ],
+        "doi": "",
+        "key": "42",
+        "page": 14,
+        "title": "Learning metric-topological maps for indoor mobile robot navigation",
+        "venue": "Artif. Intell.",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "M. J. Milford",
+          "G. F. Wyeth"
+        ],
+        "doi": "",
+        "key": "43",
+        "page": 14,
+        "title": "Mapping a suburb with a single camera using a biologically inspired slam system",
+        "venue": "IEEE Trans. Robot.",
+        "year": 2008
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+        "reference_key": "[10]",
+        "relation": "extends",
+        "why": "The regression controller is derived from CNN motor-command regression and then extended by the paper's object-detection alternative."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+        "reference_key": "[15]",
+        "relation": "uses_method",
+        "why": "The authors adopt dataset aggregation and augmentation inspired by conditional imitation learning."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In order to solve the aforementioned problems, we utilize the RetinaNet object detection architecture [31].",
+        "reference_key": "[31]",
+        "relation": "uses_method",
+        "why": "RetinaNet is the object detection backbone for the new trajectory controller."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Conceptually, our approach is similar to that of [22].",
+        "reference_key": "[22]",
+        "relation": "extends",
+        "why": "The object-detection-based controller is conceptually similar to deep object-centric policies but adapted to detect direction of movement."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "Reinforcement learning-based methods such as [11] are dependent on high amounts of resources for training its joint architecture since it needs to tune the parameters by interacting with a well-mapped, photo-realistic environment.",
+        "reference_key": "[11]",
+        "relation": "critiques",
+        "why": "The paper critiques end-to-end reinforcement learning navigation for resource demands and unrealistic assumptions."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "[13] relies on self-supervised learning but no real-world demonstrations have been shown in the work.",
+        "reference_key": "[13]",
+        "relation": "contrasts",
+        "why": "The paper contrasts its real-world evaluation with prior topological navigation work lacking real-world demonstrations."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Our implementation of trajectory imitation controllers and TNG is performed with the use of Neurotechnology’s SentiBotics Navigation SDK 3.0 [20].",
+        "reference_key": "[20]",
+        "relation": "uses_method",
+        "why": "The implementation depends on the SentiBotics SDK and robot platform."
+      },
+      {
+        "confidence": "high",
+        "page": 12,
+        "quote": "Although the TNG framework is composed of \"black box\" modules, its operation is transparent and easily interpretable at the system level, which can also be regarded as a practical advantage, compared to entirely \"black box\" models (e.g. [11]).",
+        "reference_key": "[11]",
+        "relation": "contrasts",
+        "why": "TNG is positioned as interpretable at the system level in contrast to entirely black-box models."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 1,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 1,
+          "end_text": "SentiBotics.",
+          "start_page": 1,
+          "start_text": "Topological Navigation Graph Framework"
+        },
+        "summary": "Title, authorship, abstract, and introduction motivating TNG as a way to turn non-goal-directed imitation-learning controllers into goal-directed navigation.",
+        "title": "Abstract and Introduction"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "We empirically identified several limitations in the aforementioned approach.",
+          "start_page": 2,
+          "start_text": "with a demonstration using real cars."
+        },
+        "summary": "Formalises trajectory imitation learning, presents the regression controller derived from CNN motor-command regression, and lists its sensitivity, environmental-change, and offline-evaluation limitations.",
+        "title": "Regression Trajectory Imitation Controller"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "which adds the possibility of avoiding potentially incorrect decisions.",
+          "start_page": 3,
+          "start_text": "In order to solve the aforementioned problems"
+        },
+        "summary": "Introduces the object-detection-based controller: bounding boxes encode direction of movement, a PID controller centres the detected box, and the design recovers from larger rotational errors.",
+        "title": "Object-Detection-Based Trajectory Imitation Controller"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "Here, ψ are corresponding parameters.",
+          "start_page": 4,
+          "start_text": "In this section, we review similar work"
+        },
+        "summary": "Reviews related topological, metric, and reinforcement-learning navigation work; then defines TNG as a directed graph of trajectory controllers, trajectory classifiers, and intersection classifiers for localisation and path execution.",
+        "title": "Topological Navigation Graph Framework"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "The output of the PID controller is also clipped to the range of the SentiBotics control pad command.",
+          "start_page": 6,
+          "start_text": "Trajectory classifiers g(X|φi) are constructed"
+        },
+        "summary": "Implementation details for TNG classifiers, intersection recognition, goal-reaching function, regression controller, and object-detection controller.",
+        "title": "TNG Implementation Details"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "which is not the case for the regression controller [30], this can be further investigated in future work.",
+          "start_page": 6,
+          "start_text": "Empirical Evaluation"
+        },
+        "summary": "Evaluates the two trajectory imitation controllers across three real and one simulated environment using percentage autonomy, before and after a four-week interval; finds the object-detection controller degrades less under environmental change.",
+        "title": "Controller Evaluation"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "Figure 12: Results of autonomous navigation from trajectory T5 to the goals from the remaining trajectories (T1,T2,T3,T4).",
+          "start_page": 9,
+          "start_text": "Experiments with TNG"
+        },
+        "summary": "Builds TNG over five office trajectories T1-T5, runs goal-directed navigation episodes between trajectory pairs, and reports percentage autonomy and travel distance alongside result images.",
+        "title": "TNG Navigation Experiments"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "optimising TNG by adding a fully automatic environment graph construction capability and extending it with a hierarchical component.",
+          "start_page": 12,
+          "start_text": "Although the TNG framework is composed"
+        },
+        "summary": "Discusses TNG's modularity and system-level interpretability, then notes its geometric sub-optimality, need for separable intersecting trajectories, and substantial human data/graph-design effort; concludes and states future work.",
+        "title": "Discussion, Limitations, and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "IEEE Trans. Robot., 24(5):1038–1053, Oct 2008.",
+          "start_page": 13,
+          "start_text": "[1] Sebastian Thrun"
+        },
+        "summary": "Bibliography of cited works from probabilistic robotics and SLAM through imitation learning, object detection, topological memory, and TNG-related navigation.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a research preprint that proposes the TNG framework and reports simulated and real-world robot navigation experiments.",
+      "value": "empirical"
+    }
+  }
+}

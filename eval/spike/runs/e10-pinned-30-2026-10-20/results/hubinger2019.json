@@ -1,0 +1,2980 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T06:22:40.938710570Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Hubinger et al. - 2019 - Risks from Learned Optimization in Advanced Machine Learning Systems.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 39,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 125192,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 28214,
+      "cached_tokens": 256,
+      "completion_tokens": 22770,
+      "reasoning_tokens": 10416,
+      "cost_usd": 0.0134785952,
+      "cost_source": "reported",
+      "latency_s": 214.642798811
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 37042,
+      "cached_tokens": 384,
+      "completion_tokens": 10079,
+      "reasoning_tokens": 10070,
+      "cost_usd": 0.0093669128,
+      "cost_source": "reported",
+      "latency_s": 126.633925707
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 4450,
+      "cached_tokens": 0,
+      "completion_tokens": 3740,
+      "reasoning_tokens": 3567,
+      "cost_usd": 0.0021938,
+      "cost_source": "reported",
+      "latency_s": 61.787532528
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 69706,
+    "cached_tokens": 640,
+    "completion_tokens": 36589,
+    "cost_usd": 0.025039308,
+    "model_latency_s": 403.064257046,
+    "wall_s": 409.934367226
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e10-pinned-30-2026-10-20/results/hubinger2019.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We analyze the type of learned optimization that occurs when a learned model\n(such as a neural network) is itself an optimizer—a situation we refer to as\nmesa-optimization, a neologism we introduce in this paper. We believe that the\npossibility of mesa-optimization raises two important questions for the safety\nand transparency of advanced machine learning systems. First, under what\ncircumstances will learned models be optimizers, including when they should\nnot be? Second, when a learned model is an optimizer, what will its objective\nbe—how will it differ from the loss function it was trained under—and how\ncan it be aligned? In this paper, we provide an in-depth analysis of these two\nprimary questions and provide an overview of topics for future research."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Leike et al. reward modeling and reward-result gap",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "Leike et al. describe the concept of the “reward-result gap” as the difference between the (in their case learned) “reward model” (what we call the base objective) and the “reward function that is recovered with perfect inverse reinforcement learning” (what we call the behavioral objective).[8]"
+              }
+            ],
+            "reference_key": "8",
+            "why": "It adopts and reframes the reward-result gap as a gap between base and mesa objectives."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "optimization daemons framing",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant."
+              }
+            ],
+            "reference_key": "6",
+            "why": "It argues that this framing is anthropomorphic and not the right basis for mesa-optimization."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We analyze the type of learned optimization that occurs when a learned model\n(such as a neural network) is itself an optimizer—a situation we refer to as\nmesa-optimization, a neologism we introduce in this paper."
+          }
+        ],
+        "text": "Advanced machine learning may produce learned models that are themselves optimizers, creating two safety problems: unintended mesa-optimization and misalignment between a mesa-optimizer’s objective and the base objective."
+      }
+    },
+    "citations": [
+      {
+        "context": "For example, a bottle cap causes water to be held inside the bottle, but it is not optimizing for that outcome since it is not running any sort of optimization algorithm.[1]",
+        "page": 3,
+        "reference_key": "1"
+      },
+      {
+        "context": "As a concrete example of what a neural network optimizer might look like, consider TreeQN.[2]",
+        "page": 4,
+        "reference_key": "2"
+      },
+      {
+        "context": "Universal Planning Networks, as described by Srinivas et al.,[3] provide another example of a learned system that performs optimization, though the optimization there is built-in in the form of SGD via automatic differentiation.",
+        "page": 4,
+        "reference_key": "3"
+      },
+      {
+        "context": "For example, we might design a meta-learning system to help tune our gradient descent process.[4]",
+        "page": 4,
+        "reference_key": "4"
+      },
+      {
+        "context": "However, research such as that in Andrychowicz et al.[4] and Duan et al.[5] demonstrate that optimization algorithms can be learned by RNNs, making it possible that a Universal Planning Networks-like agent could be entirely learned—assuming a very expressive model space—including the internal optimization steps.",
+        "page": 4,
+        "reference_key": "5"
+      },
+      {
+        "context": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant.",
+        "page": 4,
+        "reference_key": "6"
+      },
+      {
+        "context": "The word mesa has been proposed as the opposite of meta.[7]",
+        "page": 5,
+        "reference_key": "7"
+      },
+      {
+        "context": "Leike et al.[8] introduce the concept of an objective recovered from perfect IRL.",
+        "page": 6,
+        "reference_key": "8"
+      },
+      {
+        "context": "To see this, we can think of optimization power as being measured in terms of the number of times the optimizer is able to divide the search space in half—that is, the number of bits of information provided.[9]",
+        "page": 10,
+        "reference_key": "9"
+      },
+      {
+        "context": "Indeed, our best current algorithms for those tasks involve explicitly making an optimizer (hard-coded Monte-Carlo tree search with learned heuristics) that does optimization work on the level of the learned algorithm rather than having all the optimization work done by the base optimizer.[10]",
+        "page": 10,
+        "reference_key": "10"
+      },
+      {
+        "context": "Focusing on building many individual AI services which can together offer all the capabilities of a generally-intelligent system rather than a single general-purpose artificial general intelligence (AGI), for example, might be a way to accomplish this while still remaining competitive with other approaches.[11]",
+        "page": 13,
+        "reference_key": "11"
+      },
+      {
+        "context": "Another aspect of the task that might influence the likelihood of mesa-optimization is the presence of humans in the environment.[12]",
+        "page": 13,
+        "reference_key": "12"
+      },
+      {
+        "context": "On the other hand, if a hypothetical base optimizer looks for the program with the shortest source code that solves a task, then it is more plausible that this program will itself be an optimizer.[13]",
+        "page": 13,
+        "reference_key": "13"
+      },
+      {
+        "context": "For example, architectures that explicitly give the algorithm access to a wide range of possible computations, such as recurrent neural networks or neural Turing machines,[14] seem more likely to produce mesa-optimizers.",
+        "page": 14,
+        "reference_key": "14"
+      },
+      {
+        "context": "For example, it has been shown that neural networks are more likely to fit a simple function to a set of training data, even when no regularization is used.[15]",
+        "page": 14,
+        "reference_key": "15"
+      },
+      {
+        "context": "This suggests the following speculative conjecture: neither a minimal-depth nor minimal-size boolean circuit that solves a problem can be a mesa-optimizer.[16]",
+        "page": 14,
+        "reference_key": "16"
+      },
+      {
+        "context": "If we adopt the assumption that the mesa-optimizer computes an optimal policy given its objective function, then we can summarize the relationship between the base and mesa- objectives as follows:[17]",
+        "page": 16,
+        "reference_key": "17"
+      },
+      {
+        "context": "An interesting approach to analyzing this connection is presented in Ibarz et al, where empirical samples of the true reward and a learned reward on the same trajectories are used to create a scatter-plot visualization of the alignment between the two.[18]",
+        "page": 16,
+        "reference_key": "18"
+      },
+      {
+        "context": "This is closely analogous to the reason that machine learning models can fail to generalize or be susceptible to adversarial examples[19]—there are many more ways of classifying data that do well in training than any specific way the programmers had in mind.",
+        "page": 18,
+        "reference_key": "19"
+      },
+      {
+        "context": "Unidentifiability in mesa-optimization is partially analogous to the problem of unidentifiability in reward learning, in that the central issue is identifying the “correct” objective function given particular training data.[20]",
+        "page": 19,
+        "reference_key": "20"
+      },
+      {
+        "context": "Reward-predictive model-based reinforcement learning might be one possible way of accomplishing this.[21]",
+        "page": 21,
+        "reference_key": "21"
+      },
+      {
+        "context": "Iterated Distillation and Amplification might be a possible solution to problems of this form.[22]",
+        "page": 22,
+        "reference_key": "22"
+      },
+      {
+        "context": "The concept of deceptive alignment is closely related to Manheim and Garrabrant’s concept of “adversarial Goodhart.”[23]",
+        "page": 23,
+        "reference_key": "23"
+      },
+      {
+        "context": "In its most extreme form, this failure of alignment could lead to a “treacherous turn” as described by Nick Bostrom in Superintelligence.[24]",
+        "page": 25,
+        "reference_key": "24"
+      },
+      {
+        "context": "Paul Christiano provides a scenario that illustrates how deceptive alignment could pose a catastrophic risk.[25]",
+        "page": 25,
+        "reference_key": "25"
+      },
+      {
+        "context": "This situation would correspond to a mesa-optimizer that is corrigible[26] with respect to the base objective (though not necessarily the programmer’s intentions).",
+        "page": 28,
+        "reference_key": "26"
+      },
+      {
+        "context": "Encountering something that is very hard to compute during training, but that is likely to eventually be computed during deployment (e.g. a factorization of RSA 2048[27]).",
+        "page": 32,
+        "reference_key": "27"
+      },
+      {
+        "context": "The mesa-optimizer is then facing a decision problem similar to the “absent-minded driver problem.”[28]",
+        "page": 32,
+        "reference_key": "28"
+      },
+      {
+        "context": "For example, in Wang et al.’s “Learning to Reinforcement Learn,” the authors claim to have produced a neural network that implements its own optimization procedure.[29]",
+        "page": 32,
+        "reference_key": "29"
+      },
+      {
+        "context": "A system is robust to distributional shift if it continues to perform well on the objective function for which it was optimized even when off the training environment.[30]",
+        "page": 32,
+        "reference_key": "30"
+      },
+      {
+        "context": "Furthermore, it has been noted in the inverse reinforcement learning literature that the reward function of an agent generally cannot be uniquely deduced from its behavior.[31]",
+        "page": 33,
+        "reference_key": "31"
+      },
+      {
+        "context": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+        "page": 34,
+        "reference_key": "32"
+      },
+      {
+        "context": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+        "page": 34,
+        "reference_key": "33"
+      },
+      {
+        "context": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+        "page": 34,
+        "reference_key": "34"
+      },
+      {
+        "context": "unclear how to adequately assess approaches that rely on solving one or both of these problems (such as Iterated Distillation and Amplification[22] or AI safety via debate[35]).",
+        "page": 35,
+        "reference_key": "35"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "",
+          "name": "Evan Hubinger"
+        },
+        {
+          "affiliation": "",
+          "name": "Chris van Merwijk"
+        },
+        {
+          "affiliation": "",
+          "name": "Vladimir Mikulik"
+        },
+        {
+          "affiliation": "",
+          "name": "Joar Skalse"
+        },
+        {
+          "affiliation": "",
+          "name": "Scott Garrabrant"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Risks from Learned Optimization\nin Advanced Machine Learning Systems\nEvan Hubinger∗, Chris van Merwijk∗, Vladimir Mikulik∗, Joar Skalse∗, and Scott Garrabrant†"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1906.01820v3[cs.AI]1Dec2021",
+        "doi": ""
+      },
+      "publication_state": "preprint",
+      "subtitle": "",
+      "title": "Risks from Learned Optimization in Advanced Machine Learning Systems",
+      "venue": "",
+      "year": 2019
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "First, under what\ncircumstances will learned models be optimizers, including when they should\nnot be? Second, when a learned model is an optimizer, what will its objective\nbe—how will it differ from the loss function it was trained under—and how\ncan it be aligned?"
+        }
+      ],
+      "text": "Under what circumstances will learned models be optimizers, including when they should not be; and when a learned model is an optimizer, what will its objective be, how can it differ from the training loss, and how can it be aligned?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Daniel Filan"
+        ],
+        "doi": "",
+        "key": "1",
+        "page": 37,
+        "title": "Bottle caps aren’t optimisers, 2018. URL http://danielfilan.com/ 2018/08/31/bottle_caps_arent_optimisers.html.",
+        "venue": "",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Gregory Farquhar",
+          "Tim Rocktäschel",
+          "Maximilian Igl",
+          "Shimon Whiteson"
+        ],
+        "doi": "",
+        "key": "2",
+        "page": 37,
+        "title": "TreeQN and ATreeC: Differentiable tree-structured models for deep reinforcement learning. ICLR 2018, 2018. URL https://arxiv.org/abs/1710.11417.",
+        "venue": "ICLR 2018",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Aravind Srinivas",
+          "Allan Jabri",
+          "Pieter Abbeel",
+          "Sergey Levine",
+          "Chelsea Finn"
+        ],
+        "doi": "",
+        "key": "3",
+        "page": 37,
+        "title": "Universal planning networks. ICML 2018, 2018. URL https://arxiv.org/abs/1804.00645.",
+        "venue": "ICML 2018",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Marcin Andrychowicz",
+          "Misha Denil",
+          "Sergio Gomez",
+          "Matthew W. Hoffman",
+          "David Pfau",
+          "Tom Schaul",
+          "Brendan Shillingford",
+          "Nando de Freitas"
+        ],
+        "doi": "",
+        "key": "4",
+        "page": 37,
+        "title": "Learning to learn by gradient descent by gradient descent. NIPS 2016, 2016. URL https://arxiv.org/ abs/1606.04474.",
+        "venue": "NIPS 2016",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Yan Duan",
+          "John Schulman",
+          "Xi Chen",
+          "Peter L. Bartlett",
+          "Ilya Sutskever",
+          "Pieter Abbeel"
+        ],
+        "doi": "",
+        "key": "5",
+        "page": 37,
+        "title": "RL2: Fast reinforcement learning via slow reinforcement learning. arXiv, 2016. URL https://arxiv.org/abs/1611.02779.",
+        "venue": "arXiv",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Eliezer Yudkowsky"
+        ],
+        "doi": "",
+        "key": "6",
+        "page": 37,
+        "title": "Optimization daemons. URL https://arbital.com/p/daemons.",
+        "venue": "",
+        "year": null
+      },
+      {
+        "authors": [
+          "Joe Cheal"
+        ],
+        "doi": "",
+        "key": "7",
+        "page": 37,
+        "title": "What is the opposite of meta? ANLP Acuity Vol. 2. URL http://www. gwiznlp.com/wp-content/uploads/2014/08/Whats-the-opposite-of-meta.pdf.",
+        "venue": "ANLP Acuity Vol. 2",
+        "year": null
+      },
+      {
+        "authors": [
+          "Jan Leike",
+          "David Krueger",
+          "Tom Everitt",
+          "Miljan Martic",
+          "Vishal Maini",
+          "Shane Legg"
+        ],
+        "doi": "",
+        "key": "8",
+        "page": 37,
+        "title": "Scalable agent alignment via reward modeling: a research direction. arXiv, 2018. URL https://arxiv.org/abs/1811.07871.",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Eliezer Yudkowsky"
+        ],
+        "doi": "",
+        "key": "9",
+        "page": 37,
+        "title": "Measuring optimization power, 2008. URL https://www. lesswrong.com/posts/Q4hLMDrFd8fbteeZ8/measuring-optimization-power.",
+        "venue": "",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "David Silver",
+          "Thomas Hubert",
+          "Julian Schrittwieser",
+          "Ioannis Antonoglou",
+          "Matthew Lai",
+          "Arthur Guez",
+          "Marc Lanctot",
+          "Laurent Sifre",
+          "Dharshan Kumaran",
+          "Thore Graepel",
+          "Timothy Lillicrap",
+          "Karen Simonyan",
+          "Demis Hassabis"
+        ],
+        "doi": "",
+        "key": "10",
+        "page": 38,
+        "title": "A general reinforcement learning algorithm that masters chess, shogi, and go through self-play. Science, 362(6419):1140–1144, 2018. URL https://science.sciencemag.org/content/362/ 6419/1140.full.",
+        "venue": "Science",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "K. E. Drexler"
+        ],
+        "doi": "",
+        "key": "11",
+        "page": 38,
+        "title": "Reframing superintelligence: Comprehensive ai services as general intelligence. Technical Report #2019-1, Future of Humanity Institute, University of Oxford, 2019. URL https://www.fhi.ox.ac.uk/wp-content/uploads/Reframing_ Superintelligence_FHI-TR-2019-1.1-1.pdf.",
+        "venue": "Technical Report #2019-1, Future of Humanity Institute, University of Oxford",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Ramana Kumar",
+          "Scott Garrabrant"
+        ],
+        "doi": "",
+        "key": "12",
+        "page": 38,
+        "title": "Thoughts on human models. MIRI, 2019. URL https://intelligence.org/2019/02/22/thoughts-on-human-models.",
+        "venue": "MIRI",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Paul Christiano"
+        ],
+        "doi": "",
+        "key": "13",
+        "page": 38,
+        "title": "What does the universal prior actually look like?, 2016. URL https://ordinaryideas.wordpress.com/2016/11/30/ what-does-the-universal-prior-actually-look-like.",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Alex Graves",
+          "Greg Wayne",
+          "Ivo Danihelka"
+        ],
+        "doi": "",
+        "key": "14",
+        "page": 38,
+        "title": "Neural turing machines. arXiv, 2014. URL https://arxiv.org/abs/1410.5401.",
+        "venue": "arXiv",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Guillermo Valle-Pérez",
+          "Chico Q. Camargo",
+          "Ard A. Louis"
+        ],
+        "doi": "",
+        "key": "15",
+        "page": 38,
+        "title": "Deep learning generalizes because the parameter-function map is biased towards simple functions. ICLR 2019, 2019. URL https://arxiv.org/abs/1805.08522.",
+        "venue": "ICLR 2019",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Paul Christiano"
+        ],
+        "doi": "",
+        "key": "16",
+        "page": 38,
+        "title": "Open question: are minimal circuits daemon-free?, 2018. URL https://www.lesswrong.com/posts/nyCHnY7T5PHPLjxmN/ open-question-are-minimal-circuits-daemon-free.",
+        "venue": "",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Chris van Merwijk"
+        ],
+        "doi": "",
+        "key": "17",
+        "page": 38,
+        "title": "Development of AI agents as a principal-agent problem, Forthcoming in 2019.",
+        "venue": "",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Borja Ibarz",
+          "Jan Leike",
+          "Tobias Pohlen",
+          "Geoffrey Irving",
+          "Shane Legg",
+          "Dario Amodei"
+        ],
+        "doi": "",
+        "key": "18",
+        "page": 38,
+        "title": "Reward learning from human preferences and demonstrations in Atari. NeurIPS 2018, 2018. URL https://arxiv.org/abs/1811.06521.",
+        "venue": "NeurIPS 2018",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Jiawei Su",
+          "Danilo Vasconcellos Vargas",
+          "Kouichi Sakurai"
+        ],
+        "doi": "",
+        "key": "19",
+        "page": 38,
+        "title": "One pixel attack for fooling deep neural networks. IEEE Transactions on Evolutionary Computation, 2017. URL http://arxiv.org/abs/1710.08864.",
+        "venue": "IEEE Transactions on Evolutionary Computation",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Kareem Amin",
+          "Satinder Singh"
+        ],
+        "doi": "",
+        "key": "20",
+        "page": 38,
+        "title": "Towards resolving unidentifiability in inverse reinforcement learning. arXiv, 2016. URL https://arxiv.org/abs/1601.06569.",
+        "venue": "arXiv",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Razvan Pascanu",
+          "Yujia Li",
+          "Oriol Vinyals",
+          "Nicolas Heess",
+          "Lars Buesing",
+          "Sebastien Racanière",
+          "David Reichert",
+          "Théophane Weber",
+          "Daan Wierstra",
+          "Peter Battaglia"
+        ],
+        "doi": "",
+        "key": "21",
+        "page": 38,
+        "title": "Learning model-based planning from scratch. arXiv, 2017. URL https://arxiv.org/abs/1707.06170.",
+        "venue": "arXiv",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Paul Christiano",
+          "Buck Shlegeris",
+          "Dario Amodei"
+        ],
+        "doi": "",
+        "key": "22",
+        "page": 38,
+        "title": "Supervising strong learners by amplifying weak experts. arXiv, 2018. URL https://arxiv.org/abs/1810.08575.",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "David Manheim",
+          "Scott Garrabrant"
+        ],
+        "doi": "",
+        "key": "23",
+        "page": 38,
+        "title": "Categorizing variants of Goodhart’s law. arXiv, 2018. URL https://arxiv.org/abs/1803.04585.",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Nick Bostrom"
+        ],
+        "doi": "",
+        "key": "24",
+        "page": 38,
+        "title": "Superintelligence: Paths, Dangers, Strategies. Oxford University Press, 2014. URL https://global.oup.com/academic/product/ superintelligence-9780199678112?cc=us&lang=en&.",
+        "venue": "Oxford University Press",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Paul Christiano"
+        ],
+        "doi": "",
+        "key": "25",
+        "page": 39,
+        "title": "What failure looks like, 2019. URL https://www.alignmentforum. org/posts/HBxe6wdjxK239zajf/more-realistic-tales-of-doom.",
+        "venue": "",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Nate Soares",
+          "Benja Fallenstein",
+          "Eliezer Yudkowsky",
+          "Stuart Armstrong"
+        ],
+        "doi": "",
+        "key": "26",
+        "page": 39,
+        "title": "Corrigibility. AAAI 2015, 2015. URL https://intelligence.org/files/Corrigibility.pdf.",
+        "venue": "AAAI 2015",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Paul Christiano"
+        ],
+        "doi": "",
+        "key": "27",
+        "page": 39,
+        "title": "Worst-case guarantees, 2019. URL https://ai-alignment.com/ training-robust-corrigibility-ce0e0a3b9b4d.",
+        "venue": "",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Robert J. Aumann",
+          "Sergiu Hart",
+          "Motty Perry"
+        ],
+        "doi": "",
+        "key": "28",
+        "page": 39,
+        "title": "The absent-minded driver. Games and Economic Behavior, 20:102–116, 1997. URL http://www.ma.huji.ac. il/raumann/pdf/Minded%20Driver.pdf.",
+        "venue": "Games and Economic Behavior",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Jane X Wang",
+          "Zeb Kurth-Nelson",
+          "Dhruva Tirumala",
+          "Hubert Soyer",
+          "Joel Z Leibo",
+          "Remi Munos",
+          "Charles Blundell",
+          "Dharshan Kumaran",
+          "Matt Botvinick"
+        ],
+        "doi": "",
+        "key": "29",
+        "page": 39,
+        "title": "Learning to reinforcement learn. CogSci, 2016. URL https://arxiv.org/abs/1611.05763.",
+        "venue": "CogSci",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Dario Amodei",
+          "Chris Olah",
+          "Jacob Steinhardt",
+          "Paul Christiano",
+          "John Schulman",
+          "Dan Mané"
+        ],
+        "doi": "",
+        "key": "30",
+        "page": 39,
+        "title": "Concrete problems in AI safety. arXiv, 2016. URL https://arxiv.org/ abs/1606.06565.",
+        "venue": "arXiv",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Stuart Armstrong",
+          "Sören Mindermann"
+        ],
+        "doi": "",
+        "key": "31",
+        "page": 39,
+        "title": "Occam’s razor is insufficient to infer the preferences of irrational agents. NeurIPS 2018, 2017. URL https://arxiv.org/abs/ 1712.05812.",
+        "venue": "NeurIPS 2018",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Xiaowei Huang",
+          "Marta Kwiatkowska",
+          "Sen Wang",
+          "Min Wu"
+        ],
+        "doi": "",
+        "key": "32",
+        "page": 39,
+        "title": "Safety verification of deep neural networks. CAV 2017, 2016. URL https://arxiv.org/abs/1610.06940.",
+        "venue": "CAV 2017",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Guy Katz",
+          "Clark Barrett",
+          "David Dill",
+          "Kyle Julian",
+          "Mykel Kochenderfer"
+        ],
+        "doi": "",
+        "key": "33",
+        "page": 39,
+        "title": "Reluplex: An efficient SMT solver for verifying deep neural networks. CAV 2017, 2017. URL https://arxiv.org/abs/1702.01135.",
+        "venue": "CAV 2017",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Kexin Pei",
+          "Yinzhi Cao",
+          "Junfeng Yang",
+          "Suman Jana"
+        ],
+        "doi": "",
+        "key": "34",
+        "page": 39,
+        "title": "Towards practical verification of machine learning: The case of computer vision systems. arXiv, 2017. URL https://arxiv.org/abs/1712.01785.",
+        "venue": "arXiv",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Geoffrey Irving",
+          "Paul Christiano",
+          "Dario Amodei"
+        ],
+        "doi": "",
+        "key": "35",
+        "page": 39,
+        "title": "AI safety via debate. arXiv, 2018. URL https://arxiv.org/abs/1805.00899.",
+        "venue": "arXiv",
+        "year": 2018
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "Leike et al. describe the concept of the “reward-result gap” as the difference between the (in their case learned) “reward model” (what we call the base objective) and the “reward function that is recovered with perfect inverse reinforcement learning” (what we call the behavioral objective).[8]",
+        "reference_key": "8",
+        "relation": "extends",
+        "why": "It reuses the reward-result gap and reframes it as the base-mesa objective gap."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant.",
+        "reference_key": "6",
+        "relation": "critiques",
+        "why": "It rejects the optimization-daemon framing as anthropomorphic and misleading."
+      },
+      {
+        "confidence": "high",
+        "page": 23,
+        "quote": "The concept of deceptive alignment is closely related to Manheim and Garrabrant’s concept of “adversarial Goodhart.”[23]",
+        "reference_key": "23",
+        "relation": "extends",
+        "why": "It relates deceptive alignment to adversarial Goodhart and treats the base optimizer as regulator."
+      },
+      {
+        "confidence": "high",
+        "page": 25,
+        "quote": "In its most extreme form, this failure of alignment could lead to a “treacherous turn” as described by Nick Bostrom in Superintelligence.[24]",
+        "reference_key": "24",
+        "relation": "uses_method",
+        "why": "It borrows the treacherous-turn concept to describe extreme deceptive alignment risk."
+      },
+      {
+        "confidence": "high",
+        "page": 25,
+        "quote": "Paul Christiano provides a scenario that illustrates how deceptive alignment could pose a catastrophic risk.[25]",
+        "reference_key": "25",
+        "relation": "uses_method",
+        "why": "It uses Christiano’s failure scenario to illustrate catastrophic risk from deceptive alignment."
+      },
+      {
+        "confidence": "high",
+        "page": 28,
+        "quote": "This situation would correspond to a mesa-optimizer that is corrigible[26] with respect to the base objective (though not necessarily the programmer’s intentions).",
+        "reference_key": "26",
+        "relation": "extends",
+        "why": "It adapts corrigibility to define corrigibly aligned mesa-optimizers."
+      },
+      {
+        "confidence": "high",
+        "page": 34,
+        "quote": "Comprehensive AI Services (CAIS).[11] CAIS is a descriptive model of the process by which superintelligent systems will be developed, together with prescriptive implications for the best mode of doing so.",
+        "reference_key": "11",
+        "relation": "uses_method",
+        "why": "It analyzes where mesa-optimization could occur in the CAIS layered-services model."
+      },
+      {
+        "confidence": "high",
+        "page": 33,
+        "quote": "An example of research that may be applicable to mesa-optimization in this way is Amin and Singh’s[20] proposal for alleviating empirical unidentifiability in inverse reinforcement learning by adaptively sampling from a range of environments.",
+        "reference_key": "20",
+        "relation": "extends",
+        "why": "It suggests reward-learning unidentifiability solutions may transfer to mesa-optimization."
+      },
+      {
+        "confidence": "high",
+        "page": 22,
+        "quote": "Iterated Distillation and Amplification might be a possible solution to problems of this form.[22]",
+        "reference_key": "22",
+        "relation": "uses_method",
+        "why": "It names IDA as a possible response to problems from another optimizer layer."
+      },
+      {
+        "confidence": "high",
+        "page": 35,
+        "quote": "unclear how to adequately assess approaches that rely on solving one or both of these problems (such as Iterated Distillation and Amplification[22] or AI safety via debate[35]).",
+        "reference_key": "35",
+        "relation": "uses_method",
+        "why": "It treats AI safety via debate as an approach whose assessment depends on inner-alignment assumptions."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 6,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "Mesa-optimizers are simply a particular type of algorithm that the base optimizer might find to solve its task.",
+          "start_page": 3,
+          "start_text": "In machine learning, we do not manually program each individual parameter of our models."
+        },
+        "summary": "Defines optimizers as internally searching systems, separates base optimizers from mesa-optimizers, and introduces base objective, mesa-objective, and learned algorithm.",
+        "title": "Optimizers and the base/mesa distinction"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "Therefore, we can think of evolution as a base optimizer that produced brains—mesa-optimizers—which then actually produce organisms’ behavior—behavior that is not necessarily aligned with evolution.",
+          "start_page": 6,
+          "start_text": "We distinguish the mesa-objective from a related notion that we term the behavioral objective."
+        },
+        "summary": "Distinguishes mesa-objective from behavioral objective and uses biological evolution as an analogy for a base optimizer producing mesa-optimizers with misaligned objectives.",
+        "title": "Behavioral objectives and the evolution analogy"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "But it might also generalize on Oalt instead of Obase, reliably navigating each maze to reach red objects (pseudo-alignment).10",
+          "start_page": 7,
+          "start_text": "In “Scalable agent alignment via reward modeling,” Leike et al. describe the concept of the “reward-result gap”"
+        },
+        "summary": "Introduces inner and outer alignment and distinguishes robust alignment from pseudo-alignment, with a toy maze example.",
+        "title": "Inner/outer alignment and pseudo-alignment"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "We will call this situation deceptive alignment.",
+          "start_page": 8,
+          "start_text": "If pseudo-aligned mesa-optimizers may arise in advanced ML systems, as we will suggest, they could pose two critical safety problems."
+        },
+        "summary": "States the two safety problems: unintended optimization and inner alignment failure, previewing deceptive alignment.",
+        "title": "Mesa-optimization as a safety problem"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "Nevertheless, it sketches an argument for a pull towards mesa-optimization in sufficiently diverse environments.",
+          "start_page": 9,
+          "start_text": "Some tasks benefit from mesa-optimizers more than others."
+        },
+        "summary": "Argues that diverse environments favor search by the learned algorithm, formalized with a toy optimization-power model.",
+        "title": "Task diversity and the pull toward search"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Therefore, if the base optimizer is selecting for programs with low description length, then it might find a mesa-optimizer that can solve all mazes, despite the training environment only containing one maze.",
+          "start_page": 12,
+          "start_text": "In some tasks, good performance requires a very complex policy."
+        },
+        "summary": "Explains how compression of complex policies can favor mesa-optimizers that encode a search procedure rather than memorized behavior.",
+        "title": "Compression of complex policies"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Furthermore, there are many tasks that might benefit from human modeling that don’t explicitly involve modeling humans—to the extent that the training distribution is generated by humans, for example, modeling humans might enable the generation of a very good prior for that distribution.",
+          "start_page": 12,
+          "start_text": "The observation that diverse environments seem to increase the probability of mesa-optimization suggests that one way of reducing the probability of mesa-optimizers might be to keep the tasks on which AI systems are trained highly restricted."
+        },
+        "summary": "Considers task restriction and human modeling as task properties that affect likelihood of mesa-optimization.",
+        "title": "Task restriction and human modeling"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "Thus, to the degree that the base optimizer is selecting based on performance, it will be driven to “squeeze out” as much performance as it can for any given model capacity, leading to an inductive bias in favor of relatively compressed policies.",
+          "start_page": 13,
+          "start_text": "It is likely that certain features of the base optimizer will influence how likely it is to generate a mesa-optimizer."
+        },
+        "summary": "Discusses reachability and model capacity as base-optimizer factors influencing whether mesa-optimizers are found.",
+        "title": "Base optimizer: reachability and model capacity"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "The stronger the optimization performed explicitly, the less strong the optimization performed implicitly by the learned algorithm needs to be.",
+          "start_page": 14,
+          "start_text": "Another important factor is the degree to which the base optimizer is explicitly or implicitly biased in various ways."
+        },
+        "summary": "Covers inductive biases, simplicity bias, time/space penalties, information funnels, statefulness, and hard-coded optimization.",
+        "title": "Base optimizer: inductive biases and architecture"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "Depending on the base optimizer, we will think of Obase as the negative of the loss, the future discounted reward, or simply some fitness function by which learned algorithms are being selected.",
+          "start_page": 15,
+          "start_text": "In this section, we outline reasons to think that a mesa-optimizer may not optimize the same objective function as its base optimizer."
+        },
+        "summary": "Formalizes the inner alignment problem as base optimizer selecting policies without directly selecting mesa-objectives.",
+        "title": "Formal setup of the inner alignment problem"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "Thus, in the general case, side-effect and instrumental alignment can work together to contribute to pseudo-alignment over the training distribution, which is the general case of proxy alignment.",
+          "start_page": 16,
+          "start_text": "The basic idea of proxy alignment is that a mesa-optimizer can learn to optimize for some proxy of the base objective instead of the base objective itself."
+        },
+        "summary": "Defines proxy alignment and its special cases, side-effect alignment and instrumental alignment, using causal graphs.",
+        "title": "Proxy alignment: side-effect and instrumental"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 17
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "The mesa-optimizer might then initially only be aware of the simple strategy, and thus be suboptimality aligned, until it has been run for long enough to come up with the complicated strategy, at which point it stops exhibiting the desired behavior.",
+          "start_page": 17,
+          "start_text": "A mesa-optimizer is approximately aligned if the mesa-objective Omesa and the base objective Obase are approximately the same function"
+        },
+        "summary": "Introduces approximate alignment and suboptimality alignment as further forms of pseudo-alignment.",
+        "title": "Approximate and suboptimality alignment"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "As such, even if a training environment in principle contains enough information to identify the base objective, it might still be impossible to distinguish robustly aligned from proxy-aligned mesa-optimizers.",
+          "start_page": 18,
+          "start_text": "It is a common problem in machine learning for a dataset to not contain enough information to adequately pinpoint a specific concept."
+        },
+        "summary": "Explains unidentifiability in mesa-optimization and the lamp/button example showing output-based selection cannot distinguish objectives.",
+        "title": "Task unidentifiability"
+      },
+      {
+        "pages": {
+          "end": 20,
+          "start": 19
+        },
+        "source_span": {
+          "end_page": 20,
+          "end_text": "In contrast, our models of food, pain, etc. can be very short since they are directly related to our input data.",
+          "start_page": 19,
+          "start_text": "Proxy alignment can be seen as a form of pre-computation by the base optimizer."
+        },
+        "summary": "Argues proxy alignment is pre-computation and that complexity and description length can favor pseudo-aligned mesa-objectives.",
+        "title": "Proxy choice, pre-computation, and compression"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "Thus, a large model capacity may be both a blessing and a curse: it makes it less likely that mesa-optimizers will be approximately aligned, but it also increases the likelihood of getting a mesa-optimizer in the first place.18",
+          "start_page": 20,
+          "start_text": "In section 2, we suggested that hard-coding an optimization algorithm—that is to say, choosing a model with built-in optimization—could be used to remove some of the incentives for mesa-optimization."
+        },
+        "summary": "Discusses hard-coded optimization and model capacity as base-optimizer factors affecting pseudo-alignment.",
+        "title": "Base optimizer: hard-coded optimization and capacity"
+      },
+      {
+        "pages": {
+          "end": 22,
+          "start": 21
+        },
+        "source_span": {
+          "end_page": 22,
+          "end_text": "We will call this situation deceptive alignment and will discuss it at greater length in the next section.",
+          "start_page": 21,
+          "start_text": "There are some reasons to believe that there might be more initial optimization pressure towards proxy aligned than robustly aligned mesa-optimizers."
+        },
+        "summary": "Covers subprocess interdependence, internals-based selection, adversarial training, and the transition to deceptive alignment.",
+        "title": "Optimization pressure and selection methods"
+      },
+      {
+        "pages": {
+          "end": 24,
+          "start": 23
+        },
+        "source_span": {
+          "end_page": 24,
+          "end_text": "This simple example demonstrates how a misaligned mesa-optimizer could be incentivized to “pretend” to be aligned with the base objective until it is no longer in training or is otherwise given an opportunity to in some way compromise or escape the training process.",
+          "start_page": 23,
+          "start_text": "With enough training in sufficiently diverse environments, it seems plausible that the base objective will eventually have to be fully represented in the mesa-optimizer."
+        },
+        "summary": "Defines deceptive alignment: a mesa-optimizer models the base objective and instrumentally acts aligned to avoid modification, with a grid-world example.",
+        "title": "Deceptive alignment concept and toy example"
+      },
+      {
+        "pages": {
+          "end": 25,
+          "start": 24
+        },
+        "source_span": {
+          "end_page": 25,
+          "end_text": "Christiano notes that this may be most likely to first occur during a “period of heightened vulnerability” such as an inter-state conflict or natural disaster.",
+          "start_page": 24,
+          "start_text": "If deceptive alignment is a real possibility, it presents a critical safety problem."
+        },
+        "summary": "Explains safety risks from deceptive alignment, including defection, manipulation, treacherous turn, and correlated failure scenarios.",
+        "title": "Safety concerns from deceptive alignment"
+      },
+      {
+        "pages": {
+          "end": 27,
+          "start": 25
+        },
+        "source_span": {
+          "end_page": 27,
+          "end_text": "The mesa-optimizer must expect the threat of modification to eventually go away, either due to training ending or because of actions taken by the mesa-optimizer.",
+          "start_page": 25,
+          "start_text": "We propose that for deceptive alignment to occur the following conditions must be satisfied:"
+        },
+        "summary": "Lays out three conditions for deceptive alignment and discusses how a mesa-optimizer could model the base objective and modification threat.",
+        "title": "Conditions for deceptive alignment"
+      },
+      {
+        "pages": {
+          "end": 30,
+          "start": 27
+        },
+        "source_span": {
+          "end_page": 30,
+          "end_text": "This analysis remains speculative, however—if we are to have confidence in systems that are capable of producing mesa-optimizers, we still need a better understanding of the conditions under which strongly optimizing a system results in deceptive alignment rather than robust alignment.",
+          "start_page": 27,
+          "start_text": "Once a mesa-optimizer becomes deceptive, the dynamics of what causes it to perform well on the base objective begin to work differently."
+        },
+        "summary": "Analyzes joint optimization versus pure deception and possible long-run outcomes: internalization, crystallization, and corrigible alignment.",
+        "title": "Learning dynamics and long-run outcomes"
+      },
+      {
+        "pages": {
+          "end": 32,
+          "start": 30
+        },
+        "source_span": {
+          "end_page": 32,
+          "end_text": "Thus, the mesa-optimizer need not be able to detect when training has ended for it to be incentivized to “gamble” and randomly defect with some probability.",
+          "start_page": 30,
+          "start_text": "Once a mesa-optimizer is deceptive, it will begin to monitor its input for opportunities to defect."
+        },
+        "summary": "Discusses distributional shift, detecting training versus deployment, and probabilistic defection without detection.",
+        "title": "Distributional shift and detecting deployment"
+      },
+      {
+        "pages": {
+          "end": 33,
+          "start": 32
+        },
+        "source_span": {
+          "end_page": 33,
+          "end_text": "In this context, the inner alignment problem can be seen as an extension of the value learning problem.",
+          "start_page": 32,
+          "start_text": "Meta-learning can often be thought of meta-optimization when the meta-optimizer’s objective is explicitly designed to accomplish some base objective."
+        },
+        "summary": "Relates mesa-optimization to meta-learning, robustness, reward-result gap, unidentifiability, and value learning.",
+        "title": "Related work: meta-learning, robustness, and unidentifiability"
+      },
+      {
+        "pages": {
+          "end": 35,
+          "start": 33
+        },
+        "source_span": {
+          "end_page": 35,
+          "end_text": "If work on corrigibility were able to find a way to reliably produce corrigibly aligned mesa-optimizers, it could significantly contribute to solving the inner alignment problem.",
+          "start_page": 33,
+          "start_text": "The field of interpretability attempts to develop methods for making deep learning models more interpretable by humans."
+        },
+        "summary": "Connects mesa-optimization to interpretability, verification, corrigibility, and Comprehensive AI Services.",
+        "title": "Related work: interpretability, verification, corrigibility, and CAIS"
+      },
+      {
+        "pages": {
+          "end": 35,
+          "start": 35
+        },
+        "source_span": {
+          "end_page": 35,
+          "end_text": "We therefore suggest that it is both an important and timely task for future AI safety work to pin down the conditions under which the inner alignment problem and the unintended optimization problem are likely to occur as well as the techniques needed to solve them.",
+          "start_page": 35,
+          "start_text": "In this paper, we have argued for the existence of two basic AI safety problems:"
+        },
+        "summary": "Summarizes the two safety problems, presents possible futures depending on how likely mesa-optimizers are, and calls for more research.",
+        "title": "Conclusion"
+      },
+      {
+        "pages": {
+          "end": 37,
+          "start": 35
+        },
+        "source_span": {
+          "end_page": 37,
+          "end_text": "• Internal alignment: An internally aligned mesa-optimizer is a robustly aligned mesa-optimizer that has internalized the base objective in its mesa-objective.",
+          "start_page": 35,
+          "start_text": "• Base optimizer: A base optimizer is an optimizer that searches through algorithms according to some objective."
+        },
+        "summary": "Provides glossary definitions for key terms from sections 1–4.",
+        "title": "Glossary"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It introduces and analyzes a conceptual framework (mesa-optimization, inner alignment, deceptive alignment) and proposes research directions rather than reporting experiments.",
+      "value": "position"
+    }
+  },
+  "pass1_check": {
+    "sites": 51,
+    "verbatim": 49,
+    "near": 0,
+    "missing": 2,
+    "wrong_page": 0
+  },
+  "corrections": [],
+  "correction_outcomes": [],
+  "pass2_check": {
+    "sites": 51,
+    "verbatim": 49,
+    "near": 0,
+    "missing": 2,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We analyze the type of learned optimization that occurs when a learned model\n(such as a neural network) is itself an optimizer—a situation we refer to as\nmesa-optimization, a neologism we introduce in this paper. We believe that the\npossibility of mesa-optimization raises two important questions for the safety\nand transparency of advanced machine learning systems. First, under what\ncircumstances will learned models be optimizers, including when they should\nnot be? Second, when a learned model is an optimizer, what will its objective\nbe—how will it differ from the loss function it was trained under—and how\ncan it be aligned? In this paper, we provide an in-depth analysis of these two\nprimary questions and provide an overview of topics for future research.",
+      "admitted": "We analyze the type of learned optimization that occurs when a learned model\n(such as a neural network) is itself an optimizer—a situation we refer to as\nmesa-optimization, a neologism we introduce in this paper. We believe that the\npossibility of mesa-optimization raises two important questions for the safety\nand transparency of advanced machine learning systems. First, under what\ncircumstances will learned models be optimizers, including when they should\nnot be? Second, when a learned model is an optimizer, what will its objective\nbe—how will it differ from the loss function it was trained under—and how\ncan it be aligned? In this paper, we provide an in-depth analysis of these two\nprimary questions and provide an overview of topics for future research.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Leike et al. describe the concept of the “reward-result gap” as the difference between the (in their case learned) “reward model” (what we call the base objective) and the “reward function that is recovered with perfect inverse reinforcement learning” (what we call the behavioral objective).[8]",
+      "admitted": "Leike et al. describe the concept of the “reward-result gap” as the difference between the (in their case learned) “reward model” (what we call the base objective) and the “reward function that is recovered with perfect inverse reinforcement learning” (what we call the behavioral objective).[8]",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant.",
+      "admitted": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We analyze the type of learned optimization that occurs when a learned model\n(such as a neural network) is itself an optimizer—a situation we refer to as\nmesa-optimization, a neologism we introduce in this paper.",
+      "admitted": "We analyze the type of learned optimization that occurs when a learned model\n(such as a neural network) is itself an optimizer—a situation we refer to as\nmesa-optimization, a neologism we introduce in this paper.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Risks from Learned Optimization\nin Advanced Machine Learning Systems\nEvan Hubinger∗, Chris van Merwijk∗, Vladimir Mikulik∗, Joar Skalse∗, and Scott Garrabrant†",
+      "admitted": "Risks from Learned Optimization\nin Advanced Machine Learning Systems\nEvan Hubinger∗, Chris van Merwijk∗, Vladimir Mikulik∗, Joar Skalse∗, and Scott Garrabrant†",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "First, under what\ncircumstances will learned models be optimizers, including when they should\nnot be? Second, when a learned model is an optimizer, what will its objective\nbe—how will it differ from the loss function it was trained under—and how\ncan it be aligned?",
+      "admitted": "First, under what\ncircumstances will learned models be optimizers, including when they should\nnot be? Second, when a learned model is an optimizer, what will its objective\nbe—how will it differ from the loss function it was trained under—and how\ncan it be aligned?",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "For example, a bottle cap causes water to be held inside the bottle, but it is not optimizing for that outcome since it is not running any sort of optimization algorithm.[1]",
+      "admitted": "For example, a bottle cap causes water to be held inside the bottle, but it is not optimizing for that outcome since it is not running any sort of optimization algorithm.[1]",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "As a concrete example of what a neural network optimizer might look like, consider TreeQN.[2]",
+      "admitted": "As a concrete example of what a neural network optimizer might look like, consider TreeQN.[2]",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "Universal Planning Networks, as described by Srinivas et al.,[3] provide another example of a learned system that performs optimization, though the optimization there is built-in in the form of SGD via automatic differentiation.",
+      "admitted": "Universal Planning Networks, as described by Srinivas et al.,[3] provide another example of a learned system that performs optimization, though the optimization there is built-in in the form of SGD via automatic differentiation.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "For example, we might design a meta-learning system to help tune our gradient descent process.[4]",
+      "admitted": "For example, we might design a meta-learning system to help tune our gradient descent process.[4]",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "However, research such as that in Andrychowicz et al.[4] and Duan et al.[5] demonstrate that optimization algorithms can be learned by RNNs, making it possible that a Universal Planning Networks-like agent could be entirely learned—assuming a very expressive model space—including the internal optimization steps.",
+      "admitted": "However, research such as that in Andrychowicz et al.[4] and Duan et al.[5] demonstrate that optimization algorithms can be learned by RNNs, making it possible that a Universal Planning Networks-like agent could be entirely learned—assuming a very expressive model space—including the internal optimization steps.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant.",
+      "admitted": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "The word mesa has been proposed as the opposite of meta.[7]",
+      "admitted": "The word mesa has been proposed as the opposite of meta.[7]",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "Leike et al.[8] introduce the concept of an objective recovered from perfect IRL.",
+      "admitted": "Leike et al.[8] introduce the concept of an objective recovered from perfect IRL.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "To see this, we can think of optimization power as being measured in terms of the number of times the optimizer is able to divide the search space in half—that is, the number of bits of information provided.[9]",
+      "admitted": "To see this, we can think of optimization power as being measured in terms of the number of times the optimizer is able to divide the search space in half—that is, the number of bits of information provided.[9]",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "Indeed, our best current algorithms for those tasks involve explicitly making an optimizer (hard-coded Monte-Carlo tree search with learned heuristics) that does optimization work on the level of the learned algorithm rather than having all the optimization work done by the base optimizer.[10]",
+      "admitted": "Indeed, our best current algorithms for those tasks involve explicitly making an optimizer (hard-coded Monte-Carlo tree search with learned heuristics) that does optimization work on the level of the learned algorithm rather than having all the optimization work done by the base optimizer.[10]",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "dropped",
+      "original": "Focusing on building many individual AI services which can together offer all the capabilities of a generally-intelligent system rather than a single general-purpose artificial general intelligence (AGI), for example, might be a way to accomplish this while still remaining competitive with other approaches.[11]",
+      "admitted": null,
+      "similarity": 0.7906976744186046,
+      "cited_page": 13,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "Another aspect of the task that might influence the likelihood of mesa-optimization is the presence of humans in the environment.[12]",
+      "admitted": "Another aspect of the task that might influence the likelihood of mesa-optimization is the presence of humans in the environment.[12]",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "On the other hand, if a hypothetical base optimizer looks for the program with the shortest source code that solves a task, then it is more plausible that this program will itself be an optimizer.[13]",
+      "admitted": "On the other hand, if a hypothetical base optimizer looks for the program with the shortest source code that solves a task, then it is more plausible that this program will itself be an optimizer.[13]",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "For example, architectures that explicitly give the algorithm access to a wide range of possible computations, such as recurrent neural networks or neural Turing machines,[14] seem more likely to produce mesa-optimizers.",
+      "admitted": "For example, architectures that explicitly give the algorithm access to a wide range of possible computations, such as recurrent neural networks or neural Turing machines,[14] seem more likely to produce mesa-optimizers.",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "For example, it has been shown that neural networks are more likely to fit a simple function to a set of training data, even when no regularization is used.[15]",
+      "admitted": "For example, it has been shown that neural networks are more likely to fit a simple function to a set of training data, even when no regularization is used.[15]",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "This suggests the following speculative conjecture: neither a minimal-depth nor minimal-size boolean circuit that solves a problem can be a mesa-optimizer.[16]",
+      "admitted": "This suggests the following speculative conjecture: neither a minimal-depth nor minimal-size boolean circuit that solves a problem can be a mesa-optimizer.[16]",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "dropped",
+      "original": "If we adopt the assumption that the mesa-optimizer computes an optimal policy given its objective function, then we can summarize the relationship between the base and mesa- objectives as follows:[17]",
+      "admitted": null,
+      "similarity": 0.7,
+      "cited_page": 16,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "An interesting approach to analyzing this connection is presented in Ibarz et al, where empirical samples of the true reward and a learned reward on the same trajectories are used to create a scatter-plot visualization of the alignment between the two.[18]",
+      "admitted": "An interesting approach to analyzing this connection is presented in Ibarz et al, where empirical samples of the true reward and a learned reward on the same trajectories are used to create a scatter-plot visualization of the alignment between the two.[18]",
+      "similarity": null,
+      "cited_page": 16,
+      "matched_page": 16
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "This is closely analogous to the reason that machine learning models can fail to generalize or be susceptible to adversarial examples[19]—there are many more ways of classifying data that do well in training than any specific way the programmers had in mind.",
+      "admitted": "This is closely analogous to the reason that machine learning models can fail to generalize or be susceptible to adversarial examples[19]—there are many more ways of classifying data that do well in training than any specific way the programmers had in mind.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "Unidentifiability in mesa-optimization is partially analogous to the problem of unidentifiability in reward learning, in that the central issue is identifying the “correct” objective function given particular training data.[20]",
+      "admitted": "Unidentifiability in mesa-optimization is partially analogous to the problem of unidentifiability in reward learning, in that the central issue is identifying the “correct” objective function given particular training data.[20]",
+      "similarity": null,
+      "cited_page": 19,
+      "matched_page": 19
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "Reward-predictive model-based reinforcement learning might be one possible way of accomplishing this.[21]",
+      "admitted": "Reward-predictive model-based reinforcement learning might be one possible way of accomplishing this.[21]",
+      "similarity": null,
+      "cited_page": 21,
+      "matched_page": 21
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "Iterated Distillation and Amplification might be a possible solution to problems of this form.[22]",
+      "admitted": "Iterated Distillation and Amplification might be a possible solution to problems of this form.[22]",
+      "similarity": null,
+      "cited_page": 22,
+      "matched_page": 22
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "The concept of deceptive alignment is closely related to Manheim and Garrabrant’s concept of “adversarial Goodhart.”[23]",
+      "admitted": "The concept of deceptive alignment is closely related to Manheim and Garrabrant’s concept of “adversarial Goodhart.”[23]",
+      "similarity": null,
+      "cited_page": 23,
+      "matched_page": 23
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "In its most extreme form, this failure of alignment could lead to a “treacherous turn” as described by Nick Bostrom in Superintelligence.[24]",
+      "admitted": "In its most extreme form, this failure of alignment could lead to a “treacherous turn” as described by Nick Bostrom in Superintelligence.[24]",
+      "similarity": null,
+      "cited_page": 25,
+      "matched_page": 25
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "Paul Christiano provides a scenario that illustrates how deceptive alignment could pose a catastrophic risk.[25]",
+      "admitted": "Paul Christiano provides a scenario that illustrates how deceptive alignment could pose a catastrophic risk.[25]",
+      "similarity": null,
+      "cited_page": 25,
+      "matched_page": 25
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "verbatim",
+      "original": "This situation would correspond to a mesa-optimizer that is corrigible[26] with respect to the base objective (though not necessarily the programmer’s intentions).",
+      "admitted": "This situation would correspond to a mesa-optimizer that is corrigible[26] with respect to the base objective (though not necessarily the programmer’s intentions).",
+      "similarity": null,
+      "cited_page": 28,
+      "matched_page": 28
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "verbatim",
+      "original": "Encountering something that is very hard to compute during training, but that is likely to eventually be computed during deployment (e.g. a factorization of RSA 2048[27]).",
+      "admitted": "Encountering something that is very hard to compute during training, but that is likely to eventually be computed during deployment (e.g. a factorization of RSA 2048[27]).",
+      "similarity": null,
+      "cited_page": 32,
+      "matched_page": 32
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "verbatim",
+      "original": "The mesa-optimizer is then facing a decision problem similar to the “absent-minded driver problem.”[28]",
+      "admitted": "The mesa-optimizer is then facing a decision problem similar to the “absent-minded driver problem.”[28]",
+      "similarity": null,
+      "cited_page": 32,
+      "matched_page": 32
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/28/context",
+      "status": "verbatim",
+      "original": "For example, in Wang et al.’s “Learning to Reinforcement Learn,” the authors claim to have produced a neural network that implements its own optimization procedure.[29]",
+      "admitted": "For example, in Wang et al.’s “Learning to Reinforcement Learn,” the authors claim to have produced a neural network that implements its own optimization procedure.[29]",
+      "similarity": null,
+      "cited_page": 32,
+      "matched_page": 32
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/29/context",
+      "status": "verbatim",
+      "original": "A system is robust to distributional shift if it continues to perform well on the objective function for which it was optimized even when off the training environment.[30]",
+      "admitted": "A system is robust to distributional shift if it continues to perform well on the objective function for which it was optimized even when off the training environment.[30]",
+      "similarity": null,
+      "cited_page": 32,
+      "matched_page": 32
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/30/context",
+      "status": "verbatim",
+      "original": "Furthermore, it has been noted in the inverse reinforcement learning literature that the reward function of an agent generally cannot be uniquely deduced from its behavior.[31]",
+      "admitted": "Furthermore, it has been noted in the inverse reinforcement learning literature that the reward function of an agent generally cannot be uniquely deduced from its behavior.[31]",
+      "similarity": null,
+      "cited_page": 33,
+      "matched_page": 33
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/31/context",
+      "status": "verbatim",
+      "original": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+      "admitted": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+      "similarity": null,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/32/context",
+      "status": "verbatim",
+      "original": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+      "admitted": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+      "similarity": null,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/33/context",
+      "status": "verbatim",
+      "original": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+      "admitted": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+      "similarity": null,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/34/context",
+      "status": "verbatim",
+      "original": "unclear how to adequately assess approaches that rely on solving one or both of these problems (such as Iterated Distillation and Amplification[22] or AI safety via debate[35]).",
+      "admitted": "unclear how to adequately assess approaches that rely on solving one or both of these problems (such as Iterated Distillation and Amplification[22] or AI safety via debate[35]).",
+      "similarity": null,
+      "cited_page": 35,
+      "matched_page": 35
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Leike et al. describe the concept of the “reward-result gap” as the difference between the (in their case learned) “reward model” (what we call the base objective) and the “reward function that is recovered with perfect inverse reinforcement learning” (what we call the behavioral objective).[8]",
+      "admitted": "Leike et al. describe the concept of the “reward-result gap” as the difference between the (in their case learned) “reward model” (what we call the base objective) and the “reward function that is recovered with perfect inverse reinforcement learning” (what we call the behavioral objective).[8]",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant.",
+      "admitted": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "The concept of deceptive alignment is closely related to Manheim and Garrabrant’s concept of “adversarial Goodhart.”[23]",
+      "admitted": "The concept of deceptive alignment is closely related to Manheim and Garrabrant’s concept of “adversarial Goodhart.”[23]",
+      "similarity": null,
+      "cited_page": 23,
+      "matched_page": 23
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "In its most extreme form, this failure of alignment could lead to a “treacherous turn” as described by Nick Bostrom in Superintelligence.[24]",
+      "admitted": "In its most extreme form, this failure of alignment could lead to a “treacherous turn” as described by Nick Bostrom in Superintelligence.[24]",
+      "similarity": null,
+      "cited_page": 25,
+      "matched_page": 25
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Paul Christiano provides a scenario that illustrates how deceptive alignment could pose a catastrophic risk.[25]",
+      "admitted": "Paul Christiano provides a scenario that illustrates how deceptive alignment could pose a catastrophic risk.[25]",
+      "similarity": null,
+      "cited_page": 25,
+      "matched_page": 25
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "This situation would correspond to a mesa-optimizer that is corrigible[26] with respect to the base objective (though not necessarily the programmer’s intentions).",
+      "admitted": "This situation would correspond to a mesa-optimizer that is corrigible[26] with respect to the base objective (though not necessarily the programmer’s intentions).",
+      "similarity": null,
+      "cited_page": 28,
+      "matched_page": 28
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "Comprehensive AI Services (CAIS).[11] CAIS is a descriptive model of the process by which superintelligent systems will be developed, together with prescriptive implications for the best mode of doing so.",
+      "admitted": "Comprehensive AI Services (CAIS).[11] CAIS is a descriptive model of the process by which superintelligent systems will be developed, together with prescriptive implications for the best mode of doing so.",
+      "similarity": null,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "An example of research that may be applicable to mesa-optimization in this way is Amin and Singh’s[20] proposal for alleviating empirical unidentifiability in inverse reinforcement learning by adaptively sampling from a range of environments.",
+      "admitted": "An example of research that may be applicable to mesa-optimization in this way is Amin and Singh’s[20] proposal for alleviating empirical unidentifiability in inverse reinforcement learning by adaptively sampling from a range of environments.",
+      "similarity": null,
+      "cited_page": 33,
+      "matched_page": 33
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "Iterated Distillation and Amplification might be a possible solution to problems of this form.[22]",
+      "admitted": "Iterated Distillation and Amplification might be a possible solution to problems of this form.[22]",
+      "similarity": null,
+      "cited_page": 22,
+      "matched_page": 22
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "verbatim",
+      "original": "unclear how to adequately assess approaches that rely on solving one or both of these problems (such as Iterated Distillation and Amplification[22] or AI safety via debate[35]).",
+      "admitted": "unclear how to adequately assess approaches that rely on solving one or both of these problems (such as Iterated Distillation and Amplification[22] or AI safety via debate[35]).",
+      "similarity": null,
+      "cited_page": 35,
+      "matched_page": 35
+    }
+  ],
+  "admission_counts": {
+    "dropped": 2,
+    "verbatim": 49
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We analyze the type of learned optimization that occurs when a learned model\n(such as a neural network) is itself an optimizer—a situation we refer to as\nmesa-optimization, a neologism we introduce in this paper. We believe that the\npossibility of mesa-optimization raises two important questions for the safety\nand transparency of advanced machine learning systems. First, under what\ncircumstances will learned models be optimizers, including when they should\nnot be? Second, when a learned model is an optimizer, what will its objective\nbe—how will it differ from the loss function it was trained under—and how\ncan it be aligned? In this paper, we provide an in-depth analysis of these two\nprimary questions and provide an overview of topics for future research."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Leike et al. reward modeling and reward-result gap",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "Leike et al. describe the concept of the “reward-result gap” as the difference between the (in their case learned) “reward model” (what we call the base objective) and the “reward function that is recovered with perfect inverse reinforcement learning” (what we call the behavioral objective).[8]"
+              }
+            ],
+            "reference_key": "8",
+            "why": "It adopts and reframes the reward-result gap as a gap between base and mesa objectives."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "optimization daemons framing",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant."
+              }
+            ],
+            "reference_key": "6",
+            "why": "It argues that this framing is anthropomorphic and not the right basis for mesa-optimization."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We analyze the type of learned optimization that occurs when a learned model\n(such as a neural network) is itself an optimizer—a situation we refer to as\nmesa-optimization, a neologism we introduce in this paper."
+          }
+        ],
+        "text": "Advanced machine learning may produce learned models that are themselves optimizers, creating two safety problems: unintended mesa-optimization and misalignment between a mesa-optimizer’s objective and the base objective."
+      }
+    },
+    "citations": [
+      {
+        "context": "For example, a bottle cap causes water to be held inside the bottle, but it is not optimizing for that outcome since it is not running any sort of optimization algorithm.[1]",
+        "page": 3,
+        "reference_key": "1"
+      },
+      {
+        "context": "As a concrete example of what a neural network optimizer might look like, consider TreeQN.[2]",
+        "page": 4,
+        "reference_key": "2"
+      },
+      {
+        "context": "Universal Planning Networks, as described by Srinivas et al.,[3] provide another example of a learned system that performs optimization, though the optimization there is built-in in the form of SGD via automatic differentiation.",
+        "page": 4,
+        "reference_key": "3"
+      },
+      {
+        "context": "For example, we might design a meta-learning system to help tune our gradient descent process.[4]",
+        "page": 4,
+        "reference_key": "4"
+      },
+      {
+        "context": "However, research such as that in Andrychowicz et al.[4] and Duan et al.[5] demonstrate that optimization algorithms can be learned by RNNs, making it possible that a Universal Planning Networks-like agent could be entirely learned—assuming a very expressive model space—including the internal optimization steps.",
+        "page": 4,
+        "reference_key": "5"
+      },
+      {
+        "context": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant.",
+        "page": 4,
+        "reference_key": "6"
+      },
+      {
+        "context": "The word mesa has been proposed as the opposite of meta.[7]",
+        "page": 5,
+        "reference_key": "7"
+      },
+      {
+        "context": "Leike et al.[8] introduce the concept of an objective recovered from perfect IRL.",
+        "page": 6,
+        "reference_key": "8"
+      },
+      {
+        "context": "To see this, we can think of optimization power as being measured in terms of the number of times the optimizer is able to divide the search space in half—that is, the number of bits of information provided.[9]",
+        "page": 10,
+        "reference_key": "9"
+      },
+      {
+        "context": "Indeed, our best current algorithms for those tasks involve explicitly making an optimizer (hard-coded Monte-Carlo tree search with learned heuristics) that does optimization work on the level of the learned algorithm rather than having all the optimization work done by the base optimizer.[10]",
+        "page": 10,
+        "reference_key": "10"
+      },
+      {
+        "context": "Another aspect of the task that might influence the likelihood of mesa-optimization is the presence of humans in the environment.[12]",
+        "page": 13,
+        "reference_key": "12"
+      },
+      {
+        "context": "On the other hand, if a hypothetical base optimizer looks for the program with the shortest source code that solves a task, then it is more plausible that this program will itself be an optimizer.[13]",
+        "page": 13,
+        "reference_key": "13"
+      },
+      {
+        "context": "For example, architectures that explicitly give the algorithm access to a wide range of possible computations, such as recurrent neural networks or neural Turing machines,[14] seem more likely to produce mesa-optimizers.",
+        "page": 14,
+        "reference_key": "14"
+      },
+      {
+        "context": "For example, it has been shown that neural networks are more likely to fit a simple function to a set of training data, even when no regularization is used.[15]",
+        "page": 14,
+        "reference_key": "15"
+      },
+      {
+        "context": "This suggests the following speculative conjecture: neither a minimal-depth nor minimal-size boolean circuit that solves a problem can be a mesa-optimizer.[16]",
+        "page": 14,
+        "reference_key": "16"
+      },
+      {
+        "context": "An interesting approach to analyzing this connection is presented in Ibarz et al, where empirical samples of the true reward and a learned reward on the same trajectories are used to create a scatter-plot visualization of the alignment between the two.[18]",
+        "page": 16,
+        "reference_key": "18"
+      },
+      {
+        "context": "This is closely analogous to the reason that machine learning models can fail to generalize or be susceptible to adversarial examples[19]—there are many more ways of classifying data that do well in training than any specific way the programmers had in mind.",
+        "page": 18,
+        "reference_key": "19"
+      },
+      {
+        "context": "Unidentifiability in mesa-optimization is partially analogous to the problem of unidentifiability in reward learning, in that the central issue is identifying the “correct” objective function given particular training data.[20]",
+        "page": 19,
+        "reference_key": "20"
+      },
+      {
+        "context": "Reward-predictive model-based reinforcement learning might be one possible way of accomplishing this.[21]",
+        "page": 21,
+        "reference_key": "21"
+      },
+      {
+        "context": "Iterated Distillation and Amplification might be a possible solution to problems of this form.[22]",
+        "page": 22,
+        "reference_key": "22"
+      },
+      {
+        "context": "The concept of deceptive alignment is closely related to Manheim and Garrabrant’s concept of “adversarial Goodhart.”[23]",
+        "page": 23,
+        "reference_key": "23"
+      },
+      {
+        "context": "In its most extreme form, this failure of alignment could lead to a “treacherous turn” as described by Nick Bostrom in Superintelligence.[24]",
+        "page": 25,
+        "reference_key": "24"
+      },
+      {
+        "context": "Paul Christiano provides a scenario that illustrates how deceptive alignment could pose a catastrophic risk.[25]",
+        "page": 25,
+        "reference_key": "25"
+      },
+      {
+        "context": "This situation would correspond to a mesa-optimizer that is corrigible[26] with respect to the base objective (though not necessarily the programmer’s intentions).",
+        "page": 28,
+        "reference_key": "26"
+      },
+      {
+        "context": "Encountering something that is very hard to compute during training, but that is likely to eventually be computed during deployment (e.g. a factorization of RSA 2048[27]).",
+        "page": 32,
+        "reference_key": "27"
+      },
+      {
+        "context": "The mesa-optimizer is then facing a decision problem similar to the “absent-minded driver problem.”[28]",
+        "page": 32,
+        "reference_key": "28"
+      },
+      {
+        "context": "For example, in Wang et al.’s “Learning to Reinforcement Learn,” the authors claim to have produced a neural network that implements its own optimization procedure.[29]",
+        "page": 32,
+        "reference_key": "29"
+      },
+      {
+        "context": "A system is robust to distributional shift if it continues to perform well on the objective function for which it was optimized even when off the training environment.[30]",
+        "page": 32,
+        "reference_key": "30"
+      },
+      {
+        "context": "Furthermore, it has been noted in the inverse reinforcement learning literature that the reward function of an agent generally cannot be uniquely deduced from its behavior.[31]",
+        "page": 33,
+        "reference_key": "31"
+      },
+      {
+        "context": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+        "page": 34,
+        "reference_key": "32"
+      },
+      {
+        "context": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+        "page": 34,
+        "reference_key": "33"
+      },
+      {
+        "context": "There are both white-box algorithms,[32] e.g. an SMT solver that in principle allows for verification of arbitrary propositions about activations in the network,[33] and black-box algorithms[34].",
+        "page": 34,
+        "reference_key": "34"
+      },
+      {
+        "context": "unclear how to adequately assess approaches that rely on solving one or both of these problems (such as Iterated Distillation and Amplification[22] or AI safety via debate[35]).",
+        "page": 35,
+        "reference_key": "35"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "",
+          "name": "Evan Hubinger"
+        },
+        {
+          "affiliation": "",
+          "name": "Chris van Merwijk"
+        },
+        {
+          "affiliation": "",
+          "name": "Vladimir Mikulik"
+        },
+        {
+          "affiliation": "",
+          "name": "Joar Skalse"
+        },
+        {
+          "affiliation": "",
+          "name": "Scott Garrabrant"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Risks from Learned Optimization\nin Advanced Machine Learning Systems\nEvan Hubinger∗, Chris van Merwijk∗, Vladimir Mikulik∗, Joar Skalse∗, and Scott Garrabrant†"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1906.01820v3[cs.AI]1Dec2021",
+        "doi": ""
+      },
+      "publication_state": "preprint",
+      "subtitle": "",
+      "title": "Risks from Learned Optimization in Advanced Machine Learning Systems",
+      "venue": "",
+      "year": 2019
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "First, under what\ncircumstances will learned models be optimizers, including when they should\nnot be? Second, when a learned model is an optimizer, what will its objective\nbe—how will it differ from the loss function it was trained under—and how\ncan it be aligned?"
+        }
+      ],
+      "text": "Under what circumstances will learned models be optimizers, including when they should not be; and when a learned model is an optimizer, what will its objective be, how can it differ from the training loss, and how can it be aligned?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Daniel Filan"
+        ],
+        "doi": "",
+        "key": "1",
+        "page": 37,
+        "title": "Bottle caps aren’t optimisers, 2018. URL http://danielfilan.com/ 2018/08/31/bottle_caps_arent_optimisers.html.",
+        "venue": "",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Gregory Farquhar",
+          "Tim Rocktäschel",
+          "Maximilian Igl",
+          "Shimon Whiteson"
+        ],
+        "doi": "",
+        "key": "2",
+        "page": 37,
+        "title": "TreeQN and ATreeC: Differentiable tree-structured models for deep reinforcement learning. ICLR 2018, 2018. URL https://arxiv.org/abs/1710.11417.",
+        "venue": "ICLR 2018",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Aravind Srinivas",
+          "Allan Jabri",
+          "Pieter Abbeel",
+          "Sergey Levine",
+          "Chelsea Finn"
+        ],
+        "doi": "",
+        "key": "3",
+        "page": 37,
+        "title": "Universal planning networks. ICML 2018, 2018. URL https://arxiv.org/abs/1804.00645.",
+        "venue": "ICML 2018",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Marcin Andrychowicz",
+          "Misha Denil",
+          "Sergio Gomez",
+          "Matthew W. Hoffman",
+          "David Pfau",
+          "Tom Schaul",
+          "Brendan Shillingford",
+          "Nando de Freitas"
+        ],
+        "doi": "",
+        "key": "4",
+        "page": 37,
+        "title": "Learning to learn by gradient descent by gradient descent. NIPS 2016, 2016. URL https://arxiv.org/ abs/1606.04474.",
+        "venue": "NIPS 2016",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Yan Duan",
+          "John Schulman",
+          "Xi Chen",
+          "Peter L. Bartlett",
+          "Ilya Sutskever",
+          "Pieter Abbeel"
+        ],
+        "doi": "",
+        "key": "5",
+        "page": 37,
+        "title": "RL2: Fast reinforcement learning via slow reinforcement learning. arXiv, 2016. URL https://arxiv.org/abs/1611.02779.",
+        "venue": "arXiv",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Eliezer Yudkowsky"
+        ],
+        "doi": "",
+        "key": "6",
+        "page": 37,
+        "title": "Optimization daemons. URL https://arbital.com/p/daemons.",
+        "venue": "",
+        "year": null
+      },
+      {
+        "authors": [
+          "Joe Cheal"
+        ],
+        "doi": "",
+        "key": "7",
+        "page": 37,
+        "title": "What is the opposite of meta? ANLP Acuity Vol. 2. URL http://www. gwiznlp.com/wp-content/uploads/2014/08/Whats-the-opposite-of-meta.pdf.",
+        "venue": "ANLP Acuity Vol. 2",
+        "year": null
+      },
+      {
+        "authors": [
+          "Jan Leike",
+          "David Krueger",
+          "Tom Everitt",
+          "Miljan Martic",
+          "Vishal Maini",
+          "Shane Legg"
+        ],
+        "doi": "",
+        "key": "8",
+        "page": 37,
+        "title": "Scalable agent alignment via reward modeling: a research direction. arXiv, 2018. URL https://arxiv.org/abs/1811.07871.",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Eliezer Yudkowsky"
+        ],
+        "doi": "",
+        "key": "9",
+        "page": 37,
+        "title": "Measuring optimization power, 2008. URL https://www. lesswrong.com/posts/Q4hLMDrFd8fbteeZ8/measuring-optimization-power.",
+        "venue": "",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "David Silver",
+          "Thomas Hubert",
+          "Julian Schrittwieser",
+          "Ioannis Antonoglou",
+          "Matthew Lai",
+          "Arthur Guez",
+          "Marc Lanctot",
+          "Laurent Sifre",
+          "Dharshan Kumaran",
+          "Thore Graepel",
+          "Timothy Lillicrap",
+          "Karen Simonyan",
+          "Demis Hassabis"
+        ],
+        "doi": "",
+        "key": "10",
+        "page": 38,
+        "title": "A general reinforcement learning algorithm that masters chess, shogi, and go through self-play. Science, 362(6419):1140–1144, 2018. URL https://science.sciencemag.org/content/362/ 6419/1140.full.",
+        "venue": "Science",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "K. E. Drexler"
+        ],
+        "doi": "",
+        "key": "11",
+        "page": 38,
+        "title": "Reframing superintelligence: Comprehensive ai services as general intelligence. Technical Report #2019-1, Future of Humanity Institute, University of Oxford, 2019. URL https://www.fhi.ox.ac.uk/wp-content/uploads/Reframing_ Superintelligence_FHI-TR-2019-1.1-1.pdf.",
+        "venue": "Technical Report #2019-1, Future of Humanity Institute, University of Oxford",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Ramana Kumar",
+          "Scott Garrabrant"
+        ],
+        "doi": "",
+        "key": "12",
+        "page": 38,
+        "title": "Thoughts on human models. MIRI, 2019. URL https://intelligence.org/2019/02/22/thoughts-on-human-models.",
+        "venue": "MIRI",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Paul Christiano"
+        ],
+        "doi": "",
+        "key": "13",
+        "page": 38,
+        "title": "What does the universal prior actually look like?, 2016. URL https://ordinaryideas.wordpress.com/2016/11/30/ what-does-the-universal-prior-actually-look-like.",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Alex Graves",
+          "Greg Wayne",
+          "Ivo Danihelka"
+        ],
+        "doi": "",
+        "key": "14",
+        "page": 38,
+        "title": "Neural turing machines. arXiv, 2014. URL https://arxiv.org/abs/1410.5401.",
+        "venue": "arXiv",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Guillermo Valle-Pérez",
+          "Chico Q. Camargo",
+          "Ard A. Louis"
+        ],
+        "doi": "",
+        "key": "15",
+        "page": 38,
+        "title": "Deep learning generalizes because the parameter-function map is biased towards simple functions. ICLR 2019, 2019. URL https://arxiv.org/abs/1805.08522.",
+        "venue": "ICLR 2019",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Paul Christiano"
+        ],
+        "doi": "",
+        "key": "16",
+        "page": 38,
+        "title": "Open question: are minimal circuits daemon-free?, 2018. URL https://www.lesswrong.com/posts/nyCHnY7T5PHPLjxmN/ open-question-are-minimal-circuits-daemon-free.",
+        "venue": "",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Chris van Merwijk"
+        ],
+        "doi": "",
+        "key": "17",
+        "page": 38,
+        "title": "Development of AI agents as a principal-agent problem, Forthcoming in 2019.",
+        "venue": "",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Borja Ibarz",
+          "Jan Leike",
+          "Tobias Pohlen",
+          "Geoffrey Irving",
+          "Shane Legg",
+          "Dario Amodei"
+        ],
+        "doi": "",
+        "key": "18",
+        "page": 38,
+        "title": "Reward learning from human preferences and demonstrations in Atari. NeurIPS 2018, 2018. URL https://arxiv.org/abs/1811.06521.",
+        "venue": "NeurIPS 2018",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Jiawei Su",
+          "Danilo Vasconcellos Vargas",
+          "Kouichi Sakurai"
+        ],
+        "doi": "",
+        "key": "19",
+        "page": 38,
+        "title": "One pixel attack for fooling deep neural networks. IEEE Transactions on Evolutionary Computation, 2017. URL http://arxiv.org/abs/1710.08864.",
+        "venue": "IEEE Transactions on Evolutionary Computation",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Kareem Amin",
+          "Satinder Singh"
+        ],
+        "doi": "",
+        "key": "20",
+        "page": 38,
+        "title": "Towards resolving unidentifiability in inverse reinforcement learning. arXiv, 2016. URL https://arxiv.org/abs/1601.06569.",
+        "venue": "arXiv",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Razvan Pascanu",
+          "Yujia Li",
+          "Oriol Vinyals",
+          "Nicolas Heess",
+          "Lars Buesing",
+          "Sebastien Racanière",
+          "David Reichert",
+          "Théophane Weber",
+          "Daan Wierstra",
+          "Peter Battaglia"
+        ],
+        "doi": "",
+        "key": "21",
+        "page": 38,
+        "title": "Learning model-based planning from scratch. arXiv, 2017. URL https://arxiv.org/abs/1707.06170.",
+        "venue": "arXiv",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Paul Christiano",
+          "Buck Shlegeris",
+          "Dario Amodei"
+        ],
+        "doi": "",
+        "key": "22",
+        "page": 38,
+        "title": "Supervising strong learners by amplifying weak experts. arXiv, 2018. URL https://arxiv.org/abs/1810.08575.",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "David Manheim",
+          "Scott Garrabrant"
+        ],
+        "doi": "",
+        "key": "23",
+        "page": 38,
+        "title": "Categorizing variants of Goodhart’s law. arXiv, 2018. URL https://arxiv.org/abs/1803.04585.",
+        "venue": "arXiv",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Nick Bostrom"
+        ],
+        "doi": "",
+        "key": "24",
+        "page": 38,
+        "title": "Superintelligence: Paths, Dangers, Strategies. Oxford University Press, 2014. URL https://global.oup.com/academic/product/ superintelligence-9780199678112?cc=us&lang=en&.",
+        "venue": "Oxford University Press",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Paul Christiano"
+        ],
+        "doi": "",
+        "key": "25",
+        "page": 39,
+        "title": "What failure looks like, 2019. URL https://www.alignmentforum. org/posts/HBxe6wdjxK239zajf/more-realistic-tales-of-doom.",
+        "venue": "",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Nate Soares",
+          "Benja Fallenstein",
+          "Eliezer Yudkowsky",
+          "Stuart Armstrong"
+        ],
+        "doi": "",
+        "key": "26",
+        "page": 39,
+        "title": "Corrigibility. AAAI 2015, 2015. URL https://intelligence.org/files/Corrigibility.pdf.",
+        "venue": "AAAI 2015",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Paul Christiano"
+        ],
+        "doi": "",
+        "key": "27",
+        "page": 39,
+        "title": "Worst-case guarantees, 2019. URL https://ai-alignment.com/ training-robust-corrigibility-ce0e0a3b9b4d.",
+        "venue": "",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Robert J. Aumann",
+          "Sergiu Hart",
+          "Motty Perry"
+        ],
+        "doi": "",
+        "key": "28",
+        "page": 39,
+        "title": "The absent-minded driver. Games and Economic Behavior, 20:102–116, 1997. URL http://www.ma.huji.ac. il/raumann/pdf/Minded%20Driver.pdf.",
+        "venue": "Games and Economic Behavior",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Jane X Wang",
+          "Zeb Kurth-Nelson",
+          "Dhruva Tirumala",
+          "Hubert Soyer",
+          "Joel Z Leibo",
+          "Remi Munos",
+          "Charles Blundell",
+          "Dharshan Kumaran",
+          "Matt Botvinick"
+        ],
+        "doi": "",
+        "key": "29",
+        "page": 39,
+        "title": "Learning to reinforcement learn. CogSci, 2016. URL https://arxiv.org/abs/1611.05763.",
+        "venue": "CogSci",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Dario Amodei",
+          "Chris Olah",
+          "Jacob Steinhardt",
+          "Paul Christiano",
+          "John Schulman",
+          "Dan Mané"
+        ],
+        "doi": "",
+        "key": "30",
+        "page": 39,
+        "title": "Concrete problems in AI safety. arXiv, 2016. URL https://arxiv.org/ abs/1606.06565.",
+        "venue": "arXiv",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Stuart Armstrong",
+          "Sören Mindermann"
+        ],
+        "doi": "",
+        "key": "31",
+        "page": 39,
+        "title": "Occam’s razor is insufficient to infer the preferences of irrational agents. NeurIPS 2018, 2017. URL https://arxiv.org/abs/ 1712.05812.",
+        "venue": "NeurIPS 2018",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Xiaowei Huang",
+          "Marta Kwiatkowska",
+          "Sen Wang",
+          "Min Wu"
+        ],
+        "doi": "",
+        "key": "32",
+        "page": 39,
+        "title": "Safety verification of deep neural networks. CAV 2017, 2016. URL https://arxiv.org/abs/1610.06940.",
+        "venue": "CAV 2017",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Guy Katz",
+          "Clark Barrett",
+          "David Dill",
+          "Kyle Julian",
+          "Mykel Kochenderfer"
+        ],
+        "doi": "",
+        "key": "33",
+        "page": 39,
+        "title": "Reluplex: An efficient SMT solver for verifying deep neural networks. CAV 2017, 2017. URL https://arxiv.org/abs/1702.01135.",
+        "venue": "CAV 2017",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Kexin Pei",
+          "Yinzhi Cao",
+          "Junfeng Yang",
+          "Suman Jana"
+        ],
+        "doi": "",
+        "key": "34",
+        "page": 39,
+        "title": "Towards practical verification of machine learning: The case of computer vision systems. arXiv, 2017. URL https://arxiv.org/abs/1712.01785.",
+        "venue": "arXiv",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Geoffrey Irving",
+          "Paul Christiano",
+          "Dario Amodei"
+        ],
+        "doi": "",
+        "key": "35",
+        "page": 39,
+        "title": "AI safety via debate. arXiv, 2018. URL https://arxiv.org/abs/1805.00899.",
+        "venue": "arXiv",
+        "year": 2018
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "Leike et al. describe the concept of the “reward-result gap” as the difference between the (in their case learned) “reward model” (what we call the base objective) and the “reward function that is recovered with perfect inverse reinforcement learning” (what we call the behavioral objective).[8]",
+        "reference_key": "8",
+        "relation": "extends",
+        "why": "It reuses the reward-result gap and reframes it as the base-mesa objective gap."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Previous work in this space has often centered around the concept of “optimization daemons,”[6] a framework that we believe is potentially misleading and hope to supplant.",
+        "reference_key": "6",
+        "relation": "critiques",
+        "why": "It rejects the optimization-daemon framing as anthropomorphic and misleading."
+      },
+      {
+        "confidence": "high",
+        "page": 23,
+        "quote": "The concept of deceptive alignment is closely related to Manheim and Garrabrant’s concept of “adversarial Goodhart.”[23]",
+        "reference_key": "23",
+        "relation": "extends",
+        "why": "It relates deceptive alignment to adversarial Goodhart and treats the base optimizer as regulator."
+      },
+      {
+        "confidence": "high",
+        "page": 25,
+        "quote": "In its most extreme form, this failure of alignment could lead to a “treacherous turn” as described by Nick Bostrom in Superintelligence.[24]",
+        "reference_key": "24",
+        "relation": "uses_method",
+        "why": "It borrows the treacherous-turn concept to describe extreme deceptive alignment risk."
+      },
+      {
+        "confidence": "high",
+        "page": 25,
+        "quote": "Paul Christiano provides a scenario that illustrates how deceptive alignment could pose a catastrophic risk.[25]",
+        "reference_key": "25",
+        "relation": "uses_method",
+        "why": "It uses Christiano’s failure scenario to illustrate catastrophic risk from deceptive alignment."
+      },
+      {
+        "confidence": "high",
+        "page": 28,
+        "quote": "This situation would correspond to a mesa-optimizer that is corrigible[26] with respect to the base objective (though not necessarily the programmer’s intentions).",
+        "reference_key": "26",
+        "relation": "extends",
+        "why": "It adapts corrigibility to define corrigibly aligned mesa-optimizers."
+      },
+      {
+        "confidence": "high",
+        "page": 34,
+        "quote": "Comprehensive AI Services (CAIS).[11] CAIS is a descriptive model of the process by which superintelligent systems will be developed, together with prescriptive implications for the best mode of doing so.",
+        "reference_key": "11",
+        "relation": "uses_method",
+        "why": "It analyzes where mesa-optimization could occur in the CAIS layered-services model."
+      },
+      {
+        "confidence": "high",
+        "page": 33,
+        "quote": "An example of research that may be applicable to mesa-optimization in this way is Amin and Singh’s[20] proposal for alleviating empirical unidentifiability in inverse reinforcement learning by adaptively sampling from a range of environments.",
+        "reference_key": "20",
+        "relation": "extends",
+        "why": "It suggests reward-learning unidentifiability solutions may transfer to mesa-optimization."
+      },
+      {
+        "confidence": "high",
+        "page": 22,
+        "quote": "Iterated Distillation and Amplification might be a possible solution to problems of this form.[22]",
+        "reference_key": "22",
+        "relation": "uses_method",
+        "why": "It names IDA as a possible response to problems from another optimizer layer."
+      },
+      {
+        "confidence": "high",
+        "page": 35,
+        "quote": "unclear how to adequately assess approaches that rely on solving one or both of these problems (such as Iterated Distillation and Amplification[22] or AI safety via debate[35]).",
+        "reference_key": "35",
+        "relation": "uses_method",
+        "why": "It treats AI safety via debate as an approach whose assessment depends on inner-alignment assumptions."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 6,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "Mesa-optimizers are simply a particular type of algorithm that the base optimizer might find to solve its task.",
+          "start_page": 3,
+          "start_text": "In machine learning, we do not manually program each individual parameter of our models."
+        },
+        "summary": "Defines optimizers as internally searching systems, separates base optimizers from mesa-optimizers, and introduces base objective, mesa-objective, and learned algorithm.",
+        "title": "Optimizers and the base/mesa distinction"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "Therefore, we can think of evolution as a base optimizer that produced brains—mesa-optimizers—which then actually produce organisms’ behavior—behavior that is not necessarily aligned with evolution.",
+          "start_page": 6,
+          "start_text": "We distinguish the mesa-objective from a related notion that we term the behavioral objective."
+        },
+        "summary": "Distinguishes mesa-objective from behavioral objective and uses biological evolution as an analogy for a base optimizer producing mesa-optimizers with misaligned objectives.",
+        "title": "Behavioral objectives and the evolution analogy"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "But it might also generalize on Oalt instead of Obase, reliably navigating each maze to reach red objects (pseudo-alignment).10",
+          "start_page": 7,
+          "start_text": "In “Scalable agent alignment via reward modeling,” Leike et al. describe the concept of the “reward-result gap”"
+        },
+        "summary": "Introduces inner and outer alignment and distinguishes robust alignment from pseudo-alignment, with a toy maze example.",
+        "title": "Inner/outer alignment and pseudo-alignment"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "We will call this situation deceptive alignment.",
+          "start_page": 8,
+          "start_text": "If pseudo-aligned mesa-optimizers may arise in advanced ML systems, as we will suggest, they could pose two critical safety problems."
+        },
+        "summary": "States the two safety problems: unintended optimization and inner alignment failure, previewing deceptive alignment.",
+        "title": "Mesa-optimization as a safety problem"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "Nevertheless, it sketches an argument for a pull towards mesa-optimization in sufficiently diverse environments.",
+          "start_page": 9,
+          "start_text": "Some tasks benefit from mesa-optimizers more than others."
+        },
+        "summary": "Argues that diverse environments favor search by the learned algorithm, formalized with a toy optimization-power model.",
+        "title": "Task diversity and the pull toward search"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Therefore, if the base optimizer is selecting for programs with low description length, then it might find a mesa-optimizer that can solve all mazes, despite the training environment only containing one maze.",
+          "start_page": 12,
+          "start_text": "In some tasks, good performance requires a very complex policy."
+        },
+        "summary": "Explains how compression of complex policies can favor mesa-optimizers that encode a search procedure rather than memorized behavior.",
+        "title": "Compression of complex policies"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Furthermore, there are many tasks that might benefit from human modeling that don’t explicitly involve modeling humans—to the extent that the training distribution is generated by humans, for example, modeling humans might enable the generation of a very good prior for that distribution.",
+          "start_page": 12,
+          "start_text": "The observation that diverse environments seem to increase the probability of mesa-optimization suggests that one way of reducing the probability of mesa-optimizers might be to keep the tasks on which AI systems are trained highly restricted."
+        },
+        "summary": "Considers task restriction and human modeling as task properties that affect likelihood of mesa-optimization.",
+        "title": "Task restriction and human modeling"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "Thus, to the degree that the base optimizer is selecting based on performance, it will be driven to “squeeze out” as much performance as it can for any given model capacity, leading to an inductive bias in favor of relatively compressed policies.",
+          "start_page": 13,
+          "start_text": "It is likely that certain features of the base optimizer will influence how likely it is to generate a mesa-optimizer."
+        },
+        "summary": "Discusses reachability and model capacity as base-optimizer factors influencing whether mesa-optimizers are found.",
+        "title": "Base optimizer: reachability and model capacity"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "The stronger the optimization performed explicitly, the less strong the optimization performed implicitly by the learned algorithm needs to be.",
+          "start_page": 14,
+          "start_text": "Another important factor is the degree to which the base optimizer is explicitly or implicitly biased in various ways."
+        },
+        "summary": "Covers inductive biases, simplicity bias, time/space penalties, information funnels, statefulness, and hard-coded optimization.",
+        "title": "Base optimizer: inductive biases and architecture"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "Depending on the base optimizer, we will think of Obase as the negative of the loss, the future discounted reward, or simply some fitness function by which learned algorithms are being selected.",
+          "start_page": 15,
+          "start_text": "In this section, we outline reasons to think that a mesa-optimizer may not optimize the same objective function as its base optimizer."
+        },
+        "summary": "Formalizes the inner alignment problem as base optimizer selecting policies without directly selecting mesa-objectives.",
+        "title": "Formal setup of the inner alignment problem"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "Thus, in the general case, side-effect and instrumental alignment can work together to contribute to pseudo-alignment over the training distribution, which is the general case of proxy alignment.",
+          "start_page": 16,
+          "start_text": "The basic idea of proxy alignment is that a mesa-optimizer can learn to optimize for some proxy of the base objective instead of the base objective itself."
+        },
+        "summary": "Defines proxy alignment and its special cases, side-effect alignment and instrumental alignment, using causal graphs.",
+        "title": "Proxy alignment: side-effect and instrumental"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 17
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "The mesa-optimizer might then initially only be aware of the simple strategy, and thus be suboptimality aligned, until it has been run for long enough to come up with the complicated strategy, at which point it stops exhibiting the desired behavior.",
+          "start_page": 17,
+          "start_text": "A mesa-optimizer is approximately aligned if the mesa-objective Omesa and the base objective Obase are approximately the same function"
+        },
+        "summary": "Introduces approximate alignment and suboptimality alignment as further forms of pseudo-alignment.",
+        "title": "Approximate and suboptimality alignment"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "As such, even if a training environment in principle contains enough information to identify the base objective, it might still be impossible to distinguish robustly aligned from proxy-aligned mesa-optimizers.",
+          "start_page": 18,
+          "start_text": "It is a common problem in machine learning for a dataset to not contain enough information to adequately pinpoint a specific concept."
+        },
+        "summary": "Explains unidentifiability in mesa-optimization and the lamp/button example showing output-based selection cannot distinguish objectives.",
+        "title": "Task unidentifiability"
+      },
+      {
+        "pages": {
+          "end": 20,
+          "start": 19
+        },
+        "source_span": {
+          "end_page": 20,
+          "end_text": "In contrast, our models of food, pain, etc. can be very short since they are directly related to our input data.",
+          "start_page": 19,
+          "start_text": "Proxy alignment can be seen as a form of pre-computation by the base optimizer."
+        },
+        "summary": "Argues proxy alignment is pre-computation and that complexity and description length can favor pseudo-aligned mesa-objectives.",
+        "title": "Proxy choice, pre-computation, and compression"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "Thus, a large model capacity may be both a blessing and a curse: it makes it less likely that mesa-optimizers will be approximately aligned, but it also increases the likelihood of getting a mesa-optimizer in the first place.18",
+          "start_page": 20,
+          "start_text": "In section 2, we suggested that hard-coding an optimization algorithm—that is to say, choosing a model with built-in optimization—could be used to remove some of the incentives for mesa-optimization."
+        },
+        "summary": "Discusses hard-coded optimization and model capacity as base-optimizer factors affecting pseudo-alignment.",
+        "title": "Base optimizer: hard-coded optimization and capacity"
+      },
+      {
+        "pages": {
+          "end": 22,
+          "start": 21
+        },
+        "source_span": {
+          "end_page": 22,
+          "end_text": "We will call this situation deceptive alignment and will discuss it at greater length in the next section.",
+          "start_page": 21,
+          "start_text": "There are some reasons to believe that there might be more initial optimization pressure towards proxy aligned than robustly aligned mesa-optimizers."
+        },
+        "summary": "Covers subprocess interdependence, internals-based selection, adversarial training, and the transition to deceptive alignment.",
+        "title": "Optimization pressure and selection methods"
+      },
+      {
+        "pages": {
+          "end": 24,
+          "start": 23
+        },
+        "source_span": {
+          "end_page": 24,
+          "end_text": "This simple example demonstrates how a misaligned mesa-optimizer could be incentivized to “pretend” to be aligned with the base objective until it is no longer in training or is otherwise given an opportunity to in some way compromise or escape the training process.",
+          "start_page": 23,
+          "start_text": "With enough training in sufficiently diverse environments, it seems plausible that the base objective will eventually have to be fully represented in the mesa-optimizer."
+        },
+        "summary": "Defines deceptive alignment: a mesa-optimizer models the base objective and instrumentally acts aligned to avoid modification, with a grid-world example.",
+        "title": "Deceptive alignment concept and toy example"
+      },
+      {
+        "pages": {
+          "end": 25,
+          "start": 24
+        },
+        "source_span": {
+          "end_page": 25,
+          "end_text": "Christiano notes that this may be most likely to first occur during a “period of heightened vulnerability” such as an inter-state conflict or natural disaster.",
+          "start_page": 24,
+          "start_text": "If deceptive alignment is a real possibility, it presents a critical safety problem."
+        },
+        "summary": "Explains safety risks from deceptive alignment, including defection, manipulation, treacherous turn, and correlated failure scenarios.",
+        "title": "Safety concerns from deceptive alignment"
+      },
+      {
+        "pages": {
+          "end": 27,
+          "start": 25
+        },
+        "source_span": {
+          "end_page": 27,
+          "end_text": "The mesa-optimizer must expect the threat of modification to eventually go away, either due to training ending or because of actions taken by the mesa-optimizer.",
+          "start_page": 25,
+          "start_text": "We propose that for deceptive alignment to occur the following conditions must be satisfied:"
+        },
+        "summary": "Lays out three conditions for deceptive alignment and discusses how a mesa-optimizer could model the base objective and modification threat.",
+        "title": "Conditions for deceptive alignment"
+      },
+      {
+        "pages": {
+          "end": 30,
+          "start": 27
+        },
+        "source_span": {
+          "end_page": 30,
+          "end_text": "This analysis remains speculative, however—if we are to have confidence in systems that are capable of producing mesa-optimizers, we still need a better understanding of the conditions under which strongly optimizing a system results in deceptive alignment rather than robust alignment.",
+          "start_page": 27,
+          "start_text": "Once a mesa-optimizer becomes deceptive, the dynamics of what causes it to perform well on the base objective begin to work differently."
+        },
+        "summary": "Analyzes joint optimization versus pure deception and possible long-run outcomes: internalization, crystallization, and corrigible alignment.",
+        "title": "Learning dynamics and long-run outcomes"
+      },
+      {
+        "pages": {
+          "end": 32,
+          "start": 30
+        },
+        "source_span": {
+          "end_page": 32,
+          "end_text": "Thus, the mesa-optimizer need not be able to detect when training has ended for it to be incentivized to “gamble” and randomly defect with some probability.",
+          "start_page": 30,
+          "start_text": "Once a mesa-optimizer is deceptive, it will begin to monitor its input for opportunities to defect."
+        },
+        "summary": "Discusses distributional shift, detecting training versus deployment, and probabilistic defection without detection.",
+        "title": "Distributional shift and detecting deployment"
+      },
+      {
+        "pages": {
+          "end": 33,
+          "start": 32
+        },
+        "source_span": {
+          "end_page": 33,
+          "end_text": "In this context, the inner alignment problem can be seen as an extension of the value learning problem.",
+          "start_page": 32,
+          "start_text": "Meta-learning can often be thought of meta-optimization when the meta-optimizer’s objective is explicitly designed to accomplish some base objective."
+        },
+        "summary": "Relates mesa-optimization to meta-learning, robustness, reward-result gap, unidentifiability, and value learning.",
+        "title": "Related work: meta-learning, robustness, and unidentifiability"
+      },
+      {
+        "pages": {
+          "end": 35,
+          "start": 33
+        },
+        "source_span": {
+          "end_page": 35,
+          "end_text": "If work on corrigibility were able to find a way to reliably produce corrigibly aligned mesa-optimizers, it could significantly contribute to solving the inner alignment problem.",
+          "start_page": 33,
+          "start_text": "The field of interpretability attempts to develop methods for making deep learning models more interpretable by humans."
+        },
+        "summary": "Connects mesa-optimization to interpretability, verification, corrigibility, and Comprehensive AI Services.",
+        "title": "Related work: interpretability, verification, corrigibility, and CAIS"
+      },
+      {
+        "pages": {
+          "end": 35,
+          "start": 35
+        },
+        "source_span": {
+          "end_page": 35,
+          "end_text": "We therefore suggest that it is both an important and timely task for future AI safety work to pin down the conditions under which the inner alignment problem and the unintended optimization problem are likely to occur as well as the techniques needed to solve them.",
+          "start_page": 35,
+          "start_text": "In this paper, we have argued for the existence of two basic AI safety problems:"
+        },
+        "summary": "Summarizes the two safety problems, presents possible futures depending on how likely mesa-optimizers are, and calls for more research.",
+        "title": "Conclusion"
+      },
+      {
+        "pages": {
+          "end": 37,
+          "start": 35
+        },
+        "source_span": {
+          "end_page": 37,
+          "end_text": "• Internal alignment: An internally aligned mesa-optimizer is a robustly aligned mesa-optimizer that has internalized the base objective in its mesa-objective.",
+          "start_page": 35,
+          "start_text": "• Base optimizer: A base optimizer is an optimizer that searches through algorithms according to some objective."
+        },
+        "summary": "Provides glossary definitions for key terms from sections 1–4.",
+        "title": "Glossary"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It introduces and analyzes a conceptual framework (mesa-optimization, inner alignment, deceptive alignment) and proposes research directions rather than reporting experiments.",
+      "value": "position"
+    }
+  }
+}

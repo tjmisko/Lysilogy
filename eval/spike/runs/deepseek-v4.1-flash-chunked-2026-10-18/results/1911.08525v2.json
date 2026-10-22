@@ -1,0 +1,4265 @@
+{
+  "record_version": 2,
+  "started_at": "2026-10-19T00:31:21.860133884Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1911.08525v2.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "object_mode": "chunked:6",
+  "dpi": 120,
+  "pages": 8,
+  "calls": [
+    {
+      "stage": "extract.pass1",
+      "provider": "DigitalOcean",
+      "finish_reason": "stop",
+      "prompt_tokens": 14263,
+      "completion_tokens": 26895,
+      "reasoning_tokens": 17586,
+      "cost_usd": 0.023638425,
+      "cost_source": "reported",
+      "latency_s": 70.328027284
+    },
+    {
+      "stage": "extract.objects",
+      "provider": "Crusoe",
+      "finish_reason": "stop",
+      "prompt_tokens": 5932,
+      "completion_tokens": 15134,
+      "reasoning_tokens": 12810,
+      "cost_usd": 0.019772408,
+      "cost_source": "reported",
+      "latency_s": 97.997398139
+    },
+    {
+      "stage": "extract.objects",
+      "provider": "Crusoe",
+      "finish_reason": "stop",
+      "prompt_tokens": 8781,
+      "completion_tokens": 21463,
+      "reasoning_tokens": 15680,
+      "cost_usd": 0.028193418,
+      "cost_source": "reported",
+      "latency_s": 118.355331487
+    },
+    {
+      "stage": "extract.pass2",
+      "provider": "DigitalOcean",
+      "finish_reason": "stop",
+      "prompt_tokens": 20843,
+      "completion_tokens": 25508,
+      "reasoning_tokens": 25229,
+      "cost_usd": 0.023960625,
+      "cost_source": "reported",
+      "latency_s": 68.963198408
+    }
+  ],
+  "totals": {
+    "calls": 4,
+    "prompt_tokens": 49819,
+    "completion_tokens": 89000,
+    "cost_usd": 0.095564876,
+    "model_latency_s": 355.643955318,
+    "wall_s": 189.043387093
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [
+    {
+      "first_page": 1,
+      "last_page": 5,
+      "objects": 36,
+      "checklist": 35,
+      "retried": false
+    },
+    {
+      "first_page": 6,
+      "last_page": 8,
+      "objects": 13,
+      "checklist": 13,
+      "retried": false
+    }
+  ],
+  "object_merge": {
+    "chunks": 2,
+    "failed_chunks": 0,
+    "kept": 49,
+    "out_of_range": 0,
+    "ranges_rejected": 0,
+    "duplicates": 0,
+    "malformed": 0
+  },
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "The vacuum expectation values of conserved currents play an essential role in the generalized\nhydrodynamics of integrable quantum field theories. We use analytic continuation to extend these\nresults for the excited state expectation values in a finite volume. Our formulas are valid for\ndiagonally scattering theories and incorporate all finite size corrections."
+    },
+    "card": {
+      "headline_results": [
+        {
+          "carrier": "Eq. (47)",
+          "confidence": "high",
+          "evidence": [
+            {
+              "page": 7,
+              "quote": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents."
+            }
+          ],
+          "statement": "Exact finite-volume excited-state expectation values of conserved currents."
+        },
+        {
+          "carrier": "Eq. (46)",
+          "confidence": "high",
+          "evidence": [
+            {
+              "page": 7,
+              "quote": "In the sinh-Gordon model η k = 1 and θ k = θ̄ k + iπ 2, where θ̄ k is the rapidity of the particle, thus our formula reproduces the charge eigenvalue correctly, which asymptotically takes the form Q i = P k h i ( θ̄ k)."
+            }
+          ],
+          "statement": "Exact finite-volume excited-state expectation values of conserved charges."
+        },
+        {
+          "carrier": "Eq. (48)",
+          "confidence": "high",
+          "evidence": [
+            {
+              "page": 7,
+              "quote": "This formula agrees with the recent direct calculations in [8, 9]."
+            }
+          ],
+          "statement": "Asymptotic limit recovers earlier Gaudin-matrix expressions."
+        },
+        {
+          "carrier": "Eq. (22)",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "page": 4,
+              "quote": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10]."
+            }
+          ],
+          "statement": "Finite-volume vacuum energy expectation value agrees with TBA."
+        }
+      ],
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "[1]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting."
+              }
+            ],
+            "reference_key": "1",
+            "why": "Starts from the structural equations of generalized hydrodynamics."
+          },
+          {
+            "cited_work": "[8, 9]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "There were interesting direct calculations [8, 9], which expressed the current expectation values in spin chain Bethe states in terms of the charge eigenvalues and the inverse of the Gaudin matrix."
+              }
+            ],
+            "reference_key": "8, 9",
+            "why": "Extends earlier vacuum/direct calculations to excited-state finite volume."
+          },
+          {
+            "cited_work": "[14]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations."
+              }
+            ],
+            "reference_key": "14",
+            "why": "Adopts the analytic continuation method for excited-state TBA equations."
+          },
+          {
+            "cited_work": "[17]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17]."
+              }
+            ],
+            "reference_key": "17",
+            "why": "Checks against the excited-state Leclair-Mussardo formula."
+          }
+        ],
+        "replications": [],
+        "targets": []
+      },
+      "read_signal": {
+        "judgment": "skim",
+        "reason": "Narrow specialist paper: central results are exact but the paper itself says the main formulas were conjectured and then checked; most readers can skim the derivation and focus on Eqs. (46)-(48) and the checks."
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "As a result we describe exactly the finite volume excited state expectation values of conserved currents."
+          }
+        ],
+        "text": "The paper analytically continues generalized-hydrodynamics structural equations to obtain exact finite-volume excited-state expectation values of conserved currents, replacing the thermal pairing by an excited-state pairing."
+      }
+    },
+    "citations": [
+      {
+        "context": "The motivation came from statistical physics [1] as well as from the AdS/CFT duality [2].",
+        "page": 1,
+        "reference_key": "1, 2"
+      },
+      {
+        "context": "In the AdS/CFT duality heavy-heavy light three-point functions can be mapped to expectation values of local operators in finite volume multiparticle states [2, 3, 4, 5].",
+        "page": 1,
+        "reference_key": "2, 3, 4, 5"
+      },
+      {
+        "context": "In statistical physics the recent developments of the generalized hydrodynamics require the knowledge of the finite temperature expectation values of conserved charges and currents as they are the key inputs in formulating the Euler type hydrodynamic evolution [1, 6, 7].",
+        "page": 1,
+        "reference_key": "1, 6, 7"
+      },
+      {
+        "context": "There were interesting direct calculations [8, 9], which expressed the current expectation values in spin chain Bethe states in terms of the charge eigenvalues and the inverse of the Gaudin matrix.",
+        "page": 1,
+        "reference_key": "8, 9"
+      },
+      {
+        "context": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting.",
+        "page": 1,
+        "reference_key": "1"
+      },
+      {
+        "context": "In the generalized hydrodynamics of integrable models [1] conservation laws",
+        "page": 2,
+        "reference_key": "1"
+      },
+      {
+        "context": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+        "page": 2,
+        "reference_key": "10"
+      },
+      {
+        "context": "From relativistic invariance it follows [1] that the current expectation values take the form",
+        "page": 3,
+        "reference_key": "1"
+      },
+      {
+        "context": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+        "page": 3,
+        "reference_key": "11"
+      },
+      {
+        "context": "Keeping β i nonzero would imply twisted boundary conditions by the conserved charges [12, 13]",
+        "page": 3,
+        "reference_key": "12, 13"
+      },
+      {
+        "context": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10].",
+        "page": 4,
+        "reference_key": "10"
+      },
+      {
+        "context": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+        "page": 4,
+        "reference_key": "14"
+      },
+      {
+        "context": "These defects then modify the thermal equilibrium and change the quasi-particle density [15].",
+        "page": 4,
+        "reference_key": "15"
+      },
+      {
+        "context": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+        "page": 4,
+        "reference_key": "16"
+      },
+      {
+        "context": "Writing h i dr (θ l) = h i (θ l) + ϕ(θ l − u) ◦ h i dr (u) we can observe that the leading part of the result, i.e. the term without any integration, is the same which was obtained in [8, 9] in a more complicated way.",
+        "page": 6,
+        "reference_key": "8, 9"
+      },
+      {
+        "context": "This formula agrees with the recent direct calculations in [8, 9].",
+        "page": 7,
+        "reference_key": "8, 9"
+      },
+      {
+        "context": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+        "page": 7,
+        "reference_key": "17"
+      },
+      {
+        "context": "In doing so we had to take into account that [17] is valid in the thermal channel for operators with spins.",
+        "page": 7,
+        "reference_key": "17"
+      },
+      {
+        "context": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+        "page": 7,
+        "reference_key": "18"
+      }
+    ],
+    "claims": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (47)",
+          "Section 3",
+          "Section 4"
+        ],
+        "id": "C1",
+        "statement": "The exact finite-volume excited-state expectation value of conserved currents is given by Eq. (47).",
+        "strength": "strong",
+        "support": "Derived by analytically continuing the vacuum/thermal GHD pairing and separating polynomial and exponential finite-size corrections."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "These are the main results of the paper."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (46)",
+          "Section 3"
+        ],
+        "id": "C2",
+        "statement": "The corresponding exact finite-volume excited-state charge expectation value follows from the same modified pairing and is written in Eq. (46).",
+        "strength": "strong",
+        "support": "The charge case is simpler and asymptotically reproduces the charge eigenvalue in the sinh-Gordon model."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "This formula agrees with the recent direct calculations in [8, 9]."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (48)",
+          "[8, 9]"
+        ],
+        "id": "C3",
+        "statement": "In the asymptotic limit the excited-state current expectation values reduce to the earlier Gaudin-matrix expression of [8, 9].",
+        "strength": "strong",
+        "support": "Shown by dropping exponentially small dressing terms and comparing with prior direct calculations."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10]."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (22)",
+          "[10]"
+        ],
+        "id": "C4",
+        "statement": "The finite-volume vacuum expectation value of the energy agrees with the TBA ground-state energy.",
+        "strength": "strong",
+        "support": "Evaluating the charge formula for h1(θ)=m coshθ gives Eq. (22), matching the saddle-point TBA result."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Our formulas are valid for diagonally scattering theories and incorporate all finite size corrections."
+          }
+        ],
+        "evidence_refs": [
+          "Abstract",
+          "Section 4"
+        ],
+        "id": "C5",
+        "statement": "The formulas are valid for diagonally scattering integrable theories with a single species and include all finite-size corrections.",
+        "strength": "strong",
+        "support": "Stated in the abstract and repeated in the conclusions."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details."
+          }
+        ],
+        "evidence_refs": [
+          "Section 3",
+          "Section 4"
+        ],
+        "id": "C6",
+        "statement": "The main excited-state formulas were conjectured rather than derived, and then checked by consistency checks.",
+        "strength": "moderate",
+        "support": "The paper explicitly says the results were not really derived but conjectured based on previous experience."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "Multiparticle generalizations for diagonal scatterings are straightforward as well as the extension for flows generated by other conserved charges."
+          }
+        ],
+        "evidence_refs": [
+          "Section 4"
+        ],
+        "id": "C7",
+        "statement": "Multiparticle generalizations for diagonal scatterings and extensions to flows of other conserved charges are straightforward, while non-diagonal scattering remains open.",
+        "strength": "moderate",
+        "support": "Stated in the conclusions as an outlook."
+      }
+    ],
+    "glossary": [
+      {
+        "confidence": "high",
+        "definition": "A hydrodynamic framework for integrable systems in which conserved charges and currents determine an Euler-type evolution.",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In statistical physics the recent developments of the generalized hydrodynamics require the knowledge of the finite temperature expectation values of conserved charges and currents as they are the key inputs in formulating the Euler type hydrodynamic evolution [1, 6, 7]."
+          }
+        ],
+        "term": "generalized hydrodynamics (GHD)"
+      },
+      {
+        "confidence": "high",
+        "definition": "The thermodynamic Bethe ansatz equation determines the pseudoenergy and occupation numbers in finite temperature/volume.",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]"
+          }
+        ],
+        "term": "Thermodynamic Bethe ansatz (TBA)"
+      },
+      {
+        "confidence": "high",
+        "definition": "A form-factor expansion for finite-temperature expectation values in integrable QFT.",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]"
+          }
+        ],
+        "term": "Leclair-Mussardo (LM) formula"
+      },
+      {
+        "confidence": "high",
+        "definition": "An analytic continuation method that produces excited-state TBA equations from the ground-state TBA equation.",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations."
+          }
+        ],
+        "term": "excited-state TBA"
+      },
+      {
+        "confidence": "high",
+        "definition": "A pairing of functions with occupation-number measure used in the TBA convolution.",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "For later generalizations we introduce a pairing including the occupation number as"
+          }
+        ],
+        "term": "pairing"
+      },
+      {
+        "confidence": "high",
+        "definition": "The matrix of derivatives of the excited-state quantization conditions, appearing in the finite-size corrections.",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "In the second term we recognize the Gaudin matrix"
+          }
+        ],
+        "term": "Gaudin matrix"
+      },
+      {
+        "confidence": "high",
+        "definition": "An integrable relativistic QFT used as a testing ground for the finite-volume excited-state formulas.",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing."
+          }
+        ],
+        "term": "sinh-Gordon model"
+      },
+      {
+        "confidence": "high",
+        "definition": "A non-unitary integrable model whose singularity structure is mentioned for the integration contour.",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "In the scaling Lee-Yang model they are symmetric for the real line."
+          }
+        ],
+        "term": "scaling Lee-Yang model"
+      },
+      {
+        "confidence": "high",
+        "definition": "A model where the simplest non-diagonal topological current result has been obtained.",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18]."
+          }
+        ],
+        "term": "sine-Gordon theory"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Wigner Research Centre for Physics, Budapest, Hungary",
+          "name": "Zoltan Bajnok"
+        },
+        {
+          "affiliation": "Wigner Research Centre for Physics, Budapest, Hungary and Roland Eötvös University, Budapest, Hungary",
+          "name": "Istvan Vona"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Exact finite volume expectation values of conserved currents"
+        },
+        {
+          "page": 1,
+          "quote": "Zoltan Bajnok¹, Istvan Vona 1,2"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1911.08525v2 [hep-th]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Exact finite volume expectation values of conserved currents",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "key_numbers": [],
+    "limitations": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details."
+          }
+        ],
+        "stated_by": "authors",
+        "text": "The main excited-state formulas are conjectured rather than derived."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species."
+          }
+        ],
+        "stated_by": "authors",
+        "text": "Validity is limited to diagonally scattering theories with a single species; multiparticle and non-diagonal extensions are discussed separately."
+      }
+    ],
+    "method": {
+      "assumptions": [
+        "relativistic integrable theory",
+        "single particle species",
+        "diagonal scattering",
+        "local thermodynamic equilibrium for the vacuum expectation values"
+      ],
+      "confidence": "high",
+      "data": "analytic calculation in integrable quantum field theory; no experiments or simulations",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Our formulas are valid for diagonally scattering theories and incorporate all finite size corrections."
+        }
+      ],
+      "procedure": "Use analytic continuation of the TBA/GHD structural equations, replace the occupation-number pairing by an excited-state pairing with discrete residue contributions, dress quantities with the modified convolution, and simplify the finite-volume excited-state expectation values.",
+      "setting": "1+1 dimensional relativistic integrable quantum field theory in finite volume"
+    },
+    "notation": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "where θ is the rapidity which parametrizes the energy and momentum as E(θ) = m cosh θ, p(θ) = m sinh θ."
+          }
+        ],
+        "meaning": "Rapidity parameter for energy and momentum.",
+        "page": 2,
+        "symbol": "θ"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "We focus on a relativistic integrable theory of a single particle which scatters on itself with the S-matrix S(θ 1 − θ 2), where θ is the rapidity which parametrizes the energy and momentum as E(θ) = m cosh θ, p(θ) = m sinh θ."
+          }
+        ],
+        "meaning": "Two-particle scattering matrix depending on rapidity difference.",
+        "page": 2,
+        "symbol": "S(θ)"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "The normal modes, however are neither of these, instead they are related to the occupation number n:"
+          }
+        ],
+        "meaning": "Occupation number for quasi-particles in the TBA state.",
+        "page": 2,
+        "symbol": "n(θ)"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "It is also useful to introduce dressed quantities which satisfy"
+          }
+        ],
+        "meaning": "Dressed quantity obtained by convolving with the kernel φ and occupation number.",
+        "page": 2,
+        "symbol": "g^dr"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "Comparing hj i i to hq i i we can extract the effective velocity of the quasi-particles v eff (θ) = (E 0) dr /(p 0) dr."
+          }
+        ],
+        "meaning": "Effective velocity of quasi-particles in generalized hydrodynamics.",
+        "page": 3,
+        "symbol": "v^eff"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "The residues η j are 1 for poles on the upper and −1 for the lower half-plane."
+          }
+        ],
+        "meaning": "Residue signs for poles picked up in the modified contour for excited states.",
+        "page": 4,
+        "symbol": "η_j"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "In the second term we recognize the Gaudin matrix"
+          }
+        ],
+        "meaning": "Matrix of derivatives of the excited-state quantization conditions.",
+        "page": 5,
+        "symbol": "G_jk"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "where ϕ(θ) = −i∂ θ log S(θ)."
+          }
+        ],
+        "meaning": "TBA kernel derived from the S-matrix.",
+        "page": 2,
+        "symbol": "φ(θ)"
+      }
+    ],
+    "objects": [
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "∂tx_i(x,t)+∂xj_i(x,t)=0",
+        "number": "(1)",
+        "page": 2,
+        "plain_language": "Conservation law for a charge density and its current.",
+        "referenced_on_pages": [],
+        "why_it_matters": "This continuity equation is the basis for the finite-volume current expectation values studied in the paper."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "⟨O⟩=Z^{-1}Tr(Oe^{-∑_j\\beta_jQ_j}); Z=Tr(e^{-∑_j\\beta_jQ_j})",
+        "number": "(2)",
+        "page": 2,
+        "plain_language": "Thermal expectation value and partition function with conserved charges.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It defines the thermal averages whose finite-volume analogues are analyzed."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle q_i\\rangle=\\int\\frac{d\\theta}{2\\pi}\\rho(\\theta)h_i(\\theta)",
+        "number": "(3)",
+        "page": 2,
+        "plain_language": "Charge expectation value written using quasiparticle density and one-particle charge eigenvalue.",
+        "referenced_on_pages": [],
+        "why_it_matters": "This is the density formula that later gets extended to finite-volume excited states."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "n(\\theta)=\\frac{1}{1+e^{\\epsilon(\\theta)}}",
+        "number": "(4)",
+        "page": 2,
+        "plain_language": "Occupation number in terms of the pseudoenergy.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It defines the Fermi weighting used in the thermodynamic Bethe ansatz pairing."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\epsilon(\\theta)=\\sum_i\\beta_i h_i(\\theta)-\\int\\frac{du}{2\\pi}\\varphi(\\theta-u)\\log(1+e^{-\\epsilon(u)})",
+        "number": "(5)",
+        "page": 2,
+        "plain_language": "Thermodynamic Bethe ansatz equation for the pseudoenergy.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It determines the thermal quasiparticle state used to compute expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "g(\\theta)\\circ h(\\theta)=\\int g(\\theta)h(\\theta)\\frac{n(\\theta)d\\theta}{2\\pi}",
+        "number": "(6)",
+        "page": 2,
+        "plain_language": "Definition of a convolution-like pairing weighted by the occupation number.",
+        "referenced_on_pages": [],
+        "why_it_matters": "The pairing is the main algebraic device later modified for excited states."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\epsilon(\\theta)=\\sum_i\\beta_i h_i(\\theta)-i\\log S(\\theta-u)\\circ\\partial_u\\epsilon(u)",
+        "number": "(7)",
+        "page": 2,
+        "plain_language": "TBA equation after integration by parts, written with the pairing.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It prepares the compact pairing form used throughout the paper."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "g^{\\mathrm{dr}}(\\theta)=g(\\theta)+\\varphi(\\theta-u)\\circ g^{\\mathrm{dr}}(u)",
+        "number": "(8)",
+        "page": 2,
+        "plain_language": "Integral equation defining dressed quantities.",
+        "referenced_on_pages": [],
+        "why_it_matters": "Dressing incorporates collective medium effects into local charges and currents."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\rho(\\theta)=n(\\theta)(p')^{\\mathrm{dr}}(\\theta)",
+        "number": "(9)",
+        "page": 2,
+        "plain_language": "Quasiparticle density as occupation number times dressed momentum derivative.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It connects the occupation-number formulation to physical densities."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle q_i\\rangle=(p')^{\\mathrm{dr}}(\\theta)\\circ h_i(\\theta)=p'(\\theta)\\circ h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "(10)",
+        "page": 3,
+        "plain_language": "Charge expectation value expressed via dressed momentum and dressed charge.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "It rewrites charges in a form used to derive current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=E'(\\theta)\\circ h_i^{\\mathrm{dr}}(\\theta)=(E')^{\\mathrm{dr}}(\\theta)\\circ h_i(\\theta)",
+        "number": "(11)",
+        "page": 3,
+        "plain_language": "Current expectation value expressed via energy derivative and dressed charge.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "It gives the thermal current corresponding to the charge formula and motivates the effective velocity."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle O\\rangle=\\sum_{n=0}^{\\infty}\\frac{1}{n!}\\prod_{k=1}^{n}\\int\\frac{n(\\theta_k)d\\theta_k}{2\\pi}F_{2n,c}^{O}(\\theta_1,\\ldots,\\theta_n)",
+        "number": "(12)",
+        "page": 3,
+        "plain_language": "Leclair-Mussardo expansion of an expectation value in form factors.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It provides an alternative route to the same charge and current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "F_{2n,c}^{q_i}(\\theta_1,\\ldots,\\theta_n)=E(\\theta_1)\\varphi(\\theta_1-\\theta_2)\\cdots\\varphi(\\theta_{n-1}-\\theta_n)h_i(\\theta_n)+\\text{permutations}",
+        "number": "(13)",
+        "page": 3,
+        "plain_language": "Connected form factor for conserved charge densities.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It supplies the inputs that make the Leclair-Mussardo expansion reproduce the charge formula."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "F_{2n,c}^{j_i}(\\theta_1,\\ldots,\\theta_n)=p(\\theta_1)\\varphi(\\theta_1-\\theta_2)\\cdots\\varphi(\\theta_{n-1}-\\theta_n)h_i(\\theta_n)+\\text{permutations}",
+        "number": "(14)",
+        "page": 3,
+        "plain_language": "Connected form factor for conserved currents.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the current analogue of the charge form factor and supports the LM derivation."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\partial_{\\beta_i}\\epsilon(\\theta)=h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "(15)",
+        "page": 3,
+        "plain_language": "Derivative of the pseudoenergy with respect to a temperature variable gives a dressed charge.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the identity used to turn thermodynamic derivatives into charge and current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle q_i\\rangle=-\\partial_{\\beta_i}\\int\\frac{dp(\\theta)}{2\\pi}\\log(1+e^{-\\epsilon(\\theta)})=-\\partial_{\\beta_i}(p(\\theta)\\circ\\partial_\\theta\\epsilon(\\theta))",
+        "number": "(16)",
+        "page": 3,
+        "plain_language": "Charge expectation value as a thermodynamic derivative of a pressure-like integral.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "It gives a compact thermodynamic formula for charges before specializing to finite volume."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=-\\partial_{\\beta_i}\\int\\frac{dE(\\theta)}{2\\pi}\\log(1+e^{-\\epsilon(\\theta)})=-\\partial_{\\beta_i}(E(\\theta)\\circ\\partial_\\theta\\epsilon(\\theta))",
+        "number": "(17)",
+        "page": 3,
+        "plain_language": "Current expectation value as a thermodynamic derivative of a pressure-like integral.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "It is the corresponding compact formula for currents."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=\\frac{1}{L}h_i(\\theta)\\circ\\partial_\\theta\\epsilon(\\theta)=\\frac{1}{L}\\int\\frac{d\\theta}{2\\pi}h_i'(\\theta)\\log(1+e^{-\\epsilon(\\theta)})",
+        "number": "(18)",
+        "page": 3,
+        "plain_language": "Finite-volume current expectation value in the ground-state channel.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the simpler current formula obtained when only the volume parameter is nonzero."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle0|O|0\\rangle_L=\\sum_{n=0}^{\\infty}\\frac{1}{n!}\\prod_{k=1}^{n}\\int\\frac{n(\\theta_k)d\\theta_k}{2\\pi}F_{2n,c}^{O}(\\theta_1^\\gamma,\\ldots,\\theta_n^\\gamma)",
+        "number": "(19)",
+        "page": 3,
+        "plain_language": "Finite-volume vacuum Leclair-Mussardo formula in the mirror channel.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It sets up the finite-volume vacuum expectation values before generalizing to excited states."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle0|q_k|0\\rangle_L=i(E')^{\\mathrm{dr}}(\\theta)\\circ h_k(\\theta^\\gamma)=i\\langle j_k^\\gamma\\rangle",
+        "number": "(20)",
+        "page": 4,
+        "plain_language": "Finite-volume vacuum charge expectation value related to a crossed current.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It relates charges and currents under the crossing transformation."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle0|q_k|0\\rangle_L=\\frac{i}{L}\\int\\frac{d\\theta}{2\\pi}h_k'\\left(\\theta+\\frac{i\\pi}{2}\\right)\\log(1+e^{-\\epsilon(\\theta)})",
+        "number": "(21)",
+        "page": 4,
+        "plain_language": "Integral formula for the finite-volume vacuum charge expectation value.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the explicit finite-volume charge expression obtained after crossing."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "L\\langle0|q_1|0\\rangle_L=-m\\int\\frac{d\\theta}{2\\pi}\\cosh\\theta\\log(1+e^{-\\epsilon(\\theta)})",
+        "number": "(22)",
+        "page": 4,
+        "plain_language": "Energy specialization of the finite-volume vacuum charge formula.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It checks the formula against the known ground-state energy from the partition function."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle0|j_i|0\\rangle_L=i(p')^{\\mathrm{dr}}(\\theta)\\circ h_i(\\theta^\\gamma)=i\\langle q_i^\\gamma\\rangle",
+        "number": "(23)",
+        "page": 4,
+        "plain_language": "Finite-volume vacuum current expectation value related to a crossed charge.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It completes the vacuum-current crossing relation before passing to excited states."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "g(\\theta)\\bullet h(\\theta)=\\sum_j\\frac{\\eta_j i h(\\theta_j)g(\\theta_j)}{\\partial_\\theta\\epsilon(\\theta)|_{\\theta_j}}+\\int g(\\theta)h(\\theta)\\frac{n(\\theta)d\\theta}{2\\pi}",
+        "number": "(24)",
+        "page": 4,
+        "plain_language": "New pairing with extra residue contributions for excited states.",
+        "referenced_on_pages": [],
+        "why_it_matters": "This modified pairing is the key replacement that encodes excited-state analytic continuation."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\epsilon(\\theta)=\\sum_k\\beta_k h_k(\\theta)-i\\log S(\\theta-u)\\bullet\\partial_u\\epsilon(u)=\\sum_k\\beta_k h_k(\\theta)+\\sum_k\\eta_k\\log S(\\theta-\\theta_k)-i\\log S(\\theta-u)\\circ\\partial_u\\epsilon(u)",
+        "number": "(25)",
+        "page": 4,
+        "plain_language": "Excited-state TBA equation obtained from the modified convolution.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It defines the pseudoenergy whose dressing and derivatives give excited-state expectation values."
+      },
+      {
+        "caption": "Schematical integration contour for excited states. In the sinh-Gordon model the singularities have imaginary part \\(i\\frac{\\pi}{2}\\). In the scaling Lee-Yang model they are symmetric for the real line.",
+        "confidence": "high",
+        "kind": "figure",
+        "label": "Figure 1",
+        "latex": null,
+        "number": "1",
+        "page": 5,
+        "plain_language": "Schematic of the deformed integration contour used to pick up excited-state pole contributions.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "It visualizes the analytic continuation underlying the modified pairing and the excited-state TBA source terms."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle q_i\\rangle=(p')^{\\mathrm{dr}}(\\theta)\\bullet h_i(\\theta)=p'(\\theta)\\bullet h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "(26)",
+        "page": 5,
+        "plain_language": "Excited-state charge expectation value written with the new pairing.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the excited-state analogue of the ground-state charge formula."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=E'(\\theta)\\bullet h_i^{\\mathrm{dr}}(\\theta)=(E')^{\\mathrm{dr}}(\\theta)\\bullet h_i(\\theta)",
+        "number": "(27)",
+        "page": 5,
+        "plain_language": "Excited-state current expectation value written with the new pairing.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the excited-state analogue of the ground-state current formula."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "g^{\\mathrm{dr}}(\\theta)=g(\\theta)+\\varphi(\\theta-u)\\bullet g^{\\mathrm{dr}}(u)",
+        "number": "(28)",
+        "page": 5,
+        "plain_language": "Dressing equation using the excited-state modified convolution.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It defines dressed quantities when physical-particle contributions are included."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle q_i\\rangle=-\\partial_{\\beta_i}(p(\\theta)\\bullet\\partial_\\theta\\epsilon(\\theta))",
+        "number": "(29)",
+        "page": 5,
+        "plain_language": "Compact thermodynamic formula for excited-state charges.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is one of the paper's main general results for excited-state charge expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=-\\partial_{\\beta_i}(E(\\theta)\\bullet\\partial_\\theta\\epsilon(\\theta))",
+        "number": "(30)",
+        "page": 5,
+        "plain_language": "Compact thermodynamic formula for excited-state currents.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is one of the paper's main general results for excited-state current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=-\\partial_{\\beta_i}\\left(i\\sum_k\\eta_k E(\\theta_k)+E(\\theta)\\bullet\\partial_\\theta\\epsilon(\\theta)\\right)=-i\\sum_k\\eta_k E'(\\theta_k)\\partial_{\\beta_i}\\theta_k-\\partial_{\\beta_i}\\left(E(\\theta)\\circ\\partial_\\theta\\epsilon(\\theta)\\right)",
+        "number": "(31)",
+        "page": 5,
+        "plain_language": "Separates the physical-particle residues from the standard quasiparticle contribution to currents.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It organizes the excited-state current into explicit discrete-particle and continuous terms."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\epsilon(\\theta_k)=\\sum_i\\beta_i h_i(\\theta_k)+\\sum_j\\eta_j\\log S(\\theta_k-\\theta_j)-i\\log S(\\theta_k-u)\\circ\\partial_u\\epsilon(u)",
+        "number": "(32)",
+        "page": 5,
+        "plain_language": "Quantization condition for the rapidities of the analytically continued particles.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It fixes the positions of the poles whose residues enter the excited-state pairing."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "0=\\partial_{\\beta_i}\\epsilon(\\theta_k)=h_i^{\\mathrm{dr}}(\\theta_k)+\\sum_j\\partial_{\\theta_j}\\epsilon(\\theta_k)\\partial_{\\beta_i}\\theta_j",
+        "number": "(33)",
+        "page": 5,
+        "plain_language": "Differentiated quantization condition relating changes in rapidities to dressed charges.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is needed to compute the \\(\\beta_i\\)-derivatives of the pole positions in equation (31)."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "G_{jk}=-i\\partial_{\\theta_j}\\epsilon(\\theta_k)=-i(\\delta_{jk}\\partial_\\theta\\epsilon(\\theta)+\\partial_{\\theta_j}\\epsilon(\\theta))|_{\\theta_k}=\\delta_{jk}D^{\\mathrm{dr}}(\\theta_k)-\\varphi_j^{\\mathrm{dr}}(\\theta_k)",
+        "number": "(34)",
+        "page": 5,
+        "plain_language": "Definition of the Gaudin matrix in the excited-state setting.",
+        "referenced_on_pages": [],
+        "why_it_matters": "The Gaudin matrix controls the response of rapidities and thus the discrete contributions to currents."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "D(\\theta)=-i\\sum_l\\beta_l h_l'(\\theta)+\\sum_j\\varphi_j(\\theta);\\quad \\varphi_j(\\theta)=\\eta_j\\varphi(\\theta-\\theta_j)",
+        "number": "(35)",
+        "page": 5,
+        "plain_language": "Auxiliary function entering the dressed Gaudin matrix and source terms.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It packages the scattering kernels and source rapidities needed in the matrix formula."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(36)",
+        "latex": "0 = \\partial_{\\beta_i}\\epsilon(\\theta_k) = \\partial_\\theta \\epsilon(\\theta)\\big|_{\\theta_k} \\frac{\\partial \\theta_k}{\\partial \\beta_i} + \\partial_{\\beta_i}\\epsilon(\\theta)\\big|_{\\theta_k}",
+        "number": "36",
+        "page": 6,
+        "plain_language": "Implicit dependence of the rapidity \\theta_k on \\beta_i through the stationarity of \\epsilon.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is used to derive the dressed derivative h_i^{dr} and ultimately the current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(37)",
+        "latex": "\\langle j_i\\rangle = \\sum_{k,l} \\eta_k E'^0(\\theta_k)G^{-1}_{kl}h_i^{\\mathrm{dr}}(\\theta_l)+E'(\\theta)\\circ h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "37",
+        "page": 6,
+        "plain_language": "The current expectation value written as a discrete sum plus a continuous convolution in terms of the dressed h_i.",
+        "referenced_on_pages": [],
+        "why_it_matters": "This is an intermediate form that is later rewritten in terms of the old dressing and simplified."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(38)",
+        "latex": "g^{\\mathrm{dr}}(\\theta)=g(\\theta)+\\sum_j \\frac{\\varphi_j(\\theta)}{D^{\\mathrm{dr}}(\\theta_j)}g(\\theta_j)+\\varphi(\\theta-u)\\circ g^{\\mathrm{dr}}(u)=\\sum_{n=0}^{\\infty}[\\varphi(\\theta-u)\\bullet]^n g(u)",
+        "number": "38",
+        "page": 6,
+        "plain_language": "The new dressing is split into a discrete part and a continuous convolution part.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It allows the new dressing to be expressed in terms of the old one and the convolution kernel."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(39)",
+        "latex": "g^{\\mathrm{dr}}(\\theta)=g^{\\mathrm{dr}}(\\theta)+\\sum_j \\varphi_j^{\\mathrm{dr}}(\\theta)G^{-1}_{jk}g^{\\mathrm{dr}}(\\theta_k)",
+        "number": "39",
+        "page": 6,
+        "plain_language": "The dressed quantity is rewritten using the inverse Gaudin-type matrix and the old dressing.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the key algebraic step for eliminating the new dressing operator from the current and charge expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(40)",
+        "latex": "\\langle j_i\\rangle = \\sum_{k,l}\\eta_k (E')^{\\mathrm{dr}}(\\theta_k)G^{-1}_{kl}h_i^{\\mathrm{dr}}(\\theta_l)+E'(\\theta)\\circ h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "40",
+        "page": 6,
+        "plain_language": "The current expectation value expressed solely through the old dressing and convolutions.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It gives the finite-volume current formula that can be compared with earlier results."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(41)",
+        "latex": "\\langle q_i\\rangle = \\sum_{k,l}\\eta_k (p')^{\\mathrm{dr}}(\\theta_k)G^{-1}_{kl}h_i^{\\mathrm{dr}}(\\theta_l)+p'(\\theta)\\circ h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "41",
+        "page": 6,
+        "plain_language": "The analogous expectation value for the conserved charge q_i.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the charge counterpart of the current formula and is used for excited-state calculations."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(42)",
+        "latex": "\\partial_\\theta \\epsilon(\\theta)=L E'(\\theta)+i\\sum_k \\eta_k \\varphi(\\theta-\\theta_k)+\\varphi(\\theta-u)\\circ \\partial_u \\epsilon(u)=L(E')^{\\mathrm{dr}}(\\theta)",
+        "number": "42",
+        "page": 6,
+        "plain_language": "A finite-volume relation for the derivative of \\epsilon involving the driving energy and dressing.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It supplies the relation needed to evaluate the finite-volume current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(43)",
+        "latex": "\\langle j_k\\rangle = \\frac{1}{L}\\partial_\\theta \\epsilon(\\theta)\\bullet h_k(\\theta) = \\frac{1}{L}\\left(i\\sum_j \\eta_j h_k(\\theta_j)+\\int \\frac{d\\theta}{2\\pi} h_k(\\theta)\\log(1+e^{-\\epsilon(\\theta)})\\right)",
+        "number": "43",
+        "page": 6,
+        "plain_language": "The finite-volume current expectation value written in terms of h_k and \\epsilon.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the computational bridge from the dressing formulas to diagonal excited-state matrix elements."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(44)",
+        "latex": "\\langle\\{\\theta\\}|q_k|\\{\\theta\\}\\rangle_L = i(E')^{\\mathrm{dr}}(\\theta)\\bullet h_k(\\theta^\\gamma)=i\\langle j_k^\\gamma\\rangle",
+        "number": "44",
+        "page": 6,
+        "plain_language": "The diagonal finite-volume matrix element of the charge q_k in an excited state.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It interprets the charge expectation value as an excited-state diagonal matrix element."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(45)",
+        "latex": "\\langle\\{\\theta\\}|j_k|\\{\\theta\\}\\rangle_L = i(p')^{\\mathrm{dr}}(\\theta)\\bullet h_k(\\theta^\\gamma)=i\\langle q_k^\\gamma\\rangle",
+        "number": "45",
+        "page": 6,
+        "plain_language": "The diagonal finite-volume matrix element of the current j_k in an excited state.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "It is the concise finite-volume current result that is later rewritten in the separated-corrections form (47)."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(46)",
+        "latex": "L\\langle\\{\\theta\\}|q_k|\\{\\theta\\}\\rangle_L = -\\sum_j \\eta_j h_k\\left(\\theta_j+\\frac{i\\pi}{2}\\right)+i\\int \\frac{d\\theta}{2\\pi}h_k\\left(\\theta+\\frac{i\\pi}{2}\\right)\\log(1+e^{-\\epsilon(\\theta)})",
+        "number": "46",
+        "page": 7,
+        "plain_language": "The excited-state charge expectation value after a contour shift by i\\pi/2.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It shows explicitly how the finite-volume charge eigenvalue is reproduced and gives the sinh-Gordon check."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(47)",
+        "latex": "\\langle\\{\\theta\\}|j_k|\\{\\theta\\}\\rangle_L = i\\sum_{m,l}\\eta_m (p')^{\\mathrm{dr}}(\\theta_m)G^{-1}_{ml}h_k\\left(\\theta_l+\\frac{i\\pi}{2}\\right)^{\\mathrm{dr}} + i p'(\\theta)\\circ h_k\\left(\\theta+\\frac{i\\pi}{2}\\right)^{\\mathrm{dr}}",
+        "number": "47",
+        "page": 7,
+        "plain_language": "The exact finite-volume current expectation value with polynomial and exponential finite-size corrections separated.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "This is the main result of the paper: an exact finite-volume expression for conserved currents."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(48)",
+        "latex": "\\langle\\{\\theta\\}|j_i|\\{\\theta\\}\\rangle_L = \\sum_{k,l} E'(\\bar{\\theta}_k)\\bar{G}^{-1}_{kl}h_i(\\bar{\\theta}_l)",
+        "number": "48",
+        "page": 7,
+        "plain_language": "The asymptotic sinh-Gordon finite-volume current expectation value in terms of charge derivatives and the inverse Gaudin matrix.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "It recovers the known asymptotic formula and provides a check against previous calculations."
+      }
+    ],
+    "open_questions": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "It would be very nice to derive similar formulas for non-diagonally scattering theories."
+          }
+        ],
+        "stated_by": "authors",
+        "text": "Can the formulas be derived for non-diagonally scattering theories?"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "The aim of our paper is to provide a simple derivation of this result and to extend it in order to incorporate all the finite size corrections."
+          }
+        ],
+        "stated_by": "authors",
+        "text": "Can the previous asymptotic result be derived simply and extended to include all finite-size corrections?"
+      }
+    ],
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The aim of our paper is to provide a simple derivation of this result and to extend it in order to incorporate all the finite size corrections."
+        }
+      ],
+      "text": "How can the finite-volume excited-state expectation values of conserved currents be obtained exactly in diagonally scattering integrable QFTs?"
+    },
+    "references": [
+      {
+        "authors": [
+          "O. A. Castro-Alvaredo",
+          "B. Doyon",
+          "T. Yoshimura"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 8,
+        "title": "Emergent hydrodynamics in integrable quantum systems out of equilibrium",
+        "venue": "Phys. Rev. X6 no. 4, (2016) 041065, arXiv:1605.07331 [cond-mat.stat-mech]",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "R. A. Janik",
+          "A. Wereszczynski"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 8,
+        "title": "HHL correlators, orbit averaging and form factors",
+        "venue": "JHEP 09 (2014) 050, arXiv:1404.4556 [hep-th]",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "L. Hollo",
+          "Y. Jiang",
+          "A. Petrovskii"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 8,
+        "title": "Diagonal Form Factors and Heavy-Heavy-Light Three-Point Functions at Weak Coupling",
+        "venue": "JHEP 09 (2015) 125, arXiv:1504.07133 [hep-th]",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Y. Jiang",
+          "A. Petrovskii"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 8,
+        "title": "Diagonal form factors and hexagon form factors",
+        "venue": "JHEP 07 (2016) 120, arXiv:1511.06199 [hep-th]",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Y. Jiang"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 8,
+        "title": "Diagonal Form Factors and Hexagon Form Factors II. Non-BPS Light Operator",
+        "venue": "JHEP 01 (2017) 021, arXiv:1601.06926 [hep-th]",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "B. Bertini",
+          "M. Collura",
+          "J. De Nardis",
+          "M. Fagotti"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 8,
+        "title": "Transport in Out-of-Equilibrium XXZ Chains: Exact Profiles of Charges and Currents",
+        "venue": "Phys. Rev. Lett. 117 no. 20, (2016) 207201, arXiv:1605.09790 [cond-mat.stat-mech]",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "D.-L. Vu",
+          "T. Yoshimura"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 8,
+        "title": "Equations of state in generalized hydrodynamics",
+        "venue": "SciPost Phys. 6 no. 2, (2019) 023, arXiv:1809.03197 [cond-mat.stat-mech]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M. Borsi",
+          "B. Pozsgay",
+          "L. Pristyak"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 8,
+        "title": "Current operators in Bethe Ansatz and Generalized Hydrodynamics: An exact quantum/classical correspondence",
+        "venue": "arXiv:1908.07320 [cond-mat.stat-mech]",
+        "year": null
+      },
+      {
+        "authors": [
+          "B. Pozsgay"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 8,
+        "title": "Current operators in integrable spin chains: lessons from long range deformations",
+        "venue": "arXiv:1910.12833 [cond-mat.stat-mech]",
+        "year": null
+      },
+      {
+        "authors": [
+          "A. B. Zamolodchikov"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 8,
+        "title": "Thermodynamic Bethe Ansatz in Relativistic Models. Scaling Three State Potts and Lee-Yang Models",
+        "venue": "Nucl. Phys. B342 (1990) 695–720",
+        "year": 1990
+      },
+      {
+        "authors": [
+          "A. Leclair",
+          "G. Mussardo"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 8,
+        "title": "Finite temperature correlation functions in integrable QFT",
+        "venue": "Nucl. Phys. B552 (1999) 624–642, arXiv: hep-th/9902075 [hep-th]",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "C. Ahn",
+          "Z. Bajnok",
+          "D. Bombardelli",
+          "R. I. Nepomechie"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 8,
+        "title": "TBA, NLO Luscher correction, and double wrapping in twisted AdS/CFT",
+        "venue": "JHEP 12 (2011) 059, arXiv:1108.4914 [hep-th]",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "G. Hernandez-Chifflet",
+          "S. Negro",
+          "A. Sfondrini"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 8,
+        "title": "Flow equations for generalised T T̄ deformations",
+        "venue": "arXiv:1911.12233 [hep-th]",
+        "year": null
+      },
+      {
+        "authors": [
+          "P. Dorey",
+          "R. Tateo"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 8,
+        "title": "Excited states by analytic continuation of TBA equations",
+        "venue": "Nucl. Phys. B482 (1996) 639–659, arXiv: hep-th/9607167 [hep-th]",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "A. George"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 8,
+        "title": "From defects to boundaries",
+        "venue": "Int. J. Mod. Phys. A21 (2006) 1063–1078, arXiv: hep-th/0404199 [hep-th]",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "F. Smirnov"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 8,
+        "title": "Diagonal finite volume matrix elements in the sinh-Gordon model",
+        "venue": "Nucl. Phys. B945 (2019) 114664, arXiv:1903.06990 [hep-th]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B. Pozsgay"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 8,
+        "title": "Form factor approach to diagonal finite volume matrix elements in Integrable QFT",
+        "venue": "JHEP 07 (2013) 157, arXiv:1305.3373 [hep-th]",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. Hegedus"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 8,
+        "title": "Lattice approach to finite volume form-factors of the Massive Thirring (Sine-Gordon) model",
+        "venue": "JHEP 08 (2017) 059, arXiv:1705.00319 [hep-th]",
+        "year": 2017
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting.",
+        "reference_key": "1",
+        "relation": "extends",
+        "why": "The paper analytically continues the structural equations of GHD to finite-volume excited states."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+        "reference_key": "14",
+        "relation": "uses_method",
+        "why": "The analytic continuation method for excited-state TBA is taken directly from this work."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+        "reference_key": "11",
+        "relation": "uses_method",
+        "why": "The Leclair-Mussardo formula is used as an alternative derivation of the vacuum current and charge expectation values."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "These defects then modify the thermal equilibrium and change the quasi-particle density [15].",
+        "reference_key": "15",
+        "relation": "uses_method",
+        "why": "The defect-line interpretation motivates the modified quasi-particle density in the excited thermal channel."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+        "reference_key": "16",
+        "relation": "uses_method",
+        "why": "Prior sinh-Gordon analysis suggested the key idea that all effects can be encoded into a new pairing."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Writing h i dr (θ l) = h i (θ l) + ϕ(θ l − u) ◦ h i dr (u) we can observe that the leading part of the result, i.e. the term without any integration, is the same which was obtained in [8, 9] in a more complicated way.",
+        "reference_key": "8, 9",
+        "relation": "extends",
+        "why": "The paper recovers and extends the leading asymptotic result of these direct calculations."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "This formula agrees with the recent direct calculations in [8, 9].",
+        "reference_key": "8, 9",
+        "relation": "compares",
+        "why": "The asymptotic limit of the new finite-volume current formula is checked against these earlier direct calculations."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+        "reference_key": "17",
+        "relation": "compares",
+        "why": "The excited-state formula is tested against the existing generalization of the Leclair-Mussardo formula."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+        "reference_key": "18",
+        "relation": "critiques",
+        "why": "The paper points to this as the simplest existing non-diagonal result, motivating future generalization."
+      }
+    ],
+    "supercut": [
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "The paper starts from generalized hydrodynamics and its TBA description, where vacuum expectation values of conserved charges and currents are encoded through an occupation-number pairing."
+      },
+      {
+        "kind": "source",
+        "page": 2,
+        "text": "The collection of the β i “temperatures” can be traded for the expectation values of the conserved charges hq i i ∝ ∂ β i log Z, implying that the expectation values of the currents hj i i depend on hq i i which is the equation of state hj i i = F i (hqi)."
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "The key formal object is the pairing with occupation-number measure, which implements the TBA convolution and dressing."
+      },
+      {
+        "kind": "source",
+        "page": 2,
+        "text": "For later generalizations we introduce a pairing including the occupation number as"
+      },
+      {
+        "kind": "source",
+        "page": 2,
+        "text": "It is also useful to introduce dressed quantities which satisfy"
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "To go to excited states, the authors use analytic continuation of the TBA equations."
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations."
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "Thus we expect that all formulae remain the same as the groundstate ones except that the pairing has to be replaced with a new pairing:"
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "Formally we can represent the effect of the continuation with a modified contour as shown on Figure 1."
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "Replacing the pairing in the vacuum formulas gives the excited-state charge and current expectation values; the authors then reduce them to expressions separating physical particles from quasi-particles."
+      },
+      {
+        "kind": "source",
+        "page": 5,
+        "text": "These are the main results of the paper."
+      },
+      {
+        "kind": "source",
+        "page": 5,
+        "text": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details."
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "The main current formula is then rewritten with polynomial and exponential finite-size corrections separated, and checked against earlier asymptotic results and the excited-state LM formula."
+      },
+      {
+        "kind": "source",
+        "page": 7,
+        "text": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents."
+      },
+      {
+        "kind": "source",
+        "page": 7,
+        "text": "This formula agrees with the recent direct calculations in [8, 9]."
+      },
+      {
+        "kind": "source",
+        "page": 7,
+        "text": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17]."
+      },
+      {
+        "kind": "source",
+        "page": 7,
+        "text": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species."
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper presents analytic derivations, conjectures, and consistency checks in integrable quantum field theory.",
+      "value": "theory"
+    }
+  },
+  "pass1_check": {
+    "sites": 83,
+    "verbatim": 78,
+    "near": 5,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/open_questions/1",
+      "action": "remove",
+      "value_json": null,
+      "reason": "The paper states this as its aim and reports having achieved it, so it is not an open question.",
+      "evidence": [
+        {
+          "quote": "The aim of our paper is to provide a simple derivation of this result and to extend it in order to incorporate all the finite size corrections.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/relations/8/relation",
+      "action": "replace",
+      "value_json": "\"mentions\"",
+      "reason": "The paper mentions this prior result; it does not critique it.",
+      "evidence": [
+        {
+          "quote": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+          "page": 7
+        }
+      ]
+    },
+    {
+      "path": "/claims/1/evidence/0",
+      "action": "replace",
+      "value_json": "{\"page\":7,\"quote\":\"In the following we elaborate further on these results. For the expectation value of the conserved charge we can write\"}",
+      "reason": "The quote should point to the page where Eq. (46) is introduced, not the general main-results statement on page 5.",
+      "evidence": [
+        {
+          "quote": "In the following we elaborate further on these results. For the expectation value of the conserved charge we can write",
+          "page": 7
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/open_questions/1",
+      "action": "remove",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/relations/8/relation",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/claims/1/evidence/0",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 82,
+    "verbatim": 77,
+    "near": 5,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "The vacuum expectation values of conserved currents play an essential role in the generalized\nhydrodynamics of integrable quantum field theories. We use analytic continuation to extend these\nresults for the excited state expectation values in a finite volume. Our formulas are valid for\ndiagonally scattering theories and incorporate all finite size corrections.",
+      "admitted": "The vacuum expectation values of conserved currents play an essential role in the generalized\nhydrodynamics of integrable quantum field theories. We use analytic continuation to extend these\nresults for the excited state expectation values in a finite volume. Our formulas are valid for\ndiagonally scattering theories and incorporate all finite size corrections.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/headline_results/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents.",
+      "admitted": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/headline_results/1/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "In the sinh-Gordon model η k = 1 and θ k = θ̄ k + iπ 2, where θ̄ k is the rapidity of the particle, thus our formula reproduces the charge eigenvalue correctly, which asymptotically takes the form Q i = P k h i ( θ̄ k).",
+      "admitted": "In the sinh-Gordon model η k = 1 and θ k = θ̄ k + iπ 2, where θ̄ k is the rapidity of the particle, thus our formula reproduces the charge eigenvalue correctly, which asymptotically takes the form Q i = P h ( θ̄ ). k",
+      "similarity": 0.9545454545454546,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/headline_results/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This formula agrees with the recent direct calculations in [8, 9].",
+      "admitted": "This formula agrees with the recent direct calculations in [8, 9].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/headline_results/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10].",
+      "admitted": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting.",
+      "admitted": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "There were interesting direct calculations [8, 9], which expressed the current expectation values in spin chain Bethe states in terms of the charge eigenvalues and the inverse of the Gaudin matrix.",
+      "admitted": "There were interesting direct calculations [8, 9], which expressed the current expectation values in spin chain Bethe states in terms of the charge eigenvalues and the inverse of the Gaudin matrix.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "admitted": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "admitted": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "As a result we describe exactly the finite volume excited state expectation values of conserved currents.",
+      "admitted": "As a result we describe exactly the finite volume excited state expectation values of conserved currents.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents.",
+      "admitted": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In the following we elaborate further on these results. For the expectation value of the conserved charge we can write",
+      "admitted": "In the following we elaborate further on these results. For the expectation value of the conserved charge we can write",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This formula agrees with the recent direct calculations in [8, 9].",
+      "admitted": "This formula agrees with the recent direct calculations in [8, 9].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10].",
+      "admitted": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our formulas are valid for diagonally scattering theories and incorporate all finite size corrections.",
+      "admitted": "Our formulas are valid for diagonally scattering theories and incorporate all finite size corrections.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/5/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details.",
+      "admitted": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/claims/6/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Multiparticle generalizations for diagonal scatterings are straightforward as well as the extension for flows generated by other conserved charges.",
+      "admitted": "Multiparticle generalizations for diagonal scatterings are straightforward as well as the extension for flows generated by other conserved charges.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In statistical physics the recent developments of the generalized hydrodynamics require the knowledge of the finite temperature expectation values of conserved charges and currents as they are the key inputs in formulating the Euler type hydrodynamic evolution [1, 6, 7].",
+      "admitted": "In statistical physics the recent developments of the generalized hydrodynamics require the knowledge of the finite temperature expectation values of conserved charges and currents as they are the key inputs in formulating the Euler type hydrodynamic evolution [1, 6, 7].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+      "admitted": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+      "admitted": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "admitted": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "For later generalizations we introduce a pairing including the occupation number as",
+      "admitted": "For later generalizations we introduce a pairing including the occupation number as",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/5/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In the second term we recognize the Gaudin matrix",
+      "admitted": "In the second term we recognize the Gaudin matrix",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/6/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+      "admitted": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/7/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In the scaling Lee-Yang model they are symmetric for the real line.",
+      "admitted": "In the scaling Lee-Yang model they are symmetric for the real line.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/glossary/8/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+      "admitted": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Exact finite volume expectation values of conserved currents",
+      "admitted": "Exact finite volume expectation values of conserved currents",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Zoltan Bajnok¹, Istvan Vona 1,2",
+      "admitted": "Zoltan Bajnok¹, Istvan Vona 1,2",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/limitations/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details.",
+      "admitted": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/limitations/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species.",
+      "admitted": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/method/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our formulas are valid for diagonally scattering theories and incorporate all finite size corrections.",
+      "admitted": "Our formulas are valid for diagonally scattering theories and incorporate all finite size corrections.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "where θ is the rapidity which parametrizes the energy and momentum as E(θ) = m cosh θ, p(θ) = m sinh θ.",
+      "admitted": "where θ is the rapidity which parametrizes the energy and momentum as E(θ) = m cosh θ, p(θ) = m sinh θ.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We focus on a relativistic integrable theory of a single particle which scatters on itself with the S-matrix S(θ 1 − θ 2), where θ is the rapidity which parametrizes the energy and momentum as E(θ) = m cosh θ, p(θ) = m sinh θ.",
+      "admitted": "We focus on a relativistic integrable theory of a single particle which scatters on itself with the S-matrix S(θ 1 − θ 2), where θ is the rapidity which parametrizes the energy and momentum as E(θ) = m cosh θ, p(θ) = m sinh θ.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The normal modes, however are neither of these, instead they are related to the occupation number n:",
+      "admitted": "The normal modes, however are neither of these, instead they are related to the occupation number n:",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It is also useful to introduce dressed quantities which satisfy",
+      "admitted": "It is also useful to introduce dressed quantities which satisfy",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Comparing hj i i to hq i i we can extract the effective velocity of the quasi-particles v eff (θ) = (E 0) dr /(p 0) dr.",
+      "admitted": "Comparing hj i i to hq i i we can extract the effective velocity of the quasi-particles v eff (θ) = (E 0) dr /(p 0) dr.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/5/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The residues η j are 1 for poles on the upper and −1 for the lower half-plane.",
+      "admitted": "The residues η j are 1 for poles on the upper and −1 for the lower half-plane.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/6/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In the second term we recognize the Gaudin matrix",
+      "admitted": "In the second term we recognize the Gaudin matrix",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/notation/7/evidence/0/quote",
+      "status": "verbatim",
+      "original": "where ϕ(θ) = −i∂ θ log S(θ).",
+      "admitted": "where ϕ(θ) = −i∂ θ log S(θ).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/open_questions/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It would be very nice to derive similar formulas for non-diagonally scattering theories.",
+      "admitted": "It would be very nice to derive similar formulas for non-diagonally scattering theories.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The aim of our paper is to provide a simple derivation of this result and to extend it in order to incorporate all the finite size corrections.",
+      "admitted": "The aim of our paper is to provide a simple derivation of this result and to extend it in order to incorporate all the finite size corrections.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/1/text",
+      "status": "verbatim",
+      "original": "The collection of the β i “temperatures” can be traded for the expectation values of the conserved charges hq i i ∝ ∂ β i log Z, implying that the expectation values of the currents hj i i depend on hq i i which is the equation of state hj i i = F i (hqi).",
+      "admitted": "The collection of the β i “temperatures” can be traded for the expectation values of the conserved charges hq i i ∝ ∂ β i log Z, implying that the expectation values of the currents hj i i depend on hq i i which is the equation of state hj i i = F i (hqi).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/3/text",
+      "status": "verbatim",
+      "original": "For later generalizations we introduce a pairing including the occupation number as",
+      "admitted": "For later generalizations we introduce a pairing including the occupation number as",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/4/text",
+      "status": "verbatim",
+      "original": "It is also useful to introduce dressed quantities which satisfy",
+      "admitted": "It is also useful to introduce dressed quantities which satisfy",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/6/text",
+      "status": "verbatim",
+      "original": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "admitted": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/7/text",
+      "status": "verbatim",
+      "original": "Thus we expect that all formulae remain the same as the groundstate ones except that the pairing has to be replaced with a new pairing:",
+      "admitted": "Thus we expect that all formulae remain the same as the groundstate ones except that the pairing has to be replaced with a new pairing:",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/8/text",
+      "status": "verbatim",
+      "original": "Formally we can represent the effect of the continuation with a modified contour as shown on Figure 1.",
+      "admitted": "Formally we can represent the effect of the continuation with a modified contour as shown on Figure 1.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/10/text",
+      "status": "verbatim",
+      "original": "These are the main results of the paper.",
+      "admitted": "These are the main results of the paper.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/11/text",
+      "status": "verbatim",
+      "original": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details.",
+      "admitted": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/13/text",
+      "status": "verbatim",
+      "original": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents.",
+      "admitted": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/14/text",
+      "status": "verbatim",
+      "original": "This formula agrees with the recent direct calculations in [8, 9].",
+      "admitted": "This formula agrees with the recent direct calculations in [8, 9].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/15/text",
+      "status": "verbatim",
+      "original": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "admitted": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "supercut",
+      "pointer": "/supercut/16/text",
+      "status": "verbatim",
+      "original": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species.",
+      "admitted": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "The motivation came from statistical physics [1] as well as from the AdS/CFT duality [2].",
+      "admitted": "The motivation came from statistical physics [1] as well as from the AdS/CFT duality [2].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "In the AdS/CFT duality heavy-heavy light three-point functions can be mapped to expectation values of local operators in finite volume multiparticle states [2, 3, 4, 5].",
+      "admitted": "In the AdS/CFT duality heavy-heavy light three-point functions can be mapped to expectation values of local operators in finite volume multiparticle states [2, 3, 4, 5].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "In statistical physics the recent developments of the generalized hydrodynamics require the knowledge of the finite temperature expectation values of conserved charges and currents as they are the key inputs in formulating the Euler type hydrodynamic evolution [1, 6, 7].",
+      "admitted": "In statistical physics the recent developments of the generalized hydrodynamics require the knowledge of the finite temperature expectation values of conserved charges and currents as they are the key inputs in formulating the Euler type hydrodynamic evolution [1, 6, 7].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "There were interesting direct calculations [8, 9], which expressed the current expectation values in spin chain Bethe states in terms of the charge eigenvalues and the inverse of the Gaudin matrix.",
+      "admitted": "There were interesting direct calculations [8, 9], which expressed the current expectation values in spin chain Bethe states in terms of the charge eigenvalues and the inverse of the Gaudin matrix.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting.",
+      "admitted": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "In the generalized hydrodynamics of integrable models [1] conservation laws",
+      "admitted": "In the generalized hydrodynamics of integrable models [1] conservation laws",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+      "admitted": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "From relativistic invariance it follows [1] that the current expectation values take the form",
+      "admitted": "From relativistic invariance it follows [1] that the current expectation values take the form",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+      "admitted": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "repaired_local",
+      "original": "Keeping β i nonzero would imply twisted boundary conditions by the conserved charges [12, 13]",
+      "admitted": "γ) 2π i nonzero would imply twisted boundary conditions by the conserved charges [12, 13]",
+      "similarity": 0.8666666666666667,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10].",
+      "admitted": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "admitted": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "These defects then modify the thermal equilibrium and change the quasi-particle density [15].",
+      "admitted": "These defects then modify the thermal equilibrium and change the quasi-particle density [15].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+      "admitted": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "repaired_local",
+      "original": "Writing h i dr (θ l) = h i (θ l) + ϕ(θ l − u) ◦ h i dr (u) we can observe that the leading part of the result, i.e. the term without any integration, is the same which was obtained in [8, 9] in a more complicated way.",
+      "admitted": "Writing h i (θ l) = h i (θ l) + ϕ(θ l − u) ◦ h i (u) we can observe that the leading part of the result, i.e. the term without any integration, is the same which was obtained in [8, 9] in a more complicated way.",
+      "similarity": 0.9574468085106383,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "This formula agrees with the recent direct calculations in [8, 9].",
+      "admitted": "This formula agrees with the recent direct calculations in [8, 9].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "admitted": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "In doing so we had to take into account that [17] is valid in the thermal channel for operators with spins.",
+      "admitted": "In doing so we had to take into account that [17] is valid in the thermal channel for operators with spins.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+      "admitted": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting.",
+      "admitted": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "admitted": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+      "admitted": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "These defects then modify the thermal equilibrium and change the quasi-particle density [15].",
+      "admitted": "These defects then modify the thermal equilibrium and change the quasi-particle density [15].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+      "admitted": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "repaired_local",
+      "original": "Writing h i dr (θ l) = h i (θ l) + ϕ(θ l − u) ◦ h i dr (u) we can observe that the leading part of the result, i.e. the term without any integration, is the same which was obtained in [8, 9] in a more complicated way.",
+      "admitted": "Writing h i (θ l) = h i (θ l) + ϕ(θ l − u) ◦ h i (u) we can observe that the leading part of the result, i.e. the term without any integration, is the same which was obtained in [8, 9] in a more complicated way.",
+      "similarity": 0.9574468085106383,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "This formula agrees with the recent direct calculations in [8, 9].",
+      "admitted": "This formula agrees with the recent direct calculations in [8, 9].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "admitted": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+      "admitted": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "caption",
+      "pointer": "/objects/25/caption",
+      "status": "repaired_local",
+      "original": "Schematical integration contour for excited states. In the sinh-Gordon model the singularities have imaginary part \\(i\\frac{\\pi}{2}\\). In the scaling Lee-Yang model they are symmetric for the real line.",
+      "admitted": "Schematical integration contour for excited states. In the sinh-Gordon model the singularities have imaginary part i π 2. In the scaling Lee-Yang model they are symmetric for the real line.",
+      "similarity": 0.8928571428571429,
+      "cited_page": 5,
+      "matched_page": 5
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 5,
+    "verbatim": 77
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "The vacuum expectation values of conserved currents play an essential role in the generalized\nhydrodynamics of integrable quantum field theories. We use analytic continuation to extend these\nresults for the excited state expectation values in a finite volume. Our formulas are valid for\ndiagonally scattering theories and incorporate all finite size corrections."
+    },
+    "card": {
+      "headline_results": [
+        {
+          "carrier": "Eq. (47)",
+          "confidence": "high",
+          "evidence": [
+            {
+              "page": 7,
+              "quote": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents."
+            }
+          ],
+          "statement": "Exact finite-volume excited-state expectation values of conserved currents."
+        },
+        {
+          "carrier": "Eq. (46)",
+          "confidence": "high",
+          "evidence": [
+            {
+              "page": 7,
+              "quote": "In the sinh-Gordon model η k = 1 and θ k = θ̄ k + iπ 2, where θ̄ k is the rapidity of the particle, thus our formula reproduces the charge eigenvalue correctly, which asymptotically takes the form Q i = P h ( θ̄ ). k"
+            }
+          ],
+          "statement": "Exact finite-volume excited-state expectation values of conserved charges."
+        },
+        {
+          "carrier": "Eq. (48)",
+          "confidence": "high",
+          "evidence": [
+            {
+              "page": 7,
+              "quote": "This formula agrees with the recent direct calculations in [8, 9]."
+            }
+          ],
+          "statement": "Asymptotic limit recovers earlier Gaudin-matrix expressions."
+        },
+        {
+          "carrier": "Eq. (22)",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "page": 4,
+              "quote": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10]."
+            }
+          ],
+          "statement": "Finite-volume vacuum energy expectation value agrees with TBA."
+        }
+      ],
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "[1]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting."
+              }
+            ],
+            "reference_key": "1",
+            "why": "Starts from the structural equations of generalized hydrodynamics."
+          },
+          {
+            "cited_work": "[8, 9]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "There were interesting direct calculations [8, 9], which expressed the current expectation values in spin chain Bethe states in terms of the charge eigenvalues and the inverse of the Gaudin matrix."
+              }
+            ],
+            "reference_key": "8, 9",
+            "why": "Extends earlier vacuum/direct calculations to excited-state finite volume."
+          },
+          {
+            "cited_work": "[14]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations."
+              }
+            ],
+            "reference_key": "14",
+            "why": "Adopts the analytic continuation method for excited-state TBA equations."
+          },
+          {
+            "cited_work": "[17]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17]."
+              }
+            ],
+            "reference_key": "17",
+            "why": "Checks against the excited-state Leclair-Mussardo formula."
+          }
+        ],
+        "replications": [],
+        "targets": []
+      },
+      "read_signal": {
+        "judgment": "skim",
+        "reason": "Narrow specialist paper: central results are exact but the paper itself says the main formulas were conjectured and then checked; most readers can skim the derivation and focus on Eqs. (46)-(48) and the checks."
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "As a result we describe exactly the finite volume excited state expectation values of conserved currents."
+          }
+        ],
+        "text": "The paper analytically continues generalized-hydrodynamics structural equations to obtain exact finite-volume excited-state expectation values of conserved currents, replacing the thermal pairing by an excited-state pairing."
+      }
+    },
+    "citations": [
+      {
+        "context": "The motivation came from statistical physics [1] as well as from the AdS/CFT duality [2].",
+        "page": 1,
+        "reference_key": "1, 2"
+      },
+      {
+        "context": "In the AdS/CFT duality heavy-heavy light three-point functions can be mapped to expectation values of local operators in finite volume multiparticle states [2, 3, 4, 5].",
+        "page": 1,
+        "reference_key": "2, 3, 4, 5"
+      },
+      {
+        "context": "In statistical physics the recent developments of the generalized hydrodynamics require the knowledge of the finite temperature expectation values of conserved charges and currents as they are the key inputs in formulating the Euler type hydrodynamic evolution [1, 6, 7].",
+        "page": 1,
+        "reference_key": "1, 6, 7"
+      },
+      {
+        "context": "There were interesting direct calculations [8, 9], which expressed the current expectation values in spin chain Bethe states in terms of the charge eigenvalues and the inverse of the Gaudin matrix.",
+        "page": 1,
+        "reference_key": "8, 9"
+      },
+      {
+        "context": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting.",
+        "page": 1,
+        "reference_key": "1"
+      },
+      {
+        "context": "In the generalized hydrodynamics of integrable models [1] conservation laws",
+        "page": 2,
+        "reference_key": "1"
+      },
+      {
+        "context": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]",
+        "page": 2,
+        "reference_key": "10"
+      },
+      {
+        "context": "From relativistic invariance it follows [1] that the current expectation values take the form",
+        "page": 3,
+        "reference_key": "1"
+      },
+      {
+        "context": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+        "page": 3,
+        "reference_key": "11"
+      },
+      {
+        "context": "γ) 2π i nonzero would imply twisted boundary conditions by the conserved charges [12, 13]",
+        "page": 3,
+        "reference_key": "12, 13"
+      },
+      {
+        "context": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10].",
+        "page": 4,
+        "reference_key": "10"
+      },
+      {
+        "context": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+        "page": 4,
+        "reference_key": "14"
+      },
+      {
+        "context": "These defects then modify the thermal equilibrium and change the quasi-particle density [15].",
+        "page": 4,
+        "reference_key": "15"
+      },
+      {
+        "context": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+        "page": 4,
+        "reference_key": "16"
+      },
+      {
+        "context": "Writing h i (θ l) = h i (θ l) + ϕ(θ l − u) ◦ h i (u) we can observe that the leading part of the result, i.e. the term without any integration, is the same which was obtained in [8, 9] in a more complicated way.",
+        "page": 6,
+        "reference_key": "8, 9"
+      },
+      {
+        "context": "This formula agrees with the recent direct calculations in [8, 9].",
+        "page": 7,
+        "reference_key": "8, 9"
+      },
+      {
+        "context": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+        "page": 7,
+        "reference_key": "17"
+      },
+      {
+        "context": "In doing so we had to take into account that [17] is valid in the thermal channel for operators with spins.",
+        "page": 7,
+        "reference_key": "17"
+      },
+      {
+        "context": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+        "page": 7,
+        "reference_key": "18"
+      }
+    ],
+    "claims": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (47)",
+          "Section 3",
+          "Section 4"
+        ],
+        "id": "C1",
+        "statement": "The exact finite-volume excited-state expectation value of conserved currents is given by Eq. (47).",
+        "strength": "strong",
+        "support": "Derived by analytically continuing the vacuum/thermal GHD pairing and separating polynomial and exponential finite-size corrections."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "In the following we elaborate further on these results. For the expectation value of the conserved charge we can write"
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (46)",
+          "Section 3"
+        ],
+        "id": "C2",
+        "statement": "The corresponding exact finite-volume excited-state charge expectation value follows from the same modified pairing and is written in Eq. (46).",
+        "strength": "strong",
+        "support": "The charge case is simpler and asymptotically reproduces the charge eigenvalue in the sinh-Gordon model."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "This formula agrees with the recent direct calculations in [8, 9]."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (48)",
+          "[8, 9]"
+        ],
+        "id": "C3",
+        "statement": "In the asymptotic limit the excited-state current expectation values reduce to the earlier Gaudin-matrix expression of [8, 9].",
+        "strength": "strong",
+        "support": "Shown by dropping exponentially small dressing terms and comparing with prior direct calculations."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "which agrees with the groundstate energy E 0 (L) coming from the saddle point value of the partition function [10]."
+          }
+        ],
+        "evidence_refs": [
+          "Eq. (22)",
+          "[10]"
+        ],
+        "id": "C4",
+        "statement": "The finite-volume vacuum expectation value of the energy agrees with the TBA ground-state energy.",
+        "strength": "strong",
+        "support": "Evaluating the charge formula for h1(θ)=m coshθ gives Eq. (22), matching the saddle-point TBA result."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Our formulas are valid for diagonally scattering theories and incorporate all finite size corrections."
+          }
+        ],
+        "evidence_refs": [
+          "Abstract",
+          "Section 4"
+        ],
+        "id": "C5",
+        "statement": "The formulas are valid for diagonally scattering integrable theories with a single species and include all finite-size corrections.",
+        "strength": "strong",
+        "support": "Stated in the abstract and repeated in the conclusions."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details."
+          }
+        ],
+        "evidence_refs": [
+          "Section 3",
+          "Section 4"
+        ],
+        "id": "C6",
+        "statement": "The main excited-state formulas were conjectured rather than derived, and then checked by consistency checks.",
+        "strength": "moderate",
+        "support": "The paper explicitly says the results were not really derived but conjectured based on previous experience."
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "Multiparticle generalizations for diagonal scatterings are straightforward as well as the extension for flows generated by other conserved charges."
+          }
+        ],
+        "evidence_refs": [
+          "Section 4"
+        ],
+        "id": "C7",
+        "statement": "Multiparticle generalizations for diagonal scatterings and extensions to flows of other conserved charges are straightforward, while non-diagonal scattering remains open.",
+        "strength": "moderate",
+        "support": "Stated in the conclusions as an outlook."
+      }
+    ],
+    "glossary": [
+      {
+        "confidence": "high",
+        "definition": "A hydrodynamic framework for integrable systems in which conserved charges and currents determine an Euler-type evolution.",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In statistical physics the recent developments of the generalized hydrodynamics require the knowledge of the finite temperature expectation values of conserved charges and currents as they are the key inputs in formulating the Euler type hydrodynamic evolution [1, 6, 7]."
+          }
+        ],
+        "term": "generalized hydrodynamics (GHD)"
+      },
+      {
+        "confidence": "high",
+        "definition": "The thermodynamic Bethe ansatz equation determines the pseudoenergy and occupation numbers in finite temperature/volume.",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "which can be calculated from the Thermodynamic Bethe ansatz (TBA) equation [10]"
+          }
+        ],
+        "term": "Thermodynamic Bethe ansatz (TBA)"
+      },
+      {
+        "confidence": "high",
+        "definition": "A form-factor expansion for finite-temperature expectation values in integrable QFT.",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]"
+          }
+        ],
+        "term": "Leclair-Mussardo (LM) formula"
+      },
+      {
+        "confidence": "high",
+        "definition": "An analytic continuation method that produces excited-state TBA equations from the ground-state TBA equation.",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations."
+          }
+        ],
+        "term": "excited-state TBA"
+      },
+      {
+        "confidence": "high",
+        "definition": "A pairing of functions with occupation-number measure used in the TBA convolution.",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "For later generalizations we introduce a pairing including the occupation number as"
+          }
+        ],
+        "term": "pairing"
+      },
+      {
+        "confidence": "high",
+        "definition": "The matrix of derivatives of the excited-state quantization conditions, appearing in the finite-size corrections.",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "In the second term we recognize the Gaudin matrix"
+          }
+        ],
+        "term": "Gaudin matrix"
+      },
+      {
+        "confidence": "high",
+        "definition": "An integrable relativistic QFT used as a testing ground for the finite-volume excited-state formulas.",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing."
+          }
+        ],
+        "term": "sinh-Gordon model"
+      },
+      {
+        "confidence": "high",
+        "definition": "A non-unitary integrable model whose singularity structure is mentioned for the integration contour.",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "In the scaling Lee-Yang model they are symmetric for the real line."
+          }
+        ],
+        "term": "scaling Lee-Yang model"
+      },
+      {
+        "confidence": "high",
+        "definition": "A model where the simplest non-diagonal topological current result has been obtained.",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18]."
+          }
+        ],
+        "term": "sine-Gordon theory"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Wigner Research Centre for Physics, Budapest, Hungary",
+          "name": "Zoltan Bajnok"
+        },
+        {
+          "affiliation": "Wigner Research Centre for Physics, Budapest, Hungary and Roland Eötvös University, Budapest, Hungary",
+          "name": "Istvan Vona"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Exact finite volume expectation values of conserved currents"
+        },
+        {
+          "page": 1,
+          "quote": "Zoltan Bajnok¹, Istvan Vona 1,2"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1911.08525v2 [hep-th]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Exact finite volume expectation values of conserved currents",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "key_numbers": [],
+    "limitations": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details."
+          }
+        ],
+        "stated_by": "authors",
+        "text": "The main excited-state formulas are conjectured rather than derived."
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species."
+          }
+        ],
+        "stated_by": "authors",
+        "text": "Validity is limited to diagonally scattering theories with a single species; multiparticle and non-diagonal extensions are discussed separately."
+      }
+    ],
+    "method": {
+      "assumptions": [
+        "relativistic integrable theory",
+        "single particle species",
+        "diagonal scattering",
+        "local thermodynamic equilibrium for the vacuum expectation values"
+      ],
+      "confidence": "high",
+      "data": "analytic calculation in integrable quantum field theory; no experiments or simulations",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Our formulas are valid for diagonally scattering theories and incorporate all finite size corrections."
+        }
+      ],
+      "procedure": "Use analytic continuation of the TBA/GHD structural equations, replace the occupation-number pairing by an excited-state pairing with discrete residue contributions, dress quantities with the modified convolution, and simplify the finite-volume excited-state expectation values.",
+      "setting": "1+1 dimensional relativistic integrable quantum field theory in finite volume"
+    },
+    "notation": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "where θ is the rapidity which parametrizes the energy and momentum as E(θ) = m cosh θ, p(θ) = m sinh θ."
+          }
+        ],
+        "meaning": "Rapidity parameter for energy and momentum.",
+        "page": 2,
+        "symbol": "θ"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "We focus on a relativistic integrable theory of a single particle which scatters on itself with the S-matrix S(θ 1 − θ 2), where θ is the rapidity which parametrizes the energy and momentum as E(θ) = m cosh θ, p(θ) = m sinh θ."
+          }
+        ],
+        "meaning": "Two-particle scattering matrix depending on rapidity difference.",
+        "page": 2,
+        "symbol": "S(θ)"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "The normal modes, however are neither of these, instead they are related to the occupation number n:"
+          }
+        ],
+        "meaning": "Occupation number for quasi-particles in the TBA state.",
+        "page": 2,
+        "symbol": "n(θ)"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "It is also useful to introduce dressed quantities which satisfy"
+          }
+        ],
+        "meaning": "Dressed quantity obtained by convolving with the kernel φ and occupation number.",
+        "page": 2,
+        "symbol": "g^dr"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 3,
+            "quote": "Comparing hj i i to hq i i we can extract the effective velocity of the quasi-particles v eff (θ) = (E 0) dr /(p 0) dr."
+          }
+        ],
+        "meaning": "Effective velocity of quasi-particles in generalized hydrodynamics.",
+        "page": 3,
+        "symbol": "v^eff"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "The residues η j are 1 for poles on the upper and −1 for the lower half-plane."
+          }
+        ],
+        "meaning": "Residue signs for poles picked up in the modified contour for excited states.",
+        "page": 4,
+        "symbol": "η_j"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 5,
+            "quote": "In the second term we recognize the Gaudin matrix"
+          }
+        ],
+        "meaning": "Matrix of derivatives of the excited-state quantization conditions.",
+        "page": 5,
+        "symbol": "G_jk"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "where ϕ(θ) = −i∂ θ log S(θ)."
+          }
+        ],
+        "meaning": "TBA kernel derived from the S-matrix.",
+        "page": 2,
+        "symbol": "φ(θ)"
+      }
+    ],
+    "objects": [
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "∂tx_i(x,t)+∂xj_i(x,t)=0",
+        "number": "(1)",
+        "page": 2,
+        "plain_language": "Conservation law for a charge density and its current.",
+        "referenced_on_pages": [],
+        "why_it_matters": "This continuity equation is the basis for the finite-volume current expectation values studied in the paper."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "⟨O⟩=Z^{-1}Tr(Oe^{-∑_j\\beta_jQ_j}); Z=Tr(e^{-∑_j\\beta_jQ_j})",
+        "number": "(2)",
+        "page": 2,
+        "plain_language": "Thermal expectation value and partition function with conserved charges.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It defines the thermal averages whose finite-volume analogues are analyzed."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle q_i\\rangle=\\int\\frac{d\\theta}{2\\pi}\\rho(\\theta)h_i(\\theta)",
+        "number": "(3)",
+        "page": 2,
+        "plain_language": "Charge expectation value written using quasiparticle density and one-particle charge eigenvalue.",
+        "referenced_on_pages": [],
+        "why_it_matters": "This is the density formula that later gets extended to finite-volume excited states."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "n(\\theta)=\\frac{1}{1+e^{\\epsilon(\\theta)}}",
+        "number": "(4)",
+        "page": 2,
+        "plain_language": "Occupation number in terms of the pseudoenergy.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It defines the Fermi weighting used in the thermodynamic Bethe ansatz pairing."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\epsilon(\\theta)=\\sum_i\\beta_i h_i(\\theta)-\\int\\frac{du}{2\\pi}\\varphi(\\theta-u)\\log(1+e^{-\\epsilon(u)})",
+        "number": "(5)",
+        "page": 2,
+        "plain_language": "Thermodynamic Bethe ansatz equation for the pseudoenergy.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It determines the thermal quasiparticle state used to compute expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "g(\\theta)\\circ h(\\theta)=\\int g(\\theta)h(\\theta)\\frac{n(\\theta)d\\theta}{2\\pi}",
+        "number": "(6)",
+        "page": 2,
+        "plain_language": "Definition of a convolution-like pairing weighted by the occupation number.",
+        "referenced_on_pages": [],
+        "why_it_matters": "The pairing is the main algebraic device later modified for excited states."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\epsilon(\\theta)=\\sum_i\\beta_i h_i(\\theta)-i\\log S(\\theta-u)\\circ\\partial_u\\epsilon(u)",
+        "number": "(7)",
+        "page": 2,
+        "plain_language": "TBA equation after integration by parts, written with the pairing.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It prepares the compact pairing form used throughout the paper."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "g^{\\mathrm{dr}}(\\theta)=g(\\theta)+\\varphi(\\theta-u)\\circ g^{\\mathrm{dr}}(u)",
+        "number": "(8)",
+        "page": 2,
+        "plain_language": "Integral equation defining dressed quantities.",
+        "referenced_on_pages": [],
+        "why_it_matters": "Dressing incorporates collective medium effects into local charges and currents."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\rho(\\theta)=n(\\theta)(p')^{\\mathrm{dr}}(\\theta)",
+        "number": "(9)",
+        "page": 2,
+        "plain_language": "Quasiparticle density as occupation number times dressed momentum derivative.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It connects the occupation-number formulation to physical densities."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle q_i\\rangle=(p')^{\\mathrm{dr}}(\\theta)\\circ h_i(\\theta)=p'(\\theta)\\circ h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "(10)",
+        "page": 3,
+        "plain_language": "Charge expectation value expressed via dressed momentum and dressed charge.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "It rewrites charges in a form used to derive current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=E'(\\theta)\\circ h_i^{\\mathrm{dr}}(\\theta)=(E')^{\\mathrm{dr}}(\\theta)\\circ h_i(\\theta)",
+        "number": "(11)",
+        "page": 3,
+        "plain_language": "Current expectation value expressed via energy derivative and dressed charge.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "It gives the thermal current corresponding to the charge formula and motivates the effective velocity."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle O\\rangle=\\sum_{n=0}^{\\infty}\\frac{1}{n!}\\prod_{k=1}^{n}\\int\\frac{n(\\theta_k)d\\theta_k}{2\\pi}F_{2n,c}^{O}(\\theta_1,\\ldots,\\theta_n)",
+        "number": "(12)",
+        "page": 3,
+        "plain_language": "Leclair-Mussardo expansion of an expectation value in form factors.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It provides an alternative route to the same charge and current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "F_{2n,c}^{q_i}(\\theta_1,\\ldots,\\theta_n)=E(\\theta_1)\\varphi(\\theta_1-\\theta_2)\\cdots\\varphi(\\theta_{n-1}-\\theta_n)h_i(\\theta_n)+\\text{permutations}",
+        "number": "(13)",
+        "page": 3,
+        "plain_language": "Connected form factor for conserved charge densities.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It supplies the inputs that make the Leclair-Mussardo expansion reproduce the charge formula."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "F_{2n,c}^{j_i}(\\theta_1,\\ldots,\\theta_n)=p(\\theta_1)\\varphi(\\theta_1-\\theta_2)\\cdots\\varphi(\\theta_{n-1}-\\theta_n)h_i(\\theta_n)+\\text{permutations}",
+        "number": "(14)",
+        "page": 3,
+        "plain_language": "Connected form factor for conserved currents.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the current analogue of the charge form factor and supports the LM derivation."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\partial_{\\beta_i}\\epsilon(\\theta)=h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "(15)",
+        "page": 3,
+        "plain_language": "Derivative of the pseudoenergy with respect to a temperature variable gives a dressed charge.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the identity used to turn thermodynamic derivatives into charge and current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle q_i\\rangle=-\\partial_{\\beta_i}\\int\\frac{dp(\\theta)}{2\\pi}\\log(1+e^{-\\epsilon(\\theta)})=-\\partial_{\\beta_i}(p(\\theta)\\circ\\partial_\\theta\\epsilon(\\theta))",
+        "number": "(16)",
+        "page": 3,
+        "plain_language": "Charge expectation value as a thermodynamic derivative of a pressure-like integral.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "It gives a compact thermodynamic formula for charges before specializing to finite volume."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=-\\partial_{\\beta_i}\\int\\frac{dE(\\theta)}{2\\pi}\\log(1+e^{-\\epsilon(\\theta)})=-\\partial_{\\beta_i}(E(\\theta)\\circ\\partial_\\theta\\epsilon(\\theta))",
+        "number": "(17)",
+        "page": 3,
+        "plain_language": "Current expectation value as a thermodynamic derivative of a pressure-like integral.",
+        "referenced_on_pages": [
+          3
+        ],
+        "why_it_matters": "It is the corresponding compact formula for currents."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=\\frac{1}{L}h_i(\\theta)\\circ\\partial_\\theta\\epsilon(\\theta)=\\frac{1}{L}\\int\\frac{d\\theta}{2\\pi}h_i'(\\theta)\\log(1+e^{-\\epsilon(\\theta)})",
+        "number": "(18)",
+        "page": 3,
+        "plain_language": "Finite-volume current expectation value in the ground-state channel.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the simpler current formula obtained when only the volume parameter is nonzero."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle0|O|0\\rangle_L=\\sum_{n=0}^{\\infty}\\frac{1}{n!}\\prod_{k=1}^{n}\\int\\frac{n(\\theta_k)d\\theta_k}{2\\pi}F_{2n,c}^{O}(\\theta_1^\\gamma,\\ldots,\\theta_n^\\gamma)",
+        "number": "(19)",
+        "page": 3,
+        "plain_language": "Finite-volume vacuum Leclair-Mussardo formula in the mirror channel.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It sets up the finite-volume vacuum expectation values before generalizing to excited states."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle0|q_k|0\\rangle_L=i(E')^{\\mathrm{dr}}(\\theta)\\circ h_k(\\theta^\\gamma)=i\\langle j_k^\\gamma\\rangle",
+        "number": "(20)",
+        "page": 4,
+        "plain_language": "Finite-volume vacuum charge expectation value related to a crossed current.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It relates charges and currents under the crossing transformation."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle0|q_k|0\\rangle_L=\\frac{i}{L}\\int\\frac{d\\theta}{2\\pi}h_k'\\left(\\theta+\\frac{i\\pi}{2}\\right)\\log(1+e^{-\\epsilon(\\theta)})",
+        "number": "(21)",
+        "page": 4,
+        "plain_language": "Integral formula for the finite-volume vacuum charge expectation value.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the explicit finite-volume charge expression obtained after crossing."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "L\\langle0|q_1|0\\rangle_L=-m\\int\\frac{d\\theta}{2\\pi}\\cosh\\theta\\log(1+e^{-\\epsilon(\\theta)})",
+        "number": "(22)",
+        "page": 4,
+        "plain_language": "Energy specialization of the finite-volume vacuum charge formula.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It checks the formula against the known ground-state energy from the partition function."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle0|j_i|0\\rangle_L=i(p')^{\\mathrm{dr}}(\\theta)\\circ h_i(\\theta^\\gamma)=i\\langle q_i^\\gamma\\rangle",
+        "number": "(23)",
+        "page": 4,
+        "plain_language": "Finite-volume vacuum current expectation value related to a crossed charge.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It completes the vacuum-current crossing relation before passing to excited states."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "g(\\theta)\\bullet h(\\theta)=\\sum_j\\frac{\\eta_j i h(\\theta_j)g(\\theta_j)}{\\partial_\\theta\\epsilon(\\theta)|_{\\theta_j}}+\\int g(\\theta)h(\\theta)\\frac{n(\\theta)d\\theta}{2\\pi}",
+        "number": "(24)",
+        "page": 4,
+        "plain_language": "New pairing with extra residue contributions for excited states.",
+        "referenced_on_pages": [],
+        "why_it_matters": "This modified pairing is the key replacement that encodes excited-state analytic continuation."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\epsilon(\\theta)=\\sum_k\\beta_k h_k(\\theta)-i\\log S(\\theta-u)\\bullet\\partial_u\\epsilon(u)=\\sum_k\\beta_k h_k(\\theta)+\\sum_k\\eta_k\\log S(\\theta-\\theta_k)-i\\log S(\\theta-u)\\circ\\partial_u\\epsilon(u)",
+        "number": "(25)",
+        "page": 4,
+        "plain_language": "Excited-state TBA equation obtained from the modified convolution.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It defines the pseudoenergy whose dressing and derivatives give excited-state expectation values."
+      },
+      {
+        "caption": "Schematical integration contour for excited states. In the sinh-Gordon model the singularities have imaginary part i π 2. In the scaling Lee-Yang model they are symmetric for the real line.",
+        "confidence": "high",
+        "kind": "figure",
+        "label": "Figure 1",
+        "latex": null,
+        "number": "1",
+        "page": 5,
+        "plain_language": "Schematic of the deformed integration contour used to pick up excited-state pole contributions.",
+        "referenced_on_pages": [
+          4
+        ],
+        "why_it_matters": "It visualizes the analytic continuation underlying the modified pairing and the excited-state TBA source terms."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle q_i\\rangle=(p')^{\\mathrm{dr}}(\\theta)\\bullet h_i(\\theta)=p'(\\theta)\\bullet h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "(26)",
+        "page": 5,
+        "plain_language": "Excited-state charge expectation value written with the new pairing.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the excited-state analogue of the ground-state charge formula."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=E'(\\theta)\\bullet h_i^{\\mathrm{dr}}(\\theta)=(E')^{\\mathrm{dr}}(\\theta)\\bullet h_i(\\theta)",
+        "number": "(27)",
+        "page": 5,
+        "plain_language": "Excited-state current expectation value written with the new pairing.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the excited-state analogue of the ground-state current formula."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "g^{\\mathrm{dr}}(\\theta)=g(\\theta)+\\varphi(\\theta-u)\\bullet g^{\\mathrm{dr}}(u)",
+        "number": "(28)",
+        "page": 5,
+        "plain_language": "Dressing equation using the excited-state modified convolution.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It defines dressed quantities when physical-particle contributions are included."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle q_i\\rangle=-\\partial_{\\beta_i}(p(\\theta)\\bullet\\partial_\\theta\\epsilon(\\theta))",
+        "number": "(29)",
+        "page": 5,
+        "plain_language": "Compact thermodynamic formula for excited-state charges.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is one of the paper's main general results for excited-state charge expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=-\\partial_{\\beta_i}(E(\\theta)\\bullet\\partial_\\theta\\epsilon(\\theta))",
+        "number": "(30)",
+        "page": 5,
+        "plain_language": "Compact thermodynamic formula for excited-state currents.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is one of the paper's main general results for excited-state current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\langle j_i\\rangle=-\\partial_{\\beta_i}\\left(i\\sum_k\\eta_k E(\\theta_k)+E(\\theta)\\bullet\\partial_\\theta\\epsilon(\\theta)\\right)=-i\\sum_k\\eta_k E'(\\theta_k)\\partial_{\\beta_i}\\theta_k-\\partial_{\\beta_i}\\left(E(\\theta)\\circ\\partial_\\theta\\epsilon(\\theta)\\right)",
+        "number": "(31)",
+        "page": 5,
+        "plain_language": "Separates the physical-particle residues from the standard quasiparticle contribution to currents.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It organizes the excited-state current into explicit discrete-particle and continuous terms."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "\\epsilon(\\theta_k)=\\sum_i\\beta_i h_i(\\theta_k)+\\sum_j\\eta_j\\log S(\\theta_k-\\theta_j)-i\\log S(\\theta_k-u)\\circ\\partial_u\\epsilon(u)",
+        "number": "(32)",
+        "page": 5,
+        "plain_language": "Quantization condition for the rapidities of the analytically continued particles.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It fixes the positions of the poles whose residues enter the excited-state pairing."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "0=\\partial_{\\beta_i}\\epsilon(\\theta_k)=h_i^{\\mathrm{dr}}(\\theta_k)+\\sum_j\\partial_{\\theta_j}\\epsilon(\\theta_k)\\partial_{\\beta_i}\\theta_j",
+        "number": "(33)",
+        "page": 5,
+        "plain_language": "Differentiated quantization condition relating changes in rapidities to dressed charges.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is needed to compute the \\(\\beta_i\\)-derivatives of the pole positions in equation (31)."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "G_{jk}=-i\\partial_{\\theta_j}\\epsilon(\\theta_k)=-i(\\delta_{jk}\\partial_\\theta\\epsilon(\\theta)+\\partial_{\\theta_j}\\epsilon(\\theta))|_{\\theta_k}=\\delta_{jk}D^{\\mathrm{dr}}(\\theta_k)-\\varphi_j^{\\mathrm{dr}}(\\theta_k)",
+        "number": "(34)",
+        "page": 5,
+        "plain_language": "Definition of the Gaudin matrix in the excited-state setting.",
+        "referenced_on_pages": [],
+        "why_it_matters": "The Gaudin matrix controls the response of rapidities and thus the discrete contributions to currents."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": null,
+        "latex": "D(\\theta)=-i\\sum_l\\beta_l h_l'(\\theta)+\\sum_j\\varphi_j(\\theta);\\quad \\varphi_j(\\theta)=\\eta_j\\varphi(\\theta-\\theta_j)",
+        "number": "(35)",
+        "page": 5,
+        "plain_language": "Auxiliary function entering the dressed Gaudin matrix and source terms.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It packages the scattering kernels and source rapidities needed in the matrix formula."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(36)",
+        "latex": "0 = \\partial_{\\beta_i}\\epsilon(\\theta_k) = \\partial_\\theta \\epsilon(\\theta)\\big|_{\\theta_k} \\frac{\\partial \\theta_k}{\\partial \\beta_i} + \\partial_{\\beta_i}\\epsilon(\\theta)\\big|_{\\theta_k}",
+        "number": "36",
+        "page": 6,
+        "plain_language": "Implicit dependence of the rapidity \\theta_k on \\beta_i through the stationarity of \\epsilon.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is used to derive the dressed derivative h_i^{dr} and ultimately the current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(37)",
+        "latex": "\\langle j_i\\rangle = \\sum_{k,l} \\eta_k E'^0(\\theta_k)G^{-1}_{kl}h_i^{\\mathrm{dr}}(\\theta_l)+E'(\\theta)\\circ h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "37",
+        "page": 6,
+        "plain_language": "The current expectation value written as a discrete sum plus a continuous convolution in terms of the dressed h_i.",
+        "referenced_on_pages": [],
+        "why_it_matters": "This is an intermediate form that is later rewritten in terms of the old dressing and simplified."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(38)",
+        "latex": "g^{\\mathrm{dr}}(\\theta)=g(\\theta)+\\sum_j \\frac{\\varphi_j(\\theta)}{D^{\\mathrm{dr}}(\\theta_j)}g(\\theta_j)+\\varphi(\\theta-u)\\circ g^{\\mathrm{dr}}(u)=\\sum_{n=0}^{\\infty}[\\varphi(\\theta-u)\\bullet]^n g(u)",
+        "number": "38",
+        "page": 6,
+        "plain_language": "The new dressing is split into a discrete part and a continuous convolution part.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It allows the new dressing to be expressed in terms of the old one and the convolution kernel."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(39)",
+        "latex": "g^{\\mathrm{dr}}(\\theta)=g^{\\mathrm{dr}}(\\theta)+\\sum_j \\varphi_j^{\\mathrm{dr}}(\\theta)G^{-1}_{jk}g^{\\mathrm{dr}}(\\theta_k)",
+        "number": "39",
+        "page": 6,
+        "plain_language": "The dressed quantity is rewritten using the inverse Gaudin-type matrix and the old dressing.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the key algebraic step for eliminating the new dressing operator from the current and charge expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(40)",
+        "latex": "\\langle j_i\\rangle = \\sum_{k,l}\\eta_k (E')^{\\mathrm{dr}}(\\theta_k)G^{-1}_{kl}h_i^{\\mathrm{dr}}(\\theta_l)+E'(\\theta)\\circ h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "40",
+        "page": 6,
+        "plain_language": "The current expectation value expressed solely through the old dressing and convolutions.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It gives the finite-volume current formula that can be compared with earlier results."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(41)",
+        "latex": "\\langle q_i\\rangle = \\sum_{k,l}\\eta_k (p')^{\\mathrm{dr}}(\\theta_k)G^{-1}_{kl}h_i^{\\mathrm{dr}}(\\theta_l)+p'(\\theta)\\circ h_i^{\\mathrm{dr}}(\\theta)",
+        "number": "41",
+        "page": 6,
+        "plain_language": "The analogous expectation value for the conserved charge q_i.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the charge counterpart of the current formula and is used for excited-state calculations."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(42)",
+        "latex": "\\partial_\\theta \\epsilon(\\theta)=L E'(\\theta)+i\\sum_k \\eta_k \\varphi(\\theta-\\theta_k)+\\varphi(\\theta-u)\\circ \\partial_u \\epsilon(u)=L(E')^{\\mathrm{dr}}(\\theta)",
+        "number": "42",
+        "page": 6,
+        "plain_language": "A finite-volume relation for the derivative of \\epsilon involving the driving energy and dressing.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It supplies the relation needed to evaluate the finite-volume current expectation values."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(43)",
+        "latex": "\\langle j_k\\rangle = \\frac{1}{L}\\partial_\\theta \\epsilon(\\theta)\\bullet h_k(\\theta) = \\frac{1}{L}\\left(i\\sum_j \\eta_j h_k(\\theta_j)+\\int \\frac{d\\theta}{2\\pi} h_k(\\theta)\\log(1+e^{-\\epsilon(\\theta)})\\right)",
+        "number": "43",
+        "page": 6,
+        "plain_language": "The finite-volume current expectation value written in terms of h_k and \\epsilon.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It is the computational bridge from the dressing formulas to diagonal excited-state matrix elements."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(44)",
+        "latex": "\\langle\\{\\theta\\}|q_k|\\{\\theta\\}\\rangle_L = i(E')^{\\mathrm{dr}}(\\theta)\\bullet h_k(\\theta^\\gamma)=i\\langle j_k^\\gamma\\rangle",
+        "number": "44",
+        "page": 6,
+        "plain_language": "The diagonal finite-volume matrix element of the charge q_k in an excited state.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It interprets the charge expectation value as an excited-state diagonal matrix element."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(45)",
+        "latex": "\\langle\\{\\theta\\}|j_k|\\{\\theta\\}\\rangle_L = i(p')^{\\mathrm{dr}}(\\theta)\\bullet h_k(\\theta^\\gamma)=i\\langle q_k^\\gamma\\rangle",
+        "number": "45",
+        "page": 6,
+        "plain_language": "The diagonal finite-volume matrix element of the current j_k in an excited state.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "It is the concise finite-volume current result that is later rewritten in the separated-corrections form (47)."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(46)",
+        "latex": "L\\langle\\{\\theta\\}|q_k|\\{\\theta\\}\\rangle_L = -\\sum_j \\eta_j h_k\\left(\\theta_j+\\frac{i\\pi}{2}\\right)+i\\int \\frac{d\\theta}{2\\pi}h_k\\left(\\theta+\\frac{i\\pi}{2}\\right)\\log(1+e^{-\\epsilon(\\theta)})",
+        "number": "46",
+        "page": 7,
+        "plain_language": "The excited-state charge expectation value after a contour shift by i\\pi/2.",
+        "referenced_on_pages": [],
+        "why_it_matters": "It shows explicitly how the finite-volume charge eigenvalue is reproduced and gives the sinh-Gordon check."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(47)",
+        "latex": "\\langle\\{\\theta\\}|j_k|\\{\\theta\\}\\rangle_L = i\\sum_{m,l}\\eta_m (p')^{\\mathrm{dr}}(\\theta_m)G^{-1}_{ml}h_k\\left(\\theta_l+\\frac{i\\pi}{2}\\right)^{\\mathrm{dr}} + i p'(\\theta)\\circ h_k\\left(\\theta+\\frac{i\\pi}{2}\\right)^{\\mathrm{dr}}",
+        "number": "47",
+        "page": 7,
+        "plain_language": "The exact finite-volume current expectation value with polynomial and exponential finite-size corrections separated.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "This is the main result of the paper: an exact finite-volume expression for conserved currents."
+      },
+      {
+        "caption": null,
+        "confidence": "high",
+        "kind": "equation",
+        "label": "(48)",
+        "latex": "\\langle\\{\\theta\\}|j_i|\\{\\theta\\}\\rangle_L = \\sum_{k,l} E'(\\bar{\\theta}_k)\\bar{G}^{-1}_{kl}h_i(\\bar{\\theta}_l)",
+        "number": "48",
+        "page": 7,
+        "plain_language": "The asymptotic sinh-Gordon finite-volume current expectation value in terms of charge derivatives and the inverse Gaudin matrix.",
+        "referenced_on_pages": [
+          7
+        ],
+        "why_it_matters": "It recovers the known asymptotic formula and provides a check against previous calculations."
+      }
+    ],
+    "open_questions": [
+      {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 7,
+            "quote": "It would be very nice to derive similar formulas for non-diagonally scattering theories."
+          }
+        ],
+        "stated_by": "authors",
+        "text": "Can the formulas be derived for non-diagonally scattering theories?"
+      }
+    ],
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The aim of our paper is to provide a simple derivation of this result and to extend it in order to incorporate all the finite size corrections."
+        }
+      ],
+      "text": "How can the finite-volume excited-state expectation values of conserved currents be obtained exactly in diagonally scattering integrable QFTs?"
+    },
+    "references": [
+      {
+        "authors": [
+          "O. A. Castro-Alvaredo",
+          "B. Doyon",
+          "T. Yoshimura"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 8,
+        "title": "Emergent hydrodynamics in integrable quantum systems out of equilibrium",
+        "venue": "Phys. Rev. X6 no. 4, (2016) 041065, arXiv:1605.07331 [cond-mat.stat-mech]",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "R. A. Janik",
+          "A. Wereszczynski"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 8,
+        "title": "HHL correlators, orbit averaging and form factors",
+        "venue": "JHEP 09 (2014) 050, arXiv:1404.4556 [hep-th]",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "L. Hollo",
+          "Y. Jiang",
+          "A. Petrovskii"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 8,
+        "title": "Diagonal Form Factors and Heavy-Heavy-Light Three-Point Functions at Weak Coupling",
+        "venue": "JHEP 09 (2015) 125, arXiv:1504.07133 [hep-th]",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Y. Jiang",
+          "A. Petrovskii"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 8,
+        "title": "Diagonal form factors and hexagon form factors",
+        "venue": "JHEP 07 (2016) 120, arXiv:1511.06199 [hep-th]",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Y. Jiang"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 8,
+        "title": "Diagonal Form Factors and Hexagon Form Factors II. Non-BPS Light Operator",
+        "venue": "JHEP 01 (2017) 021, arXiv:1601.06926 [hep-th]",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "B. Bertini",
+          "M. Collura",
+          "J. De Nardis",
+          "M. Fagotti"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 8,
+        "title": "Transport in Out-of-Equilibrium XXZ Chains: Exact Profiles of Charges and Currents",
+        "venue": "Phys. Rev. Lett. 117 no. 20, (2016) 207201, arXiv:1605.09790 [cond-mat.stat-mech]",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "D.-L. Vu",
+          "T. Yoshimura"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 8,
+        "title": "Equations of state in generalized hydrodynamics",
+        "venue": "SciPost Phys. 6 no. 2, (2019) 023, arXiv:1809.03197 [cond-mat.stat-mech]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "M. Borsi",
+          "B. Pozsgay",
+          "L. Pristyak"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 8,
+        "title": "Current operators in Bethe Ansatz and Generalized Hydrodynamics: An exact quantum/classical correspondence",
+        "venue": "arXiv:1908.07320 [cond-mat.stat-mech]",
+        "year": null
+      },
+      {
+        "authors": [
+          "B. Pozsgay"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 8,
+        "title": "Current operators in integrable spin chains: lessons from long range deformations",
+        "venue": "arXiv:1910.12833 [cond-mat.stat-mech]",
+        "year": null
+      },
+      {
+        "authors": [
+          "A. B. Zamolodchikov"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 8,
+        "title": "Thermodynamic Bethe Ansatz in Relativistic Models. Scaling Three State Potts and Lee-Yang Models",
+        "venue": "Nucl. Phys. B342 (1990) 695–720",
+        "year": 1990
+      },
+      {
+        "authors": [
+          "A. Leclair",
+          "G. Mussardo"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 8,
+        "title": "Finite temperature correlation functions in integrable QFT",
+        "venue": "Nucl. Phys. B552 (1999) 624–642, arXiv: hep-th/9902075 [hep-th]",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "C. Ahn",
+          "Z. Bajnok",
+          "D. Bombardelli",
+          "R. I. Nepomechie"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 8,
+        "title": "TBA, NLO Luscher correction, and double wrapping in twisted AdS/CFT",
+        "venue": "JHEP 12 (2011) 059, arXiv:1108.4914 [hep-th]",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "G. Hernandez-Chifflet",
+          "S. Negro",
+          "A. Sfondrini"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 8,
+        "title": "Flow equations for generalised T T̄ deformations",
+        "venue": "arXiv:1911.12233 [hep-th]",
+        "year": null
+      },
+      {
+        "authors": [
+          "P. Dorey",
+          "R. Tateo"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 8,
+        "title": "Excited states by analytic continuation of TBA equations",
+        "venue": "Nucl. Phys. B482 (1996) 639–659, arXiv: hep-th/9607167 [hep-th]",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "A. George"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 8,
+        "title": "From defects to boundaries",
+        "venue": "Int. J. Mod. Phys. A21 (2006) 1063–1078, arXiv: hep-th/0404199 [hep-th]",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Z. Bajnok",
+          "F. Smirnov"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 8,
+        "title": "Diagonal finite volume matrix elements in the sinh-Gordon model",
+        "venue": "Nucl. Phys. B945 (2019) 114664, arXiv:1903.06990 [hep-th]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "B. Pozsgay"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 8,
+        "title": "Form factor approach to diagonal finite volume matrix elements in Integrable QFT",
+        "venue": "JHEP 07 (2013) 157, arXiv:1305.3373 [hep-th]",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. Hegedus"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 8,
+        "title": "Lattice approach to finite volume form-factors of the Massive Thirring (Sine-Gordon) model",
+        "venue": "JHEP 08 (2017) 059, arXiv:1705.00319 [hep-th]",
+        "year": 2017
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "In doing so we continue analytically the structural equations of generalized hydrodynamics [1] and interpret the result in the finite volume setting.",
+        "reference_key": "1",
+        "relation": "extends",
+        "why": "The paper analytically continues the structural equations of GHD to finite-volume excited states."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations.",
+        "reference_key": "14",
+        "relation": "uses_method",
+        "why": "The analytic continuation method for excited-state TBA is taken directly from this work."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "These results can also be obtained from the Leclair-Mussardo (LM) formula [11]",
+        "reference_key": "11",
+        "relation": "uses_method",
+        "why": "The Leclair-Mussardo formula is used as an alternative derivation of the vacuum current and charge expectation values."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "These defects then modify the thermal equilibrium and change the quasi-particle density [15].",
+        "reference_key": "15",
+        "relation": "uses_method",
+        "why": "The defect-line interpretation motivates the modified quasi-particle density in the excited thermal channel."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In analyzing the finite volume excited state expectation values in the sinh-Gordon model [16] it turned out that all effects coming from the analytical continuation can be encoded into the pairing.",
+        "reference_key": "16",
+        "relation": "uses_method",
+        "why": "Prior sinh-Gordon analysis suggested the key idea that all effects can be encoded into a new pairing."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Writing h i (θ l) = h i (θ l) + ϕ(θ l − u) ◦ h i (u) we can observe that the leading part of the result, i.e. the term without any integration, is the same which was obtained in [8, 9] in a more complicated way.",
+        "reference_key": "8, 9",
+        "relation": "extends",
+        "why": "The paper recovers and extends the leading asymptotic result of these direct calculations."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "This formula agrees with the recent direct calculations in [8, 9].",
+        "reference_key": "8, 9",
+        "relation": "compares",
+        "why": "The asymptotic limit of the new finite-volume current formula is checked against these earlier direct calculations."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17].",
+        "reference_key": "17",
+        "relation": "compares",
+        "why": "The excited-state formula is tested against the existing generalization of the Leclair-Mussardo formula."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "The simplest of such results was obtained for the topological current in the sine-Gordon theory in [18].",
+        "reference_key": "18",
+        "relation": "mentions",
+        "why": "The paper points to this as the simplest existing non-diagonal result, motivating future generalization."
+      }
+    ],
+    "supercut": [
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "The paper starts from generalized hydrodynamics and its TBA description, where vacuum expectation values of conserved charges and currents are encoded through an occupation-number pairing."
+      },
+      {
+        "kind": "source",
+        "page": 2,
+        "text": "The collection of the β i “temperatures” can be traded for the expectation values of the conserved charges hq i i ∝ ∂ β i log Z, implying that the expectation values of the currents hj i i depend on hq i i which is the equation of state hj i i = F i (hqi)."
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "The key formal object is the pairing with occupation-number measure, which implements the TBA convolution and dressing."
+      },
+      {
+        "kind": "source",
+        "page": 2,
+        "text": "For later generalizations we introduce a pairing including the occupation number as"
+      },
+      {
+        "kind": "source",
+        "page": 2,
+        "text": "It is also useful to introduce dressed quantities which satisfy"
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "To go to excited states, the authors use analytic continuation of the TBA equations."
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "It was observed in [14] that excited state TBA equations can be obtained from the ground-state one by analytical continuations."
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "Thus we expect that all formulae remain the same as the groundstate ones except that the pairing has to be replaced with a new pairing:"
+      },
+      {
+        "kind": "source",
+        "page": 4,
+        "text": "Formally we can represent the effect of the continuation with a modified contour as shown on Figure 1."
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "Replacing the pairing in the vacuum formulas gives the excited-state charge and current expectation values; the authors then reduce them to expressions separating physical particles from quasi-particles."
+      },
+      {
+        "kind": "source",
+        "page": 5,
+        "text": "These are the main results of the paper."
+      },
+      {
+        "kind": "source",
+        "page": 5,
+        "text": "Since they were not really derived, merely conjectured based on previous experiences, we perform various consistency checks and elaborate the details."
+      },
+      {
+        "kind": "connector",
+        "page": null,
+        "text": "The main current formula is then rewritten with polynomial and exponential finite-size corrections separated, and checked against earlier asymptotic results and the excited-state LM formula."
+      },
+      {
+        "kind": "source",
+        "page": 7,
+        "text": "This formula is the main result of our paper, which describes the exact finite volume expectation value of conserved currents."
+      },
+      {
+        "kind": "source",
+        "page": 7,
+        "text": "This formula agrees with the recent direct calculations in [8, 9]."
+      },
+      {
+        "kind": "source",
+        "page": 7,
+        "text": "We also checked these formulas in the sinh-Gordon theory against the generalization of the LM formula for excited states [17]."
+      },
+      {
+        "kind": "source",
+        "page": 7,
+        "text": "Our results provide all the finite size corrections to the asymptotical formulas valid in a diagonally scattering integrable theory with a single species."
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper presents analytic derivations, conjectures, and consistency checks in integrable quantum field theory.",
+      "value": "theory"
+    }
+  }
+}

@@ -1,0 +1,1497 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T02:45:05.820393182Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Shannon - 1948 - A Mathematical Theory of Communication.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 55,
+  "calls": [
+    {
+      "stage": "extract.identity",
+      "max_tokens": 131072,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 1194,
+      "cached_tokens": 0,
+      "completion_tokens": 4187,
+      "reasoning_tokens": 4136,
+      "cost_usd": 0.00217708,
+      "cost_source": "reported",
+      "latency_s": 30.48783968
+    },
+    {
+      "stage": "extract.type",
+      "max_tokens": 131072,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 39057,
+      "cached_tokens": 0,
+      "completion_tokens": 1146,
+      "reasoning_tokens": 1095,
+      "cost_usd": 0.004842261,
+      "cost_source": "reported",
+      "latency_s": 14.118747498
+    },
+    {
+      "stage": "extract.abstract",
+      "max_tokens": 131072,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 2763,
+      "cached_tokens": 768,
+      "completion_tokens": 157,
+      "reasoning_tokens": 150,
+      "cost_usd": 0.000224294,
+      "cost_source": "reported",
+      "latency_s": 2.821756964
+    },
+    {
+      "stage": "extract.card",
+      "max_tokens": 131072,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 39088,
+      "cached_tokens": 0,
+      "completion_tokens": 2265,
+      "reasoning_tokens": 2213,
+      "cost_usd": 0.00386866,
+      "cost_source": "reported",
+      "latency_s": 33.736173089
+    },
+    {
+      "stage": "extract.sections",
+      "max_tokens": 131072,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 39581,
+      "cached_tokens": 0,
+      "completion_tokens": 26806,
+      "reasoning_tokens": 27182,
+      "cost_usd": 0.01617367,
+      "cost_source": "reported",
+      "latency_s": 192.057404135
+    },
+    {
+      "stage": "extract.references",
+      "max_tokens": 131072,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 39081,
+      "cached_tokens": 256,
+      "completion_tokens": 10792,
+      "reasoning_tokens": 9658,
+      "cost_usd": 0.011717303,
+      "cost_source": "reported",
+      "latency_s": 64.334232927
+    },
+    {
+      "stage": "extract.graph",
+      "max_tokens": 131072,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 39092,
+      "cached_tokens": 38912,
+      "completion_tokens": 15381,
+      "reasoning_tokens": 13425,
+      "cost_usd": 0.011327251,
+      "cost_source": "reported",
+      "latency_s": 96.670305467
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 44019,
+      "cached_tokens": 768,
+      "completion_tokens": 9281,
+      "reasoning_tokens": 8993,
+      "cost_usd": 0.024117108,
+      "cost_source": "reported",
+      "latency_s": 59.814770529
+    }
+  ],
+  "totals": {
+    "calls": 8,
+    "prompt_tokens": 243875,
+    "cached_tokens": 40704,
+    "completion_tokens": 70015,
+    "cost_usd": 0.074447627,
+    "model_latency_s": 494.041230289,
+    "wall_s": 503.834786083
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e8-fanout-30-2026-10-20/results/shannon1948.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": null,
+      "text": null
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Nyquist and Hartley",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject."
+              }
+            ],
+            "reference_key": "Nyquist1924; Hartley1928",
+            "why": "Shannon explicitly states that the basis for his communication theory is contained in their prior work."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Engineering communication theory / semantic theories of communication",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "These semantic aspects of communication are irrelevant to the engineering problem."
+              }
+            ],
+            "reference_key": null,
+            "why": "Shannon contrasts his engineering approach by treating semantic aspects as irrelevant and focusing on the statistical problem of message selection."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "The significant aspect is that the actual message is one selected from a set of possible messages."
+          },
+          {
+            "page": 1,
+            "quote": "The logarithmic measure is more convenient for various reasons:"
+          },
+          {
+            "page": 11,
+            "quote": "The only H satisfying the three above assumptions is of the form:"
+          }
+        ],
+        "text": "Communication can be treated as a statistical problem in which messages are selected from a set of possibilities, and the amount of information is measured by a logarithmic entropy function that gives fundamental limits on reliable transmission."
+      }
+    },
+    "citations": [
+      {
+        "context": "A basis for such a theory is contained in the important papers of Nyquist and Hartley on this subject.",
+        "page": 1,
+        "reference_key": "Nyquist and Hartley"
+      },
+      {
+        "context": "As was pointed out by Hartley the most natural choice is the logarithmic function.",
+        "page": 1,
+        "reference_key": "Hartley"
+      },
+      {
+        "context": "A physical system, or a mathematical model of a system which produces such a sequence of symbols governed by a set of probabilities, is known as a stochastic process.",
+        "page": 5,
+        "reference_key": "Chandrasekhar"
+      },
+      {
+        "context": "This was constructed with the use of a table of random numbers.",
+        "page": 5,
+        "reference_key": "Kendall and Smith"
+      },
+      {
+        "context": "Letter, digram and trigram frequencies are given in Secret and Urgent by Fletcher Pratt, Blue Ribbon Books, 1939. Word frequencies are tabulated in Relative Frequency of English Speech Sounds, G. Dewey, Harvard University Press, 1923.",
+        "page": 6,
+        "reference_key": "Pratt and Dewey"
+      },
+      {
+        "context": "Stochastic processes of the type described above are known mathematically as discrete Markoff processes and have been extensively studied in the literature.",
+        "page": 8,
+        "reference_key": "Fréchet"
+      },
+      {
+        "context": "If the graph has the following two properties the corresponding process will be ergodic.",
+        "page": 9,
+        "reference_key": "Fréchet"
+      },
+      {
+        "context": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics where pi is the probability of a system being in cell i of its phase space.",
+        "page": 11,
+        "reference_key": "Tolman"
+      },
+      {
+        "context": "This method of encoding is substantially the same as one found independently by R. M. Fano.",
+        "page": 17,
+        "reference_key": "Fano"
+      },
+      {
+        "context": "An efficient code, allowing complete correction of errors and transmitting at the rate C, is the following (found by a method due to R. Hamming).",
+        "page": 27,
+        "reference_key": "Hamming"
+      },
+      {
+        "context": "More precisely it is known that with an ergodic ensemble an average of any statistic over the ensemble is equal (with probability 1) to an average over the time translations of a particular function of the set.",
+        "page": 33,
+        "reference_key": "Birkoff, von Neumann, Koopman, Wiener, Hopf, Hurewicz"
+      },
+      {
+        "context": "Wiener has pointed out the intimate relation between the invariance of physical devices under time translations and Fourier theory.",
+        "page": 34,
+        "reference_key": "Wiener"
+      },
+      {
+        "context": "Communication theory is properly concerned, as has been emphasized by Wiener, not with operations on particular functions, but with operations on ensembles of functions.",
+        "page": 34,
+        "reference_key": "Wiener"
+      },
+      {
+        "context": "Formulas similar to C = W log P + N N for the white noise case have been developed independently by several other writers, although with somewhat different interpretations. We may mention the work of N. Wiener, W. G. Tuller, and H. Sullivan in this connection.",
+        "page": 44,
+        "reference_key": "Wiener, Tuller, and Sullivan"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": null,
+          "name": "C. E. SHANNON"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "A Mathematical Theory of Communication"
+        },
+        {
+          "page": 1,
+          "quote": "By C. E. SHANNON"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "A Mathematical Theory of Communication",
+      "venue": "The Bell System Technical Journal",
+      "year": 1948
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point."
+        },
+        {
+          "page": 10,
+          "quote": "Can we find a measure of how much “choice” is involved in the selection of the event or of how uncertain we are of the outcome?"
+        }
+      ],
+      "text": "How can information be measured and what are the fundamental limits on reliably reproducing messages over discrete, noisy, and continuous communication channels?"
+    },
+    "references": [
+      {
+        "authors": [
+          "H. Nyquist"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 324,
+        "title": "Certain Factors Affecting Telegraph Speed",
+        "venue": "Bell System Technical Journal",
+        "year": 1924
+      },
+      {
+        "authors": [
+          "R. V. L. Hartley"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 535,
+        "title": "Transmission of Information",
+        "venue": "Bell System Technical Journal",
+        "year": 1928
+      },
+      {
+        "authors": [
+          "S. Chandrasekhar"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 1,
+        "title": "Stochastic Problems in Physics and Astronomy",
+        "venue": "Reviews of Modern Physics",
+        "year": 1943
+      },
+      {
+        "authors": [
+          "Kendall",
+          "Smith"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 0,
+        "title": "Tables of Random Sampling Numbers",
+        "venue": "Cambridge",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "Fletcher Pratt"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 0,
+        "title": "Secret and Urgent",
+        "venue": "Blue Ribbon Books",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "G. Dewey"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 0,
+        "title": "Relative Frequency of English Speech Sounds",
+        "venue": "Harvard University Press",
+        "year": 1923
+      },
+      {
+        "authors": [
+          "M. Fréchet"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 0,
+        "title": "Méthode des fonctions arbitraires. Théorie des événements en chaîne dans le cas d’un nombre fini d’états possibles",
+        "venue": "Paris, Gauthier-Villars",
+        "year": 1938
+      },
+      {
+        "authors": [
+          "R. C. Tolman"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 0,
+        "title": "Principles of Statistical Mechanics",
+        "venue": "Oxford, Clarendon",
+        "year": 1938
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "9",
+        "page": 0,
+        "title": "Technical Report No. 65",
+        "venue": "The Research Laboratory of Electronics, M.I.T.",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "E. Hopf"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 0,
+        "title": "Ergodentheorie",
+        "venue": "Ergebnisse der Mathematik und ihrer Grenzgebiete",
+        "year": 1934
+      },
+      {
+        "authors": [
+          "E. Hopf"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 0,
+        "title": "On Causality Statistics and Probability",
+        "venue": "Journal of Mathematics and Physics",
+        "year": 1934
+      },
+      {
+        "authors": [
+          "N. Wiener"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 0,
+        "title": "The Ergodic Theorem",
+        "venue": "Duke Mathematical Journal",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "N. Wiener"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 0,
+        "title": "The Interpolation, Extrapolation and Smoothing of Stationary Time Series",
+        "venue": "Wiley",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "N. Wiener"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 0,
+        "title": "Cybernetics",
+        "venue": "Wiley",
+        "year": 1948
+      },
+      {
+        "authors": [
+          "C. E. Shannon"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 10,
+        "title": "Communication in the Presence of Noise",
+        "venue": "Proceedings of the Institute of Radio Engineers",
+        "year": 1949
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "8",
+        "page": 468,
+        "title": "Theoretical Limitations on the Rate of Transmission of Information",
+        "venue": "Proceedings of the Institute of Radio Engineers",
+        "year": 1949
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+        "reference_key": "Nyquist and Hartley",
+        "relation": "extends",
+        "why": "Shannon treats Nyquist and Hartley as the basis for a general communication theory, then extends that theory to noise and statistical structure."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "As was pointed out by Hartley the most natural choice is the logarithmic",
+        "reference_key": "Hartley",
+        "relation": "uses_method",
+        "why": "Shannon adopts Hartley's logarithmic measure as the natural choice for measuring information."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "such a sequence of symbols governed by a set of probabilities, is known as a stochastic process.³",
+        "reference_key": "Chandrasekhar",
+        "relation": "background",
+        "why": "Chandrasekhar is cited as a background reference for the notion of a stochastic process."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "This was constructed with the use of a table of random numbers.⁴",
+        "reference_key": "Kendall and Smith",
+        "relation": "uses_data",
+        "why": "Shannon uses a table of random numbers from Kendall and Smith to construct one of the example artificial sources."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Letter, digram and trigram frequencies are given in Secret and Urgent by Fletcher Pratt, Blue Ribbon Books, 1939. Word frequencies are tabulated in Relative Frequency of English Speech Sounds, G. Dewey, Harvard University Press, 1923.",
+        "reference_key": "Pratt and Dewey",
+        "relation": "uses_data",
+        "why": "Pratt and Dewey are cited for English letter, digram, trigram, and word frequency data used in the approximations."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "and have been extensively studied in the literature.⁶",
+        "reference_key": "Fréchet",
+        "relation": "background",
+        "why": "Fréchet is cited as a detailed treatment of discrete Markoff processes and the graph conditions for ergodicity."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is",
+        "reference_key": "Tolman",
+        "relation": "background",
+        "why": "Tolman is cited for the formulation of entropy in statistical mechanics, which Shannon uses as an analogy."
+      },
+      {
+        "confidence": "high",
+        "page": 17,
+        "quote": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+        "reference_key": "Fano",
+        "relation": "compares",
+        "why": "Shannon compares his arithmetic encoding method with Fano's independently found method."
+      },
+      {
+        "confidence": "high",
+        "page": 27,
+        "quote": "(found by a method due to R. Hamming):",
+        "reference_key": "Hamming",
+        "relation": "uses_method",
+        "why": "Shannon presents an efficient error-correcting code found by a method due to Hamming."
+      },
+      {
+        "confidence": "high",
+        "page": 33,
+        "quote": "to an average over the time translations of a particular function of the set.³",
+        "reference_key": "Birkoff, von Neumann, Koopman, Wiener, Hopf, Hurewicz",
+        "relation": "background",
+        "why": "Shannon cites the ergodic theorem literature as the basis for identifying ensemble averages with time averages."
+      },
+      {
+        "confidence": "high",
+        "page": 34,
+        "quote": "Communication theory is properly concerned, as has been emphasized by Wiener, not with operations",
+        "reference_key": "Wiener",
+        "relation": "background",
+        "why": "Shannon credits Wiener with emphasizing that communication theory concerns operations on ensembles of functions, an idea central to the paper's statistical approach."
+      },
+      {
+        "confidence": "high",
+        "page": 44,
+        "quote": "N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+        "reference_key": "Wiener, Tuller, and Sullivan",
+        "relation": "compares",
+        "why": "Shannon notes that white-noise capacity formulas were independently developed by Wiener, Tuller, and Sullivan, with somewhat different interpretations."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "A mixed system is one in which both discrete and continuous variables appear, e.g., PCM transmission of speech.",
+          "start_page": 1,
+          "start_text": "Reprinted with corrections from The Bell System Technical Journal,"
+        },
+        "summary": "Shannon defines the engineering problem of communication as reproducing a selected message, sets aside semantic aspects, and adopts a logarithmic measure of information. He introduces bits and outlines the five-part communication system and three system categories.",
+        "title": "Reprinted with corrections from The Bell System Technical Journal, Vol. 27, pp. 379–423, 623–656, July, October, 1948. A Mathematical Theory of Communication By C. E. SHANNON T INTRODUCTION HE recent development of various methods of modulation such as PCM and PPM which exchange bandwidth for signal-to-noise ratio has intensified the interest in a general theory of communication. A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject. In the present paper we will extend the theory to include a number of new factors, in particular the effect of noise in the channel, and the savings possible due to the statistical structure of the original message and due to the nature of the final destination of the information. The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point. Frequently the messages have meaning; that is they refer to or are correlated according to some system with certain physical or conceptual entities. These semantic aspects of communication are irrelevant to the engineering problem. The significant aspect is that the actual message is one selected from a set of possible messages. The system must be designed to operate for each possible selection, not just the one which will actually be chosen since this is unknown at the time of design. If the number of messages in the set is finite then this number or any monotonic function of this number can be regarded as a measure of the information produced when one message is chosen from the set, all choices being equally likely. As was pointed out by Hartley the most natural choice is the logarithmic function. Although this definition must be generalized considerably when we consider the influence of the statistics of the message and when we have a continuous range of messages, we will in all cases use an essentially logarithmic measure. The logarithmic measure is more convenient for various reasons: 1. It is practically more useful. Parameters of engineering importance such as time, bandwidth, number of relays, etc., tend to vary linearly with the logarithm of the number of possibilities. For example, adding one relay to a group doubles the number of possible states of the relays. It adds 1 to the base 2 logarithm of this number. Doubling the time roughly squares the number of possible messages, or doubles the logarithm, etc. 2. It is nearer to our intuitive feeling as to the proper measure. This is closely related to (1) since we intuitively measures entities by linear comparison with common standards. One feels, for example, that two punched cards should have twice the capacity of one for information storage, and two identical channels twice the capacity of one for transmitting information. 3. It is mathematically more suitable. Many of the limiting operations are simple in terms of the logarithm but would require clumsy restatement in terms of the number of possibilities. The choice of a logarithmic base corresponds to the choice of a unit for measuring information. If the base 2 is used the resulting units may be called binary digits, or more briefly bits, a word suggested by J. W. Tukey. A device with two stable positions, such as a relay or a flip-flop circuit, can store one bit of information. N such devices can store N bits, since the total number of possible states is 2N and log2 2N = N. If the base 10 is used the units may be called decimal digits. Since = log2 M = log10 M log10 2 = 3 32 log10 M : ; 1Nyquist, H., “Certain Factors Affecting Telegraph Speed,” Bell System Technical Journal, April 1924, p. 324; “Certain Topics in Telegraph Transmission Theory,” A.I.E. E. Trans., v. 47, April 1928, p. 617. 2Hartley, R. V. L., “Transmission of Information,” Bell System Technical Journal, July 1928, p. 535. 1 INFORMATION SOURCE TRANSMITTER RECEIVER SIGNAL DESTINATION RECEIVED SIGNAL MESSAGE MESSAGE NOISE SOURCE Fig. 1 — Schematic diagram of a general communication system. a decimal digit is about 3 13 bits. A digit wheel on a desk computing machine has ten stable positions and therefore has a storage capacity of one decimal digit. In analytical work where integration and differentiation are involved the base e is sometimes useful. The resulting units of information will be called natural units. Change from the base a to base b merely requires multiplication by logb a. By a communication system we will mean a system of the type indicated schematically in Fig. 1. It consists of essentially five parts: 1. An information source which produces a message or sequence of messages to be communicated to the receiving terminal. The message may be of various types: (a) A sequence of letters as in a telegraph of teletype system; (b) A single function of time f (t) as in radio or telephony; (c) A function of time and other variables as in black and white television — here the message may be thought of as a function f (x y t) of two space coordinates and time, the light intensity at point (x y) and time t on a pickup tube plate; (d) Two or more functions of time, say f (t), g(t), h(t) — this is the case in “threedimensional” sound transmission or if the system is intended to service several individual channels in multiplex; (e) Several functions of several variables — in color television the message consists of three functions f (x y t), g(x y t), h(x y t) defined in a three-dimensional continuum — we may also think of these three functions as components of a vector field defined in the region — similarly, several black and white television sources would produce “messages” consisting of a number of functions of three variables; (f) Various combinations also occur, for example in television with an associated audio channel. ;; ;; ; ;; ;; 2. A transmitter which operates on the message in some way to produce a signal suitable for transmission over the channel. In telephony this operation consists merely of changing sound pressure into a proportional electrical current. In telegraphy we have an encoding operation which produces a sequence of dots, dashes and spaces on the channel corresponding to the message. In a multiplex PCM system the different speech functions must be sampled, compressed, quantized and encoded, and finally interleaved properly to construct the signal. Vocoder systems, television and frequency modulation are other examples of complex operations applied to the message to obtain the signal. 3. The channel is merely the medium used to transmit the signal from transmitter to receiver. It may be a pair of wires, a coaxial cable, a band of radio frequencies, a beam of light, etc. 4. The receiver ordinarily performs the inverse operation of that done by the transmitter, reconstructing the message from the signal. 5. The destination is the person (or thing) for whom the message is intended. We wish to consider certain general problems involving communication systems. To do this it is first necessary to represent the various elements involved as mathematical entities, suitably idealized from their 2 physical counterparts. We may roughly classify communication systems into three main categories: discrete, continuous and mixed. By a discrete system we will mean one in which both the message and the signal are a sequence of discrete symbols. A typical case is telegraphy where the message is a sequence of letters and the signal a sequence of dots, dashes and spaces. A continuous system is one in which the message and signal are both treated as continuous functions, e.g., radio or television. A mixed system is one in which both discrete and continuous variables appear, e.g., PCM transmission of speech."
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a theoretical journal article presenting Shannon's mathematical theory of communication.",
+      "value": "theory"
+    }
+  },
+  "pass1_check": {
+    "sites": 35,
+    "verbatim": 23,
+    "near": 12,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/sections/0/source_span/end_page",
+      "action": "replace",
+      "value_json": "3",
+      "reason": "The section's end_text (\"A mixed system is one in which both discrete and continuous variables appear, e.g., PCM transmission of speech.\") occurs on page 3, not page 2.",
+      "evidence": [
+        {
+          "quote": "A mixed system is one in which both discrete and continuous variables appear, e.g., PCM transmission of speech.",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/sections/0/pages/end",
+      "action": "replace",
+      "value_json": "3",
+      "reason": "The section ends with text that appears on page 3, so the ending page should be 3, not 2.",
+      "evidence": [
+        {
+          "quote": "A mixed system is one in which both discrete and continuous variables appear, e.g., PCM transmission of speech.",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/sections/0/title",
+      "action": "replace",
+      "value_json": "\"Introduction\"",
+      "reason": "The section's title field contains the full text of the article's opening (reprint notice, article title, author, and entire introductory body) rather than a section heading. The heading for this section is 'Introduction'.",
+      "evidence": [
+        {
+          "quote": "A Mathematical Theory of Communication",
+          "page": 1
+        },
+        {
+          "quote": "INTRODUCTION",
+          "page": 1
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/sections/0/source_span/end_page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/sections/0/pages/end",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/sections/0/title",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 35,
+    "verbatim": 23,
+    "near": 12,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+      "admitted": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "These semantic aspects of communication are irrelevant to the engineering problem.",
+      "admitted": "These semantic aspects of communication are irrelevant to the engineering problem.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The significant aspect is that the actual message is one selected from a set of possible messages.",
+      "admitted": "The significant aspect is that the actual message is one selected from a set of possible messages.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/1/quote",
+      "status": "verbatim",
+      "original": "The logarithmic measure is more convenient for various reasons:",
+      "admitted": "The logarithmic measure is more convenient for various reasons:",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/2/quote",
+      "status": "verbatim",
+      "original": "The only H satisfying the three above assumptions is of the form:",
+      "admitted": "The only H satisfying the three above assumptions is of the form:",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "A Mathematical Theory of Communication",
+      "admitted": "A Mathematical Theory of Communication",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "By C. E. SHANNON",
+      "admitted": "By C. E. SHANNON",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point.",
+      "admitted": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Can we find a measure of how much “choice” is involved in the selection of the event or of how uncertain we are of the outcome?",
+      "admitted": "Can we find a measure of how much “choice” is involved in the selection of the event or of how uncertain we are of the outcome?",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "repaired_local",
+      "original": "A basis for such a theory is contained in the important papers of Nyquist and Hartley on this subject.",
+      "admitted": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+      "similarity": 0.8947368421052632,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "As was pointed out by Hartley the most natural choice is the logarithmic function.",
+      "admitted": "As was pointed out by Hartley the most natural choice is the logarithmic function.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "repaired_local",
+      "original": "A physical system, or a mathematical model of a system which produces such a sequence of symbols governed by a set of probabilities, is known as a stochastic process.",
+      "admitted": "A physical system, or a mathematical model of a system which produces such a sequence of symbols governed by a set of probabilities, is known as a stochastic",
+      "similarity": 0.9655172413793104,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "repaired_local",
+      "original": "This was constructed with the use of a table of random numbers.",
+      "admitted": "This was constructed with the use of a table of random",
+      "similarity": 0.9166666666666666,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "repaired_local",
+      "original": "Letter, digram and trigram frequencies are given in Secret and Urgent by Fletcher Pratt, Blue Ribbon Books, 1939. Word frequencies are tabulated in Relative Frequency of English Speech Sounds, G. Dewey, Harvard University Press, 1923.",
+      "admitted": "5Letter, digram and trigram frequencies are given in Secret and Urgent by Fletcher Pratt, Blue Ribbon Books, 1939. Word frequencies are tabulated in Relative Frequency of English Speech Sounds, G. Dewey, Harvard University Press, 1923.",
+      "similarity": 0.9714285714285714,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "repaired_local",
+      "original": "Stochastic processes of the type described above are known mathematically as discrete Markoff processes and have been extensively studied in the literature.",
+      "admitted": "Stochastic processes of the type described above are known mathematically as discrete Markoff processes and have been extensively studied in the",
+      "similarity": 0.9545454545454546,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "repaired_local",
+      "original": "If the graph has the following two properties the corresponding process will be ergodic.",
+      "admitted": "If the graph has the following two properties⁷ the corresponding process will be ergodic:",
+      "similarity": 0.9285714285714286,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "repaired_local",
+      "original": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics where pi is the probability of a system being in cell i of its phase space.",
+      "admitted": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+      "similarity": 0.9714285714285714,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "repaired_local",
+      "original": "This method of encoding is substantially the same as one found independently by R. M. Fano.",
+      "admitted": "This method of encoding is substantially the same as one found independently by R. M.",
+      "similarity": 0.9375,
+      "cited_page": 17,
+      "matched_page": 17
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "An efficient code, allowing complete correction of errors and transmitting at the rate C, is the following (found by a method due to R. Hamming).",
+      "admitted": "An efficient code, allowing complete correction of errors and transmitting at the rate C, is the following (found by a method due to R. Hamming).",
+      "similarity": null,
+      "cited_page": 27,
+      "matched_page": 27
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "repaired_local",
+      "original": "More precisely it is known that with an ergodic ensemble an average of any statistic over the ensemble is equal (with probability 1) to an average over the time translations of a particular function of the set.",
+      "admitted": "More precisely it is known that with an ergodic ensemble an average of any statistic over the ensemble is equal (with probability 1) to an average over the time translations of a particular function of the",
+      "similarity": 0.972972972972973,
+      "cited_page": 33,
+      "matched_page": 33
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "repaired_local",
+      "original": "Wiener has pointed out the intimate relation between the invariance of physical devices under time translations and Fourier theory.",
+      "admitted": "Wiener has pointed out the intimate relation between the invariance of physical devices under time translations and Fourier",
+      "similarity": 0.9473684210526316,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "Communication theory is properly concerned, as has been emphasized by Wiener, not with operations on particular functions, but with operations on ensembles of functions.",
+      "admitted": "Communication theory is properly concerned, as has been emphasized by Wiener, not with operations on particular functions, but with operations on ensembles of functions.",
+      "similarity": null,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "repaired_local",
+      "original": "Formulas similar to C = W log P + N N for the white noise case have been developed independently by several other writers, although with somewhat different interpretations. We may mention the work of N. Wiener, W. G. Tuller, and H. Sullivan in this connection.",
+      "admitted": "Formulas similar to C = W log for the white noise case have been developed independently N by several other writers, although with somewhat different interpretations. We may mention the work of N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+      "similarity": 0.8636363636363636,
+      "cited_page": 44,
+      "matched_page": 44
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+      "admitted": "basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "As was pointed out by Hartley the most natural choice is the logarithmic",
+      "admitted": "As was pointed out by Hartley the most natural choice is the logarithmic",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "such a sequence of symbols governed by a set of probabilities, is known as a stochastic process.³",
+      "admitted": "such a sequence of symbols governed by a set of probabilities, is known as a stochastic process.³",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "This was constructed with the use of a table of random numbers.⁴",
+      "admitted": "This was constructed with the use of a table of random numbers.⁴",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "repaired_local",
+      "original": "Letter, digram and trigram frequencies are given in Secret and Urgent by Fletcher Pratt, Blue Ribbon Books, 1939. Word frequencies are tabulated in Relative Frequency of English Speech Sounds, G. Dewey, Harvard University Press, 1923.",
+      "admitted": "5Letter, digram and trigram frequencies are given in Secret and Urgent by Fletcher Pratt, Blue Ribbon Books, 1939. Word frequencies are tabulated in Relative Frequency of English Speech Sounds, G. Dewey, Harvard University Press, 1923.",
+      "similarity": 0.9714285714285714,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "and have been extensively studied in the literature.⁶",
+      "admitted": "and have been extensively studied in the literature.⁶",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is",
+      "admitted": "will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+      "admitted": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+      "similarity": null,
+      "cited_page": 17,
+      "matched_page": 17
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "(found by a method due to R. Hamming):",
+      "admitted": "(found by a method due to R. Hamming):",
+      "similarity": null,
+      "cited_page": 27,
+      "matched_page": 27
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "verbatim",
+      "original": "to an average over the time translations of a particular function of the set.³",
+      "admitted": "to an average over the time translations of a particular function of the set.³",
+      "similarity": null,
+      "cited_page": 33,
+      "matched_page": 33
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/10/quote",
+      "status": "verbatim",
+      "original": "Communication theory is properly concerned, as has been emphasized by Wiener, not with operations",
+      "admitted": "Communication theory is properly concerned, as has been emphasized by Wiener, not with operations",
+      "similarity": null,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/11/quote",
+      "status": "verbatim",
+      "original": "N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+      "admitted": "N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+      "similarity": null,
+      "cited_page": 44,
+      "matched_page": 44
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 12,
+    "verbatim": 23
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": null,
+      "text": null
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Nyquist and Hartley",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject."
+              }
+            ],
+            "reference_key": "Nyquist1924; Hartley1928",
+            "why": "Shannon explicitly states that the basis for his communication theory is contained in their prior work."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Engineering communication theory / semantic theories of communication",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "These semantic aspects of communication are irrelevant to the engineering problem."
+              }
+            ],
+            "reference_key": null,
+            "why": "Shannon contrasts his engineering approach by treating semantic aspects as irrelevant and focusing on the statistical problem of message selection."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "The significant aspect is that the actual message is one selected from a set of possible messages."
+          },
+          {
+            "page": 1,
+            "quote": "The logarithmic measure is more convenient for various reasons:"
+          },
+          {
+            "page": 11,
+            "quote": "The only H satisfying the three above assumptions is of the form:"
+          }
+        ],
+        "text": "Communication can be treated as a statistical problem in which messages are selected from a set of possibilities, and the amount of information is measured by a logarithmic entropy function that gives fundamental limits on reliable transmission."
+      }
+    },
+    "citations": [
+      {
+        "context": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+        "page": 1,
+        "reference_key": "Nyquist and Hartley"
+      },
+      {
+        "context": "As was pointed out by Hartley the most natural choice is the logarithmic function.",
+        "page": 1,
+        "reference_key": "Hartley"
+      },
+      {
+        "context": "A physical system, or a mathematical model of a system which produces such a sequence of symbols governed by a set of probabilities, is known as a stochastic",
+        "page": 5,
+        "reference_key": "Chandrasekhar"
+      },
+      {
+        "context": "This was constructed with the use of a table of random",
+        "page": 5,
+        "reference_key": "Kendall and Smith"
+      },
+      {
+        "context": "5Letter, digram and trigram frequencies are given in Secret and Urgent by Fletcher Pratt, Blue Ribbon Books, 1939. Word frequencies are tabulated in Relative Frequency of English Speech Sounds, G. Dewey, Harvard University Press, 1923.",
+        "page": 6,
+        "reference_key": "Pratt and Dewey"
+      },
+      {
+        "context": "Stochastic processes of the type described above are known mathematically as discrete Markoff processes and have been extensively studied in the",
+        "page": 8,
+        "reference_key": "Fréchet"
+      },
+      {
+        "context": "If the graph has the following two properties⁷ the corresponding process will be ergodic:",
+        "page": 9,
+        "reference_key": "Fréchet"
+      },
+      {
+        "context": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+        "page": 11,
+        "reference_key": "Tolman"
+      },
+      {
+        "context": "This method of encoding is substantially the same as one found independently by R. M.",
+        "page": 17,
+        "reference_key": "Fano"
+      },
+      {
+        "context": "An efficient code, allowing complete correction of errors and transmitting at the rate C, is the following (found by a method due to R. Hamming).",
+        "page": 27,
+        "reference_key": "Hamming"
+      },
+      {
+        "context": "More precisely it is known that with an ergodic ensemble an average of any statistic over the ensemble is equal (with probability 1) to an average over the time translations of a particular function of the",
+        "page": 33,
+        "reference_key": "Birkoff, von Neumann, Koopman, Wiener, Hopf, Hurewicz"
+      },
+      {
+        "context": "Wiener has pointed out the intimate relation between the invariance of physical devices under time translations and Fourier",
+        "page": 34,
+        "reference_key": "Wiener"
+      },
+      {
+        "context": "Communication theory is properly concerned, as has been emphasized by Wiener, not with operations on particular functions, but with operations on ensembles of functions.",
+        "page": 34,
+        "reference_key": "Wiener"
+      },
+      {
+        "context": "Formulas similar to C = W log for the white noise case have been developed independently N by several other writers, although with somewhat different interpretations. We may mention the work of N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+        "page": 44,
+        "reference_key": "Wiener, Tuller, and Sullivan"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": null,
+          "name": "C. E. SHANNON"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "A Mathematical Theory of Communication"
+        },
+        {
+          "page": 1,
+          "quote": "By C. E. SHANNON"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "A Mathematical Theory of Communication",
+      "venue": "The Bell System Technical Journal",
+      "year": 1948
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point."
+        },
+        {
+          "page": 10,
+          "quote": "Can we find a measure of how much “choice” is involved in the selection of the event or of how uncertain we are of the outcome?"
+        }
+      ],
+      "text": "How can information be measured and what are the fundamental limits on reliably reproducing messages over discrete, noisy, and continuous communication channels?"
+    },
+    "references": [
+      {
+        "authors": [
+          "H. Nyquist"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 324,
+        "title": "Certain Factors Affecting Telegraph Speed",
+        "venue": "Bell System Technical Journal",
+        "year": 1924
+      },
+      {
+        "authors": [
+          "R. V. L. Hartley"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 535,
+        "title": "Transmission of Information",
+        "venue": "Bell System Technical Journal",
+        "year": 1928
+      },
+      {
+        "authors": [
+          "S. Chandrasekhar"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 1,
+        "title": "Stochastic Problems in Physics and Astronomy",
+        "venue": "Reviews of Modern Physics",
+        "year": 1943
+      },
+      {
+        "authors": [
+          "Kendall",
+          "Smith"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 0,
+        "title": "Tables of Random Sampling Numbers",
+        "venue": "Cambridge",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "Fletcher Pratt"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 0,
+        "title": "Secret and Urgent",
+        "venue": "Blue Ribbon Books",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "G. Dewey"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 0,
+        "title": "Relative Frequency of English Speech Sounds",
+        "venue": "Harvard University Press",
+        "year": 1923
+      },
+      {
+        "authors": [
+          "M. Fréchet"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 0,
+        "title": "Méthode des fonctions arbitraires. Théorie des événements en chaîne dans le cas d’un nombre fini d’états possibles",
+        "venue": "Paris, Gauthier-Villars",
+        "year": 1938
+      },
+      {
+        "authors": [
+          "R. C. Tolman"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 0,
+        "title": "Principles of Statistical Mechanics",
+        "venue": "Oxford, Clarendon",
+        "year": 1938
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "9",
+        "page": 0,
+        "title": "Technical Report No. 65",
+        "venue": "The Research Laboratory of Electronics, M.I.T.",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "E. Hopf"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 0,
+        "title": "Ergodentheorie",
+        "venue": "Ergebnisse der Mathematik und ihrer Grenzgebiete",
+        "year": 1934
+      },
+      {
+        "authors": [
+          "E. Hopf"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 0,
+        "title": "On Causality Statistics and Probability",
+        "venue": "Journal of Mathematics and Physics",
+        "year": 1934
+      },
+      {
+        "authors": [
+          "N. Wiener"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 0,
+        "title": "The Ergodic Theorem",
+        "venue": "Duke Mathematical Journal",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "N. Wiener"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 0,
+        "title": "The Interpolation, Extrapolation and Smoothing of Stationary Time Series",
+        "venue": "Wiley",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "N. Wiener"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 0,
+        "title": "Cybernetics",
+        "venue": "Wiley",
+        "year": 1948
+      },
+      {
+        "authors": [
+          "C. E. Shannon"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 10,
+        "title": "Communication in the Presence of Noise",
+        "venue": "Proceedings of the Institute of Radio Engineers",
+        "year": 1949
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "8",
+        "page": 468,
+        "title": "Theoretical Limitations on the Rate of Transmission of Information",
+        "venue": "Proceedings of the Institute of Radio Engineers",
+        "year": 1949
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+        "reference_key": "Nyquist and Hartley",
+        "relation": "extends",
+        "why": "Shannon treats Nyquist and Hartley as the basis for a general communication theory, then extends that theory to noise and statistical structure."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "As was pointed out by Hartley the most natural choice is the logarithmic",
+        "reference_key": "Hartley",
+        "relation": "uses_method",
+        "why": "Shannon adopts Hartley's logarithmic measure as the natural choice for measuring information."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "such a sequence of symbols governed by a set of probabilities, is known as a stochastic process.³",
+        "reference_key": "Chandrasekhar",
+        "relation": "background",
+        "why": "Chandrasekhar is cited as a background reference for the notion of a stochastic process."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "This was constructed with the use of a table of random numbers.⁴",
+        "reference_key": "Kendall and Smith",
+        "relation": "uses_data",
+        "why": "Shannon uses a table of random numbers from Kendall and Smith to construct one of the example artificial sources."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "5Letter, digram and trigram frequencies are given in Secret and Urgent by Fletcher Pratt, Blue Ribbon Books, 1939. Word frequencies are tabulated in Relative Frequency of English Speech Sounds, G. Dewey, Harvard University Press, 1923.",
+        "reference_key": "Pratt and Dewey",
+        "relation": "uses_data",
+        "why": "Pratt and Dewey are cited for English letter, digram, trigram, and word frequency data used in the approximations."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "and have been extensively studied in the literature.⁶",
+        "reference_key": "Fréchet",
+        "relation": "background",
+        "why": "Fréchet is cited as a detailed treatment of discrete Markoff processes and the graph conditions for ergodicity."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is",
+        "reference_key": "Tolman",
+        "relation": "background",
+        "why": "Tolman is cited for the formulation of entropy in statistical mechanics, which Shannon uses as an analogy."
+      },
+      {
+        "confidence": "high",
+        "page": 17,
+        "quote": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+        "reference_key": "Fano",
+        "relation": "compares",
+        "why": "Shannon compares his arithmetic encoding method with Fano's independently found method."
+      },
+      {
+        "confidence": "high",
+        "page": 27,
+        "quote": "(found by a method due to R. Hamming):",
+        "reference_key": "Hamming",
+        "relation": "uses_method",
+        "why": "Shannon presents an efficient error-correcting code found by a method due to Hamming."
+      },
+      {
+        "confidence": "high",
+        "page": 33,
+        "quote": "to an average over the time translations of a particular function of the set.³",
+        "reference_key": "Birkoff, von Neumann, Koopman, Wiener, Hopf, Hurewicz",
+        "relation": "background",
+        "why": "Shannon cites the ergodic theorem literature as the basis for identifying ensemble averages with time averages."
+      },
+      {
+        "confidence": "high",
+        "page": 34,
+        "quote": "Communication theory is properly concerned, as has been emphasized by Wiener, not with operations",
+        "reference_key": "Wiener",
+        "relation": "background",
+        "why": "Shannon credits Wiener with emphasizing that communication theory concerns operations on ensembles of functions, an idea central to the paper's statistical approach."
+      },
+      {
+        "confidence": "high",
+        "page": 44,
+        "quote": "N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+        "reference_key": "Wiener, Tuller, and Sullivan",
+        "relation": "compares",
+        "why": "Shannon notes that white-noise capacity formulas were independently developed by Wiener, Tuller, and Sullivan, with somewhat different interpretations."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "A mixed system is one in which both discrete and continuous variables appear, e.g., PCM transmission of speech.",
+          "start_page": 1,
+          "start_text": "Reprinted with corrections from The Bell System Technical Journal,"
+        },
+        "summary": "Shannon defines the engineering problem of communication as reproducing a selected message, sets aside semantic aspects, and adopts a logarithmic measure of information. He introduces bits and outlines the five-part communication system and three system categories.",
+        "title": "Introduction"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a theoretical journal article presenting Shannon's mathematical theory of communication.",
+      "value": "theory"
+    }
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "title": "Scaling Laws for Neural Language Models",
+  "authors": [
+    "Jared Kaplan",
+    "Sam McCandlish",
+    "Tom Henighan",
+    "Tom B. Brown",
+    "Benjamin Chess",
+    "Rewon Child",
+    "Scott Gray",
+    "Alec Radford",
+    "Jeffrey Wu",
+    "Dario Amodei"
+  ],
+  "abstract": "We study empirical scaling laws for language model performance on the cross-entropy loss. The loss scales as a power-law with model size, dataset size, and the amount of compute used for training, with some trends spanning more than seven orders of magnitude. Other architectural details such as network width or depth have minimal effects within a wide range. Simple equations govern the dependence of overfitting on model/dataset size and the dependence of training speed on model size. These relationships allow us to determine the optimal allocation of a fixed compute budget. Larger models are significantly more sample-efficient, such that optimally compute-efficient training involves training very large models on a relatively modest amount of data and stopping significantly before convergence.",
+  "sections": [
+    {
+      "title": "Scaling framework and principal findings",
+      "pages": {
+        "start": 2,
+        "end": 6
+      },
+      "source_span": {
+        "start_text": "Language provides a natural domain",
+        "start_page": 2,
+        "end_text": "N, D, C, S, B, Cmin.",
+        "end_page": 6
+      },
+      "summary": "Language-model loss follows empirical power laws in model size, data, and compute, with weaker dependence on architectural shape. The overview introduces the joint scaling equations, sample-efficiency implications, compute-allocation results, and notation used throughout."
+    },
+    {
+      "title": "Experimental setup and basic scaling evidence",
+      "pages": {
+        "start": 6,
+        "end": 10
+      },
+      "source_span": {
+        "start_text": "We train language models on WebText2",
+        "start_page": 6,
+        "end_text": "illustrate this directly in Figure 19 in the appendix.",
+        "end_page": 10
+      },
+      "summary": "Transformer parameter and compute accounting, WebText2 construction, and training procedures establish the experimental setup. Measurements show approximate shape independence, parameter/data/compute power laws, improved transfer with lower validation loss, and advantages over LSTMs at longer contexts."
+    },
+    {
+      "title": "Joint model–data scaling and overfitting",
+      "pages": {
+        "start": 10,
+        "end": 12
+      },
+      "source_span": {
+        "start_text": "In Section 3 we found a number of basic scaling laws",
+        "start_page": 10,
+        "end_text": "while varying dataset and model size.",
+        "end_page": 12
+      },
+      "summary": "A joint loss equation interpolates between data-limited and model-limited regimes and predicts overfitting when both vary. Early-stopped experiments support the equation and suggest that dataset size can grow sublinearly with model size without increasing the overfitting penalty."
+    },
+    {
+      "title": "Training dynamics and batch-size adjustment",
+      "pages": {
+        "start": 12,
+        "end": 14
+      },
+      "source_span": {
+        "start_text": "In this section we will demonstrate that a simple scaling law",
+        "start_page": 12,
+        "end_text": "computed from the fit to L(N, D) evaluated at D = ∞.",
+        "end_page": 14
+      },
+      "summary": "Critical-batch-size measurements normalize training steps and compute across runs. A joint model-size and training-time equation fits learning curves and yields a lower bound on when early stopping should occur with finite data."
+    },
+    {
+      "title": "Allocating compute and limits to extrapolation",
+      "pages": {
+        "start": 14,
+        "end": 18
+      },
+      "source_span": {
+        "start_text": "We displayed the empirical trend of performance",
+        "start_page": 14,
+        "end_text": "may be meaningful even if it occurs after the leveling off.",
+        "end_page": 18
+      },
+      "summary": "Empirical and derived compute frontiers favor larger models trained well short of convergence, with comparatively slow growth in data and serial steps. Extrapolating the laws produces an eventual contradiction between compute and data limits, motivating a speculative saturation conjecture."
+    },
+    {
+      "title": "Connections, implications, and open questions",
+      "pages": {
+        "start": 18,
+        "end": 19
+      },
+      "source_span": {
+        "start_text": "Power laws can arise from a wide variety of sources",
+        "start_page": 18,
+        "end_text": "remain on the compute-efficient frontier for an entire training run.",
+        "end_page": 19
+      },
+      "summary": "Related scaling, optimization, and generalization research contextualizes the findings. The discussion asks which laws transfer to other domains, how loss improvement relates to qualitative capabilities, and how parallelism or growing networks could exploit the predicted compute frontier."
+    },
+    {
+      "title": "Reference laws and compute-frontier derivation",
+      "pages": {
+        "start": 20,
+        "end": 22
+      },
+      "source_span": {
+        "start_text": "For easier reference, we provide a summary",
+        "start_page": 20,
+        "end_text": "after initial transient effects.",
+        "end_page": 22
+      },
+      "summary": "Tables collect fitted laws and optimal resource allocations, followed by derivations from the learning-curve model. The appendix quantifies the costs of near-convergence training and suboptimal model sizes, including time–compute tradeoffs."
+    },
+    {
+      "title": "Limitations and supplementary efficiency checks",
+      "pages": {
+        "start": 22,
+        "end": 24
+      },
+      "source_span": {
+        "start_text": "In this section we list some potential caveats",
+        "start_page": 22,
+        "end_text": "to a very large one.",
+        "end_page": 24
+      },
+      "summary": "Caveats qualify the theoretical basis, batch-size extrapolations, small-data fits, compute accounting, and optimization choices behind the scaling laws. Supplementary figures and text test early stopping, recurrent parameter reuse, batch-size tradeoffs, and sample efficiency, distinguishing parameter savings from compute savings."
+    },
+    {
+      "title": "Context use, optimization robustness, and transfer",
+      "pages": {
+        "start": 25,
+        "end": 27
+      },
+      "source_span": {
+        "start_text": "This figure provides information about the performance per token",
+        "start_page": 25,
+        "end_text": "we have not seen this surprising result in other experiments.",
+        "end_page": 27
+      },
+      "summary": "Token-level measurements show how context position, model size, and training time affect prediction quality. Learning-rate experiments, fit diagnostics, and depth-controlled transfer tests assess robustness and exceptions to the aggregate scaling trends."
+    }
+  ]
+}

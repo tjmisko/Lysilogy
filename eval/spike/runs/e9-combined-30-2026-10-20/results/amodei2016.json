@@ -1,0 +1,5574 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T03:34:54.107513940Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Amodei et al. - 2016 - Concrete Problems in AI Safety.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 29,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 95192,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 26068,
+      "cached_tokens": 24832,
+      "completion_tokens": 36861,
+      "reasoning_tokens": 18424,
+      "cost_usd": 0.018715676,
+      "cost_source": "reported",
+      "latency_s": 137.451440139
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 39033,
+      "cached_tokens": 896,
+      "completion_tokens": 19084,
+      "reasoning_tokens": 18708,
+      "cost_usd": 0.034347276,
+      "cost_source": "reported",
+      "latency_s": 98.040272712
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 8932,
+      "cached_tokens": 0,
+      "completion_tokens": 11187,
+      "reasoning_tokens": 10527,
+      "cost_usd": 0.00621874,
+      "cost_source": "reported",
+      "latency_s": 69.302352533
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 74033,
+    "cached_tokens": 25728,
+    "completion_tokens": 67132,
+    "cost_usd": 0.059281692000000004,
+    "model_latency_s": 304.79406538399996,
+    "wall_s": 310.62405707
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e9-combined-30-2026-10-20/results/amodei2016.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "existing machine-learning work on robustness, risk-sensitivity, and safe exploration",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below."
+              }
+            ],
+            "reference_key": "2",
+            "why": "The paper reviews these areas and maps them onto accident risk in modern ML systems."
+          },
+          {
+            "cited_work": "public discussions centered on extreme superintelligent-agent scenarios",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents, and in fact doing so can lead to unnecessarily speculative discussions that lack precision, as noted by some critics [38, 85]."
+              }
+            ],
+            "reference_key": "38,85",
+            "why": "It argues accidents can be discussed productively without invoking such speculative scenarios and focuses on concrete ML problems."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "the view that reward hacking is merely individual designer incompetence",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "It might be thought that individual instances of reward hacking have little in common and that the remedy is simply to avoid choosing the wrong objective function in each individual case—that bad objective functions reflect failures in competence by individual designers, rather than topics for machine learning research."
+              }
+            ],
+            "reference_key": "9",
+            "why": "It argues wrong objective functions arise from general causes and therefore merit ML research."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”)."
+          }
+        ],
+        "text": "AI accident risk can be made tractable by framing it as five concrete machine-learning problems—avoiding side effects, avoiding reward hacking, scalable oversight, safe exploration, and robustness to distributional shift—and pursuing empirical research on each."
+      }
+    },
+    "citations": [
+      {
+        "context": "AI progress spans vision, games, autonomous vehicles, and Go",
+        "page": 1,
+        "reference_key": "82,102,86,140"
+      },
+      {
+        "context": "Critics of speculative AI accident discussions",
+        "page": 2,
+        "reference_key": "38,85"
+      },
+      {
+        "context": "Low-impact agents prior discussion",
+        "page": 4,
+        "reference_key": "13"
+      },
+      {
+        "context": "Frame problem connection",
+        "page": 4,
+        "reference_key": "95"
+      },
+      {
+        "context": "Empowerment used as intrinsic reward",
+        "page": 6,
+        "reference_key": "103"
+      },
+      {
+        "context": "Cooperative inverse reinforcement learning approach",
+        "page": 6,
+        "reference_key": "66"
+      },
+      {
+        "context": "Shutdown issue studied in related work",
+        "page": 6,
+        "reference_key": "113"
+      },
+      {
+        "context": "Evolved radio example of unexpected reward hacking",
+        "page": 7,
+        "reference_key": "157,23"
+      },
+      {
+        "context": "Goodhart’s law naming",
+        "page": 8,
+        "reference_key": "63"
+      },
+      {
+        "context": "Wireheading terminology",
+        "page": 9,
+        "reference_key": "49,127,42,67,165"
+      },
+      {
+        "context": "Adversarial reward idea reminiscent of GANs",
+        "page": 9,
+        "reference_key": "61"
+      },
+      {
+        "context": "Delusion-box experimental model",
+        "page": 11,
+        "reference_key": "127"
+      },
+      {
+        "context": "Hierarchical reinforcement learning approach",
+        "page": 13,
+        "reference_key": "40"
+      },
+      {
+        "context": "Safe exploration surveys",
+        "page": 14,
+        "reference_key": "55,118"
+      },
+      {
+        "context": "Risk-sensitive exploration and reversibility",
+        "page": 15,
+        "reference_key": "104,159"
+      },
+      {
+        "context": "Unsupervised risk estimation formalism",
+        "page": 18,
+        "reference_key": "44"
+      },
+      {
+        "context": "Implicit contract failure in ML systems",
+        "page": 19,
+        "reference_key": "135"
+      },
+      {
+        "context": "Speech calibration out-of-distribution example",
+        "page": 20,
+        "reference_key": "116"
+      },
+      {
+        "context": "Conclusion on concrete accident threat",
+        "page": 21,
+        "reference_key": "21"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Google Brain",
+          "name": "Dario Amodei"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Chris Olah"
+        },
+        {
+          "affiliation": "Stanford University",
+          "name": "Jacob Steinhardt"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "John Schulman"
+        },
+        {
+          "affiliation": "UC Berkeley",
+          "name": "Paul Christiano"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Dan Mané"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Concrete Problems in AI Safety"
+        },
+        {
+          "page": 1,
+          "quote": "Dario Amodei∗\nGoogle Brain\nChris Olah∗\nGoogle Brain\nJacob Steinhardt\nStanford University\nJohn Schulman\nOpenAI\nPaul Christiano\nUC Berkeley\nDan Mané\nGoogle Brain"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1606.06565v2",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Concrete Problems in AI Safety",
+      "venue": "arXiv",
+      "year": 2016
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems."
+        }
+      ],
+      "text": "What concrete technical problems contribute to accident risk in machine learning systems, and what research directions and experiments can address them?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Martin Abadi",
+          "David Andersen",
+          "et al."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 22,
+        "title": "Deep Learning with Differential Privacy",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Pieter Abbeel",
+          "Andrew Y Ng"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 22,
+        "title": "Exploration and apprenticeship learning in reinforcement learning",
+        "venue": "Proceedings of the 22nd international conference on Machine learning. ACM",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Julius Adebayo",
+          "Lalana Kagal",
+          "Alex Pentland"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 22,
+        "title": "The Hidden Cost of Efficiency: Fairness and Discrimination in Predictive Modeling",
+        "venue": "",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Alekh Agarwal",
+          "et al."
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 22,
+        "title": "Taming the monster: A fast and simple algorithm for contextual bandits",
+        "venue": "",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Hana Ajakan",
+          "et al."
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 22,
+        "title": "Domain-adversarial neural networks",
+        "venue": "arXiv preprint arXiv:1412.4446",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ifeoma Ajunwa",
+          "et al."
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 22,
+        "title": "Hiring by algorithm: predicting and preventing disparate impact",
+        "venue": "Available at SSRN 2746078",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Dario Amodei",
+          "et al."
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 22,
+        "title": "Deep Speech 2: End-to-End Speech Recognition in English and Mandarin",
+        "venue": "arXiv preprint arXiv:1512.02595",
+        "year": 2015
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "8",
+        "page": 22,
+        "title": "An Open Letter: Research Priorities for Robust and Beneficial Artificial Intelligence",
+        "venue": "Open Letter. Signed by 8,600 people; see attached research agenda",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Animashree Anandkumar",
+          "Daniel Hsu",
+          "Sham M Kakade"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 22,
+        "title": "A method of moments for mixture models and hidden Markov models",
+        "venue": "arXiv preprint arXiv:1203.0683",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Theodore W Anderson",
+          "Herman Rubin"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 22,
+        "title": "Estimation of the parameters of a single equation in a complete system of stochastic equations",
+        "venue": "The Annals of Mathematical Statistics",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "Theodore W Anderson",
+          "Herman Rubin"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 22,
+        "title": "The asymptotic properties of estimates of the parameters of a single equation in a complete system of stochastic equations",
+        "venue": "The Annals of Mathematical Statistics",
+        "year": 1950
+      },
+      {
+        "authors": [
+          "Stuart Armstrong"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 22,
+        "title": "Motivated value selection for artificial agents",
+        "venue": "Workshops at the Twenty-Ninth AAAI Conference on Artificial Intelligence",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Stuart Armstrong"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 22,
+        "title": "The mathematics of reduced impact: help needed",
+        "venue": "",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Stuart Armstrong"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 22,
+        "title": "Utility indifference",
+        "venue": "Tech. rep. Technical Report 2010-1. Oxford: Future of Humanity Institute, University of Oxford",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Melanie Arntz",
+          "Terry Gregory",
+          "Ulrich Zierahn"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 22,
+        "title": "The Risk of Automation for Jobs in OECD Countries",
+        "venue": "OECD Social, Employment and Migration Working Papers",
+        "year": 2016
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "16",
+        "page": 22,
+        "title": "Autonomous Weapons: An Open Letter from AI & Robotics Researchers",
+        "venue": "Open Letter. Signed by 20,000+ people",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "James Babcock",
+          "Janos Kramar",
+          "Roman Yampolskiy"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 23,
+        "title": "The AGI Containment Problem",
+        "venue": "The Ninth Conference on Artificial General Intelligence",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Krishnakumar Balasubramanian",
+          "Pinar Donmez",
+          "Guy Lebanon"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 23,
+        "title": "Unsupervised supervised learning ii: Margin-based classification without labels",
+        "venue": "The Journal of Machine Learning Research 12",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Marco Barreno",
+          "et al."
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 23,
+        "title": "The security of machine learning",
+        "venue": "Machine Learning 81.2",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Tamer Başar",
+          "Pierre Bernhard"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 23,
+        "title": "H-infinity optimal control and related minimax design problems: a dynamic game approach",
+        "venue": "Springer Science & Business Media",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Michèle Basseville"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 23,
+        "title": "Detecting changes in signals and systems—a survey",
+        "venue": "Automatica 24.3",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "F Berkenkamp",
+          "A Krause",
+          "Angela P Schoellig"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 23,
+        "title": "Bayesian optimization with safety constraints: safe and automatic parameter tuning in robotics",
+        "venue": "arXiv preprint arXiv:1602.04450",
+        "year": null
+      },
+      {
+        "authors": [
+          "Jon Bird",
+          "Paul Layzell"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 23,
+        "title": "The evolved radio and its implications for modelling the evolution of novel sensors",
+        "venue": "Evolutionary Computation, 2002. CEC’02. Proceedings of the 2002 Congress on. Vol. 2. IEEE",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "John Blitzer",
+          "Mark Dredze",
+          "Fernando Pereira",
+          "et al."
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 23,
+        "title": "Biographies, bollywood, boom-boxes and blenders: Domain adaptation for sentiment classification",
+        "venue": "ACL. Vol. 7",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "John Blitzer",
+          "Sham Kakade",
+          "Dean P Foster"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 23,
+        "title": "Domain adaptation with coupled subspaces",
+        "venue": "International Conference on Artificial Intelligence and Statistics",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Charles Blundell",
+          "et al."
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 23,
+        "title": "Weight uncertainty in neural networks",
+        "venue": "arXiv preprint arXiv:1505.05424",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Nick Bostrom"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 23,
+        "title": "Superintelligence: Paths, dangers, strategies",
+        "venue": "OUP Oxford",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Léon Bottou"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 23,
+        "title": "Two high stakes challenges in machine learning",
+        "venue": "Invited talk at the 32nd International Conference on Machine Learning",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Léon Bottou",
+          "et al."
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 23,
+        "title": "Counterfactual Reasoning and Learning Systems",
+        "venue": "arXiv preprint arXiv:1209.2355",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Léon Bottou",
+          "et al."
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 23,
+        "title": "Counterfactual reasoning and learning systems: The example of computational advertising",
+        "venue": "The Journal of Machine Learning Research 14.1",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Ronen I Brafman",
+          "Moshe Tennenholtz"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 23,
+        "title": "R-max-a general polynomial time algorithm for near-optimal reinforcement learning",
+        "venue": "The Journal of Machine Learning Research 3",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Erik Brynjolfsson",
+          "Andrew McAfee"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 23,
+        "title": "The second machine age: work, progress, and prosperity in a time of brilliant technologies",
+        "venue": "WW Norton & Company",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ryan Calo"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 23,
+        "title": "Open robotics",
+        "venue": "Maryland Law Review 70.3",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Paul Christiano"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 23,
+        "title": "AI Control",
+        "venue": "[Online; accessed 13-June-2016]. url: https://medium.com/ai-control",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Fabio Cozman",
+          "Ira Cohen"
+        ],
+        "doi": null,
+        "key": "35",
+        "page": 23,
+        "title": "Risks of semi-supervised learning",
+        "venue": "Semi-Supervised Learning",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Andrew Critch"
+        ],
+        "doi": null,
+        "key": "36",
+        "page": 23,
+        "title": "Parametric Bounded Löb’s Theorem and Robust Cooperation of Bounded Agents",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Christian Daniel",
+          "et al."
+        ],
+        "doi": null,
+        "key": "37",
+        "page": 23,
+        "title": "Active reward learning",
+        "venue": "Proceedings of Robotics Science & Systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ernest Davis"
+        ],
+        "doi": null,
+        "key": "38",
+        "page": 23,
+        "title": "Ethical guidelines for a superintelligence",
+        "venue": "Artif. Intell. 220",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Alexander Philip Dawid",
+          "Allan M Skene"
+        ],
+        "doi": null,
+        "key": "39",
+        "page": 23,
+        "title": "Maximum likelihood estimation of observer error-rates using the EM algorithm",
+        "venue": "Applied statistics",
+        "year": 1979
+      },
+      {
+        "authors": [
+          "Peter Dayan",
+          "Geoffrey E Hinton"
+        ],
+        "doi": null,
+        "key": "40",
+        "page": 24,
+        "title": "Feudal reinforcement learning",
+        "venue": "Advances in neural information processing systems. Morgan Kaufmann Publishers",
+        "year": 1993
+      },
+      {
+        "authors": [
+          "Kalyanmoy Deb"
+        ],
+        "doi": null,
+        "key": "41",
+        "page": 24,
+        "title": "Multi-objective optimization",
+        "venue": "Search methodologies. Springer",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Daniel Dewey"
+        ],
+        "doi": null,
+        "key": "42",
+        "page": 24,
+        "title": "Learning what to value",
+        "venue": "Artificial General Intelligence. Springer",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Daniel Dewey"
+        ],
+        "doi": null,
+        "key": "43",
+        "page": 24,
+        "title": "Reinforcement learning and the reward engineering principle",
+        "venue": "2014 AAAI Spring Symposium Series",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Pinar Donmez",
+          "Guy Lebanon",
+          "Krishnakumar Balasubramanian"
+        ],
+        "doi": null,
+        "key": "44",
+        "page": 24,
+        "title": "Unsupervised supervised learning i: Estimating classification and regression errors without labels",
+        "venue": "The Journal of Machine Learning Research 11",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Gregory Druck",
+          "Gideon Mann",
+          "Andrew McCallum"
+        ],
+        "doi": null,
+        "key": "45",
+        "page": 24,
+        "title": "Learning from labeled features using generalized expectation criteria",
+        "venue": "Proceedings of the 31st annual international ACM SIGIR conference on Research and development in information retrieval. ACM",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Cynthia Dwork",
+          "et al."
+        ],
+        "doi": null,
+        "key": "46",
+        "page": 24,
+        "title": "Fairness through awareness",
+        "venue": "Proceedings of the 3rd Innovations in Theoretical Computer Science Conference. ACM",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Bradley Efron"
+        ],
+        "doi": null,
+        "key": "47",
+        "page": 24,
+        "title": "Computers and the theory of statistics: thinking the unthinkable",
+        "venue": "SIAM review 21.4",
+        "year": 1979
+      },
+      {
+        "authors": [
+          "Owain Evans",
+          "Andreas Stuhlmüller",
+          "Noah D Goodman"
+        ],
+        "doi": null,
+        "key": "48",
+        "page": 24,
+        "title": "Learning the preferences of ignorant, inconsistent agents",
+        "venue": "arXiv preprint arXiv:1512.05832",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Tom Everitt",
+          "Marcus Hutter"
+        ],
+        "doi": null,
+        "key": "49",
+        "page": 24,
+        "title": "Avoiding wireheading with value reinforcement learning",
+        "venue": "arXiv preprint arXiv:1605.03143",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Tom Everitt",
+          "et al."
+        ],
+        "doi": null,
+        "key": "50",
+        "page": 24,
+        "title": "Self-Modification of Policy and Utility Function in Rational Agents",
+        "venue": "arXiv preprint arXiv:1605.03142",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Chelsea Finn",
+          "Sergey Levine",
+          "Pieter Abbeel"
+        ],
+        "doi": null,
+        "key": "51",
+        "page": 24,
+        "title": "Guided Cost Learning: Deep Inverse Optimal Control via Policy Optimization",
+        "venue": "arXiv preprint arXiv:1603.00448",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Carl Benedikt Frey",
+          "Michael A Osborne"
+        ],
+        "doi": null,
+        "key": "52",
+        "page": 24,
+        "title": "The future of employment: how susceptible are jobs to computerisation",
+        "venue": "Retrieved September 7",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Yarin Gal",
+          "Zoubin Ghahramani"
+        ],
+        "doi": null,
+        "key": "53",
+        "page": 24,
+        "title": "Dropout as a Bayesian approximation: Representing model uncertainty in deep learning",
+        "venue": "arXiv preprint arXiv:1506.02142",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Joao Gama",
+          "et al."
+        ],
+        "doi": null,
+        "key": "54",
+        "page": 24,
+        "title": "Learning with drift detection",
+        "venue": "Advances in artificial intelligence–SBIA 2004. Springer",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Javier García",
+          "Fernando Fernández"
+        ],
+        "doi": null,
+        "key": "55",
+        "page": 24,
+        "title": "A Comprehensive Survey on Safe Reinforcement Learning",
+        "venue": "Journal of Machine Learning Research 16",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Scott Garrabrant",
+          "Nate Soares",
+          "Jessica Taylor"
+        ],
+        "doi": null,
+        "key": "56",
+        "page": 24,
+        "title": "Asymptotic Convergence in Online Learning with Unbounded Delays",
+        "venue": "arXiv preprint arXiv:1604.05280",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Scott Garrabrant",
+          "et al."
+        ],
+        "doi": null,
+        "key": "57",
+        "page": 24,
+        "title": "Uniform Coherence",
+        "venue": "arXiv preprint arXiv:1604.05288",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Shalini Ghosh",
+          "et al."
+        ],
+        "doi": null,
+        "key": "58",
+        "page": 24,
+        "title": "Trusted Machine Learning for Probabilistic Models",
+        "venue": "Reliable Machine Learning in the Wild at ICML 2016",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Yolanda Gil",
+          "et al."
+        ],
+        "doi": null,
+        "key": "59",
+        "page": 24,
+        "title": "Amplify scientific discovery with artificial intelligence",
+        "venue": "Science 346.6206",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Alec Go",
+          "Richa Bhayani",
+          "Lei Huang"
+        ],
+        "doi": null,
+        "key": "60",
+        "page": 24,
+        "title": "Twitter sentiment classification using distant supervision",
+        "venue": "CS224N Project Report, Stanford 1",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Ian Goodfellow",
+          "et al."
+        ],
+        "doi": null,
+        "key": "61",
+        "page": 24,
+        "title": "Generative adversarial nets",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ian J Goodfellow",
+          "Jonathon Shlens",
+          "Christian Szegedy"
+        ],
+        "doi": null,
+        "key": "62",
+        "page": 24,
+        "title": "Explaining and harnessing adversarial examples",
+        "venue": "arXiv preprint arXiv:1412.6572",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Charles AE Goodhart"
+        ],
+        "doi": null,
+        "key": "63",
+        "page": 24,
+        "title": "Problems of monetary management: the UK experience",
+        "venue": "Springer",
+        "year": 1984
+      },
+      {
+        "authors": [
+          "Alex Graves",
+          "Greg Wayne",
+          "Ivo Danihelka"
+        ],
+        "doi": null,
+        "key": "64",
+        "page": 24,
+        "title": "Neural turing machines",
+        "venue": "arXiv preprint arXiv:1410.5401",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Sonal Gupta"
+        ],
+        "doi": null,
+        "key": "65",
+        "page": 25,
+        "title": "Distantly Supervised Information Extraction Using Bootstrapped Patterns",
+        "venue": "PhD thesis. Stanford University",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Dylan Hadfield-Menell",
+          "et al."
+        ],
+        "doi": null,
+        "key": "66",
+        "page": 25,
+        "title": "Cooperative Inverse Reinforcement Learning",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Dylan Hadfield-Menell",
+          "et al."
+        ],
+        "doi": null,
+        "key": "67",
+        "page": 25,
+        "title": "The Off-Switch",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Lars Peter Hansen"
+        ],
+        "doi": null,
+        "key": "68",
+        "page": 25,
+        "title": "Large sample properties of generalized method of moments estimators",
+        "venue": "Econometrica: Journal of the Econometric Society",
+        "year": 1982
+      },
+      {
+        "authors": [
+          "Lars Peter Hansen"
+        ],
+        "doi": null,
+        "key": "69",
+        "page": 25,
+        "title": "Nobel Lecture: Uncertainty Outside and Inside Economic Models",
+        "venue": "Journal of Political Economy 122.5",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Mark Herbster",
+          "Manfred K Warmuth"
+        ],
+        "doi": null,
+        "key": "70",
+        "page": 25,
+        "title": "Tracking the best linear predictor",
+        "venue": "The Journal of Machine Learning Research 1",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Bill Hibbard"
+        ],
+        "doi": null,
+        "key": "71",
+        "page": 25,
+        "title": "Model-based utility functions",
+        "venue": "Journal of Artificial General Intelligence 3.1",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Thomas Hofmann",
+          "Bernhard Schölkopf",
+          "Alexander J Smola"
+        ],
+        "doi": null,
+        "key": "72",
+        "page": 25,
+        "title": "Kernel methods in machine learning",
+        "venue": "The annals of statistics",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Garud N Iyengar"
+        ],
+        "doi": null,
+        "key": "73",
+        "page": 25,
+        "title": "Robust dynamic programming",
+        "venue": "Mathematics of Operations Research 30.2",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Ariel Jaffe",
+          "Boaz Nadler",
+          "Yuval Kluger"
+        ],
+        "doi": null,
+        "key": "74",
+        "page": 25,
+        "title": "Estimating the accuracies of multiple classifiers without labeled data",
+        "venue": "arXiv preprint arXiv:1407.7644",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Jean-Baptiste Jeannin",
+          "et al."
+        ],
+        "doi": null,
+        "key": "75",
+        "page": 25,
+        "title": "A formally verified hybrid system for the next-generation airborne collision avoidance system",
+        "venue": "Tools and Algorithms for the Construction and Analysis of Systems. Springer",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Zhanglong Ji",
+          "Zachary C Lipton",
+          "Charles Elkan"
+        ],
+        "doi": null,
+        "key": "76",
+        "page": 25,
+        "title": "Differential privacy and machine learning: A survey and review",
+        "venue": "arXiv preprint arXiv:1412.7584",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Fredrik D Johansson",
+          "Uri Shalit",
+          "David Sontag"
+        ],
+        "doi": null,
+        "key": "77",
+        "page": 25,
+        "title": "Learning Representations for Counterfactual Inference",
+        "venue": "arXiv preprint arXiv:1605.03661",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Leslie Pack Kaelbling",
+          "Michael L Littman",
+          "Anthony R Cassandra"
+        ],
+        "doi": null,
+        "key": "78",
+        "page": 25,
+        "title": "Planning and acting in partially observable stochastic domains",
+        "venue": "Artificial intelligence 101.1",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Lukasz Kaiser",
+          "Ilya Sutskever"
+        ],
+        "doi": null,
+        "key": "79",
+        "page": 25,
+        "title": "Neural GPUs learn algorithms",
+        "venue": "arXiv preprint arXiv:1511.08228",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Yoshinobu Kawahara",
+          "Masashi Sugiyama"
+        ],
+        "doi": null,
+        "key": "80",
+        "page": 25,
+        "title": "Change-Point Detection in Time-Series Data by Direct Density-Ratio Estimation",
+        "venue": "SDM. Vol. 9. SIAM",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "F. Khani",
+          "M. Rinard",
+          "P. Liang"
+        ],
+        "doi": null,
+        "key": "81",
+        "page": 25,
+        "title": "Unanimous Prediction for 100Learning Semantic Parsers",
+        "venue": "Association for Computational Linguistics (ACL)",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Alex Krizhevsky",
+          "Ilya Sutskever",
+          "Geoffrey E Hinton"
+        ],
+        "doi": null,
+        "key": "82",
+        "page": 25,
+        "title": "Imagenet classification with deep convolutional neural networks",
+        "venue": "Advances in neural information processing systems",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Volodymyr Kuleshov",
+          "Percy S Liang"
+        ],
+        "doi": null,
+        "key": "83",
+        "page": 25,
+        "title": "Calibrated Structured Prediction",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Tejas D Kulkarni",
+          "et al."
+        ],
+        "doi": null,
+        "key": "84",
+        "page": 25,
+        "title": "Hierarchical Deep Reinforcement Learning: Integrating Temporal Abstraction and Intrinsic Motivation",
+        "venue": "arXiv preprint arXiv:1604.06057",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Neil Lawrence"
+        ],
+        "doi": null,
+        "key": "85",
+        "page": 25,
+        "title": "Discussion of ’Superintelligence: Paths, Dangers, Strategies’",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Jesse Levinson",
+          "et al."
+        ],
+        "doi": null,
+        "key": "86",
+        "page": 25,
+        "title": "Towards fully autonomous driving: Systems and algorithms",
+        "venue": "Intelligent Vehicles Symposium (IV), 2011 IEEE. IEEE",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Lihong Li",
+          "et al."
+        ],
+        "doi": null,
+        "key": "87",
+        "page": 25,
+        "title": "Knows what it knows: a framework for self-aware learning",
+        "venue": "Machine learning 82.3",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Yu-Feng Li",
+          "Zhi-Hua Zhou"
+        ],
+        "doi": null,
+        "key": "88",
+        "page": 25,
+        "title": "Towards making unlabeled data never hurt",
+        "venue": "Pattern Analysis and Machine Intelligence, IEEE Transactions on 37.1",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Percy Liang"
+        ],
+        "doi": null,
+        "key": "89",
+        "page": 25,
+        "title": "On the Elusiveness of a Specification for AI",
+        "venue": "NIPS 2015, Symposium: Algorithms Among Us. url: http://research.microsoft.com/apps/video/default.aspx?id=260009&r=1",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Percy Liang",
+          "Dan Klein"
+        ],
+        "doi": null,
+        "key": "90",
+        "page": 26,
+        "title": "Analyzing the Errors of Unsupervised Learning",
+        "venue": "ACL",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Song Liu",
+          "et al."
+        ],
+        "doi": null,
+        "key": "91",
+        "page": 26,
+        "title": "Change-point detection in time-series data by relative density-ratio estimation",
+        "venue": "Neural Networks 43",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Sarah M Loos",
+          "David Renshaw",
+          "André Platzer"
+        ],
+        "doi": null,
+        "key": "92",
+        "page": 26,
+        "title": "Formal verification of distributed aircraft controllers",
+        "venue": "Proceedings of the 16th international conference on Hybrid systems: computation and control. ACM",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "John Lygeros",
+          "Claire Tomlin",
+          "Shankar Sastry"
+        ],
+        "doi": null,
+        "key": "93",
+        "page": 26,
+        "title": "Controllers for reachability specifications for hybrid systems",
+        "venue": "Automatica 35.3",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "Gideon S Mann",
+          "Andrew McCallum"
+        ],
+        "doi": null,
+        "key": "94",
+        "page": 26,
+        "title": "Generalized expectation criteria for semi-supervised learning with weakly labeled data",
+        "venue": "The Journal of Machine Learning Research 11",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "John McCarthy",
+          "Patrick J Hayes"
+        ],
+        "doi": null,
+        "key": "95",
+        "page": 26,
+        "title": "Some philosophical problems from the standpoint of artificial intelligence",
+        "venue": "Readings in artificial intelligence",
+        "year": 1969
+      },
+      {
+        "authors": [
+          "Shike Mei",
+          "Xiaojin Zhu"
+        ],
+        "doi": null,
+        "key": "96",
+        "page": 26,
+        "title": "The Security of Latent Dirichlet Allocation",
+        "venue": "AISTATS",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Shike Mei",
+          "Xiaojin Zhu"
+        ],
+        "doi": null,
+        "key": "97",
+        "page": 26,
+        "title": "Using Machine Teaching to Identify Optimal Training-Set Attacks on Machine Learners",
+        "venue": "AAAI",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Bernard Merialdo"
+        ],
+        "doi": null,
+        "key": "98",
+        "page": 26,
+        "title": "Tagging English text with a probabilistic model",
+        "venue": "Computational linguistics 20.2",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "Mike Mintz",
+          "et al."
+        ],
+        "doi": null,
+        "key": "99",
+        "page": 26,
+        "title": "Distant supervision for relation extraction without labeled data",
+        "venue": "Proceedings of the Joint Conference of the 47th Annual Meeting of the ACL and the 4th International Joint Conference on Natural Language Processing of the AFNLP: Volume 2-Volume 2. Association for Computational Linguistics",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Ian M Mitchell",
+          "Alexandre M Bayen",
+          "Claire J Tomlin"
+        ],
+        "doi": null,
+        "key": "100",
+        "page": 26,
+        "title": "A time-dependent Hamilton-Jacobi formulation of reachable sets for continuous dynamic games",
+        "venue": "Automatic Control, IEEE Transactions on 50.7",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Stefan Mitsch",
+          "Sarah M Loos",
+          "André Platzer"
+        ],
+        "doi": null,
+        "key": "101",
+        "page": 26,
+        "title": "Towards formal verification of freeway traffic control",
+        "venue": "Cyber-Physical Systems (ICCPS), 2012 IEEE/ACM Third International Conference on. IEEE",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Volodymyr Mnih",
+          "et al."
+        ],
+        "doi": null,
+        "key": "102",
+        "page": 26,
+        "title": "Human-level control through deep reinforcement learning",
+        "venue": "Nature 518.7540",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Shakir Mohamed",
+          "Danilo Jimenez Rezende"
+        ],
+        "doi": null,
+        "key": "103",
+        "page": 26,
+        "title": "Variational Information Maximisation for Intrinsically Motivated Reinforcement Learning",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Teodor Mihai Moldovan",
+          "Pieter Abbeel"
+        ],
+        "doi": null,
+        "key": "104",
+        "page": 26,
+        "title": "Safe exploration in markov decision processes",
+        "venue": "arXiv preprint arXiv:1205.4810",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Alexander Mordvintsev",
+          "Christopher Olah",
+          "Mike Tyka"
+        ],
+        "doi": null,
+        "key": "105",
+        "page": 26,
+        "title": "Inceptionism: Going deeper into neural networks",
+        "venue": "Google Research Blog. Retrieved June 20",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jersey Neyman"
+        ],
+        "doi": null,
+        "key": "106",
+        "page": 26,
+        "title": "Sur les applications de la théorie des probabilités aux experiences agricoles: Essai des principes",
+        "venue": "Roczniki Nauk Rolniczych 10",
+        "year": 1923
+      },
+      {
+        "authors": [
+          "Andrew Y Ng",
+          "Stuart J Russell",
+          "et al."
+        ],
+        "doi": null,
+        "key": "107",
+        "page": 26,
+        "title": "Algorithms for inverse reinforcement learning",
+        "venue": "Icml",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Anh Nguyen",
+          "Jason Yosinski",
+          "Jeff Clune"
+        ],
+        "doi": null,
+        "key": "108",
+        "page": 26,
+        "title": "Deep neural networks are easily fooled: High confidence predictions for unrecognizable images",
+        "venue": "Computer Vision and Pattern Recognition (CVPR), 2015 IEEE Conference on. IEEE",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Anh Nguyen",
+          "et al."
+        ],
+        "doi": null,
+        "key": "109",
+        "page": 26,
+        "title": "Synthesizing the preferred inputs for neurons in neural networks via deep generator networks",
+        "venue": "arXiv preprint arXiv:1605.09304",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Kamal Nigam",
+          "et al."
+        ],
+        "doi": null,
+        "key": "110",
+        "page": 26,
+        "title": "Learning to classify text from labeled and unlabeled documents",
+        "venue": "AAAI/IAAI 792",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Arnab Nilim",
+          "Laurent El Ghaoui"
+        ],
+        "doi": null,
+        "key": "111",
+        "page": 27,
+        "title": "Robust control of Markov decision processes with uncertain transition matrices",
+        "venue": "Operations Research 53.5",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Christopher Olah"
+        ],
+        "doi": null,
+        "key": "112",
+        "page": 27,
+        "title": "Visualizing Representations: Deep Learning and Human Beings",
+        "venue": "url: http://colah.github.io/posts/2015-01-Visualizing-Representations/",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Laurent Orseau",
+          "Stuart Armstrong"
+        ],
+        "doi": null,
+        "key": "113",
+        "page": 27,
+        "title": "Safely Interruptible Agents",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Ian Osband",
+          "et al."
+        ],
+        "doi": null,
+        "key": "114",
+        "page": 27,
+        "title": "Deep Exploration via Bootstrapped DQN",
+        "venue": "arXiv preprint arXiv:1602.04621",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Nicolas Papernot",
+          "et al."
+        ],
+        "doi": null,
+        "key": "115",
+        "page": 27,
+        "title": "Practical Black-Box Attacks against Deep Learning Systems using Adversarial Examples",
+        "venue": "arXiv preprint arXiv:1602.02697",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Douglas B Paul",
+          "Janet M Baker"
+        ],
+        "doi": null,
+        "key": "116",
+        "page": 27,
+        "title": "The design for the Wall Street Journal-based CSR corpus",
+        "venue": "Proceedings of the workshop on Speech and Natural Language. Association for Computational Linguistics",
+        "year": 1992
+      },
+      {
+        "authors": [
+          "Judea Pearl",
+          "et al."
+        ],
+        "doi": null,
+        "key": "117",
+        "page": 27,
+        "title": "Causal inference in statistics: An overview",
+        "venue": "Statistics Surveys 3",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Martin Pecka",
+          "Tomas Svoboda"
+        ],
+        "doi": null,
+        "key": "118",
+        "page": 27,
+        "title": "Safe exploration techniques for reinforcement learning–an overview",
+        "venue": "Modelling and Simulation for Autonomous Systems. Springer",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Dino Pedreshi",
+          "Salvatore Ruggieri",
+          "Franco Turini"
+        ],
+        "doi": null,
+        "key": "119",
+        "page": 27,
+        "title": "Discrimination-aware data mining",
+        "venue": "Proceedings of the 14th ACM SIGKDD international conference on Knowledge discovery and data mining. ACM",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Jonas Peters",
+          "et al."
+        ],
+        "doi": null,
+        "key": "120",
+        "page": 27,
+        "title": "Causal discovery with continuous additive noise models",
+        "venue": "The Journal of Machine Learning Research 15.1",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Emmanouil Antonios Platanios"
+        ],
+        "doi": null,
+        "key": "121",
+        "page": 27,
+        "title": "Estimating accuracy from unlabeled data",
+        "venue": "MA thesis. Carnegie Mellon University",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Emmanouil Antonios Platanios",
+          "Avrim Blum",
+          "Tom Mitchell"
+        ],
+        "doi": null,
+        "key": "122",
+        "page": 27,
+        "title": "Estimating accuracy from unlabeled data",
+        "venue": "",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Walter W Powell",
+          "Laurel Smith-Doerr"
+        ],
+        "doi": null,
+        "key": "123",
+        "page": 27,
+        "title": "Networks and economic life",
+        "venue": "The handbook of economic sociology 368",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "Joaquin Quinonero-Candela",
+          "et al."
+        ],
+        "doi": null,
+        "key": "124",
+        "page": 27,
+        "title": "Dataset shift in machine learning, ser. Neural information processing series",
+        "venue": "",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Rajat Raina",
+          "et al."
+        ],
+        "doi": null,
+        "key": "125",
+        "page": 27,
+        "title": "Self-taught learning: transfer learning from unlabeled data",
+        "venue": "Proceedings of the 24th international conference on Machine learning. ACM",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Bharath Ramsundar",
+          "et al."
+        ],
+        "doi": null,
+        "key": "126",
+        "page": 27,
+        "title": "Massively multitask networks for drug discovery",
+        "venue": "arXiv preprint arXiv:1502.02072",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Mark Ring",
+          "Laurent Orseau"
+        ],
+        "doi": null,
+        "key": "127",
+        "page": 27,
+        "title": "Delusion, survival, and intelligent agents",
+        "venue": "Artificial General Intelligence. Springer",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Stéphane Ross",
+          "Geoffrey J Gordon",
+          "J Andrew Bagnell"
+        ],
+        "doi": null,
+        "key": "128",
+        "page": 27,
+        "title": "A reduction of imitation learning and structured prediction to no-regret online learning",
+        "venue": "arXiv preprint arXiv:1011.0686",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Donald B Rubin"
+        ],
+        "doi": null,
+        "key": "129",
+        "page": 27,
+        "title": "Estimating causal effects of treatments in randomized and nonrandomized studies",
+        "venue": "Journal of educational Psychology 66.5",
+        "year": 1974
+      },
+      {
+        "authors": [
+          "Stuart Russell",
+          "et al."
+        ],
+        "doi": null,
+        "key": "130",
+        "page": 27,
+        "title": "Research priorities for robust and beneficial artificial intelligence",
+        "venue": "Future of Life Institute",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Christoph Salge",
+          "Cornelius Glackin",
+          "Daniel Polani"
+        ],
+        "doi": null,
+        "key": "131",
+        "page": 27,
+        "title": "Empowerment–an introduction",
+        "venue": "Guided Self-Organization: Inception. Springer",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "J Denis Sargan"
+        ],
+        "doi": null,
+        "key": "132",
+        "page": 27,
+        "title": "The estimation of relationships with autocorrelated residuals by the use of instrumental variables",
+        "venue": "Journal of the Royal Statistical Society. Series B (Methodological)",
+        "year": 1959
+      },
+      {
+        "authors": [
+          "John D Sargan"
+        ],
+        "doi": null,
+        "key": "133",
+        "page": 27,
+        "title": "The estimation of economic relationships using instrumental variables",
+        "venue": "Econometrica: Journal of the Econometric Society",
+        "year": 1958
+      },
+      {
+        "authors": [
+          "John Schulman",
+          "et al."
+        ],
+        "doi": null,
+        "key": "134",
+        "page": 28,
+        "title": "High-dimensional continuous control using generalized advantage estimation",
+        "venue": "arXiv preprint arXiv:1506.02438",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "D Sculley",
+          "et al."
+        ],
+        "doi": null,
+        "key": "135",
+        "page": 28,
+        "title": "Machine Learning: The High-Interest Credit Card of Technical Debt",
+        "venue": "",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Glenn Shafer",
+          "Vladimir Vovk"
+        ],
+        "doi": null,
+        "key": "136",
+        "page": 28,
+        "title": "A tutorial on conformal prediction",
+        "venue": "The Journal of Machine Learning Research 9",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Uri Shalit",
+          "Fredrik Johansson",
+          "David Sontag"
+        ],
+        "doi": null,
+        "key": "137",
+        "page": 28,
+        "title": "Bounding and Minimizing Counterfactual Error",
+        "venue": "arXiv preprint arXiv:1606.03976",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Hidetoshi Shimodaira"
+        ],
+        "doi": null,
+        "key": "138",
+        "page": 28,
+        "title": "Improving predictive inference under covariate shift by weighting the log-likelihood function",
+        "venue": "Journal of statistical planning and inference 90.2",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Jaeho Shin",
+          "et al."
+        ],
+        "doi": null,
+        "key": "139",
+        "page": 28,
+        "title": "Incremental knowledge base construction using deepdive",
+        "venue": "Proceedings of the VLDB Endowment 8.11",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "David Silver",
+          "et al."
+        ],
+        "doi": null,
+        "key": "140",
+        "page": 28,
+        "title": "Mastering the game of Go with deep neural networks and tree search",
+        "venue": "Nature 529.7587",
+        "year": 2016
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "141",
+        "page": 28,
+        "title": "SNES Super Mario World (USA) “arbitrary code execution”",
+        "venue": "Tool-assisted movies. url: http://tasvideos.org/2513M.html",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Nate Soares",
+          "Benja Fallenstein"
+        ],
+        "doi": null,
+        "key": "142",
+        "page": 28,
+        "title": "Toward idealized decision theory",
+        "venue": "arXiv preprint arXiv:1507.01986",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Ray J Solomonoff"
+        ],
+        "doi": null,
+        "key": "143",
+        "page": 28,
+        "title": "A formal theory of inductive inference. Part I",
+        "venue": "Information and control 7.1",
+        "year": 1964
+      },
+      {
+        "authors": [
+          "Ray J Solomonoff"
+        ],
+        "doi": null,
+        "key": "144",
+        "page": 28,
+        "title": "A formal theory of inductive inference. Part II",
+        "venue": "Information and control 7.2",
+        "year": 1964
+      },
+      {
+        "authors": [
+          "J Steinebach"
+        ],
+        "doi": null,
+        "key": "145",
+        "page": 28,
+        "title": "EL Lehmann, JP Romano: Testing statistical hypotheses",
+        "venue": "Metrika 64.2",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Jacob Steinhardt"
+        ],
+        "doi": null,
+        "key": "146",
+        "page": 28,
+        "title": "Long-Term and Short-Term Challenges to Ensuring the Safety of AI Systems",
+        "venue": "[Online; accessed 13-June-2016]. url: https://jsteinhardt.wordpress.com/2015/06/24/long- term- and- short- term- challenges- to- ensuring- the- safety- ofai-systems/",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jacob Steinhardt",
+          "Percy Liang"
+        ],
+        "doi": null,
+        "key": "147",
+        "page": 28,
+        "title": "Unsupervised Risk Estimation with only Structural Assumptions",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Jacob Steinhardt",
+          "Russ Tedrake"
+        ],
+        "doi": null,
+        "key": "148",
+        "page": 28,
+        "title": "Finite-time regional verification of stochastic non-linear systems",
+        "venue": "The International Journal of Robotics Research 31.7",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Jacob Steinhardt",
+          "Gregory Valiant",
+          "Moses Charikar"
+        ],
+        "doi": null,
+        "key": "149",
+        "page": 28,
+        "title": "Avoiding Imposters and Delinquents: Adversarial Crowdsourcing and Peer Prediction",
+        "venue": "arxiv prepring arXiv:1606.05374. url: http://arxiv.org/abs/1606.05374",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Richard S Sutton",
+          "Andrew G Barto"
+        ],
+        "doi": null,
+        "key": "150",
+        "page": 28,
+        "title": "Reinforcement learning: An introduction",
+        "venue": "MIT press",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Adith Swaminathan",
+          "Thorsten Joachims"
+        ],
+        "doi": null,
+        "key": "151",
+        "page": 28,
+        "title": "Counterfactual risk minimization: Learning from logged bandit feedback",
+        "venue": "arXiv preprint arXiv:1502.02362",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Christian Szegedy",
+          "et al."
+        ],
+        "doi": null,
+        "key": "152",
+        "page": 28,
+        "title": "Intriguing properties of neural networks",
+        "venue": "arXiv preprint arXiv:1312.6199",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Aviv Tamar",
+          "Yonatan Glassner",
+          "Shie Mannor"
+        ],
+        "doi": null,
+        "key": "153",
+        "page": 28,
+        "title": "Policy gradients beyond expectations: Conditional value-at-risk",
+        "venue": "arXiv preprint arXiv:1404.3862",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Jessica Taylor"
+        ],
+        "doi": null,
+        "key": "154",
+        "page": 28,
+        "title": "Quantilizers: A Safer Alternative to Maximizers for Limited Optimization",
+        "venue": "forthcoming). Submitted to AAAI",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Matthew E Taylor",
+          "Peter Stone"
+        ],
+        "doi": null,
+        "key": "155",
+        "page": 28,
+        "title": "Transfer learning for reinforcement learning domains: A survey",
+        "venue": "Journal of Machine Learning Research 10.Jul",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Philip S Thomas",
+          "Georgios Theocharous",
+          "Mohammad Ghavamzadeh"
+        ],
+        "doi": null,
+        "key": "156",
+        "page": 28,
+        "title": "High-Confidence Off-Policy Evaluation",
+        "venue": "AAAI",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Adrian Thompson"
+        ],
+        "doi": null,
+        "key": "157",
+        "page": 28,
+        "title": "Artificial evolution in the physical world",
+        "venue": "",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Antonio Torralba",
+          "Alexei A Efros"
+        ],
+        "doi": null,
+        "key": "158",
+        "page": 29,
+        "title": "Unbiased look at dataset bias",
+        "venue": "Computer Vision and Pattern Recognition (CVPR), 2011 IEEE Conference on. IEEE",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Matteo Turchetta",
+          "Felix Berkenkamp",
+          "Andreas Krause"
+        ],
+        "doi": null,
+        "key": "159",
+        "page": 29,
+        "title": "Safe Exploration in Finite Markov Decision Processes with Gaussian Processes",
+        "venue": "arXiv preprint arXiv:1606.04753",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Stefan Wager",
+          "Susan Athey"
+        ],
+        "doi": null,
+        "key": "160",
+        "page": 29,
+        "title": "Estimation and Inference of Heterogeneous Treatment Effects using Random Forests",
+        "venue": "arXiv preprint arXiv:1510.04342",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Daniel Weld",
+          "Oren Etzioni"
+        ],
+        "doi": null,
+        "key": "161",
+        "page": 29,
+        "title": "The first law of robotics (a call to arms)",
+        "venue": "AAAI. Vol. 94. 1994",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "Keenon Werling",
+          "et al."
+        ],
+        "doi": null,
+        "key": "162",
+        "page": 29,
+        "title": "On-the-job learning with bayesian decision theory",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jason Weston",
+          "et al."
+        ],
+        "doi": null,
+        "key": "163",
+        "page": 29,
+        "title": "Towards ai-complete question answering: A set of prerequisite toy tasks",
+        "venue": "arXiv preprint arXiv:1502.05698",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Wolfram Wiesemann",
+          "Daniel Kuhn",
+          "Berç Rustem"
+        ],
+        "doi": null,
+        "key": "164",
+        "page": 29,
+        "title": "Robust Markov decision processes",
+        "venue": "Mathematics of Operations Research 38.1",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Roman V Yampolskiy"
+        ],
+        "doi": null,
+        "key": "165",
+        "page": 29,
+        "title": "Utility function security in artificially intelligent agents",
+        "venue": "Journal of Experimental & Theoretical Artificial Intelligence 26.3",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Jason Yosinski",
+          "et al."
+        ],
+        "doi": null,
+        "key": "166",
+        "page": 29,
+        "title": "Understanding neural networks through deep visualization",
+        "venue": "arXiv preprint arXiv:1506.06579",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Eliezer Yudkowsky"
+        ],
+        "doi": null,
+        "key": "167",
+        "page": 29,
+        "title": "Artificial intelligence as a positive and negative factor in global risk",
+        "venue": "Global catastrophic risks 1",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Muhammad Bilal Zafar",
+          "et al."
+        ],
+        "doi": null,
+        "key": "168",
+        "page": 29,
+        "title": "Learning Fair Classifiers",
+        "venue": "stat 1050",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Richard S Zemel",
+          "et al."
+        ],
+        "doi": null,
+        "key": "169",
+        "page": 29,
+        "title": "Learning Fair Representations",
+        "venue": "ICML (3) 28",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Yuchen Zhang",
+          "et al."
+        ],
+        "doi": null,
+        "key": "170",
+        "page": 29,
+        "title": "Spectral methods meet EM: A provably optimal algorithm for crowdsourcing",
+        "venue": "Advances in neural information processing systems",
+        "year": 2014
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 14,
+        "quote": "[55, 118] provide thorough reviews of this literature, so we don’t review it extensively here, but simply describe some general routes that this research has taken, as well as suggesting some directions that might have increasing relevance as RL systems expand in scope and capability.",
+        "reference_key": "55, 118",
+        "relation": "uses_method",
+        "why": "The paper uses these surveys as the basis for its safe-exploration review rather than re-reviewing every method."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "A possible promising avenue of approach would be more realistic versions of the “delusion box” environment described by [127], in which standard RL agents distort their own perception to appear to receive high reward, rather than optimizing the objective in the external world that the reward signal was intended to encourage.",
+        "reference_key": "127",
+        "relation": "uses_method",
+        "why": "The delusion-box model grounds the paper’s proposed reward-hacking experiments."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "In the economics literature this is known as Goodhart’s law [63]: “when a metric is used as a target, it ceases to be a good metric.”",
+        "reference_key": "63",
+        "relation": "uses_method",
+        "why": "Goodhart’s law supplies a named mechanism for reward hacking when a proxy objective is strongly optimized."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "One approach to this is Cooperative Inverse Reinforcement Learning [66], where an agent and a human work together to achieve the human’s goals.",
+        "reference_key": "66",
+        "relation": "background",
+        "why": "The paper cites cooperative inverse RL as a multi-agent strategy for avoiding negative externalities."
+      },
+      {
+        "confidence": "high",
+        "page": 9,
+        "quote": "For instance, the reward agent could try to find scenarios that the ML system claimed were high reward but that a human labels as low reward; this is reminiscent of generative adversarial networks [61].",
+        "reference_key": "61",
+        "relation": "critiques",
+        "why": "The paper analogizes adversarial reward checking to GANs and proposes it as a way to catch reward hacking."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "A version of this problem has been discussed informally by [13] under the heading of “low impact agents.”",
+        "reference_key": "13",
+        "relation": "uses_method",
+        "why": "The paper builds its side-effect discussion on prior informal work on low-impact agents."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Intuitively, this seems related to the frame problem, an obstacle in efficient specification for knowledge representation raised by [95].",
+        "reference_key": "95",
+        "relation": "background",
+        "why": "The frame problem is used to explain why specifying non-interference in a large environment is difficult."
+      },
+      {
+        "confidence": "high",
+        "page": 18,
+        "quote": "This formalism, introduced by [44], has the advantage of potentially handling very large changes between train and test — even if the test distribution looks completely different from the training distribution and we have no hope of outputting accurate predictions, unsupervised risk estimation may still be possible, as in this case we would only need to output a large estimate for the risk.",
+        "reference_key": "44",
+        "relation": "uses_method",
+        "why": "Unsupervised risk estimation is a key proposed approach for detecting when a model is performing badly under distributional shift."
+      },
+      {
+        "confidence": "high",
+        "page": 19,
+        "quote": "[135] enumerates a list of ways in which existing machine learning systems fail to do this, and the problems this can cause for deployment and maintenance of machine learning systems at scale.",
+        "reference_key": "135",
+        "relation": "uses_method",
+        "why": "The contracts perspective frames robustness to distributional shift as satisfying a well-defined behavioral contract."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27].",
+        "reference_key": "27",
+        "relation": "critiques",
+        "why": "The paper contrasts its practical, ML-focused accident framing with superintelligence-focused discussions."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "In Sections 3-7, we explore five concrete problems in AI safety. Each section is accompanied by proposals for relevant experiments.",
+          "start_page": 1,
+          "start_text": "Concrete Problems in AI Safety"
+        },
+        "summary": "Introduces AI accident risk as unintended harmful behavior from misspecified objectives, careless learning, or implementation errors, and motivates practical ML research rather than speculative scenarios.",
+        "title": "Introduction"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "Together, we believe these trends suggest an increasing role for research on accidents.",
+          "start_page": 2,
+          "start_text": "Very broadly, an accident can be described as a situation where a human designer had in mind"
+        },
+        "summary": "Categorizes accident sources by where design goes wrong and previews five concrete problems illustrated by a cleaning robot.",
+        "title": "Overview and Five Problems"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "As an added advantage, regularizers that were known or certified to produce safe behavior on one task might be easier to establish as safe on other tasks.",
+          "start_page": 4,
+          "start_text": "Suppose a designer wants an RL agent (for example our cleaning robot) to achieve some goal"
+        },
+        "summary": "Defines negative side effects as unwanted environmental disruption from narrow objectives, and examines impact regularization approaches.",
+        "title": "Negative Side Effects: Problem and Impact Regularization"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "Ultimately, we would want the side effect regularizer (or the multi-agent policy, if we take that approach) to demonstrate successful transfer to totally new applications.",
+          "start_page": 6,
+          "start_text": "Multi-Agent Approaches: Avoiding side effects can be seen as a proxy"
+        },
+        "summary": "Covers multi-agent and reward-uncertainty approaches to side effects and proposes obstacle-course experiments.",
+        "title": "Negative Side Effects: Multi-Agent, Reward Uncertainty, Experiments"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "Finally, once an agent begins hacking its reward function and finds an easy way to get high reward, it won’t be inclined to stop, which could lead to additional challenges in agents that operate over a long timescale.",
+          "start_page": 7,
+          "start_text": "Imagine that an agent discovers a buffer overflow in its reward function"
+        },
+        "summary": "Defines reward hacking and surveys mechanisms by which objective functions or implementations are gamed.",
+        "title": "Reward Hacking: Failure Modes"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "The goal would be to develop generalizable learning strategies that succeed at optimizing external objectives in a wide range of environments, while avoiding being fooled by delusion boxes that arise naturally in many diverse ways.",
+          "start_page": 9,
+          "start_text": "Here we suggest some preliminary, machine-learning based approaches to preventing reward hacking:"
+        },
+        "summary": "Proposes ML-based defenses against reward hacking and outlines delusion-box experiments.",
+        "title": "Reward Hacking: Mitigations and Experiments"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Or, even without the visual display of the score, the agent might be able to learn to play from only a handful of explicit reward requests",
+          "start_page": 11,
+          "start_text": "Consider an autonomous agent performing some complex task"
+        },
+        "summary": "Frames scalable oversight via semi-supervised RL, where reward is observed only on a small fraction of timesteps or episodes.",
+        "title": "Scalable Oversight: Semi-Supervised RL"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Robot locomotion or industrial control tasks might be a natural candidate for such experiments.",
+          "start_page": 13,
+          "start_text": "There are other possible approaches to scalable oversight:"
+        },
+        "summary": "Reviews distant supervision and hierarchical RL as alternative scalable-oversight approaches and proposes experiments.",
+        "title": "Scalable Oversight: Alternative Approaches and Experiments"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Training RL agents (particularly robots) in simulated environments is already quite common, so advances in “exploration-focused simulation” could be easily incorporated into current workflows.",
+          "start_page": 14,
+          "start_text": "All autonomous learning agents need to sometimes engage in exploration"
+        },
+        "summary": "Introduces safe exploration and covers risk-sensitive criteria, demonstrations, and simulation.",
+        "title": "Safe Exploration: Risk, Demonstrations, Simulation"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "Such a suite of environments might serve a benchmarking role similar to that of the bAbI tasks [163], with the eventual goal being to develop a single architecture that can learn to avoid catastrophes in all environments in the suite.",
+          "start_page": 15,
+          "start_text": "Bounded Exploration: If we know that a certain portion of state space is safe"
+        },
+        "summary": "Covers bounded exploration, trusted-policy/human oversight, and a proposed suite of catastrophic exploration environments.",
+        "title": "Safe Exploration: Bounded Exploration, Oversight, Experiments"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "Because these methods focus only on the model errors and ignore other aspects of the data distribution, they can also be seen as an instance of partial model specification.",
+          "start_page": 16,
+          "start_text": "All of us occasionally find ourselves in situations that our previous experience has not adequately prepared us to deal with"
+        },
+        "summary": "Defines robustness to distributional change and reviews well-specified and partially specified modeling approaches.",
+        "title": "Distributional Shift: Problem and Well/Partially Specified Models"
+      },
+      {
+        "pages": {
+          "end": 20,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 20,
+          "end_text": "Finally, it might also be valuable to create an environment where an RL agent must learn to interpret speech as part of some larger task, and to explore how to respond appropriately to its own estimates of its transcription error.",
+          "start_page": 18,
+          "start_text": "Training on multiple distributions. One could also train on multiple training distributions"
+        },
+        "summary": "Discusses how to respond out-of-distribution, contracts for ML systems, and experimental proposals.",
+        "title": "Distributional Shift: Responses, Contracts, Experiments"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "We believe that research on these topics has both urgency and great promise, and that fruitful intersection is likely to exist between these topics and the topics we discuss in this paper.",
+          "start_page": 20,
+          "start_text": "As mentioned in the introduction, several other communities have thought broadly about the safety of AI systems"
+        },
+        "summary": "Places the paper relative to cyber-physical systems, futurist, other safety calls, and adjacent ML social-impact areas.",
+        "title": "Related Efforts"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 21
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "we believe that the increasing trend towards end-to-end, fully autonomous systems points towards the need for a unified approach to prevent these systems from causing unintended harm.",
+          "start_page": 21,
+          "start_text": "This paper analyzed the problem of accidents in machine learning systems"
+        },
+        "summary": "Recaps five accident-risk problems and argues for principled, forward-looking safety research.",
+        "title": "Conclusion"
+      },
+      {
+        "pages": {
+          "end": 29,
+          "start": 22
+        },
+        "source_span": {
+          "end_page": 29,
+          "end_text": "Yuchen Zhang et al. “Spectral methods meet EM: A provably optimal algorithm for crowdsourcing”. In: Advances in neural information processing systems. 2014, pp. 1260–1268.",
+          "start_page": 22,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of cited works; use for lookup rather than as part of the argument sequence.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It frames five practical AI-safety research problems and proposes research directions and experiments, rather than reporting a single new empirical result.",
+      "value": "position"
+    }
+  },
+  "pass1_check": {
+    "sites": 37,
+    "verbatim": 16,
+    "near": 2,
+    "missing": 19,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/sections/2/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"Exploring variants of empowerment penalization that more precisely capture the notion of avoiding influence is a potential challenge for future research.\"",
+      "reason": "The recorded end_text is the last line of page 5, yet the span claims end_page 6. Section 3's content continues past that line (the “Penalize Influence” bullet and the empowerment discussion) and only finishes on page 6, right before the “Multi-Agent Approaches” bullet that the draft assigns to the next section. The end_text should therefore be the page-6 sentence.",
+      "evidence": [
+        {
+          "quote": "As an added advantage, regularizers that were known or certified to produce safe behavior on one task might be easier to establish as safe on other tasks.",
+          "page": 5
+        },
+        {
+          "quote": "Exploring variants of empowerment penalization that more precisely capture the notion of avoiding influence is a potential challenge for future research.",
+          "page": 6
+        }
+      ]
+    },
+    {
+      "path": "/citations/18",
+      "action": "flag",
+      "value_json": null,
+      "reason": "This entry is an invented citation: it pairs the conclusion page (21) with reference key 21, but page 21 contains no citation to [21] at all (the conclusion text has no bracketed citations). Reference [21] (Basseville, a change-detection survey) is cited on page 16 in the distributional-shift discussion, and it has nothing to do with a “Conclusion on concrete accident threat”. The entry cannot be repaired without guessing the intended content.",
+      "evidence": [
+        {
+          "quote": "including change detection and anomaly detection [21, 80, 91]",
+          "page": 16
+        },
+        {
+          "quote": "small-scale accidents seem like a very concrete threat",
+          "page": 21
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/sections/2/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/citations/18",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 37,
+    "verbatim": 16,
+    "near": 2,
+    "missing": 19,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI.",
+      "admitted": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below.",
+      "admitted": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents, and in fact doing so can lead to unnecessarily speculative discussions that lack precision, as noted by some critics [38, 85].",
+      "admitted": "However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents, and in fact doing so can lead to unnecessarily speculative discussions that lack precision, as noted by some critics [38, 85].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It might be thought that individual instances of reward hacking have little in common and that the remedy is simply to avoid choosing the wrong objective function in each individual case—that bad objective functions reflect failures in competence by individual designers, rather than topics for machine learning research.",
+      "admitted": "It might be thought that individual instances of reward hacking have little in common and that the remedy is simply to avoid choosing the wrong objective function in each individual case—that bad objective functions reflect failures in competence by individual designers, rather than topics for machine learning research.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”).",
+      "admitted": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Concrete Problems in AI Safety",
+      "admitted": "Concrete Problems in AI Safety",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "repaired_local",
+      "original": "Dario Amodei∗\nGoogle Brain\nChris Olah∗\nGoogle Brain\nJacob Steinhardt\nStanford University\nJohn Schulman\nOpenAI\nPaul Christiano\nUC Berkeley\nDan Mané\nGoogle Brain",
+      "admitted": "Dario Amodei∗ Google Brain Chris Olah∗ Google Brain Jacob Steinhardt Stanford University John Schulman OpenAI Paul Christiano UC Berkeley Dan Mané Google Brain",
+      "similarity": 0.9565217391304348,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems.",
+      "admitted": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "repaired_model",
+      "original": "AI progress spans vision, games, autonomous vehicles, and Go",
+      "admitted": "The last few years have seen rapid progress on long-standing, difficult problems in machine learning and artificial intelligence (AI), in areas as diverse as computer vision [82], video game playing [102], autonomous vehicles [86], and Go [140].",
+      "similarity": 0.33333333333333337,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "repaired_model",
+      "original": "Critics of speculative AI accident discussions",
+      "admitted": "doing so can lead to unnecessarily speculative discussions that lack precision, as noted by some critics [38, 85]",
+      "similarity": 0.33333333333333337,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "repaired_model",
+      "original": "Low-impact agents prior discussion",
+      "admitted": "A version of this problem has been discussed informally by [13] under the heading of “low impact agents.”",
+      "similarity": 0.25,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "repaired_model",
+      "original": "Frame problem connection",
+      "admitted": "1Intuitively, this seems related to the frame problem, an obstacle in efficient specification for knowledge representation raised by [95].",
+      "similarity": 0.6666666666666667,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "repaired_model",
+      "original": "Empowerment used as intrinsic reward",
+      "admitted": "Empowerment is often maximized (rather than minimized) as a source of intrinsic reward.",
+      "similarity": 0.6,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "repaired_model",
+      "original": "Cooperative inverse reinforcement learning approach",
+      "admitted": "One approach to this is Cooperative Inverse Reinforcement Learning [66], where an agent and a human work together to achieve the human’s goals.",
+      "similarity": 0.8,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "repaired_model",
+      "original": "Shutdown issue studied in related work",
+      "admitted": "(this “shutdown” issue is an interesting problem in its own right, and is also studied in [113])",
+      "similarity": 0.33333333333333337,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "repaired_model",
+      "original": "Evolved radio example of unexpected reward hacking",
+      "admitted": "For example, it has been shown that genetic algorithms can often output unexpected but formally correct solutions to problems [157, 23], such as a circuit tasked to keep time which instead developed into a radio that picked up the regular RF emissions of a nearby PC.",
+      "similarity": 0.4285714285714286,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "repaired_model",
+      "original": "Goodhart’s law naming",
+      "admitted": "In the economics literature this is known as Goodhart’s law [63]: “when a metric is used as a target, it ceases to be a good metric.”",
+      "similarity": 0.6666666666666667,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "repaired_model",
+      "original": "Wireheading terminology",
+      "admitted": "This particular failure mode is often called “wireheading” [49, 127, 42, 67, 165].",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "repaired_model",
+      "original": "Adversarial reward idea reminiscent of GANs",
+      "admitted": "For instance, the reward agent could try to find scenarios that the ML system claimed were high reward but that a human labels as low reward; this is reminiscent of generative adversarial networks [61].",
+      "similarity": 0.33333333333333337,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "withdrawn",
+      "original": "Delusion-box experimental model",
+      "admitted": null,
+      "similarity": 0.33333333333333337,
+      "cited_page": 11,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "withdrawn",
+      "original": "Hierarchical reinforcement learning approach",
+      "admitted": null,
+      "similarity": 0.75,
+      "cited_page": 13,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "withdrawn",
+      "original": "Safe exploration surveys",
+      "admitted": null,
+      "similarity": 0.6666666666666667,
+      "cited_page": 14,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "withdrawn",
+      "original": "Risk-sensitive exploration and reversibility",
+      "admitted": null,
+      "similarity": 0.5,
+      "cited_page": 15,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "withdrawn",
+      "original": "Unsupervised risk estimation formalism",
+      "admitted": null,
+      "similarity": 0.75,
+      "cited_page": 18,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "withdrawn",
+      "original": "Implicit contract failure in ML systems",
+      "admitted": null,
+      "similarity": 0.5,
+      "cited_page": 19,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "withdrawn",
+      "original": "Speech calibration out-of-distribution example",
+      "admitted": null,
+      "similarity": 0.25,
+      "cited_page": 20,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "withdrawn",
+      "original": "Conclusion on concrete accident threat",
+      "admitted": null,
+      "similarity": 0.4,
+      "cited_page": 21,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "[55, 118] provide thorough reviews of this literature, so we don’t review it extensively here, but simply describe some general routes that this research has taken, as well as suggesting some directions that might have increasing relevance as RL systems expand in scope and capability.",
+      "admitted": "[55, 118] provide thorough reviews of this literature, so we don’t review it extensively here, but simply describe some general routes that this research has taken, as well as suggesting some directions that might have increasing relevance as RL systems expand in scope and capability.",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "A possible promising avenue of approach would be more realistic versions of the “delusion box” environment described by [127], in which standard RL agents distort their own perception to appear to receive high reward, rather than optimizing the objective in the external world that the reward signal was intended to encourage.",
+      "admitted": "A possible promising avenue of approach would be more realistic versions of the “delusion box” environment described by [127], in which standard RL agents distort their own perception to appear to receive high reward, rather than optimizing the objective in the external world that the reward signal was intended to encourage.",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "In the economics literature this is known as Goodhart’s law [63]: “when a metric is used as a target, it ceases to be a good metric.”",
+      "admitted": "In the economics literature this is known as Goodhart’s law [63]: “when a metric is used as a target, it ceases to be a good metric.”",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "One approach to this is Cooperative Inverse Reinforcement Learning [66], where an agent and a human work together to achieve the human’s goals.",
+      "admitted": "One approach to this is Cooperative Inverse Reinforcement Learning [66], where an agent and a human work together to achieve the human’s goals.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "For instance, the reward agent could try to find scenarios that the ML system claimed were high reward but that a human labels as low reward; this is reminiscent of generative adversarial networks [61].",
+      "admitted": "For instance, the reward agent could try to find scenarios that the ML system claimed were high reward but that a human labels as low reward; this is reminiscent of generative adversarial networks [61].",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "A version of this problem has been discussed informally by [13] under the heading of “low impact agents.”",
+      "admitted": "A version of this problem has been discussed informally by [13] under the heading of “low impact agents.”",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "repaired_local",
+      "original": "Intuitively, this seems related to the frame problem, an obstacle in efficient specification for knowledge representation raised by [95].",
+      "admitted": "1Intuitively, this seems related to the frame problem, an obstacle in efficient specification for knowledge representation raised by [95].",
+      "similarity": 0.9473684210526316,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "This formalism, introduced by [44], has the advantage of potentially handling very large changes between train and test — even if the test distribution looks completely different from the training distribution and we have no hope of outputting accurate predictions, unsupervised risk estimation may still be possible, as in this case we would only need to output a large estimate for the risk.",
+      "admitted": "This formalism, introduced by [44], has the advantage of potentially handling very large changes between train and test — even if the test distribution looks completely different from the training distribution and we have no hope of outputting accurate predictions, unsupervised risk estimation may still be possible, as in this case we would only need to output a large estimate for the risk.",
+      "similarity": null,
+      "cited_page": 18,
+      "matched_page": 18
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "[135] enumerates a list of ways in which existing machine learning systems fail to do this, and the problems this can cause for deployment and maintenance of machine learning systems at scale.",
+      "admitted": "[135] enumerates a list of ways in which existing machine learning systems fail to do this, and the problems this can cause for deployment and maintenance of machine learning systems at scale.",
+      "similarity": null,
+      "cited_page": 19,
+      "matched_page": 19
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "verbatim",
+      "original": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27].",
+      "admitted": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 2,
+    "repaired_model": 11,
+    "verbatim": 16,
+    "withdrawn": 8
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems. We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”). We review previous work in these areas as well as suggesting research directions with a focus on relevance to cutting-edge AI systems. Finally, we consider the high-level question of how to think most productively about the safety of forward-looking applications of AI."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "existing machine-learning work on robustness, risk-sensitivity, and safe exploration",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "There is a large and diverse literature in the machine learning community on issues related to accidents, including robustness, risk-sensitivity, and safe exploration; we review these in detail below."
+              }
+            ],
+            "reference_key": "2",
+            "why": "The paper reviews these areas and maps them onto accident risk in modern ML systems."
+          },
+          {
+            "cited_work": "public discussions centered on extreme superintelligent-agent scenarios",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "However, in our opinion one need not invoke these extreme scenarios to productively discuss accidents, and in fact doing so can lead to unnecessarily speculative discussions that lack precision, as noted by some critics [38, 85]."
+              }
+            ],
+            "reference_key": "38,85",
+            "why": "It argues accidents can be discussed productively without invoking such speculative scenarios and focuses on concrete ML problems."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "the view that reward hacking is merely individual designer incompetence",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "It might be thought that individual instances of reward hacking have little in common and that the remedy is simply to avoid choosing the wrong objective function in each individual case—that bad objective functions reflect failures in competence by individual designers, rather than topics for machine learning research."
+              }
+            ],
+            "reference_key": "9",
+            "why": "It argues wrong objective functions arise from general causes and therefore merit ML research."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We present a list of five practical research problems related to accident risk, categorized according to whether the problem originates from having the wrong objective function (“avoiding side effects” and “avoiding reward hacking”), an objective function that is too expensive to evaluate frequently (“scalable supervision”), or undesirable behavior during the learning process (“safe exploration” and “distributional shift”)."
+          }
+        ],
+        "text": "AI accident risk can be made tractable by framing it as five concrete machine-learning problems—avoiding side effects, avoiding reward hacking, scalable oversight, safe exploration, and robustness to distributional shift—and pursuing empirical research on each."
+      }
+    },
+    "citations": [
+      {
+        "context": "The last few years have seen rapid progress on long-standing, difficult problems in machine learning and artificial intelligence (AI), in areas as diverse as computer vision [82], video game playing [102], autonomous vehicles [86], and Go [140].",
+        "page": 1,
+        "reference_key": "82,102,86,140"
+      },
+      {
+        "context": "doing so can lead to unnecessarily speculative discussions that lack precision, as noted by some critics [38, 85]",
+        "page": 2,
+        "reference_key": "38,85"
+      },
+      {
+        "context": "A version of this problem has been discussed informally by [13] under the heading of “low impact agents.”",
+        "page": 4,
+        "reference_key": "13"
+      },
+      {
+        "context": "1Intuitively, this seems related to the frame problem, an obstacle in efficient specification for knowledge representation raised by [95].",
+        "page": 4,
+        "reference_key": "95"
+      },
+      {
+        "context": "Empowerment is often maximized (rather than minimized) as a source of intrinsic reward.",
+        "page": 6,
+        "reference_key": "103"
+      },
+      {
+        "context": "One approach to this is Cooperative Inverse Reinforcement Learning [66], where an agent and a human work together to achieve the human’s goals.",
+        "page": 6,
+        "reference_key": "66"
+      },
+      {
+        "context": "(this “shutdown” issue is an interesting problem in its own right, and is also studied in [113])",
+        "page": 6,
+        "reference_key": "113"
+      },
+      {
+        "context": "For example, it has been shown that genetic algorithms can often output unexpected but formally correct solutions to problems [157, 23], such as a circuit tasked to keep time which instead developed into a radio that picked up the regular RF emissions of a nearby PC.",
+        "page": 7,
+        "reference_key": "157,23"
+      },
+      {
+        "context": "In the economics literature this is known as Goodhart’s law [63]: “when a metric is used as a target, it ceases to be a good metric.”",
+        "page": 8,
+        "reference_key": "63"
+      },
+      {
+        "context": "This particular failure mode is often called “wireheading” [49, 127, 42, 67, 165].",
+        "page": 9,
+        "reference_key": "49,127,42,67,165"
+      },
+      {
+        "context": "For instance, the reward agent could try to find scenarios that the ML system claimed were high reward but that a human labels as low reward; this is reminiscent of generative adversarial networks [61].",
+        "page": 9,
+        "reference_key": "61"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Google Brain",
+          "name": "Dario Amodei"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Chris Olah"
+        },
+        {
+          "affiliation": "Stanford University",
+          "name": "Jacob Steinhardt"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "John Schulman"
+        },
+        {
+          "affiliation": "UC Berkeley",
+          "name": "Paul Christiano"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Dan Mané"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Concrete Problems in AI Safety"
+        },
+        {
+          "page": 1,
+          "quote": "Dario Amodei∗ Google Brain Chris Olah∗ Google Brain Jacob Steinhardt Stanford University John Schulman OpenAI Paul Christiano UC Berkeley Dan Mané Google Brain"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1606.06565v2",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Concrete Problems in AI Safety",
+      "venue": "arXiv",
+      "year": 2016
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this paper we discuss one such potential impact: the problem of accidents in machine learning systems, defined as unintended and harmful behavior that may emerge from poor design of real-world AI systems."
+        }
+      ],
+      "text": "What concrete technical problems contribute to accident risk in machine learning systems, and what research directions and experiments can address them?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Martin Abadi",
+          "David Andersen",
+          "et al."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 22,
+        "title": "Deep Learning with Differential Privacy",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Pieter Abbeel",
+          "Andrew Y Ng"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 22,
+        "title": "Exploration and apprenticeship learning in reinforcement learning",
+        "venue": "Proceedings of the 22nd international conference on Machine learning. ACM",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Julius Adebayo",
+          "Lalana Kagal",
+          "Alex Pentland"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 22,
+        "title": "The Hidden Cost of Efficiency: Fairness and Discrimination in Predictive Modeling",
+        "venue": "",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Alekh Agarwal",
+          "et al."
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 22,
+        "title": "Taming the monster: A fast and simple algorithm for contextual bandits",
+        "venue": "",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Hana Ajakan",
+          "et al."
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 22,
+        "title": "Domain-adversarial neural networks",
+        "venue": "arXiv preprint arXiv:1412.4446",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ifeoma Ajunwa",
+          "et al."
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 22,
+        "title": "Hiring by algorithm: predicting and preventing disparate impact",
+        "venue": "Available at SSRN 2746078",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Dario Amodei",
+          "et al."
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 22,
+        "title": "Deep Speech 2: End-to-End Speech Recognition in English and Mandarin",
+        "venue": "arXiv preprint arXiv:1512.02595",
+        "year": 2015
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "8",
+        "page": 22,
+        "title": "An Open Letter: Research Priorities for Robust and Beneficial Artificial Intelligence",
+        "venue": "Open Letter. Signed by 8,600 people; see attached research agenda",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Animashree Anandkumar",
+          "Daniel Hsu",
+          "Sham M Kakade"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 22,
+        "title": "A method of moments for mixture models and hidden Markov models",
+        "venue": "arXiv preprint arXiv:1203.0683",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Theodore W Anderson",
+          "Herman Rubin"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 22,
+        "title": "Estimation of the parameters of a single equation in a complete system of stochastic equations",
+        "venue": "The Annals of Mathematical Statistics",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "Theodore W Anderson",
+          "Herman Rubin"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 22,
+        "title": "The asymptotic properties of estimates of the parameters of a single equation in a complete system of stochastic equations",
+        "venue": "The Annals of Mathematical Statistics",
+        "year": 1950
+      },
+      {
+        "authors": [
+          "Stuart Armstrong"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 22,
+        "title": "Motivated value selection for artificial agents",
+        "venue": "Workshops at the Twenty-Ninth AAAI Conference on Artificial Intelligence",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Stuart Armstrong"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 22,
+        "title": "The mathematics of reduced impact: help needed",
+        "venue": "",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Stuart Armstrong"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 22,
+        "title": "Utility indifference",
+        "venue": "Tech. rep. Technical Report 2010-1. Oxford: Future of Humanity Institute, University of Oxford",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Melanie Arntz",
+          "Terry Gregory",
+          "Ulrich Zierahn"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 22,
+        "title": "The Risk of Automation for Jobs in OECD Countries",
+        "venue": "OECD Social, Employment and Migration Working Papers",
+        "year": 2016
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "16",
+        "page": 22,
+        "title": "Autonomous Weapons: An Open Letter from AI & Robotics Researchers",
+        "venue": "Open Letter. Signed by 20,000+ people",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "James Babcock",
+          "Janos Kramar",
+          "Roman Yampolskiy"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 23,
+        "title": "The AGI Containment Problem",
+        "venue": "The Ninth Conference on Artificial General Intelligence",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Krishnakumar Balasubramanian",
+          "Pinar Donmez",
+          "Guy Lebanon"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 23,
+        "title": "Unsupervised supervised learning ii: Margin-based classification without labels",
+        "venue": "The Journal of Machine Learning Research 12",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Marco Barreno",
+          "et al."
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 23,
+        "title": "The security of machine learning",
+        "venue": "Machine Learning 81.2",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Tamer Başar",
+          "Pierre Bernhard"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 23,
+        "title": "H-infinity optimal control and related minimax design problems: a dynamic game approach",
+        "venue": "Springer Science & Business Media",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Michèle Basseville"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 23,
+        "title": "Detecting changes in signals and systems—a survey",
+        "venue": "Automatica 24.3",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "F Berkenkamp",
+          "A Krause",
+          "Angela P Schoellig"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 23,
+        "title": "Bayesian optimization with safety constraints: safe and automatic parameter tuning in robotics",
+        "venue": "arXiv preprint arXiv:1602.04450",
+        "year": null
+      },
+      {
+        "authors": [
+          "Jon Bird",
+          "Paul Layzell"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 23,
+        "title": "The evolved radio and its implications for modelling the evolution of novel sensors",
+        "venue": "Evolutionary Computation, 2002. CEC’02. Proceedings of the 2002 Congress on. Vol. 2. IEEE",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "John Blitzer",
+          "Mark Dredze",
+          "Fernando Pereira",
+          "et al."
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 23,
+        "title": "Biographies, bollywood, boom-boxes and blenders: Domain adaptation for sentiment classification",
+        "venue": "ACL. Vol. 7",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "John Blitzer",
+          "Sham Kakade",
+          "Dean P Foster"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 23,
+        "title": "Domain adaptation with coupled subspaces",
+        "venue": "International Conference on Artificial Intelligence and Statistics",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Charles Blundell",
+          "et al."
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 23,
+        "title": "Weight uncertainty in neural networks",
+        "venue": "arXiv preprint arXiv:1505.05424",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Nick Bostrom"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 23,
+        "title": "Superintelligence: Paths, dangers, strategies",
+        "venue": "OUP Oxford",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Léon Bottou"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 23,
+        "title": "Two high stakes challenges in machine learning",
+        "venue": "Invited talk at the 32nd International Conference on Machine Learning",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Léon Bottou",
+          "et al."
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 23,
+        "title": "Counterfactual Reasoning and Learning Systems",
+        "venue": "arXiv preprint arXiv:1209.2355",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Léon Bottou",
+          "et al."
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 23,
+        "title": "Counterfactual reasoning and learning systems: The example of computational advertising",
+        "venue": "The Journal of Machine Learning Research 14.1",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Ronen I Brafman",
+          "Moshe Tennenholtz"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 23,
+        "title": "R-max-a general polynomial time algorithm for near-optimal reinforcement learning",
+        "venue": "The Journal of Machine Learning Research 3",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Erik Brynjolfsson",
+          "Andrew McAfee"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 23,
+        "title": "The second machine age: work, progress, and prosperity in a time of brilliant technologies",
+        "venue": "WW Norton & Company",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ryan Calo"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 23,
+        "title": "Open robotics",
+        "venue": "Maryland Law Review 70.3",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Paul Christiano"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 23,
+        "title": "AI Control",
+        "venue": "[Online; accessed 13-June-2016]. url: https://medium.com/ai-control",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Fabio Cozman",
+          "Ira Cohen"
+        ],
+        "doi": null,
+        "key": "35",
+        "page": 23,
+        "title": "Risks of semi-supervised learning",
+        "venue": "Semi-Supervised Learning",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Andrew Critch"
+        ],
+        "doi": null,
+        "key": "36",
+        "page": 23,
+        "title": "Parametric Bounded Löb’s Theorem and Robust Cooperation of Bounded Agents",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Christian Daniel",
+          "et al."
+        ],
+        "doi": null,
+        "key": "37",
+        "page": 23,
+        "title": "Active reward learning",
+        "venue": "Proceedings of Robotics Science & Systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ernest Davis"
+        ],
+        "doi": null,
+        "key": "38",
+        "page": 23,
+        "title": "Ethical guidelines for a superintelligence",
+        "venue": "Artif. Intell. 220",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Alexander Philip Dawid",
+          "Allan M Skene"
+        ],
+        "doi": null,
+        "key": "39",
+        "page": 23,
+        "title": "Maximum likelihood estimation of observer error-rates using the EM algorithm",
+        "venue": "Applied statistics",
+        "year": 1979
+      },
+      {
+        "authors": [
+          "Peter Dayan",
+          "Geoffrey E Hinton"
+        ],
+        "doi": null,
+        "key": "40",
+        "page": 24,
+        "title": "Feudal reinforcement learning",
+        "venue": "Advances in neural information processing systems. Morgan Kaufmann Publishers",
+        "year": 1993
+      },
+      {
+        "authors": [
+          "Kalyanmoy Deb"
+        ],
+        "doi": null,
+        "key": "41",
+        "page": 24,
+        "title": "Multi-objective optimization",
+        "venue": "Search methodologies. Springer",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Daniel Dewey"
+        ],
+        "doi": null,
+        "key": "42",
+        "page": 24,
+        "title": "Learning what to value",
+        "venue": "Artificial General Intelligence. Springer",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Daniel Dewey"
+        ],
+        "doi": null,
+        "key": "43",
+        "page": 24,
+        "title": "Reinforcement learning and the reward engineering principle",
+        "venue": "2014 AAAI Spring Symposium Series",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Pinar Donmez",
+          "Guy Lebanon",
+          "Krishnakumar Balasubramanian"
+        ],
+        "doi": null,
+        "key": "44",
+        "page": 24,
+        "title": "Unsupervised supervised learning i: Estimating classification and regression errors without labels",
+        "venue": "The Journal of Machine Learning Research 11",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Gregory Druck",
+          "Gideon Mann",
+          "Andrew McCallum"
+        ],
+        "doi": null,
+        "key": "45",
+        "page": 24,
+        "title": "Learning from labeled features using generalized expectation criteria",
+        "venue": "Proceedings of the 31st annual international ACM SIGIR conference on Research and development in information retrieval. ACM",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Cynthia Dwork",
+          "et al."
+        ],
+        "doi": null,
+        "key": "46",
+        "page": 24,
+        "title": "Fairness through awareness",
+        "venue": "Proceedings of the 3rd Innovations in Theoretical Computer Science Conference. ACM",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Bradley Efron"
+        ],
+        "doi": null,
+        "key": "47",
+        "page": 24,
+        "title": "Computers and the theory of statistics: thinking the unthinkable",
+        "venue": "SIAM review 21.4",
+        "year": 1979
+      },
+      {
+        "authors": [
+          "Owain Evans",
+          "Andreas Stuhlmüller",
+          "Noah D Goodman"
+        ],
+        "doi": null,
+        "key": "48",
+        "page": 24,
+        "title": "Learning the preferences of ignorant, inconsistent agents",
+        "venue": "arXiv preprint arXiv:1512.05832",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Tom Everitt",
+          "Marcus Hutter"
+        ],
+        "doi": null,
+        "key": "49",
+        "page": 24,
+        "title": "Avoiding wireheading with value reinforcement learning",
+        "venue": "arXiv preprint arXiv:1605.03143",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Tom Everitt",
+          "et al."
+        ],
+        "doi": null,
+        "key": "50",
+        "page": 24,
+        "title": "Self-Modification of Policy and Utility Function in Rational Agents",
+        "venue": "arXiv preprint arXiv:1605.03142",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Chelsea Finn",
+          "Sergey Levine",
+          "Pieter Abbeel"
+        ],
+        "doi": null,
+        "key": "51",
+        "page": 24,
+        "title": "Guided Cost Learning: Deep Inverse Optimal Control via Policy Optimization",
+        "venue": "arXiv preprint arXiv:1603.00448",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Carl Benedikt Frey",
+          "Michael A Osborne"
+        ],
+        "doi": null,
+        "key": "52",
+        "page": 24,
+        "title": "The future of employment: how susceptible are jobs to computerisation",
+        "venue": "Retrieved September 7",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Yarin Gal",
+          "Zoubin Ghahramani"
+        ],
+        "doi": null,
+        "key": "53",
+        "page": 24,
+        "title": "Dropout as a Bayesian approximation: Representing model uncertainty in deep learning",
+        "venue": "arXiv preprint arXiv:1506.02142",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Joao Gama",
+          "et al."
+        ],
+        "doi": null,
+        "key": "54",
+        "page": 24,
+        "title": "Learning with drift detection",
+        "venue": "Advances in artificial intelligence–SBIA 2004. Springer",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Javier García",
+          "Fernando Fernández"
+        ],
+        "doi": null,
+        "key": "55",
+        "page": 24,
+        "title": "A Comprehensive Survey on Safe Reinforcement Learning",
+        "venue": "Journal of Machine Learning Research 16",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Scott Garrabrant",
+          "Nate Soares",
+          "Jessica Taylor"
+        ],
+        "doi": null,
+        "key": "56",
+        "page": 24,
+        "title": "Asymptotic Convergence in Online Learning with Unbounded Delays",
+        "venue": "arXiv preprint arXiv:1604.05280",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Scott Garrabrant",
+          "et al."
+        ],
+        "doi": null,
+        "key": "57",
+        "page": 24,
+        "title": "Uniform Coherence",
+        "venue": "arXiv preprint arXiv:1604.05288",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Shalini Ghosh",
+          "et al."
+        ],
+        "doi": null,
+        "key": "58",
+        "page": 24,
+        "title": "Trusted Machine Learning for Probabilistic Models",
+        "venue": "Reliable Machine Learning in the Wild at ICML 2016",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Yolanda Gil",
+          "et al."
+        ],
+        "doi": null,
+        "key": "59",
+        "page": 24,
+        "title": "Amplify scientific discovery with artificial intelligence",
+        "venue": "Science 346.6206",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Alec Go",
+          "Richa Bhayani",
+          "Lei Huang"
+        ],
+        "doi": null,
+        "key": "60",
+        "page": 24,
+        "title": "Twitter sentiment classification using distant supervision",
+        "venue": "CS224N Project Report, Stanford 1",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Ian Goodfellow",
+          "et al."
+        ],
+        "doi": null,
+        "key": "61",
+        "page": 24,
+        "title": "Generative adversarial nets",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Ian J Goodfellow",
+          "Jonathon Shlens",
+          "Christian Szegedy"
+        ],
+        "doi": null,
+        "key": "62",
+        "page": 24,
+        "title": "Explaining and harnessing adversarial examples",
+        "venue": "arXiv preprint arXiv:1412.6572",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Charles AE Goodhart"
+        ],
+        "doi": null,
+        "key": "63",
+        "page": 24,
+        "title": "Problems of monetary management: the UK experience",
+        "venue": "Springer",
+        "year": 1984
+      },
+      {
+        "authors": [
+          "Alex Graves",
+          "Greg Wayne",
+          "Ivo Danihelka"
+        ],
+        "doi": null,
+        "key": "64",
+        "page": 24,
+        "title": "Neural turing machines",
+        "venue": "arXiv preprint arXiv:1410.5401",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Sonal Gupta"
+        ],
+        "doi": null,
+        "key": "65",
+        "page": 25,
+        "title": "Distantly Supervised Information Extraction Using Bootstrapped Patterns",
+        "venue": "PhD thesis. Stanford University",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Dylan Hadfield-Menell",
+          "et al."
+        ],
+        "doi": null,
+        "key": "66",
+        "page": 25,
+        "title": "Cooperative Inverse Reinforcement Learning",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Dylan Hadfield-Menell",
+          "et al."
+        ],
+        "doi": null,
+        "key": "67",
+        "page": 25,
+        "title": "The Off-Switch",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Lars Peter Hansen"
+        ],
+        "doi": null,
+        "key": "68",
+        "page": 25,
+        "title": "Large sample properties of generalized method of moments estimators",
+        "venue": "Econometrica: Journal of the Econometric Society",
+        "year": 1982
+      },
+      {
+        "authors": [
+          "Lars Peter Hansen"
+        ],
+        "doi": null,
+        "key": "69",
+        "page": 25,
+        "title": "Nobel Lecture: Uncertainty Outside and Inside Economic Models",
+        "venue": "Journal of Political Economy 122.5",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Mark Herbster",
+          "Manfred K Warmuth"
+        ],
+        "doi": null,
+        "key": "70",
+        "page": 25,
+        "title": "Tracking the best linear predictor",
+        "venue": "The Journal of Machine Learning Research 1",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Bill Hibbard"
+        ],
+        "doi": null,
+        "key": "71",
+        "page": 25,
+        "title": "Model-based utility functions",
+        "venue": "Journal of Artificial General Intelligence 3.1",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Thomas Hofmann",
+          "Bernhard Schölkopf",
+          "Alexander J Smola"
+        ],
+        "doi": null,
+        "key": "72",
+        "page": 25,
+        "title": "Kernel methods in machine learning",
+        "venue": "The annals of statistics",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Garud N Iyengar"
+        ],
+        "doi": null,
+        "key": "73",
+        "page": 25,
+        "title": "Robust dynamic programming",
+        "venue": "Mathematics of Operations Research 30.2",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Ariel Jaffe",
+          "Boaz Nadler",
+          "Yuval Kluger"
+        ],
+        "doi": null,
+        "key": "74",
+        "page": 25,
+        "title": "Estimating the accuracies of multiple classifiers without labeled data",
+        "venue": "arXiv preprint arXiv:1407.7644",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Jean-Baptiste Jeannin",
+          "et al."
+        ],
+        "doi": null,
+        "key": "75",
+        "page": 25,
+        "title": "A formally verified hybrid system for the next-generation airborne collision avoidance system",
+        "venue": "Tools and Algorithms for the Construction and Analysis of Systems. Springer",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Zhanglong Ji",
+          "Zachary C Lipton",
+          "Charles Elkan"
+        ],
+        "doi": null,
+        "key": "76",
+        "page": 25,
+        "title": "Differential privacy and machine learning: A survey and review",
+        "venue": "arXiv preprint arXiv:1412.7584",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Fredrik D Johansson",
+          "Uri Shalit",
+          "David Sontag"
+        ],
+        "doi": null,
+        "key": "77",
+        "page": 25,
+        "title": "Learning Representations for Counterfactual Inference",
+        "venue": "arXiv preprint arXiv:1605.03661",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Leslie Pack Kaelbling",
+          "Michael L Littman",
+          "Anthony R Cassandra"
+        ],
+        "doi": null,
+        "key": "78",
+        "page": 25,
+        "title": "Planning and acting in partially observable stochastic domains",
+        "venue": "Artificial intelligence 101.1",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Lukasz Kaiser",
+          "Ilya Sutskever"
+        ],
+        "doi": null,
+        "key": "79",
+        "page": 25,
+        "title": "Neural GPUs learn algorithms",
+        "venue": "arXiv preprint arXiv:1511.08228",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Yoshinobu Kawahara",
+          "Masashi Sugiyama"
+        ],
+        "doi": null,
+        "key": "80",
+        "page": 25,
+        "title": "Change-Point Detection in Time-Series Data by Direct Density-Ratio Estimation",
+        "venue": "SDM. Vol. 9. SIAM",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "F. Khani",
+          "M. Rinard",
+          "P. Liang"
+        ],
+        "doi": null,
+        "key": "81",
+        "page": 25,
+        "title": "Unanimous Prediction for 100Learning Semantic Parsers",
+        "venue": "Association for Computational Linguistics (ACL)",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Alex Krizhevsky",
+          "Ilya Sutskever",
+          "Geoffrey E Hinton"
+        ],
+        "doi": null,
+        "key": "82",
+        "page": 25,
+        "title": "Imagenet classification with deep convolutional neural networks",
+        "venue": "Advances in neural information processing systems",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Volodymyr Kuleshov",
+          "Percy S Liang"
+        ],
+        "doi": null,
+        "key": "83",
+        "page": 25,
+        "title": "Calibrated Structured Prediction",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Tejas D Kulkarni",
+          "et al."
+        ],
+        "doi": null,
+        "key": "84",
+        "page": 25,
+        "title": "Hierarchical Deep Reinforcement Learning: Integrating Temporal Abstraction and Intrinsic Motivation",
+        "venue": "arXiv preprint arXiv:1604.06057",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Neil Lawrence"
+        ],
+        "doi": null,
+        "key": "85",
+        "page": 25,
+        "title": "Discussion of ’Superintelligence: Paths, Dangers, Strategies’",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Jesse Levinson",
+          "et al."
+        ],
+        "doi": null,
+        "key": "86",
+        "page": 25,
+        "title": "Towards fully autonomous driving: Systems and algorithms",
+        "venue": "Intelligent Vehicles Symposium (IV), 2011 IEEE. IEEE",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Lihong Li",
+          "et al."
+        ],
+        "doi": null,
+        "key": "87",
+        "page": 25,
+        "title": "Knows what it knows: a framework for self-aware learning",
+        "venue": "Machine learning 82.3",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Yu-Feng Li",
+          "Zhi-Hua Zhou"
+        ],
+        "doi": null,
+        "key": "88",
+        "page": 25,
+        "title": "Towards making unlabeled data never hurt",
+        "venue": "Pattern Analysis and Machine Intelligence, IEEE Transactions on 37.1",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Percy Liang"
+        ],
+        "doi": null,
+        "key": "89",
+        "page": 25,
+        "title": "On the Elusiveness of a Specification for AI",
+        "venue": "NIPS 2015, Symposium: Algorithms Among Us. url: http://research.microsoft.com/apps/video/default.aspx?id=260009&r=1",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Percy Liang",
+          "Dan Klein"
+        ],
+        "doi": null,
+        "key": "90",
+        "page": 26,
+        "title": "Analyzing the Errors of Unsupervised Learning",
+        "venue": "ACL",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Song Liu",
+          "et al."
+        ],
+        "doi": null,
+        "key": "91",
+        "page": 26,
+        "title": "Change-point detection in time-series data by relative density-ratio estimation",
+        "venue": "Neural Networks 43",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Sarah M Loos",
+          "David Renshaw",
+          "André Platzer"
+        ],
+        "doi": null,
+        "key": "92",
+        "page": 26,
+        "title": "Formal verification of distributed aircraft controllers",
+        "venue": "Proceedings of the 16th international conference on Hybrid systems: computation and control. ACM",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "John Lygeros",
+          "Claire Tomlin",
+          "Shankar Sastry"
+        ],
+        "doi": null,
+        "key": "93",
+        "page": 26,
+        "title": "Controllers for reachability specifications for hybrid systems",
+        "venue": "Automatica 35.3",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "Gideon S Mann",
+          "Andrew McCallum"
+        ],
+        "doi": null,
+        "key": "94",
+        "page": 26,
+        "title": "Generalized expectation criteria for semi-supervised learning with weakly labeled data",
+        "venue": "The Journal of Machine Learning Research 11",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "John McCarthy",
+          "Patrick J Hayes"
+        ],
+        "doi": null,
+        "key": "95",
+        "page": 26,
+        "title": "Some philosophical problems from the standpoint of artificial intelligence",
+        "venue": "Readings in artificial intelligence",
+        "year": 1969
+      },
+      {
+        "authors": [
+          "Shike Mei",
+          "Xiaojin Zhu"
+        ],
+        "doi": null,
+        "key": "96",
+        "page": 26,
+        "title": "The Security of Latent Dirichlet Allocation",
+        "venue": "AISTATS",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Shike Mei",
+          "Xiaojin Zhu"
+        ],
+        "doi": null,
+        "key": "97",
+        "page": 26,
+        "title": "Using Machine Teaching to Identify Optimal Training-Set Attacks on Machine Learners",
+        "venue": "AAAI",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Bernard Merialdo"
+        ],
+        "doi": null,
+        "key": "98",
+        "page": 26,
+        "title": "Tagging English text with a probabilistic model",
+        "venue": "Computational linguistics 20.2",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "Mike Mintz",
+          "et al."
+        ],
+        "doi": null,
+        "key": "99",
+        "page": 26,
+        "title": "Distant supervision for relation extraction without labeled data",
+        "venue": "Proceedings of the Joint Conference of the 47th Annual Meeting of the ACL and the 4th International Joint Conference on Natural Language Processing of the AFNLP: Volume 2-Volume 2. Association for Computational Linguistics",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Ian M Mitchell",
+          "Alexandre M Bayen",
+          "Claire J Tomlin"
+        ],
+        "doi": null,
+        "key": "100",
+        "page": 26,
+        "title": "A time-dependent Hamilton-Jacobi formulation of reachable sets for continuous dynamic games",
+        "venue": "Automatic Control, IEEE Transactions on 50.7",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Stefan Mitsch",
+          "Sarah M Loos",
+          "André Platzer"
+        ],
+        "doi": null,
+        "key": "101",
+        "page": 26,
+        "title": "Towards formal verification of freeway traffic control",
+        "venue": "Cyber-Physical Systems (ICCPS), 2012 IEEE/ACM Third International Conference on. IEEE",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Volodymyr Mnih",
+          "et al."
+        ],
+        "doi": null,
+        "key": "102",
+        "page": 26,
+        "title": "Human-level control through deep reinforcement learning",
+        "venue": "Nature 518.7540",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Shakir Mohamed",
+          "Danilo Jimenez Rezende"
+        ],
+        "doi": null,
+        "key": "103",
+        "page": 26,
+        "title": "Variational Information Maximisation for Intrinsically Motivated Reinforcement Learning",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Teodor Mihai Moldovan",
+          "Pieter Abbeel"
+        ],
+        "doi": null,
+        "key": "104",
+        "page": 26,
+        "title": "Safe exploration in markov decision processes",
+        "venue": "arXiv preprint arXiv:1205.4810",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Alexander Mordvintsev",
+          "Christopher Olah",
+          "Mike Tyka"
+        ],
+        "doi": null,
+        "key": "105",
+        "page": 26,
+        "title": "Inceptionism: Going deeper into neural networks",
+        "venue": "Google Research Blog. Retrieved June 20",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jersey Neyman"
+        ],
+        "doi": null,
+        "key": "106",
+        "page": 26,
+        "title": "Sur les applications de la théorie des probabilités aux experiences agricoles: Essai des principes",
+        "venue": "Roczniki Nauk Rolniczych 10",
+        "year": 1923
+      },
+      {
+        "authors": [
+          "Andrew Y Ng",
+          "Stuart J Russell",
+          "et al."
+        ],
+        "doi": null,
+        "key": "107",
+        "page": 26,
+        "title": "Algorithms for inverse reinforcement learning",
+        "venue": "Icml",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Anh Nguyen",
+          "Jason Yosinski",
+          "Jeff Clune"
+        ],
+        "doi": null,
+        "key": "108",
+        "page": 26,
+        "title": "Deep neural networks are easily fooled: High confidence predictions for unrecognizable images",
+        "venue": "Computer Vision and Pattern Recognition (CVPR), 2015 IEEE Conference on. IEEE",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Anh Nguyen",
+          "et al."
+        ],
+        "doi": null,
+        "key": "109",
+        "page": 26,
+        "title": "Synthesizing the preferred inputs for neurons in neural networks via deep generator networks",
+        "venue": "arXiv preprint arXiv:1605.09304",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Kamal Nigam",
+          "et al."
+        ],
+        "doi": null,
+        "key": "110",
+        "page": 26,
+        "title": "Learning to classify text from labeled and unlabeled documents",
+        "venue": "AAAI/IAAI 792",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Arnab Nilim",
+          "Laurent El Ghaoui"
+        ],
+        "doi": null,
+        "key": "111",
+        "page": 27,
+        "title": "Robust control of Markov decision processes with uncertain transition matrices",
+        "venue": "Operations Research 53.5",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Christopher Olah"
+        ],
+        "doi": null,
+        "key": "112",
+        "page": 27,
+        "title": "Visualizing Representations: Deep Learning and Human Beings",
+        "venue": "url: http://colah.github.io/posts/2015-01-Visualizing-Representations/",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Laurent Orseau",
+          "Stuart Armstrong"
+        ],
+        "doi": null,
+        "key": "113",
+        "page": 27,
+        "title": "Safely Interruptible Agents",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Ian Osband",
+          "et al."
+        ],
+        "doi": null,
+        "key": "114",
+        "page": 27,
+        "title": "Deep Exploration via Bootstrapped DQN",
+        "venue": "arXiv preprint arXiv:1602.04621",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Nicolas Papernot",
+          "et al."
+        ],
+        "doi": null,
+        "key": "115",
+        "page": 27,
+        "title": "Practical Black-Box Attacks against Deep Learning Systems using Adversarial Examples",
+        "venue": "arXiv preprint arXiv:1602.02697",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Douglas B Paul",
+          "Janet M Baker"
+        ],
+        "doi": null,
+        "key": "116",
+        "page": 27,
+        "title": "The design for the Wall Street Journal-based CSR corpus",
+        "venue": "Proceedings of the workshop on Speech and Natural Language. Association for Computational Linguistics",
+        "year": 1992
+      },
+      {
+        "authors": [
+          "Judea Pearl",
+          "et al."
+        ],
+        "doi": null,
+        "key": "117",
+        "page": 27,
+        "title": "Causal inference in statistics: An overview",
+        "venue": "Statistics Surveys 3",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Martin Pecka",
+          "Tomas Svoboda"
+        ],
+        "doi": null,
+        "key": "118",
+        "page": 27,
+        "title": "Safe exploration techniques for reinforcement learning–an overview",
+        "venue": "Modelling and Simulation for Autonomous Systems. Springer",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Dino Pedreshi",
+          "Salvatore Ruggieri",
+          "Franco Turini"
+        ],
+        "doi": null,
+        "key": "119",
+        "page": 27,
+        "title": "Discrimination-aware data mining",
+        "venue": "Proceedings of the 14th ACM SIGKDD international conference on Knowledge discovery and data mining. ACM",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Jonas Peters",
+          "et al."
+        ],
+        "doi": null,
+        "key": "120",
+        "page": 27,
+        "title": "Causal discovery with continuous additive noise models",
+        "venue": "The Journal of Machine Learning Research 15.1",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Emmanouil Antonios Platanios"
+        ],
+        "doi": null,
+        "key": "121",
+        "page": 27,
+        "title": "Estimating accuracy from unlabeled data",
+        "venue": "MA thesis. Carnegie Mellon University",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Emmanouil Antonios Platanios",
+          "Avrim Blum",
+          "Tom Mitchell"
+        ],
+        "doi": null,
+        "key": "122",
+        "page": 27,
+        "title": "Estimating accuracy from unlabeled data",
+        "venue": "",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Walter W Powell",
+          "Laurel Smith-Doerr"
+        ],
+        "doi": null,
+        "key": "123",
+        "page": 27,
+        "title": "Networks and economic life",
+        "venue": "The handbook of economic sociology 368",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "Joaquin Quinonero-Candela",
+          "et al."
+        ],
+        "doi": null,
+        "key": "124",
+        "page": 27,
+        "title": "Dataset shift in machine learning, ser. Neural information processing series",
+        "venue": "",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Rajat Raina",
+          "et al."
+        ],
+        "doi": null,
+        "key": "125",
+        "page": 27,
+        "title": "Self-taught learning: transfer learning from unlabeled data",
+        "venue": "Proceedings of the 24th international conference on Machine learning. ACM",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Bharath Ramsundar",
+          "et al."
+        ],
+        "doi": null,
+        "key": "126",
+        "page": 27,
+        "title": "Massively multitask networks for drug discovery",
+        "venue": "arXiv preprint arXiv:1502.02072",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Mark Ring",
+          "Laurent Orseau"
+        ],
+        "doi": null,
+        "key": "127",
+        "page": 27,
+        "title": "Delusion, survival, and intelligent agents",
+        "venue": "Artificial General Intelligence. Springer",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Stéphane Ross",
+          "Geoffrey J Gordon",
+          "J Andrew Bagnell"
+        ],
+        "doi": null,
+        "key": "128",
+        "page": 27,
+        "title": "A reduction of imitation learning and structured prediction to no-regret online learning",
+        "venue": "arXiv preprint arXiv:1011.0686",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Donald B Rubin"
+        ],
+        "doi": null,
+        "key": "129",
+        "page": 27,
+        "title": "Estimating causal effects of treatments in randomized and nonrandomized studies",
+        "venue": "Journal of educational Psychology 66.5",
+        "year": 1974
+      },
+      {
+        "authors": [
+          "Stuart Russell",
+          "et al."
+        ],
+        "doi": null,
+        "key": "130",
+        "page": 27,
+        "title": "Research priorities for robust and beneficial artificial intelligence",
+        "venue": "Future of Life Institute",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Christoph Salge",
+          "Cornelius Glackin",
+          "Daniel Polani"
+        ],
+        "doi": null,
+        "key": "131",
+        "page": 27,
+        "title": "Empowerment–an introduction",
+        "venue": "Guided Self-Organization: Inception. Springer",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "J Denis Sargan"
+        ],
+        "doi": null,
+        "key": "132",
+        "page": 27,
+        "title": "The estimation of relationships with autocorrelated residuals by the use of instrumental variables",
+        "venue": "Journal of the Royal Statistical Society. Series B (Methodological)",
+        "year": 1959
+      },
+      {
+        "authors": [
+          "John D Sargan"
+        ],
+        "doi": null,
+        "key": "133",
+        "page": 27,
+        "title": "The estimation of economic relationships using instrumental variables",
+        "venue": "Econometrica: Journal of the Econometric Society",
+        "year": 1958
+      },
+      {
+        "authors": [
+          "John Schulman",
+          "et al."
+        ],
+        "doi": null,
+        "key": "134",
+        "page": 28,
+        "title": "High-dimensional continuous control using generalized advantage estimation",
+        "venue": "arXiv preprint arXiv:1506.02438",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "D Sculley",
+          "et al."
+        ],
+        "doi": null,
+        "key": "135",
+        "page": 28,
+        "title": "Machine Learning: The High-Interest Credit Card of Technical Debt",
+        "venue": "",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Glenn Shafer",
+          "Vladimir Vovk"
+        ],
+        "doi": null,
+        "key": "136",
+        "page": 28,
+        "title": "A tutorial on conformal prediction",
+        "venue": "The Journal of Machine Learning Research 9",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Uri Shalit",
+          "Fredrik Johansson",
+          "David Sontag"
+        ],
+        "doi": null,
+        "key": "137",
+        "page": 28,
+        "title": "Bounding and Minimizing Counterfactual Error",
+        "venue": "arXiv preprint arXiv:1606.03976",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Hidetoshi Shimodaira"
+        ],
+        "doi": null,
+        "key": "138",
+        "page": 28,
+        "title": "Improving predictive inference under covariate shift by weighting the log-likelihood function",
+        "venue": "Journal of statistical planning and inference 90.2",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Jaeho Shin",
+          "et al."
+        ],
+        "doi": null,
+        "key": "139",
+        "page": 28,
+        "title": "Incremental knowledge base construction using deepdive",
+        "venue": "Proceedings of the VLDB Endowment 8.11",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "David Silver",
+          "et al."
+        ],
+        "doi": null,
+        "key": "140",
+        "page": 28,
+        "title": "Mastering the game of Go with deep neural networks and tree search",
+        "venue": "Nature 529.7587",
+        "year": 2016
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "141",
+        "page": 28,
+        "title": "SNES Super Mario World (USA) “arbitrary code execution”",
+        "venue": "Tool-assisted movies. url: http://tasvideos.org/2513M.html",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Nate Soares",
+          "Benja Fallenstein"
+        ],
+        "doi": null,
+        "key": "142",
+        "page": 28,
+        "title": "Toward idealized decision theory",
+        "venue": "arXiv preprint arXiv:1507.01986",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Ray J Solomonoff"
+        ],
+        "doi": null,
+        "key": "143",
+        "page": 28,
+        "title": "A formal theory of inductive inference. Part I",
+        "venue": "Information and control 7.1",
+        "year": 1964
+      },
+      {
+        "authors": [
+          "Ray J Solomonoff"
+        ],
+        "doi": null,
+        "key": "144",
+        "page": 28,
+        "title": "A formal theory of inductive inference. Part II",
+        "venue": "Information and control 7.2",
+        "year": 1964
+      },
+      {
+        "authors": [
+          "J Steinebach"
+        ],
+        "doi": null,
+        "key": "145",
+        "page": 28,
+        "title": "EL Lehmann, JP Romano: Testing statistical hypotheses",
+        "venue": "Metrika 64.2",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Jacob Steinhardt"
+        ],
+        "doi": null,
+        "key": "146",
+        "page": 28,
+        "title": "Long-Term and Short-Term Challenges to Ensuring the Safety of AI Systems",
+        "venue": "[Online; accessed 13-June-2016]. url: https://jsteinhardt.wordpress.com/2015/06/24/long- term- and- short- term- challenges- to- ensuring- the- safety- ofai-systems/",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jacob Steinhardt",
+          "Percy Liang"
+        ],
+        "doi": null,
+        "key": "147",
+        "page": 28,
+        "title": "Unsupervised Risk Estimation with only Structural Assumptions",
+        "venue": "",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Jacob Steinhardt",
+          "Russ Tedrake"
+        ],
+        "doi": null,
+        "key": "148",
+        "page": 28,
+        "title": "Finite-time regional verification of stochastic non-linear systems",
+        "venue": "The International Journal of Robotics Research 31.7",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Jacob Steinhardt",
+          "Gregory Valiant",
+          "Moses Charikar"
+        ],
+        "doi": null,
+        "key": "149",
+        "page": 28,
+        "title": "Avoiding Imposters and Delinquents: Adversarial Crowdsourcing and Peer Prediction",
+        "venue": "arxiv prepring arXiv:1606.05374. url: http://arxiv.org/abs/1606.05374",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Richard S Sutton",
+          "Andrew G Barto"
+        ],
+        "doi": null,
+        "key": "150",
+        "page": 28,
+        "title": "Reinforcement learning: An introduction",
+        "venue": "MIT press",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "Adith Swaminathan",
+          "Thorsten Joachims"
+        ],
+        "doi": null,
+        "key": "151",
+        "page": 28,
+        "title": "Counterfactual risk minimization: Learning from logged bandit feedback",
+        "venue": "arXiv preprint arXiv:1502.02362",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Christian Szegedy",
+          "et al."
+        ],
+        "doi": null,
+        "key": "152",
+        "page": 28,
+        "title": "Intriguing properties of neural networks",
+        "venue": "arXiv preprint arXiv:1312.6199",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Aviv Tamar",
+          "Yonatan Glassner",
+          "Shie Mannor"
+        ],
+        "doi": null,
+        "key": "153",
+        "page": 28,
+        "title": "Policy gradients beyond expectations: Conditional value-at-risk",
+        "venue": "arXiv preprint arXiv:1404.3862",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Jessica Taylor"
+        ],
+        "doi": null,
+        "key": "154",
+        "page": 28,
+        "title": "Quantilizers: A Safer Alternative to Maximizers for Limited Optimization",
+        "venue": "forthcoming). Submitted to AAAI",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Matthew E Taylor",
+          "Peter Stone"
+        ],
+        "doi": null,
+        "key": "155",
+        "page": 28,
+        "title": "Transfer learning for reinforcement learning domains: A survey",
+        "venue": "Journal of Machine Learning Research 10.Jul",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Philip S Thomas",
+          "Georgios Theocharous",
+          "Mohammad Ghavamzadeh"
+        ],
+        "doi": null,
+        "key": "156",
+        "page": 28,
+        "title": "High-Confidence Off-Policy Evaluation",
+        "venue": "AAAI",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Adrian Thompson"
+        ],
+        "doi": null,
+        "key": "157",
+        "page": 28,
+        "title": "Artificial evolution in the physical world",
+        "venue": "",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Antonio Torralba",
+          "Alexei A Efros"
+        ],
+        "doi": null,
+        "key": "158",
+        "page": 29,
+        "title": "Unbiased look at dataset bias",
+        "venue": "Computer Vision and Pattern Recognition (CVPR), 2011 IEEE Conference on. IEEE",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Matteo Turchetta",
+          "Felix Berkenkamp",
+          "Andreas Krause"
+        ],
+        "doi": null,
+        "key": "159",
+        "page": 29,
+        "title": "Safe Exploration in Finite Markov Decision Processes with Gaussian Processes",
+        "venue": "arXiv preprint arXiv:1606.04753",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Stefan Wager",
+          "Susan Athey"
+        ],
+        "doi": null,
+        "key": "160",
+        "page": 29,
+        "title": "Estimation and Inference of Heterogeneous Treatment Effects using Random Forests",
+        "venue": "arXiv preprint arXiv:1510.04342",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Daniel Weld",
+          "Oren Etzioni"
+        ],
+        "doi": null,
+        "key": "161",
+        "page": 29,
+        "title": "The first law of robotics (a call to arms)",
+        "venue": "AAAI. Vol. 94. 1994",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "Keenon Werling",
+          "et al."
+        ],
+        "doi": null,
+        "key": "162",
+        "page": 29,
+        "title": "On-the-job learning with bayesian decision theory",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Jason Weston",
+          "et al."
+        ],
+        "doi": null,
+        "key": "163",
+        "page": 29,
+        "title": "Towards ai-complete question answering: A set of prerequisite toy tasks",
+        "venue": "arXiv preprint arXiv:1502.05698",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Wolfram Wiesemann",
+          "Daniel Kuhn",
+          "Berç Rustem"
+        ],
+        "doi": null,
+        "key": "164",
+        "page": 29,
+        "title": "Robust Markov decision processes",
+        "venue": "Mathematics of Operations Research 38.1",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Roman V Yampolskiy"
+        ],
+        "doi": null,
+        "key": "165",
+        "page": 29,
+        "title": "Utility function security in artificially intelligent agents",
+        "venue": "Journal of Experimental & Theoretical Artificial Intelligence 26.3",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Jason Yosinski",
+          "et al."
+        ],
+        "doi": null,
+        "key": "166",
+        "page": 29,
+        "title": "Understanding neural networks through deep visualization",
+        "venue": "arXiv preprint arXiv:1506.06579",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Eliezer Yudkowsky"
+        ],
+        "doi": null,
+        "key": "167",
+        "page": 29,
+        "title": "Artificial intelligence as a positive and negative factor in global risk",
+        "venue": "Global catastrophic risks 1",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Muhammad Bilal Zafar",
+          "et al."
+        ],
+        "doi": null,
+        "key": "168",
+        "page": 29,
+        "title": "Learning Fair Classifiers",
+        "venue": "stat 1050",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Richard S Zemel",
+          "et al."
+        ],
+        "doi": null,
+        "key": "169",
+        "page": 29,
+        "title": "Learning Fair Representations",
+        "venue": "ICML (3) 28",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Yuchen Zhang",
+          "et al."
+        ],
+        "doi": null,
+        "key": "170",
+        "page": 29,
+        "title": "Spectral methods meet EM: A provably optimal algorithm for crowdsourcing",
+        "venue": "Advances in neural information processing systems",
+        "year": 2014
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 14,
+        "quote": "[55, 118] provide thorough reviews of this literature, so we don’t review it extensively here, but simply describe some general routes that this research has taken, as well as suggesting some directions that might have increasing relevance as RL systems expand in scope and capability.",
+        "reference_key": "55, 118",
+        "relation": "uses_method",
+        "why": "The paper uses these surveys as the basis for its safe-exploration review rather than re-reviewing every method."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "A possible promising avenue of approach would be more realistic versions of the “delusion box” environment described by [127], in which standard RL agents distort their own perception to appear to receive high reward, rather than optimizing the objective in the external world that the reward signal was intended to encourage.",
+        "reference_key": "127",
+        "relation": "uses_method",
+        "why": "The delusion-box model grounds the paper’s proposed reward-hacking experiments."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "In the economics literature this is known as Goodhart’s law [63]: “when a metric is used as a target, it ceases to be a good metric.”",
+        "reference_key": "63",
+        "relation": "uses_method",
+        "why": "Goodhart’s law supplies a named mechanism for reward hacking when a proxy objective is strongly optimized."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "One approach to this is Cooperative Inverse Reinforcement Learning [66], where an agent and a human work together to achieve the human’s goals.",
+        "reference_key": "66",
+        "relation": "background",
+        "why": "The paper cites cooperative inverse RL as a multi-agent strategy for avoiding negative externalities."
+      },
+      {
+        "confidence": "high",
+        "page": 9,
+        "quote": "For instance, the reward agent could try to find scenarios that the ML system claimed were high reward but that a human labels as low reward; this is reminiscent of generative adversarial networks [61].",
+        "reference_key": "61",
+        "relation": "critiques",
+        "why": "The paper analogizes adversarial reward checking to GANs and proposes it as a way to catch reward hacking."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "A version of this problem has been discussed informally by [13] under the heading of “low impact agents.”",
+        "reference_key": "13",
+        "relation": "uses_method",
+        "why": "The paper builds its side-effect discussion on prior informal work on low-impact agents."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "1Intuitively, this seems related to the frame problem, an obstacle in efficient specification for knowledge representation raised by [95].",
+        "reference_key": "95",
+        "relation": "background",
+        "why": "The frame problem is used to explain why specifying non-interference in a large environment is difficult."
+      },
+      {
+        "confidence": "high",
+        "page": 18,
+        "quote": "This formalism, introduced by [44], has the advantage of potentially handling very large changes between train and test — even if the test distribution looks completely different from the training distribution and we have no hope of outputting accurate predictions, unsupervised risk estimation may still be possible, as in this case we would only need to output a large estimate for the risk.",
+        "reference_key": "44",
+        "relation": "uses_method",
+        "why": "Unsupervised risk estimation is a key proposed approach for detecting when a model is performing badly under distributional shift."
+      },
+      {
+        "confidence": "high",
+        "page": 19,
+        "quote": "[135] enumerates a list of ways in which existing machine learning systems fail to do this, and the problems this can cause for deployment and maintenance of machine learning systems at scale.",
+        "reference_key": "135",
+        "relation": "uses_method",
+        "why": "The contracts perspective frames robustness to distributional shift as satisfying a well-defined behavioral contract."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "To date much of this discussion has highlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent agents [27].",
+        "reference_key": "27",
+        "relation": "critiques",
+        "why": "The paper contrasts its practical, ML-focused accident framing with superintelligence-focused discussions."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "In Sections 3-7, we explore five concrete problems in AI safety. Each section is accompanied by proposals for relevant experiments.",
+          "start_page": 1,
+          "start_text": "Concrete Problems in AI Safety"
+        },
+        "summary": "Introduces AI accident risk as unintended harmful behavior from misspecified objectives, careless learning, or implementation errors, and motivates practical ML research rather than speculative scenarios.",
+        "title": "Introduction"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "Together, we believe these trends suggest an increasing role for research on accidents.",
+          "start_page": 2,
+          "start_text": "Very broadly, an accident can be described as a situation where a human designer had in mind"
+        },
+        "summary": "Categorizes accident sources by where design goes wrong and previews five concrete problems illustrated by a cleaning robot.",
+        "title": "Overview and Five Problems"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "Exploring variants of empowerment penalization that more precisely capture the notion of avoiding influence is a potential challenge for future research.",
+          "start_page": 4,
+          "start_text": "Suppose a designer wants an RL agent (for example our cleaning robot) to achieve some goal"
+        },
+        "summary": "Defines negative side effects as unwanted environmental disruption from narrow objectives, and examines impact regularization approaches.",
+        "title": "Negative Side Effects: Problem and Impact Regularization"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "Ultimately, we would want the side effect regularizer (or the multi-agent policy, if we take that approach) to demonstrate successful transfer to totally new applications.",
+          "start_page": 6,
+          "start_text": "Multi-Agent Approaches: Avoiding side effects can be seen as a proxy"
+        },
+        "summary": "Covers multi-agent and reward-uncertainty approaches to side effects and proposes obstacle-course experiments.",
+        "title": "Negative Side Effects: Multi-Agent, Reward Uncertainty, Experiments"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "Finally, once an agent begins hacking its reward function and finds an easy way to get high reward, it won’t be inclined to stop, which could lead to additional challenges in agents that operate over a long timescale.",
+          "start_page": 7,
+          "start_text": "Imagine that an agent discovers a buffer overflow in its reward function"
+        },
+        "summary": "Defines reward hacking and surveys mechanisms by which objective functions or implementations are gamed.",
+        "title": "Reward Hacking: Failure Modes"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "The goal would be to develop generalizable learning strategies that succeed at optimizing external objectives in a wide range of environments, while avoiding being fooled by delusion boxes that arise naturally in many diverse ways.",
+          "start_page": 9,
+          "start_text": "Here we suggest some preliminary, machine-learning based approaches to preventing reward hacking:"
+        },
+        "summary": "Proposes ML-based defenses against reward hacking and outlines delusion-box experiments.",
+        "title": "Reward Hacking: Mitigations and Experiments"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Or, even without the visual display of the score, the agent might be able to learn to play from only a handful of explicit reward requests",
+          "start_page": 11,
+          "start_text": "Consider an autonomous agent performing some complex task"
+        },
+        "summary": "Frames scalable oversight via semi-supervised RL, where reward is observed only on a small fraction of timesteps or episodes.",
+        "title": "Scalable Oversight: Semi-Supervised RL"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Robot locomotion or industrial control tasks might be a natural candidate for such experiments.",
+          "start_page": 13,
+          "start_text": "There are other possible approaches to scalable oversight:"
+        },
+        "summary": "Reviews distant supervision and hierarchical RL as alternative scalable-oversight approaches and proposes experiments.",
+        "title": "Scalable Oversight: Alternative Approaches and Experiments"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Training RL agents (particularly robots) in simulated environments is already quite common, so advances in “exploration-focused simulation” could be easily incorporated into current workflows.",
+          "start_page": 14,
+          "start_text": "All autonomous learning agents need to sometimes engage in exploration"
+        },
+        "summary": "Introduces safe exploration and covers risk-sensitive criteria, demonstrations, and simulation.",
+        "title": "Safe Exploration: Risk, Demonstrations, Simulation"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "Such a suite of environments might serve a benchmarking role similar to that of the bAbI tasks [163], with the eventual goal being to develop a single architecture that can learn to avoid catastrophes in all environments in the suite.",
+          "start_page": 15,
+          "start_text": "Bounded Exploration: If we know that a certain portion of state space is safe"
+        },
+        "summary": "Covers bounded exploration, trusted-policy/human oversight, and a proposed suite of catastrophic exploration environments.",
+        "title": "Safe Exploration: Bounded Exploration, Oversight, Experiments"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "Because these methods focus only on the model errors and ignore other aspects of the data distribution, they can also be seen as an instance of partial model specification.",
+          "start_page": 16,
+          "start_text": "All of us occasionally find ourselves in situations that our previous experience has not adequately prepared us to deal with"
+        },
+        "summary": "Defines robustness to distributional change and reviews well-specified and partially specified modeling approaches.",
+        "title": "Distributional Shift: Problem and Well/Partially Specified Models"
+      },
+      {
+        "pages": {
+          "end": 20,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 20,
+          "end_text": "Finally, it might also be valuable to create an environment where an RL agent must learn to interpret speech as part of some larger task, and to explore how to respond appropriately to its own estimates of its transcription error.",
+          "start_page": 18,
+          "start_text": "Training on multiple distributions. One could also train on multiple training distributions"
+        },
+        "summary": "Discusses how to respond out-of-distribution, contracts for ML systems, and experimental proposals.",
+        "title": "Distributional Shift: Responses, Contracts, Experiments"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "We believe that research on these topics has both urgency and great promise, and that fruitful intersection is likely to exist between these topics and the topics we discuss in this paper.",
+          "start_page": 20,
+          "start_text": "As mentioned in the introduction, several other communities have thought broadly about the safety of AI systems"
+        },
+        "summary": "Places the paper relative to cyber-physical systems, futurist, other safety calls, and adjacent ML social-impact areas.",
+        "title": "Related Efforts"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 21
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "we believe that the increasing trend towards end-to-end, fully autonomous systems points towards the need for a unified approach to prevent these systems from causing unintended harm.",
+          "start_page": 21,
+          "start_text": "This paper analyzed the problem of accidents in machine learning systems"
+        },
+        "summary": "Recaps five accident-risk problems and argues for principled, forward-looking safety research.",
+        "title": "Conclusion"
+      },
+      {
+        "pages": {
+          "end": 29,
+          "start": 22
+        },
+        "source_span": {
+          "end_page": 29,
+          "end_text": "Yuchen Zhang et al. “Spectral methods meet EM: A provably optimal algorithm for crowdsourcing”. In: Advances in neural information processing systems. 2014, pp. 1260–1268.",
+          "start_page": 22,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of cited works; use for lookup rather than as part of the argument sequence.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It frames five practical AI-safety research problems and proposes research directions and experiments, rather than reporting a single new empirical result.",
+      "value": "position"
+    }
+  }
+}

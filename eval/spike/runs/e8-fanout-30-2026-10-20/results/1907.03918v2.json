@@ -1,0 +1,3149 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T02:16:00.678354203Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1907.03918v2.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 16,
+  "calls": [
+    {
+      "stage": "extract.identity",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 1636,
+      "cached_tokens": 256,
+      "completion_tokens": 3675,
+      "reasoning_tokens": 3441,
+      "cost_usd": 0.004825536,
+      "cost_source": "reported",
+      "latency_s": 7.600230138
+    },
+    {
+      "stage": "extract.type",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 23290,
+      "cached_tokens": 1536,
+      "completion_tokens": 496,
+      "reasoning_tokens": 462,
+      "cost_usd": 0.007130616,
+      "cost_source": "reported",
+      "latency_s": 1.473264116
+    },
+    {
+      "stage": "extract.abstract",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 4799,
+      "cached_tokens": 4736,
+      "completion_tokens": 999,
+      "reasoning_tokens": 704,
+      "cost_usd": 0.001246116,
+      "cost_source": "reported",
+      "latency_s": 2.238155834
+    },
+    {
+      "stage": "extract.card",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 23321,
+      "cached_tokens": 23168,
+      "completion_tokens": 3977,
+      "reasoning_tokens": 3122,
+      "cost_usd": 0.004957308,
+      "cost_source": "reported",
+      "latency_s": 6.373580379
+    },
+    {
+      "stage": "extract.sections",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 23814,
+      "cached_tokens": 256,
+      "completion_tokens": 14490,
+      "reasoning_tokens": 14327,
+      "cost_usd": 0.024456936,
+      "cost_source": "reported",
+      "latency_s": 26.166233263
+    },
+    {
+      "stage": "extract.references",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 23314,
+      "cached_tokens": 23168,
+      "completion_tokens": 7148,
+      "reasoning_tokens": 3417,
+      "cost_usd": 0.008760408,
+      "cost_source": "reported",
+      "latency_s": 9.80187682
+    },
+    {
+      "stage": "extract.graph",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 23325,
+      "cached_tokens": 23168,
+      "completion_tokens": 12261,
+      "reasoning_tokens": 8875,
+      "cost_usd": 0.014899308,
+      "cost_source": "reported",
+      "latency_s": 18.948250129
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 29885,
+      "cached_tokens": 768,
+      "completion_tokens": 3237,
+      "reasoning_tokens": 2405,
+      "cost_usd": 0.012624108,
+      "cost_source": "reported",
+      "latency_s": 18.918409088
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 14321,
+      "cached_tokens": 0,
+      "completion_tokens": 12080,
+      "reasoning_tokens": 10709,
+      "cost_usd": 0.00704247,
+      "cost_source": "reported",
+      "latency_s": 95.268258953
+    }
+  ],
+  "totals": {
+    "calls": 9,
+    "prompt_tokens": 167705,
+    "cached_tokens": 77056,
+    "completion_tokens": 58363,
+    "cost_usd": 0.08594280599999998,
+    "model_latency_s": 186.78825872,
+    "wall_s": 191.609217986
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e8-fanout-30-2026-10-20/results/1907.03918v2.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "As a promising branch of robotics, imitation learning emerges as an important way to transfer human skills to\nrobots, where human demonstrations represented in Cartesian\nor joint spaces are utilized to estimate task/skill models that can\nbe subsequently generalized to new situations. While learning\nCartesian positions suffices for many applications, the endeffector orientation is required in many others. Despite recent\nadvances in learning orientations from demonstrations, several\ncrucial issues have not been adequately addressed yet. For\ninstance, how can demonstrated orientations be adapted to pass\nthrough arbitrary desired points that comprise orientations and\nangular velocities? In this paper, we propose an approach that is\ncapable of learning multiple orientation trajectories and adapting\nlearned orientation skills to new situations (e.g., via-points and\nend-points), where both orientation and angular velocity are\nconsidered. Specifically, we introduce a kernelized treatment\nto alleviate explicit basis functions when learning orientations,\nwhich allows for learning orientation trajectories associated with\nhigh-dimensional inputs. In addition, we extend our approach\nto the learning of quaternions with angular acceleration or jerk\nconstraints, which allows for generating smoother orientation\nprofiles for robots. Several examples including experiments with\nreal 7-DoF robot arms are provided to verify the effectiveness of\nour method."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "kernelized movement primitives",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "We follow the treatment in KMP to learn the probabilistic reference trajectory Dr."
+              }
+            ],
+            "reference_key": "KMP",
+            "why": "The method explicitly adopts the KMP learning framework for the probabilistic reference trajectory."
+          },
+          {
+            "cited_work": "our previous work [1]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Note that this paper has comprehensively extended our previous work [1] in terms of both theoretical parts (e.g., Sections IV and V) and evaluations (e.g., Sections VI-B, VI-C and VI-E)."
+              }
+            ],
+            "reference_key": "Huang et al. 2019",
+            "why": "The paper states it extends the authors' prior conference work theoretically and experimentally."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "orientation DMP approaches [13], [14], [15]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "However, [13], [14], [15] can only adapt quaternions towards a desired target with zero angular velocity as a consequence of the spring-damper dynamics inherited from the original DMP."
+              }
+            ],
+            "reference_key": "Pastor et al. 2011; Ude et al. 2014; Abu-Dakka et al. 2015",
+            "why": "It critiques their inability to handle non-zero desired angular velocities during adaptation."
+          },
+          {
+            "cited_work": "orientation via-point adaptation in prior probabilistic approaches",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "However, adaptation to orientation via-points and angular velocities is not provided."
+              }
+            ],
+            "reference_key": "Zeestraten et al. 2017",
+            "why": "It identifies a gap in adaptation to via-points and angular velocities in earlier orientation-learning work."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In this paper, we propose an approach that is capable of learning multiple orientation trajectories and adapting learned orientation skills to new situations (e.g., via-points and end-points), where both orientation and angular velocity are considered."
+          },
+          {
+            "page": 1,
+            "quote": "In addition, we extend our approach to the learning of quaternions with angular acceleration or jerk constraints, which allows for generating smoother orientation profiles for robots."
+          }
+        ],
+        "text": "The paper proposes an analytical kernelized imitation-learning approach to learn multiple quaternion orientation trajectories and adapt them to arbitrary desired quaternion and angular-velocity points, while supporting high-dimensional inputs and angular acceleration or jerk constraints."
+      }
+    },
+    "citations": [
+      {
+        "context": "[2], [3], [4]",
+        "page": 1,
+        "reference_key": "[2], [3], [4]"
+      },
+      {
+        "context": "[5], [6], [7], [8]",
+        "page": 1,
+        "reference_key": "[5], [6], [7], [8]"
+      },
+      {
+        "context": "[9], [10], [11]",
+        "page": 1,
+        "reference_key": "[9], [10], [11]"
+      },
+      {
+        "context": "[3], [12]",
+        "page": 1,
+        "reference_key": "[3], [12]"
+      },
+      {
+        "context": "[13], [14], [15]",
+        "page": 1,
+        "reference_key": "[13], [14], [15]"
+      },
+      {
+        "context": "[16]",
+        "page": 1,
+        "reference_key": "[16]"
+      },
+      {
+        "context": "[17]",
+        "page": 1,
+        "reference_key": "[17]"
+      },
+      {
+        "context": "[20], [21]",
+        "page": 2,
+        "reference_key": "[20], [21]"
+      },
+      {
+        "context": "[7], [22], [11], [23], [24], [25]",
+        "page": 2,
+        "reference_key": "[7], [22], [11], [23], [24], [25]"
+      },
+      {
+        "context": "[14], [16], [17]",
+        "page": 2,
+        "reference_key": "[14], [16], [17]"
+      },
+      {
+        "context": "[1]",
+        "page": 2,
+        "reference_key": "[1]"
+      },
+      {
+        "context": "[3]",
+        "page": 3,
+        "reference_key": "[3]"
+      },
+      {
+        "context": "[7]",
+        "page": 3,
+        "reference_key": "[7]"
+      },
+      {
+        "context": "[7], [26]",
+        "page": 3,
+        "reference_key": "[7], [26]"
+      },
+      {
+        "context": "[8]",
+        "page": 4,
+        "reference_key": "[8]"
+      },
+      {
+        "context": "[5], [7]",
+        "page": 4,
+        "reference_key": "[5], [7]"
+      },
+      {
+        "context": "[6]",
+        "page": 4,
+        "reference_key": "[6]"
+      },
+      {
+        "context": "[27]",
+        "page": 4,
+        "reference_key": "[27]"
+      },
+      {
+        "context": "[28], [29], [30]",
+        "page": 4,
+        "reference_key": "[28], [29], [30]"
+      },
+      {
+        "context": "[14], [15]",
+        "page": 5,
+        "reference_key": "[14], [15]"
+      },
+      {
+        "context": "[14]",
+        "page": 5,
+        "reference_key": "[14]"
+      },
+      {
+        "context": "[20], [21]",
+        "page": 6,
+        "reference_key": "[20], [21]"
+      },
+      {
+        "context": "[20]",
+        "page": 6,
+        "reference_key": "[20]"
+      },
+      {
+        "context": "[31], [32]",
+        "page": 7,
+        "reference_key": "[31], [32]"
+      },
+      {
+        "context": "[33]",
+        "page": 7,
+        "reference_key": "[33]"
+      },
+      {
+        "context": "[32]",
+        "page": 7,
+        "reference_key": "[32]"
+      },
+      {
+        "context": "[31], [32]",
+        "page": 7,
+        "reference_key": "[31], [32]"
+      },
+      {
+        "context": "[8], [11], [34]",
+        "page": 7,
+        "reference_key": "[8], [11], [34]"
+      },
+      {
+        "context": "[8]",
+        "page": 7,
+        "reference_key": "[8]"
+      },
+      {
+        "context": "[35]",
+        "page": 8,
+        "reference_key": "[35]"
+      },
+      {
+        "context": "[14], [15], [3]",
+        "page": 9,
+        "reference_key": "[14], [15], [3]"
+      },
+      {
+        "context": "[14], [15]",
+        "page": 10,
+        "reference_key": "[14], [15]"
+      },
+      {
+        "context": "[3]",
+        "page": 10,
+        "reference_key": "[3]"
+      },
+      {
+        "context": "[14], [15], [3]",
+        "page": 10,
+        "reference_key": "[14], [15], [3]"
+      },
+      {
+        "context": "[36]",
+        "page": 11,
+        "reference_key": "[36]"
+      },
+      {
+        "context": "[1]",
+        "page": 11,
+        "reference_key": "[1]"
+      },
+      {
+        "context": "[31], [32]",
+        "page": 12,
+        "reference_key": "[31], [32]"
+      },
+      {
+        "context": "[6]",
+        "page": 13,
+        "reference_key": "[6]"
+      },
+      {
+        "context": "[37]",
+        "page": 13,
+        "reference_key": "[37]"
+      },
+      {
+        "context": "[6], [37]",
+        "page": 13,
+        "reference_key": "[6], [37]"
+      },
+      {
+        "context": "[38]",
+        "page": 13,
+        "reference_key": "[38]"
+      },
+      {
+        "context": "[18]",
+        "page": 13,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "[18]",
+        "page": 13,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "[37], [38], [18]",
+        "page": 13,
+        "reference_key": "[37], [38], [18]"
+      },
+      {
+        "context": "[5], [6], [31], [32]",
+        "page": 13,
+        "reference_key": "[5], [6], [31], [32]"
+      },
+      {
+        "context": "[27]",
+        "page": 13,
+        "reference_key": "[27]"
+      },
+      {
+        "context": "[16]",
+        "page": 14,
+        "reference_key": "[16]"
+      },
+      {
+        "context": "[3], [17]",
+        "page": 14,
+        "reference_key": "[3], [17]"
+      },
+      {
+        "context": "[14], [15], [19]",
+        "page": 14,
+        "reference_key": "[14], [15], [19]"
+      },
+      {
+        "context": "[19]",
+        "page": 14,
+        "reference_key": "[19]"
+      },
+      {
+        "context": "[16], [17]",
+        "page": 14,
+        "reference_key": "[16], [17]"
+      },
+      {
+        "context": "[11], [39]",
+        "page": 14,
+        "reference_key": "[11], [39]"
+      },
+      {
+        "context": "[14], [15]",
+        "page": 14,
+        "reference_key": "[14], [15]"
+      },
+      {
+        "context": "[27]",
+        "page": 15,
+        "reference_key": "[27]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Beijing Institute for General Artificial Intelligence (BIGAI), Beijing, China",
+          "name": "Xiaohan Zhang"
+        },
+        {
+          "affiliation": "Beijing Institute for General Artificial Intelligence (BIGAI), Beijing, China",
+          "name": "Zhenjie Zhao"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Xiaohan Zhang, Zhenjie Zhao"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:2405.16457v1",
+        "doi": "10.1109/LRA.2024.3408092"
+      },
+      "publication_state": "published",
+      "subtitle": "",
+      "title": "A Survey of Embodied Learning for Object-Centric Robotic Manipulation",
+      "venue": "IEEE Robotics and Automation Letters (RA-L)",
+      "year": 2024
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "In summary, if we consider the problem of adapting quaternions and angular velocities to pass through arbitrary desired points (e.g., via-point and end-point) while taking into account high-dimensional inputs and smoothness constraints, no previous work in the scope of imitation learning provides an allencompassing solution."
+        }
+      ],
+      "text": "Can quaternion orientation trajectories be learned from demonstrations and adapted to arbitrary desired quaternion and angular-velocity points, including via-/end-points, while handling high-dimensional inputs and angular acceleration or jerk constraints?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Y. Huang",
+          "F. J. Abu-Dakka",
+          "J. Silvério",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 15,
+        "title": "Generalized orientation learning in robot task space",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y. Huang",
+          "B. Schölkopf",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 15,
+        "title": "Learning optimal striking points for a ping-pong playing robot",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "J. Silvério",
+          "L. Rozo",
+          "S. Calinon",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 15,
+        "title": "Learning bimanual end-effector poses from demonstrations using task-parameterized dynamical systems",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "S. Schaal"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 15,
+        "title": "Is imitation learning the route to humanoid robots?",
+        "venue": "Trends in Cognitive Sciences",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "A. J. Ijspeert",
+          "J. Nakanishi",
+          "H. Hoffmann",
+          "P. Pastor",
+          "S. Schaal"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 15,
+        "title": "Dynamical movement primitives: learning attractor models for motor behaviors",
+        "venue": "Neural Computation",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. Paraschos",
+          "C. Daniel",
+          "J. R. Peters",
+          "G. Neumann"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 15,
+        "title": "Probabilistic movement primitives",
+        "venue": "Proc. Advances in Neural Information Processing Systems",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "S. Calinon"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 15,
+        "title": "A tutorial on task-parameterized movement learning and retrieval",
+        "venue": "Intelligent Service Robotics",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Y. Huang",
+          "L. Rozo",
+          "J. Silvério",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 15,
+        "title": "Kernelized movement primitives",
+        "venue": "The International Journal of Robotics Research",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "D. Koert",
+          "G. Maeda",
+          "R. Lioutikov",
+          "G. Neumann",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 15,
+        "title": "Demonstration based trajectory optimization for generalizable robot motions",
+        "venue": "Proc. International Conference on Humanoid Robots",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Y. Zhou",
+          "T. Asfour"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 15,
+        "title": "Task-oriented generalization of dynamic movement primitive",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "J. Silvério",
+          "Y. Huang",
+          "F. J. Abu-Dakka",
+          "L. Rozo",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 15,
+        "title": "Uncertainty-aware imitation learning using kernelized movement primitives",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "P. Pastor",
+          "H. Hoffmann",
+          "T. Asfour",
+          "S. Schaal"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 15,
+        "title": "Learning and generalization of motor skills by learning from demonstration",
+        "venue": "Proc. IEEE International Conference on Robotics and Automation",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "P. Pastor",
+          "L. Righetti",
+          "M. Kalakrishnan",
+          "S. Schaal"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 15,
+        "title": "Online movement adaptation based on previous sensor experiences",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "A. Ude",
+          "B. Nemec",
+          "T. Petrić",
+          "J. Morimoto"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 15,
+        "title": "Orientation in cartesian space dynamic movement primitives",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "F. J. Abu-Dakka",
+          "B. Nemec",
+          "J. A. Jørgensen",
+          "T. R. Savarimuthu",
+          "N. Krüger",
+          "A. Ude"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 15,
+        "title": "Adaptation of manipulation skills in physical contact with the environment to reference force profiles",
+        "venue": "Autonomous Robots",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "S. Kim",
+          "R. Haschke",
+          "H. Ritter"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 15,
+        "title": "Gaussian mixture model for 3-dof orientations",
+        "venue": "Robotics and Autonomous Systems",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "M. J. Zeestraten",
+          "I. Havoutis",
+          "J. Silvério",
+          "S. Calinon",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 15,
+        "title": "An approach for imitation learning on riemannian manifolds",
+        "venue": "IEEE Robotics and Automation Letters",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "M. Saveriano",
+          "F. Franzel",
+          "D. Lee"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 15,
+        "title": "Merging position and orientation motion primitives",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "A. Kramberger",
+          "A. Gams",
+          "B. Nemec",
+          "D. Chrysostomou",
+          "O. Madsen",
+          "A. Ude"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 15,
+        "title": "Generalization of orientation trajectories and forcetorque profiles for robotic assembly",
+        "venue": "Robotics and Autonomous Systems",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "O. Koç",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 16,
+        "title": "Learning to serve: an experimental study for a new learning from demonstrations framework",
+        "venue": "IEEE Robotics and Automation Letters",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "N. Ratliff",
+          "M. Zucker",
+          "J. A. Bagnell",
+          "S. Srinivasa"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 16,
+        "title": "Chomp: Gradient optimization techniques for efficient motion planning",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "M. Muhlig",
+          "M. Gienger",
+          "S. Hellbach",
+          "J. J. Steil",
+          "C. Goerick"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 16,
+        "title": "Tasklevel imitation learning using variance-based movement optimization",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "E. Todorov",
+          "M. I. Jordan"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 16,
+        "title": "Optimal feedback control as a theory of motor coordination",
+        "venue": "Nature Neuroscience",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "J. R. Medina",
+          "D. Lee",
+          "S. Hirche"
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 16,
+        "title": "Risk-sensitive optimal feedback control for haptic assistance",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Y. Huang",
+          "J. Silvério",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 16,
+        "title": "Towards minimal intervention control with competing constraints",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "D. A. Cohn",
+          "Z. Ghahramani",
+          "M. I. Jordan"
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 16,
+        "title": "Active learning with statistical models",
+        "venue": "Journal of Artificial Intelligence Research",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "C. M. Bishop"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 16,
+        "title": "Pattern Recognition and Machine Learning",
+        "venue": "Springer",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "C. Saunders",
+          "A. Gammerman",
+          "V. Vovk"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 16,
+        "title": "Ridge regression learning algorithm in dual variables",
+        "venue": "Proc. International Conference on Machine Learning",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "K. P. Murphy"
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 16,
+        "title": "Machine Learning: A Probabilistic Perspective",
+        "venue": "MIT press",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "J. Kober",
+          "E. Oztop",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 16,
+        "title": "Reinforcement learning to adjust robot movements to new situations",
+        "venue": "Proc. International Joint Conference on Artificial Intelligence",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "H. B. Amor",
+          "G. Neumann",
+          "S. Kamthe",
+          "O. Kroemer",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 16,
+        "title": "Interaction primitives for human-robot cooperation tasks",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "G. Maeda",
+          "M. Ewerton",
+          "G. Neumann",
+          "R. Lioutikov",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 16,
+        "title": "Phase estimation for fast action recognition and trajectory generation in human–robot collaboration",
+        "venue": "The International Journal of Robotics Research",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "M. Ewerton",
+          "G. Neumann",
+          "R. Lioutikov",
+          "H. B. Amor",
+          "J. Peters",
+          "G. Maeda"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 16,
+        "title": "Learning multiple collaborative tasks with a mixture of interaction primitives",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "J. Silvério",
+          "Y. Huang",
+          "L. Rozo",
+          "S. Calinon",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 16,
+        "title": "Probabilistic learning of torque controllers from kinematic and force constraints",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "J. R. Hershey",
+          "P. A. Olsen"
+        ],
+        "doi": null,
+        "key": "35",
+        "page": 16,
+        "title": "Approximating the kullback leibler divergence between gaussian mixture models",
+        "venue": "Proc. International Conference on Acoustics, Speech and Signal Processing",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "D. Duvenaud"
+        ],
+        "doi": null,
+        "key": "36",
+        "page": 16,
+        "title": "Automatic model construction with gaussian processes",
+        "venue": "Ph.D. dissertation, University of Cambridge",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "F. Stulp",
+          "G. Raiola",
+          "A. Hoarau",
+          "S. Ivaldi",
+          "O. Sigaud"
+        ],
+        "doi": null,
+        "key": "37",
+        "page": 16,
+        "title": "Learning compact parameterized skills with a single regression",
+        "venue": "Proc. International Conference on Humanoid Robots",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "R. Weitschat",
+          "H. Aschemann"
+        ],
+        "doi": null,
+        "key": "38",
+        "page": 16,
+        "title": "Safe and efficient human–robot collaboration part ii: Optimal generalized human-in-the-loop real-time motion generation",
+        "venue": "IEEE Robotics and Automation Letters",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "S. Calinon",
+          "D. Bruno",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "39",
+        "page": 16,
+        "title": "A task-parameterized probabilistic model with minimal intervention control",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2014
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "Note that this paper has comprehensively extended our previous work [1] in terms of both theoretical parts (e.g., Sections IV and V) and evaluations (e.g., Sections VI-B, VI-C and VI-E).",
+        "reference_key": "[1]",
+        "relation": "extends",
+        "why": "The paper states it extends its own prior conference work with additional theory and evaluations."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "One representative type of approach is built on DMP [13], [14], [15], where unit quaternions were used to represent orientation and different reformulations of DMP were developed to ensure proper quaternions over the course of orientation adaptation.",
+        "reference_key": "[13], [14], [15]",
+        "relation": "contrasts",
+        "why": "These DMP-based orientation methods are cited as prior approaches that cannot adapt to nonzero angular velocity, motivating the new method."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Another solution of learning orientation was proposed in [16], where GMM was employed to model the distribution of quaternion displacements so as to avoid the quaternion constraint.",
+        "reference_key": "[16]",
+        "relation": "contrasts",
+        "why": "This GMM-based orientation method is cited as addressing reproduction but not adaptation, a gap the current work fills."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "In contrast to [16] that learns quaternion displacements, the Riemannian topology of the S3 manifold was exploited in [17] to probabilistically encode and reproduce distributions of quaternions.",
+        "reference_key": "[17]",
+        "relation": "contrasts",
+        "why": "The paper contrasts its approach with Riemannian S3 modeling in [17], which lacks via-point and angular-velocity adaptation."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "As a recently developed framework, KMP [8] exhibits several advantages over state-of-the-art approaches:",
+        "reference_key": "[8]",
+        "relation": "uses_method",
+        "why": "The paper builds its learning formulation on kernelized movement primitives (KMP)."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In comparison with DMP [5] and TP-GMM [7], that focus on target adaptations, KMP is capable of adapting trajectories towards arbitrary desired points (e.g., start/via/end- points).",
+        "reference_key": "[5], [7]",
+        "relation": "compares",
+        "why": "The paper compares its KMP-based method against DMP and TP-GMM, which are limited to target adaptation."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Unlike DMP and ProMP [6] that rely on explicit definition of basis functions, KMP employs the kernel trick to alleviate the definition of basis functions and thus allows for convenient extensions to the learning and adaptation of demonstrations consisting of high-dimensional inputs.",
+        "reference_key": "[6]",
+        "relation": "contrasts",
+        "why": "ProMP is cited as relying on explicit basis functions, whereas the proposed kernel approach avoids this for high-dimensional inputs."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "It is well known that robot trajectories should be smooth in order to facilitate the design of controllers as well as the execution of motor commands [20], [21].",
+        "reference_key": "[20], [21]",
+        "relation": "uses_method",
+        "why": "These works are cited to motivate adding angular acceleration or jerk smoothness constraints."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "In many previous work, human and robot motions are encoded by taking time as input (e.g., DMP was used in [31] and ProMP in [32]).",
+        "reference_key": "[31], [32]",
+        "relation": "contrasts",
+        "why": "The paper contrasts its high-dimensional-input approach with prior time-driven human-robot collaboration methods."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "Readers are suggested to refer to [35] for GMM sampling.",
+        "reference_key": "[35]",
+        "relation": "uses_method",
+        "why": "This reference is used for the GMM sampling technique that selects input points for high-dimensional learning."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "The periodic kernel [36] k(ti, tj) = exp(−`sin²( ti −tj T π)) with ` = 0.4 and T = 10s is employed.",
+        "reference_key": "[36]",
+        "relation": "uses_method",
+        "why": "The periodic kernel from [36] is used for rhythmic quaternion trajectory evaluations."
+      },
+      {
+        "confidence": "high",
+        "page": 13,
+        "quote": "Differing from [18] where the demonstration needs to be segmented for each movement primitive, we propose to learn and adapt the entire demonstrations using a single movement primitive, where the segmentation of demonstrations and the sequence of multiple motion primitives are not required.",
+        "reference_key": "[18]",
+        "relation": "contrasts",
+        "why": "The paper contrasts its single-primitive approach with the sequenced-DMP method in [18] that requires demonstration segmentation."
+      },
+      {
+        "confidence": "high",
+        "page": 14,
+        "quote": "Differing from [19], in our framework (see Section V), each demonstration comprises a high-dimensional varying input trajectory and a robot trajectory",
+        "reference_key": "[19]",
+        "relation": "contrasts",
+        "why": "The paper contrasts its high-dimensional input learning with [19], which uses time sequences plus contextual states."
+      },
+      {
+        "confidence": "high",
+        "page": 14,
+        "quote": "Interestingly, some recent works on exploiting the covariance of trajectories and optimal control were reported, e.g., uncertainty-aware controller [11] and minimum intervention controller [39].",
+        "reference_key": "[11], [39]",
+        "relation": "uses_method",
+        "why": "These works are cited as related uses of trajectory covariance and optimal control that could integrate with the proposed framework."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "",
+          "start_page": 1,
+          "start_text": ""
+        },
+        "summary": "Imitation learning is promising for transferring human skills to robots, but Cartesian orientation learning remains difficult because quaternions must obey constraints and must support via-point/end-point adaptation, angular velocities, high-dimensional inputs, and smoothness. The paper positions an analytical solution against prior work and summarizes its contributions in Table I.",
+        "title": "Motivation and Contributions: Orientation Learning in Cartesian Space"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "evidence",
+      "value": "survey"
+    }
+  },
+  "pass1_check": {
+    "sites": 77,
+    "verbatim": 63,
+    "near": 2,
+    "missing": 12,
+    "wrong_page": 3
+  },
+  "corrections": [
+    {
+      "path": "/identity/title",
+      "action": "replace",
+      "value_json": "\"Towards Orientation Learning and Adaptation in Cartesian Space\"",
+      "reason": "The draft title is for a different paper (a survey); the actual paper title is 'Towards Orientation Learning and Adaptation in Cartesian Space'.",
+      "evidence": [
+        {
+          "quote": "Towards Orientation Learning and Adaptation in Cartesian Space",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/authors",
+      "action": "replace",
+      "value_json": "[{\"affiliation\":\"School of Computing, University of Leeds, Leeds LS29JT, UK\",\"name\":\"Yanlong Huang\"},{\"affiliation\":\"Intelligent Robotics Group at the Department of Electrical Engineering and Automation, Aalto University, Finland\",\"name\":\"Fares J. Abu-Dakka\"},{\"affiliation\":\"Idiap Research Institute, CH-1920 Martigny, Switzerland\",\"name\":\"João Silvério\"},{\"affiliation\":\"Department of Advanced Robotics, Istituto Italiano di Tecnologia, Via Morego 30, 16163 Genoa, Italy\",\"name\":\"Darwin G. Caldwell\"}]",
+      "reason": "The draft lists wrong authors (Xiaohan Zhang, Zhenjie Zhao). Actual authors are Yanlong Huang, Fares J. Abu-Dakka, João Silvério, and Darwin G. Caldwell, with the affiliations shown in the paper.",
+      "evidence": [
+        {
+          "quote": "Yanlong Huang, Fares J. Abu-Dakka, João Silvério, and Darwin G. Caldwell",
+          "page": 1
+        },
+        {
+          "quote": "Yanlong Huang is with School of Computing, University of Leeds, Leeds LS29JT, UK (e-mail: y.l.huang@leeds.ac.uk).",
+          "page": 1
+        },
+        {
+          "quote": "Darwin G. Caldwell is with Department of Advanced Robotics, Istituto Italiano di Tecnologia, Via Morego 30, 16163 Genoa, Italy (e-mail: darwin.caldwell@iit.it).",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/venue",
+      "action": "replace",
+      "value_json": "\"IEEE Transactions on Robotics\"",
+      "reason": "The draft venue 'IEEE Robotics and Automation Letters (RA-L)' is wrong; the paper appears in IEEE Transactions on Robotics.",
+      "evidence": [
+        {
+          "quote": "IEEE TRANSACTIONS ON ROBOTICS",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/year",
+      "action": "replace",
+      "value_json": "2020",
+      "reason": "The draft year 2024 is wrong; this paper's version is dated 2020.",
+      "evidence": [
+        {
+          "quote": "arXiv:1907.03918v2[cs.RO]15Aug2020",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/identifiers/arxiv",
+      "action": "replace",
+      "value_json": "\"arXiv:1907.03918v2\"",
+      "reason": "The draft arXiv identifier 'arXiv:2405.16457v1' belongs to another paper; the correct identifier is arXiv:1907.03918v2.",
+      "evidence": [
+        {
+          "quote": "arXiv:1907.03918v2[cs.RO]15Aug2020",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/identifiers/doi",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft DOI '10.1109/LRA.2024.3408092' is for a different (RA-L 2024) paper; the paper text does not state this paper's DOI, so it cannot be corrected from the given material.",
+      "evidence": [
+        {
+          "quote": "IEEE TRANSACTIONS ON ROBOTICS",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/type/value",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft classifies the paper as a 'survey', but this is a research/contribution paper presenting a novel approach, not a survey. The correct type value cannot be determined with certainty from the text.",
+      "evidence": []
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/title",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/identity/authors",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/identity/venue",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/identity/year",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/identity/identifiers/arxiv",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 5,
+      "path": "/identity/identifiers/doi",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 6,
+      "path": "/type/value",
+      "action": "flag",
+      "status": "rejected",
+      "reason": "no evidence"
+    }
+  ],
+  "pass2_check": {
+    "sites": 77,
+    "verbatim": 63,
+    "near": 2,
+    "missing": 12,
+    "wrong_page": 3
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "repaired_local",
+      "original": "As a promising branch of robotics, imitation learning emerges as an important way to transfer human skills to\nrobots, where human demonstrations represented in Cartesian\nor joint spaces are utilized to estimate task/skill models that can\nbe subsequently generalized to new situations. While learning\nCartesian positions suffices for many applications, the endeffector orientation is required in many others. Despite recent\nadvances in learning orientations from demonstrations, several\ncrucial issues have not been adequately addressed yet. For\ninstance, how can demonstrated orientations be adapted to pass\nthrough arbitrary desired points that comprise orientations and\nangular velocities? In this paper, we propose an approach that is\ncapable of learning multiple orientation trajectories and adapting\nlearned orientation skills to new situations (e.g., via-points and\nend-points), where both orientation and angular velocity are\nconsidered. Specifically, we introduce a kernelized treatment\nto alleviate explicit basis functions when learning orientations,\nwhich allows for learning orientation trajectories associated with\nhigh-dimensional inputs. In addition, we extend our approach\nto the learning of quaternions with angular acceleration or jerk\nconstraints, which allows for generating smoother orientation\nprofiles for robots. Several examples including experiments with\nreal 7-DoF robot arms are provided to verify the effectiveness of\nour method.",
+      "admitted": "Abstract—As a promising branch of robotics, imitation learning emerges as an important way to transfer human skills to robots, where human demonstrations represented in Cartesian or joint spaces are utilized to estimate task/skill models that can be subsequently generalized to new situations. While learning Cartesian positions suffices for many applications, the endeffector orientation is required in many others. Despite recent advances in learning orientations from demonstrations, several crucial issues have not been adequately addressed yet. For instance, how can demonstrated orientations be adapted to pass through arbitrary desired points that comprise orientations and angular velocities? In this paper, we propose an approach that is capable of learning multiple orientation trajectories and adapting learned orientation skills to new situations (e.g., via-points and end-points), where both orientation and angular velocity are considered. Specifically, we introduce a kernelized treatment to alleviate explicit basis functions when learning orientations, which allows for learning orientation trajectories associated with high-dimensional inputs. In addition, we extend our approach to the learning of quaternions with angular acceleration or jerk constraints, which allows for generating smoother orientation profiles for robots. Several examples including experiments with real 7-DoF robot arms are provided to verify the effectiveness of our method.",
+      "similarity": 0.9949494949494949,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We follow the treatment in KMP to learn the probabilistic reference trajectory Dr.",
+      "admitted": "We follow the treatment in KMP to learn the probabilistic reference trajectory Dr.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Note that this paper has comprehensively extended our previous work [1] in terms of both theoretical parts (e.g., Sections IV and V) and evaluations (e.g., Sections VI-B, VI-C and VI-E).",
+      "admitted": "Note that this paper has comprehensively extended our previous work [1] in terms of both theoretical parts (e.g., Sections IV and V) and evaluations (e.g., Sections VI-B, VI-C and VI-E).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "However, [13], [14], [15] can only adapt quaternions towards a desired target with zero angular velocity as a consequence of the spring-damper dynamics inherited from the original DMP.",
+      "admitted": "However, [13], [14], [15] can only adapt quaternions towards a desired target with zero angular velocity as a consequence of the spring-damper dynamics inherited from the original DMP.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "However, adaptation to orientation via-points and angular velocities is not provided.",
+      "admitted": "However, adaptation to orientation via-points and angular velocities is not provided.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper, we propose an approach that is capable of learning multiple orientation trajectories and adapting learned orientation skills to new situations (e.g., via-points and end-points), where both orientation and angular velocity are considered.",
+      "admitted": "In this paper, we propose an approach that is capable of learning multiple orientation trajectories and adapting learned orientation skills to new situations (e.g., via-points and end-points), where both orientation and angular velocity are considered.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/1/quote",
+      "status": "verbatim",
+      "original": "In addition, we extend our approach to the learning of quaternions with angular acceleration or jerk constraints, which allows for generating smoother orientation profiles for robots.",
+      "admitted": "In addition, we extend our approach to the learning of quaternions with angular acceleration or jerk constraints, which allows for generating smoother orientation profiles for robots.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "withdrawn",
+      "original": "Xiaohan Zhang, Zhenjie Zhao",
+      "admitted": null,
+      "similarity": 0.0,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In summary, if we consider the problem of adapting quaternions and angular velocities to pass through arbitrary desired points (e.g., via-point and end-point) while taking into account high-dimensional inputs and smoothness constraints, no previous work in the scope of imitation learning provides an allencompassing solution.",
+      "admitted": "In summary, if we consider the problem of adapting quaternions and angular velocities to pass through arbitrary desired points (e.g., via-point and end-point) while taking into account high-dimensional inputs and smoothness constraints, no previous work in the scope of imitation learning provides an allencompassing solution.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "repaired_model",
+      "original": "[2], [3], [4]",
+      "admitted": "N many challenging tasks (e.g., robot table tennis [2] and bimanual manipulation [3]), it is non-trivial to manually define proper trajectories for robots beforehand, hence imitation learning is suggested in order to facilitate the transfer of human skills to robots [4].",
+      "similarity": 0.33333333333333337,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "repaired_model",
+      "original": "[5], [6], [7], [8]",
+      "admitted": "A myriad of imitation learning techniques have been reported in the past few years, such as dynamic movement primitives (DMP) [5], probabilistic movement primitives (ProMP) [6], task-parameterized Gaussian mixture model (TP-GMM) [7] and kernelized movement primitives (KMP) [8].",
+      "similarity": 0.5,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "[9], [10], [11]",
+      "admitted": "[9], [10], [11]",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "[3], [12]",
+      "admitted": "[3], [12]",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 15
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "[13], [14], [15]",
+      "admitted": "[13], [14], [15]",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "[16]",
+      "admitted": "[16]",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "[17]",
+      "admitted": "[17]",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "[20], [21]",
+      "admitted": "[20], [21]",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "repaired_model",
+      "original": "[7], [22], [11], [23], [24], [25]",
+      "admitted": "As suggested in [7], [22], the probability distribution of multiple demonstrations often encapsulates important motion features and further facilitates the design of optimal controllers [11], [23], [24], [25].",
+      "similarity": 0.6666666666666667,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "[14], [16], [17]",
+      "admitted": "[14], [16], [17]",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "[1]",
+      "admitted": "[1]",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "[3]",
+      "admitted": "[3]",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "[7]",
+      "admitted": "[7]",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "[7], [26]",
+      "admitted": "[7], [26]",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "[8]",
+      "admitted": "[8]",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "[5], [7]",
+      "admitted": "[5], [7]",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "[6]",
+      "admitted": "[6]",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "[27]",
+      "admitted": "[27]",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "[28], [29], [30]",
+      "admitted": "[28], [29], [30]",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "[14], [15]",
+      "admitted": "[14], [15]",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "[14]",
+      "admitted": "[14]",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "[20], [21]",
+      "admitted": "[20], [21]",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "[20]",
+      "admitted": "[20]",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "[31], [32]",
+      "admitted": "[31], [32]",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "[33]",
+      "admitted": "[33]",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "verbatim",
+      "original": "[32]",
+      "admitted": "[32]",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "verbatim",
+      "original": "[31], [32]",
+      "admitted": "[31], [32]",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "repaired_model",
+      "original": "[8], [11], [34]",
+      "admitted": "We have successfully tested this solution in previous work on human-robot collaboration, namely in the collaborative hand task [8] and robot-assisted painting task [11], [34].",
+      "similarity": 0.6666666666666667,
+      "cited_page": 7,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/28/context",
+      "status": "verbatim",
+      "original": "[8]",
+      "admitted": "[8]",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/29/context",
+      "status": "verbatim",
+      "original": "[35]",
+      "admitted": "[35]",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/30/context",
+      "status": "repaired_model",
+      "original": "[14], [15], [3]",
+      "admitted": "orientation-DMP [14], [15] and orientation TP-GMM [3] are employed as comparisons¹³;",
+      "similarity": 0.6666666666666667,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/31/context",
+      "status": "verbatim",
+      "original": "[14], [15]",
+      "admitted": "[14], [15]",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/32/context",
+      "status": "verbatim",
+      "original": "[3]",
+      "admitted": "[3]",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/33/context",
+      "status": "repaired_model",
+      "original": "[14], [15], [3]",
+      "admitted": "In order to show the performance of our approach, we first compare it with orientation-DMP [14], [15] and orientation TP-GMM [3] in Section VI-A1.",
+      "similarity": 0.6666666666666667,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/34/context",
+      "status": "verbatim",
+      "original": "[36]",
+      "admitted": "[36]",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/35/context",
+      "status": "verbatim",
+      "original": "[1]",
+      "admitted": "[1]",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/36/context",
+      "status": "verbatim",
+      "original": "[31], [32]",
+      "admitted": "[31], [32]",
+      "similarity": null,
+      "cited_page": 12,
+      "matched_page": 12
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/37/context",
+      "status": "verbatim",
+      "original": "[6]",
+      "admitted": "[6]",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/38/context",
+      "status": "verbatim",
+      "original": "[37]",
+      "admitted": "[37]",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/39/context",
+      "status": "verbatim",
+      "original": "[6], [37]",
+      "admitted": "[6], [37]",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/40/context",
+      "status": "verbatim",
+      "original": "[38]",
+      "admitted": "[38]",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/41/context",
+      "status": "verbatim",
+      "original": "[18]",
+      "admitted": "[18]",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/42/context",
+      "status": "verbatim",
+      "original": "[18]",
+      "admitted": "[18]",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/43/context",
+      "status": "verbatim",
+      "original": "[37], [38], [18]",
+      "admitted": "[37], [38], [18]",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/44/context",
+      "status": "withdrawn",
+      "original": "[5], [6], [31], [32]",
+      "admitted": null,
+      "similarity": 0.5,
+      "cited_page": 13,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/45/context",
+      "status": "verbatim",
+      "original": "[27]",
+      "admitted": "[27]",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/46/context",
+      "status": "verbatim",
+      "original": "[16]",
+      "admitted": "[16]",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/47/context",
+      "status": "verbatim",
+      "original": "[3], [17]",
+      "admitted": "[3], [17]",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/48/context",
+      "status": "withdrawn",
+      "original": "[14], [15], [19]",
+      "admitted": null,
+      "similarity": 0.6666666666666667,
+      "cited_page": 14,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/49/context",
+      "status": "verbatim",
+      "original": "[19]",
+      "admitted": "[19]",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/50/context",
+      "status": "verbatim",
+      "original": "[16], [17]",
+      "admitted": "[16], [17]",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/51/context",
+      "status": "withdrawn",
+      "original": "[11], [39]",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/52/context",
+      "status": "verbatim",
+      "original": "[14], [15]",
+      "admitted": "[14], [15]",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/53/context",
+      "status": "verbatim",
+      "original": "[27]",
+      "admitted": "[27]",
+      "similarity": null,
+      "cited_page": 15,
+      "matched_page": 15
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Note that this paper has comprehensively extended our previous work [1] in terms of both theoretical parts (e.g., Sections IV and V) and evaluations (e.g., Sections VI-B, VI-C and VI-E).",
+      "admitted": "Note that this paper has comprehensively extended our previous work [1] in terms of both theoretical parts (e.g., Sections IV and V) and evaluations (e.g., Sections VI-B, VI-C and VI-E).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "One representative type of approach is built on DMP [13], [14], [15], where unit quaternions were used to represent orientation and different reformulations of DMP were developed to ensure proper quaternions over the course of orientation adaptation.",
+      "admitted": "One representative type of approach is built on DMP [13], [14], [15], where unit quaternions were used to represent orientation and different reformulations of DMP were developed to ensure proper quaternions over the course of orientation adaptation.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "Another solution of learning orientation was proposed in [16], where GMM was employed to model the distribution of quaternion displacements so as to avoid the quaternion constraint.",
+      "admitted": "Another solution of learning orientation was proposed in [16], where GMM was employed to model the distribution of quaternion displacements so as to avoid the quaternion constraint.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "In contrast to [16] that learns quaternion displacements, the Riemannian topology of the S3 manifold was exploited in [17] to probabilistically encode and reproduce distributions of quaternions.",
+      "admitted": "In contrast to [16] that learns quaternion displacements, the Riemannian topology of the S3 manifold was exploited in [17] to probabilistically encode and reproduce distributions of quaternions.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "As a recently developed framework, KMP [8] exhibits several advantages over state-of-the-art approaches:",
+      "admitted": "As a recently developed framework, KMP [8] exhibits several advantages over state-of-the-art approaches:",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "In comparison with DMP [5] and TP-GMM [7], that focus on target adaptations, KMP is capable of adapting trajectories towards arbitrary desired points (e.g., start/via/end- points).",
+      "admitted": "In comparison with DMP [5] and TP-GMM [7], that focus on target adaptations, KMP is capable of adapting trajectories towards arbitrary desired points (e.g., start/via/end- points).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "Unlike DMP and ProMP [6] that rely on explicit definition of basis functions, KMP employs the kernel trick to alleviate the definition of basis functions and thus allows for convenient extensions to the learning and adaptation of demonstrations consisting of high-dimensional inputs.",
+      "admitted": "Unlike DMP and ProMP [6] that rely on explicit definition of basis functions, KMP employs the kernel trick to alleviate the definition of basis functions and thus allows for convenient extensions to the learning and adaptation of demonstrations consisting of high-dimensional inputs.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "It is well known that robot trajectories should be smooth in order to facilitate the design of controllers as well as the execution of motor commands [20], [21].",
+      "admitted": "It is well known that robot trajectories should be smooth in order to facilitate the design of controllers as well as the execution of motor commands [20], [21].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "In many previous work, human and robot motions are encoded by taking time as input (e.g., DMP was used in [31] and ProMP in [32]).",
+      "admitted": "In many previous work, human and robot motions are encoded by taking time as input (e.g., DMP was used in [31] and ProMP in [32]).",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "repaired_local",
+      "original": "Readers are suggested to refer to [35] for GMM sampling.",
+      "admitted": "11Readers are suggested to refer to [35] for GMM sampling.",
+      "similarity": 0.9,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/10/quote",
+      "status": "dropped",
+      "original": "The periodic kernel [36] k(ti, tj) = exp(−`sin²( ti −tj T π)) with ` = 0.4 and T = 10s is employed.",
+      "admitted": null,
+      "similarity": 0.7222222222222222,
+      "cited_page": 11,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/11/quote",
+      "status": "withdrawn",
+      "original": "Differing from [18] where the demonstration needs to be segmented for each movement primitive, we propose to learn and adapt the entire demonstrations using a single movement primitive, where the segmentation of demonstrations and the sequence of multiple motion primitives are not required.",
+      "admitted": null,
+      "similarity": 0.7674418604651163,
+      "cited_page": 13,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/12/quote",
+      "status": "verbatim",
+      "original": "Differing from [19], in our framework (see Section V), each demonstration comprises a high-dimensional varying input trajectory and a robot trajectory",
+      "admitted": "Differing from [19], in our framework (see Section V), each demonstration comprises a high-dimensional varying input trajectory and a robot trajectory",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/13/quote",
+      "status": "verbatim",
+      "original": "Interestingly, some recent works on exploiting the covariance of trajectories and optimal control were reported, e.g., uncertainty-aware controller [11] and minimum intervention controller [39].",
+      "admitted": "Interestingly, some recent works on exploiting the covariance of trajectories and optimal control were reported, e.g., uncertainty-aware controller [11] and minimum intervention controller [39].",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    }
+  ],
+  "admission_counts": {
+    "dropped": 1,
+    "repaired_local": 2,
+    "repaired_model": 6,
+    "verbatim": 63,
+    "withdrawn": 5
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Abstract—As a promising branch of robotics, imitation learning emerges as an important way to transfer human skills to robots, where human demonstrations represented in Cartesian or joint spaces are utilized to estimate task/skill models that can be subsequently generalized to new situations. While learning Cartesian positions suffices for many applications, the endeffector orientation is required in many others. Despite recent advances in learning orientations from demonstrations, several crucial issues have not been adequately addressed yet. For instance, how can demonstrated orientations be adapted to pass through arbitrary desired points that comprise orientations and angular velocities? In this paper, we propose an approach that is capable of learning multiple orientation trajectories and adapting learned orientation skills to new situations (e.g., via-points and end-points), where both orientation and angular velocity are considered. Specifically, we introduce a kernelized treatment to alleviate explicit basis functions when learning orientations, which allows for learning orientation trajectories associated with high-dimensional inputs. In addition, we extend our approach to the learning of quaternions with angular acceleration or jerk constraints, which allows for generating smoother orientation profiles for robots. Several examples including experiments with real 7-DoF robot arms are provided to verify the effectiveness of our method."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "kernelized movement primitives",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "We follow the treatment in KMP to learn the probabilistic reference trajectory Dr."
+              }
+            ],
+            "reference_key": "KMP",
+            "why": "The method explicitly adopts the KMP learning framework for the probabilistic reference trajectory."
+          },
+          {
+            "cited_work": "our previous work [1]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Note that this paper has comprehensively extended our previous work [1] in terms of both theoretical parts (e.g., Sections IV and V) and evaluations (e.g., Sections VI-B, VI-C and VI-E)."
+              }
+            ],
+            "reference_key": "Huang et al. 2019",
+            "why": "The paper states it extends the authors' prior conference work theoretically and experimentally."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "orientation DMP approaches [13], [14], [15]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "However, [13], [14], [15] can only adapt quaternions towards a desired target with zero angular velocity as a consequence of the spring-damper dynamics inherited from the original DMP."
+              }
+            ],
+            "reference_key": "Pastor et al. 2011; Ude et al. 2014; Abu-Dakka et al. 2015",
+            "why": "It critiques their inability to handle non-zero desired angular velocities during adaptation."
+          },
+          {
+            "cited_work": "orientation via-point adaptation in prior probabilistic approaches",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "However, adaptation to orientation via-points and angular velocities is not provided."
+              }
+            ],
+            "reference_key": "Zeestraten et al. 2017",
+            "why": "It identifies a gap in adaptation to via-points and angular velocities in earlier orientation-learning work."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In this paper, we propose an approach that is capable of learning multiple orientation trajectories and adapting learned orientation skills to new situations (e.g., via-points and end-points), where both orientation and angular velocity are considered."
+          },
+          {
+            "page": 1,
+            "quote": "In addition, we extend our approach to the learning of quaternions with angular acceleration or jerk constraints, which allows for generating smoother orientation profiles for robots."
+          }
+        ],
+        "text": "The paper proposes an analytical kernelized imitation-learning approach to learn multiple quaternion orientation trajectories and adapt them to arbitrary desired quaternion and angular-velocity points, while supporting high-dimensional inputs and angular acceleration or jerk constraints."
+      }
+    },
+    "citations": [
+      {
+        "context": "N many challenging tasks (e.g., robot table tennis [2] and bimanual manipulation [3]), it is non-trivial to manually define proper trajectories for robots beforehand, hence imitation learning is suggested in order to facilitate the transfer of human skills to robots [4].",
+        "page": 1,
+        "reference_key": "[2], [3], [4]"
+      },
+      {
+        "context": "A myriad of imitation learning techniques have been reported in the past few years, such as dynamic movement primitives (DMP) [5], probabilistic movement primitives (ProMP) [6], task-parameterized Gaussian mixture model (TP-GMM) [7] and kernelized movement primitives (KMP) [8].",
+        "page": 1,
+        "reference_key": "[5], [6], [7], [8]"
+      },
+      {
+        "context": "[9], [10], [11]",
+        "page": 1,
+        "reference_key": "[9], [10], [11]"
+      },
+      {
+        "context": "[3], [12]",
+        "page": 15,
+        "reference_key": "[3], [12]"
+      },
+      {
+        "context": "[13], [14], [15]",
+        "page": 1,
+        "reference_key": "[13], [14], [15]"
+      },
+      {
+        "context": "[16]",
+        "page": 1,
+        "reference_key": "[16]"
+      },
+      {
+        "context": "[17]",
+        "page": 1,
+        "reference_key": "[17]"
+      },
+      {
+        "context": "[20], [21]",
+        "page": 2,
+        "reference_key": "[20], [21]"
+      },
+      {
+        "context": "As suggested in [7], [22], the probability distribution of multiple demonstrations often encapsulates important motion features and further facilitates the design of optimal controllers [11], [23], [24], [25].",
+        "page": 2,
+        "reference_key": "[7], [22], [11], [23], [24], [25]"
+      },
+      {
+        "context": "[14], [16], [17]",
+        "page": 2,
+        "reference_key": "[14], [16], [17]"
+      },
+      {
+        "context": "[1]",
+        "page": 2,
+        "reference_key": "[1]"
+      },
+      {
+        "context": "[3]",
+        "page": 3,
+        "reference_key": "[3]"
+      },
+      {
+        "context": "[7]",
+        "page": 3,
+        "reference_key": "[7]"
+      },
+      {
+        "context": "[7], [26]",
+        "page": 3,
+        "reference_key": "[7], [26]"
+      },
+      {
+        "context": "[8]",
+        "page": 4,
+        "reference_key": "[8]"
+      },
+      {
+        "context": "[5], [7]",
+        "page": 10,
+        "reference_key": "[5], [7]"
+      },
+      {
+        "context": "[6]",
+        "page": 4,
+        "reference_key": "[6]"
+      },
+      {
+        "context": "[27]",
+        "page": 4,
+        "reference_key": "[27]"
+      },
+      {
+        "context": "[28], [29], [30]",
+        "page": 4,
+        "reference_key": "[28], [29], [30]"
+      },
+      {
+        "context": "[14], [15]",
+        "page": 5,
+        "reference_key": "[14], [15]"
+      },
+      {
+        "context": "[14]",
+        "page": 5,
+        "reference_key": "[14]"
+      },
+      {
+        "context": "[20], [21]",
+        "page": 6,
+        "reference_key": "[20], [21]"
+      },
+      {
+        "context": "[20]",
+        "page": 6,
+        "reference_key": "[20]"
+      },
+      {
+        "context": "[31], [32]",
+        "page": 7,
+        "reference_key": "[31], [32]"
+      },
+      {
+        "context": "[33]",
+        "page": 7,
+        "reference_key": "[33]"
+      },
+      {
+        "context": "[32]",
+        "page": 7,
+        "reference_key": "[32]"
+      },
+      {
+        "context": "[31], [32]",
+        "page": 7,
+        "reference_key": "[31], [32]"
+      },
+      {
+        "context": "We have successfully tested this solution in previous work on human-robot collaboration, namely in the collaborative hand task [8] and robot-assisted painting task [11], [34].",
+        "page": 8,
+        "reference_key": "[8], [11], [34]"
+      },
+      {
+        "context": "[8]",
+        "page": 7,
+        "reference_key": "[8]"
+      },
+      {
+        "context": "[35]",
+        "page": 8,
+        "reference_key": "[35]"
+      },
+      {
+        "context": "orientation-DMP [14], [15] and orientation TP-GMM [3] are employed as comparisons¹³;",
+        "page": 9,
+        "reference_key": "[14], [15], [3]"
+      },
+      {
+        "context": "[14], [15]",
+        "page": 10,
+        "reference_key": "[14], [15]"
+      },
+      {
+        "context": "[3]",
+        "page": 10,
+        "reference_key": "[3]"
+      },
+      {
+        "context": "In order to show the performance of our approach, we first compare it with orientation-DMP [14], [15] and orientation TP-GMM [3] in Section VI-A1.",
+        "page": 10,
+        "reference_key": "[14], [15], [3]"
+      },
+      {
+        "context": "[36]",
+        "page": 11,
+        "reference_key": "[36]"
+      },
+      {
+        "context": "[1]",
+        "page": 11,
+        "reference_key": "[1]"
+      },
+      {
+        "context": "[31], [32]",
+        "page": 12,
+        "reference_key": "[31], [32]"
+      },
+      {
+        "context": "[6]",
+        "page": 13,
+        "reference_key": "[6]"
+      },
+      {
+        "context": "[37]",
+        "page": 13,
+        "reference_key": "[37]"
+      },
+      {
+        "context": "[6], [37]",
+        "page": 10,
+        "reference_key": "[6], [37]"
+      },
+      {
+        "context": "[38]",
+        "page": 13,
+        "reference_key": "[38]"
+      },
+      {
+        "context": "[18]",
+        "page": 13,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "[18]",
+        "page": 13,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "[37], [38], [18]",
+        "page": 13,
+        "reference_key": "[37], [38], [18]"
+      },
+      {
+        "context": "[27]",
+        "page": 13,
+        "reference_key": "[27]"
+      },
+      {
+        "context": "[16]",
+        "page": 14,
+        "reference_key": "[16]"
+      },
+      {
+        "context": "[3], [17]",
+        "page": 14,
+        "reference_key": "[3], [17]"
+      },
+      {
+        "context": "[19]",
+        "page": 14,
+        "reference_key": "[19]"
+      },
+      {
+        "context": "[16], [17]",
+        "page": 14,
+        "reference_key": "[16], [17]"
+      },
+      {
+        "context": "[14], [15]",
+        "page": 14,
+        "reference_key": "[14], [15]"
+      },
+      {
+        "context": "[27]",
+        "page": 15,
+        "reference_key": "[27]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "School of Computing, University of Leeds, Leeds LS29JT, UK",
+          "name": "Yanlong Huang"
+        },
+        {
+          "affiliation": "Intelligent Robotics Group at the Department of Electrical Engineering and Automation, Aalto University, Finland",
+          "name": "Fares J. Abu-Dakka"
+        },
+        {
+          "affiliation": "Idiap Research Institute, CH-1920 Martigny, Switzerland",
+          "name": "João Silvério"
+        },
+        {
+          "affiliation": "Department of Advanced Robotics, Istituto Italiano di Tecnologia, Via Morego 30, 16163 Genoa, Italy",
+          "name": "Darwin G. Caldwell"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [],
+      "identifiers": {
+        "arxiv": "arXiv:1907.03918v2",
+        "doi": "10.1109/LRA.2024.3408092"
+      },
+      "publication_state": "published",
+      "subtitle": "",
+      "title": "Towards Orientation Learning and Adaptation in Cartesian Space",
+      "venue": "IEEE Transactions on Robotics",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "In summary, if we consider the problem of adapting quaternions and angular velocities to pass through arbitrary desired points (e.g., via-point and end-point) while taking into account high-dimensional inputs and smoothness constraints, no previous work in the scope of imitation learning provides an allencompassing solution."
+        }
+      ],
+      "text": "Can quaternion orientation trajectories be learned from demonstrations and adapted to arbitrary desired quaternion and angular-velocity points, including via-/end-points, while handling high-dimensional inputs and angular acceleration or jerk constraints?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Y. Huang",
+          "F. J. Abu-Dakka",
+          "J. Silvério",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 15,
+        "title": "Generalized orientation learning in robot task space",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y. Huang",
+          "B. Schölkopf",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 15,
+        "title": "Learning optimal striking points for a ping-pong playing robot",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "J. Silvério",
+          "L. Rozo",
+          "S. Calinon",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 15,
+        "title": "Learning bimanual end-effector poses from demonstrations using task-parameterized dynamical systems",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "S. Schaal"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 15,
+        "title": "Is imitation learning the route to humanoid robots?",
+        "venue": "Trends in Cognitive Sciences",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "A. J. Ijspeert",
+          "J. Nakanishi",
+          "H. Hoffmann",
+          "P. Pastor",
+          "S. Schaal"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 15,
+        "title": "Dynamical movement primitives: learning attractor models for motor behaviors",
+        "venue": "Neural Computation",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. Paraschos",
+          "C. Daniel",
+          "J. R. Peters",
+          "G. Neumann"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 15,
+        "title": "Probabilistic movement primitives",
+        "venue": "Proc. Advances in Neural Information Processing Systems",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "S. Calinon"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 15,
+        "title": "A tutorial on task-parameterized movement learning and retrieval",
+        "venue": "Intelligent Service Robotics",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Y. Huang",
+          "L. Rozo",
+          "J. Silvério",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 15,
+        "title": "Kernelized movement primitives",
+        "venue": "The International Journal of Robotics Research",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "D. Koert",
+          "G. Maeda",
+          "R. Lioutikov",
+          "G. Neumann",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 15,
+        "title": "Demonstration based trajectory optimization for generalizable robot motions",
+        "venue": "Proc. International Conference on Humanoid Robots",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Y. Zhou",
+          "T. Asfour"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 15,
+        "title": "Task-oriented generalization of dynamic movement primitive",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "J. Silvério",
+          "Y. Huang",
+          "F. J. Abu-Dakka",
+          "L. Rozo",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 15,
+        "title": "Uncertainty-aware imitation learning using kernelized movement primitives",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "P. Pastor",
+          "H. Hoffmann",
+          "T. Asfour",
+          "S. Schaal"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 15,
+        "title": "Learning and generalization of motor skills by learning from demonstration",
+        "venue": "Proc. IEEE International Conference on Robotics and Automation",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "P. Pastor",
+          "L. Righetti",
+          "M. Kalakrishnan",
+          "S. Schaal"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 15,
+        "title": "Online movement adaptation based on previous sensor experiences",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "A. Ude",
+          "B. Nemec",
+          "T. Petrić",
+          "J. Morimoto"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 15,
+        "title": "Orientation in cartesian space dynamic movement primitives",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "F. J. Abu-Dakka",
+          "B. Nemec",
+          "J. A. Jørgensen",
+          "T. R. Savarimuthu",
+          "N. Krüger",
+          "A. Ude"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 15,
+        "title": "Adaptation of manipulation skills in physical contact with the environment to reference force profiles",
+        "venue": "Autonomous Robots",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "S. Kim",
+          "R. Haschke",
+          "H. Ritter"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 15,
+        "title": "Gaussian mixture model for 3-dof orientations",
+        "venue": "Robotics and Autonomous Systems",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "M. J. Zeestraten",
+          "I. Havoutis",
+          "J. Silvério",
+          "S. Calinon",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 15,
+        "title": "An approach for imitation learning on riemannian manifolds",
+        "venue": "IEEE Robotics and Automation Letters",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "M. Saveriano",
+          "F. Franzel",
+          "D. Lee"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 15,
+        "title": "Merging position and orientation motion primitives",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "A. Kramberger",
+          "A. Gams",
+          "B. Nemec",
+          "D. Chrysostomou",
+          "O. Madsen",
+          "A. Ude"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 15,
+        "title": "Generalization of orientation trajectories and forcetorque profiles for robotic assembly",
+        "venue": "Robotics and Autonomous Systems",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "O. Koç",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 16,
+        "title": "Learning to serve: an experimental study for a new learning from demonstrations framework",
+        "venue": "IEEE Robotics and Automation Letters",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "N. Ratliff",
+          "M. Zucker",
+          "J. A. Bagnell",
+          "S. Srinivasa"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 16,
+        "title": "Chomp: Gradient optimization techniques for efficient motion planning",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "M. Muhlig",
+          "M. Gienger",
+          "S. Hellbach",
+          "J. J. Steil",
+          "C. Goerick"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 16,
+        "title": "Tasklevel imitation learning using variance-based movement optimization",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "E. Todorov",
+          "M. I. Jordan"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 16,
+        "title": "Optimal feedback control as a theory of motor coordination",
+        "venue": "Nature Neuroscience",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "J. R. Medina",
+          "D. Lee",
+          "S. Hirche"
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 16,
+        "title": "Risk-sensitive optimal feedback control for haptic assistance",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Y. Huang",
+          "J. Silvério",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 16,
+        "title": "Towards minimal intervention control with competing constraints",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "D. A. Cohn",
+          "Z. Ghahramani",
+          "M. I. Jordan"
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 16,
+        "title": "Active learning with statistical models",
+        "venue": "Journal of Artificial Intelligence Research",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "C. M. Bishop"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 16,
+        "title": "Pattern Recognition and Machine Learning",
+        "venue": "Springer",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "C. Saunders",
+          "A. Gammerman",
+          "V. Vovk"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 16,
+        "title": "Ridge regression learning algorithm in dual variables",
+        "venue": "Proc. International Conference on Machine Learning",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "K. P. Murphy"
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 16,
+        "title": "Machine Learning: A Probabilistic Perspective",
+        "venue": "MIT press",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "J. Kober",
+          "E. Oztop",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 16,
+        "title": "Reinforcement learning to adjust robot movements to new situations",
+        "venue": "Proc. International Joint Conference on Artificial Intelligence",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "H. B. Amor",
+          "G. Neumann",
+          "S. Kamthe",
+          "O. Kroemer",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 16,
+        "title": "Interaction primitives for human-robot cooperation tasks",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "G. Maeda",
+          "M. Ewerton",
+          "G. Neumann",
+          "R. Lioutikov",
+          "J. Peters"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 16,
+        "title": "Phase estimation for fast action recognition and trajectory generation in human–robot collaboration",
+        "venue": "The International Journal of Robotics Research",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "M. Ewerton",
+          "G. Neumann",
+          "R. Lioutikov",
+          "H. B. Amor",
+          "J. Peters",
+          "G. Maeda"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 16,
+        "title": "Learning multiple collaborative tasks with a mixture of interaction primitives",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "J. Silvério",
+          "Y. Huang",
+          "L. Rozo",
+          "S. Calinon",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 16,
+        "title": "Probabilistic learning of torque controllers from kinematic and force constraints",
+        "venue": "Proc. International Conference on Intelligent Robots and Systems",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "J. R. Hershey",
+          "P. A. Olsen"
+        ],
+        "doi": null,
+        "key": "35",
+        "page": 16,
+        "title": "Approximating the kullback leibler divergence between gaussian mixture models",
+        "venue": "Proc. International Conference on Acoustics, Speech and Signal Processing",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "D. Duvenaud"
+        ],
+        "doi": null,
+        "key": "36",
+        "page": 16,
+        "title": "Automatic model construction with gaussian processes",
+        "venue": "Ph.D. dissertation, University of Cambridge",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "F. Stulp",
+          "G. Raiola",
+          "A. Hoarau",
+          "S. Ivaldi",
+          "O. Sigaud"
+        ],
+        "doi": null,
+        "key": "37",
+        "page": 16,
+        "title": "Learning compact parameterized skills with a single regression",
+        "venue": "Proc. International Conference on Humanoid Robots",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "R. Weitschat",
+          "H. Aschemann"
+        ],
+        "doi": null,
+        "key": "38",
+        "page": 16,
+        "title": "Safe and efficient human–robot collaboration part ii: Optimal generalized human-in-the-loop real-time motion generation",
+        "venue": "IEEE Robotics and Automation Letters",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "S. Calinon",
+          "D. Bruno",
+          "D. G. Caldwell"
+        ],
+        "doi": null,
+        "key": "39",
+        "page": 16,
+        "title": "A task-parameterized probabilistic model with minimal intervention control",
+        "venue": "Proc. International Conference on Robotics and Automation",
+        "year": 2014
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "Note that this paper has comprehensively extended our previous work [1] in terms of both theoretical parts (e.g., Sections IV and V) and evaluations (e.g., Sections VI-B, VI-C and VI-E).",
+        "reference_key": "[1]",
+        "relation": "extends",
+        "why": "The paper states it extends its own prior conference work with additional theory and evaluations."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "One representative type of approach is built on DMP [13], [14], [15], where unit quaternions were used to represent orientation and different reformulations of DMP were developed to ensure proper quaternions over the course of orientation adaptation.",
+        "reference_key": "[13], [14], [15]",
+        "relation": "contrasts",
+        "why": "These DMP-based orientation methods are cited as prior approaches that cannot adapt to nonzero angular velocity, motivating the new method."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Another solution of learning orientation was proposed in [16], where GMM was employed to model the distribution of quaternion displacements so as to avoid the quaternion constraint.",
+        "reference_key": "[16]",
+        "relation": "contrasts",
+        "why": "This GMM-based orientation method is cited as addressing reproduction but not adaptation, a gap the current work fills."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "In contrast to [16] that learns quaternion displacements, the Riemannian topology of the S3 manifold was exploited in [17] to probabilistically encode and reproduce distributions of quaternions.",
+        "reference_key": "[17]",
+        "relation": "contrasts",
+        "why": "The paper contrasts its approach with Riemannian S3 modeling in [17], which lacks via-point and angular-velocity adaptation."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "As a recently developed framework, KMP [8] exhibits several advantages over state-of-the-art approaches:",
+        "reference_key": "[8]",
+        "relation": "uses_method",
+        "why": "The paper builds its learning formulation on kernelized movement primitives (KMP)."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "In comparison with DMP [5] and TP-GMM [7], that focus on target adaptations, KMP is capable of adapting trajectories towards arbitrary desired points (e.g., start/via/end- points).",
+        "reference_key": "[5], [7]",
+        "relation": "compares",
+        "why": "The paper compares its KMP-based method against DMP and TP-GMM, which are limited to target adaptation."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Unlike DMP and ProMP [6] that rely on explicit definition of basis functions, KMP employs the kernel trick to alleviate the definition of basis functions and thus allows for convenient extensions to the learning and adaptation of demonstrations consisting of high-dimensional inputs.",
+        "reference_key": "[6]",
+        "relation": "contrasts",
+        "why": "ProMP is cited as relying on explicit basis functions, whereas the proposed kernel approach avoids this for high-dimensional inputs."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "It is well known that robot trajectories should be smooth in order to facilitate the design of controllers as well as the execution of motor commands [20], [21].",
+        "reference_key": "[20], [21]",
+        "relation": "uses_method",
+        "why": "These works are cited to motivate adding angular acceleration or jerk smoothness constraints."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "In many previous work, human and robot motions are encoded by taking time as input (e.g., DMP was used in [31] and ProMP in [32]).",
+        "reference_key": "[31], [32]",
+        "relation": "contrasts",
+        "why": "The paper contrasts its high-dimensional-input approach with prior time-driven human-robot collaboration methods."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "11Readers are suggested to refer to [35] for GMM sampling.",
+        "reference_key": "[35]",
+        "relation": "uses_method",
+        "why": "This reference is used for the GMM sampling technique that selects input points for high-dimensional learning."
+      },
+      {
+        "confidence": "high",
+        "page": 14,
+        "quote": "Differing from [19], in our framework (see Section V), each demonstration comprises a high-dimensional varying input trajectory and a robot trajectory",
+        "reference_key": "[19]",
+        "relation": "contrasts",
+        "why": "The paper contrasts its high-dimensional input learning with [19], which uses time sequences plus contextual states."
+      },
+      {
+        "confidence": "high",
+        "page": 14,
+        "quote": "Interestingly, some recent works on exploiting the covariance of trajectories and optimal control were reported, e.g., uncertainty-aware controller [11] and minimum intervention controller [39].",
+        "reference_key": "[11], [39]",
+        "relation": "uses_method",
+        "why": "These works are cited as related uses of trajectory covariance and optimal control that could integrate with the proposed framework."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "",
+          "start_page": 1,
+          "start_text": ""
+        },
+        "summary": "Imitation learning is promising for transferring human skills to robots, but Cartesian orientation learning remains difficult because quaternions must obey constraints and must support via-point/end-point adaptation, angular velocities, high-dimensional inputs, and smoothness. The paper positions an analytical solution against prior work and summarizes its contributions in Table I.",
+        "title": "Motivation and Contributions: Orientation Learning in Cartesian Space"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "evidence",
+      "value": "survey"
+    }
+  }
+}

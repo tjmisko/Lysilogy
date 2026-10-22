@@ -50,7 +50,16 @@ pub fn readable_pages(layout: &DocumentLayout) -> Vec<ExtractedPage> {
                                 });
                             }
                         } else {
+                            let touching = previous.is_some_and(|p| {
+                                p.rects.last().zip(token.rects.first()).is_some_and(
+                                    |(before, after)| {
+                                        let height = (before.y_max - before.y_min).max(1.0);
+                                        after.x_min - before.x_max < height * 0.1
+                                    },
+                                )
+                            });
                             if !text.is_empty()
+                                && !touching
                                 && !token
                                     .text
                                     .starts_with(['.', ',', ';', ':', '!', '?', ')', ']'])

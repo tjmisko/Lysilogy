@@ -1,0 +1,2057 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-20T05:03:09.229724693Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/2001.11673v1.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 8,
+  "calls": [
+    {
+      "stage": "core",
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 9061,
+      "cached_tokens": 0,
+      "completion_tokens": 23749,
+      "reasoning_tokens": 18315,
+      "cost_usd": 0.00073117,
+      "cost_source": "reported",
+      "latency_s": 189.227506462
+    },
+    {
+      "stage": "extract.pass2",
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 12935,
+      "cached_tokens": 0,
+      "completion_tokens": 11971,
+      "reasoning_tokens": 11747,
+      "cost_usd": 0.000736734,
+      "cost_source": "reported",
+      "latency_s": 113.926047934
+    },
+    {
+      "stage": "extract.repair",
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 8998,
+      "cached_tokens": 0,
+      "completion_tokens": 4046,
+      "reasoning_tokens": 3369,
+      "cost_usd": 0.000452556,
+      "cost_source": "reported",
+      "latency_s": 37.303349468
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 30994,
+    "cached_tokens": 0,
+    "completion_tokens": 39766,
+    "cost_usd": 0.00192046,
+    "model_latency_s": 340.456903864,
+    "wall_s": 342.396170459
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e3-30-2026-10-20/results/2001.11673v1.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "medium",
+      "page": 1,
+      "text": "Visual Question Answering (VQA) concerns providing answers to Natural Language questions about images. Several deep neural network approaches have been proposed to model the task in an end-to-end fashion. Whereas the task is grounded in visual processing, if the question focuses on events described by verbs, the language understanding component becomes crucial. Our hypothesis is that models should be aware of verb semantics, as expressed via semantic role labels, argument types, and/or frame elements. Unfortunately, no VQA dataset exists that includes verb semantic information. Our first contribution is a new VQA dataset (imSituVQA) that we built by taking advantage of the imSitu annotations. The imSitu dataset consists of images manually labeled with semantic frame elements, mostly taken from FrameNet. Second, we propose a multitask CNN-LSTM VQA model that learns to classify the answers as well as the semantic frame elements. Our experiments show that semantic frame element classification helps the VQA system avoid inconsistent responses and improves performance."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "[1]",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The current dominant baseline method proposed in [1] employs a CNN-LSTM-based architecture."
+              }
+            ],
+            "reference_key": "[1]",
+            "why": "The paper adopts the VQA task and the dominant CNN-LSTM baseline as the starting point for its augmentation."
+          },
+          {
+            "cited_work": "[9]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "In order to create a VQA dataset with verb semantic information, we took advantage of the imSitu dataset [9], developed for situation recognition and consisting of about 125k images."
+              }
+            ],
+            "reference_key": "[9]",
+            "why": "imSitu is the source of images and frame-element annotations for imSituVQA."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "VQA datasets/systems that omit verb semantic information",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Our hypothesis is that models should be aware of verb semantics, as expressed via semantic role labels, argument types, and/or frame elements."
+              }
+            ],
+            "reference_key": "",
+            "why": "The paper argues current VQA datasets neither encode nor use verb semantics, while its frame-element augmentation does."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Our experiments show that semantic frame element classification helps the VQA system avoid inconsistent responses and improves performance."
+          }
+        ],
+        "text": "Adding semantic frame element classification as an auxiliary multitask objective to a CNN-LSTM VQA model improves answer consistency and accuracy."
+      }
+    },
+    "citations": [
+      {
+        "context": "",
+        "page": 1,
+        "reference_key": "[1]"
+      },
+      {
+        "context": "",
+        "page": 1,
+        "reference_key": "[2]"
+      },
+      {
+        "context": "",
+        "page": 1,
+        "reference_key": "[3]"
+      },
+      {
+        "context": "",
+        "page": 1,
+        "reference_key": "[4]"
+      },
+      {
+        "context": "",
+        "page": 1,
+        "reference_key": "[5]"
+      },
+      {
+        "context": "",
+        "page": 1,
+        "reference_key": "[6]"
+      },
+      {
+        "context": "",
+        "page": 1,
+        "reference_key": "[7]"
+      },
+      {
+        "context": "",
+        "page": 1,
+        "reference_key": "[8]"
+      },
+      {
+        "context": "",
+        "page": 1,
+        "reference_key": "[9]"
+      },
+      {
+        "context": "",
+        "page": 2,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "",
+        "page": 2,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "",
+        "page": 2,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "",
+        "page": 2,
+        "reference_key": "[13]"
+      },
+      {
+        "context": "",
+        "page": 2,
+        "reference_key": "[14]"
+      },
+      {
+        "context": "",
+        "page": 2,
+        "reference_key": "[15]"
+      },
+      {
+        "context": "",
+        "page": 2,
+        "reference_key": "[16]"
+      },
+      {
+        "context": "",
+        "page": 4,
+        "reference_key": "[17]"
+      },
+      {
+        "context": "",
+        "page": 5,
+        "reference_key": "[18]"
+      },
+      {
+        "context": "",
+        "page": 5,
+        "reference_key": "[19]"
+      },
+      {
+        "context": "",
+        "page": 5,
+        "reference_key": "[20]"
+      },
+      {
+        "context": "",
+        "page": 5,
+        "reference_key": "[21]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "University of Illinois at Chicago",
+          "name": "Mehrdad Alizadeh"
+        },
+        {
+          "affiliation": "University of Illinois at Chicago",
+          "name": "Barbara Di Eugenio"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Augmenting Visual Question Answering with\nSemantic Frame Information in a Multitask\nLearning Approach"
+        },
+        {
+          "page": 1,
+          "quote": "Mehrdad Alizadeh\nBarbara Di Eugenio"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:2001.11673v1 [cs.AI]",
+        "doi": ""
+      },
+      "publication_state": "published",
+      "subtitle": "",
+      "title": "Augmenting Visual Question Answering with Semantic Frame Information in a Multitask Learning Approach",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "medium",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Our hypothesis is that models should be aware of verb semantics, as expressed via semantic role labels, argument types, and/or frame elements."
+        }
+      ],
+      "text": "How can semantic information about verbs be incorporated into VQA, and does making a model aware of verb semantics via semantic role labels, argument types, and/or frame elements improve VQA performance and consistency?"
+    },
+    "references": [
+      {
+        "authors": [
+          "S. Antol",
+          "A. Agrawal",
+          "J. Lu",
+          "M. Mitchell",
+          "D. Batra",
+          "C. L. Zitnick",
+          "D. Parikh"
+        ],
+        "doi": "",
+        "key": "[1]",
+        "page": 8,
+        "title": "VQA: Visual Question Answering",
+        "venue": "International Conference on Computer Vision (ICCV)",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "K. Kafle",
+          "C. Kanan"
+        ],
+        "doi": "",
+        "key": "[2]",
+        "page": 8,
+        "title": "Visual question answering: Datasets, algorithms, and future challenges",
+        "venue": "Computer Vision and Image Understanding",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "J. H. Martin",
+          "D. Jurafsky"
+        ],
+        "doi": "",
+        "key": "[3]",
+        "page": 8,
+        "title": "Speech and language processing: An introduction to natural language processing, computational linguistics, and speech recognition",
+        "venue": "Pearson/Prentice Hall",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "K. Kipper",
+          "A. Korhonen",
+          "N. Ryant",
+          "M. Palmer"
+        ],
+        "doi": "",
+        "key": "[4]",
+        "page": 8,
+        "title": "A Large-Scale Classification of English Verbs",
+        "venue": "Journal of Language Resources and Evaluation",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "E. Strubell",
+          "P. Verga",
+          "D. Andor",
+          "D. Weiss",
+          "A. McCallum"
+        ],
+        "doi": "",
+        "key": "[5]",
+        "page": 8,
+        "title": "Linguistically-informed self-attention for semantic role labeling",
+        "venue": "arXiv preprint arXiv:1804.08199",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "D. Shen",
+          "M. Lapata"
+        ],
+        "doi": "",
+        "key": "[6]",
+        "page": 8,
+        "title": "Using semantic roles to improve question answering",
+        "venue": "Proceedings of the 2007 joint conference on empirical methods in natural language processing and computational natural language learning (EMNLP-CoNLL)",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "M. Palmer",
+          "D. Gildea",
+          "P. Kingsbury"
+        ],
+        "doi": "",
+        "key": "[7]",
+        "page": 8,
+        "title": "The proposition bank: An annotated corpus of semantic roles",
+        "venue": "Computational Linguistics",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "C. J. Fillmore",
+          "C. R. Johnson",
+          "M. R. Petruck"
+        ],
+        "doi": "",
+        "key": "[8]",
+        "page": 8,
+        "title": "Background to framenet",
+        "venue": "International journal of lexicography",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "M. Yatskar",
+          "L. Zettlemoyer",
+          "A. Farhadi"
+        ],
+        "doi": "",
+        "key": "[9]",
+        "page": 8,
+        "title": "Situation recognition: Visual semantic role labeling for image understanding",
+        "venue": "Conference on Computer Vision and Pattern Recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "M. Malinowski",
+          "M. Fritz"
+        ],
+        "doi": "",
+        "key": "[10]",
+        "page": 8,
+        "title": "A multi-world approach to question answering about real-world scenes based on uncertain input",
+        "venue": "Advances in Neural Information Processing Systems 27",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "M. Ren",
+          "R. Kiros",
+          "R. Zemel"
+        ],
+        "doi": "",
+        "key": "[11]",
+        "page": 8,
+        "title": "Exploring models and data for image question answering",
+        "venue": "Advances in neural information processing systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Y. Zhu",
+          "O. Groth",
+          "M. Bernstein",
+          "L. Fei-Fei"
+        ],
+        "doi": "",
+        "key": "[12]",
+        "page": 8,
+        "title": "Visual7w: Grounded question answering in images",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "P. Wang",
+          "Q. Wu",
+          "C. Shen",
+          "A. Dick",
+          "A. van den Hengel"
+        ],
+        "doi": "",
+        "key": "[13]",
+        "page": 8,
+        "title": "Fvqa: Fact-based visual question answering",
+        "venue": "IEEE transactions on pattern analysis and machine intelligence",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Z. Yang",
+          "X. He",
+          "J. Gao",
+          "L. Deng",
+          "A. Smola"
+        ],
+        "doi": "",
+        "key": "[14]",
+        "page": 8,
+        "title": "Stacked attention networks for image question answering",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "J. Lu",
+          "J. Yang",
+          "D. Batra",
+          "D. Parikh"
+        ],
+        "doi": "",
+        "key": "[15]",
+        "page": 8,
+        "title": "Hierarchical question-image co-attention for visual question answering",
+        "venue": "Advances In Neural Information Processing Systems",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Z. Yu",
+          "J. Yu",
+          "J. Fan",
+          "D. Tao"
+        ],
+        "doi": "",
+        "key": "[16]",
+        "page": 8,
+        "title": "Multi-modal factorized bilinear pooling with co-attention learning for visual question answering",
+        "venue": "Proc. IEEE Int. Conf. Comp. Vis",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "S. Xie",
+          "T. Yang",
+          "X. Wang",
+          "Y. Lin"
+        ],
+        "doi": "",
+        "key": "[17]",
+        "page": 8,
+        "title": "Hyper-class augmented and regularized deep learning for fine-grained image classification",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "S. Antol",
+          "A. Agrawal",
+          "J. Lu",
+          "M. Mitchell",
+          "D. Batra",
+          "C. Lawrence Zitnick",
+          "D. Parikh"
+        ],
+        "doi": "",
+        "key": "[18]",
+        "page": 8,
+        "title": "Vqa: Visual question answering",
+        "venue": "Proceedings of the IEEE international conference on computer vision",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "J. Pennington",
+          "R. Socher",
+          "C. Manning"
+        ],
+        "doi": "",
+        "key": "[19]",
+        "page": 8,
+        "title": "Glove: Global vectors for word representation",
+        "venue": "Proceedings of the 2014 conference on empirical methods in natural language processing (EMNLP)",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "K. Simonyan",
+          "A. Zisserman"
+        ],
+        "doi": "",
+        "key": "[20]",
+        "page": 8,
+        "title": "Very deep convolutional networks for large-scale image recognition",
+        "venue": "arXiv preprint arXiv:1409.1556",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "T. Tieleman",
+          "G. Hinton"
+        ],
+        "doi": "",
+        "key": "[21]",
+        "page": 8,
+        "title": "Lecture 6.5-rmsprop: Divide the gradient by a running average of its recent magnitude",
+        "venue": "COURSERA: Neural networks for machine learning",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Z. Wu",
+          "M. Palmer"
+        ],
+        "doi": "",
+        "key": "[22]",
+        "page": 8,
+        "title": "Verbs semantics and lexical selection",
+        "venue": "Proceedings of the 32nd annual meeting on Association for Computational Linguistics. Association for Computational Linguistics",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "M. Malinowski",
+          "M. Fritz"
+        ],
+        "doi": "",
+        "key": "[23]",
+        "page": 8,
+        "title": "A multi-world approach to question answering about real-world scenes based on uncertain input",
+        "venue": "Advances in neural information processing systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "S. Li",
+          "A. Karatzoglou",
+          "C. Gentile"
+        ],
+        "doi": "",
+        "key": "[24]",
+        "page": 8,
+        "title": "Collaborative filtering bandits",
+        "venue": "In Proceedings of the 39th International ACM SIGIR Conference on Information Retrieval. SIGIR16",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "C. Gentile",
+          "S. Li",
+          "P. Kar",
+          "A. Karatzoglou",
+          "G. Zappella",
+          "E. Etrue"
+        ],
+        "doi": "",
+        "key": "[25]",
+        "page": 8,
+        "title": "On context-dependent clustering of bandits",
+        "venue": "Proceedings of the 34th International Conference on Machine Learning-Volume 70. JMLR. org",
+        "year": 2017
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "medium",
+        "page": 1,
+        "quote": "Traditionally in linguistics, semantic information about a verb has been captured via so-called thematic or semantic roles [3], which may include roles like agent or patient as encoded in a resource such as VerbNet [4].",
+        "reference_key": "[3]",
+        "relation": "uses_method",
+        "why": "The paper situates its frame-element approach against earlier thematic-role resources such as VerbNet."
+      },
+      {
+        "confidence": "medium",
+        "page": 1,
+        "quote": "Semantic role labeling has been shown to improve performance in challenging tasks such as dialog systems, machine reading, translation and question answering [5], [6].",
+        "reference_key": "[5]",
+        "relation": "uses_method",
+        "why": "It cites prior evidence that semantic role labeling improves QA and related tasks."
+      },
+      {
+        "confidence": "medium",
+        "page": 1,
+        "quote": "However, the difficulty of clearly defining such roles has given rise to other approaches, such as the abstract roles provided by PropBank [7], or the specialized frame elements provided by FrameNet [8].",
+        "reference_key": "[7]",
+        "relation": "uses_method",
+        "why": "PropBank and FrameNet are presented as alternative semantic-role resources leading to the paper’s FrameNet-based framing."
+      },
+      {
+        "confidence": "medium",
+        "page": 1,
+        "quote": "In order to create a VQA dataset with verb semantic information, we took advantage of the imSitu dataset [9], developed for situation recognition and consisting of about 125k images.",
+        "reference_key": "[9]",
+        "relation": "uses_method",
+        "why": "imSitu supplies the images and frame-element annotations from which imSituVQA is built."
+      },
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "AQUAR [10] is among the first benchmarks released for the VQA task.",
+        "reference_key": "[10]",
+        "relation": "background",
+        "why": "AQUAR is reviewed as an early VQA benchmark in the related-work survey."
+      },
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "Different attention techniques, such as stacked attention [14], co-attention between question and image [15], and factorized bilinear pooling with co-attention [16] have been shown to improve the performance of VQA.",
+        "reference_key": "[14]",
+        "relation": "uses_method",
+        "why": "Attention-based VQA methods are summarized as related prior work."
+      },
+      {
+        "confidence": "medium",
+        "page": 4,
+        "quote": "[17] suggests a hyper-class augmentation formulated as multi-task learning in order to boost the recognition task.",
+        "reference_key": "[17]",
+        "relation": "uses_method",
+        "why": "The paper adapts hyper-class augmentation as the multitask frame-element objective for VQA."
+      },
+      {
+        "confidence": "medium",
+        "page": 5,
+        "quote": "The proposed VQA model is evaluated by means of the CNN-LSTM-based architecture introduced in [18].",
+        "reference_key": "[18]",
+        "relation": "uses_method",
+        "why": "The evaluated architecture follows this CNN-LSTM VQA model."
+      },
+      {
+        "confidence": "medium",
+        "page": 5,
+        "quote": "Consequently, we employ trained models such as GLOVE [19] and VGG-NET [20].",
+        "reference_key": "[19]",
+        "relation": "uses_method",
+        "why": "GloVe and VGG-NET are used for word and image embeddings."
+      },
+      {
+        "confidence": "medium",
+        "page": 5,
+        "quote": "The model is trained by minimizing the sum of the two cross-entropy loss functions using the rmsprop optimization algorithm [21].",
+        "reference_key": "[21]",
+        "relation": "uses_method",
+        "why": "RMSprop is the optimization algorithm used to train the multitask model."
+      },
+      {
+        "confidence": "medium",
+        "page": 5,
+        "quote": "Wu-Palmer (WUP) Similarity can be used as an alternative to accuracy [22].",
+        "reference_key": "[22]",
+        "relation": "uses_method",
+        "why": "WUP similarity is adopted as an evaluation metric."
+      },
+      {
+        "confidence": "medium",
+        "page": 5,
+        "quote": "[23] extended WUP similarity to the VQA task evaluation.",
+        "reference_key": "[23]",
+        "relation": "uses_method",
+        "why": "WUP is extended to VQA evaluation and thresholded WUPS."
+      },
+      {
+        "confidence": "medium",
+        "page": 7,
+        "quote": "One hypothesis would be to consider the semantic information equivalent to context or context-aware information [24] [25].",
+        "reference_key": "[24]",
+        "relation": "compares",
+        "why": "Semantic information is analogized to context or context-aware information in the conclusion."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "The VQA task requires co-reasoning over both image and text to infer the correct answer.",
+          "start_page": 1,
+          "start_text": "Augmenting Visual Question Answering with Semantic Frame Information in a Multitask Learning Approach"
+        },
+        "summary": "VQA models need verb semantic information, especially for event-verb questions, but existing datasets and systems do not encode it. The paper frames this gap using FrameNet-style semantic roles and frame elements, then previews imSituVQA and a multitask CNN-LSTM model.",
+        "title": "Motivation and Background: Verb Semantics in VQA"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "The questions are mostly between 4 to 7 words.",
+          "start_page": 2,
+          "start_text": "As we noted, the imSitu dataset [9] is tailored to situation recognition, a problem that involves predicting activities along with actors, objects, substances, and locations and how they fit together."
+        },
+        "summary": "imSituVQA is built from imSitu’s 504 verbs, 190 frame elements, abstract definitions, and image annotations. Templates are generated by holding out frame elements, then realized with noun fillers to create 254k/88k/88k splits.",
+        "title": "Constructing imSituVQA from imSitu and FrameNet"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "Fig. 3. Proposed multitask learning architecture for VQA",
+          "start_page": 4,
+          "start_text": "Hyper-class augmented deep learning model has been shown to work well for fine-grained image classification."
+        },
+        "summary": "The proposed model shares a CNN-LSTM VQA architecture up to the classification layer, then branches into answer and frame-element softmax classifiers. Training uses GloVe, VGG-NET, pointwise multimodal fusion, and the sum of two cross-entropy losses.",
+        "title": "Multitask CNN-LSTM VQA Model"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "Table VIII shows a different view of the performance difference between CNN-LSTM and the multi-task version.",
+          "start_page": 5,
+          "start_text": "Table VI shows the performance evaluation of the test samples."
+        },
+        "summary": "The multitask model improves accuracy from 39.58% to 44.90% and WUPS at 0.9 from 46.92% to 51.83%. Frame-element classification reaches 99.32% test accuracy, raises consistency to 99.94%, and improves many fine-grained verb and role results.",
+        "title": "Evaluation, Consistency, and Fine-Grained Results"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "paradigm.",
+          "start_page": 7,
+          "start_text": "In this paper, we explained how we used the imSitu annotations to build a VQA dataset with semantic verb information."
+        },
+        "summary": "The conclusion restates the dataset and multitask gains, then proposes future work such as using semantic role labeling to add frame-element information to other VQA datasets and generalizing hyper-class augmentation to answer types and task types.",
+        "title": "Conclusions and Future Work"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "1253–1262.",
+          "start_page": 8,
+          "start_text": "R EFERENCES"
+        },
+        "summary": "The bibliography lists 25 works covering VQA datasets and methods, semantic-role and frame resources, embeddings, optimization, and context-aware learning.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "medium",
+      "reason": "It presents a new dataset and a multitask VQA model with experiments and conclusions.",
+      "value": "survey"
+    }
+  },
+  "pass1_check": {
+    "sites": 42,
+    "verbatim": 19,
+    "near": 1,
+    "missing": 22,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/type/value",
+      "action": "replace",
+      "value_json": "\"research\"",
+      "reason": "The paper presents a new dataset and model, not a survey.",
+      "evidence": [
+        {
+          "quote": "Our first contribution is a new VQA dataset (imSituVQA) that we built by taking advantage of the imSitu annotations.",
+          "page": 1
+        },
+        {
+          "quote": "Our second contribution is an augmented CNN-LSTM VQA model with semantic frame element information in a multi-task learning paradigm.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/publication_state",
+      "action": "replace",
+      "value_json": "\"preprint\"",
+      "reason": "The paper is an arXiv preprint, as indicated by the header.",
+      "evidence": [
+        {
+          "quote": "arXiv:2001.11673v1 [cs.AI] 31 Jan 2020",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/card/position/targets/0/evidence/0/quote",
+      "action": "replace",
+      "value_json": "\"However, neither do VQA datasets encode, nor has any VQA system taken advantage of this information.\"",
+      "reason": "This quote directly supports the target about VQA datasets/systems omitting verb semantic information.",
+      "evidence": [
+        {
+          "quote": "However, neither do VQA datasets encode, nor has any VQA system taken advantage of this information.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/citations",
+      "action": "add",
+      "value_json": "{\"context\":\"\",\"page\":5,\"reference_key\":\"[22]\"}",
+      "reason": "Citation [22] is used in the paper but missing from the citations list.",
+      "evidence": [
+        {
+          "quote": "Wu-Palmer (WUP) Similarity can be used as an alternative to accuracy [22].",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "path": "/citations",
+      "action": "add",
+      "value_json": "{\"context\":\"\",\"page\":5,\"reference_key\":\"[23]\"}",
+      "reason": "Citation [23] is used in the paper but missing from the citations list.",
+      "evidence": [
+        {
+          "quote": "[23] extended WUP similarity to the VQA task evaluation.",
+          "page": 5
+        }
+      ]
+    },
+    {
+      "path": "/citations",
+      "action": "add",
+      "value_json": "{\"context\":\"\",\"page\":7,\"reference_key\":\"[24]\"}",
+      "reason": "Citation [24] is used in the paper but missing from the citations list.",
+      "evidence": [
+        {
+          "quote": "One hypothesis would be to consider the semantic information equivalent to context or context-aware information [24] [25].",
+          "page": 7
+        }
+      ]
+    },
+    {
+      "path": "/citations",
+      "action": "add",
+      "value_json": "{\"context\":\"\",\"page\":7,\"reference_key\":\"[25]\"}",
+      "reason": "Citation [25] is used in the paper but missing from the citations list.",
+      "evidence": [
+        {
+          "quote": "One hypothesis would be to consider the semantic information equivalent to context or context-aware information [24] [25].",
+          "page": 7
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/type/value",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "value does not match the schema: : value is not one of the allowed values"
+    },
+    {
+      "index": 1,
+      "path": "/identity/publication_state",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/card/position/targets/0/evidence/0/quote",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/citations",
+      "action": "add",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/citations",
+      "action": "add",
+      "status": "rejected",
+      "reason": "evidence is not in the source"
+    },
+    {
+      "index": 5,
+      "path": "/citations",
+      "action": "add",
+      "status": "applied"
+    },
+    {
+      "index": 6,
+      "path": "/citations",
+      "action": "add",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 45,
+    "verbatim": 19,
+    "near": 1,
+    "missing": 25,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "repaired_local",
+      "original": "Visual Question Answering (VQA) concerns providing answers to Natural Language questions about images. Several deep neural network approaches have been proposed to model the task in an end-to-end fashion. Whereas the task is grounded in visual processing, if the question focuses on events described by verbs, the language understanding component becomes crucial. Our hypothesis is that models should be aware of verb semantics, as expressed via semantic role labels, argument types, and/or frame elements. Unfortunately, no VQA dataset exists that includes verb semantic information. Our first contribution is a new VQA dataset (imSituVQA) that we built by taking advantage of the imSitu annotations. The imSitu dataset consists of images manually labeled with semantic frame elements, mostly taken from FrameNet. Second, we propose a multitask CNN-LSTM VQA model that learns to classify the answers as well as the semantic frame elements. Our experiments show that semantic frame element classification helps the VQA system avoid inconsistent responses and improves performance.",
+      "admitted": "Abstract—Visual Question Answering (VQA) concerns providing answers to Natural Language questions about images. Several deep neural network approaches have been proposed to model the task in an end-to-end fashion. Whereas the task is grounded in visual processing, if the question focuses on events described by verbs, the language understanding component becomes crucial. Our hypothesis is that models should be aware of verb semantics, as expressed via semantic role labels, argument types, and/or frame elements. Unfortunately, no VQA dataset exists that includes verb semantic information. Our first contribution is a new VQA dataset (imSituVQA) that we built by taking advantage of the imSitu annotations. The imSitu dataset consists of images manually labeled with semantic frame elements, mostly taken from FrameNet. Second, we propose a multitask CNNLSTM VQA model that learns to classify the answers as well as the semantic frame elements. Our experiments show that semantic frame element classification helps the VQA system avoid inconsistent responses and improves performance.",
+      "similarity": 0.9936708860759493,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The current dominant baseline method proposed in [1] employs a CNN-LSTM-based architecture.",
+      "admitted": "The current dominant baseline method proposed in [1] employs a CNN-LSTM-based architecture.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In order to create a VQA dataset with verb semantic information, we took advantage of the imSitu dataset [9], developed for situation recognition and consisting of about 125k images.",
+      "admitted": "In order to create a VQA dataset with verb semantic information, we took advantage of the imSitu dataset [9], developed for situation recognition and consisting of about 125k images.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "However, neither do VQA datasets encode, nor has any VQA system taken advantage of this information.",
+      "admitted": "However, neither do VQA datasets encode, nor has any VQA system taken advantage of this information.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our experiments show that semantic frame element classification helps the VQA system avoid inconsistent responses and improves performance.",
+      "admitted": "Our experiments show that semantic frame element classification helps the VQA system avoid inconsistent responses and improves performance.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Augmenting Visual Question Answering with\nSemantic Frame Information in a Multitask\nLearning Approach",
+      "admitted": "Augmenting Visual Question Answering with\nSemantic Frame Information in a Multitask\nLearning Approach",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Mehrdad Alizadeh\nBarbara Di Eugenio",
+      "admitted": "Mehrdad Alizadeh\nBarbara Di Eugenio",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our hypothesis is that models should be aware of verb semantics, as expressed via semantic role labels, argument types, and/or frame elements.",
+      "admitted": "Our hypothesis is that models should be aware of verb semantics, as expressed via semantic role labels, argument types, and/or frame elements.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Traditionally in linguistics, semantic information about a verb has been captured via so-called thematic or semantic roles [3], which may include roles like agent or patient as encoded in a resource such as VerbNet [4].",
+      "admitted": "Traditionally in linguistics, semantic information about a verb has been captured via so-called thematic or semantic roles [3], which may include roles like agent or patient as encoded in a resource such as VerbNet [4].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Semantic role labeling has been shown to improve performance in challenging tasks such as dialog systems, machine reading, translation and question answering [5], [6].",
+      "admitted": "Semantic role labeling has been shown to improve performance in challenging tasks such as dialog systems, machine reading, translation and question answering [5], [6].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "However, the difficulty of clearly defining such roles has given rise to other approaches, such as the abstract roles provided by PropBank [7], or the specialized frame elements provided by FrameNet [8].",
+      "admitted": "However, the difficulty of clearly defining such roles has given rise to other approaches, such as the abstract roles provided by PropBank [7], or the specialized frame elements provided by FrameNet [8].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "In order to create a VQA dataset with verb semantic information, we took advantage of the imSitu dataset [9], developed for situation recognition and consisting of about 125k images.",
+      "admitted": "In order to create a VQA dataset with verb semantic information, we took advantage of the imSitu dataset [9], developed for situation recognition and consisting of about 125k images.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "AQUAR [10] is among the first benchmarks released for the VQA task.",
+      "admitted": "AQUAR [10] is among the first benchmarks released for the VQA task.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "Different attention techniques, such as stacked attention [14], co-attention between question and image [15], and factorized bilinear pooling with co-attention [16] have been shown to improve the performance of VQA.",
+      "admitted": "Different attention techniques, such as stacked attention [14], co-attention between question and image [15], and factorized bilinear pooling with co-attention [16] have been shown to improve the performance of VQA.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "[17] suggests a hyper-class augmentation formulated as multi-task learning in order to boost the recognition task.",
+      "admitted": "[17] suggests a hyper-class augmentation formulated as multi-task learning in order to boost the recognition task.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "The proposed VQA model is evaluated by means of the CNN-LSTM-based architecture introduced in [18].",
+      "admitted": "The proposed VQA model is evaluated by means of the CNN-LSTM-based architecture introduced in [18].",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "Consequently, we employ trained models such as GLOVE [19] and VGG-NET [20].",
+      "admitted": "Consequently, we employ trained models such as GLOVE [19] and VGG-NET [20].",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "verbatim",
+      "original": "The model is trained by minimizing the sum of the two cross-entropy loss functions using the rmsprop optimization algorithm [21].",
+      "admitted": "The model is trained by minimizing the sum of the two cross-entropy loss functions using the rmsprop optimization algorithm [21].",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/10/quote",
+      "status": "verbatim",
+      "original": "Wu-Palmer (WUP) Similarity can be used as an alternative to accuracy [22].",
+      "admitted": "Wu-Palmer (WUP) Similarity can be used as an alternative to accuracy [22].",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/11/quote",
+      "status": "dropped",
+      "original": "[23] extended WUP similarity to the VQA task evaluation.",
+      "admitted": null,
+      "similarity": 0.7777777777777778,
+      "cited_page": 5,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/12/quote",
+      "status": "verbatim",
+      "original": "One hypothesis would be to consider the semantic information equivalent to context or context-aware information [24] [25].",
+      "admitted": "One hypothesis would be to consider the semantic information equivalent to context or context-aware information [24] [25].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    }
+  ],
+  "admission_counts": {
+    "dropped": 1,
+    "repaired_local": 1,
+    "verbatim": 19,
+    "withdrawn": 24
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "medium",
+      "page": 1,
+      "text": "Abstract—Visual Question Answering (VQA) concerns providing answers to Natural Language questions about images. Several deep neural network approaches have been proposed to model the task in an end-to-end fashion. Whereas the task is grounded in visual processing, if the question focuses on events described by verbs, the language understanding component becomes crucial. Our hypothesis is that models should be aware of verb semantics, as expressed via semantic role labels, argument types, and/or frame elements. Unfortunately, no VQA dataset exists that includes verb semantic information. Our first contribution is a new VQA dataset (imSituVQA) that we built by taking advantage of the imSitu annotations. The imSitu dataset consists of images manually labeled with semantic frame elements, mostly taken from FrameNet. Second, we propose a multitask CNNLSTM VQA model that learns to classify the answers as well as the semantic frame elements. Our experiments show that semantic frame element classification helps the VQA system avoid inconsistent responses and improves performance."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "[1]",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "The current dominant baseline method proposed in [1] employs a CNN-LSTM-based architecture."
+              }
+            ],
+            "reference_key": "[1]",
+            "why": "The paper adopts the VQA task and the dominant CNN-LSTM baseline as the starting point for its augmentation."
+          },
+          {
+            "cited_work": "[9]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "In order to create a VQA dataset with verb semantic information, we took advantage of the imSitu dataset [9], developed for situation recognition and consisting of about 125k images."
+              }
+            ],
+            "reference_key": "[9]",
+            "why": "imSitu is the source of images and frame-element annotations for imSituVQA."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "VQA datasets/systems that omit verb semantic information",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "However, neither do VQA datasets encode, nor has any VQA system taken advantage of this information."
+              }
+            ],
+            "reference_key": "",
+            "why": "The paper argues current VQA datasets neither encode nor use verb semantics, while its frame-element augmentation does."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "medium",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Our experiments show that semantic frame element classification helps the VQA system avoid inconsistent responses and improves performance."
+          }
+        ],
+        "text": "Adding semantic frame element classification as an auxiliary multitask objective to a CNN-LSTM VQA model improves answer consistency and accuracy."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "University of Illinois at Chicago",
+          "name": "Mehrdad Alizadeh"
+        },
+        {
+          "affiliation": "University of Illinois at Chicago",
+          "name": "Barbara Di Eugenio"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Augmenting Visual Question Answering with\nSemantic Frame Information in a Multitask\nLearning Approach"
+        },
+        {
+          "page": 1,
+          "quote": "Mehrdad Alizadeh\nBarbara Di Eugenio"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:2001.11673v1 [cs.AI]",
+        "doi": ""
+      },
+      "publication_state": "preprint",
+      "subtitle": "",
+      "title": "Augmenting Visual Question Answering with Semantic Frame Information in a Multitask Learning Approach",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "medium",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Our hypothesis is that models should be aware of verb semantics, as expressed via semantic role labels, argument types, and/or frame elements."
+        }
+      ],
+      "text": "How can semantic information about verbs be incorporated into VQA, and does making a model aware of verb semantics via semantic role labels, argument types, and/or frame elements improve VQA performance and consistency?"
+    },
+    "references": [
+      {
+        "authors": [
+          "S. Antol",
+          "A. Agrawal",
+          "J. Lu",
+          "M. Mitchell",
+          "D. Batra",
+          "C. L. Zitnick",
+          "D. Parikh"
+        ],
+        "doi": "",
+        "key": "[1]",
+        "page": 8,
+        "title": "VQA: Visual Question Answering",
+        "venue": "International Conference on Computer Vision (ICCV)",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "K. Kafle",
+          "C. Kanan"
+        ],
+        "doi": "",
+        "key": "[2]",
+        "page": 8,
+        "title": "Visual question answering: Datasets, algorithms, and future challenges",
+        "venue": "Computer Vision and Image Understanding",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "J. H. Martin",
+          "D. Jurafsky"
+        ],
+        "doi": "",
+        "key": "[3]",
+        "page": 8,
+        "title": "Speech and language processing: An introduction to natural language processing, computational linguistics, and speech recognition",
+        "venue": "Pearson/Prentice Hall",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "K. Kipper",
+          "A. Korhonen",
+          "N. Ryant",
+          "M. Palmer"
+        ],
+        "doi": "",
+        "key": "[4]",
+        "page": 8,
+        "title": "A Large-Scale Classification of English Verbs",
+        "venue": "Journal of Language Resources and Evaluation",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "E. Strubell",
+          "P. Verga",
+          "D. Andor",
+          "D. Weiss",
+          "A. McCallum"
+        ],
+        "doi": "",
+        "key": "[5]",
+        "page": 8,
+        "title": "Linguistically-informed self-attention for semantic role labeling",
+        "venue": "arXiv preprint arXiv:1804.08199",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "D. Shen",
+          "M. Lapata"
+        ],
+        "doi": "",
+        "key": "[6]",
+        "page": 8,
+        "title": "Using semantic roles to improve question answering",
+        "venue": "Proceedings of the 2007 joint conference on empirical methods in natural language processing and computational natural language learning (EMNLP-CoNLL)",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "M. Palmer",
+          "D. Gildea",
+          "P. Kingsbury"
+        ],
+        "doi": "",
+        "key": "[7]",
+        "page": 8,
+        "title": "The proposition bank: An annotated corpus of semantic roles",
+        "venue": "Computational Linguistics",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "C. J. Fillmore",
+          "C. R. Johnson",
+          "M. R. Petruck"
+        ],
+        "doi": "",
+        "key": "[8]",
+        "page": 8,
+        "title": "Background to framenet",
+        "venue": "International journal of lexicography",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "M. Yatskar",
+          "L. Zettlemoyer",
+          "A. Farhadi"
+        ],
+        "doi": "",
+        "key": "[9]",
+        "page": 8,
+        "title": "Situation recognition: Visual semantic role labeling for image understanding",
+        "venue": "Conference on Computer Vision and Pattern Recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "M. Malinowski",
+          "M. Fritz"
+        ],
+        "doi": "",
+        "key": "[10]",
+        "page": 8,
+        "title": "A multi-world approach to question answering about real-world scenes based on uncertain input",
+        "venue": "Advances in Neural Information Processing Systems 27",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "M. Ren",
+          "R. Kiros",
+          "R. Zemel"
+        ],
+        "doi": "",
+        "key": "[11]",
+        "page": 8,
+        "title": "Exploring models and data for image question answering",
+        "venue": "Advances in neural information processing systems",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "Y. Zhu",
+          "O. Groth",
+          "M. Bernstein",
+          "L. Fei-Fei"
+        ],
+        "doi": "",
+        "key": "[12]",
+        "page": 8,
+        "title": "Visual7w: Grounded question answering in images",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "P. Wang",
+          "Q. Wu",
+          "C. Shen",
+          "A. Dick",
+          "A. van den Hengel"
+        ],
+        "doi": "",
+        "key": "[13]",
+        "page": 8,
+        "title": "Fvqa: Fact-based visual question answering",
+        "venue": "IEEE transactions on pattern analysis and machine intelligence",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Z. Yang",
+          "X. He",
+          "J. Gao",
+          "L. Deng",
+          "A. Smola"
+        ],
+        "doi": "",
+        "key": "[14]",
+        "page": 8,
+        "title": "Stacked attention networks for image question answering",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "J. Lu",
+          "J. Yang",
+          "D. Batra",
+          "D. Parikh"
+        ],
+        "doi": "",
+        "key": "[15]",
+        "page": 8,
+        "title": "Hierarchical question-image co-attention for visual question answering",
+        "venue": "Advances In Neural Information Processing Systems",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "Z. Yu",
+          "J. Yu",
+          "J. Fan",
+          "D. Tao"
+        ],
+        "doi": "",
+        "key": "[16]",
+        "page": 8,
+        "title": "Multi-modal factorized bilinear pooling with co-attention learning for visual question answering",
+        "venue": "Proc. IEEE Int. Conf. Comp. Vis",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "S. Xie",
+          "T. Yang",
+          "X. Wang",
+          "Y. Lin"
+        ],
+        "doi": "",
+        "key": "[17]",
+        "page": 8,
+        "title": "Hyper-class augmented and regularized deep learning for fine-grained image classification",
+        "venue": "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "S. Antol",
+          "A. Agrawal",
+          "J. Lu",
+          "M. Mitchell",
+          "D. Batra",
+          "C. Lawrence Zitnick",
+          "D. Parikh"
+        ],
+        "doi": "",
+        "key": "[18]",
+        "page": 8,
+        "title": "Vqa: Visual question answering",
+        "venue": "Proceedings of the IEEE international conference on computer vision",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "J. Pennington",
+          "R. Socher",
+          "C. Manning"
+        ],
+        "doi": "",
+        "key": "[19]",
+        "page": 8,
+        "title": "Glove: Global vectors for word representation",
+        "venue": "Proceedings of the 2014 conference on empirical methods in natural language processing (EMNLP)",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "K. Simonyan",
+          "A. Zisserman"
+        ],
+        "doi": "",
+        "key": "[20]",
+        "page": 8,
+        "title": "Very deep convolutional networks for large-scale image recognition",
+        "venue": "arXiv preprint arXiv:1409.1556",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "T. Tieleman",
+          "G. Hinton"
+        ],
+        "doi": "",
+        "key": "[21]",
+        "page": 8,
+        "title": "Lecture 6.5-rmsprop: Divide the gradient by a running average of its recent magnitude",
+        "venue": "COURSERA: Neural networks for machine learning",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Z. Wu",
+          "M. Palmer"
+        ],
+        "doi": "",
+        "key": "[22]",
+        "page": 8,
+        "title": "Verbs semantics and lexical selection",
+        "venue": "Proceedings of the 32nd annual meeting on Association for Computational Linguistics. Association for Computational Linguistics",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "M. Malinowski",
+          "M. Fritz"
+        ],
+        "doi": "",
+        "key": "[23]",
+        "page": 8,
+        "title": "A multi-world approach to question answering about real-world scenes based on uncertain input",
+        "venue": "Advances in neural information processing systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "S. Li",
+          "A. Karatzoglou",
+          "C. Gentile"
+        ],
+        "doi": "",
+        "key": "[24]",
+        "page": 8,
+        "title": "Collaborative filtering bandits",
+        "venue": "In Proceedings of the 39th International ACM SIGIR Conference on Information Retrieval. SIGIR16",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "C. Gentile",
+          "S. Li",
+          "P. Kar",
+          "A. Karatzoglou",
+          "G. Zappella",
+          "E. Etrue"
+        ],
+        "doi": "",
+        "key": "[25]",
+        "page": 8,
+        "title": "On context-dependent clustering of bandits",
+        "venue": "Proceedings of the 34th International Conference on Machine Learning-Volume 70. JMLR. org",
+        "year": 2017
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "medium",
+        "page": 1,
+        "quote": "Traditionally in linguistics, semantic information about a verb has been captured via so-called thematic or semantic roles [3], which may include roles like agent or patient as encoded in a resource such as VerbNet [4].",
+        "reference_key": "[3]",
+        "relation": "uses_method",
+        "why": "The paper situates its frame-element approach against earlier thematic-role resources such as VerbNet."
+      },
+      {
+        "confidence": "medium",
+        "page": 1,
+        "quote": "Semantic role labeling has been shown to improve performance in challenging tasks such as dialog systems, machine reading, translation and question answering [5], [6].",
+        "reference_key": "[5]",
+        "relation": "uses_method",
+        "why": "It cites prior evidence that semantic role labeling improves QA and related tasks."
+      },
+      {
+        "confidence": "medium",
+        "page": 1,
+        "quote": "However, the difficulty of clearly defining such roles has given rise to other approaches, such as the abstract roles provided by PropBank [7], or the specialized frame elements provided by FrameNet [8].",
+        "reference_key": "[7]",
+        "relation": "uses_method",
+        "why": "PropBank and FrameNet are presented as alternative semantic-role resources leading to the paper’s FrameNet-based framing."
+      },
+      {
+        "confidence": "medium",
+        "page": 1,
+        "quote": "In order to create a VQA dataset with verb semantic information, we took advantage of the imSitu dataset [9], developed for situation recognition and consisting of about 125k images.",
+        "reference_key": "[9]",
+        "relation": "uses_method",
+        "why": "imSitu supplies the images and frame-element annotations from which imSituVQA is built."
+      },
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "AQUAR [10] is among the first benchmarks released for the VQA task.",
+        "reference_key": "[10]",
+        "relation": "background",
+        "why": "AQUAR is reviewed as an early VQA benchmark in the related-work survey."
+      },
+      {
+        "confidence": "medium",
+        "page": 2,
+        "quote": "Different attention techniques, such as stacked attention [14], co-attention between question and image [15], and factorized bilinear pooling with co-attention [16] have been shown to improve the performance of VQA.",
+        "reference_key": "[14]",
+        "relation": "uses_method",
+        "why": "Attention-based VQA methods are summarized as related prior work."
+      },
+      {
+        "confidence": "medium",
+        "page": 4,
+        "quote": "[17] suggests a hyper-class augmentation formulated as multi-task learning in order to boost the recognition task.",
+        "reference_key": "[17]",
+        "relation": "uses_method",
+        "why": "The paper adapts hyper-class augmentation as the multitask frame-element objective for VQA."
+      },
+      {
+        "confidence": "medium",
+        "page": 5,
+        "quote": "The proposed VQA model is evaluated by means of the CNN-LSTM-based architecture introduced in [18].",
+        "reference_key": "[18]",
+        "relation": "uses_method",
+        "why": "The evaluated architecture follows this CNN-LSTM VQA model."
+      },
+      {
+        "confidence": "medium",
+        "page": 5,
+        "quote": "Consequently, we employ trained models such as GLOVE [19] and VGG-NET [20].",
+        "reference_key": "[19]",
+        "relation": "uses_method",
+        "why": "GloVe and VGG-NET are used for word and image embeddings."
+      },
+      {
+        "confidence": "medium",
+        "page": 5,
+        "quote": "The model is trained by minimizing the sum of the two cross-entropy loss functions using the rmsprop optimization algorithm [21].",
+        "reference_key": "[21]",
+        "relation": "uses_method",
+        "why": "RMSprop is the optimization algorithm used to train the multitask model."
+      },
+      {
+        "confidence": "medium",
+        "page": 5,
+        "quote": "Wu-Palmer (WUP) Similarity can be used as an alternative to accuracy [22].",
+        "reference_key": "[22]",
+        "relation": "uses_method",
+        "why": "WUP similarity is adopted as an evaluation metric."
+      },
+      {
+        "confidence": "medium",
+        "page": 7,
+        "quote": "One hypothesis would be to consider the semantic information equivalent to context or context-aware information [24] [25].",
+        "reference_key": "[24]",
+        "relation": "compares",
+        "why": "Semantic information is analogized to context or context-aware information in the conclusion."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "The VQA task requires co-reasoning over both image and text to infer the correct answer.",
+          "start_page": 1,
+          "start_text": "Augmenting Visual Question Answering with Semantic Frame Information in a Multitask Learning Approach"
+        },
+        "summary": "VQA models need verb semantic information, especially for event-verb questions, but existing datasets and systems do not encode it. The paper frames this gap using FrameNet-style semantic roles and frame elements, then previews imSituVQA and a multitask CNN-LSTM model.",
+        "title": "Motivation and Background: Verb Semantics in VQA"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "The questions are mostly between 4 to 7 words.",
+          "start_page": 2,
+          "start_text": "As we noted, the imSitu dataset [9] is tailored to situation recognition, a problem that involves predicting activities along with actors, objects, substances, and locations and how they fit together."
+        },
+        "summary": "imSituVQA is built from imSitu’s 504 verbs, 190 frame elements, abstract definitions, and image annotations. Templates are generated by holding out frame elements, then realized with noun fillers to create 254k/88k/88k splits.",
+        "title": "Constructing imSituVQA from imSitu and FrameNet"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "Fig. 3. Proposed multitask learning architecture for VQA",
+          "start_page": 4,
+          "start_text": "Hyper-class augmented deep learning model has been shown to work well for fine-grained image classification."
+        },
+        "summary": "The proposed model shares a CNN-LSTM VQA architecture up to the classification layer, then branches into answer and frame-element softmax classifiers. Training uses GloVe, VGG-NET, pointwise multimodal fusion, and the sum of two cross-entropy losses.",
+        "title": "Multitask CNN-LSTM VQA Model"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "Table VIII shows a different view of the performance difference between CNN-LSTM and the multi-task version.",
+          "start_page": 5,
+          "start_text": "Table VI shows the performance evaluation of the test samples."
+        },
+        "summary": "The multitask model improves accuracy from 39.58% to 44.90% and WUPS at 0.9 from 46.92% to 51.83%. Frame-element classification reaches 99.32% test accuracy, raises consistency to 99.94%, and improves many fine-grained verb and role results.",
+        "title": "Evaluation, Consistency, and Fine-Grained Results"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "paradigm.",
+          "start_page": 7,
+          "start_text": "In this paper, we explained how we used the imSitu annotations to build a VQA dataset with semantic verb information."
+        },
+        "summary": "The conclusion restates the dataset and multitask gains, then proposes future work such as using semantic role labeling to add frame-element information to other VQA datasets and generalizing hyper-class augmentation to answer types and task types.",
+        "title": "Conclusions and Future Work"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "1253–1262.",
+          "start_page": 8,
+          "start_text": "R EFERENCES"
+        },
+        "summary": "The bibliography lists 25 works covering VQA datasets and methods, semantic-role and frame resources, embeddings, optimization, and context-aware learning.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "medium",
+      "reason": "It presents a new dataset and a multitask VQA model with experiments and conclusions.",
+      "value": "survey"
+    }
+  }
+}

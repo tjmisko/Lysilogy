@@ -1,0 +1,55 @@
+{
+  "record_version": 4,
+  "started_at": "2026-10-19T21:01:17.267645890Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1911.11582v1.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 9,
+  "calls": [
+    {
+      "stage": "core",
+      "provider": "Together",
+      "finish_reason": "length",
+      "prompt_tokens": 8624,
+      "cached_tokens": 256,
+      "completion_tokens": 24576,
+      "reasoning_tokens": 14018,
+      "cost_usd": 0.032003136,
+      "cost_source": "reported",
+      "latency_s": 72.594891511
+    }
+  ],
+  "totals": {
+    "calls": 1,
+    "prompt_tokens": 8624,
+    "cached_tokens": 256,
+    "completion_tokens": 24576,
+    "cost_usd": 0.032003136,
+    "model_latency_s": 72.594891511,
+    "wall_s": 74.802621212
+  },
+  "budget_stopped": null,
+  "failures": [
+    {
+      "stage": "core",
+      "error": "output was cut off at the length limit",
+      "raw": "{\n  \"abstract\": {\n    \"confidence\":  \r\n  \"low\",\n    \"page\": 1,\n    \"text\": \"Occlusion relationship reasoning based on convolution neural networks consists of two subtasks: occlusion boundary extraction and occlusion orientation inference. Due to the essential differences between the two subtasks in the feature expression at the higher and lower stages, it is challenging to carry on them simultaneously in one network. To address this issue, we propose a novel Dual-path Decoder Network, which uniformly extracts occlusion information at higher stages and separates into two paths to recover boundary and occlusion orientation respectively in lower stages. Besides, considering the restriction of occlusion orientation presentation to occlusion orientation learning, we design a new orthogonal representation for occlusion orientation and proposed the Orthogonal Orientation Regression loss which can get rid of the unfitness between occlusion representation and learning and further prompt the occlusion orientation learning. Finally, we apply a multi-scale loss together with our proposed orientation regression loss to guide the boundary and orientation path learning respectively. Experiments demonstrate that our proposed method achieves state-of-the-art results on PIOD and BSDS ownership datasets.\"\n  },\n  \"card\": {\n    \"position\": {\n      \"predecessors\": [\n        {\n          \"cited_work\": \"DOOBNet\",\n          \"confidence\": \"high\",\n          \"evidence\": [\n            {\n              \"page\": 2,\n              \"quote\": \"Previous methods, such as DOOBNet [18], OFNet [10] first use the backbone network to extract different level features and use the entire decoder to extract shared information for two tasks\"\n            }\n          ],\n          \"reference_key\": \"18\",\n          \"why\": \"Prior shared-decoder method that the paper contrasts with by separating boundary and orientation paths in lower stages.\"\n        },\n        {\n          \"cited_work\": \"DOC\",\n          \"confidence\": \"hig"
+    }
+  ],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e1-markdown-2026-10-19/results/1911.11582v1.reasoning.jsonl",
+  "pass1": null,
+  "pass1_check": null,
+  "corrections": [],
+  "correction_outcomes": [],
+  "pass2_check": null,
+  "admission": [],
+  "admission_counts": {},
+  "artifacts": null
+}

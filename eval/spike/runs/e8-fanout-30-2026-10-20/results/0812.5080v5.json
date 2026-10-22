@@ -1,0 +1,1726 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T02:12:22.948218683Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/0812.5080v5.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 19,
+  "calls": [
+    {
+      "stage": "extract.identity",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 574,
+      "cached_tokens": 512,
+      "completion_tokens": 2861,
+      "reasoning_tokens": 2603,
+      "cost_usd": 0.003454872,
+      "cost_source": "reported",
+      "latency_s": 16.824404352
+    },
+    {
+      "stage": "extract.type",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 16631,
+      "cached_tokens": 256,
+      "completion_tokens": 663,
+      "reasoning_tokens": 585,
+      "cost_usd": 0.005709636,
+      "cost_source": "reported",
+      "latency_s": 3.818397603
+    },
+    {
+      "stage": "extract.abstract",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 1464,
+      "cached_tokens": 1408,
+      "completion_tokens": 581,
+      "reasoning_tokens": 454,
+      "cost_usd": 0.000722448,
+      "cost_source": "reported",
+      "latency_s": 2.902291799
+    },
+    {
+      "stage": "extract.card",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 16662,
+      "cached_tokens": 16640,
+      "completion_tokens": 4155,
+      "reasoning_tokens": 3018,
+      "cost_usd": 0.00509244,
+      "cost_source": "reported",
+      "latency_s": 19.746297275
+    },
+    {
+      "stage": "extract.sections",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 17155,
+      "cached_tokens": 17152,
+      "completion_tokens": 11614,
+      "reasoning_tokens": 10056,
+      "cost_usd": 0.014040612,
+      "cost_source": "reported",
+      "latency_s": 27.175721162
+    },
+    {
+      "stage": "extract.references",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 16655,
+      "cached_tokens": 16640,
+      "completion_tokens": 9828,
+      "reasoning_tokens": 5840,
+      "cost_usd": 0.01189794,
+      "cost_source": "reported",
+      "latency_s": 17.227121899
+    },
+    {
+      "stage": "extract.graph",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 16666,
+      "cached_tokens": 16640,
+      "completion_tokens": 7242,
+      "reasoning_tokens": 7193,
+      "cost_usd": 0.00879804,
+      "cost_source": "reported",
+      "latency_s": 13.74262414
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 22627,
+      "cached_tokens": 896,
+      "completion_tokens": 18479,
+      "reasoning_tokens": 18470,
+      "cost_usd": 0.028699476,
+      "cost_source": "reported",
+      "latency_s": 108.661997521
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 2366,
+      "cached_tokens": 0,
+      "completion_tokens": 630,
+      "reasoning_tokens": 589,
+      "cost_usd": 0.00048062,
+      "cost_source": "reported",
+      "latency_s": 4.639236012
+    }
+  ],
+  "totals": {
+    "calls": 9,
+    "prompt_tokens": 110800,
+    "cached_tokens": 70144,
+    "completion_tokens": 56053,
+    "cost_usd": 0.07889608399999999,
+    "model_latency_s": 214.738091763,
+    "wall_s": 217.709155765
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e8-fanout-30-2026-10-20/results/0812.5080v5.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We argue that BPS ansatzes, entering manifestly vacuum BPS monopole solutions to equations of\nmotion in the (Minkowskian) non-Abelian Higgs model play the role of some electric form-factors and\nthat this implies (soft) violating the CP-invariance of the mentioned model, similar to taking place\nin the Euclidian Yang-Mills (YM) theory with instantons, generating the θ-term in the appropriate\neffective Hamiltonian."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "M. K. Prasad, C. M. Sommerfeld, Phys. Rev. Lett. 35, 760 (1975); E. B. Bogomol’nyi, Yad. Fiz. 24, 449 (1976).",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "It turns out that going over to the limit\nλ → 0,\nm → 0:\nin Eq. (1.1) just induces the (topologically degenerated) vacuum BPS monopole solutions in the Higgs\nand YM sectors of the model (1.1)."
+              }
+            ],
+            "reference_key": "[6]",
+            "why": "The BPS limit and vacuum BPS monopole solutions are the foundation for the ansatzes discussed in the paper."
+          },
+          {
+            "cited_work": "A. S. Schwarz, Kvantovaja Teorija Polja i Topologija, 1st edition (Nauka, Moscow, 1989) [A. S. Schwartz, Quantum Field Theory and Topology (Springer, 1993)].",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "The explicit way deriving the Bogomol’nyi equation (1.6) and evaluating the Bogomol’nyi bound (1.5)\nwas stated, for instance, in the monograph [8] (see ibid §Φ11)."
+              }
+            ],
+            "reference_key": "[8]",
+            "why": "The monograph is explicitly cited as the source for deriving the Bogomol’nyi equation and bound."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "E. Witten, Phys. Lett. B 86, 283 (1979).",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "This effect violating the CP invariance by the θ-\ndependence of the instanton models was analyzed in the paper [30], and we reconstruct partially the\narguments [30] in Section 3."
+              }
+            ],
+            "reference_key": "[30]",
+            "why": "The paper states it reconstructs Witten's arguments on CP violation by θ-dependence."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "E. Witten, Phys. Lett. B 86, 283 (1979).",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 15,
+                "quote": "The fact that at θ = 0 the dyons have integer charges is associated with the fact that I + E in Eq.\n(3.6) is quadratic in q, with no linear term. A linear term as in Eq. (3.9) leads to noninteger charges:\nthis is directly proportional to the coefficient of the linear term."
+              }
+            ],
+            "reference_key": "[30]",
+            "why": "The paper contrasts its BPS-monopole CP-violation mechanism with the θ-term mechanism analyzed by Witten."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We argue that BPS ansatzes, entering manifestly vacuum BPS monopole solutions to equations of\nmotion in the (Minkowskian) non-Abelian Higgs model play the role of some electric form-factors and\nthat this implies (soft) violating the CP-invariance of the mentioned model, similar to taking place\nin the Euclidian Yang-Mills (YM) theory with instantons, generating the θ-term in the appropriate\neffective Hamiltonian."
+          }
+        ],
+        "text": "BPS ansatzes in vacuum BPS monopole solutions of the Minkowskian non-Abelian Higgs model act as electric form-factors and thereby softly violate CP invariance, analogous to instanton-induced θ-term effects."
+      }
+    },
+    "citations": [
+      {
+        "context": "",
+        "page": 3,
+        "reference_key": "[6]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": null,
+          "name": "L. D. Lantsman."
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "BPS ansatzes as electric form-factors."
+        },
+        {
+          "page": 1,
+          "quote": "L. D. Lantsman."
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:0812.5080v5[hep-th]4Dec2021"
+        },
+        {
+          "page": 1,
+          "quote": "December 7, 2021"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:0812.5080v5[hep-th]4Dec2021",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "BPS ansatzes as electric form-factors.",
+      "venue": "arXiv",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 7,
+          "quote": "The principal goal of the present note is to show that BPS ansatzes f1BP S (r), f0BP S (r), one encounter\nin the Higgs BPS monopole model, can serve as electric form-factors therein. Unlike this, electric form-\nfactors become trivial in the ’t Hooft-Polyakov theory [22, 23]. Grounding this fact will be the topic of\nSection 2.\nIn Section 3 we show that presence of BPS ansatzes in the considered model implies violating the CP\ninvariance."
+        }
+      ],
+      "text": "Do BPS ansatzes in the Minkowskian non-Abelian Higgs BPS monopole vacuum serve as electric form-factors, and does their presence imply CP violation?"
+    },
+    "references": [
+      {
+        "authors": [
+          "T. P. Cheng",
+          "L.- F. Li"
+        ],
+        "doi": "",
+        "key": "1",
+        "page": 17,
+        "title": "Gauge Theory of Elementary Particle Physics, 3rd edn. (Oxford University Press 1988).",
+        "venue": "",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "L. H. Ryder"
+        ],
+        "doi": "",
+        "key": "2",
+        "page": 17,
+        "title": "Quantum Field Theory, 1st edn. (Cambridge University Press 1984).",
+        "venue": "",
+        "year": 1984
+      },
+      {
+        "authors": [
+          "L. D. Lantsman",
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "3",
+        "page": 17,
+        "title": "The Higgs Field as The Cheshire Cat and his Yang-Mills ”Smiles”, Proc. of 6th International Baldin Seminar on High Energy Physics Problems (ISHEPP), Dubna, Russia, 10-15 June 2002; [arXiv: hep-th/0205252]; L. D. Lantsman, Minkowskian Yang-Mills Vacuum, [arXiv: math-ph/0411080].",
+        "venue": "",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "L. D. Lantsman",
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "4",
+        "page": 17,
+        "title": "Yad. Fiz. 66, 1416 (2003) [Physics of Atomic Nuclei 66, 1384 (2003)]; [arXiv: hep-th/0407195].",
+        "venue": "",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "L. D. Lantsman"
+        ],
+        "doi": "",
+        "key": "5",
+        "page": 17,
+        "title": "Superfluid Properties of BPS Monopoles, [arXiv: hep-th/0605074].",
+        "venue": "",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "M. K. Prasad",
+          "C. M. Sommerfeld",
+          "E. B. Bogomol’nyi"
+        ],
+        "doi": "",
+        "key": "6",
+        "page": 17,
+        "title": "Phys. Rev. Lett. 35, 760 (1975); E. B. Bogomol’nyi, Yad. Fiz. 24, 449 (1976).",
+        "venue": "",
+        "year": 1975
+      },
+      {
+        "authors": [
+          "R. Akhoury",
+          "J.-H. Jun",
+          "A. S. Golghaber"
+        ],
+        "doi": "",
+        "key": "7",
+        "page": 17,
+        "title": "Phys. Rev. D 21, 454 (1980).",
+        "venue": "",
+        "year": 1980
+      },
+      {
+        "authors": [
+          "A. S. Schwarz"
+        ],
+        "doi": "",
+        "key": "8",
+        "page": 18,
+        "title": "Kvantovaja Teorija Polja i Topologija, 1st edition (Nauka, Moscow, 1989) [A. S. Schwartz, Quantum Field Theory and Topology (Springer, 1993)].",
+        "venue": "",
+        "year": 1989
+      },
+      {
+        "authors": [
+          "L. D. Faddeev",
+          "R. Jackiw"
+        ],
+        "doi": "",
+        "key": "9",
+        "page": 18,
+        "title": "in Proc. of 4th Int. Symp. on Nonlocal Quantum Field Theory, Dubna, USSR, 1976, JINR D1-9768, p. 267; R. Jackiw, Rev. Mod. Phys. 49 (1977) 681.",
+        "venue": "",
+        "year": 1976
+      },
+      {
+        "authors": [
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "10",
+        "page": 18,
+        "title": "Dirac Variables in Gauge Theories, Lecture Notes in DAAD Summerschool on Dense Matter in Particle and Astrophysics, JINR, Dubna, Russia, August 20- 31, 2001; Fiz. Elem. Chast. Atom. Yadra 34, 679 (2003) [Phys. Part. Nucl. 34, 348 (2003)]; [hep-th/0109218].",
+        "venue": "",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "A. M. Khvedelidze",
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "11",
+        "page": 18,
+        "title": "Helv. Phys. Acta, 67, 637 (1994).",
+        "venue": "",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "D. Blaschke",
+          "V. N. Pervushin",
+          "G. Röpke"
+        ],
+        "doi": "",
+        "key": "12",
+        "page": 18,
+        "title": "Topological Gauge invariantVariables in QCD, MPG-VT- UR 191/99, [arXiv: hep-th/9909133].",
+        "venue": "",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "D. Blaschke",
+          "V. N. Pervushin",
+          "G. Röpke"
+        ],
+        "doi": "",
+        "key": "13",
+        "page": 18,
+        "title": "Topological Invariant Variables in QCD, in Proceeding of the Int. Seminar Physical variables in Gauge Theories, Dubna, September 21-25, 1999, edited by A. M. Khvedelidze, M. Lavelle, D. McMullan and V. Pervushin (E2-2000-172, Dubna, 2000), p. 49, [arXiv: hep-th/0006249].",
+        "venue": "",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "T. T. Wu",
+          "C. N. Yang"
+        ],
+        "doi": "",
+        "key": "14",
+        "page": 18,
+        "title": "Phys. Rev. D 12, 3845 (1975).",
+        "venue": "",
+        "year": 1975
+      },
+      {
+        "authors": [
+          "S. G. Matinyan",
+          "G. K. Savidy",
+          "A. A. Vladimirov",
+          "D. V. Shirkov"
+        ],
+        "doi": "",
+        "key": "15",
+        "page": 18,
+        "title": "Nucl. Phys. B 134, 539 (1978); A. A. Vladimirov, D. V. Shirkov, Usp. Fiz. Nauk 129, 407 (1979) [Sov. Phys. Usp. 129, 860 (1979)].",
+        "venue": "",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "D. J. Gross",
+          "F. Wilczek",
+          "H. D. Politzer"
+        ],
+        "doi": "",
+        "key": "16",
+        "page": 18,
+        "title": "Phys. Rev. Lett. 30, 1343 (1973); Phys. Rev. D 8, 3633 (1973); H. D. Politzer, Phys. Rev. D 8, 3636 (1973).",
+        "venue": "",
+        "year": 1973
+      },
+      {
+        "authors": [
+          "N. N. Bogoliubov",
+          "V. V. Tolmachev",
+          "D. V. Shirkov",
+          "L. D. Landau"
+        ],
+        "doi": "",
+        "key": "17",
+        "page": 18,
+        "title": "J. Phys. 9, 23 (1947); N. N. Bogoliubov, V. V. Tolmachev, D. V. Shirkov, Novij Metod v Teorii Sverchprovodimosti, 1st edition (Izd-vo AN SSSR, Moscow,1958, pp. 5-9). L. D. Landau, JETF 11, 592 (1941); DAN USSR 61, 253 (1948).",
+        "venue": "",
+        "year": 1947
+      },
+      {
+        "authors": [
+          "I. M. Khalatnikov"
+        ],
+        "doi": "",
+        "key": "18",
+        "page": 18,
+        "title": "Teorija Sverxtekychesti, 1st edition (Nauka, Moscow, 1971).",
+        "venue": "",
+        "year": 1971
+      },
+      {
+        "authors": [
+          "L. D. Landau",
+          "E. M. Lifschitz"
+        ],
+        "doi": "",
+        "key": "19",
+        "page": 18,
+        "title": "Lehrbuch der Theoretischen Physik (Statistische Physik, Band 5, teil 2), in German, 1st edition by H. Escrig and P. Ziesche (Akademie-Verlag, Berlin, 1980).",
+        "venue": "",
+        "year": 1980
+      },
+      {
+        "authors": [
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "20",
+        "page": 18,
+        "title": "Teor. Mat. Fiz. 45, 394 (1980) [Theor. Math. Phys. 45, 1100 (1981)].",
+        "venue": "",
+        "year": 1980
+      },
+      {
+        "authors": [
+          "V. G. Levich",
+          "Yu. A. Vdovin",
+          "V. A. Mjamlin"
+        ],
+        "doi": "",
+        "key": "21",
+        "page": 18,
+        "title": "Kurs Teoreticheskoj Fiziki, v. 2, 2nd edition (Nauka, Moscow, 1971).",
+        "venue": "",
+        "year": 1971
+      },
+      {
+        "authors": [
+          "G. ’t Hooft"
+        ],
+        "doi": "",
+        "key": "22",
+        "page": 18,
+        "title": "Nucl. Phys. B 79, 276 (1974).",
+        "venue": "",
+        "year": 1974
+      },
+      {
+        "authors": [
+          "A. M. Polyakov"
+        ],
+        "doi": "",
+        "key": "23",
+        "page": 18,
+        "title": "Pisma JETP 20, 430 (1974) [Sov. Phys. JETP Lett. 20, 194 (1974)]; Sov. Phys. JETP Lett. 41, 988 (1975).",
+        "venue": "",
+        "year": 1974
+      },
+      {
+        "authors": [
+          "F. Bruckmann",
+          "G. ’t Hooft"
+        ],
+        "doi": "",
+        "key": "24",
+        "page": 18,
+        "title": "Phys. Rep. 142, 357 (1986), [arXiv: hep-th/0010225].",
+        "venue": "",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "A. A. Belavin",
+          "R. Jackiw",
+          "C. Rebbi",
+          "C. G. Jr. Callan",
+          "R. F. Dashen",
+          "D. J. Gross"
+        ],
+        "doi": "",
+        "key": "25",
+        "page": 18,
+        "title": "Phys. Lett. 59, 85 (1975); R. Jackiw, C. Rebbi, Phys. Lett. B 63, 172 (1976); C. G. Jr. Callan, R. F. Dashen, D. J. Gross, Phys. Rev. D 17, 2717 (1977).",
+        "venue": "",
+        "year": 1975
+      },
+      {
+        "authors": [
+          "L. D. Lantsman"
+        ],
+        "doi": "",
+        "key": "26",
+        "page": 18,
+        "title": "Topological Dirac variables in Abelian U (1) theory, [arXiv:1406.0160 hep-th].",
+        "venue": "",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "P. A. M. Dirac"
+        ],
+        "doi": "",
+        "key": "27",
+        "page": 18,
+        "title": "Proc. Roy. Soc. A 133, 69 (1931).",
+        "venue": "",
+        "year": 1931
+      },
+      {
+        "authors": [
+          "L. D. Lantsman"
+        ],
+        "doi": "",
+        "key": "28",
+        "page": 19,
+        "title": "”Discrete” Vacuum Geometry as a Tool for Dirac Fundamental Quantization of Minkowskian Higgs Model, [arXiv: hep-th/0701097].",
+        "venue": "",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "L. D. Lantsman"
+        ],
+        "doi": "",
+        "key": "29",
+        "page": 19,
+        "title": "Whether the Vacuum Manifold in the Minkowskian Nnon-Abelian Model Quantized by Dirac Can Be Described with the Aid of the Superselection Rules?, [arXiv:1008.2866].",
+        "venue": "",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "E. Witten"
+        ],
+        "doi": "",
+        "key": "30",
+        "page": 19,
+        "title": "Phys. Lett. B 86, 283 (1979).",
+        "venue": "",
+        "year": 1979
+      },
+      {
+        "authors": [
+          "D. Zwanziger",
+          "J. Schwinger"
+        ],
+        "doi": "",
+        "key": "31",
+        "page": 19,
+        "title": "Phys. Rev. 176, 1480 (1978); J. Schwinger, Phys. Rev. 144, 1087 (1968); Phys. Rev. 173, 1536 (1968).",
+        "venue": "",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "A. S. Galperin",
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "32",
+        "page": 19,
+        "title": "JINR P2-11830 (1978).",
+        "venue": "",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "L. D. Lantsman"
+        ],
+        "doi": "",
+        "key": "33",
+        "page": 19,
+        "title": "Nontrivial Topological Dynamics in Minkowskian Higgs Model Quantized by Dirac., [arXiv: hep-th/0610217].",
+        "venue": "",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "C. G. Jr. Callan"
+        ],
+        "doi": "",
+        "key": "34",
+        "page": 19,
+        "title": "Phys. Rev. D 17, 2717 (1978).",
+        "venue": "",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "E. Tomboulis",
+          "G. Woo"
+        ],
+        "doi": "",
+        "key": "35",
+        "page": 19,
+        "title": "Nucl. Phys. B 107, 221 (1976).",
+        "venue": "",
+        "year": 1976
+      },
+      {
+        "authors": [
+          "N. N. Bogoliubov",
+          "A. A. Logunov",
+          "A. I. Oksak",
+          "I. T. Todorov"
+        ],
+        "doi": "",
+        "key": "36",
+        "page": 19,
+        "title": "Obshie Prinzipi Kvantovoj Teorii Polja, 1st edition (Nauka, Moscow, 1987).",
+        "venue": "",
+        "year": 1987
+      },
+      {
+        "authors": [
+          "P. A. M. Dirac"
+        ],
+        "doi": "",
+        "key": "37",
+        "page": 19,
+        "title": "Proc. Roy. Soc. A 114 (1927) 243; Can. J. Phys. 33 (1955) 650.",
+        "venue": "",
+        "year": 1927
+      }
+    ],
+    "relations": [],
+    "sections": [
+      {
+        "pages": {
+          "end": 4,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "",
+          "start_page": 1,
+          "start_text": ""
+        },
+        "summary": "The abstract states the central thesis: BPS ansatzes act as electric form-factors and softly violate CP, analogous to instanton θ-term physics. The introduction then sets up the Minkowskian Yang-Mills-Higgs model, the BPS limit, the Bogomol’nyi equation/bound, and the explicit vacuum BPS monopole solutions with their boundary behavior and topological properties.",
+        "title": "Thesis and BPS Limit Setup"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "",
+          "start_page": 5,
+          "start_text": ""
+        },
+        "summary": "The Bogomol’nyi equation is interpreted as a potentiality condition. The paper draws the helium-II superfluid analogy, invoking Landau critical velocity, potential motion, non-ideal gases, and Bose condensation. It then contrasts the ’t Hooft-Polyakov model, where the vacuum magnetic field and electric form-factors become trivial, and states the goal for Section 2.",
+        "title": "Potentiality, Superfluidity, and the ’t Hooft-Polyakov Contrast"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "",
+          "start_page": 7,
+          "start_text": ""
+        },
+        "summary": "This unit introduces the Dirac quantization condition, dyons, and the Zwanziger-Schwinger two-dyon generalization. It then computes the total angular momentum in a magnetic monopole background using the canonical momentum and ’t Hooft-Polyakov potentials, showing how Dirac quantization leads to a conserved total momentum J.",
+        "title": "Dirac Quantization and Monopole Angular Momentum"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "",
+          "start_page": 9,
+          "start_text": ""
+        },
+        "summary": "With the YM BPS ansatz present, the total momentum and isospin computation changes. The ansatz f1BPS screens the electric charge via e ↔ f1BPS e, making it an electric form-factor; f0BPS plays a similar role. The paper concludes that topologically nontrivial sectors become dyonic.",
+        "title": "BPS Ansatz as an Electric Form-Factor"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 10
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "",
+          "start_page": 10,
+          "start_text": ""
+        },
+        "summary": "The paper traces consequences of f1BPS(0) → 0. In zero topology, arbitrary magnetic charges near the origin lead to “magnons”; in nontrivial topology, an apparent UV divergence arises. Threads and magnetic-tension gaps produce a first-order phase transition, with the VEV of B² as order parameter, and the condition supports asymptotic freedom near the origin.",
+        "title": "Dyonic Sectors, Magnons, and Phase Transition"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "",
+          "start_page": 12,
+          "start_text": ""
+        },
+        "summary": "The Dirac-Zwanziger-Schwinger condition allows arbitrary electric charges for individual monopoles when only the difference is quantized. Adding CP conservation forces monopole electric charges to integer or half-integer multiples of e; without CP conservation, deviations from such charges are proportional to the strength of CP violation.",
+        "title": "CP Conservation and Monopole Charge Quantization"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "",
+          "start_page": 12,
+          "start_text": ""
+        },
+        "summary": "This unit introduces the instanton Yang-Mills effective Lagrangian with a θ-term. θ is treated as a quasimomentum; the equations of motion are unchanged. Quantization produces complex θ and imaginary topological momentum modes, leading to a non-separable Hilbert space and the no-go theorem for ordinary quantization methods.",
+        "title": "Instanton Theta-Term and Complex Theta Vacuum"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "",
+          "start_page": 14,
+          "start_text": ""
+        },
+        "summary": "The semi-classical analysis of dyons gives T(I+E)=2πn. At θ=0, q=ne; at θ≠0, q=ne−θe/2π, so no electrically neutral magnetic monopole exists. In the monopole sector, θ dependence differs from instanton tunneling, and CP violation—regardless of mechanism—can induce a linear term in I+E and noninteger charges.",
+        "title": "Semi-Classical Dyon Charge under Theta and CP Violation"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "",
+          "start_page": 16,
+          "start_text": ""
+        },
+        "summary": "Dirac fundamental quantization resolves the Gauss law via topological Dirac variables and vacuum electric monopoles. The rotary action W_N has a purely real P_N spectrum and is both P- and C-invariant, unlike the instanton θ case whose energy is linear in e and θ. The paper concludes CP conservation in the BPS-monopole YMH model.",
+        "title": "Dirac Quantization and CP Conservation in the BPS Monopole Vacuum"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 17
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "",
+          "start_page": 17,
+          "start_text": ""
+        },
+        "summary": "Bibliography only. Use this unit for lookup of cited works; it is not part of the main argument.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper is an arXiv preprint presenting original theoretical arguments and calculations on BPS monopoles, electric form-factors, and CP violation, organized with abstract, sections, equations, and references.",
+      "value": "theory"
+    }
+  },
+  "pass1_check": {
+    "sites": 12,
+    "verbatim": 11,
+    "near": 0,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "corrections": [],
+  "correction_outcomes": [],
+  "pass2_check": {
+    "sites": 12,
+    "verbatim": 11,
+    "near": 0,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We argue that BPS ansatzes, entering manifestly vacuum BPS monopole solutions to equations of\nmotion in the (Minkowskian) non-Abelian Higgs model play the role of some electric form-factors and\nthat this implies (soft) violating the CP-invariance of the mentioned model, similar to taking place\nin the Euclidian Yang-Mills (YM) theory with instantons, generating the θ-term in the appropriate\neffective Hamiltonian.",
+      "admitted": "We argue that BPS ansatzes, entering manifestly vacuum BPS monopole solutions to equations of\nmotion in the (Minkowskian) non-Abelian Higgs model play the role of some electric form-factors and\nthat this implies (soft) violating the CP-invariance of the mentioned model, similar to taking place\nin the Euclidian Yang-Mills (YM) theory with instantons, generating the θ-term in the appropriate\neffective Hamiltonian.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "It turns out that going over to the limit\nλ → 0,\nm → 0:\nin Eq. (1.1) just induces the (topologically degenerated) vacuum BPS monopole solutions in the Higgs\nand YM sectors of the model (1.1).",
+      "admitted": "It turns out that going over to the limit\nλ → 0,\nm → 0:\nin Eq. (1.1) just induces the (topologically degenerated) vacuum BPS monopole solutions in the Higgs\nand YM sectors of the model (1.1).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The explicit way deriving the Bogomol’nyi equation (1.6) and evaluating the Bogomol’nyi bound (1.5)\nwas stated, for instance, in the monograph [8] (see ibid §Φ11).",
+      "admitted": "The explicit way deriving the Bogomol’nyi equation (1.6) and evaluating the Bogomol’nyi bound (1.5)\nwas stated, for instance, in the monograph [8] (see ibid §Φ11).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/replications/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This effect violating the CP invariance by the θ-\ndependence of the instanton models was analyzed in the paper [30], and we reconstruct partially the\narguments [30] in Section 3.",
+      "admitted": "This effect violating the CP invariance by the θ-\ndependence of the instanton models was analyzed in the paper [30], and we reconstruct partially the\narguments [30] in Section 3.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The fact that at θ = 0 the dyons have integer charges is associated with the fact that I + E in Eq.\n(3.6) is quadratic in q, with no linear term. A linear term as in Eq. (3.9) leads to noninteger charges:\nthis is directly proportional to the coefficient of the linear term.",
+      "admitted": "The fact that at θ = 0 the dyons have integer charges is associated with the fact that I + E in Eq.\n(3.6) is quadratic in q, with no linear term. A linear term as in Eq. (3.9) leads to noninteger charges:\nthis is directly proportional to the coefficient of the linear term.",
+      "similarity": null,
+      "cited_page": 15,
+      "matched_page": 15
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We argue that BPS ansatzes, entering manifestly vacuum BPS monopole solutions to equations of\nmotion in the (Minkowskian) non-Abelian Higgs model play the role of some electric form-factors and\nthat this implies (soft) violating the CP-invariance of the mentioned model, similar to taking place\nin the Euclidian Yang-Mills (YM) theory with instantons, generating the θ-term in the appropriate\neffective Hamiltonian.",
+      "admitted": "We argue that BPS ansatzes, entering manifestly vacuum BPS monopole solutions to equations of\nmotion in the (Minkowskian) non-Abelian Higgs model play the role of some electric form-factors and\nthat this implies (soft) violating the CP-invariance of the mentioned model, similar to taking place\nin the Euclidian Yang-Mills (YM) theory with instantons, generating the θ-term in the appropriate\neffective Hamiltonian.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "BPS ansatzes as electric form-factors.",
+      "admitted": "BPS ansatzes as electric form-factors.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "L. D. Lantsman.",
+      "admitted": "L. D. Lantsman.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/2/quote",
+      "status": "verbatim",
+      "original": "arXiv:0812.5080v5[hep-th]4Dec2021",
+      "admitted": "arXiv:0812.5080v5[hep-th]4Dec2021",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/3/quote",
+      "status": "verbatim",
+      "original": "December 7, 2021",
+      "admitted": "December 7, 2021",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The principal goal of the present note is to show that BPS ansatzes f1BP S (r), f0BP S (r), one encounter\nin the Higgs BPS monopole model, can serve as electric form-factors therein. Unlike this, electric form-\nfactors become trivial in the ’t Hooft-Polyakov theory [22, 23]. Grounding this fact will be the topic of\nSection 2.\nIn Section 3 we show that presence of BPS ansatzes in the considered model implies violating the CP\ninvariance.",
+      "admitted": "The principal goal of the present note is to show that BPS ansatzes f1BP S (r), f0BP S (r), one encounter\nin the Higgs BPS monopole model, can serve as electric form-factors therein. Unlike this, electric form-\nfactors become trivial in the ’t Hooft-Polyakov theory [22, 23]. Grounding this fact will be the topic of\nSection 2.\nIn Section 3 we show that presence of BPS ansatzes in the considered model implies violating the CP\ninvariance.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "withdrawn",
+      "original": "",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": null
+    }
+  ],
+  "admission_counts": {
+    "verbatim": 11,
+    "withdrawn": 1
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We argue that BPS ansatzes, entering manifestly vacuum BPS monopole solutions to equations of\nmotion in the (Minkowskian) non-Abelian Higgs model play the role of some electric form-factors and\nthat this implies (soft) violating the CP-invariance of the mentioned model, similar to taking place\nin the Euclidian Yang-Mills (YM) theory with instantons, generating the θ-term in the appropriate\neffective Hamiltonian."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "M. K. Prasad, C. M. Sommerfeld, Phys. Rev. Lett. 35, 760 (1975); E. B. Bogomol’nyi, Yad. Fiz. 24, 449 (1976).",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "It turns out that going over to the limit\nλ → 0,\nm → 0:\nin Eq. (1.1) just induces the (topologically degenerated) vacuum BPS monopole solutions in the Higgs\nand YM sectors of the model (1.1)."
+              }
+            ],
+            "reference_key": "[6]",
+            "why": "The BPS limit and vacuum BPS monopole solutions are the foundation for the ansatzes discussed in the paper."
+          },
+          {
+            "cited_work": "A. S. Schwarz, Kvantovaja Teorija Polja i Topologija, 1st edition (Nauka, Moscow, 1989) [A. S. Schwartz, Quantum Field Theory and Topology (Springer, 1993)].",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "The explicit way deriving the Bogomol’nyi equation (1.6) and evaluating the Bogomol’nyi bound (1.5)\nwas stated, for instance, in the monograph [8] (see ibid §Φ11)."
+              }
+            ],
+            "reference_key": "[8]",
+            "why": "The monograph is explicitly cited as the source for deriving the Bogomol’nyi equation and bound."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "E. Witten, Phys. Lett. B 86, 283 (1979).",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 7,
+                "quote": "This effect violating the CP invariance by the θ-\ndependence of the instanton models was analyzed in the paper [30], and we reconstruct partially the\narguments [30] in Section 3."
+              }
+            ],
+            "reference_key": "[30]",
+            "why": "The paper states it reconstructs Witten's arguments on CP violation by θ-dependence."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "E. Witten, Phys. Lett. B 86, 283 (1979).",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 15,
+                "quote": "The fact that at θ = 0 the dyons have integer charges is associated with the fact that I + E in Eq.\n(3.6) is quadratic in q, with no linear term. A linear term as in Eq. (3.9) leads to noninteger charges:\nthis is directly proportional to the coefficient of the linear term."
+              }
+            ],
+            "reference_key": "[30]",
+            "why": "The paper contrasts its BPS-monopole CP-violation mechanism with the θ-term mechanism analyzed by Witten."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We argue that BPS ansatzes, entering manifestly vacuum BPS monopole solutions to equations of\nmotion in the (Minkowskian) non-Abelian Higgs model play the role of some electric form-factors and\nthat this implies (soft) violating the CP-invariance of the mentioned model, similar to taking place\nin the Euclidian Yang-Mills (YM) theory with instantons, generating the θ-term in the appropriate\neffective Hamiltonian."
+          }
+        ],
+        "text": "BPS ansatzes in vacuum BPS monopole solutions of the Minkowskian non-Abelian Higgs model act as electric form-factors and thereby softly violate CP invariance, analogous to instanton-induced θ-term effects."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": null,
+          "name": "L. D. Lantsman."
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "BPS ansatzes as electric form-factors."
+        },
+        {
+          "page": 1,
+          "quote": "L. D. Lantsman."
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:0812.5080v5[hep-th]4Dec2021"
+        },
+        {
+          "page": 1,
+          "quote": "December 7, 2021"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:0812.5080v5[hep-th]4Dec2021",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "BPS ansatzes as electric form-factors.",
+      "venue": "arXiv",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 7,
+          "quote": "The principal goal of the present note is to show that BPS ansatzes f1BP S (r), f0BP S (r), one encounter\nin the Higgs BPS monopole model, can serve as electric form-factors therein. Unlike this, electric form-\nfactors become trivial in the ’t Hooft-Polyakov theory [22, 23]. Grounding this fact will be the topic of\nSection 2.\nIn Section 3 we show that presence of BPS ansatzes in the considered model implies violating the CP\ninvariance."
+        }
+      ],
+      "text": "Do BPS ansatzes in the Minkowskian non-Abelian Higgs BPS monopole vacuum serve as electric form-factors, and does their presence imply CP violation?"
+    },
+    "references": [
+      {
+        "authors": [
+          "T. P. Cheng",
+          "L.- F. Li"
+        ],
+        "doi": "",
+        "key": "1",
+        "page": 17,
+        "title": "Gauge Theory of Elementary Particle Physics, 3rd edn. (Oxford University Press 1988).",
+        "venue": "",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "L. H. Ryder"
+        ],
+        "doi": "",
+        "key": "2",
+        "page": 17,
+        "title": "Quantum Field Theory, 1st edn. (Cambridge University Press 1984).",
+        "venue": "",
+        "year": 1984
+      },
+      {
+        "authors": [
+          "L. D. Lantsman",
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "3",
+        "page": 17,
+        "title": "The Higgs Field as The Cheshire Cat and his Yang-Mills ”Smiles”, Proc. of 6th International Baldin Seminar on High Energy Physics Problems (ISHEPP), Dubna, Russia, 10-15 June 2002; [arXiv: hep-th/0205252]; L. D. Lantsman, Minkowskian Yang-Mills Vacuum, [arXiv: math-ph/0411080].",
+        "venue": "",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "L. D. Lantsman",
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "4",
+        "page": 17,
+        "title": "Yad. Fiz. 66, 1416 (2003) [Physics of Atomic Nuclei 66, 1384 (2003)]; [arXiv: hep-th/0407195].",
+        "venue": "",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "L. D. Lantsman"
+        ],
+        "doi": "",
+        "key": "5",
+        "page": 17,
+        "title": "Superfluid Properties of BPS Monopoles, [arXiv: hep-th/0605074].",
+        "venue": "",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "M. K. Prasad",
+          "C. M. Sommerfeld",
+          "E. B. Bogomol’nyi"
+        ],
+        "doi": "",
+        "key": "6",
+        "page": 17,
+        "title": "Phys. Rev. Lett. 35, 760 (1975); E. B. Bogomol’nyi, Yad. Fiz. 24, 449 (1976).",
+        "venue": "",
+        "year": 1975
+      },
+      {
+        "authors": [
+          "R. Akhoury",
+          "J.-H. Jun",
+          "A. S. Golghaber"
+        ],
+        "doi": "",
+        "key": "7",
+        "page": 17,
+        "title": "Phys. Rev. D 21, 454 (1980).",
+        "venue": "",
+        "year": 1980
+      },
+      {
+        "authors": [
+          "A. S. Schwarz"
+        ],
+        "doi": "",
+        "key": "8",
+        "page": 18,
+        "title": "Kvantovaja Teorija Polja i Topologija, 1st edition (Nauka, Moscow, 1989) [A. S. Schwartz, Quantum Field Theory and Topology (Springer, 1993)].",
+        "venue": "",
+        "year": 1989
+      },
+      {
+        "authors": [
+          "L. D. Faddeev",
+          "R. Jackiw"
+        ],
+        "doi": "",
+        "key": "9",
+        "page": 18,
+        "title": "in Proc. of 4th Int. Symp. on Nonlocal Quantum Field Theory, Dubna, USSR, 1976, JINR D1-9768, p. 267; R. Jackiw, Rev. Mod. Phys. 49 (1977) 681.",
+        "venue": "",
+        "year": 1976
+      },
+      {
+        "authors": [
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "10",
+        "page": 18,
+        "title": "Dirac Variables in Gauge Theories, Lecture Notes in DAAD Summerschool on Dense Matter in Particle and Astrophysics, JINR, Dubna, Russia, August 20- 31, 2001; Fiz. Elem. Chast. Atom. Yadra 34, 679 (2003) [Phys. Part. Nucl. 34, 348 (2003)]; [hep-th/0109218].",
+        "venue": "",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "A. M. Khvedelidze",
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "11",
+        "page": 18,
+        "title": "Helv. Phys. Acta, 67, 637 (1994).",
+        "venue": "",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "D. Blaschke",
+          "V. N. Pervushin",
+          "G. Röpke"
+        ],
+        "doi": "",
+        "key": "12",
+        "page": 18,
+        "title": "Topological Gauge invariantVariables in QCD, MPG-VT- UR 191/99, [arXiv: hep-th/9909133].",
+        "venue": "",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "D. Blaschke",
+          "V. N. Pervushin",
+          "G. Röpke"
+        ],
+        "doi": "",
+        "key": "13",
+        "page": 18,
+        "title": "Topological Invariant Variables in QCD, in Proceeding of the Int. Seminar Physical variables in Gauge Theories, Dubna, September 21-25, 1999, edited by A. M. Khvedelidze, M. Lavelle, D. McMullan and V. Pervushin (E2-2000-172, Dubna, 2000), p. 49, [arXiv: hep-th/0006249].",
+        "venue": "",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "T. T. Wu",
+          "C. N. Yang"
+        ],
+        "doi": "",
+        "key": "14",
+        "page": 18,
+        "title": "Phys. Rev. D 12, 3845 (1975).",
+        "venue": "",
+        "year": 1975
+      },
+      {
+        "authors": [
+          "S. G. Matinyan",
+          "G. K. Savidy",
+          "A. A. Vladimirov",
+          "D. V. Shirkov"
+        ],
+        "doi": "",
+        "key": "15",
+        "page": 18,
+        "title": "Nucl. Phys. B 134, 539 (1978); A. A. Vladimirov, D. V. Shirkov, Usp. Fiz. Nauk 129, 407 (1979) [Sov. Phys. Usp. 129, 860 (1979)].",
+        "venue": "",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "D. J. Gross",
+          "F. Wilczek",
+          "H. D. Politzer"
+        ],
+        "doi": "",
+        "key": "16",
+        "page": 18,
+        "title": "Phys. Rev. Lett. 30, 1343 (1973); Phys. Rev. D 8, 3633 (1973); H. D. Politzer, Phys. Rev. D 8, 3636 (1973).",
+        "venue": "",
+        "year": 1973
+      },
+      {
+        "authors": [
+          "N. N. Bogoliubov",
+          "V. V. Tolmachev",
+          "D. V. Shirkov",
+          "L. D. Landau"
+        ],
+        "doi": "",
+        "key": "17",
+        "page": 18,
+        "title": "J. Phys. 9, 23 (1947); N. N. Bogoliubov, V. V. Tolmachev, D. V. Shirkov, Novij Metod v Teorii Sverchprovodimosti, 1st edition (Izd-vo AN SSSR, Moscow,1958, pp. 5-9). L. D. Landau, JETF 11, 592 (1941); DAN USSR 61, 253 (1948).",
+        "venue": "",
+        "year": 1947
+      },
+      {
+        "authors": [
+          "I. M. Khalatnikov"
+        ],
+        "doi": "",
+        "key": "18",
+        "page": 18,
+        "title": "Teorija Sverxtekychesti, 1st edition (Nauka, Moscow, 1971).",
+        "venue": "",
+        "year": 1971
+      },
+      {
+        "authors": [
+          "L. D. Landau",
+          "E. M. Lifschitz"
+        ],
+        "doi": "",
+        "key": "19",
+        "page": 18,
+        "title": "Lehrbuch der Theoretischen Physik (Statistische Physik, Band 5, teil 2), in German, 1st edition by H. Escrig and P. Ziesche (Akademie-Verlag, Berlin, 1980).",
+        "venue": "",
+        "year": 1980
+      },
+      {
+        "authors": [
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "20",
+        "page": 18,
+        "title": "Teor. Mat. Fiz. 45, 394 (1980) [Theor. Math. Phys. 45, 1100 (1981)].",
+        "venue": "",
+        "year": 1980
+      },
+      {
+        "authors": [
+          "V. G. Levich",
+          "Yu. A. Vdovin",
+          "V. A. Mjamlin"
+        ],
+        "doi": "",
+        "key": "21",
+        "page": 18,
+        "title": "Kurs Teoreticheskoj Fiziki, v. 2, 2nd edition (Nauka, Moscow, 1971).",
+        "venue": "",
+        "year": 1971
+      },
+      {
+        "authors": [
+          "G. ’t Hooft"
+        ],
+        "doi": "",
+        "key": "22",
+        "page": 18,
+        "title": "Nucl. Phys. B 79, 276 (1974).",
+        "venue": "",
+        "year": 1974
+      },
+      {
+        "authors": [
+          "A. M. Polyakov"
+        ],
+        "doi": "",
+        "key": "23",
+        "page": 18,
+        "title": "Pisma JETP 20, 430 (1974) [Sov. Phys. JETP Lett. 20, 194 (1974)]; Sov. Phys. JETP Lett. 41, 988 (1975).",
+        "venue": "",
+        "year": 1974
+      },
+      {
+        "authors": [
+          "F. Bruckmann",
+          "G. ’t Hooft"
+        ],
+        "doi": "",
+        "key": "24",
+        "page": 18,
+        "title": "Phys. Rep. 142, 357 (1986), [arXiv: hep-th/0010225].",
+        "venue": "",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "A. A. Belavin",
+          "R. Jackiw",
+          "C. Rebbi",
+          "C. G. Jr. Callan",
+          "R. F. Dashen",
+          "D. J. Gross"
+        ],
+        "doi": "",
+        "key": "25",
+        "page": 18,
+        "title": "Phys. Lett. 59, 85 (1975); R. Jackiw, C. Rebbi, Phys. Lett. B 63, 172 (1976); C. G. Jr. Callan, R. F. Dashen, D. J. Gross, Phys. Rev. D 17, 2717 (1977).",
+        "venue": "",
+        "year": 1975
+      },
+      {
+        "authors": [
+          "L. D. Lantsman"
+        ],
+        "doi": "",
+        "key": "26",
+        "page": 18,
+        "title": "Topological Dirac variables in Abelian U (1) theory, [arXiv:1406.0160 hep-th].",
+        "venue": "",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "P. A. M. Dirac"
+        ],
+        "doi": "",
+        "key": "27",
+        "page": 18,
+        "title": "Proc. Roy. Soc. A 133, 69 (1931).",
+        "venue": "",
+        "year": 1931
+      },
+      {
+        "authors": [
+          "L. D. Lantsman"
+        ],
+        "doi": "",
+        "key": "28",
+        "page": 19,
+        "title": "”Discrete” Vacuum Geometry as a Tool for Dirac Fundamental Quantization of Minkowskian Higgs Model, [arXiv: hep-th/0701097].",
+        "venue": "",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "L. D. Lantsman"
+        ],
+        "doi": "",
+        "key": "29",
+        "page": 19,
+        "title": "Whether the Vacuum Manifold in the Minkowskian Nnon-Abelian Model Quantized by Dirac Can Be Described with the Aid of the Superselection Rules?, [arXiv:1008.2866].",
+        "venue": "",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "E. Witten"
+        ],
+        "doi": "",
+        "key": "30",
+        "page": 19,
+        "title": "Phys. Lett. B 86, 283 (1979).",
+        "venue": "",
+        "year": 1979
+      },
+      {
+        "authors": [
+          "D. Zwanziger",
+          "J. Schwinger"
+        ],
+        "doi": "",
+        "key": "31",
+        "page": 19,
+        "title": "Phys. Rev. 176, 1480 (1978); J. Schwinger, Phys. Rev. 144, 1087 (1968); Phys. Rev. 173, 1536 (1968).",
+        "venue": "",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "A. S. Galperin",
+          "V. N. Pervushin"
+        ],
+        "doi": "",
+        "key": "32",
+        "page": 19,
+        "title": "JINR P2-11830 (1978).",
+        "venue": "",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "L. D. Lantsman"
+        ],
+        "doi": "",
+        "key": "33",
+        "page": 19,
+        "title": "Nontrivial Topological Dynamics in Minkowskian Higgs Model Quantized by Dirac., [arXiv: hep-th/0610217].",
+        "venue": "",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "C. G. Jr. Callan"
+        ],
+        "doi": "",
+        "key": "34",
+        "page": 19,
+        "title": "Phys. Rev. D 17, 2717 (1978).",
+        "venue": "",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "E. Tomboulis",
+          "G. Woo"
+        ],
+        "doi": "",
+        "key": "35",
+        "page": 19,
+        "title": "Nucl. Phys. B 107, 221 (1976).",
+        "venue": "",
+        "year": 1976
+      },
+      {
+        "authors": [
+          "N. N. Bogoliubov",
+          "A. A. Logunov",
+          "A. I. Oksak",
+          "I. T. Todorov"
+        ],
+        "doi": "",
+        "key": "36",
+        "page": 19,
+        "title": "Obshie Prinzipi Kvantovoj Teorii Polja, 1st edition (Nauka, Moscow, 1987).",
+        "venue": "",
+        "year": 1987
+      },
+      {
+        "authors": [
+          "P. A. M. Dirac"
+        ],
+        "doi": "",
+        "key": "37",
+        "page": 19,
+        "title": "Proc. Roy. Soc. A 114 (1927) 243; Can. J. Phys. 33 (1955) 650.",
+        "venue": "",
+        "year": 1927
+      }
+    ],
+    "relations": [],
+    "sections": [
+      {
+        "pages": {
+          "end": 4,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "",
+          "start_page": 1,
+          "start_text": ""
+        },
+        "summary": "The abstract states the central thesis: BPS ansatzes act as electric form-factors and softly violate CP, analogous to instanton θ-term physics. The introduction then sets up the Minkowskian Yang-Mills-Higgs model, the BPS limit, the Bogomol’nyi equation/bound, and the explicit vacuum BPS monopole solutions with their boundary behavior and topological properties.",
+        "title": "Thesis and BPS Limit Setup"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "",
+          "start_page": 5,
+          "start_text": ""
+        },
+        "summary": "The Bogomol’nyi equation is interpreted as a potentiality condition. The paper draws the helium-II superfluid analogy, invoking Landau critical velocity, potential motion, non-ideal gases, and Bose condensation. It then contrasts the ’t Hooft-Polyakov model, where the vacuum magnetic field and electric form-factors become trivial, and states the goal for Section 2.",
+        "title": "Potentiality, Superfluidity, and the ’t Hooft-Polyakov Contrast"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "",
+          "start_page": 7,
+          "start_text": ""
+        },
+        "summary": "This unit introduces the Dirac quantization condition, dyons, and the Zwanziger-Schwinger two-dyon generalization. It then computes the total angular momentum in a magnetic monopole background using the canonical momentum and ’t Hooft-Polyakov potentials, showing how Dirac quantization leads to a conserved total momentum J.",
+        "title": "Dirac Quantization and Monopole Angular Momentum"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "",
+          "start_page": 9,
+          "start_text": ""
+        },
+        "summary": "With the YM BPS ansatz present, the total momentum and isospin computation changes. The ansatz f1BPS screens the electric charge via e ↔ f1BPS e, making it an electric form-factor; f0BPS plays a similar role. The paper concludes that topologically nontrivial sectors become dyonic.",
+        "title": "BPS Ansatz as an Electric Form-Factor"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 10
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "",
+          "start_page": 10,
+          "start_text": ""
+        },
+        "summary": "The paper traces consequences of f1BPS(0) → 0. In zero topology, arbitrary magnetic charges near the origin lead to “magnons”; in nontrivial topology, an apparent UV divergence arises. Threads and magnetic-tension gaps produce a first-order phase transition, with the VEV of B² as order parameter, and the condition supports asymptotic freedom near the origin.",
+        "title": "Dyonic Sectors, Magnons, and Phase Transition"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "",
+          "start_page": 12,
+          "start_text": ""
+        },
+        "summary": "The Dirac-Zwanziger-Schwinger condition allows arbitrary electric charges for individual monopoles when only the difference is quantized. Adding CP conservation forces monopole electric charges to integer or half-integer multiples of e; without CP conservation, deviations from such charges are proportional to the strength of CP violation.",
+        "title": "CP Conservation and Monopole Charge Quantization"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "",
+          "start_page": 12,
+          "start_text": ""
+        },
+        "summary": "This unit introduces the instanton Yang-Mills effective Lagrangian with a θ-term. θ is treated as a quasimomentum; the equations of motion are unchanged. Quantization produces complex θ and imaginary topological momentum modes, leading to a non-separable Hilbert space and the no-go theorem for ordinary quantization methods.",
+        "title": "Instanton Theta-Term and Complex Theta Vacuum"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "",
+          "start_page": 14,
+          "start_text": ""
+        },
+        "summary": "The semi-classical analysis of dyons gives T(I+E)=2πn. At θ=0, q=ne; at θ≠0, q=ne−θe/2π, so no electrically neutral magnetic monopole exists. In the monopole sector, θ dependence differs from instanton tunneling, and CP violation—regardless of mechanism—can induce a linear term in I+E and noninteger charges.",
+        "title": "Semi-Classical Dyon Charge under Theta and CP Violation"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "",
+          "start_page": 16,
+          "start_text": ""
+        },
+        "summary": "Dirac fundamental quantization resolves the Gauss law via topological Dirac variables and vacuum electric monopoles. The rotary action W_N has a purely real P_N spectrum and is both P- and C-invariant, unlike the instanton θ case whose energy is linear in e and θ. The paper concludes CP conservation in the BPS-monopole YMH model.",
+        "title": "Dirac Quantization and CP Conservation in the BPS Monopole Vacuum"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 17
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "",
+          "start_page": 17,
+          "start_text": ""
+        },
+        "summary": "Bibliography only. Use this unit for lookup of cited works; it is not part of the main argument.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper is an arXiv preprint presenting original theoretical arguments and calculations on BPS monopoles, electric form-factors, and CP violation, organized with abstract, sections, equations, and references.",
+      "value": "theory"
+    }
+  }
+}

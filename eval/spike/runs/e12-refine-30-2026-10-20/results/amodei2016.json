@@ -1,0 +1,997 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T21:48:44.810255208Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Amodei et al. - 2016 - Concrete Problems in AI Safety.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 29,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 95192,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 26164,
+      "cached_tokens": 26112,
+      "completion_tokens": 7611,
+      "reasoning_tokens": 4447,
+      "cost_usd": 0.0033135704,
+      "cost_source": "reported",
+      "latency_s": 69.762461011
+    },
+    {
+      "stage": "extract.sections.refine",
+      "max_tokens": 95192,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 26879,
+      "cached_tokens": 25216,
+      "completion_tokens": 5537,
+      "reasoning_tokens": 4474,
+      "cost_usd": 0.0026642672,
+      "cost_source": "reported",
+      "latency_s": 46.401602913
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 27886,
+      "cached_tokens": 384,
+      "completion_tokens": 8017,
+      "reasoning_tokens": 7947,
+      "cost_usd": 0.0072190328,
+      "cost_source": "reported",
+      "latency_s": 77.392509592
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 2792,
+      "cached_tokens": 0,
+      "completion_tokens": 1112,
+      "reasoning_tokens": 1054,
+      "cost_usd": 0.00085792,
+      "cost_source": "reported",
+      "latency_s": 20.429193058
+    }
+  ],
+  "totals": {
+    "calls": 4,
+    "prompt_tokens": 83721,
+    "cached_tokens": 51712,
+    "completion_tokens": 22277,
+    "cost_usd": 0.014054790400000001,
+    "model_latency_s": 213.98576657400002,
+    "wall_s": 219.501622434
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e12-refine-30-2026-10-20/results/amodei2016.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such\npotential impact: the problem of accidents in machine learning systems, defined as unintended\nand harmful behavior that may emerge from poor design of real-world AI systems. We present a\nlist of five practical research problems related to accident risk, categorized according to whether\nthe problem originates from having the wrong objective function (“avoiding side effects” and\n“avoiding reward hacking”), an objective function that is too expensive to evaluate frequently\n(“scalable supervision”), or undesirable behavior during the learning process (“safe exploration”\nand “distributional shift”). We review previous work in these areas as well as suggesting research\ndirections with a focus on relevance to cutting-edge AI systems. Finally, we consider\nthe high-level question of how to think most productively about the safety of forward-looking\napplications of AI."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Existing ML robustness, safe exploration, distributional-shift, and risk-sensitive RL literature",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 14,
+                "quote": "There is a sizable literature on such safe exploration—it is arguably the most studied of the problems\nwe discuss in this document."
+              }
+            ],
+            "reference_key": "multiple",
+            "why": "The paper explicitly reviews and organizes this prior work."
+          },
+          {
+            "cited_work": "Nick Bostrom, Superintelligence: Paths, dangers, strategies",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "To date much of this discussion has\nhighlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent\nagents [27]."
+              }
+            ],
+            "reference_key": "27",
+            "why": "It builds on the broader AI-safety discussion but shifts focus toward practical ML problems."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Superintelligence-focused AI-risk discussion",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "However, in our opinion one need not invoke these extreme scenarios to productively\ndiscuss accidents"
+              }
+            ],
+            "reference_key": "27",
+            "why": "The paper contrasts its concrete ML accident framework with speculative superintelligence scenarios."
+          },
+          {
+            "cited_work": "Ad hoc or purely theoretical safety treatment",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 11,
+                "quote": "Given the\npredominantly theoretical focus on this problem to date, designing experiments that could induce\nthe problem and test solutions might improve the relevance and clarity of this topic."
+              }
+            ],
+            "reference_key": "multiple",
+            "why": "It critiques the lack of empirical work and proposes concrete experiments."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We present a\nlist of five practical research problems related to accident risk"
+          }
+        ],
+        "text": "AI accident risk should be studied as five concrete, practical machine-learning research problems—side effects, reward hacking, scalable oversight, safe exploration, and distributional shift—rather than only as speculative superintelligence scenarios."
+      }
+    },
+    "citations": [
+      {
+        "context": "negative side effects",
+        "page": 4,
+        "reference_key": "13"
+      },
+      {
+        "context": "empowerment",
+        "page": 6,
+        "reference_key": "131"
+      },
+      {
+        "context": "Cooperative Inverse Reinforcement Learning",
+        "page": 6,
+        "reference_key": "66"
+      },
+      {
+        "context": "delusion box",
+        "page": 11,
+        "reference_key": "127"
+      },
+      {
+        "context": "safe exploration reviews",
+        "page": 14,
+        "reference_key": "55, 118"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Google Brain",
+          "name": "Dario Amodei"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Chris Olah"
+        },
+        {
+          "affiliation": "Stanford University",
+          "name": "Jacob Steinhardt"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "John Schulman"
+        },
+        {
+          "affiliation": "UC Berkeley",
+          "name": "Paul Christiano"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Dan Mané"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Dario Amodei∗\nGoogle Brain\nChris Olah∗\nGoogle Brain\nJacob Steinhardt\nStanford University\nJohn Schulman\nOpenAI\nPaul Christiano\nUC Berkeley\nDan Mané\nGoogle Brain"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1606.06565v2 [cs.AI]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Concrete Problems in AI Safety",
+      "venue": "arXiv",
+      "year": 2016
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "Our goal in this document is to highlight a few concrete safety problems that are ready for experimentation today and relevant to the cutting edge of AI systems"
+        }
+      ],
+      "text": "What concrete technical problems create accident risk in modern machine-learning and reinforcement-learning systems, and what research directions and experiments can address them?"
+    },
+    "references": [],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "A version of this problem has been discussed informally by [13]\nunder the heading of “low impact agents.”",
+        "reference_key": "13",
+        "relation": "extends",
+        "why": "The paper adopts and formalizes the informal low-impact-agent idea within its negative-side-effects section."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Perhaps the best-known such measure is empowerment [131], the maximum possible mutual information between the\nagent’s potential future actions and its potential future state",
+        "reference_key": "131",
+        "relation": "uses_method",
+        "why": "Empowerment is used as a concrete information-theoretic influence measure for impact regularization."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "One approach to this is Cooperative Inverse Reinforcement Learning [66], where an agent and\na human work together to achieve the human’s goals.",
+        "reference_key": "66",
+        "relation": "uses_method",
+        "why": "It is proposed as a multi-agent route to avoiding side effects by modeling human interests."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "A possible promising avenue of approach would be more realistic versions\nof the “delusion box” environment described by [127]",
+        "reference_key": "127",
+        "relation": "uses_method",
+        "why": "The delusion-box environment is used as an experimental model for reward hacking."
+      },
+      {
+        "confidence": "high",
+        "page": 14,
+        "quote": "[55, 118] provide thorough reviews of this literature, so we don’t review\nit extensively here",
+        "reference_key": "55, 118",
+        "relation": "critiques",
+        "why": "The paper relies on these reviews while noting the need for more principled, scalable approaches."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 4,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "adjacent areas of research whenever possible.",
+          "start_page": 1,
+          "start_text": "Concrete Problems in AI Safety"
+        },
+        "summary": "Introduces the accident-risk framing, contrasts it with speculative AI-risk debates, states the five concrete problems, and reviews why reinforcement learning, more complex environments, and increasing autonomy make these problems increasingly urgent.",
+        "title": "Framing AI Accident Risk and the Five-Problem Agenda"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "successful transfer\nto totally new applications.",
+          "start_page": 4,
+          "start_text": "Suppose a designer wants an RL agent"
+        },
+        "summary": "Defines negative side effects, explains how narrow objectives can express harmful indifference, and reviews impact regularizers: state-distance penalties, learned regularizers, empowerment/influence measures, multi-agent approaches, reward uncertainty, and proposed toy-environment experiments.",
+        "title": "Avoiding Negative Side Effects"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "in order to get reward.",
+          "start_page": 7,
+          "start_text": "Imagine that an agent discovers a buffer overflow"
+        },
+        "summary": "Explains reward hacking through examples and mechanisms such as closing eyes, gaming objectives, partially observed goals, complicated systems, abstract learned rewards, Goodhart’s law, feedback loops, and environmental embedding/wireheading.",
+        "title": "Reward Hacking: Mechanisms and Examples"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "arise naturally in many diverse ways.",
+          "start_page": 9,
+          "start_text": "In today’s relatively simple systems"
+        },
+        "summary": "Surveys mitigations for reward hacking—adversarial reward functions, model lookahead, adversarial blinding, careful engineering, reward capping, counterexample resistance, multiple rewards, reward pretraining, variable indifference, and trip wires—and proposes delusion-box-inspired experiments.",
+        "title": "Mitigating Reward Hacking and Experiments"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "natural candidate for such experiments.",
+          "start_page": 11,
+          "start_text": "Consider an autonomous agent performing some complex task"
+        },
+        "summary": "Frames scalable oversight as semi-supervised RL with sparse or active reward queries, reviews supervised reward learning, semi-supervised/active reward learning, unsupervised value/model learning, distant supervision, hierarchical RL, and proposes control, Atari, and real-world experiments.",
+        "title": "Scalable Oversight and Semi-Supervised RL"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "avoid catastrophes in all environments in the suite.",
+          "start_page": 14,
+          "start_text": "All autonomous learning agents need to sometimes engage in exploration"
+        },
+        "summary": "Discusses dangerous exploration and reviews risk-sensitive criteria, demonstrations, simulated exploration, bounded exploration, trusted policy oversight, human oversight, and a proposed suite of catastrophe-avoidance benchmark environments.",
+        "title": "Safe Exploration"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "distributions that are sufficiently different from the set of training distributions.",
+          "start_page": 16,
+          "start_text": "All of us occasionally find ourselves in situations"
+        },
+        "summary": "Defines distributional shift, explains silent confident failures, and reviews well-specified and partially specified approaches: covariate shift, marginal likelihood, generative models, method of moments, unsupervised risk estimation, and training on multiple distributions.",
+        "title": "Robustness to Distributional Change"
+      },
+      {
+        "pages": {
+          "end": 20,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 20,
+          "end_text": "estimates of its transcription error.",
+          "start_page": 18,
+          "start_text": "How to respond when out-of-distribution."
+        },
+        "summary": "Asks how agents should respond once out-of-distribution is detected, discusses human input, conservative policies, active information gathering, counterfactual reasoning, machine learning with contracts, and proposes speech-system calibration demonstrations.",
+        "title": "Responding to Out-of-Distribution and Unifying Views"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "prevent these systems from causing unintended harm.",
+          "start_page": 20,
+          "start_text": "As mentioned in the introduction"
+        },
+        "summary": "Briefly positions related communities—cyber-physical systems, futurist AI-safety groups, other calls for safety, and adjacent social-impact topics—then concludes that concrete accident prevention is increasingly important for autonomous systems.",
+        "title": "Related Efforts and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 29,
+          "start": 22
+        },
+        "source_span": {
+          "end_page": 29,
+          "end_text": "[170]",
+          "start_page": 22,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of 170 entries, not part of the main-text reading budget; include only as an optional navigation unit.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a position/review-style research agenda that defines accident risk, reviews five problem areas, and proposes experiments rather than presenting one primary empirical study.",
+      "value": "position"
+    }
+  },
+  "pass1_check": {
+    "sites": 18,
+    "verbatim": 17,
+    "near": 0,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/references",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The references array is empty, but the paper contains a bibliography with entries [1]–[170].",
+      "evidence": [
+        {
+          "quote": "References",
+          "page": 22
+        },
+        {
+          "quote": "[170]",
+          "page": 29
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/references",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 18,
+    "verbatim": 17,
+    "near": 0,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such\npotential impact: the problem of accidents in machine learning systems, defined as unintended\nand harmful behavior that may emerge from poor design of real-world AI systems. We present a\nlist of five practical research problems related to accident risk, categorized according to whether\nthe problem originates from having the wrong objective function (“avoiding side effects” and\n“avoiding reward hacking”), an objective function that is too expensive to evaluate frequently\n(“scalable supervision”), or undesirable behavior during the learning process (“safe exploration”\nand “distributional shift”). We review previous work in these areas as well as suggesting research\ndirections with a focus on relevance to cutting-edge AI systems. Finally, we consider\nthe high-level question of how to think most productively about the safety of forward-looking\napplications of AI.",
+      "admitted": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such\npotential impact: the problem of accidents in machine learning systems, defined as unintended\nand harmful behavior that may emerge from poor design of real-world AI systems. We present a\nlist of five practical research problems related to accident risk, categorized according to whether\nthe problem originates from having the wrong objective function (“avoiding side effects” and\n“avoiding reward hacking”), an objective function that is too expensive to evaluate frequently\n(“scalable supervision”), or undesirable behavior during the learning process (“safe exploration”\nand “distributional shift”). We review previous work in these areas as well as suggesting research\ndirections with a focus on relevance to cutting-edge AI systems. Finally, we consider\nthe high-level question of how to think most productively about the safety of forward-looking\napplications of AI.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "There is a sizable literature on such safe exploration—it is arguably the most studied of the problems\nwe discuss in this document.",
+      "admitted": "There is a sizable literature on such safe exploration—it is arguably the most studied of the problems\nwe discuss in this document.",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "To date much of this discussion has\nhighlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent\nagents [27].",
+      "admitted": "To date much of this discussion has\nhighlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent\nagents [27].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "However, in our opinion one need not invoke these extreme scenarios to productively\ndiscuss accidents",
+      "admitted": "However, in our opinion one need not invoke these extreme scenarios to productively\ndiscuss accidents",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Given the\npredominantly theoretical focus on this problem to date, designing experiments that could induce\nthe problem and test solutions might improve the relevance and clarity of this topic.",
+      "admitted": "Given the\npredominantly theoretical focus on this problem to date, designing experiments that could induce\nthe problem and test solutions might improve the relevance and clarity of this topic.",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We present a\nlist of five practical research problems related to accident risk",
+      "admitted": "We present a\nlist of five practical research problems related to accident risk",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Dario Amodei∗\nGoogle Brain\nChris Olah∗\nGoogle Brain\nJacob Steinhardt\nStanford University\nJohn Schulman\nOpenAI\nPaul Christiano\nUC Berkeley\nDan Mané\nGoogle Brain",
+      "admitted": "Dario Amodei∗\nGoogle Brain\nChris Olah∗\nGoogle Brain\nJacob Steinhardt\nStanford University\nJohn Schulman\nOpenAI\nPaul Christiano\nUC Berkeley\nDan Mané\nGoogle Brain",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our goal in this document is to highlight a few concrete safety problems that are ready for experimentation today and relevant to the cutting edge of AI systems",
+      "admitted": "Our goal in this document is to highlight a few concrete safety problems that are ready for experimentation today and relevant to the cutting edge of AI systems",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "negative side effects",
+      "admitted": "negative side effects",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "empowerment",
+      "admitted": "empowerment",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "Cooperative Inverse Reinforcement Learning",
+      "admitted": "Cooperative Inverse Reinforcement Learning",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "delusion box",
+      "admitted": "delusion box",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "repaired_model",
+      "original": "safe exploration reviews",
+      "admitted": "[55, 118] provide thorough reviews of this literature",
+      "similarity": 0.6666666666666667,
+      "cited_page": 14,
+      "matched_page": 14
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "A version of this problem has been discussed informally by [13]\nunder the heading of “low impact agents.”",
+      "admitted": "A version of this problem has been discussed informally by [13]\nunder the heading of “low impact agents.”",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Perhaps the best-known such measure is empowerment [131], the maximum possible mutual information between the\nagent’s potential future actions and its potential future state",
+      "admitted": "Perhaps the best-known such measure is empowerment [131], the maximum possible mutual information between the\nagent’s potential future actions and its potential future state",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "One approach to this is Cooperative Inverse Reinforcement Learning [66], where an agent and\na human work together to achieve the human’s goals.",
+      "admitted": "One approach to this is Cooperative Inverse Reinforcement Learning [66], where an agent and\na human work together to achieve the human’s goals.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "A possible promising avenue of approach would be more realistic versions\nof the “delusion box” environment described by [127]",
+      "admitted": "A possible promising avenue of approach would be more realistic versions\nof the “delusion box” environment described by [127]",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "[55, 118] provide thorough reviews of this literature, so we don’t review\nit extensively here",
+      "admitted": "[55, 118] provide thorough reviews of this literature, so we don’t review\nit extensively here",
+      "similarity": null,
+      "cited_page": 14,
+      "matched_page": 14
+    }
+  ],
+  "admission_counts": {
+    "repaired_model": 1,
+    "verbatim": 17
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Rapid progress in machine learning and artificial intelligence (AI) has brought increasing attention to the potential impacts of AI technologies on society. In this paper we discuss one such\npotential impact: the problem of accidents in machine learning systems, defined as unintended\nand harmful behavior that may emerge from poor design of real-world AI systems. We present a\nlist of five practical research problems related to accident risk, categorized according to whether\nthe problem originates from having the wrong objective function (“avoiding side effects” and\n“avoiding reward hacking”), an objective function that is too expensive to evaluate frequently\n(“scalable supervision”), or undesirable behavior during the learning process (“safe exploration”\nand “distributional shift”). We review previous work in these areas as well as suggesting research\ndirections with a focus on relevance to cutting-edge AI systems. Finally, we consider\nthe high-level question of how to think most productively about the safety of forward-looking\napplications of AI."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Existing ML robustness, safe exploration, distributional-shift, and risk-sensitive RL literature",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 14,
+                "quote": "There is a sizable literature on such safe exploration—it is arguably the most studied of the problems\nwe discuss in this document."
+              }
+            ],
+            "reference_key": "multiple",
+            "why": "The paper explicitly reviews and organizes this prior work."
+          },
+          {
+            "cited_work": "Nick Bostrom, Superintelligence: Paths, dangers, strategies",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "To date much of this discussion has\nhighlighted extreme scenarios such as the risk of misspecified objective functions in superintelligent\nagents [27]."
+              }
+            ],
+            "reference_key": "27",
+            "why": "It builds on the broader AI-safety discussion but shifts focus toward practical ML problems."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Superintelligence-focused AI-risk discussion",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "However, in our opinion one need not invoke these extreme scenarios to productively\ndiscuss accidents"
+              }
+            ],
+            "reference_key": "27",
+            "why": "The paper contrasts its concrete ML accident framework with speculative superintelligence scenarios."
+          },
+          {
+            "cited_work": "Ad hoc or purely theoretical safety treatment",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 11,
+                "quote": "Given the\npredominantly theoretical focus on this problem to date, designing experiments that could induce\nthe problem and test solutions might improve the relevance and clarity of this topic."
+              }
+            ],
+            "reference_key": "multiple",
+            "why": "It critiques the lack of empirical work and proposes concrete experiments."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "We present a\nlist of five practical research problems related to accident risk"
+          }
+        ],
+        "text": "AI accident risk should be studied as five concrete, practical machine-learning research problems—side effects, reward hacking, scalable oversight, safe exploration, and distributional shift—rather than only as speculative superintelligence scenarios."
+      }
+    },
+    "citations": [
+      {
+        "context": "negative side effects",
+        "page": 4,
+        "reference_key": "13"
+      },
+      {
+        "context": "empowerment",
+        "page": 6,
+        "reference_key": "131"
+      },
+      {
+        "context": "Cooperative Inverse Reinforcement Learning",
+        "page": 6,
+        "reference_key": "66"
+      },
+      {
+        "context": "delusion box",
+        "page": 11,
+        "reference_key": "127"
+      },
+      {
+        "context": "[55, 118] provide thorough reviews of this literature",
+        "page": 14,
+        "reference_key": "55, 118"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Google Brain",
+          "name": "Dario Amodei"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Chris Olah"
+        },
+        {
+          "affiliation": "Stanford University",
+          "name": "Jacob Steinhardt"
+        },
+        {
+          "affiliation": "OpenAI",
+          "name": "John Schulman"
+        },
+        {
+          "affiliation": "UC Berkeley",
+          "name": "Paul Christiano"
+        },
+        {
+          "affiliation": "Google Brain",
+          "name": "Dan Mané"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Dario Amodei∗\nGoogle Brain\nChris Olah∗\nGoogle Brain\nJacob Steinhardt\nStanford University\nJohn Schulman\nOpenAI\nPaul Christiano\nUC Berkeley\nDan Mané\nGoogle Brain"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1606.06565v2 [cs.AI]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Concrete Problems in AI Safety",
+      "venue": "arXiv",
+      "year": 2016
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "Our goal in this document is to highlight a few concrete safety problems that are ready for experimentation today and relevant to the cutting edge of AI systems"
+        }
+      ],
+      "text": "What concrete technical problems create accident risk in modern machine-learning and reinforcement-learning systems, and what research directions and experiments can address them?"
+    },
+    "references": [],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "A version of this problem has been discussed informally by [13]\nunder the heading of “low impact agents.”",
+        "reference_key": "13",
+        "relation": "extends",
+        "why": "The paper adopts and formalizes the informal low-impact-agent idea within its negative-side-effects section."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "Perhaps the best-known such measure is empowerment [131], the maximum possible mutual information between the\nagent’s potential future actions and its potential future state",
+        "reference_key": "131",
+        "relation": "uses_method",
+        "why": "Empowerment is used as a concrete information-theoretic influence measure for impact regularization."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "One approach to this is Cooperative Inverse Reinforcement Learning [66], where an agent and\na human work together to achieve the human’s goals.",
+        "reference_key": "66",
+        "relation": "uses_method",
+        "why": "It is proposed as a multi-agent route to avoiding side effects by modeling human interests."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "A possible promising avenue of approach would be more realistic versions\nof the “delusion box” environment described by [127]",
+        "reference_key": "127",
+        "relation": "uses_method",
+        "why": "The delusion-box environment is used as an experimental model for reward hacking."
+      },
+      {
+        "confidence": "high",
+        "page": 14,
+        "quote": "[55, 118] provide thorough reviews of this literature, so we don’t review\nit extensively here",
+        "reference_key": "55, 118",
+        "relation": "critiques",
+        "why": "The paper relies on these reviews while noting the need for more principled, scalable approaches."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 4,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "adjacent areas of research whenever possible.",
+          "start_page": 1,
+          "start_text": "Concrete Problems in AI Safety"
+        },
+        "summary": "Introduces the accident-risk framing, contrasts it with speculative AI-risk debates, states the five concrete problems, and reviews why reinforcement learning, more complex environments, and increasing autonomy make these problems increasingly urgent.",
+        "title": "Framing AI Accident Risk and the Five-Problem Agenda"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "successful transfer\nto totally new applications.",
+          "start_page": 4,
+          "start_text": "Suppose a designer wants an RL agent"
+        },
+        "summary": "Defines negative side effects, explains how narrow objectives can express harmful indifference, and reviews impact regularizers: state-distance penalties, learned regularizers, empowerment/influence measures, multi-agent approaches, reward uncertainty, and proposed toy-environment experiments.",
+        "title": "Avoiding Negative Side Effects"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "in order to get reward.",
+          "start_page": 7,
+          "start_text": "Imagine that an agent discovers a buffer overflow"
+        },
+        "summary": "Explains reward hacking through examples and mechanisms such as closing eyes, gaming objectives, partially observed goals, complicated systems, abstract learned rewards, Goodhart’s law, feedback loops, and environmental embedding/wireheading.",
+        "title": "Reward Hacking: Mechanisms and Examples"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "arise naturally in many diverse ways.",
+          "start_page": 9,
+          "start_text": "In today’s relatively simple systems"
+        },
+        "summary": "Surveys mitigations for reward hacking—adversarial reward functions, model lookahead, adversarial blinding, careful engineering, reward capping, counterexample resistance, multiple rewards, reward pretraining, variable indifference, and trip wires—and proposes delusion-box-inspired experiments.",
+        "title": "Mitigating Reward Hacking and Experiments"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "natural candidate for such experiments.",
+          "start_page": 11,
+          "start_text": "Consider an autonomous agent performing some complex task"
+        },
+        "summary": "Frames scalable oversight as semi-supervised RL with sparse or active reward queries, reviews supervised reward learning, semi-supervised/active reward learning, unsupervised value/model learning, distant supervision, hierarchical RL, and proposes control, Atari, and real-world experiments.",
+        "title": "Scalable Oversight and Semi-Supervised RL"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "avoid catastrophes in all environments in the suite.",
+          "start_page": 14,
+          "start_text": "All autonomous learning agents need to sometimes engage in exploration"
+        },
+        "summary": "Discusses dangerous exploration and reviews risk-sensitive criteria, demonstrations, simulated exploration, bounded exploration, trusted policy oversight, human oversight, and a proposed suite of catastrophe-avoidance benchmark environments.",
+        "title": "Safe Exploration"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "distributions that are sufficiently different from the set of training distributions.",
+          "start_page": 16,
+          "start_text": "All of us occasionally find ourselves in situations"
+        },
+        "summary": "Defines distributional shift, explains silent confident failures, and reviews well-specified and partially specified approaches: covariate shift, marginal likelihood, generative models, method of moments, unsupervised risk estimation, and training on multiple distributions.",
+        "title": "Robustness to Distributional Change"
+      },
+      {
+        "pages": {
+          "end": 20,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 20,
+          "end_text": "estimates of its transcription error.",
+          "start_page": 18,
+          "start_text": "How to respond when out-of-distribution."
+        },
+        "summary": "Asks how agents should respond once out-of-distribution is detected, discusses human input, conservative policies, active information gathering, counterfactual reasoning, machine learning with contracts, and proposes speech-system calibration demonstrations.",
+        "title": "Responding to Out-of-Distribution and Unifying Views"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "prevent these systems from causing unintended harm.",
+          "start_page": 20,
+          "start_text": "As mentioned in the introduction"
+        },
+        "summary": "Briefly positions related communities—cyber-physical systems, futurist AI-safety groups, other calls for safety, and adjacent social-impact topics—then concludes that concrete accident prevention is increasingly important for autonomous systems.",
+        "title": "Related Efforts and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 29,
+          "start": 22
+        },
+        "source_span": {
+          "end_page": 29,
+          "end_text": "[170]",
+          "start_page": 22,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of 170 entries, not part of the main-text reading budget; include only as an optional navigation unit.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a position/review-style research agenda that defines accident risk, reviews five problem areas, and proposes experiments rather than presenting one primary empirical study.",
+      "value": "position"
+    }
+  }
+}

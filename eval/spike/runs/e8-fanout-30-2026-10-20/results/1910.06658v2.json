@@ -1,0 +1,801 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T02:19:46.585683464Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1910.06658v2.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 14,
+  "calls": [
+    {
+      "stage": "extract.identity",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 1085,
+      "cached_tokens": 256,
+      "completion_tokens": 3997,
+      "reasoning_tokens": 3583,
+      "cost_usd": 0.005046636,
+      "cost_source": "reported",
+      "latency_s": 11.617801943
+    },
+    {
+      "stage": "extract.type",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 9877,
+      "cached_tokens": 896,
+      "completion_tokens": 1335,
+      "reasoning_tokens": 1260,
+      "cost_usd": 0.004301676,
+      "cost_source": "reported",
+      "latency_s": 3.708897399
+    },
+    {
+      "stage": "extract.abstract",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 2620,
+      "cached_tokens": 2560,
+      "completion_tokens": 1863,
+      "reasoning_tokens": 1671,
+      "cost_usd": 0.00226896,
+      "cost_source": "reported",
+      "latency_s": 4.918259711
+    },
+    {
+      "stage": "extract.card",
+      "max_tokens": 65536,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 9908,
+      "cached_tokens": 0,
+      "completion_tokens": 1582,
+      "reasoning_tokens": 1496,
+      "cost_usd": 0.00148456,
+      "cost_source": "reported",
+      "latency_s": 13.144278031
+    },
+    {
+      "stage": "extract.sections",
+      "max_tokens": 65536,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 10401,
+      "cached_tokens": 0,
+      "completion_tokens": 25425,
+      "reasoning_tokens": 27093,
+      "cost_usd": 0.01344057,
+      "cost_source": "reported",
+      "latency_s": 147.884977508
+    },
+    {
+      "stage": "extract.references",
+      "max_tokens": 65536,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 9901,
+      "cached_tokens": 9472,
+      "completion_tokens": 7485,
+      "reasoning_tokens": 6465,
+      "cost_usd": 0.003848306,
+      "cost_source": "reported",
+      "latency_s": 49.32898683
+    },
+    {
+      "stage": "extract.graph",
+      "max_tokens": 65536,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 9912,
+      "cached_tokens": 9472,
+      "completion_tokens": 13357,
+      "reasoning_tokens": 14145,
+      "cost_usd": 0.006785076,
+      "cost_source": "reported",
+      "latency_s": 76.326904114
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 12652,
+      "cached_tokens": 768,
+      "completion_tokens": 2569,
+      "reasoning_tokens": 2243,
+      "cost_usd": 0.006652608,
+      "cost_source": "reported",
+      "latency_s": 16.719494151
+    }
+  ],
+  "totals": {
+    "calls": 8,
+    "prompt_tokens": 66356,
+    "cached_tokens": 23424,
+    "completion_tokens": 57613,
+    "cost_usd": 0.043828391999999994,
+    "model_latency_s": 323.649599687,
+    "wall_s": 326.605402206
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e8-fanout-30-2026-10-20/results/1910.06658v2.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed\nmobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories.\nThe TNG framework represents the environment as a directed graph composed of deep\nneural networks. Each vertex of the graph corresponds to a trajectory and is represented\nby a trajectory identification classifier and a trajectory imitation controller. For trajectory\nfollowing, we propose the novel use of neural object detection architectures. The edges of\nTNG correspond to intersections between trajectories and are all represented by a classifier.\nWe provide empirical evaluation of the proposed navigation framework and its components\nin simulated and real-world environments, demonstrating that TNG allows us to utilise\nnon-goal-directed, imitation-learning methods for goal-directed autonomous navigation."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Imitation learning, behaviour cloning, CNN-based regression controllers, and topological navigation methods.",
+            "confidence": "high",
+            "evidence": [],
+            "reference_key": "",
+            "why": "It builds on learned trajectory imitation and graph-based navigation components."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "A regression controller derived from prior end-to-end imitation work.",
+            "confidence": "medium",
+            "evidence": [],
+            "reference_key": "",
+            "why": "It reimplements and evaluates that controller for comparison against the object-detection-based controller."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "End-to-end reinforcement-learning and metric/geometric navigation approaches.",
+            "confidence": "high",
+            "evidence": [],
+            "reference_key": "",
+            "why": "It avoids large joint training and precise metric localization by using modular reactive skills and minimal topological localization."
+          },
+          {
+            "cited_work": "Regression-based imitation controllers.",
+            "confidence": "high",
+            "evidence": [],
+            "reference_key": "",
+            "why": "It critiques their sensitivity to rotational errors and environmental changes and their cascading-error risk."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [],
+        "text": "A topological navigation graph can compose separately learned, non-goal-directed trajectory imitation controllers and trajectory/intersection classifiers into a goal-directed autonomous robot navigation system, with object-detection-based controllers improving robustness over regression controllers."
+      }
+    },
+    "citations": [
+      {
+        "context": "[1, 2, 3, 4]",
+        "page": 1,
+        "reference_key": "[1, 2, 3, 4]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Povilas Daniušis"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Shubham Juneja"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Lukas Valatka"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Linas Petkevičius"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Topological Navigation Graph Framework∗"
+        },
+        {
+          "page": 1,
+          "quote": "Povilas Daniušis†"
+        },
+        {
+          "page": 1,
+          "quote": "Shubham Juneja"
+        },
+        {
+          "page": 1,
+          "quote": "Lukas Valatka‡"
+        },
+        {
+          "page": 1,
+          "quote": "Linas Petkevičius"
+        },
+        {
+          "page": 1,
+          "quote": "May 17, 2021"
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:1910.06658v2[cs.RO]13May2021"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1910.06658v2",
+        "doi": "https://doi.org/10.1007/s10514-021-09980-x"
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Topological Navigation Graph Framework",
+      "venue": "arXiv",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [],
+      "text": "How can non-goal-directed reactive trajectory imitation controllers be used for goal-directed mobile robot navigation?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Daniušis, Povilas",
+          "Juneja, Shubham",
+          "Valatka, Lukas",
+          "Petkevičius, Linas"
+        ],
+        "doi": "https://doi.org/10.1007/s10514-021-09980-x",
+        "key": "1",
+        "page": 1,
+        "title": "Topological Navigation Graph Framework",
+        "venue": "Autonomous Robots (preprint)",
+        "year": 2021
+      }
+    ],
+    "relations": [],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "The main contributions of this study include the TNG framework",
+          "start_page": 1,
+          "start_text": "We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories."
+        },
+        "summary": "Sets up mobile robot navigation as challenging, contrasts geometric/probabilistic mapping with imitation learning, and introduces TNG as a way to make non-goal-directed imitation controllers goal-directed. It lists contributions: TNG, object-detection-based trajectory imitation, and simulator/real-world evaluation with SentiBotics.",
+        "title": "Introduction, Motivation, and Contributions"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "an object detection-based controller, by design, allows recovery",
+          "start_page": 2,
+          "start_text": "we focus on learning a reactive skill of visuomotor trajectory following"
+        },
+        "summary": "Defines trajectory following as visuomotor imitation yt=f(Xt|θ), collects expert camera-command pairs, and compares two controllers. The regression controller uses a fixed CNN encoder plus trainable MLP, ridge loss, Adam, DAgger and augmentation. It is sensitive to rotational errors and environmental change. The object-detection controller uses RetinaNet to detect a single bounding box for the robot's direction of movement, then a PID controller centers it. This recovers from larger rotational errors and can avoid low-confidence detections.",
+        "title": "Trajectory Imitation Controllers: Regression and Object Detection"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "Having TNG and the current sensory input Xt, we can topologically localise the robot by evaluating g(Xt|φi)",
+          "start_page": 4,
+          "start_text": "In this section, we review similar work of other authors and formally describe the proposed TNG framework"
+        },
+        "summary": "Reviews related topological and end-to-end navigation methods and their limitations (resource-heavy, hard assumptions, manual low-level control, no real-world demos). Then formalizes TNG as a directed graph G=(V,E): vertices are trajectory controllers plus trajectory classifiers, edges are intersection classifiers. It supports topological localization, goal identification via g(X*|φi), shortest path planning, switching controllers at intersections, and goal-reaching function.",
+        "title": "TNG Framework: Related Work and Formal Definition"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "[2048, 1024, 256, 32, 2] neurones and ReLU activations in every layer.",
+          "start_page": 6,
+          "start_text": "Trajectory classifiers g(X|φi) are constructed using the form mentioned in (1) with the SoftMax activation of"
+        },
+        "summary": "Describes how classifiers, intersection detectors, goal-reaching, and trajectory controllers are implemented. Trajectory classifiers use MobileNetV2-based MLP with SoftMax, cross-entropy, fixed ImageNet encoder. Intersections and goal-reaching use a proprietary object recognition engine with FAST corners and BRIEF descriptors. Regression controller uses a 2048-1024-256-32-2 MLP with clipped output; object-detection controller uses RetinaNet and PID with clipped output.",
+        "title": "TNG Implementation Details"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "With lower differences in the percentage autonomy between evaluations before and after an interval, object",
+          "start_page": 7,
+          "start_text": "To evaluate trajectory imitation controllers, we utilise three real-world environments and one simulated"
+        },
+        "summary": "Evaluates controllers in three real environments (L1-L2 office, L3 shopping centre) and one simulated environment (L4). Data collected by driving robot three times per trajectory, recording front RGB images and motor commands. Controllers trained, run for 10 laps, human interventions timed. Percentage autonomy used. Results: both nearly perfect in simulation; real-world lower; regression controller degrades more after 4 weeks than object-detection controller. Object-detection controller better tolerates environmental change and needs less aggregated data.",
+        "title": "Trajectory Imitation Controller Evaluation"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Although the TNG framework is composed of \"black box\" modules, its operation is transparent and easily",
+          "start_page": 9,
+          "start_text": "We cover a subset of an office environment with five trajectories (denoted as T1-T5), and construct the"
+        },
+        "summary": "Tests TNG in an office with five trajectories T1-T5. Random initial/goal positions for each trajectory pair; autonomous navigation episodes record percentage autonomy, traveled distance, and initial/goal/final images. Results indicate TNG enables goal-directed navigation from pre-trained reactive controllers in real-world environments. Discussion contrasts TNG with metric/topological/hybrid approaches: TNG provides only minimal localization needed to keep/switch behavior. Advantages: incremental augmentation and modular perception/action selection. Limitations: assumes separable intersecting trajectories, may not handle arbitrary coverings or parallel trajectories; geometrically sub-optimal; requires human effort. But many realistic scenarios satisfy assumption.",
+        "title": "TNG Navigation Experiments and Discussion"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Our future work will include research on more efficient and reliable imitation learning approaches able",
+          "start_page": 12,
+          "start_text": "In this article, we studied how to utilise reactive trajectory imitation controllers for topological, goal-directed"
+        },
+        "summary": "Concludes that reactive trajectory imitation controllers can be used for topological goal-directed navigation via TNG. Reaffirms object detection for visuomotor imitation and TNG composition. Future work: more efficient/reliable imitation learning for dynamic environments, automatic environment graph construction, hierarchical component.",
+        "title": "Conclusion and Future Work"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "IEEE Trans. Robot., 24(5):1038–1053, Oct 2008.",
+          "start_page": 12,
+          "start_text": "[1] Sebastian Thrun, Wolfram Burgard, and Dieter Fox. Probabilistic robotics. MIT press, 2005."
+        },
+        "summary": "Bibliography of cited works.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "it proposes a TNG framework and reports simulated and real-world experiments, and the text identifies it as a preprint of an article published in Autonomous Robots",
+      "value": "empirical"
+    }
+  },
+  "pass1_check": {
+    "sites": 9,
+    "verbatim": 9,
+    "near": 0,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/references/0",
+      "action": "replace",
+      "value_json": "{\"authors\":[\"Thrun, Sebastian\",\"Burgard, Wolfram\",\"Fox, Dieter\"],\"doi\":\"\",\"key\":\"1\",\"page\":12,\"title\":\"Probabilistic robotics\",\"venue\":\"MIT press\",\"year\":2005}",
+      "reason": "The single reference in the draft is a self-referential, invented entry (the paper's own title given as reference [1]). Reference [1] of the paper is Thrun, Burgard and Fox, Probabilistic robotics, MIT press, 2005, listed on the first page of the bibliography (page 12).",
+      "evidence": [
+        {
+          "quote": "[1] Sebastian Thrun, Wolfram Burgard, and Dieter Fox. Probabilistic robotics. MIT press, 2005.",
+          "page": 12
+        }
+      ]
+    },
+    {
+      "path": "/references",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft's reference list contains only one entry, but the paper's bibliography on pages 12-14 contains 43 numbered references ([1]-[43]), all of which are missing and cannot be fabricated here.",
+      "evidence": [
+        {
+          "quote": "[1] Sebastian Thrun, Wolfram Burgard, and Dieter Fox. Probabilistic robotics. MIT press, 2005.",
+          "page": 12
+        },
+        {
+          "quote": "IEEE Trans. Robot., 24(5):1038–1053, Oct 2008.",
+          "page": 14
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/references/0",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/references",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 9,
+    "verbatim": 9,
+    "near": 0,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed\nmobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories.\nThe TNG framework represents the environment as a directed graph composed of deep\nneural networks. Each vertex of the graph corresponds to a trajectory and is represented\nby a trajectory identification classifier and a trajectory imitation controller. For trajectory\nfollowing, we propose the novel use of neural object detection architectures. The edges of\nTNG correspond to intersections between trajectories and are all represented by a classifier.\nWe provide empirical evaluation of the proposed navigation framework and its components\nin simulated and real-world environments, demonstrating that TNG allows us to utilise\nnon-goal-directed, imitation-learning methods for goal-directed autonomous navigation.",
+      "admitted": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed\nmobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories.\nThe TNG framework represents the environment as a directed graph composed of deep\nneural networks. Each vertex of the graph corresponds to a trajectory and is represented\nby a trajectory identification classifier and a trajectory imitation controller. For trajectory\nfollowing, we propose the novel use of neural object detection architectures. The edges of\nTNG correspond to intersections between trajectories and are all represented by a classifier.\nWe provide empirical evaluation of the proposed navigation framework and its components\nin simulated and real-world environments, demonstrating that TNG allows us to utilise\nnon-goal-directed, imitation-learning methods for goal-directed autonomous navigation.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Topological Navigation Graph Framework∗",
+      "admitted": "Topological Navigation Graph Framework∗",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Povilas Daniušis†",
+      "admitted": "Povilas Daniušis†",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/2/quote",
+      "status": "verbatim",
+      "original": "Shubham Juneja",
+      "admitted": "Shubham Juneja",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/3/quote",
+      "status": "verbatim",
+      "original": "Lukas Valatka‡",
+      "admitted": "Lukas Valatka‡",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/4/quote",
+      "status": "verbatim",
+      "original": "Linas Petkevičius",
+      "admitted": "Linas Petkevičius",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/5/quote",
+      "status": "verbatim",
+      "original": "May 17, 2021",
+      "admitted": "May 17, 2021",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/6/quote",
+      "status": "verbatim",
+      "original": "arXiv:1910.06658v2[cs.RO]13May2021",
+      "admitted": "arXiv:1910.06658v2[cs.RO]13May2021",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "[1, 2, 3, 4]",
+      "admitted": "[1, 2, 3, 4]",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    }
+  ],
+  "admission_counts": {
+    "verbatim": 9
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed\nmobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories.\nThe TNG framework represents the environment as a directed graph composed of deep\nneural networks. Each vertex of the graph corresponds to a trajectory and is represented\nby a trajectory identification classifier and a trajectory imitation controller. For trajectory\nfollowing, we propose the novel use of neural object detection architectures. The edges of\nTNG correspond to intersections between trajectories and are all represented by a classifier.\nWe provide empirical evaluation of the proposed navigation framework and its components\nin simulated and real-world environments, demonstrating that TNG allows us to utilise\nnon-goal-directed, imitation-learning methods for goal-directed autonomous navigation."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Imitation learning, behaviour cloning, CNN-based regression controllers, and topological navigation methods.",
+            "confidence": "high",
+            "evidence": [],
+            "reference_key": "",
+            "why": "It builds on learned trajectory imitation and graph-based navigation components."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "A regression controller derived from prior end-to-end imitation work.",
+            "confidence": "medium",
+            "evidence": [],
+            "reference_key": "",
+            "why": "It reimplements and evaluates that controller for comparison against the object-detection-based controller."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "End-to-end reinforcement-learning and metric/geometric navigation approaches.",
+            "confidence": "high",
+            "evidence": [],
+            "reference_key": "",
+            "why": "It avoids large joint training and precise metric localization by using modular reactive skills and minimal topological localization."
+          },
+          {
+            "cited_work": "Regression-based imitation controllers.",
+            "confidence": "high",
+            "evidence": [],
+            "reference_key": "",
+            "why": "It critiques their sensitivity to rotational errors and environmental changes and their cascading-error risk."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [],
+        "text": "A topological navigation graph can compose separately learned, non-goal-directed trajectory imitation controllers and trajectory/intersection classifiers into a goal-directed autonomous robot navigation system, with object-detection-based controllers improving robustness over regression controllers."
+      }
+    },
+    "citations": [
+      {
+        "context": "[1, 2, 3, 4]",
+        "page": 1,
+        "reference_key": "[1, 2, 3, 4]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Povilas Daniušis"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Shubham Juneja"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Lukas Valatka"
+        },
+        {
+          "affiliation": "Neurotechnology",
+          "name": "Linas Petkevičius"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Topological Navigation Graph Framework∗"
+        },
+        {
+          "page": 1,
+          "quote": "Povilas Daniušis†"
+        },
+        {
+          "page": 1,
+          "quote": "Shubham Juneja"
+        },
+        {
+          "page": 1,
+          "quote": "Lukas Valatka‡"
+        },
+        {
+          "page": 1,
+          "quote": "Linas Petkevičius"
+        },
+        {
+          "page": 1,
+          "quote": "May 17, 2021"
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:1910.06658v2[cs.RO]13May2021"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1910.06658v2",
+        "doi": "https://doi.org/10.1007/s10514-021-09980-x"
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Topological Navigation Graph Framework",
+      "venue": "arXiv",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [],
+      "text": "How can non-goal-directed reactive trajectory imitation controllers be used for goal-directed mobile robot navigation?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Thrun, Sebastian",
+          "Burgard, Wolfram",
+          "Fox, Dieter"
+        ],
+        "doi": "",
+        "key": "1",
+        "page": 12,
+        "title": "Probabilistic robotics",
+        "venue": "MIT press",
+        "year": 2005
+      }
+    ],
+    "relations": [],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "The main contributions of this study include the TNG framework",
+          "start_page": 1,
+          "start_text": "We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories."
+        },
+        "summary": "Sets up mobile robot navigation as challenging, contrasts geometric/probabilistic mapping with imitation learning, and introduces TNG as a way to make non-goal-directed imitation controllers goal-directed. It lists contributions: TNG, object-detection-based trajectory imitation, and simulator/real-world evaluation with SentiBotics.",
+        "title": "Introduction, Motivation, and Contributions"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "an object detection-based controller, by design, allows recovery",
+          "start_page": 2,
+          "start_text": "we focus on learning a reactive skill of visuomotor trajectory following"
+        },
+        "summary": "Defines trajectory following as visuomotor imitation yt=f(Xt|θ), collects expert camera-command pairs, and compares two controllers. The regression controller uses a fixed CNN encoder plus trainable MLP, ridge loss, Adam, DAgger and augmentation. It is sensitive to rotational errors and environmental change. The object-detection controller uses RetinaNet to detect a single bounding box for the robot's direction of movement, then a PID controller centers it. This recovers from larger rotational errors and can avoid low-confidence detections.",
+        "title": "Trajectory Imitation Controllers: Regression and Object Detection"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "Having TNG and the current sensory input Xt, we can topologically localise the robot by evaluating g(Xt|φi)",
+          "start_page": 4,
+          "start_text": "In this section, we review similar work of other authors and formally describe the proposed TNG framework"
+        },
+        "summary": "Reviews related topological and end-to-end navigation methods and their limitations (resource-heavy, hard assumptions, manual low-level control, no real-world demos). Then formalizes TNG as a directed graph G=(V,E): vertices are trajectory controllers plus trajectory classifiers, edges are intersection classifiers. It supports topological localization, goal identification via g(X*|φi), shortest path planning, switching controllers at intersections, and goal-reaching function.",
+        "title": "TNG Framework: Related Work and Formal Definition"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "[2048, 1024, 256, 32, 2] neurones and ReLU activations in every layer.",
+          "start_page": 6,
+          "start_text": "Trajectory classifiers g(X|φi) are constructed using the form mentioned in (1) with the SoftMax activation of"
+        },
+        "summary": "Describes how classifiers, intersection detectors, goal-reaching, and trajectory controllers are implemented. Trajectory classifiers use MobileNetV2-based MLP with SoftMax, cross-entropy, fixed ImageNet encoder. Intersections and goal-reaching use a proprietary object recognition engine with FAST corners and BRIEF descriptors. Regression controller uses a 2048-1024-256-32-2 MLP with clipped output; object-detection controller uses RetinaNet and PID with clipped output.",
+        "title": "TNG Implementation Details"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "With lower differences in the percentage autonomy between evaluations before and after an interval, object",
+          "start_page": 7,
+          "start_text": "To evaluate trajectory imitation controllers, we utilise three real-world environments and one simulated"
+        },
+        "summary": "Evaluates controllers in three real environments (L1-L2 office, L3 shopping centre) and one simulated environment (L4). Data collected by driving robot three times per trajectory, recording front RGB images and motor commands. Controllers trained, run for 10 laps, human interventions timed. Percentage autonomy used. Results: both nearly perfect in simulation; real-world lower; regression controller degrades more after 4 weeks than object-detection controller. Object-detection controller better tolerates environmental change and needs less aggregated data.",
+        "title": "Trajectory Imitation Controller Evaluation"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Although the TNG framework is composed of \"black box\" modules, its operation is transparent and easily",
+          "start_page": 9,
+          "start_text": "We cover a subset of an office environment with five trajectories (denoted as T1-T5), and construct the"
+        },
+        "summary": "Tests TNG in an office with five trajectories T1-T5. Random initial/goal positions for each trajectory pair; autonomous navigation episodes record percentage autonomy, traveled distance, and initial/goal/final images. Results indicate TNG enables goal-directed navigation from pre-trained reactive controllers in real-world environments. Discussion contrasts TNG with metric/topological/hybrid approaches: TNG provides only minimal localization needed to keep/switch behavior. Advantages: incremental augmentation and modular perception/action selection. Limitations: assumes separable intersecting trajectories, may not handle arbitrary coverings or parallel trajectories; geometrically sub-optimal; requires human effort. But many realistic scenarios satisfy assumption.",
+        "title": "TNG Navigation Experiments and Discussion"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Our future work will include research on more efficient and reliable imitation learning approaches able",
+          "start_page": 12,
+          "start_text": "In this article, we studied how to utilise reactive trajectory imitation controllers for topological, goal-directed"
+        },
+        "summary": "Concludes that reactive trajectory imitation controllers can be used for topological goal-directed navigation via TNG. Reaffirms object detection for visuomotor imitation and TNG composition. Future work: more efficient/reliable imitation learning for dynamic environments, automatic environment graph construction, hierarchical component.",
+        "title": "Conclusion and Future Work"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "IEEE Trans. Robot., 24(5):1038–1053, Oct 2008.",
+          "start_page": 12,
+          "start_text": "[1] Sebastian Thrun, Wolfram Burgard, and Dieter Fox. Probabilistic robotics. MIT press, 2005."
+        },
+        "summary": "Bibliography of cited works.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "it proposes a TNG framework and reports simulated and real-world experiments, and the text identifies it as a preprint of an article published in Autonomous Robots",
+      "value": "empirical"
+    }
+  }
+}

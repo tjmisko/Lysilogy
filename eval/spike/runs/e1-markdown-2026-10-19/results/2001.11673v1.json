@@ -1,0 +1,55 @@
+{
+  "record_version": 4,
+  "started_at": "2026-10-19T21:03:31.715266350Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/2001.11673v1.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 8,
+  "calls": [
+    {
+      "stage": "core",
+      "provider": "Together",
+      "finish_reason": "length",
+      "prompt_tokens": 8681,
+      "cached_tokens": 256,
+      "completion_tokens": 24576,
+      "reasoning_tokens": 8139,
+      "cost_usd": 0.032020236,
+      "cost_source": "reported",
+      "latency_s": 66.497028261
+    }
+  ],
+  "totals": {
+    "calls": 1,
+    "prompt_tokens": 8681,
+    "cached_tokens": 256,
+    "completion_tokens": 24576,
+    "cost_usd": 0.032020236,
+    "model_latency_s": 66.497028261,
+    "wall_s": 68.378601024
+  },
+  "budget_stopped": null,
+  "failures": [
+    {
+      "stage": "core",
+      "error": "output was cut off at the length limit",
+      "raw": "{\n  \"abstract\": {\n    \"confidence\": \r\n      \"high\",\n    \"page\": 1,\n    \"text\": \"Visual Question Answering (VQA) concerns providing answers to Natural Language questions about images. Several deep neural network approaches have been proposed to model the task in an end-to-end fashion. Whereas the task is grounded in visual processing, if the question focuses on events described by verbs, the language understanding component becomes crucial. Our hypothesis is that models should be aware of verb semantics, as expressed via semantic role labels, argument types, and/or frame elements. Unfortunately, no VQA dataset exists that includes verb semantic information. Our first contribution is a new VQA dataset (imSituVQA) that we built by taking advantage of the imSitu annotations. The imSitu dataset consists of images manually labeled with semantic frame elements, mostly taken from FrameNet. Second, we propose a multitask CNN- LSTM VQA model that learns to classify the answers as well as the semantic frame elements. Our experiments show that semantic frame element classification helps the VQA system avoid inconsistent responses and improves performance.\"\n  },\n  \"card\": {\n    \"position\": {\n      \"predecessors\": \r\n        [\n          {\n            \"cited_work\": \"1\",\n            \"confidence\": \"high\",\n            \"evidence\": [\n              {\n                \"page\": 2,\n                \"quote\": \"The current dominant baseline method proposed in [1] employs a CNN-LSTM-based architecture.\"\n              }\n            ],\n            \"reference_key\": \"1\",\n            \"why\": \"The paper builds on the dominant CNN-LSTM VQA baseline and the VQA benchmark.\"\n          },\n          {\n            \"cited_work\": \"9\",\n            \"confidence\": \"high\",\n            \"evidence\": [\n              {\n                \"page\": 1,\n                \"quote\": \"In order to create a VQA dataset with verb semantic information, we took advantage of the imSitu dataset [9], developed for situation recognition and cons"
+    }
+  ],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e1-markdown-2026-10-19/results/2001.11673v1.reasoning.jsonl",
+  "pass1": null,
+  "pass1_check": null,
+  "corrections": [],
+  "correction_outcomes": [],
+  "pass2_check": null,
+  "admission": [],
+  "admission_counts": {},
+  "artifacts": null
+}

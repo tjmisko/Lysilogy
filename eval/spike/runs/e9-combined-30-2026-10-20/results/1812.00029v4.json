@@ -1,0 +1,1917 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T03:17:37.029292067Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1812.00029v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 17,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 12348,
+      "cached_tokens": 256,
+      "completion_tokens": 20912,
+      "reasoning_tokens": 14227,
+      "cost_usd": 0.016199604,
+      "cost_source": "reported",
+      "latency_s": 114.062100276
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 17244,
+      "cached_tokens": 768,
+      "completion_tokens": 9677,
+      "reasoning_tokens": 9429,
+      "cost_usd": 0.016559808,
+      "cost_source": "reported",
+      "latency_s": 42.040038906
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 29592,
+    "cached_tokens": 1024,
+    "completion_tokens": 30589,
+    "cost_usd": 0.032759412,
+    "model_latency_s": 156.102139182,
+    "wall_s": 161.430228547
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e9-combined-30-2026-10-20/results/1812.00029v4.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Decision forests are popular tools for classification and regression. These forests naturally generate proximity matrices that measure the frequency of observations appearing in the same leaf node. While other kernels are known to have strong theoretical properties such as being characteristic, there is no similar result available for decision forest-based kernels. In addition, existing approaches to independence and k-sample testing may require unfeasibly large sample sizes and are not interpretable. In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests. We leverage this to introduce kernel mean embedding random forest (KMERF), which is a valid and consistent method for independence and k-sample testing. Our extensive simulations demonstrate that KMERF outperforms other tests across a variety of independence and two-sample testing scenarios. Additionally, the test is interpretable, and its key features are readily discernible. This work therefore demonstrates the existence of a test that is both more powerful and more interpretable than existing methods, flying in the face of conventional wisdom of the trade-off between the two."
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "conventional wisdom",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "This work therefore demonstrates the existence of a test that is both more powerful and more interpretable than existing methods, flying in the face of conventional wisdom of the trade-off between the two."
+              }
+            ],
+            "reference_key": "conventional wisdom",
+            "why": "The paper explicitly says it flies in the face of the conventional power-interpretability trade-off."
+          },
+          {
+            "cited_work": "Breiman [5] and Davies and Ghahramani [9]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Decision forests are ensemble method popularized by Breiman [5]."
+              }
+            ],
+            "reference_key": "[5, 9]",
+            "why": "It builds on random forests and the random-forest kernel representation."
+          },
+          {
+            "cited_work": "Gretton et al. [12] and Shen et al. [34]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "In this paper, we leverage the popular random forest method [5] and a recent chi-square test [34] for a more powerful and interpretable method for hypothesis testing."
+              }
+            ],
+            "reference_key": "[12, 34]",
+            "why": "It uses and extends characteristic-kernel dependence measures and the chi-square test of distance correlation."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests."
+          }
+        ],
+        "text": "Decision forest induced proximity is a characteristic kernel, enabling a valid, consistent, powerful, and interpretable method (KMERF) for independence and k-sample testing."
+      }
+    },
+    "citations": [
+      {
+        "context": "Decision forests are ensemble method popularized by Breiman [5].",
+        "page": 1,
+        "reference_key": "[5]"
+      },
+      {
+        "context": "It is highly effective in classification and regression tasks, particularly in high-dimensional settings [7, 8, 39].",
+        "page": 1,
+        "reference_key": "[7, 8, 39]"
+      },
+      {
+        "context": "To measure the similarity between two observations, a proximity matrix can be constructed, defined as the percentage of trees in which both observations lie in the same leaf node [6].",
+        "page": 1,
+        "reference_key": "[6]"
+      },
+      {
+        "context": "Parametric methods are often highly interpretable, such as Pearson’s correlation and its rank variants [18, 24, 35].",
+        "page": 1,
+        "reference_key": "[18, 24, 35]"
+      },
+      {
+        "context": "The more recent distance correlation (Dcorr) [37, 38] and the kernel correlation (HSIC) [12, 13] are consistent for testing independence against any distribution of finite second moments for any finite dimensionality; moreover, the energy-based statistics (such as Dcorr) and kernel-based statistics (such as HSIC) are known to be exactly equivalent for all finite samples [23, 32].",
+        "page": 1,
+        "reference_key": "[37, 38, 12, 13, 23, 32]"
+      },
+      {
+        "context": "The theory supporting universal consistency of these methods (which we refer to as kernel methods hereafter, without loss of generality) depends on those kernels being characteristic kernel [20, 21, 30, 32].",
+        "page": 1,
+        "reference_key": "[20, 21, 30, 32]"
+      },
+      {
+        "context": "To the best of our knowledge, very few tests exist[17, 40].",
+        "page": 1,
+        "reference_key": "[17, 40]"
+      },
+      {
+        "context": "Choosing an appropriate kernel that properly summarize geometries within the data is often times non-obvious [29].",
+        "page": 1,
+        "reference_key": "[29]"
+      },
+      {
+        "context": "High-dimensional data is particularly vexing [27, 40], and a number of extensions have been proposed to achieve better power such as adaptive metric kernel choice [14], low-dimensional projections [16], and marginal correlations [31].",
+        "page": 1,
+        "reference_key": "[27, 40, 14, 16, 31]"
+      },
+      {
+        "context": "In this paper, we leverage the popular random forest method [5] and a recent chi-square test [34] for a more powerful and interpretable method for hypothesis testing.",
+        "page": 1,
+        "reference_key": "[5, 34]"
+      },
+      {
+        "context": "Given any kernel function k(·, ·), we can formulate the kernel induced correlation measure as cnk(x, y) using the sample kernel matrices [12, 32], where x = {xi} and y = {yi}.",
+        "page": 2,
+        "reference_key": "[12, 32]"
+      },
+      {
+        "context": "When the kernel function k(·, ·) is characteristic, it has been shown that cnk(x, y) → 0 if and only if x and y are independent [12].",
+        "page": 2,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "By concatenating the l datasets and introducing an auxiliary random variable, the kernel correlation measure can be used for k-sample testing [23].",
+        "page": 2,
+        "reference_key": "[23]"
+      },
+      {
+        "context": "Compute the unbiased kernel transformation [34, 36] on Kx.",
+        "page": 3,
+        "reference_key": "[34, 36]"
+      },
+      {
+        "context": "Let Ky be the Euclidean distance induced kernel by Shen and Vogelstein [32], or the proximity kernel in the case that dimensions of x and y is the same, that is p = q, and compute Ly using the same unbiased transformation.",
+        "page": 3,
+        "reference_key": "[32]"
+      },
+      {
+        "context": "Compute the p-value via the following chi-square test [34]:",
+        "page": 3,
+        "reference_key": "[34]"
+      },
+      {
+        "context": "In the numerical implementation, the standard supervised random forest is used with m = 500 (which is also applicable to the unsupervised version or other random forest variants [1, 4, 39]).",
+        "page": 3,
+        "reference_key": "[1, 4, 39]"
+      },
+      {
+        "context": "We found that utilizing the multiscale version of the kernel correlation [33, 40], which is equivalent for linear relationships while being better for nonlinear relationships, produced similar results to using distance correlation, but substantially increased runtimes.",
+        "page": 3,
+        "reference_key": "[33, 40]"
+      },
+      {
+        "context": "Note that one could also compute a p-value for KMERF via the permutation test, which is a standard procedure for testing independence [11].",
+        "page": 3,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "This theorem holds because the forest-induced kernel is a summation of a permuted block diagonal matrix, with each matrix coming from individual tree, that is positive definite [9]; and a summation of positive definite matrices is still positive definite.",
+        "page": 3,
+        "reference_key": "[9]"
+      },
+      {
+        "context": "A similar property is also used for proving classification consistency for k-nearest-neighbors [10], and we shall denote N (ϕw) as the maximum area of each part.",
+        "page": 4,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "By Gretton et al. [12], any characteristic-kernel based dependence measure converges to 0 if and only if X and Y are independent.",
+        "page": 4,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "Moreover, Shen et al. [34] showed that the chi-square distribution χ21 − 1 approximates and upper-tail dominates the true null distribution of any unbiased kernel when using distance correlation, making it a valid and consistent test.",
+        "page": 4,
+        "reference_key": "[34]"
+      },
+      {
+        "context": "We utilize the hyppo package in Python [22], which uses scikit-learn [25] random forest with 500 trees and otherwise default hyper-parameters, and calculate the proximity matrix from this.",
+        "page": 4,
+        "reference_key": "[22, 25]"
+      },
+      {
+        "context": "The HHG method has been shown to work extremely well against nonlinear dependencies [15].",
+        "page": 4,
+        "reference_key": "[15]"
+      },
+      {
+        "context": "The MGC method has been shown to work well against linear, nonlinear, and high-dimensional dependencies [33].",
+        "page": 4,
+        "reference_key": "[33]"
+      },
+      {
+        "context": "We take 20 high-dimensional simulation settings [40], consisting of various linear, monotone, and strongly nonlinear dependencies with p increasing, q = 1, and n = 100.",
+        "page": 4,
+        "reference_key": "[40]"
+      },
+      {
+        "context": "It has been shown that all independence measures can be used for two-sample testing [23, 32], allowing all previous independence testing methods to be compared here as well.",
+        "page": 4,
+        "reference_key": "[23, 32]"
+      },
+      {
+        "context": "We then applied KMERF to a date set consisting of proteolytic peptides derived from the blood samples of 95 individuals harboring pancreatic (n=10), ovarian (n=24), colorectal cancer (n=28), and healthy controls (n=33) [40].",
+        "page": 6,
+        "reference_key": "[40]"
+      },
+      {
+        "context": "The test identifies neurogranin as a potentially valuable marker for pancreatic cancer, which the literature also corroborates [44, 45].",
+        "page": 6,
+        "reference_key": "[44, 45]"
+      },
+      {
+        "context": "In fact, multiscale graph correlation [33, 40] can be thought of, in a sense, as kernel learning: given n samples, and a pair of kernel or distance functions, it chooses one of the approximately n2 sparsified kernels, by excluding all but the nearest neighbors for each data point [33, 40].",
+        "page": 7,
+        "reference_key": "[33, 40]"
+      },
+      {
+        "context": "Because random forest can be thought of as a nearest neighbor algorithm [19], in a sense, the forest induced kernel is a natural extension of Vogelstein et al. [40], which leads to far more data-adaptive estimates of the nearest neighbors using supervised information.",
+        "page": 7,
+        "reference_key": "[19, 40]"
+      },
+      {
+        "context": "Moreover, proving that the random-forest induced kernel is characteristic is a first step towards building lifelong learning kernel machines with strong theoretical guarantees [26, 41].",
+        "page": 7,
+        "reference_key": "[26, 41]"
+      },
+      {
+        "context": "It will be worthwhile to further understand the underlying theoretical mechanism of the induced characteristic kernel, as well as evaluating the performance of these forest induced kernels on other learning problems, including classification, regression, clustering, and embedding [28].",
+        "page": 7,
+        "reference_key": "[28]"
+      },
+      {
+        "context": "The forest-induced kernel is a summation of permuted block diagonal matrix, with ones in each block and zeros elsewhere [9], i.e.,",
+        "page": 12,
+        "reference_key": "[9]"
+      },
+      {
+        "context": "A similar property is also used for proving classification consistency in k-nearest-neighbor [10], and we shall denote N (ϕw) ∈ R≥0 Lw as the maximum area of each part.",
+        "page": 12,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "By Shen and Vogelstein [32], the Euclidean distance induced kernel is also characteristic.",
+        "page": 13,
+        "reference_key": "[32]"
+      },
+      {
+        "context": "Therefore by Gretton et al. [12], Lyons [20], cnk(x, y) is asymptotically 0 if and only if independence.",
+        "page": 13,
+        "reference_key": "[12, 20]"
+      },
+      {
+        "context": "By Shen et al. [34], for sufficiently large n, the chi-square distribution¹n dominates the true null distribution of the unbiased correlation in upper tail.",
+        "page": 13,
+        "reference_key": "[34]"
+      },
+      {
+        "context": "In the problem setting that we are considering (composite null vs. composite alternative), there is no uniformly most powerful test [3].",
+        "page": 13,
+        "reference_key": "[3]"
+      },
+      {
+        "context": "Previous studies have shown the utility of selection reaction monitoring when measuring protein and peptide abundance [42], and one was used to identify 318 peptides from 33 normal, 10 pancreatic cancer, 28 colorectal cancer, and 24 ovarian cancer samples [43].",
+        "page": 16,
+        "reference_key": "[42, 43]"
+      },
+      {
+        "context": "We then evaluated at a type 1 error level of α = 0.05, and used the Benjamini-Hochberg procedure to control the false discovery rate [2] for our 318 p-values.",
+        "page": 16,
+        "reference_key": "[2]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Johns Hopkins University",
+          "name": "Sambit Panda"
+        },
+        {
+          "affiliation": "University of Delaware",
+          "name": "Cencheng Shen"
+        },
+        {
+          "affiliation": "Johns Hopkins University",
+          "name": "Joshua T. Vogelstein"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Learning Interpretable Characteristic Kernels via Decision Forests"
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:1812.00029v4[stat.ML]11Oct2024"
+        },
+        {
+          "page": 1,
+          "quote": "Sambit Panda1,†, Cencheng Shen2,†, and Joshua T. Vogelstein1,∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1812.00029v4",
+        "doi": "10.48550/arXiv.1812.00029"
+      },
+      "publication_state": "preprint",
+      "subtitle": "Learning Interpretable Characteristic Kernels via Decision Forests",
+      "title": "Learning Interpretable Characteristic Kernels via Decision Forests",
+      "venue": "arXiv",
+      "year": 2024
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests."
+        }
+      ],
+      "text": "Can decision-forest induced proximity kernels be characteristic, and can they yield a valid, consistent, powerful, and interpretable method for independence and k-sample testing?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Sambit Panda",
+          "Cencheng Shen",
+          "Joshua T. Vogelstein"
+        ],
+        "doi": "10.48550/arXiv.1812.00029",
+        "key": "identity",
+        "page": 1,
+        "title": "Learning Interpretable Characteristic Kernels via Decision Forests",
+        "venue": "arXiv",
+        "year": 2024
+      },
+      {
+        "authors": [
+          "Sambit Panda",
+          "Cencheng Shen",
+          "Joshua T. Vogelstein"
+        ],
+        "doi": "10.48550/arXiv.1812.00029",
+        "key": "identity",
+        "page": 1,
+        "title": "Learning Interpretable Characteristic Kernels via Decision Forests",
+        "venue": "arXiv",
+        "year": 2024
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Decision forests are ensemble method popularized by Breiman [5].",
+        "reference_key": "[5]",
+        "relation": "uses_method",
+        "why": "The paper builds directly on random forests as the source of the proximity kernel."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "This theorem holds because the forest-induced kernel is a summation of a permuted block diagonal matrix, with each matrix coming from individual tree, that is positive definite [9]; and a summation of positive definite matrices is still positive definite.",
+        "reference_key": "[9]",
+        "relation": "extends",
+        "why": "The proof of positive definiteness uses the random forest kernel representation from Davies and Ghahramani."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "By Gretton et al. [12], any characteristic-kernel based dependence measure converges to 0 if and only if X and Y are independent.",
+        "reference_key": "[12]",
+        "relation": "uses_method",
+        "why": "KMERF inherits consistency from characteristic-kernel dependence measures established by Gretton et al."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Let Ky be the Euclidean distance induced kernel by Shen and Vogelstein [32], or the proximity kernel in the case that dimensions of x and y is the same, that is p = q, and compute Ly using the same unbiased transformation.",
+        "reference_key": "[32]",
+        "relation": "uses_method",
+        "why": "The Euclidean-distance induced kernel and equivalence results from Shen and Vogelstein are used in the KMERF statistic."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Compute the p-value via the following chi-square test [34]:",
+        "reference_key": "[34]",
+        "relation": "uses_method",
+        "why": "The chi-square test of distance correlation supplies the p-value calculation and validity argument."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "We take 20 high-dimensional simulation settings [40], consisting of various linear, monotone, and strongly nonlinear dependencies with p increasing, q = 1, and n = 100.",
+        "reference_key": "[40]",
+        "relation": "extends",
+        "why": "Vogelstein et al. provide simulation settings and a closely related MGC-based framework that KMERF extends."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "The MGC method has been shown to work well against linear, nonlinear, and high-dimensional dependencies [33].",
+        "reference_key": "[33]",
+        "relation": "compares",
+        "why": "KMERF is compared with multiscale graph correlation, a leading nonlinear and high-dimensional dependence test."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "The HHG method has been shown to work extremely well against nonlinear dependencies [15].",
+        "reference_key": "[15]",
+        "relation": "compares",
+        "why": "KMERF is benchmarked against the HHG nonlinear dependence test."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "Because random forest can be thought of as a nearest neighbor algorithm [19], in a sense, the forest induced kernel is a natural extension of Vogelstein et al. [40], which leads to far more data-adaptive estimates of the nearest neighbors using supervised information.",
+        "reference_key": "[19]",
+        "relation": "uses_method",
+        "why": "The paper uses the nearest-neighbor interpretation of random forests to motivate the learned kernel."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "The test identifies neurogranin as a potentially valuable marker for pancreatic cancer, which the literature also corroborates [44, 45].",
+        "reference_key": "[44, 45]",
+        "relation": "supports",
+        "why": "The neurogranin finding is supported by prior cancer-biomarker literature."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "KMERF is both empirically more powerful and more interpretable than existing approaches.",
+          "start_page": 1,
+          "start_text": "1 Introduction"
+        },
+        "summary": "Motivates decision forests as proximity-kernel generators, identifies the lack of characteristic-kernel theory and interpretability in existing independence/k-sample tests, and states the main contributions: proving the forest proximity kernel is characteristic and introducing KMERF.",
+        "title": "Introduction and Contributions"
+      },
+      {
+        "pages": {
+          "end": 2,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "3 KMERF",
+          "start_page": 2,
+          "start_text": "2 Preliminaries"
+        },
+        "summary": "Formalizes independence and k-sample hypotheses, defines kernel-induced correlation, and reviews positive-definite and characteristic kernels.",
+        "title": "Hypothesis Testing and Characteristic Kernels"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Reject the independence hypothesis if the p-value is less than a specified type 1 error level, say 0.05.",
+          "start_page": 2,
+          "start_text": "KMERF The proposed approach for hypothesis testing, KMERF, involves the following steps:"
+        },
+        "summary": "Describes the KMERF pipeline: grow a random forest, compute the proximity kernel, apply the unbiased transformation, compute the kernel correlation statistic, and obtain a chi-square p-value.",
+        "title": "The KMERF Testing Procedure"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "Moreover, for sufficiently large n and sufficiently small type 1 error level α, this method is valid and consistent for independence and k-sample testing.",
+          "start_page": 3,
+          "start_text": "4 Theoretical Properties"
+        },
+        "summary": "States and proves positive definiteness, asymptotic characteristicness under shrinking leaf partitions, and the resulting validity and consistency of KMERF for independence and k-sample testing.",
+        "title": "Theoretical Guarantees for the Forest Kernel"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "For nearly all simulations and simulation dimensions, KMERF performs as well as, or better than, existing multivariate two-sample tests in high-dimensional dependence testing.",
+          "start_page": 4,
+          "start_text": "5 Simulations"
+        },
+        "summary": "Compares KMERF against MGC, Dcorr, Hsic, HHG, CCA, RV, Energy, and MMD across 20 independence and two-sample settings, showing strong empirical power in most regimes.",
+        "title": "Simulation Studies: Independence and Two-Sample Testing"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "The process we used to generate this figure can be trivially extended to a two-sample or k-sample case.",
+          "start_page": 5,
+          "start_text": "5.3 Interpretability"
+        },
+        "summary": "Shows that KMERF yields feature-importance estimates and that, in designed simulations, estimated importance decreases as dimension increases, supporting interpretability.",
+        "title": "Interpretability via Feature Importances"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "The peptide identified by KMERF achieves the best true and false positive rates.",
+          "start_page": 6,
+          "start_text": "6 Real Data"
+        },
+        "summary": "Applies KMERF to peptide abundance data from pancreatic, ovarian, colorectal cancer, and healthy subjects, identifying neurogranin as a pancreatic-cancer marker and comparing biomarker-based kNN classification.",
+        "title": "Real-Data Cancer Biomarker Application"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "including classification, regression, clustering, and embedding [28].",
+          "start_page": 6,
+          "start_text": "7 Discussion"
+        },
+        "summary": "Positions KMERF as a learned characteristic kernel, relates it to multiscale graph correlation and nearest-neighbor forests, and suggests extensions to lifelong learning and other learning problems.",
+        "title": "Discussion and Future Directions"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "making it a consistent test.",
+          "start_page": 12,
+          "start_text": "Appendix A. Proofs."
+        },
+        "summary": "Provides formal proofs that the random-forest kernel is positive definite, asymptotically characteristic, and that KMERF is valid and consistent.",
+        "title": "Appendix Proofs"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Then we let Z′ = Qθ ZT be the rotated versions of Z.",
+          "start_page": 13,
+          "start_text": "Appendix B. Limitations."
+        },
+        "summary": "Discusses limitations such as no uniformly most powerful test and unexplored forest variants, then gives detailed equations for all independence and two-sample simulations.",
+        "title": "Limitations and Simulation Specifications"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "Software: Python 3.8, hyppo v0.4.0",
+          "start_page": 16,
+          "start_text": "Appendix D. Real Data."
+        },
+        "summary": "Documents the peptide data source, multiple-testing procedure, supplemental data, and the hardware/software used for experiments.",
+        "title": "Real-Data Details and Computational Configuration"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper introduces a new kernel construction (decision forest induced proximity) and proves characteristic-kernel, consistency, and testing properties, with simulations and a real-data application.",
+      "value": "method"
+    }
+  },
+  "pass1_check": {
+    "sites": 61,
+    "verbatim": 60,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/references",
+      "action": "flag",
+      "value_json": null,
+      "reason": "Both reference entries are byte-for-byte identical (key \"identity\", same authors/title/venue/year) and describe the paper's own identity rather than any work the paper cites. The paper's bibliography (Breiman, Gretton, Shen, etc.) is absent, so the reference list is duplicated and/or invented. I cannot reconstruct the full bibliography from the draft, so I flag it rather than silently removing.",
+      "evidence": [
+        {
+          "quote": "Learning Interpretable Characteristic Kernels via Decision Forests",
+          "page": 1
+        },
+        {
+          "quote": "Sambit Panda1,†, Cencheng Shen2,†, and Joshua T. Vogelstein1,∗",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/subtitle",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The paper has a single-line title with no subtitle; setting subtitle equal to title is a duplicate/placeholder rather than a real subtitle. Flagged since a string-to-null replacement would change the field's type.",
+      "evidence": [
+        {
+          "quote": "Learning Interpretable Characteristic Kernels via Decision Forests",
+          "page": 1
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/references",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 1,
+      "path": "/identity/subtitle",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 61,
+    "verbatim": 60,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "Decision forests are popular tools for classification and regression. These forests naturally generate proximity matrices that measure the frequency of observations appearing in the same leaf node. While other kernels are known to have strong theoretical properties such as being characteristic, there is no similar result available for decision forest-based kernels. In addition, existing approaches to independence and k-sample testing may require unfeasibly large sample sizes and are not interpretable. In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests. We leverage this to introduce kernel mean embedding random forest (KMERF), which is a valid and consistent method for independence and k-sample testing. Our extensive simulations demonstrate that KMERF outperforms other tests across a variety of independence and two-sample testing scenarios. Additionally, the test is interpretable, and its key features are readily discernible. This work therefore demonstrates the existence of a test that is both more powerful and more interpretable than existing methods, flying in the face of conventional wisdom of the trade-off between the two.",
+      "admitted": "Decision forests are popular tools for classification and regression. These forests naturally generate proximity matrices that measure the frequency of observations appearing in the same leaf node. While other kernels are known to have strong theoretical properties such as being characteristic, there is no similar result available for decision forest-based kernels. In addition, existing approaches to independence and k-sample testing may require unfeasibly large sample sizes and are not interpretable. In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests. We leverage this to introduce kernel mean embedding random forest (KMERF), which is a valid and consistent method for independence and k-sample testing. Our extensive simulations demonstrate that KMERF outperforms other tests across a variety of independence and two-sample testing scenarios. Additionally, the test is interpretable, and its key features are readily discernible. This work therefore demonstrates the existence of a test that is both more powerful and more interpretable than existing methods, flying in the face of conventional wisdom of the trade-off between the two.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This work therefore demonstrates the existence of a test that is both more powerful and more interpretable than existing methods, flying in the face of conventional wisdom of the trade-off between the two.",
+      "admitted": "This work therefore demonstrates the existence of a test that is both more powerful and more interpretable than existing methods, flying in the face of conventional wisdom of the trade-off between the two.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Decision forests are ensemble method popularized by Breiman [5].",
+      "admitted": "Decision forests are ensemble method popularized by Breiman [5].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper, we leverage the popular random forest method [5] and a recent chi-square test [34] for a more powerful and interpretable method for hypothesis testing.",
+      "admitted": "In this paper, we leverage the popular random forest method [5] and a recent chi-square test [34] for a more powerful and interpretable method for hypothesis testing.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests.",
+      "admitted": "In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Learning Interpretable Characteristic Kernels via Decision Forests",
+      "admitted": "Learning Interpretable Characteristic Kernels via Decision Forests",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "arXiv:1812.00029v4[stat.ML]11Oct2024",
+      "admitted": "arXiv:1812.00029v4[stat.ML]11Oct2024",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/2/quote",
+      "status": "verbatim",
+      "original": "Sambit Panda1,†, Cencheng Shen2,†, and Joshua T. Vogelstein1,∗",
+      "admitted": "Sambit Panda1,†, Cencheng Shen2,†, and Joshua T. Vogelstein1,∗",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests.",
+      "admitted": "In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "Decision forests are ensemble method popularized by Breiman [5].",
+      "admitted": "Decision forests are ensemble method popularized by Breiman [5].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "It is highly effective in classification and regression tasks, particularly in high-dimensional settings [7, 8, 39].",
+      "admitted": "It is highly effective in classification and regression tasks, particularly in high-dimensional settings [7, 8, 39].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "To measure the similarity between two observations, a proximity matrix can be constructed, defined as the percentage of trees in which both observations lie in the same leaf node [6].",
+      "admitted": "To measure the similarity between two observations, a proximity matrix can be constructed, defined as the percentage of trees in which both observations lie in the same leaf node [6].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "Parametric methods are often highly interpretable, such as Pearson’s correlation and its rank variants [18, 24, 35].",
+      "admitted": "Parametric methods are often highly interpretable, such as Pearson’s correlation and its rank variants [18, 24, 35].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "The more recent distance correlation (Dcorr) [37, 38] and the kernel correlation (HSIC) [12, 13] are consistent for testing independence against any distribution of finite second moments for any finite dimensionality; moreover, the energy-based statistics (such as Dcorr) and kernel-based statistics (such as HSIC) are known to be exactly equivalent for all finite samples [23, 32].",
+      "admitted": "The more recent distance correlation (Dcorr) [37, 38] and the kernel correlation (HSIC) [12, 13] are consistent for testing independence against any distribution of finite second moments for any finite dimensionality; moreover, the energy-based statistics (such as Dcorr) and kernel-based statistics (such as HSIC) are known to be exactly equivalent for all finite samples [23, 32].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "The theory supporting universal consistency of these methods (which we refer to as kernel methods hereafter, without loss of generality) depends on those kernels being characteristic kernel [20, 21, 30, 32].",
+      "admitted": "The theory supporting universal consistency of these methods (which we refer to as kernel methods hereafter, without loss of generality) depends on those kernels being characteristic kernel [20, 21, 30, 32].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "To the best of our knowledge, very few tests exist[17, 40].",
+      "admitted": "To the best of our knowledge, very few tests exist[17, 40].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "Choosing an appropriate kernel that properly summarize geometries within the data is often times non-obvious [29].",
+      "admitted": "Choosing an appropriate kernel that properly summarize geometries within the data is often times non-obvious [29].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "High-dimensional data is particularly vexing [27, 40], and a number of extensions have been proposed to achieve better power such as adaptive metric kernel choice [14], low-dimensional projections [16], and marginal correlations [31].",
+      "admitted": "High-dimensional data is particularly vexing [27, 40], and a number of extensions have been proposed to achieve better power such as adaptive metric kernel choice [14], low-dimensional projections [16], and marginal correlations [31].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "In this paper, we leverage the popular random forest method [5] and a recent chi-square test [34] for a more powerful and interpretable method for hypothesis testing.",
+      "admitted": "In this paper, we leverage the popular random forest method [5] and a recent chi-square test [34] for a more powerful and interpretable method for hypothesis testing.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "Given any kernel function k(·, ·), we can formulate the kernel induced correlation measure as cnk(x, y) using the sample kernel matrices [12, 32], where x = {xi} and y = {yi}.",
+      "admitted": "Given any kernel function k(·, ·), we can formulate the kernel induced correlation measure as cnk(x, y) using the sample kernel matrices [12, 32], where x = {xi} and y = {yi}.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "When the kernel function k(·, ·) is characteristic, it has been shown that cnk(x, y) → 0 if and only if x and y are independent [12].",
+      "admitted": "When the kernel function k(·, ·) is characteristic, it has been shown that cnk(x, y) → 0 if and only if x and y are independent [12].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "By concatenating the l datasets and introducing an auxiliary random variable, the kernel correlation measure can be used for k-sample testing [23].",
+      "admitted": "By concatenating the l datasets and introducing an auxiliary random variable, the kernel correlation measure can be used for k-sample testing [23].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "Compute the unbiased kernel transformation [34, 36] on Kx.",
+      "admitted": "Compute the unbiased kernel transformation [34, 36] on Kx.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "Let Ky be the Euclidean distance induced kernel by Shen and Vogelstein [32], or the proximity kernel in the case that dimensions of x and y is the same, that is p = q, and compute Ly using the same unbiased transformation.",
+      "admitted": "Let Ky be the Euclidean distance induced kernel by Shen and Vogelstein [32], or the proximity kernel in the case that dimensions of x and y is the same, that is p = q, and compute Ly using the same unbiased transformation.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "Compute the p-value via the following chi-square test [34]:",
+      "admitted": "Compute the p-value via the following chi-square test [34]:",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "In the numerical implementation, the standard supervised random forest is used with m = 500 (which is also applicable to the unsupervised version or other random forest variants [1, 4, 39]).",
+      "admitted": "In the numerical implementation, the standard supervised random forest is used with m = 500 (which is also applicable to the unsupervised version or other random forest variants [1, 4, 39]).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "We found that utilizing the multiscale version of the kernel correlation [33, 40], which is equivalent for linear relationships while being better for nonlinear relationships, produced similar results to using distance correlation, but substantially increased runtimes.",
+      "admitted": "We found that utilizing the multiscale version of the kernel correlation [33, 40], which is equivalent for linear relationships while being better for nonlinear relationships, produced similar results to using distance correlation, but substantially increased runtimes.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "Note that one could also compute a p-value for KMERF via the permutation test, which is a standard procedure for testing independence [11].",
+      "admitted": "Note that one could also compute a p-value for KMERF via the permutation test, which is a standard procedure for testing independence [11].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "This theorem holds because the forest-induced kernel is a summation of a permuted block diagonal matrix, with each matrix coming from individual tree, that is positive definite [9]; and a summation of positive definite matrices is still positive definite.",
+      "admitted": "This theorem holds because the forest-induced kernel is a summation of a permuted block diagonal matrix, with each matrix coming from individual tree, that is positive definite [9]; and a summation of positive definite matrices is still positive definite.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "A similar property is also used for proving classification consistency for k-nearest-neighbors [10], and we shall denote N (ϕw) as the maximum area of each part.",
+      "admitted": "A similar property is also used for proving classification consistency for k-nearest-neighbors [10], and we shall denote N (ϕw) as the maximum area of each part.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "By Gretton et al. [12], any characteristic-kernel based dependence measure converges to 0 if and only if X and Y are independent.",
+      "admitted": "By Gretton et al. [12], any characteristic-kernel based dependence measure converges to 0 if and only if X and Y are independent.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "Moreover, Shen et al. [34] showed that the chi-square distribution χ21 − 1 approximates and upper-tail dominates the true null distribution of any unbiased kernel when using distance correlation, making it a valid and consistent test.",
+      "admitted": "Moreover, Shen et al. [34] showed that the chi-square distribution χ21 − 1 approximates and upper-tail dominates the true null distribution of any unbiased kernel when using distance correlation, making it a valid and consistent test.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "We utilize the hyppo package in Python [22], which uses scikit-learn [25] random forest with 500 trees and otherwise default hyper-parameters, and calculate the proximity matrix from this.",
+      "admitted": "We utilize the hyppo package in Python [22], which uses scikit-learn [25] random forest with 500 trees and otherwise default hyper-parameters, and calculate the proximity matrix from this.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "The HHG method has been shown to work extremely well against nonlinear dependencies [15].",
+      "admitted": "The HHG method has been shown to work extremely well against nonlinear dependencies [15].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "verbatim",
+      "original": "The MGC method has been shown to work well against linear, nonlinear, and high-dimensional dependencies [33].",
+      "admitted": "The MGC method has been shown to work well against linear, nonlinear, and high-dimensional dependencies [33].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "verbatim",
+      "original": "We take 20 high-dimensional simulation settings [40], consisting of various linear, monotone, and strongly nonlinear dependencies with p increasing, q = 1, and n = 100.",
+      "admitted": "We take 20 high-dimensional simulation settings [40], consisting of various linear, monotone, and strongly nonlinear dependencies with p increasing, q = 1, and n = 100.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "verbatim",
+      "original": "It has been shown that all independence measures can be used for two-sample testing [23, 32], allowing all previous independence testing methods to be compared here as well.",
+      "admitted": "It has been shown that all independence measures can be used for two-sample testing [23, 32], allowing all previous independence testing methods to be compared here as well.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/28/context",
+      "status": "verbatim",
+      "original": "We then applied KMERF to a date set consisting of proteolytic peptides derived from the blood samples of 95 individuals harboring pancreatic (n=10), ovarian (n=24), colorectal cancer (n=28), and healthy controls (n=33) [40].",
+      "admitted": "We then applied KMERF to a date set consisting of proteolytic peptides derived from the blood samples of 95 individuals harboring pancreatic (n=10), ovarian (n=24), colorectal cancer (n=28), and healthy controls (n=33) [40].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/29/context",
+      "status": "verbatim",
+      "original": "The test identifies neurogranin as a potentially valuable marker for pancreatic cancer, which the literature also corroborates [44, 45].",
+      "admitted": "The test identifies neurogranin as a potentially valuable marker for pancreatic cancer, which the literature also corroborates [44, 45].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/30/context",
+      "status": "verbatim",
+      "original": "In fact, multiscale graph correlation [33, 40] can be thought of, in a sense, as kernel learning: given n samples, and a pair of kernel or distance functions, it chooses one of the approximately n2 sparsified kernels, by excluding all but the nearest neighbors for each data point [33, 40].",
+      "admitted": "In fact, multiscale graph correlation [33, 40] can be thought of, in a sense, as kernel learning: given n samples, and a pair of kernel or distance functions, it chooses one of the approximately n2 sparsified kernels, by excluding all but the nearest neighbors for each data point [33, 40].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/31/context",
+      "status": "verbatim",
+      "original": "Because random forest can be thought of as a nearest neighbor algorithm [19], in a sense, the forest induced kernel is a natural extension of Vogelstein et al. [40], which leads to far more data-adaptive estimates of the nearest neighbors using supervised information.",
+      "admitted": "Because random forest can be thought of as a nearest neighbor algorithm [19], in a sense, the forest induced kernel is a natural extension of Vogelstein et al. [40], which leads to far more data-adaptive estimates of the nearest neighbors using supervised information.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/32/context",
+      "status": "verbatim",
+      "original": "Moreover, proving that the random-forest induced kernel is characteristic is a first step towards building lifelong learning kernel machines with strong theoretical guarantees [26, 41].",
+      "admitted": "Moreover, proving that the random-forest induced kernel is characteristic is a first step towards building lifelong learning kernel machines with strong theoretical guarantees [26, 41].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/33/context",
+      "status": "verbatim",
+      "original": "It will be worthwhile to further understand the underlying theoretical mechanism of the induced characteristic kernel, as well as evaluating the performance of these forest induced kernels on other learning problems, including classification, regression, clustering, and embedding [28].",
+      "admitted": "It will be worthwhile to further understand the underlying theoretical mechanism of the induced characteristic kernel, as well as evaluating the performance of these forest induced kernels on other learning problems, including classification, regression, clustering, and embedding [28].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/34/context",
+      "status": "verbatim",
+      "original": "The forest-induced kernel is a summation of permuted block diagonal matrix, with ones in each block and zeros elsewhere [9], i.e.,",
+      "admitted": "The forest-induced kernel is a summation of permuted block diagonal matrix, with ones in each block and zeros elsewhere [9], i.e.,",
+      "similarity": null,
+      "cited_page": 12,
+      "matched_page": 12
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/35/context",
+      "status": "repaired_local",
+      "original": "A similar property is also used for proving classification consistency in k-nearest-neighbor [10], and we shall denote N (ϕw) ∈ R≥0 Lw as the maximum area of each part.",
+      "admitted": "A similar property is also used for proving classification consistency for k-nearest-neighbors [10], and we shall denote N (ϕw) as the maximum area of each part.",
+      "similarity": 0.8571428571428572,
+      "cited_page": 12,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/36/context",
+      "status": "verbatim",
+      "original": "By Shen and Vogelstein [32], the Euclidean distance induced kernel is also characteristic.",
+      "admitted": "By Shen and Vogelstein [32], the Euclidean distance induced kernel is also characteristic.",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/37/context",
+      "status": "verbatim",
+      "original": "Therefore by Gretton et al. [12], Lyons [20], cnk(x, y) is asymptotically 0 if and only if independence.",
+      "admitted": "Therefore by Gretton et al. [12], Lyons [20], cnk(x, y) is asymptotically 0 if and only if independence.",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/38/context",
+      "status": "verbatim",
+      "original": "By Shen et al. [34], for sufficiently large n, the chi-square distribution¹n dominates the true null distribution of the unbiased correlation in upper tail.",
+      "admitted": "By Shen et al. [34], for sufficiently large n, the chi-square distribution¹n dominates the true null distribution of the unbiased correlation in upper tail.",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/39/context",
+      "status": "verbatim",
+      "original": "In the problem setting that we are considering (composite null vs. composite alternative), there is no uniformly most powerful test [3].",
+      "admitted": "In the problem setting that we are considering (composite null vs. composite alternative), there is no uniformly most powerful test [3].",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/40/context",
+      "status": "verbatim",
+      "original": "Previous studies have shown the utility of selection reaction monitoring when measuring protein and peptide abundance [42], and one was used to identify 318 peptides from 33 normal, 10 pancreatic cancer, 28 colorectal cancer, and 24 ovarian cancer samples [43].",
+      "admitted": "Previous studies have shown the utility of selection reaction monitoring when measuring protein and peptide abundance [42], and one was used to identify 318 peptides from 33 normal, 10 pancreatic cancer, 28 colorectal cancer, and 24 ovarian cancer samples [43].",
+      "similarity": null,
+      "cited_page": 16,
+      "matched_page": 16
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/41/context",
+      "status": "verbatim",
+      "original": "We then evaluated at a type 1 error level of α = 0.05, and used the Benjamini-Hochberg procedure to control the false discovery rate [2] for our 318 p-values.",
+      "admitted": "We then evaluated at a type 1 error level of α = 0.05, and used the Benjamini-Hochberg procedure to control the false discovery rate [2] for our 318 p-values.",
+      "similarity": null,
+      "cited_page": 16,
+      "matched_page": 16
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Decision forests are ensemble method popularized by Breiman [5].",
+      "admitted": "Decision forests are ensemble method popularized by Breiman [5].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "This theorem holds because the forest-induced kernel is a summation of a permuted block diagonal matrix, with each matrix coming from individual tree, that is positive definite [9]; and a summation of positive definite matrices is still positive definite.",
+      "admitted": "This theorem holds because the forest-induced kernel is a summation of a permuted block diagonal matrix, with each matrix coming from individual tree, that is positive definite [9]; and a summation of positive definite matrices is still positive definite.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "By Gretton et al. [12], any characteristic-kernel based dependence measure converges to 0 if and only if X and Y are independent.",
+      "admitted": "By Gretton et al. [12], any characteristic-kernel based dependence measure converges to 0 if and only if X and Y are independent.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "Let Ky be the Euclidean distance induced kernel by Shen and Vogelstein [32], or the proximity kernel in the case that dimensions of x and y is the same, that is p = q, and compute Ly using the same unbiased transformation.",
+      "admitted": "Let Ky be the Euclidean distance induced kernel by Shen and Vogelstein [32], or the proximity kernel in the case that dimensions of x and y is the same, that is p = q, and compute Ly using the same unbiased transformation.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Compute the p-value via the following chi-square test [34]:",
+      "admitted": "Compute the p-value via the following chi-square test [34]:",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "We take 20 high-dimensional simulation settings [40], consisting of various linear, monotone, and strongly nonlinear dependencies with p increasing, q = 1, and n = 100.",
+      "admitted": "We take 20 high-dimensional simulation settings [40], consisting of various linear, monotone, and strongly nonlinear dependencies with p increasing, q = 1, and n = 100.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "The MGC method has been shown to work well against linear, nonlinear, and high-dimensional dependencies [33].",
+      "admitted": "The MGC method has been shown to work well against linear, nonlinear, and high-dimensional dependencies [33].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "The HHG method has been shown to work extremely well against nonlinear dependencies [15].",
+      "admitted": "The HHG method has been shown to work extremely well against nonlinear dependencies [15].",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "verbatim",
+      "original": "Because random forest can be thought of as a nearest neighbor algorithm [19], in a sense, the forest induced kernel is a natural extension of Vogelstein et al. [40], which leads to far more data-adaptive estimates of the nearest neighbors using supervised information.",
+      "admitted": "Because random forest can be thought of as a nearest neighbor algorithm [19], in a sense, the forest induced kernel is a natural extension of Vogelstein et al. [40], which leads to far more data-adaptive estimates of the nearest neighbors using supervised information.",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "verbatim",
+      "original": "The test identifies neurogranin as a potentially valuable marker for pancreatic cancer, which the literature also corroborates [44, 45].",
+      "admitted": "The test identifies neurogranin as a potentially valuable marker for pancreatic cancer, which the literature also corroborates [44, 45].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 1,
+    "verbatim": 60
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Decision forests are popular tools for classification and regression. These forests naturally generate proximity matrices that measure the frequency of observations appearing in the same leaf node. While other kernels are known to have strong theoretical properties such as being characteristic, there is no similar result available for decision forest-based kernels. In addition, existing approaches to independence and k-sample testing may require unfeasibly large sample sizes and are not interpretable. In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests. We leverage this to introduce kernel mean embedding random forest (KMERF), which is a valid and consistent method for independence and k-sample testing. Our extensive simulations demonstrate that KMERF outperforms other tests across a variety of independence and two-sample testing scenarios. Additionally, the test is interpretable, and its key features are readily discernible. This work therefore demonstrates the existence of a test that is both more powerful and more interpretable than existing methods, flying in the face of conventional wisdom of the trade-off between the two."
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "conventional wisdom",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "This work therefore demonstrates the existence of a test that is both more powerful and more interpretable than existing methods, flying in the face of conventional wisdom of the trade-off between the two."
+              }
+            ],
+            "reference_key": "conventional wisdom",
+            "why": "The paper explicitly says it flies in the face of the conventional power-interpretability trade-off."
+          },
+          {
+            "cited_work": "Breiman [5] and Davies and Ghahramani [9]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Decision forests are ensemble method popularized by Breiman [5]."
+              }
+            ],
+            "reference_key": "[5, 9]",
+            "why": "It builds on random forests and the random-forest kernel representation."
+          },
+          {
+            "cited_work": "Gretton et al. [12] and Shen et al. [34]",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "In this paper, we leverage the popular random forest method [5] and a recent chi-square test [34] for a more powerful and interpretable method for hypothesis testing."
+              }
+            ],
+            "reference_key": "[12, 34]",
+            "why": "It uses and extends characteristic-kernel dependence measures and the chi-square test of distance correlation."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests."
+          }
+        ],
+        "text": "Decision forest induced proximity is a characteristic kernel, enabling a valid, consistent, powerful, and interpretable method (KMERF) for independence and k-sample testing."
+      }
+    },
+    "citations": [
+      {
+        "context": "Decision forests are ensemble method popularized by Breiman [5].",
+        "page": 1,
+        "reference_key": "[5]"
+      },
+      {
+        "context": "It is highly effective in classification and regression tasks, particularly in high-dimensional settings [7, 8, 39].",
+        "page": 1,
+        "reference_key": "[7, 8, 39]"
+      },
+      {
+        "context": "To measure the similarity between two observations, a proximity matrix can be constructed, defined as the percentage of trees in which both observations lie in the same leaf node [6].",
+        "page": 1,
+        "reference_key": "[6]"
+      },
+      {
+        "context": "Parametric methods are often highly interpretable, such as Pearson’s correlation and its rank variants [18, 24, 35].",
+        "page": 1,
+        "reference_key": "[18, 24, 35]"
+      },
+      {
+        "context": "The more recent distance correlation (Dcorr) [37, 38] and the kernel correlation (HSIC) [12, 13] are consistent for testing independence against any distribution of finite second moments for any finite dimensionality; moreover, the energy-based statistics (such as Dcorr) and kernel-based statistics (such as HSIC) are known to be exactly equivalent for all finite samples [23, 32].",
+        "page": 1,
+        "reference_key": "[37, 38, 12, 13, 23, 32]"
+      },
+      {
+        "context": "The theory supporting universal consistency of these methods (which we refer to as kernel methods hereafter, without loss of generality) depends on those kernels being characteristic kernel [20, 21, 30, 32].",
+        "page": 1,
+        "reference_key": "[20, 21, 30, 32]"
+      },
+      {
+        "context": "To the best of our knowledge, very few tests exist[17, 40].",
+        "page": 1,
+        "reference_key": "[17, 40]"
+      },
+      {
+        "context": "Choosing an appropriate kernel that properly summarize geometries within the data is often times non-obvious [29].",
+        "page": 1,
+        "reference_key": "[29]"
+      },
+      {
+        "context": "High-dimensional data is particularly vexing [27, 40], and a number of extensions have been proposed to achieve better power such as adaptive metric kernel choice [14], low-dimensional projections [16], and marginal correlations [31].",
+        "page": 1,
+        "reference_key": "[27, 40, 14, 16, 31]"
+      },
+      {
+        "context": "In this paper, we leverage the popular random forest method [5] and a recent chi-square test [34] for a more powerful and interpretable method for hypothesis testing.",
+        "page": 1,
+        "reference_key": "[5, 34]"
+      },
+      {
+        "context": "Given any kernel function k(·, ·), we can formulate the kernel induced correlation measure as cnk(x, y) using the sample kernel matrices [12, 32], where x = {xi} and y = {yi}.",
+        "page": 2,
+        "reference_key": "[12, 32]"
+      },
+      {
+        "context": "When the kernel function k(·, ·) is characteristic, it has been shown that cnk(x, y) → 0 if and only if x and y are independent [12].",
+        "page": 2,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "By concatenating the l datasets and introducing an auxiliary random variable, the kernel correlation measure can be used for k-sample testing [23].",
+        "page": 2,
+        "reference_key": "[23]"
+      },
+      {
+        "context": "Compute the unbiased kernel transformation [34, 36] on Kx.",
+        "page": 3,
+        "reference_key": "[34, 36]"
+      },
+      {
+        "context": "Let Ky be the Euclidean distance induced kernel by Shen and Vogelstein [32], or the proximity kernel in the case that dimensions of x and y is the same, that is p = q, and compute Ly using the same unbiased transformation.",
+        "page": 3,
+        "reference_key": "[32]"
+      },
+      {
+        "context": "Compute the p-value via the following chi-square test [34]:",
+        "page": 3,
+        "reference_key": "[34]"
+      },
+      {
+        "context": "In the numerical implementation, the standard supervised random forest is used with m = 500 (which is also applicable to the unsupervised version or other random forest variants [1, 4, 39]).",
+        "page": 3,
+        "reference_key": "[1, 4, 39]"
+      },
+      {
+        "context": "We found that utilizing the multiscale version of the kernel correlation [33, 40], which is equivalent for linear relationships while being better for nonlinear relationships, produced similar results to using distance correlation, but substantially increased runtimes.",
+        "page": 3,
+        "reference_key": "[33, 40]"
+      },
+      {
+        "context": "Note that one could also compute a p-value for KMERF via the permutation test, which is a standard procedure for testing independence [11].",
+        "page": 3,
+        "reference_key": "[11]"
+      },
+      {
+        "context": "This theorem holds because the forest-induced kernel is a summation of a permuted block diagonal matrix, with each matrix coming from individual tree, that is positive definite [9]; and a summation of positive definite matrices is still positive definite.",
+        "page": 3,
+        "reference_key": "[9]"
+      },
+      {
+        "context": "A similar property is also used for proving classification consistency for k-nearest-neighbors [10], and we shall denote N (ϕw) as the maximum area of each part.",
+        "page": 4,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "By Gretton et al. [12], any characteristic-kernel based dependence measure converges to 0 if and only if X and Y are independent.",
+        "page": 4,
+        "reference_key": "[12]"
+      },
+      {
+        "context": "Moreover, Shen et al. [34] showed that the chi-square distribution χ21 − 1 approximates and upper-tail dominates the true null distribution of any unbiased kernel when using distance correlation, making it a valid and consistent test.",
+        "page": 4,
+        "reference_key": "[34]"
+      },
+      {
+        "context": "We utilize the hyppo package in Python [22], which uses scikit-learn [25] random forest with 500 trees and otherwise default hyper-parameters, and calculate the proximity matrix from this.",
+        "page": 4,
+        "reference_key": "[22, 25]"
+      },
+      {
+        "context": "The HHG method has been shown to work extremely well against nonlinear dependencies [15].",
+        "page": 4,
+        "reference_key": "[15]"
+      },
+      {
+        "context": "The MGC method has been shown to work well against linear, nonlinear, and high-dimensional dependencies [33].",
+        "page": 4,
+        "reference_key": "[33]"
+      },
+      {
+        "context": "We take 20 high-dimensional simulation settings [40], consisting of various linear, monotone, and strongly nonlinear dependencies with p increasing, q = 1, and n = 100.",
+        "page": 4,
+        "reference_key": "[40]"
+      },
+      {
+        "context": "It has been shown that all independence measures can be used for two-sample testing [23, 32], allowing all previous independence testing methods to be compared here as well.",
+        "page": 4,
+        "reference_key": "[23, 32]"
+      },
+      {
+        "context": "We then applied KMERF to a date set consisting of proteolytic peptides derived from the blood samples of 95 individuals harboring pancreatic (n=10), ovarian (n=24), colorectal cancer (n=28), and healthy controls (n=33) [40].",
+        "page": 6,
+        "reference_key": "[40]"
+      },
+      {
+        "context": "The test identifies neurogranin as a potentially valuable marker for pancreatic cancer, which the literature also corroborates [44, 45].",
+        "page": 6,
+        "reference_key": "[44, 45]"
+      },
+      {
+        "context": "In fact, multiscale graph correlation [33, 40] can be thought of, in a sense, as kernel learning: given n samples, and a pair of kernel or distance functions, it chooses one of the approximately n2 sparsified kernels, by excluding all but the nearest neighbors for each data point [33, 40].",
+        "page": 7,
+        "reference_key": "[33, 40]"
+      },
+      {
+        "context": "Because random forest can be thought of as a nearest neighbor algorithm [19], in a sense, the forest induced kernel is a natural extension of Vogelstein et al. [40], which leads to far more data-adaptive estimates of the nearest neighbors using supervised information.",
+        "page": 7,
+        "reference_key": "[19, 40]"
+      },
+      {
+        "context": "Moreover, proving that the random-forest induced kernel is characteristic is a first step towards building lifelong learning kernel machines with strong theoretical guarantees [26, 41].",
+        "page": 7,
+        "reference_key": "[26, 41]"
+      },
+      {
+        "context": "It will be worthwhile to further understand the underlying theoretical mechanism of the induced characteristic kernel, as well as evaluating the performance of these forest induced kernels on other learning problems, including classification, regression, clustering, and embedding [28].",
+        "page": 7,
+        "reference_key": "[28]"
+      },
+      {
+        "context": "The forest-induced kernel is a summation of permuted block diagonal matrix, with ones in each block and zeros elsewhere [9], i.e.,",
+        "page": 12,
+        "reference_key": "[9]"
+      },
+      {
+        "context": "A similar property is also used for proving classification consistency for k-nearest-neighbors [10], and we shall denote N (ϕw) as the maximum area of each part.",
+        "page": 4,
+        "reference_key": "[10]"
+      },
+      {
+        "context": "By Shen and Vogelstein [32], the Euclidean distance induced kernel is also characteristic.",
+        "page": 13,
+        "reference_key": "[32]"
+      },
+      {
+        "context": "Therefore by Gretton et al. [12], Lyons [20], cnk(x, y) is asymptotically 0 if and only if independence.",
+        "page": 13,
+        "reference_key": "[12, 20]"
+      },
+      {
+        "context": "By Shen et al. [34], for sufficiently large n, the chi-square distribution¹n dominates the true null distribution of the unbiased correlation in upper tail.",
+        "page": 13,
+        "reference_key": "[34]"
+      },
+      {
+        "context": "In the problem setting that we are considering (composite null vs. composite alternative), there is no uniformly most powerful test [3].",
+        "page": 13,
+        "reference_key": "[3]"
+      },
+      {
+        "context": "Previous studies have shown the utility of selection reaction monitoring when measuring protein and peptide abundance [42], and one was used to identify 318 peptides from 33 normal, 10 pancreatic cancer, 28 colorectal cancer, and 24 ovarian cancer samples [43].",
+        "page": 16,
+        "reference_key": "[42, 43]"
+      },
+      {
+        "context": "We then evaluated at a type 1 error level of α = 0.05, and used the Benjamini-Hochberg procedure to control the false discovery rate [2] for our 318 p-values.",
+        "page": 16,
+        "reference_key": "[2]"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Johns Hopkins University",
+          "name": "Sambit Panda"
+        },
+        {
+          "affiliation": "University of Delaware",
+          "name": "Cencheng Shen"
+        },
+        {
+          "affiliation": "Johns Hopkins University",
+          "name": "Joshua T. Vogelstein"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Learning Interpretable Characteristic Kernels via Decision Forests"
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:1812.00029v4[stat.ML]11Oct2024"
+        },
+        {
+          "page": 1,
+          "quote": "Sambit Panda1,†, Cencheng Shen2,†, and Joshua T. Vogelstein1,∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1812.00029v4",
+        "doi": "10.48550/arXiv.1812.00029"
+      },
+      "publication_state": "preprint",
+      "subtitle": "Learning Interpretable Characteristic Kernels via Decision Forests",
+      "title": "Learning Interpretable Characteristic Kernels via Decision Forests",
+      "venue": "arXiv",
+      "year": 2024
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests."
+        }
+      ],
+      "text": "Can decision-forest induced proximity kernels be characteristic, and can they yield a valid, consistent, powerful, and interpretable method for independence and k-sample testing?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Sambit Panda",
+          "Cencheng Shen",
+          "Joshua T. Vogelstein"
+        ],
+        "doi": "10.48550/arXiv.1812.00029",
+        "key": "identity",
+        "page": 1,
+        "title": "Learning Interpretable Characteristic Kernels via Decision Forests",
+        "venue": "arXiv",
+        "year": 2024
+      },
+      {
+        "authors": [
+          "Sambit Panda",
+          "Cencheng Shen",
+          "Joshua T. Vogelstein"
+        ],
+        "doi": "10.48550/arXiv.1812.00029",
+        "key": "identity",
+        "page": 1,
+        "title": "Learning Interpretable Characteristic Kernels via Decision Forests",
+        "venue": "arXiv",
+        "year": 2024
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "Decision forests are ensemble method popularized by Breiman [5].",
+        "reference_key": "[5]",
+        "relation": "uses_method",
+        "why": "The paper builds directly on random forests as the source of the proximity kernel."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "This theorem holds because the forest-induced kernel is a summation of a permuted block diagonal matrix, with each matrix coming from individual tree, that is positive definite [9]; and a summation of positive definite matrices is still positive definite.",
+        "reference_key": "[9]",
+        "relation": "extends",
+        "why": "The proof of positive definiteness uses the random forest kernel representation from Davies and Ghahramani."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "By Gretton et al. [12], any characteristic-kernel based dependence measure converges to 0 if and only if X and Y are independent.",
+        "reference_key": "[12]",
+        "relation": "uses_method",
+        "why": "KMERF inherits consistency from characteristic-kernel dependence measures established by Gretton et al."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Let Ky be the Euclidean distance induced kernel by Shen and Vogelstein [32], or the proximity kernel in the case that dimensions of x and y is the same, that is p = q, and compute Ly using the same unbiased transformation.",
+        "reference_key": "[32]",
+        "relation": "uses_method",
+        "why": "The Euclidean-distance induced kernel and equivalence results from Shen and Vogelstein are used in the KMERF statistic."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Compute the p-value via the following chi-square test [34]:",
+        "reference_key": "[34]",
+        "relation": "uses_method",
+        "why": "The chi-square test of distance correlation supplies the p-value calculation and validity argument."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "We take 20 high-dimensional simulation settings [40], consisting of various linear, monotone, and strongly nonlinear dependencies with p increasing, q = 1, and n = 100.",
+        "reference_key": "[40]",
+        "relation": "extends",
+        "why": "Vogelstein et al. provide simulation settings and a closely related MGC-based framework that KMERF extends."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "The MGC method has been shown to work well against linear, nonlinear, and high-dimensional dependencies [33].",
+        "reference_key": "[33]",
+        "relation": "compares",
+        "why": "KMERF is compared with multiscale graph correlation, a leading nonlinear and high-dimensional dependence test."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "The HHG method has been shown to work extremely well against nonlinear dependencies [15].",
+        "reference_key": "[15]",
+        "relation": "compares",
+        "why": "KMERF is benchmarked against the HHG nonlinear dependence test."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "Because random forest can be thought of as a nearest neighbor algorithm [19], in a sense, the forest induced kernel is a natural extension of Vogelstein et al. [40], which leads to far more data-adaptive estimates of the nearest neighbors using supervised information.",
+        "reference_key": "[19]",
+        "relation": "uses_method",
+        "why": "The paper uses the nearest-neighbor interpretation of random forests to motivate the learned kernel."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "The test identifies neurogranin as a potentially valuable marker for pancreatic cancer, which the literature also corroborates [44, 45].",
+        "reference_key": "[44, 45]",
+        "relation": "supports",
+        "why": "The neurogranin finding is supported by prior cancer-biomarker literature."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "KMERF is both empirically more powerful and more interpretable than existing approaches.",
+          "start_page": 1,
+          "start_text": "1 Introduction"
+        },
+        "summary": "Motivates decision forests as proximity-kernel generators, identifies the lack of characteristic-kernel theory and interpretability in existing independence/k-sample tests, and states the main contributions: proving the forest proximity kernel is characteristic and introducing KMERF.",
+        "title": "Introduction and Contributions"
+      },
+      {
+        "pages": {
+          "end": 2,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "3 KMERF",
+          "start_page": 2,
+          "start_text": "2 Preliminaries"
+        },
+        "summary": "Formalizes independence and k-sample hypotheses, defines kernel-induced correlation, and reviews positive-definite and characteristic kernels.",
+        "title": "Hypothesis Testing and Characteristic Kernels"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Reject the independence hypothesis if the p-value is less than a specified type 1 error level, say 0.05.",
+          "start_page": 2,
+          "start_text": "KMERF The proposed approach for hypothesis testing, KMERF, involves the following steps:"
+        },
+        "summary": "Describes the KMERF pipeline: grow a random forest, compute the proximity kernel, apply the unbiased transformation, compute the kernel correlation statistic, and obtain a chi-square p-value.",
+        "title": "The KMERF Testing Procedure"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "Moreover, for sufficiently large n and sufficiently small type 1 error level α, this method is valid and consistent for independence and k-sample testing.",
+          "start_page": 3,
+          "start_text": "4 Theoretical Properties"
+        },
+        "summary": "States and proves positive definiteness, asymptotic characteristicness under shrinking leaf partitions, and the resulting validity and consistency of KMERF for independence and k-sample testing.",
+        "title": "Theoretical Guarantees for the Forest Kernel"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "For nearly all simulations and simulation dimensions, KMERF performs as well as, or better than, existing multivariate two-sample tests in high-dimensional dependence testing.",
+          "start_page": 4,
+          "start_text": "5 Simulations"
+        },
+        "summary": "Compares KMERF against MGC, Dcorr, Hsic, HHG, CCA, RV, Energy, and MMD across 20 independence and two-sample settings, showing strong empirical power in most regimes.",
+        "title": "Simulation Studies: Independence and Two-Sample Testing"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "The process we used to generate this figure can be trivially extended to a two-sample or k-sample case.",
+          "start_page": 5,
+          "start_text": "5.3 Interpretability"
+        },
+        "summary": "Shows that KMERF yields feature-importance estimates and that, in designed simulations, estimated importance decreases as dimension increases, supporting interpretability.",
+        "title": "Interpretability via Feature Importances"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "The peptide identified by KMERF achieves the best true and false positive rates.",
+          "start_page": 6,
+          "start_text": "6 Real Data"
+        },
+        "summary": "Applies KMERF to peptide abundance data from pancreatic, ovarian, colorectal cancer, and healthy subjects, identifying neurogranin as a pancreatic-cancer marker and comparing biomarker-based kNN classification.",
+        "title": "Real-Data Cancer Biomarker Application"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "including classification, regression, clustering, and embedding [28].",
+          "start_page": 6,
+          "start_text": "7 Discussion"
+        },
+        "summary": "Positions KMERF as a learned characteristic kernel, relates it to multiscale graph correlation and nearest-neighbor forests, and suggests extensions to lifelong learning and other learning problems.",
+        "title": "Discussion and Future Directions"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 12
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "making it a consistent test.",
+          "start_page": 12,
+          "start_text": "Appendix A. Proofs."
+        },
+        "summary": "Provides formal proofs that the random-forest kernel is positive definite, asymptotically characteristic, and that KMERF is valid and consistent.",
+        "title": "Appendix Proofs"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Then we let Z′ = Qθ ZT be the rotated versions of Z.",
+          "start_page": 13,
+          "start_text": "Appendix B. Limitations."
+        },
+        "summary": "Discusses limitations such as no uniformly most powerful test and unexplored forest variants, then gives detailed equations for all independence and two-sample simulations.",
+        "title": "Limitations and Simulation Specifications"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "Software: Python 3.8, hyppo v0.4.0",
+          "start_page": 16,
+          "start_text": "Appendix D. Real Data."
+        },
+        "summary": "Documents the peptide data source, multiple-testing procedure, supplemental data, and the hardware/software used for experiments.",
+        "title": "Real-Data Details and Computational Configuration"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper introduces a new kernel construction (decision forest induced proximity) and proves characteristic-kernel, consistency, and testing properties, with simulations and a real-data application.",
+      "value": "method"
+    }
+  }
+}

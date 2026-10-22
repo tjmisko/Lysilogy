@@ -1,0 +1,1812 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T20:52:26.615147897Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1912.01121v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 17,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 13034,
+      "cached_tokens": 256,
+      "completion_tokens": 18008,
+      "reasoning_tokens": 12661,
+      "cost_usd": 0.0093533552,
+      "cost_source": "reported",
+      "latency_s": 150.143950634
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 16095,
+      "cached_tokens": 16000,
+      "completion_tokens": 12830,
+      "reasoning_tokens": 12428,
+      "cost_usd": 0.0054691,
+      "cost_source": "reported",
+      "latency_s": 122.450134916
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 8530,
+      "cached_tokens": 0,
+      "completion_tokens": 10560,
+      "reasoning_tokens": 8819,
+      "cost_usd": 0.0056294,
+      "cost_source": "reported",
+      "latency_s": 97.300634831
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 37659,
+    "cached_tokens": 16256,
+    "completion_tokens": 41398,
+    "cost_usd": 0.0204518552,
+    "model_latency_s": 369.89472038099996,
+    "wall_s": 436.541968468
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e11-oneshot-30-2026-10-20/results/1912.01121v4.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "In this paper, we will apply the tools from number theory and modular forms to the study of the Seiberg-Witten theory. We will express the holomorphic functions a, aD, which generate the lattice Z = nea + nm aD, (ne, nm) ∈ Z2 of central charges, in terms of the periods of the Legendre family of elliptic curves. Thus we will be able to compute the transformations of the quotient aD /a under the action of the modular group PSL(2, Z). We will show the Schwarzian derivative of the quotient aD /a with respect to the complexified coupling constant is given by the theta functions. We will also compute the scalar curvature of the moduli space of the N = 2 supersymmetric Yang-Mills theory, which is shown to be asymptotically flat near the perturbative limit."
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Seiberg and Witten",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "In the fundamental paper [12] by Seiberg and Witten, the low-energy effective action"
+              },
+              {
+                "page": 1,
+                "quote": "Their beautiful work is now called the Seiberg-Witten theory."
+              },
+              {
+                "page": 8,
+                "quote": "Let us now prove a well-know result [4, 13]."
+              },
+              {
+                "page": 13,
+                "quote": "Inspired by the paper [11], let us now compute the"
+              }
+            ],
+            "reference_key": "12",
+            "why": "It builds directly on the Seiberg-Witten construction of the low-energy effective action and its periods."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In this paper, we will apply the tools from number theory and modular forms"
+          },
+          {
+            "page": 3,
+            "quote": "The most significant result we have obtained through"
+          }
+        ],
+        "text": "Number theory and modular forms can give new insight into Seiberg-Witten theory, especially by expressing its periods through the Legendre family, identifying the Schwarzian derivative with theta functions, and computing the scalar curvature near the perturbative and non-perturbative limits."
+      }
+    },
+    "citations": [
+      {
+        "context": "States that Seiberg and Witten determined the low-energy effective action.",
+        "page": 1,
+        "reference_key": "12"
+      },
+      {
+        "context": "States that the moduli space singularities determine the low-energy effective action.",
+        "page": 2,
+        "reference_key": "12"
+      },
+      {
+        "context": "States that the quotient aD/a is important for wall-crossing of BPS states.",
+        "page": 3,
+        "reference_key": "1, 2, 12"
+      },
+      {
+        "context": "States the original Seiberg-Witten one-form defines a cohomology class.",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "States the Seiberg-Witten periods are given by period integrals.",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "States the structure of the BPS mass lattice.",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "States the complexified coupling constant is a period of the elliptic curve.",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "States the quotient aD/a plays an important role in Seiberg-Witten theory.",
+        "page": 3,
+        "reference_key": "1, 2, 12"
+      },
+      {
+        "context": "Lays out the Schwarzian derivative and its properties.",
+        "page": 3,
+        "reference_key": "9, 11"
+      },
+      {
+        "context": "Uses branch cuts to construct the elliptic curve.",
+        "page": 5,
+        "reference_key": "5"
+      },
+      {
+        "context": "States the period integral gives the hypergeometric function.",
+        "page": 6,
+        "reference_key": "6"
+      },
+      {
+        "context": "States the Picard-Fuchs equation for the one-form.",
+        "page": 6,
+        "reference_key": "5"
+      },
+      {
+        "context": "States the monodromy matrices generate the modular group.",
+        "page": 7,
+        "reference_key": "5"
+      },
+      {
+        "context": "States the modular lambda function generates the function field of X(2).",
+        "page": 7,
+        "reference_key": "6"
+      },
+      {
+        "context": "States X(2) is a sixfold cover of PSL(2, Z) H.",
+        "page": 7,
+        "reference_key": "7"
+      },
+      {
+        "context": "Expresses the modular lambda function through theta functions.",
+        "page": 7,
+        "reference_key": "6"
+      },
+      {
+        "context": "Defines the normalized Yukawa coupling.",
+        "page": 7,
+        "reference_key": "8, 10"
+      },
+      {
+        "context": "Gives the power series expansion of lambda in q.",
+        "page": 7,
+        "reference_key": "5"
+      },
+      {
+        "context": "States the normalization of the Yukawa coupling.",
+        "page": 8,
+        "reference_key": "4, 13"
+      },
+      {
+        "context": "Derives the relation for the period squared.",
+        "page": 8,
+        "reference_key": "4, 13"
+      },
+      {
+        "context": "Gives the action of T and S on theta functions.",
+        "page": 9,
+        "reference_key": "6"
+      },
+      {
+        "context": "States the theta identity used in the proof of Lemma 3.1.",
+        "page": 9,
+        "reference_key": "6"
+      },
+      {
+        "context": "Relates the periods to the central charge lattice.",
+        "page": 10,
+        "reference_key": "12"
+      },
+      {
+        "context": "States the relation between a, aD and pi0, pi1.",
+        "page": 10,
+        "reference_key": "12"
+      },
+      {
+        "context": "States the complexified coupling constant in terms of periods.",
+        "page": 10,
+        "reference_key": "12"
+      },
+      {
+        "context": "States the Picard-Fuchs equation for the BPS periods.",
+        "page": 11,
+        "reference_key": "5"
+      },
+      {
+        "context": "Connects the Schwarzian derivative to the ODE.",
+        "page": 11,
+        "reference_key": "9"
+      },
+      {
+        "context": "Expresses the period tau in terms of hypergeometric functions.",
+        "page": 12,
+        "reference_key": "6"
+      },
+      {
+        "context": "Computes the Schwarzian derivative of the Seiberg-Witten period.",
+        "page": 13,
+        "reference_key": "11"
+      },
+      {
+        "context": "States the modular form relation for theta^8.",
+        "page": 13,
+        "reference_key": "7, 14"
+      },
+      {
+        "context": "Refers to applications of E_{0,4}(tau).",
+        "page": 13,
+        "reference_key": "3"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "SITP, Physics Department, Stanford University, Stanford, CA, 94305",
+          "name": "WENZHE YANG"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "WENZHE YANG"
+        },
+        {
+          "page": 1,
+          "quote": "SEIBERG-WITTEN THEORY AND MODULAR LAMBDA FUNCTION"
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:1912.01121v4[hep-th]13Jan2021"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1912.01121v4[hep-th]13Jan2021",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "SEIBERG-WITTEN THEORY AND MODULAR LAMBDA FUNCTION",
+      "venue": "arXiv",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 3,
+          "quote": "could the tools in number theory provide any new insights into the Seiberg-Witten theory?"
+        }
+      ],
+      "text": "Can number theory and modular forms, especially the modular lambda function, theta functions, Schwarzian derivative, and Picard's theorem, provide new insight into Seiberg-Witten theory, including the transformations of aD/a, the Schwarzian derivative, and the scalar curvature of the moduli space?"
+    },
+    "references": [
+      {
+        "authors": [
+          "L. Alvarez-Gaumé",
+          "S. F. Hassan"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 16,
+        "title": "Introduction to S-Duality in N = 2 Supersymmetric Gauge Theories",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "A. Bilal"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 16,
+        "title": "DUALITY IN N = 2 SUSY SU (2) YANG-MILLS THEORY: A pedagogical introduction to the work of Seiberg and Witten.",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "R. E. Borcherds"
+        ],
+        "doi": "https://doi.org/10.1007/s002220050232",
+        "key": "3",
+        "page": 16,
+        "title": "Automorphic forms with singularities on Grassmannians",
+        "venue": "Invent math 132, 491–562",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "J. H. Bruinier",
+          "G. van der Geer",
+          "G. Harder",
+          "D. Zagier"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 17,
+        "title": "The 1–2–3 of Modular Forms, Lectures at a Summer School in Nordfjordeid, Norway.",
+        "venue": "Springer",
+        "year": null
+      },
+      {
+        "authors": [
+          "J. Carlson",
+          "S. Müller-Stach",
+          "C. Peters"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 17,
+        "title": "Period Mappings and Period Domains.",
+        "venue": "Cambridge University Press",
+        "year": null
+      },
+      {
+        "authors": [
+          "K. Chandrasekharan"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 17,
+        "title": "Elliptic Functions",
+        "venue": "Grundlehren der mathematischen Wissenschaften, 281, Springer-Verlag",
+        "year": null
+      },
+      {
+        "authors": [
+          "F. Diamond",
+          "J. Shurman"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 17,
+        "title": "A First Course in Modular Forms",
+        "venue": "GTM, vol. 228, Springer",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "M. Gross",
+          "D. Huybrechts",
+          "D. Joyce"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 17,
+        "title": "Calabi-Yau Manifolds and Related Geometries.",
+        "venue": "Springer",
+        "year": null
+      },
+      {
+        "authors": [
+          "E. Hille"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 17,
+        "title": "Ordinary differential equations in the complex domain",
+        "venue": "Dover Publications",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "M. Kim",
+          "W. Yang"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 17,
+        "title": "Mirror symmetry, mixed motives and ζ(3).",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "A. Sebbar",
+          "H. Saber"
+        ],
+        "doi": "https://doi.org/10.1515/forum-2020-0025",
+        "key": "11",
+        "page": 17,
+        "title": "Automorphic Schwarzian equations.",
+        "venue": "Forum Mathematicum — Volume 32: Issue 6",
+        "year": null
+      },
+      {
+        "authors": [
+          "N. Seiberg",
+          "E. Witten"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 17,
+        "title": "Electric-magnetic duality, monopole condensation, and confinement in N=2 supersymmetric Yang-Mills theory.",
+        "venue": "Nucl.Phys. B426",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "D. Zagier"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 17,
+        "title": "Arithmetic and topology of differential equations",
+        "venue": "in Proceedings of the Seventh European Congress of Mathematics (Berlin, July 18–22, 2016), Editors V. Mehrmann, M. Skutella, European Mathematical Society, Berlin, 2018, 717–776.",
+        "year": 2018
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "14",
+        "page": 17,
+        "title": "A035016, The On-Line Encyclopedia of Integer Sequences.",
+        "venue": "OEIS",
+        "year": null
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "In the fundamental paper [12] by Seiberg and Witten, the low-energy effective action of",
+        "reference_key": "12",
+        "relation": "extends",
+        "why": "The paper applies modular-form tools to the Seiberg-Witten setting and re-expresses its periods through the Legendre family."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "From the Chapter 1 of [5], the oneform Ωλ satisfies a second",
+        "reference_key": "5",
+        "relation": "uses_method",
+        "why": "The Picard-Fuchs equation, period constructions, and branch-cut description of Legendre curves are taken from this source."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "The modular lambda function can also be expressed as a product of the theta functions [6]",
+        "reference_key": "6",
+        "relation": "uses_method",
+        "why": "The modular lambda function and theta-function identities are central to converting periods into modular functions."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "There is a fundamental relation between the Schwarzian derivative and ODE in the complex",
+        "reference_key": "9",
+        "relation": "uses_method",
+        "why": "The link between the Schwarzian derivative and the Q-form ODE is used to compute period invariants."
+      },
+      {
+        "confidence": "high",
+        "page": 13,
+        "quote": "Inspired by the paper [11], let us now compute the",
+        "reference_key": "11",
+        "relation": "extends",
+        "why": "The paper follows the Schwarzian-equation approach and applies it to the Seiberg-Witten period."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "Let us now prove a well-know result [4, 13].",
+        "reference_key": "4, 13",
+        "relation": "uses_method",
+        "why": "These modular-forms results are used to prove the identity for the period as a theta function."
+      },
+      {
+        "confidence": "high",
+        "page": 13,
+        "quote": "On the other hand, the modular group Γ0(2) has a unique weight-4 normalized entire modular",
+        "reference_key": "7, 14",
+        "relation": "uses_method",
+        "why": "The modular form E_{0,4} and its relation to theta^8 are used to identify the Schwarzian derivative."
+      },
+      {
+        "confidence": "high",
+        "page": 13,
+        "quote": "The readers are referred to the paper [3] for some applications of the modular form E0,4(τ).",
+        "reference_key": "3",
+        "relation": "critiques",
+        "why": "It is cited as a source for applications of the same modular form."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 4,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "open questions.",
+          "start_page": 1,
+          "start_text": "SEIBERG-WITTEN THEORY AND MODULAR LAMBDA FUNCTION"
+        },
+        "summary": "Introduces the Seiberg-Witten setting, the central-charge lattice, the prepotential, the moduli-space metric, and the motivation for using modular forms and Schwarzian derivatives.",
+        "title": "Introduction and Seiberg-Witten Background"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "Picard-Fuchs equation (2.11).",
+          "start_page": 5,
+          "start_text": "2. The Legendre family of elliptic curves"
+        },
+        "summary": "Reviews the Legendre family, its branch cuts, one-form, homology basis, periods, hypergeometric expansion, and Picard-Fuchs ordinary differential equation.",
+        "title": "Legendre Family and Its Periods"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "which will be important in this paper.",
+          "start_page": 6,
+          "start_text": "3. The modular lambda function and theta functions"
+        },
+        "summary": "Develops the modular lambda function, tau, monodromy, q-expansions, theta-function identities, Yukawa coupling, and the proof that the period is theta_3 squared.",
+        "title": "Modular Lambda Function and Theta Functions"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "variable τ of the upper half-plane H that is going to be more interesting and important in this paper [11].",
+          "start_page": 9,
+          "start_text": "4. The meromorphic Seiberg-Witten oneform and its periods"
+        },
+        "summary": "Transforms the Seiberg-Witten one-form to the Legendre family, defines BPS periods, relates them to a and aD, and introduces the Q-form ODE and its Schwarzian connection.",
+        "title": "Meromorphic Seiberg-Witten Oneform and BPS Periods"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "for some applications of the modular form E0,4(τ).",
+          "start_page": 11,
+          "start_text": "5. The Schwarzian derivative of the Seiberg-Witten period"
+        },
+        "summary": "Computes the modular transformations of the BPS periods, the fixed point at lambda = 1/2, and the Schwarzian derivatives of phi and aD/a, identifying them with theta functions and a modular form.",
+        "title": "Schwarzian Derivative and Modular Transformations"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "N = 2 supersymmetric Yang-Mills theory.",
+          "start_page": 14,
+          "start_text": "6. Great Picard’s Theorem and the non-perturbative limit"
+        },
+        "summary": "Uses Picard's theorem to show that the quotient aD/a takes real values near the non-perturbative limits, then computes the scalar curvature of the moduli space and its exponential behavior near the singularities.",
+        "title": "Non-perturbative Limits and Scalar Curvature"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "N = 2 supersymmetric Yang-Mills theory.",
+          "start_page": 16,
+          "start_text": "8. Conclusions and further prospects"
+        },
+        "summary": "Summarizes the paper's results and raises open questions about automorphic representations, physical interpretations, and the special vacuum at u = 0.",
+        "title": "Conclusions and Open Questions"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "Yangwz@stanford.edu.",
+          "start_page": 16,
+          "start_text": "References"
+        },
+        "summary": "Lists all bibliography entries used in the paper.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper is a theoretical/mathematical physics research article that derives new relations in Seiberg-Witten theory using modular forms and differential equations.",
+      "value": "theory"
+    }
+  },
+  "pass1_check": {
+    "sites": 50,
+    "verbatim": 19,
+    "near": 1,
+    "missing": 30,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/citations/25",
+      "action": "remove",
+      "value_json": null,
+      "reason": "The BPS-period ODE is associated with the Schwarzian/ODE connection [9] nearby, not with reference [5] on page 11.",
+      "evidence": [
+        {
+          "quote": "This Q-form is closely related to Schwarzian derivative [9].",
+          "page": 11
+        }
+      ]
+    },
+    {
+      "path": "/citations/18",
+      "action": "remove",
+      "value_json": null,
+      "reason": "Reference [4, 13] is attached to the Lemma after the Yukawa-coupling normalization, not to the normalization statement itself.",
+      "evidence": [
+        {
+          "quote": "Let us now prove a well-know result [4, 13].",
+          "page": 8
+        }
+      ]
+    },
+    {
+      "path": "/card/position/targets/0/evidence/3",
+      "action": "remove",
+      "value_json": null,
+      "reason": "This quote concerns reference [11], not Seiberg and Witten, so it is not evidence for the Seiberg-Witten target.",
+      "evidence": [
+        {
+          "quote": "Inspired by the paper [11], let us now compute the",
+          "page": 13
+        }
+      ]
+    },
+    {
+      "path": "/card/position/targets/0/evidence/2",
+      "action": "remove",
+      "value_json": null,
+      "reason": "This quote concerns references [4, 13], not Seiberg and Witten, so it is not evidence for the Seiberg-Witten target.",
+      "evidence": [
+        {
+          "quote": "Let us now prove a well-know result [4, 13].",
+          "page": 8
+        }
+      ]
+    },
+    {
+      "path": "/sections/7/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"yangwz@stanford.edu.\"",
+      "reason": "The paper's email address begins with lowercase 'yangwz', not 'Yangwz'.",
+      "evidence": [
+        {
+          "quote": "Email address: yangwz@stanford.edu.",
+          "page": 17
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/citations/25",
+      "action": "remove",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/citations/18",
+      "action": "remove",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/card/position/targets/0/evidence/3",
+      "action": "remove",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/card/position/targets/0/evidence/2",
+      "action": "remove",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/sections/7/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 46,
+    "verbatim": 17,
+    "near": 1,
+    "missing": 28,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "In this paper, we will apply the tools from number theory and modular forms to the study of the Seiberg-Witten theory. We will express the holomorphic functions a, aD, which generate the lattice Z = nea + nm aD, (ne, nm) ∈ Z2 of central charges, in terms of the periods of the Legendre family of elliptic curves. Thus we will be able to compute the transformations of the quotient aD /a under the action of the modular group PSL(2, Z). We will show the Schwarzian derivative of the quotient aD /a with respect to the complexified coupling constant is given by the theta functions. We will also compute the scalar curvature of the moduli space of the N = 2 supersymmetric Yang-Mills theory, which is shown to be asymptotically flat near the perturbative limit.",
+      "admitted": "In this paper, we will apply the tools from number theory and modular forms to the study of the Seiberg-Witten theory. We will express the holomorphic functions a, aD, which generate the lattice Z = nea + nm aD, (ne, nm) ∈ Z2 of central charges, in terms of the periods of the Legendre family of elliptic curves. Thus we will be able to compute the transformations of the quotient aD /a under the action of the modular group PSL(2, Z). We will show the Schwarzian derivative of the quotient aD /a with respect to the complexified coupling constant is given by the theta functions. We will also compute the scalar curvature of the moduli space of the N = 2 supersymmetric Yang-Mills theory, which is shown to be asymptotically flat near the perturbative limit.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In the fundamental paper [12] by Seiberg and Witten, the low-energy effective action",
+      "admitted": "In the fundamental paper [12] by Seiberg and Witten, the low-energy effective action",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Their beautiful work is now called the Seiberg-Witten theory.",
+      "admitted": "Their beautiful work is now called the Seiberg-Witten theory.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper, we will apply the tools from number theory and modular forms",
+      "admitted": "In this paper, we will apply the tools from number theory and modular forms",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/1/quote",
+      "status": "verbatim",
+      "original": "The most significant result we have obtained through",
+      "admitted": "The most significant result we have obtained through",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "WENZHE YANG",
+      "admitted": "WENZHE YANG",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "SEIBERG-WITTEN THEORY AND MODULAR LAMBDA FUNCTION",
+      "admitted": "SEIBERG-WITTEN THEORY AND MODULAR LAMBDA FUNCTION",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/2/quote",
+      "status": "verbatim",
+      "original": "arXiv:1912.01121v4[hep-th]13Jan2021",
+      "admitted": "arXiv:1912.01121v4[hep-th]13Jan2021",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "could the tools in number theory provide any new insights into the Seiberg-Witten theory?",
+      "admitted": "could the tools in number theory provide any new insights into the Seiberg-Witten theory?",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "repaired_model",
+      "original": "States that Seiberg and Witten determined the low-energy effective action.",
+      "admitted": "In the fundamental paper [12] by Seiberg and Witten, the low-energy effective action of the N = 2 supersymmetric Yang-Mills theory with gauge group SU(2) has been determined by using the holomorphic properties of the theory together with their monodromy behaviors near certain singularities.",
+      "similarity": 0.7,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "repaired_model",
+      "original": "States that the moduli space singularities determine the low-energy effective action.",
+      "admitted": "However, this moduli space M has special singularities, and the behaviors of the N = 2 theory near these singularities will determine the low-energy effective action [12].",
+      "similarity": 0.4545454545454546,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "repaired_model",
+      "original": "States that the quotient aD/a is important for wall-crossing of BPS states.",
+      "admitted": "The quotient aD/a plays an important role in the Seiberg-Witten theory, especially in the study of the wall-crossing of BPS states [1, 2, 12].",
+      "similarity": 0.41666666666666663,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "repaired_model",
+      "original": "States the original Seiberg-Witten one-form defines a cohomology class.",
+      "admitted": "The residue of Ωsw u at its pole is zero, therefore it defines an element of the cohomology group",
+      "similarity": 0.33333333333333337,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "repaired_model",
+      "original": "States the Seiberg-Witten periods are given by period integrals.",
+      "admitted": "From the paper [12], there exists a basis {γ0sw, γ1sw} for the homology group H1(Eu, Z) such that",
+      "similarity": 0.4444444444444444,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "repaired_model",
+      "original": "States the structure of the BPS mass lattice.",
+      "admitted": "In fact, the mass-lattice of the BPS states of the N = 2 theory is given by {nea + nmaD: (ne, nm) ∈ Z2}.",
+      "similarity": 0.5,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "repaired_model",
+      "original": "States the complexified coupling constant is a period of the elliptic curve.",
+      "admitted": "Furthermore, the complexified coupling constant τsw(u) is just the period of the elliptic curve Eu that is given by",
+      "similarity": 0.6666666666666667,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "repaired_model",
+      "original": "States the quotient aD/a plays an important role in Seiberg-Witten theory.",
+      "admitted": "The quotient aD/a plays an important role in the Seiberg-Witten theory, especially in the study of the wall-crossing of BPS states [1, 2, 12].",
+      "similarity": 0.8181818181818181,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "repaired_model",
+      "original": "Lays out the Schwarzian derivative and its properties.",
+      "admitted": "The Schwarzian derivative has many important properties [9, 11], e.g.",
+      "similarity": 0.5,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "repaired_model",
+      "original": "Uses branch cuts to construct the elliptic curve.",
+      "admitted": "Let us now briefly recall how to construct a complex curve from the equation (2.1) using branch cuts [5].",
+      "similarity": 0.375,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "repaired_model",
+      "original": "States the period integral gives the hypergeometric function.",
+      "admitted": "which is the hypergeometric function 2F1(1/2, 1/2; 1; λ) [6].",
+      "similarity": 0.375,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "repaired_model",
+      "original": "States the Picard-Fuchs equation for the one-form.",
+      "admitted": "which is called the Picard-Fuchs equation of Ωλ.",
+      "similarity": 0.4285714285714286,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "repaired_model",
+      "original": "States the monodromy matrices generate the modular group.",
+      "admitted": "The monodromy matrices of the period vector ̟ near the three singular points {0,1, ∞} generate the modular group Γ(2).",
+      "similarity": 0.5,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "repaired_model",
+      "original": "States the modular lambda function generates the function field of X(2).",
+      "admitted": "Moreover, λ(τ) generates the function field of the modular curve X(2), i.e. it is a Hauptmodul for X(2) [6].",
+      "similarity": 0.5454545454545454,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "repaired_model",
+      "original": "States X(2) is a sixfold cover of PSL(2, Z) H.",
+      "admitted": "The modular curve X(2) = Γ(2)\\H is a sixfold cover of PSL(2, Z)\\H [7].",
+      "similarity": 0.6,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "repaired_model",
+      "original": "Expresses the modular lambda function through theta functions.",
+      "admitted": "The modular lambda function can also be expressed as a product of the theta functions [6]",
+      "similarity": 0.75,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "repaired_model",
+      "original": "Defines the normalized Yukawa coupling.",
+      "admitted": "Following the mirror symmetry of Calabi-Yau threefolds [8, 10], let us define the normalized Yukawa coupling Y by",
+      "similarity": 0.8,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "repaired_model",
+      "original": "Gives the power series expansion of lambda in q.",
+      "admitted": "λ(q) = 16q − 128q2 + 704q3 − 3072q4 + · · ·.",
+      "similarity": 0.6666666666666667,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "repaired_model",
+      "original": "Derives the relation for the period squared.",
+      "admitted": "From formula (3.20), we have\n̟02(λ) =\n1 dλ\n1\n.\nπi dτ λ(1 − λ)",
+      "similarity": 0.4285714285714286,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "repaired_model",
+      "original": "Gives the action of T and S on theta functions.",
+      "admitted": "But the actions of T and S on the θ34(0, q) are [6]\nT: θ34(0, q) 7→ θ44(0, q) = (1 − λ) θ34(0, q),\nS: θ34(0, q) 7→ −τ2 θ34(0, q);",
+      "similarity": 0.6,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "repaired_model",
+      "original": "States the theta identity used in the proof of Lemma 3.1.",
+      "admitted": "where we have used formula (3.10).",
+      "similarity": 0.36363636363636365,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "repaired_model",
+      "original": "Relates the periods to the central charge lattice.",
+      "admitted": "In particular, the central charge lattice of the BPS states of the N = 2 theory is also given by {mπ0 + n π1: (m, n) ∈ Z2}.",
+      "similarity": 0.5,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "repaired_model",
+      "original": "States the relation between a, aD and pi0, pi1.",
+      "admitted": "we find that [12]\na = −π1 − π0, aD = −π1.",
+      "similarity": 0.33333333333333337,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "repaired_model",
+      "original": "States the complexified coupling constant in terms of periods.",
+      "admitted": "Hence from formula (1.14), the complexified coupling constant τsw of the N = 2 theory is also given by",
+      "similarity": 0.5555555555555556,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "withdrawn",
+      "original": "Connects the Schwarzian derivative to the ODE.",
+      "admitted": null,
+      "similarity": 0.5714285714285714,
+      "cited_page": 11,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "withdrawn",
+      "original": "Expresses the period tau in terms of hypergeometric functions.",
+      "admitted": null,
+      "similarity": 0.4444444444444444,
+      "cited_page": 12,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "repaired_local",
+      "original": "Computes the Schwarzian derivative of the Seiberg-Witten period.",
+      "admitted": "compute the Schwarzian derivative of the Seiberg-Witten period",
+      "similarity": 0.875,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "withdrawn",
+      "original": "States the modular form relation for theta^8.",
+      "admitted": null,
+      "similarity": 0.4285714285714286,
+      "cited_page": 13,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/28/context",
+      "status": "withdrawn",
+      "original": "Refers to applications of E_{0,4}(tau).",
+      "admitted": null,
+      "similarity": 0.4,
+      "cited_page": 13,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "In the fundamental paper [12] by Seiberg and Witten, the low-energy effective action of",
+      "admitted": "In the fundamental paper [12] by Seiberg and Witten, the low-energy effective action of",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "From the Chapter 1 of [5], the oneform Ωλ satisfies a second",
+      "admitted": "From the Chapter 1 of [5], the oneform Ωλ satisfies a second",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "The modular lambda function can also be expressed as a product of the theta functions [6]",
+      "admitted": "The modular lambda function can also be expressed as a product of the theta functions [6]",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "There is a fundamental relation between the Schwarzian derivative and ODE in the complex",
+      "admitted": "There is a fundamental relation between the Schwarzian derivative and ODE in the complex",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Inspired by the paper [11], let us now compute the",
+      "admitted": "Inspired by the paper [11], let us now compute the",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "Let us now prove a well-know result [4, 13].",
+      "admitted": "Let us now prove a well-know result [4, 13].",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "On the other hand, the modular group Γ0(2) has a unique weight-4 normalized entire modular",
+      "admitted": "On the other hand, the modular group Γ0(2) has a unique weight-4 normalized entire modular",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "The readers are referred to the paper [3] for some applications of the modular form E0,4(τ).",
+      "admitted": "The readers are referred to the paper [3] for some applications of the modular form E0,4(τ).",
+      "similarity": null,
+      "cited_page": 13,
+      "matched_page": 13
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 1,
+    "repaired_model": 24,
+    "verbatim": 17,
+    "withdrawn": 4
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "In this paper, we will apply the tools from number theory and modular forms to the study of the Seiberg-Witten theory. We will express the holomorphic functions a, aD, which generate the lattice Z = nea + nm aD, (ne, nm) ∈ Z2 of central charges, in terms of the periods of the Legendre family of elliptic curves. Thus we will be able to compute the transformations of the quotient aD /a under the action of the modular group PSL(2, Z). We will show the Schwarzian derivative of the quotient aD /a with respect to the complexified coupling constant is given by the theta functions. We will also compute the scalar curvature of the moduli space of the N = 2 supersymmetric Yang-Mills theory, which is shown to be asymptotically flat near the perturbative limit."
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Seiberg and Witten",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "In the fundamental paper [12] by Seiberg and Witten, the low-energy effective action"
+              },
+              {
+                "page": 1,
+                "quote": "Their beautiful work is now called the Seiberg-Witten theory."
+              }
+            ],
+            "reference_key": "12",
+            "why": "It builds directly on the Seiberg-Witten construction of the low-energy effective action and its periods."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In this paper, we will apply the tools from number theory and modular forms"
+          },
+          {
+            "page": 3,
+            "quote": "The most significant result we have obtained through"
+          }
+        ],
+        "text": "Number theory and modular forms can give new insight into Seiberg-Witten theory, especially by expressing its periods through the Legendre family, identifying the Schwarzian derivative with theta functions, and computing the scalar curvature near the perturbative and non-perturbative limits."
+      }
+    },
+    "citations": [
+      {
+        "context": "In the fundamental paper [12] by Seiberg and Witten, the low-energy effective action of the N = 2 supersymmetric Yang-Mills theory with gauge group SU(2) has been determined by using the holomorphic properties of the theory together with their monodromy behaviors near certain singularities.",
+        "page": 1,
+        "reference_key": "12"
+      },
+      {
+        "context": "However, this moduli space M has special singularities, and the behaviors of the N = 2 theory near these singularities will determine the low-energy effective action [12].",
+        "page": 2,
+        "reference_key": "12"
+      },
+      {
+        "context": "The quotient aD/a plays an important role in the Seiberg-Witten theory, especially in the study of the wall-crossing of BPS states [1, 2, 12].",
+        "page": 3,
+        "reference_key": "1, 2, 12"
+      },
+      {
+        "context": "The residue of Ωsw u at its pole is zero, therefore it defines an element of the cohomology group",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "From the paper [12], there exists a basis {γ0sw, γ1sw} for the homology group H1(Eu, Z) such that",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "In fact, the mass-lattice of the BPS states of the N = 2 theory is given by {nea + nmaD: (ne, nm) ∈ Z2}.",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "Furthermore, the complexified coupling constant τsw(u) is just the period of the elliptic curve Eu that is given by",
+        "page": 3,
+        "reference_key": "12"
+      },
+      {
+        "context": "The quotient aD/a plays an important role in the Seiberg-Witten theory, especially in the study of the wall-crossing of BPS states [1, 2, 12].",
+        "page": 3,
+        "reference_key": "1, 2, 12"
+      },
+      {
+        "context": "The Schwarzian derivative has many important properties [9, 11], e.g.",
+        "page": 3,
+        "reference_key": "9, 11"
+      },
+      {
+        "context": "Let us now briefly recall how to construct a complex curve from the equation (2.1) using branch cuts [5].",
+        "page": 5,
+        "reference_key": "5"
+      },
+      {
+        "context": "which is the hypergeometric function 2F1(1/2, 1/2; 1; λ) [6].",
+        "page": 6,
+        "reference_key": "6"
+      },
+      {
+        "context": "which is called the Picard-Fuchs equation of Ωλ.",
+        "page": 6,
+        "reference_key": "5"
+      },
+      {
+        "context": "The monodromy matrices of the period vector ̟ near the three singular points {0,1, ∞} generate the modular group Γ(2).",
+        "page": 7,
+        "reference_key": "5"
+      },
+      {
+        "context": "Moreover, λ(τ) generates the function field of the modular curve X(2), i.e. it is a Hauptmodul for X(2) [6].",
+        "page": 7,
+        "reference_key": "6"
+      },
+      {
+        "context": "The modular curve X(2) = Γ(2)\\H is a sixfold cover of PSL(2, Z)\\H [7].",
+        "page": 7,
+        "reference_key": "7"
+      },
+      {
+        "context": "The modular lambda function can also be expressed as a product of the theta functions [6]",
+        "page": 7,
+        "reference_key": "6"
+      },
+      {
+        "context": "Following the mirror symmetry of Calabi-Yau threefolds [8, 10], let us define the normalized Yukawa coupling Y by",
+        "page": 7,
+        "reference_key": "8, 10"
+      },
+      {
+        "context": "λ(q) = 16q − 128q2 + 704q3 − 3072q4 + · · ·.",
+        "page": 7,
+        "reference_key": "5"
+      },
+      {
+        "context": "From formula (3.20), we have\n̟02(λ) =\n1 dλ\n1\n.\nπi dτ λ(1 − λ)",
+        "page": 8,
+        "reference_key": "4, 13"
+      },
+      {
+        "context": "But the actions of T and S on the θ34(0, q) are [6]\nT: θ34(0, q) 7→ θ44(0, q) = (1 − λ) θ34(0, q),\nS: θ34(0, q) 7→ −τ2 θ34(0, q);",
+        "page": 9,
+        "reference_key": "6"
+      },
+      {
+        "context": "where we have used formula (3.10).",
+        "page": 9,
+        "reference_key": "6"
+      },
+      {
+        "context": "In particular, the central charge lattice of the BPS states of the N = 2 theory is also given by {mπ0 + n π1: (m, n) ∈ Z2}.",
+        "page": 10,
+        "reference_key": "12"
+      },
+      {
+        "context": "we find that [12]\na = −π1 − π0, aD = −π1.",
+        "page": 10,
+        "reference_key": "12"
+      },
+      {
+        "context": "Hence from formula (1.14), the complexified coupling constant τsw of the N = 2 theory is also given by",
+        "page": 10,
+        "reference_key": "12"
+      },
+      {
+        "context": "compute the Schwarzian derivative of the Seiberg-Witten period",
+        "page": 13,
+        "reference_key": "11"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "SITP, Physics Department, Stanford University, Stanford, CA, 94305",
+          "name": "WENZHE YANG"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "WENZHE YANG"
+        },
+        {
+          "page": 1,
+          "quote": "SEIBERG-WITTEN THEORY AND MODULAR LAMBDA FUNCTION"
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:1912.01121v4[hep-th]13Jan2021"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1912.01121v4[hep-th]13Jan2021",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "SEIBERG-WITTEN THEORY AND MODULAR LAMBDA FUNCTION",
+      "venue": "arXiv",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 3,
+          "quote": "could the tools in number theory provide any new insights into the Seiberg-Witten theory?"
+        }
+      ],
+      "text": "Can number theory and modular forms, especially the modular lambda function, theta functions, Schwarzian derivative, and Picard's theorem, provide new insight into Seiberg-Witten theory, including the transformations of aD/a, the Schwarzian derivative, and the scalar curvature of the moduli space?"
+    },
+    "references": [
+      {
+        "authors": [
+          "L. Alvarez-Gaumé",
+          "S. F. Hassan"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 16,
+        "title": "Introduction to S-Duality in N = 2 Supersymmetric Gauge Theories",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "A. Bilal"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 16,
+        "title": "DUALITY IN N = 2 SUSY SU (2) YANG-MILLS THEORY: A pedagogical introduction to the work of Seiberg and Witten.",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "R. E. Borcherds"
+        ],
+        "doi": "https://doi.org/10.1007/s002220050232",
+        "key": "3",
+        "page": 16,
+        "title": "Automorphic forms with singularities on Grassmannians",
+        "venue": "Invent math 132, 491–562",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "J. H. Bruinier",
+          "G. van der Geer",
+          "G. Harder",
+          "D. Zagier"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 17,
+        "title": "The 1–2–3 of Modular Forms, Lectures at a Summer School in Nordfjordeid, Norway.",
+        "venue": "Springer",
+        "year": null
+      },
+      {
+        "authors": [
+          "J. Carlson",
+          "S. Müller-Stach",
+          "C. Peters"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 17,
+        "title": "Period Mappings and Period Domains.",
+        "venue": "Cambridge University Press",
+        "year": null
+      },
+      {
+        "authors": [
+          "K. Chandrasekharan"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 17,
+        "title": "Elliptic Functions",
+        "venue": "Grundlehren der mathematischen Wissenschaften, 281, Springer-Verlag",
+        "year": null
+      },
+      {
+        "authors": [
+          "F. Diamond",
+          "J. Shurman"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 17,
+        "title": "A First Course in Modular Forms",
+        "venue": "GTM, vol. 228, Springer",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "M. Gross",
+          "D. Huybrechts",
+          "D. Joyce"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 17,
+        "title": "Calabi-Yau Manifolds and Related Geometries.",
+        "venue": "Springer",
+        "year": null
+      },
+      {
+        "authors": [
+          "E. Hille"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 17,
+        "title": "Ordinary differential equations in the complex domain",
+        "venue": "Dover Publications",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "M. Kim",
+          "W. Yang"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 17,
+        "title": "Mirror symmetry, mixed motives and ζ(3).",
+        "venue": "arXiv",
+        "year": null
+      },
+      {
+        "authors": [
+          "A. Sebbar",
+          "H. Saber"
+        ],
+        "doi": "https://doi.org/10.1515/forum-2020-0025",
+        "key": "11",
+        "page": 17,
+        "title": "Automorphic Schwarzian equations.",
+        "venue": "Forum Mathematicum — Volume 32: Issue 6",
+        "year": null
+      },
+      {
+        "authors": [
+          "N. Seiberg",
+          "E. Witten"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 17,
+        "title": "Electric-magnetic duality, monopole condensation, and confinement in N=2 supersymmetric Yang-Mills theory.",
+        "venue": "Nucl.Phys. B426",
+        "year": 1994
+      },
+      {
+        "authors": [
+          "D. Zagier"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 17,
+        "title": "Arithmetic and topology of differential equations",
+        "venue": "in Proceedings of the Seventh European Congress of Mathematics (Berlin, July 18–22, 2016), Editors V. Mehrmann, M. Skutella, European Mathematical Society, Berlin, 2018, 717–776.",
+        "year": 2018
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "14",
+        "page": 17,
+        "title": "A035016, The On-Line Encyclopedia of Integer Sequences.",
+        "venue": "OEIS",
+        "year": null
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "In the fundamental paper [12] by Seiberg and Witten, the low-energy effective action of",
+        "reference_key": "12",
+        "relation": "extends",
+        "why": "The paper applies modular-form tools to the Seiberg-Witten setting and re-expresses its periods through the Legendre family."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "From the Chapter 1 of [5], the oneform Ωλ satisfies a second",
+        "reference_key": "5",
+        "relation": "uses_method",
+        "why": "The Picard-Fuchs equation, period constructions, and branch-cut description of Legendre curves are taken from this source."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "The modular lambda function can also be expressed as a product of the theta functions [6]",
+        "reference_key": "6",
+        "relation": "uses_method",
+        "why": "The modular lambda function and theta-function identities are central to converting periods into modular functions."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "There is a fundamental relation between the Schwarzian derivative and ODE in the complex",
+        "reference_key": "9",
+        "relation": "uses_method",
+        "why": "The link between the Schwarzian derivative and the Q-form ODE is used to compute period invariants."
+      },
+      {
+        "confidence": "high",
+        "page": 13,
+        "quote": "Inspired by the paper [11], let us now compute the",
+        "reference_key": "11",
+        "relation": "extends",
+        "why": "The paper follows the Schwarzian-equation approach and applies it to the Seiberg-Witten period."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "Let us now prove a well-know result [4, 13].",
+        "reference_key": "4, 13",
+        "relation": "uses_method",
+        "why": "These modular-forms results are used to prove the identity for the period as a theta function."
+      },
+      {
+        "confidence": "high",
+        "page": 13,
+        "quote": "On the other hand, the modular group Γ0(2) has a unique weight-4 normalized entire modular",
+        "reference_key": "7, 14",
+        "relation": "uses_method",
+        "why": "The modular form E_{0,4} and its relation to theta^8 are used to identify the Schwarzian derivative."
+      },
+      {
+        "confidence": "high",
+        "page": 13,
+        "quote": "The readers are referred to the paper [3] for some applications of the modular form E0,4(τ).",
+        "reference_key": "3",
+        "relation": "critiques",
+        "why": "It is cited as a source for applications of the same modular form."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 4,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "open questions.",
+          "start_page": 1,
+          "start_text": "SEIBERG-WITTEN THEORY AND MODULAR LAMBDA FUNCTION"
+        },
+        "summary": "Introduces the Seiberg-Witten setting, the central-charge lattice, the prepotential, the moduli-space metric, and the motivation for using modular forms and Schwarzian derivatives.",
+        "title": "Introduction and Seiberg-Witten Background"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "Picard-Fuchs equation (2.11).",
+          "start_page": 5,
+          "start_text": "2. The Legendre family of elliptic curves"
+        },
+        "summary": "Reviews the Legendre family, its branch cuts, one-form, homology basis, periods, hypergeometric expansion, and Picard-Fuchs ordinary differential equation.",
+        "title": "Legendre Family and Its Periods"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "which will be important in this paper.",
+          "start_page": 6,
+          "start_text": "3. The modular lambda function and theta functions"
+        },
+        "summary": "Develops the modular lambda function, tau, monodromy, q-expansions, theta-function identities, Yukawa coupling, and the proof that the period is theta_3 squared.",
+        "title": "Modular Lambda Function and Theta Functions"
+      },
+      {
+        "pages": {
+          "end": 11,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 11,
+          "end_text": "variable τ of the upper half-plane H that is going to be more interesting and important in this paper [11].",
+          "start_page": 9,
+          "start_text": "4. The meromorphic Seiberg-Witten oneform and its periods"
+        },
+        "summary": "Transforms the Seiberg-Witten one-form to the Legendre family, defines BPS periods, relates them to a and aD, and introduces the Q-form ODE and its Schwarzian connection.",
+        "title": "Meromorphic Seiberg-Witten Oneform and BPS Periods"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "for some applications of the modular form E0,4(τ).",
+          "start_page": 11,
+          "start_text": "5. The Schwarzian derivative of the Seiberg-Witten period"
+        },
+        "summary": "Computes the modular transformations of the BPS periods, the fixed point at lambda = 1/2, and the Schwarzian derivatives of phi and aD/a, identifying them with theta functions and a modular form.",
+        "title": "Schwarzian Derivative and Modular Transformations"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 14
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "N = 2 supersymmetric Yang-Mills theory.",
+          "start_page": 14,
+          "start_text": "6. Great Picard’s Theorem and the non-perturbative limit"
+        },
+        "summary": "Uses Picard's theorem to show that the quotient aD/a takes real values near the non-perturbative limits, then computes the scalar curvature of the moduli space and its exponential behavior near the singularities.",
+        "title": "Non-perturbative Limits and Scalar Curvature"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "N = 2 supersymmetric Yang-Mills theory.",
+          "start_page": 16,
+          "start_text": "8. Conclusions and further prospects"
+        },
+        "summary": "Summarizes the paper's results and raises open questions about automorphic representations, physical interpretations, and the special vacuum at u = 0.",
+        "title": "Conclusions and Open Questions"
+      },
+      {
+        "pages": {
+          "end": 17,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 17,
+          "end_text": "yangwz@stanford.edu.",
+          "start_page": 16,
+          "start_text": "References"
+        },
+        "summary": "Lists all bibliography entries used in the paper.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper is a theoretical/mathematical physics research article that derives new relations in Seiberg-Witten theory using modular forms and differential equations.",
+      "value": "theory"
+    }
+  }
+}

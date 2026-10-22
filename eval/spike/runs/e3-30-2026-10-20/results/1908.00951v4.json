@@ -1,0 +1,55 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-20T04:45:01.815853827Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1908.00951v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 15,
+  "calls": [
+    {
+      "stage": "core",
+      "provider": "Relace",
+      "finish_reason": "length",
+      "prompt_tokens": 15881,
+      "cached_tokens": 0,
+      "completion_tokens": 65536,
+      "reasoning_tokens": 13776,
+      "cost_usd": 0.001616268,
+      "cost_source": "reported",
+      "latency_s": 403.029774559
+    }
+  ],
+  "totals": {
+    "calls": 1,
+    "prompt_tokens": 15881,
+    "cached_tokens": 0,
+    "completion_tokens": 65536,
+    "cost_usd": 0.001616268,
+    "model_latency_s": 403.029774559,
+    "wall_s": 406.520317898
+  },
+  "budget_stopped": null,
+  "failures": [
+    {
+      "stage": "core",
+      "error": "output was cut off at the length limit",
+      "raw": "{\n  \"abstract\": {\n    \"confidence\":  \"high\",\n    \"page\": 1,\n    \"text\": \"We consider the problem of fast time-series data clustering. Building on previous work modeling the correlation-based Hamiltonian of spin variables we present an updated fast non-expensive Agglomerative Likelihood Clustering algorithm (ALC). The method replaces the optimized genetic algorithm based approach (f-SPC) with an agglomerative recursive merging framework inspired by previous work in Econophysics and Community Detection. The method is tested on noisy synthetic correlated time-series data-sets with built-in cluster structure to demonstrate that the algorithm produces meaningful non-trivial results. We apply it to time-series data-sets as large as 20,000 assets and we argue that ALC can reduce compute time costs and resource usage cost for large scale clustering for time-series applications while being serialized, and hence has no obvious parallelization requirement. The algorithm can be an effective choice for state-detection for online learning in a fast non-linear data environment because the algorithm requires no prior information about the number of clusters.\"\n  },\n  \"card\": {\n    \"position\": {\n      \"predecessors\": [\n        {\n          \"cited_work\": \"Giada-Marsili likelihood and Merging Algorithm [11, 12]\",\n          \"confidence\": \"high\",\n          \"evidence\": [\n            {\n              \"page\": 1,\n              \"quote\": \"Building on prior work we propose and demonstrate an alternative to fast Super-Paramagnetic Clustering (f-SPC) [47] using a modern and streamlined implementation of the “Merging Algorithm” first suggested in [12], one that can recover the same or better cluster configurations but with significantly reduced compute times.\"\n            }\n          ],\n          \"reference_key\": \"11\",\n          \"why\": \"ALC explicitly optimizes the Giada-Marsili likelihood through a greedy merging framework based on their Merging Algorithm.\"\n        },\n        {\n          \"cited_wor"
+    }
+  ],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e3-30-2026-10-20/results/1908.00951v4.reasoning.jsonl",
+  "pass1": null,
+  "pass1_check": null,
+  "corrections": [],
+  "correction_outcomes": [],
+  "pass2_check": null,
+  "admission": [],
+  "admission_counts": {},
+  "artifacts": null
+}

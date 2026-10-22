@@ -45,6 +45,25 @@ impl PdfExtractor {
         source: &Path,
         fallback_metadata: &PaperMetadata,
     ) -> Result<ExtractedPaper> {
+        self.extract_with(source, fallback_metadata, false).await
+    }
+
+    /// Like `extract`, but returns an all-empty page set instead of failing when
+    /// the PDF has no text layer, so the caller can fill it from page images.
+    pub async fn extract_allowing_empty(
+        &self,
+        source: &Path,
+        fallback_metadata: &PaperMetadata,
+    ) -> Result<ExtractedPaper> {
+        self.extract_with(source, fallback_metadata, true).await
+    }
+
+    async fn extract_with(
+        &self,
+        source: &Path,
+        fallback_metadata: &PaperMetadata,
+        allow_empty: bool,
+    ) -> Result<ExtractedPaper> {
         let text_future = self.extract_text(source);
         let layout_future = self.extract_layout(source);
         let metadata_future = self.extract_metadata(source);
@@ -59,18 +78,26 @@ impl PdfExtractor {
             )));
         }
 
-        let pages = if verbatim.pages.iter().any(|p| !p.tokens.is_empty()) {
+        let mut pages = if verbatim.pages.iter().any(|p| !p.tokens.is_empty()) {
             crate::frontmatter::readable_pages(&verbatim)
                 .into_iter()
                 .map(|page| ExtractedPage {
                     number: page.number,
                     text: clean_page(&page.text),
                 })
-                .collect()
+                .collect::<Vec<_>>()
         } else {
             split_pages(&text)
         };
-        if pages.iter().all(|page| page.text.trim().is_empty()) {
+        if allow_empty {
+            while pages.len() < layout.pages.len() {
+                let number = u32::try_from(pages.len() + 1).unwrap_or(u32::MAX);
+                pages.push(ExtractedPage {
+                    number,
+                    text: String::new(),
+                });
+            }
+        } else if pages.iter().all(|page| page.text.trim().is_empty()) {
             return Err(Error::EmptyExtraction(source.to_owned()));
         }
         let mut metadata = fallback_metadata.clone();

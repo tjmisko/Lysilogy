@@ -1,0 +1,1461 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "identity",
+    "type",
+    "abstract",
+    "card",
+    "question",
+    "sections",
+    "references",
+    "citations",
+    "relations",
+    "objects",
+    "supercut",
+    "claims",
+    "method",
+    "key_numbers",
+    "limitations",
+    "open_questions",
+    "headline_results",
+    "read_signal",
+    "notation",
+    "glossary"
+  ],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "subtitle",
+        "authors",
+        "year",
+        "venue",
+        "identifiers",
+        "publication_state",
+        "evidence",
+        "confidence"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "As printed, without line-break hyphens."
+        },
+        "subtitle": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "affiliation"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "As printed."
+              },
+              "affiliation": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "description": "All authors, in printed order."
+        },
+        "year": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "venue": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "identifiers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "doi",
+            "arxiv"
+          ],
+          "properties": {
+            "doi": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "arxiv": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "arXiv identifier without the 'arXiv:' prefix."
+            }
+          }
+        },
+        "publication_state": {
+          "type": "string",
+          "enum": [
+            "preprint",
+            "published",
+            "unknown"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "quote",
+              "page"
+            ],
+            "properties": {
+              "quote": {
+                "type": "string",
+                "description": "Copied exactly from the page text, 8 to 300 characters."
+              },
+              "page": {
+                "type": "integer",
+                "description": "1-based page number."
+              }
+            },
+            "description": "A verbatim passage from the paper and the page it is on."
+          },
+          "description": "Verbatim support. Empty only when the item is a model judgment."
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "description": "How sure you are that this item is correct."
+        }
+      }
+    },
+    "type": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "reason",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "type": "string",
+          "enum": [
+            "survey",
+            "method",
+            "empirical",
+            "theory",
+            "dataset",
+            "position",
+            "replication",
+            "resource"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "description": "How sure you are that this item is correct."
+        }
+      }
+    },
+    "abstract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "page",
+        "confidence"
+      ],
+      "properties": {
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The abstract copied verbatim, paragraphs joined with a blank line; null if the paper has none."
+        },
+        "page": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "description": "How sure you are that this item is correct."
+        }
+      }
+    },
+    "card": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "thesis",
+        "position",
+        "headline_results",
+        "read_signal"
+      ],
+      "properties": {
+        "thesis": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "evidence",
+            "confidence"
+          ],
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "One plain sentence."
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "quote",
+                  "page"
+                ],
+                "properties": {
+                  "quote": {
+                    "type": "string",
+                    "description": "Copied exactly from the page text, 8 to 300 characters."
+                  },
+                  "page": {
+                    "type": "integer",
+                    "description": "1-based page number."
+                  }
+                },
+                "description": "A verbatim passage from the paper and the page it is on."
+              },
+              "description": "Verbatim support. Empty only when the item is a model judgment."
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ],
+              "description": "How sure you are that this item is correct."
+            }
+          }
+        },
+        "position": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "predecessors",
+            "targets",
+            "replications"
+          ],
+          "properties": {
+            "predecessors": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "reference_key",
+                  "cited_work",
+                  "why",
+                  "evidence",
+                  "confidence"
+                ],
+                "properties": {
+                  "reference_key": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The key of the entry in `references`, or null if it is not in the bibliography."
+                  },
+                  "cited_work": {
+                    "type": "string",
+                    "description": "Short name of the cited work, e.g. 'Smith et al. 2020'."
+                  },
+                  "why": {
+                    "type": "string",
+                    "description": "One plain-language line on the relation."
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "quote",
+                        "page"
+                      ],
+                      "properties": {
+                        "quote": {
+                          "type": "string",
+                          "description": "Copied exactly from the page text, 8 to 300 characters."
+                        },
+                        "page": {
+                          "type": "integer",
+                          "description": "1-based page number."
+                        }
+                      },
+                      "description": "A verbatim passage from the paper and the page it is on."
+                    },
+                    "description": "Verbatim support. Empty only when the item is a model judgment."
+                  },
+                  "confidence": {
+                    "type": "string",
+                    "enum": [
+                      "high",
+                      "medium",
+                      "low"
+                    ],
+                    "description": "How sure you are that this item is correct."
+                  }
+                }
+              },
+              "description": "Work this paper builds on."
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "reference_key",
+                  "cited_work",
+                  "why",
+                  "evidence",
+                  "confidence"
+                ],
+                "properties": {
+                  "reference_key": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The key of the entry in `references`, or null if it is not in the bibliography."
+                  },
+                  "cited_work": {
+                    "type": "string",
+                    "description": "Short name of the cited work, e.g. 'Smith et al. 2020'."
+                  },
+                  "why": {
+                    "type": "string",
+                    "description": "One plain-language line on the relation."
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "quote",
+                        "page"
+                      ],
+                      "properties": {
+                        "quote": {
+                          "type": "string",
+                          "description": "Copied exactly from the page text, 8 to 300 characters."
+                        },
+                        "page": {
+                          "type": "integer",
+                          "description": "1-based page number."
+                        }
+                      },
+                      "description": "A verbatim passage from the paper and the page it is on."
+                    },
+                    "description": "Verbatim support. Empty only when the item is a model judgment."
+                  },
+                  "confidence": {
+                    "type": "string",
+                    "enum": [
+                      "high",
+                      "medium",
+                      "low"
+                    ],
+                    "description": "How sure you are that this item is correct."
+                  }
+                }
+              },
+              "description": "Work it contrasts with or critiques."
+            },
+            "replications": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "reference_key",
+                  "cited_work",
+                  "why",
+                  "evidence",
+                  "confidence"
+                ],
+                "properties": {
+                  "reference_key": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The key of the entry in `references`, or null if it is not in the bibliography."
+                  },
+                  "cited_work": {
+                    "type": "string",
+                    "description": "Short name of the cited work, e.g. 'Smith et al. 2020'."
+                  },
+                  "why": {
+                    "type": "string",
+                    "description": "One plain-language line on the relation."
+                  },
+                  "evidence": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "quote",
+                        "page"
+                      ],
+                      "properties": {
+                        "quote": {
+                          "type": "string",
+                          "description": "Copied exactly from the page text, 8 to 300 characters."
+                        },
+                        "page": {
+                          "type": "integer",
+                          "description": "1-based page number."
+                        }
+                      },
+                      "description": "A verbatim passage from the paper and the page it is on."
+                    },
+                    "description": "Verbatim support. Empty only when the item is a model judgment."
+                  },
+                  "confidence": {
+                    "type": "string",
+                    "enum": [
+                      "high",
+                      "medium",
+                      "low"
+                    ],
+                    "description": "How sure you are that this item is correct."
+                  }
+                }
+              },
+              "description": "Work it replicates or that replicates it."
+            }
+          }
+        },
+        "headline_results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "statement",
+              "carrier",
+              "evidence",
+              "confidence"
+            ],
+            "properties": {
+              "statement": {
+                "type": "string"
+              },
+              "carrier": {
+                "type": "string",
+                "description": "The object label or number that carries the result."
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "quote",
+                    "page"
+                  ],
+                  "properties": {
+                    "quote": {
+                      "type": "string",
+                      "description": "Copied exactly from the page text, 8 to 300 characters."
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "1-based page number."
+                    }
+                  },
+                  "description": "A verbatim passage from the paper and the page it is on."
+                },
+                "description": "Verbatim support. Empty only when the item is a model judgment."
+              },
+              "confidence": {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ],
+                "description": "How sure you are that this item is correct."
+              }
+            }
+          }
+        },
+        "read_signal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "judgment",
+            "reason"
+          ],
+          "properties": {
+            "judgment": {
+              "type": "string",
+              "enum": [
+                "read",
+                "skim",
+                "glance",
+                "summary_enough"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "description": "Model judgment; say why."
+            }
+          }
+        }
+      }
+    },
+    "question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "evidence",
+        "confidence"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The research question or hypothesis."
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "quote",
+              "page"
+            ],
+            "properties": {
+              "quote": {
+                "type": "string",
+                "description": "Copied exactly from the page text, 8 to 300 characters."
+              },
+              "page": {
+                "type": "integer",
+                "description": "1-based page number."
+              }
+            },
+            "description": "A verbatim passage from the paper and the page it is on."
+          },
+          "description": "Verbatim support. Empty only when the item is a model judgment."
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "description": "How sure you are that this item is correct."
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "kind",
+          "family",
+          "pages",
+          "source_span",
+          "summary"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short topic title, not a breadcrumb of the paper's own headings."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "abstract",
+              "background",
+              "research_question",
+              "theory",
+              "methods",
+              "data",
+              "results",
+              "discussion",
+              "limitations",
+              "conclusion",
+              "references",
+              "appendix",
+              "other"
+            ]
+          },
+          "family": {
+            "type": "string",
+            "enum": [
+              "context",
+              "question",
+              "method",
+              "evidence",
+              "interpretation",
+              "caveat",
+              "reference"
+            ]
+          },
+          "pages": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "start",
+              "end"
+            ],
+            "properties": {
+              "start": {
+                "type": "integer",
+                "description": "First 1-based PDF page."
+              },
+              "end": {
+                "type": "integer",
+                "description": "Last 1-based PDF page."
+              }
+            }
+          },
+          "source_span": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "start_text",
+              "start_page",
+              "end_text",
+              "end_page"
+            ],
+            "properties": {
+              "start_text": {
+                "type": "string",
+                "description": "A short verbatim phrase from where the unit begins."
+              },
+              "start_page": {
+                "type": "integer"
+              },
+              "end_text": {
+                "type": "string",
+                "description": "A short verbatim phrase from where the unit ends."
+              },
+              "end_page": {
+                "type": "integer"
+              }
+            }
+          },
+          "summary": {
+            "type": "string",
+            "description": "One or two sentences that synthesize the whole unit."
+          }
+        }
+      },
+      "description": "Coherent topic-based reading units, usually 1-2 pages and generally 1-5 pages of content. Keep related headings, variants, and examples together. Increasing PDF order, non-overlapping spans. Never a list of the paper's own headings."
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "title",
+          "authors",
+          "year",
+          "venue",
+          "doi",
+          "page"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "The in-text marker, e.g. '12' or 'Smith et al., 2020'."
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "year": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "venue": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "doi": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page": {
+            "type": "integer"
+          }
+        }
+      },
+      "description": "Every bibliography entry, in order."
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reference_key",
+          "page",
+          "context"
+        ],
+        "properties": {
+          "reference_key": {
+            "type": "string"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "context": {
+            "type": "string",
+            "description": "The citing sentence, verbatim."
+          }
+        }
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reference_key",
+          "relation",
+          "why",
+          "quote",
+          "page",
+          "confidence"
+        ],
+        "properties": {
+          "reference_key": {
+            "type": "string"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "background",
+              "uses_method",
+              "uses_data",
+              "extends",
+              "supports",
+              "contrasts",
+              "critiques",
+              "compares",
+              "other"
+            ]
+          },
+          "why": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string",
+            "description": "Verbatim."
+          },
+          "page": {
+            "type": "integer"
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "label",
+          "number",
+          "page",
+          "caption",
+          "latex",
+          "referenced_on_pages",
+          "confidence"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "figure",
+              "table",
+              "equation",
+              "algorithm"
+            ]
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "As printed, e.g. 'Figure 3', 'Table 1', '(12)'."
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The number alone, e.g. '3', '1', '12', 'A.2'."
+          },
+          "page": {
+            "type": "integer"
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The printed caption, copied verbatim. Null for equations and for any object without a printed caption; never write one."
+          },
+          "latex": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Equations: LaTeX read from the page image. Null otherwise."
+          },
+          "referenced_on_pages": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      },
+      "description": "Every figure, table, and numbered displayed equation of the requested kinds; also unnumbered displayed equations that matter."
+    },
+    "supercut": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "text",
+          "page"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "source",
+              "connector"
+            ],
+            "description": "source: the paper's own sentences, verbatim. connector: your short bridging text."
+          },
+          "text": {
+            "type": "string"
+          },
+          "page": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Required for source segments; null for connectors."
+          }
+        }
+      },
+      "description": "The argument as ordered segments. Length and quote density follow the paper's importance and prose quality."
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "statement",
+          "support",
+          "strength",
+          "evidence_refs",
+          "evidence",
+          "confidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "c1, c2, ..."
+          },
+          "statement": {
+            "type": "string"
+          },
+          "support": {
+            "type": "string",
+            "description": "What supports it, in a line."
+          },
+          "strength": {
+            "type": "string",
+            "enum": [
+              "strong",
+              "moderate",
+              "weak",
+              "speculative"
+            ]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Object labels, numbers, or section names that support it."
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "page"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "description": "Copied exactly from the page text, 8 to 300 characters."
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "1-based page number."
+                }
+              },
+              "description": "A verbatim passage from the paper and the page it is on."
+            },
+            "description": "Verbatim support. Empty only when the item is a model judgment."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "setting",
+        "data",
+        "procedure",
+        "assumptions",
+        "evidence",
+        "confidence"
+      ],
+      "properties": {
+        "setting": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "data": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "procedure": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "quote",
+              "page"
+            ],
+            "properties": {
+              "quote": {
+                "type": "string",
+                "description": "Copied exactly from the page text, 8 to 300 characters."
+              },
+              "page": {
+                "type": "integer",
+                "description": "1-based page number."
+              }
+            },
+            "description": "A verbatim passage from the paper and the page it is on."
+          },
+          "description": "Verbatim support. Empty only when the item is a model judgment."
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "description": "How sure you are that this item is correct."
+        }
+      }
+    },
+    "key_numbers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "value",
+          "quantity",
+          "context",
+          "evidence",
+          "confidence"
+        ],
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "As printed, with units."
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "context": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "page"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "description": "Copied exactly from the page text, 8 to 300 characters."
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "1-based page number."
+                }
+              },
+              "description": "A verbatim passage from the paper and the page it is on."
+            },
+            "description": "Verbatim support. Empty only when the item is a model judgment."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "stated_by",
+          "evidence",
+          "confidence"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "stated_by": {
+            "type": "string",
+            "enum": [
+              "authors",
+              "model"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "page"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "description": "Copied exactly from the page text, 8 to 300 characters."
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "1-based page number."
+                }
+              },
+              "description": "A verbatim passage from the paper and the page it is on."
+            },
+            "description": "Verbatim support. Empty only when the item is a model judgment."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text",
+          "stated_by",
+          "evidence",
+          "confidence"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "stated_by": {
+            "type": "string",
+            "enum": [
+              "authors",
+              "model"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "page"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "description": "Copied exactly from the page text, 8 to 300 characters."
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "1-based page number."
+                }
+              },
+              "description": "A verbatim passage from the paper and the page it is on."
+            },
+            "description": "Verbatim support. Empty only when the item is a model judgment."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    },
+    "headline_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "statement",
+          "carrier",
+          "evidence",
+          "confidence"
+        ],
+        "properties": {
+          "statement": {
+            "type": "string"
+          },
+          "carrier": {
+            "type": "string",
+            "description": "The object label or number that carries the result."
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "page"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "description": "Copied exactly from the page text, 8 to 300 characters."
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "1-based page number."
+                }
+              },
+              "description": "A verbatim passage from the paper and the page it is on."
+            },
+            "description": "Verbatim support. Empty only when the item is a model judgment."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    },
+    "read_signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "judgment",
+        "reason"
+      ],
+      "properties": {
+        "judgment": {
+          "type": "string",
+          "enum": [
+            "read",
+            "skim",
+            "glance",
+            "summary_enough"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "Model judgment; say why."
+        }
+      }
+    },
+    "notation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "symbol",
+          "meaning",
+          "page",
+          "evidence",
+          "confidence"
+        ],
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "LaTeX."
+          },
+          "meaning": {
+            "type": "string"
+          },
+          "page": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "page"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "description": "Copied exactly from the page text, 8 to 300 characters."
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "1-based page number."
+                }
+              },
+              "description": "A verbatim passage from the paper and the page it is on."
+            },
+            "description": "Verbatim support. Empty only when the item is a model judgment."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    },
+    "glossary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "term",
+          "definition",
+          "evidence",
+          "confidence"
+        ],
+        "properties": {
+          "term": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quote",
+                "page"
+              ],
+              "properties": {
+                "quote": {
+                  "type": "string",
+                  "description": "Copied exactly from the page text, 8 to 300 characters."
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "1-based page number."
+                }
+              },
+              "description": "A verbatim passage from the paper and the page it is on."
+            },
+            "description": "Verbatim support. Empty only when the item is a model judgment."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      }
+    }
+  },
+  "description": "The paper-alone artifacts of one scientific paper."
+}

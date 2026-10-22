@@ -2,9 +2,9 @@
 
 pub mod abstracts;
 pub mod acquisition;
-pub mod audit;
 pub mod analysis;
 pub mod api;
+pub mod audit;
 pub mod citation_graph;
 pub mod config;
 pub mod domain;
@@ -21,6 +21,7 @@ pub mod library;
 pub mod literature;
 pub mod markdown;
 pub mod notes;
+pub mod paper_artifacts;
 pub mod prominence;
 pub mod provenance;
 pub mod ramps;

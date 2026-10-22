@@ -1,0 +1,209 @@
+{
+  "abstract_status": "Accepted",
+  "artifacts": {
+    "abstract": {
+      "page": 1,
+      "text": "This paper proposes a real-time approach for longterm inertial navigation based only on an Inertial Measurement Unit (IMU) for self-localizing wheeled robots. The approach builds upon two components: 1) a robust detector that uses recurrent deep neural networks to dynamically detect a variety of situations of interest, such as zero velocity or no lateral slip; and 2) a state-of-the-art Kalman filter which incorporates this knowledge as pseudo-measurements for localization. Evaluations on a publicly available car dataset demonstrates that the proposed scheme may achieve a final precision of 20 m for a 21 km long trajectory of a vehicle driving for over an hour, equipped with an IMU of moderate precision (the gyro drift rate is 10 deg/h). To our knowledge, this is the first paper which combines sophisticated deep learning techniques with state-ofthe-art filtering methods for pure inertial navigation on wheeled vehicles and as such opens up for novel data-driven inertial navigation techniques. Moreover, albeit taylored for IMU-only based localization, our method may be used as a component for self-localization of wheeled robots equipped with a more complete sensor suite. Index Terms—inertial navigation, deep learning, invariant extended Kalman filter, autonomous vehicle, inertial odometry"
+    },
+    "citations": [],
+    "identity": {
+      "authors": [],
+      "title": ""
+    },
+    "objects": [
+      {
+        "caption": "Fig. 1. Trajectory ground truth and estimates obtained by various methods: integration of IMU signals; odometry based on a differential wheel encoder system; odometry combined with an highly accurate and expensive Fiber optics Gyro (FoG) that provides orientation estimates; and the proposed RINS-W approach which considers only the IMU sensor embarked in the vehicle, and which outperforms the other schemes. The final distance error for this long-term sequence urban16 (73 minutes) of the car dataset [11] is 20 m for the RINS-W solution. The deep learning based detector (see Section IV-A) has of course not been trained or cross-validated on this sequence.",
+        "kind": "figure",
+        "label": "Figure 1",
+        "number": null,
+        "page": 2
+      },
+      {
+        "caption": "Fig. 2. Real IMU data of a car stopping from sequence urban06 of [11].",
+        "kind": "figure",
+        "label": "Figure 2",
+        "number": null,
+        "page": 3
+      },
+      {
+        "caption": "Fig. 3. Structure of the proposed RINS-W system for inertial navigation. The detector identifies specific motion profiles (8) from raw IMU signals only.",
+        "kind": "figure",
+        "label": "Figure 3",
+        "number": null,
+        "page": 4
+      },
+      {
+        "caption": "Figure 5.",
+        "kind": "figure",
+        "label": "Figure 5",
+        "number": null,
+        "page": 4
+      },
+      {
+        "caption": "Fig. 4. Structure of the detector, which consists for each motion pattern of a recurrent neural network (LSTM) followed by a threshold to obtain an output vector ẑ n that consists of binary components. The hidden state h n of the neural network allows the full structure to be recursive.",
+        "kind": "figure",
+        "label": "Figure 4",
+        "number": null,
+        "page": 4
+      },
+      {
+        "caption": "Fig. 5. Structure of the IEKF. The filter leverages motion profile information ẑ n both for the propagation and the update of the state x̂ n+1 .",
+        "kind": "figure",
+        "label": "Figure 5",
+        "number": null,
+        "page": 4
+      },
+      {
+        "caption": "Fig. 6. The considered dataset [11] contains data logs of a Xsens MTi- 300 2 (right) recorded at 100 Hz along with the ground truth pose.",
+        "kind": "figure",
+        "label": "Figure 6",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Table 1. Results obtained by the 3 methods on urban test sequences 15, 16, 17 in terms of: m-ATE /aligned m-ATE / final distance error to ground truth, in m. Last line is the concatenation of the three sequences. Direct IMU integration always diverges. The proposed RINS-W outperforms differential wheel speeds based odometry and outperforms on average (see last line) the expensive combination of odometry + FoG. Indeed, RINS-W uses an IMU with gyro stability of 10 deg /h, whereas FoG stability is 0.05 deg /h.",
+        "kind": "table",
+        "label": "Table 1",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Fig. 7. Ground truth and trajectory estimates for the test sequence urban15 of the car dataset [11]. RINS-W obtains results comparable with FoG-based odometry.",
+        "kind": "figure",
+        "label": "Figure 7",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Fig. 8. Ground truth and trajectory estimates for the test sequence urban17 of the car dataset [11]. RINS-W clearly outperforms the odometry and even the odometry + FoG solution. We note that RINS-W accurately follows the",
+        "kind": "figure",
+        "label": "Figure 8",
+        "number": null,
+        "page": 7
+      },
+      {
+        "caption": "Fig. 9. Comparison on the sequence urban07 between proposed RINS- W, and a similar algorithm that does not use zero lateral and vertical velocities assumptions brought by the detector, see (25)-(26). The final distance between ground truth and RINS-W estimates is as small as 5 m, whereas ignoring (25)-(26) yields divergence.",
+        "kind": "figure",
+        "label": "Figure 9",
+        "number": null,
+        "page": 7
+      },
+      {
+        "caption": "Table 2. Results on zero velocity (9) detection obtained by an ideal AMVD [20] and the proposed detector on test sequences urban15-17. The proposed detector systematically obtains better results and precision. This is remarkable because the detector is not trained on those sequences, whereas AMVD parameters were optimized on the considered test sequences.",
+        "kind": "table",
+        "label": "Table 2",
+        "number": null,
+        "page": 7
+      }
+    ],
+    "references": []
+  },
+  "calls": [],
+  "failures": [],
+  "model": "deterministic",
+  "pages": 8,
+  "pass1": {
+    "abstract": {
+      "page": 1,
+      "text": "This paper proposes a real-time approach for longterm inertial navigation based only on an Inertial Measurement Unit (IMU) for self-localizing wheeled robots. The approach builds upon two components: 1) a robust detector that uses recurrent deep neural networks to dynamically detect a variety of situations of interest, such as zero velocity or no lateral slip; and 2) a state-of-the-art Kalman filter which incorporates this knowledge as pseudo-measurements for localization. Evaluations on a publicly available car dataset demonstrates that the proposed scheme may achieve a final precision of 20 m for a 21 km long trajectory of a vehicle driving for over an hour, equipped with an IMU of moderate precision (the gyro drift rate is 10 deg/h). To our knowledge, this is the first paper which combines sophisticated deep learning techniques with state-ofthe-art filtering methods for pure inertial navigation on wheeled vehicles and as such opens up for novel data-driven inertial navigation techniques. Moreover, albeit taylored for IMU-only based localization, our method may be used as a component for self-localization of wheeled robots equipped with a more complete sensor suite. Index Terms—inertial navigation, deep learning, invariant extended Kalman filter, autonomous vehicle, inertial odometry"
+    },
+    "citations": [],
+    "identity": {
+      "authors": [],
+      "title": ""
+    },
+    "objects": [
+      {
+        "caption": "Fig. 1. Trajectory ground truth and estimates obtained by various methods: integration of IMU signals; odometry based on a differential wheel encoder system; odometry combined with an highly accurate and expensive Fiber optics Gyro (FoG) that provides orientation estimates; and the proposed RINS-W approach which considers only the IMU sensor embarked in the vehicle, and which outperforms the other schemes. The final distance error for this long-term sequence urban16 (73 minutes) of the car dataset [11] is 20 m for the RINS-W solution. The deep learning based detector (see Section IV-A) has of course not been trained or cross-validated on this sequence.",
+        "kind": "figure",
+        "label": "Figure 1",
+        "number": null,
+        "page": 2
+      },
+      {
+        "caption": "Fig. 2. Real IMU data of a car stopping from sequence urban06 of [11].",
+        "kind": "figure",
+        "label": "Figure 2",
+        "number": null,
+        "page": 3
+      },
+      {
+        "caption": "Fig. 3. Structure of the proposed RINS-W system for inertial navigation. The detector identifies specific motion profiles (8) from raw IMU signals only.",
+        "kind": "figure",
+        "label": "Figure 3",
+        "number": null,
+        "page": 4
+      },
+      {
+        "caption": "Figure 5.",
+        "kind": "figure",
+        "label": "Figure 5",
+        "number": null,
+        "page": 4
+      },
+      {
+        "caption": "Fig. 4. Structure of the detector, which consists for each motion pattern of a recurrent neural network (LSTM) followed by a threshold to obtain an output vector ẑ n that consists of binary components. The hidden state h n of the neural network allows the full structure to be recursive.",
+        "kind": "figure",
+        "label": "Figure 4",
+        "number": null,
+        "page": 4
+      },
+      {
+        "caption": "Fig. 5. Structure of the IEKF. The filter leverages motion profile information ẑ n both for the propagation and the update of the state x̂ n+1 .",
+        "kind": "figure",
+        "label": "Figure 5",
+        "number": null,
+        "page": 4
+      },
+      {
+        "caption": "Fig. 6. The considered dataset [11] contains data logs of a Xsens MTi- 300 2 (right) recorded at 100 Hz along with the ground truth pose.",
+        "kind": "figure",
+        "label": "Figure 6",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Table 1. Results obtained by the 3 methods on urban test sequences 15, 16, 17 in terms of: m-ATE /aligned m-ATE / final distance error to ground truth, in m. Last line is the concatenation of the three sequences. Direct IMU integration always diverges. The proposed RINS-W outperforms differential wheel speeds based odometry and outperforms on average (see last line) the expensive combination of odometry + FoG. Indeed, RINS-W uses an IMU with gyro stability of 10 deg /h, whereas FoG stability is 0.05 deg /h.",
+        "kind": "table",
+        "label": "Table 1",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Fig. 7. Ground truth and trajectory estimates for the test sequence urban15 of the car dataset [11]. RINS-W obtains results comparable with FoG-based odometry.",
+        "kind": "figure",
+        "label": "Figure 7",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Fig. 8. Ground truth and trajectory estimates for the test sequence urban17 of the car dataset [11]. RINS-W clearly outperforms the odometry and even the odometry + FoG solution. We note that RINS-W accurately follows the",
+        "kind": "figure",
+        "label": "Figure 8",
+        "number": null,
+        "page": 7
+      },
+      {
+        "caption": "Fig. 9. Comparison on the sequence urban07 between proposed RINS- W, and a similar algorithm that does not use zero lateral and vertical velocities assumptions brought by the detector, see (25)-(26). The final distance between ground truth and RINS-W estimates is as small as 5 m, whereas ignoring (25)-(26) yields divergence.",
+        "kind": "figure",
+        "label": "Figure 9",
+        "number": null,
+        "page": 7
+      },
+      {
+        "caption": "Table 2. Results on zero velocity (9) detection obtained by an ideal AMVD [20] and the proposed detector on test sequences urban15-17. The proposed detector systematically obtains better results and precision. This is remarkable because the detector is not trained on those sequences, whereas AMVD parameters were optimized on the considered test sequences.",
+        "kind": "table",
+        "label": "Table 2",
+        "number": null,
+        "page": 7
+      }
+    ],
+    "references": []
+  },
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1903.02210v2.pdf",
+  "record_version": 2,
+  "totals": {
+    "cost_usd": 0.0,
+    "wall_s": 0.311227096
+  }
+}

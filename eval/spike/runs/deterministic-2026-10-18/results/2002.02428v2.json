@@ -1,0 +1,1549 @@
+{
+  "abstract_status": "Accepted",
+  "artifacts": {
+    "abstract": {
+      "page": 1,
+      "text": "A normalizing flow implements two operations: sampling via Equation (1), and evaluating the density via Equation (2). These operations have distinct computational requirements: generating samples and evaluating their density requires only f and its Jacobian determinant, whereas evaluating the density of arbitrary datapoints requires only f −1 and its Jacobian determinant. Thus, the intended usage of the flow dictates whether f, f −1 or both must have efficient implementations. For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019). Normalizing flows are a powerful tool for building expressive distributions in high dimensions. So far, most of the literature has concentrated on learning flows on Euclidean spaces. Some problems however, such as those involving angles, are defined on spaces with more complex geometries, such as tori or spheres. In this paper, we propose and compare expressive and numerically stable flows on such spaces. Our flows are built recursively on the dimension of the space, starting from flows on circles, closed intervals or spheres."
+    },
+    "citations": [
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 5
+      },
+      {
+        "page": 5
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 9
+      },
+      {
+        "page": 9
+      },
+      {
+        "page": 9
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "name": "Gurtej Kanwar"
+        },
+        {
+          "name": "Phiala E. Shanahan"
+        },
+        {
+          "name": "Kyle Cranmer"
+        }
+      ],
+      "title": "Normalizing Flows on Tori and Spheres"
+    },
+    "objects": [
+      {
+        "caption": "Figure 1. Illustration of the recursive flow on the sphere S 2 .",
+        "kind": "figure",
+        "label": "Figure 1",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Figure 2. Comparing flows on T 2 using ESS, for the targets in Figure 3 and various inverse temperatures β. A larger value of β makes the target densities more concentrated and therefore harder to learn. Numbers in square brackets indicate the number of components K used for each transform. All values are averages across 10 runs with different neural-network initialization. See also Figure 8 (appendix) for KL values and further comparisons. Top row: Unimodal target. Middle row: Multi-modal target with 3 mixture components. Bottom row: Correlated target.",
+        "kind": "figure",
+        "label": "Figure 2",
+        "number": null,
+        "page": 7
+      },
+      {
+        "caption": "Figure 4. Learned multi-modal density on S 2 using exponentialmap flows, using the Mollweide projection for visualization. The model is a composition of 24 exponential-map transforms, using the radial scalar field with 1 component.",
+        "kind": "figure",
+        "label": "Figure 4",
+        "number": null,
+        "page": 8
+      },
+      {
+        "caption": "Figure 3. Learned densities on T 2 using NCP, Möbius and CS flows. Densities shown on the torus are from NCP.",
+        "kind": "figure",
+        "label": "Figure 3",
+        "number": null,
+        "page": 8
+      },
+      {
+        "caption": "Table 1. Comparing baseline and proposed flows on S 2 using KL and ESS. The target density is the mixture of 4 modes shown in Figure 4. We compare recursive Möbius-spline flow (MS), exponential-map polynomial flow (EMP) and exponential-map sum-of-radial flow (EMSRE). Brackets show error bars on the KL from 3 replicas of each experiment. N T is the number of stacked transformations for each flow; K m is the number of centres used in Möbius; K s is the number of segments in the spline flow; K is the number of radial components in the radial exponential-map flow. The polynomial scalar field is shown in Appendix E.",
+        "kind": "table",
+        "label": "Table 1",
+        "number": null,
+        "page": 8
+      },
+      {
+        "caption": "Figure 5. Learned multi-modal density on SU(2) ∼",
+        "kind": "figure",
+        "label": "Figure 5",
+        "number": null,
+        "page": 8
+      },
+      {
+        "caption": "Figure 6. Detailed illustration of the recursive flow on the sphere S D showing the explicit wiring of the conditional flows. The sphere S D is recursively transformed to the cylinder S 1 × [−1, 1] D−1 , then an autoregressive flow is applied to the cylinder, and finally the cylinder is transformed back to the sphere.",
+        "kind": "figure",
+        "label": "Figure 6",
+        "number": null,
+        "page": 12
+      },
+      {
+        "caption": "Figure 7. Probability density functions of convex combinations of 15 Möbius transformations applied to a uniform base distribution on the circle S 1 . Each of these distributions required 30 = 15 × 2 parameters.",
+        "kind": "figure",
+        "label": "Figure 7",
+        "number": null,
+        "page": 13
+      },
+      {
+        "caption": "Table 2. Target densities used for experiments on T 2 .",
+        "kind": "table",
+        "label": "Table 2",
+        "number": null,
+        "page": 13
+      },
+      {
+        "caption": "Figure 8. Same as Figure 2, with KL and values for the Fourier transforms added. For the Fourier models, the numbers between brackets represent used frequencies, and a number before the bracket means each frequency was repeated. For example, Fourier3[1 − 4] is a Fourier model with 12 frequencies: 3 frequencies of k for each k = 1, . . . , 4.",
+        "kind": "figure",
+        "label": "Figure 8",
+        "number": null,
+        "page": 13
+      },
+      {
+        "caption": "Figure 9. Learning a non-axis-aligned density on S 2 using Equations (12) to (14) with and without composing with a learnable rotation. We compare Möbius-spline flow (MS) (K s = 32, K m = 12), learnable rotation composed with MS (Rot ◦ MS), small MS (K s = 3, K m = 3) (SMS) and learnable rotation composed with SMS (Rot ◦ SMS). We observed no substantial differences between these models, suggesting that the particular choice of axis inside the flow has no impact on performance.",
+        "kind": "figure",
+        "label": "Figure 9",
+        "number": null,
+        "page": 16
+      },
+      {
+        "caption": "Figure 10. Learning the posterior density over joint angles of a 6-link 2D robot arm. We used an autoregressive Möbius flow on the torus T 6 to approximate the posterior density of joint angles resulting in a Gaussian mixture density for the tip of the robot arm. Left: The heat map shows the target density for the tip of the robot arm, a Gaussian mixture with two modes with centres at (−0.5, 0.5) and (0.6, −0.1). White paths show arm configurations sampled from the learned model in angle space converted to position space. Right: Density of the tips of the robot arm using samples from the learned model.",
+        "kind": "figure",
+        "label": "Figure 10",
+        "number": null,
+        "page": 16
+      },
+      {
+        "caption": "Figure 11. Learning a complex density from data samples using autoregressive spline flows. Left: Target density from which i.i.d. data samples were generated. Middle: Model samples overlaid on target density; Right: Heat map of the learned density.",
+        "kind": "figure",
+        "label": "Figure 11",
+        "number": null,
+        "page": 16
+      }
+    ],
+    "references": [
+      {
+        "authors": [
+          "Hamelryck, T.",
+          "Kent, J. T.",
+          "Krogh",
+          "A. Sampling realistic protein conformations using local structural bias"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "PLoS Computational Biology, 2(9), 2006",
+        "venue": null,
+        "year": "2006"
+      },
+      {
+        "authors": [
+          "Arnaud, D.",
+          "de Freitas, N.",
+          "Gordon",
+          "N. Sequential Monte Carlo methods in practice"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "Information Science and Statistics",
+        "venue": "Springer New York",
+        "year": "2001"
+      },
+      {
+        "authors": [
+          "Boomsma, W.",
+          "Mardia, K. V.",
+          "Taylor, C. C.",
+          "Ferkinghoff- Borg, J.",
+          "Krogh, A.",
+          "Hamelryck",
+          "T. A generative",
+          "probabilistic model of local protein structure"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "Proceedings of the National Academy of Sciences, 105(26):8932– 8937, 2008",
+        "venue": null,
+        "year": "2008"
+      },
+      {
+        "authors": [
+          "Davidson, T. R.",
+          "Falorsi, L.",
+          "De Cao, N.",
+          "Kipf, T.",
+          "Tomczak",
+          "J. M. Hyperspherical variational auto-encoders. Conference on Uncertainty in Artificial Intelligence",
+          "Gatto, R.",
+          "Jammalamadaka",
+          "S. R. The generalized von Mises distribution"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "Statistical Methodology, 4(3):341– 353, 2007",
+        "venue": null,
+        "year": "2007"
+      },
+      {
+        "authors": [
+          "Gemici, M. C.",
+          "Rezende, D. J.",
+          "Mohamed",
+          "S. Normalizing flows on Riemannian manifolds"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "arXiv preprint arXiv:1611.02304, 2016",
+        "venue": null,
+        "year": "2016"
+      },
+      {
+        "authors": [
+          "Jakob",
+          "W. Numerically stable sampling of the von Mises Fisher distribution on S 2 (and other tricks)"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "Technical report, Interactive Geometry Lab, ETH Zürich, 2012",
+        "venue": null,
+        "year": "2012"
+      },
+      {
+        "authors": [
+          "Jona-Lasinio, G.",
+          "Gelfand, A.",
+          "Jona-Lasinio",
+          "M. Spatial analysis of wave direction data using wrapped Gaussian processes"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "The Annals of Applied Statistics, 6(4):1478– 1498, 2012",
+        "venue": null,
+        "year": "2012"
+      },
+      {
+        "authors": [
+          "Kato, S.",
+          "McCullagh",
+          "P. Möbius transformation Normalizing Flows on Tori",
+          "Spheres",
+          "a Cauchy family on the sphere"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "arXiv preprint arXiv:1510.07679, 2015",
+        "venue": null,
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "Kato, S.",
+          "Shimizu, K.",
+          "Shieh",
+          "G. S. A circular–circular regression model"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Statistica Sinica, 18:633–645, 2008",
+        "venue": null,
+        "year": "2008"
+      },
+      {
+        "authors": [
+          "Kent",
+          "J. T. The Fisher–Bingham distribution on the sphere"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Journal of the Royal Statistical Society",
+        "venue": "Series B (Method- ological), 44(1):71–80",
+        "year": "1982"
+      },
+      {
+        "authors": [
+          "Kingma, D. P.",
+          "Ba",
+          "J. Adam: A method for stochastic optimization"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "International Conference for Learning Representations, 2015",
+        "venue": null,
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "Kingma, D. P.",
+          "Salimans, T.",
+          "Jozefowicz, R.",
+          "Chen, X.",
+          "Sutskever, I.",
+          "Welling",
+          "M. Improved variational inference with inverse autoregressive flow"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Advances in Neural Information Processing Systems, 2016",
+        "venue": null,
+        "year": "2016"
+      },
+      {
+        "authors": [
+          "Kobayashi, S.",
+          "Nomizu",
+          "K. Foundations of differential geometry",
+          "volume 1"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Interscience Publishers, 1963",
+        "venue": null,
+        "year": "1963"
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Liu, J. S. Monte Carlo strategies in scientific computing",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Springer Science",
+          "Business Media"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": null,
+        "venue": null,
+        "year": "2008"
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Jupp",
+          "P. E. Directional statistics"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Wiley Series in Probability and Statistics",
+        "venue": "John Wiley & Sons",
+        "year": "2009"
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Taylor, C. C.",
+          "Subramaniam",
+          "G. K. Protein bioinformatics",
+          "mixtures of bivariate von Mises distributions for angular data"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Biometrics, 63(2):505–512, 2007",
+        "venue": null,
+        "year": "2007"
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Hughes, G.",
+          "Taylor, C. C.",
+          "Singh",
+          "H. A multivariate von Mises distribution with applications to bioinformatics"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "The Canadian Journal of Statistics, 36 (1):99–109, 2008",
+        "venue": null,
+        "year": "2008"
+      },
+      {
+        "authors": [
+          "Mathieu, E.",
+          "Le Lan, C.",
+          "Maddison, C. J.",
+          "Tomioka, R.",
+          "Teh",
+          "Y. W. Continuous hierarchical representations with Poincaré variational auto-encoders. Advances in Neural Information Processing Systems"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": null,
+        "venue": null,
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "Müller, T.",
+          "McWilliams, B.",
+          "Rousselle, F.",
+          "Gross, M.",
+          "Novák",
+          "J. Neural importance sampling"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "ACM Transactions on Graphics, 38(5):1–19, 2019",
+        "venue": null,
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "Navarro, A. K. W.",
+          "Frellsen, J.",
+          "Turner",
+          "R. E. The multi-variate generalised von Mises distribution: Inference",
+          "applications"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "AAAI Conference on Artificial Intelligence, 2017",
+        "venue": null,
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "Papamakarios, G.",
+          "Pavlakou, T.",
+          "Murray",
+          "I. Masked autoregressive flow for density estimation"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Advances in Neural Information Processing Systems, 2017",
+        "venue": null,
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "Papamakarios, G.",
+          "Nalisnick, E.",
+          "Rezende, D. J.",
+          "Mohamed, S.",
+          "Lakshminarayanan",
+          "B. Normalizing flows for probabilistic modeling",
+          "inference"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "arXiv preprint arXiv:1912.02762, 2019",
+        "venue": null,
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "Peel, D.",
+          "Whiten, W. J.",
+          "McLachlan",
+          "G. J. Fitting mixtures of Kent distributions to aid in joint set identification"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Journal of the American Statistical Association, 96(453): 56–63, 2001",
+        "venue": null,
+        "year": "2001"
+      },
+      {
+        "authors": [
+          "Rezende, D. J.",
+          "Mohamed",
+          "S. Variational inference with normalizing flows"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "International Conference on Machine",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Learning"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": null,
+        "venue": null,
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "Sei",
+          "T. A Jacobian inequality for gradient maps on the sphere",
+          "its application to directional statistics"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Communications in Statistics—Theory and Methods, 42(14): 2525–2542, 2013",
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Senanayake, R.",
+          "Ramos",
+          "F. Directional grid maps: modeling multimodal angular uncertainty in dynamic environments"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "IEEE/RSJ International Conference on Intelligent Robots and Systems, 2018",
+        "venue": null,
+        "year": "2018"
+      },
+      {
+        "authors": [
+          "Shapovalov, M. V.",
+          "Dunbrack Jr",
+          "R. L. A smoothed backbone-dependent rotamer library for proteins derived from adaptive kernel density estimates",
+          "regressions"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Structure, 19(6):844–858, 2011",
+        "venue": null,
+        "year": "2011"
+      },
+      {
+        "authors": [
+          "Tabak, E. G.",
+          "Turner",
+          "C. V. A family of nonparametric density estimation algorithms"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Communications on Pure and Applied Mathematics, 66(2):145–164, 2013",
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Tilma, T.",
+          "Sudarshan",
+          "E. Generalized Euler angle parametrization for SU (N )"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Journal of Physics A: Mathematical and General, 35(48):10467, 2002",
+        "venue": null,
+        "year": "2002"
+      },
+      {
+        "authors": [
+          "Tilma, T.",
+          "Sudarshan",
+          "E. Generalized Euler angle parameterization for U (N ) with applications to SU (N ) coset volume measures"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Journal of Geometry and Physics, 52 (3):263–283, 2004",
+        "venue": null,
+        "year": "2004"
+      },
+      {
+        "authors": [
+          "Wang, F.",
+          "Gelfand",
+          "A. E. Directional data analysis under the general projected normal distribution"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Statistical Methodology, 10(1):113–127, 2013",
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Wang",
+          "M. Extensions of probability distributions on torus",
+          "cylinder",
+          "disc"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "PhD thesis, Graduate School of Science and Technology, Keio University, 2013",
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Wang, P. Z.",
+          "Wang",
+          "W. Y. Riemannian normalizing flow on variational Wasserstein autoencoder for text modeling"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, 2019",
+        "venue": null,
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "Wang, Z.",
+          "Cheng, S.",
+          "Li, Y.",
+          "Zhu, J.",
+          "Zhang",
+          "B. A Wasserstein minimum velocity approach to learning unnormalized models"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Symposium on Advances in Approximate Bayesian Inference, 2019",
+        "venue": null,
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "Woit",
+          "P. Quantum theory",
+          "groups",
+          "representations: An introduction"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Springer, 2017",
+        "venue": null,
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "Normalizing Flows on Tori",
+          "Spheres A. Density Transformations on Manifolds In this section",
+          "we explain how to update the density of a distribution transformed from one Riemannian manifold to another by a smooth map"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 11,
+        "title": "We only consider the case where both manifolds are sub-manifolds of Euclidean spaces",
+        "venue": "Let M and N be D-dimensional manifolds embedded into Euclidean spaces R m and R n respectively. For example, M and N could be S D embedded in R D+1 as in Section 2.3. Both manifolds inherit a Riemannian metric from their embedding spaces. Let T be a smooth injective map T : M → N . We will assume that T can be extended to a smooth map between open neighbourhoods of the embedding spaces that contain M and N , and that we have chosen such an extension. For example, the exponential-map flow in Equation (19) can be written using the coordinates of the embedding space R D+1 , and can thus be extended to open neighbourhoods of the embedding spaces as desired. In what follows, we will use the fact that if u 1 , . . . , u D are vectors in R n , then the p volume of the parallelepiped with sides u 1 , . . . , u D is det(U > U ), where U is the n × D matrix with column vectors u 1 , . . . , u D . If u 1 , . . . , u D form an orthonormal system, this volume is 1. Let π : M → R + be a density on M. This defines a distribution on M and we can use T to transform it into a distribution on N . Let p : N → R + be the density of the transformed distribution. We are interested in computing p assuming we know π. Let x be a point on M, and e 1 , . . . , e D be an orthonormal basis of the tangent space T x M. Define E to be the m × D matrix with i-th column vector e i . Let J be the n×m Jacobian of T , where T is seen as a map between open sets in R m and R n . The tangent map of T at x transforms each e i to Je i , and the matrix that collects all transformed vectors in its columns is JE. Hence, the volume p of the parallelepiped with p sides the trans- formed vectors is det((JE) > JE) = det(E > J > JE). Therefore, the density p is given by π(x) p(T (x)) = p . det(E > J > JE) (24) In the special case where M = N = R D and m = n = D, the matrix E is an orthogonal matrix, and the above reduces to the familiar density update in Equation (2). A.1. The case of T c→s : S D−1 × [−1, 1] → S D In this section, we specialize to M = S D−1 × (−1, 1) and N = S D with D ≥ 2. In particular, we will prove: Proposition 1. Let π be a density π : S D−1 × (−1, 1) → R + . Let p : S D → R + be the density of the transformed distribution under T c→s . Then: p(T c→s (z, r)) = π(z, r) D (1 − r 2 ) 2 −1 . (25) Proof. The sphere S D−1 is embedded in R D . This gives us an embedding of M in R D+1 . The map T c→s , introduced in Equation (14), is easily extended to a map R D √ × (−1, 1) → R D+1 using the same formula T c→s (z, r) = ( 1 − r 2 z, r). Its Jacobian is an upper triangular D + 1 by D + 1 matrix  √  1 r 1 − r 2 0 · · · √ −x 1−r 2 √  −x 2 r  √ 1 − r 2  0  1−r 2   J =  .. ..  . ..  . . .  0 ··· 1 We will use a symmetry argument to simplify the computation of the determinant in Equation (24). Let G be a rotation of R D+1 that leaves the last coordinate invariant. 1 Note that for any point x ∈ R D+1 , we have T c→s (Gx) = GT c→s (x). This means that the Jacobian J transforms as a function of x as J(Gx) = GJ(x)G > . Note also that if x is in M, and E(x) is a matrix where the column vectors form a basis of the tangent space at x, then Gx is also in M, and GE(x) is a matrix where the column vectors form a basis of the tangent space at Gx. So we can choose E(Gx) = GE(x). With that choice \u0001 det E(Gx) > J(Gx) > J(Gx)E(Gx) \u0001 = det E(x) > G > GJ(x) > G > GJ(x)G > GE(x) \u0001 = det E(x)J(x) > J(x)E(x) . Since for any x ∈ M, √ we can always choose G such that Gx is of the form ( 1 − r 2 , 0, . . . , 0, r), we can restrict ourselves to this case. For such a choice, the Jacobian simplifies to  √ −r  1 − r 2 0 · · · √ 1−r 2 √  0 1 − r 2 0    . J =  .. ..  ..  . . .  0 ··· 1 For E, we can simply choose the D + 1 by D matrix made by removing the first column from the identity matrix. Then JE is equal to J with the first column removed:  −r  0 0 · · · √ 1−r 2 √  1 − r 2  0 0   √  0 2 1 − r 0  JE =   .  .. ..  ..  . . .  0 ··· 1 The product (JE) > JE is simply a diagonal matrix of size 1 D with diagonal (1 − r 2 , . . . , 1 − r 2 , 1−r 2 ). Taking the determinant and applying Equation (24) concludes the proof. 1 The set of such rotations is the group of rotations of R D embedded in R D+1 . Normalizing Flows on Tori and Spheres At first, Proposition 1 might seem worrying since the density ratio in that proposition vanishes when r is −1 or 1. So, as r approaches the boundary of the interval [−1, 1], it seems that the correction term to the density will tend to infinity and lead to numerical instability. What saves us is that we do not use T c→s on its own, and instead combine it with a particular flow transformation on S D−1 × [−1, 1] and the inverse T s→c , as shown in Equations (12) to (14). In these formulas, the map g is a spline on the interval [−1, 1] which maps −1 to −1, 1 to 1, and has strictly positive slopes g 0 (−1) and g 0 (1). Looking only at −1 (the case 1 can be similarly dealt with), this means AR g(−1 + \u000f) ≈ −1 + g 0 (−1)\u000f. As \u000f goes to 0, the density corrections coming from T c→s and T s→c combine to \u0012 \u0013 D 1 − g(−1 + \u000f) 2 − 1 log , 2 1 − (−1 + \u000f) 2 which is equivalent to \u0012 \u0013 D − 1 log g 0 (−1) 2 as \u000f goes to 0. In particular, the terms that tend to infinity cancel each other, and the flow is well-behaved. When implementing the flow, numerical stability is achieved by not adding the terms that cancel each other. Finally, we note a subtle point about what we proved: the sequence of transformations T c→s ◦ T c→c ◦ T s→c will transform a distribution with finite density into another distribution with finite density, but we do not guarantee that the resulting density will be continuous. B. Detailed Diagram of Recursive Flow on S D In Figure 6, we provide an illustration of the recursive construction in Equations (12) to (14), showing the specific wiring order of the conditional maps inside the flow. This order is the one implied by the recursion. In general, any other order can be used, or a composition of autoregressive flows with multiple orders. C. Examples of Möbius Transformations 1 To illustrate the kind of densities we get on S using the Möbius flows, we show a few random examples in Figure 7. D. Fourier Transformations on S 1 Another family of circle transformations that we considered are Fourier transformations, defined by X α i f α,φ,w (θ) = θ + sin(w i θ − φ i ) + µ, (26) w i i P where µ = i α i sin(φ i ), w i ∈ Z, φ i ∈ [0, 2π] and P |α | ≤ 1. The integers w i are fixed frequencies in the i i Fourier basis. We found empirically that this family of transformations is not competitive with the other transformations considered in this paper, especially for highly concentrated densities as shown in Figure 8. E. Polynomial Exponential Map",
+        "year": null
+      },
+      {
+        "authors": [
+          "The polynomial exponential map of Sei"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 12,
+        "title": "is the exponential-map flow built using the scalar field φ(x) = µ > x + x > Ax, (27) where x ∈ S D in the coordinates of the embedding space R D+1",
+        "venue": "The parameters µ and A must satisfy the constraint kµk 1 + kAk 1 ≤ 1 where k·k 1 is the elementwise ` 1 norm. F. Target Densities Used in Experiments For the experiments on the torus T 2 , we used targets built from densities in the von Mises family as shown in Table 2. On the sphere S 2 , the target was a mixture of the form p(x) ∝ 4 X > e 10x T s→e (µ k ) , (28) k=1 where µ 1 = (0.7, 1.5), µ 2 = (−1, 1), µ 3 = (0.6, 0.5), µ 4 = (−0.7, 4), T s→e maps from spherical to Euclidean Normalizing Flows on Tori and Spheres Target Expression Unimodal Multi-modal p A (θ 1 , θ 2 ) ∝ exp[cos(θ 1 − φ 1 ) + cos(θ 2 − φ 2 )] P 3 p B (θ 1 , θ 2 ) ∝ 13 i=1 p A (θ 1 , θ 2 ; φ i ) Correlated p C (θ 1 , θ 2 ) ∝ exp[cos(θ 1 + θ 2 − φ)] Parameters φ = (4.18, 5.96) φ = {(0.21, 2.85), (1.89, 6.18), (3.77, 1.56)} φ = 1.94 Normalizing Flows on Tori and Spheres coordinates, and x ∈ R 3 is a point on the embedded sphere in Euclidean coordinates. On SU(2) ∼ = S 3 , the target was a mixture of the same form where µ 1 = (1.7, −1.5, 2.3), µ 2 = (−3.0, 1.0, 3.0), µ 3 = (0.6, −2.6, 4.5), µ 4 = (−2.5, 3.0, 5.0), and x ∈ R 4 is a point on the embedded sphere in Euclidean coordinates. We begin by expanding Equation (31) in terms of more basic trigonometric quantities, e iw = = 2 G. Misaligned Density on S The recursive formulas shown in Equations (12) to (14) require choosing a sequence of axes in order to construct the cylindrical coordinate system. This may introduce artifacts to the density related to this choice of axes. To test if this results in numerical problems, we compare the flow from Equations (12) to (14) on a target density that forms a nonaxis-aligned ring against a composition of the same flow with a learned rotation. The results of this experiment are shown in Figure 9. We compared both large (K s = 32, K m = 12) and small (K s = 3, K m = 3) versions of the auto-regressive Möbius- Spline flow and observed no significant differences between the two models on S 2 . More experiments would be necessary to investigate this potential effect in higher dimensions. = e iθ + 1−α 1+α iθ 1 + 1−α 1+α e 1−α −iθ e iθ + 1−α 1+α 1 + 1+α e 1−α −iθ iθ 1 + 1−α 1+α e 1 + 1+α e \u0011 2 \u0010 1−α e iθ + 2 1−α + e −iθ 1+α 1+α 2(cos(θ)+α 2 (− cos(θ))+α 2 +1) (α+1) 2 \u0010 θ \u0011 2 −i θ 2 e i 2 + 1−α 1+α e = 2(cos(θ)+α 2 (− cos(θ))+α 2 +1) (α+1) 2 \u0010 θ θ (1 + α)e i 2 + (1 − α)e −i 2 \u0011 2 1 2 cos(θ) + α 2 (− cos(θ)) + α 2 + 1 \u0001 \u0001\u0001 2 2 cos θ 2 + iα sin θ 2 = . cos(θ) + α 2 (− cos(θ)) + α 2 + 1 = In order to isolate w, only the numerator v = \u0001 \u0001\u0001 2 of the expression above matters 2 cos θ 2 + iα sin θ 2 as we are only interested in ratios of the imaginary and real parts of this expression, tan(w) = =(v) <(v) . The numerator can be expanded as H. NCP as a complex Möbius transformation 2 cos For a general Möbius transformation f (z) = az + b , cz + d z − a . h(z) = 1 − āz (30) This form ensures that h(z) h̄(z) = 1 if z z̄ = 1 and has two real-valued free parameters <(a) and =(a). In what follows we show that for the choice =(a) = 0 and <(a) = − 1−α equivalent 1+α , the transformation h(z) is \u0001 \u0001 to an NCP transform w = 2 arctan α tan θ 2 + β with scale parameter α and offset parameter β = 0 (assuming w, θ ∈ (−π, π)). If we define θ via z = e iθ , the goal is to show that w defined via e iθ + 1−α 1+α iθ 1 + 1−α 1+α e follows the NCP transformation rule \u0012 \u0012 \u0013\u0013 θ w = 2 arctan α tan 2 \u0001 + iα sin \u0001 2 cos 2 θ 2 θ 2 \u0001\u0001 2 (29) where a, b, c, d, z ∈ C, to define a diffeomorphism on S 1 it must be constrained to be of the form e iw = θ 2 , (31) mod 2π. \u0012 \u0013 θ 2 \u0012 \u0013 θ + 2α tan i + 1, 2 = −α 2 tan 2 from which we conclude, \u0001 2α tan θ 2 =(v) \u0001 . = tan(w) = <(v) 1 − α 2 tan 2 θ 2 (32) 2 tan(x) Using the trigonometric formula tan(2x) = 1−tan(x) 2 , we arrive at the final result \u0012 \u0013 \u0010 w \u0011 θ tan = α tan 2 2 ⇔ \u0012 \u0012 \u0013\u0013 θ w = 2 arctan α tan 2 mod 2π. I. Application: Multi-Link Robot Arm As a concrete application of flows on tori, we consider the problem of approximating the posterior density over joint angles θ 1,...,6 of a 6-link 2D robot arm, given (soft) constraints on the position of the tip of the arm. The possible Normalizing Flows on Tori and Spheres configurations of this arm are points in T 6 . The position r k of a joint k = 1, . . . , 6 of the robot arm is given by       X X r k = r k−1 +  l k cos  θ j  , l k sin  θ j   , j≤k j≤k where r 0 = (0, 0) is the position where the arm is affixed, l k = 0.2 is the length of the k-th link, and θ k is the angle of the k-th link in a local reference frame. The constraint on the position of the tip of the arm, r 6 , is expressed in the form of a Gaussian-mixture likelihood p(r 6 | θ 1,...,6 ) with two components. The prior p(θ 1,...,6 ) is taken to be a uniform distribution on T 6 . The experimental results are illustrated in Figure 10. J. Application: Learning from samples In most of the experiments shown on this paper, we trained the models to fit a target density known up to a normalization constant (i.e. an inference problem). In this experiment we train our flow directly on data samples instead. Training a flow-based model from data samples via maximum likelihood requires an explicit computation of the inverse map as shown in Equation (2). To demonstrate this is feasible with data coming from a non-trivial target density on the sphere S 2 (i.e. that would require a large number of mixture components from simpler densities such as von Mises), we created a dataset of samples on the sphere coming from a density shaped as Earth’s continental map as shown in Figure 11 (left). We trained a flow built from stacking two autoregressive flows. Each flow in the stack used circular splines and standard splines on the interval. The model was trained to maximize the likelihood of the dataset for 100,000 training steps. Both splines used K s = 80 segments. The neural networks producing the spline parameters are the same as for the other experiments. In Figure 11 (middle) we show samples from the learned model overlaid on Earth’s map and in Figure 11 (right) we show a heat map of the learned density. Normalizing Flows on Tori and Spheres",
+        "year": "2013"
+      }
+    ]
+  },
+  "calls": [],
+  "failures": [],
+  "model": "deterministic",
+  "pages": 16,
+  "pass1": {
+    "abstract": {
+      "page": 1,
+      "text": "A normalizing flow implements two operations: sampling via Equation (1), and evaluating the density via Equation (2). These operations have distinct computational requirements: generating samples and evaluating their density requires only f and its Jacobian determinant, whereas evaluating the density of arbitrary datapoints requires only f −1 and its Jacobian determinant. Thus, the intended usage of the flow dictates whether f, f −1 or both must have efficient implementations. For an overview of various implementations and associated trade-offs, see (Papamakarios et al., 2019). Normalizing flows are a powerful tool for building expressive distributions in high dimensions. So far, most of the literature has concentrated on learning flows on Euclidean spaces. Some problems however, such as those involving angles, are defined on spaces with more complex geometries, such as tori or spheres. In this paper, we propose and compare expressive and numerically stable flows on such spaces. Our flows are built recursively on the dimension of the space, starting from flows on circles, closed intervals or spheres."
+    },
+    "citations": [
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 5
+      },
+      {
+        "page": 5
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 9
+      },
+      {
+        "page": 9
+      },
+      {
+        "page": 9
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "name": "Gurtej Kanwar"
+        },
+        {
+          "name": "Phiala E. Shanahan"
+        },
+        {
+          "name": "Kyle Cranmer"
+        }
+      ],
+      "title": "Normalizing Flows on Tori and Spheres"
+    },
+    "objects": [
+      {
+        "caption": "Figure 1. Illustration of the recursive flow on the sphere S 2 .",
+        "kind": "figure",
+        "label": "Figure 1",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Figure 2. Comparing flows on T 2 using ESS, for the targets in Figure 3 and various inverse temperatures β. A larger value of β makes the target densities more concentrated and therefore harder to learn. Numbers in square brackets indicate the number of components K used for each transform. All values are averages across 10 runs with different neural-network initialization. See also Figure 8 (appendix) for KL values and further comparisons. Top row: Unimodal target. Middle row: Multi-modal target with 3 mixture components. Bottom row: Correlated target.",
+        "kind": "figure",
+        "label": "Figure 2",
+        "number": null,
+        "page": 7
+      },
+      {
+        "caption": "Figure 4. Learned multi-modal density on S 2 using exponentialmap flows, using the Mollweide projection for visualization. The model is a composition of 24 exponential-map transforms, using the radial scalar field with 1 component.",
+        "kind": "figure",
+        "label": "Figure 4",
+        "number": null,
+        "page": 8
+      },
+      {
+        "caption": "Figure 3. Learned densities on T 2 using NCP, Möbius and CS flows. Densities shown on the torus are from NCP.",
+        "kind": "figure",
+        "label": "Figure 3",
+        "number": null,
+        "page": 8
+      },
+      {
+        "caption": "Table 1. Comparing baseline and proposed flows on S 2 using KL and ESS. The target density is the mixture of 4 modes shown in Figure 4. We compare recursive Möbius-spline flow (MS), exponential-map polynomial flow (EMP) and exponential-map sum-of-radial flow (EMSRE). Brackets show error bars on the KL from 3 replicas of each experiment. N T is the number of stacked transformations for each flow; K m is the number of centres used in Möbius; K s is the number of segments in the spline flow; K is the number of radial components in the radial exponential-map flow. The polynomial scalar field is shown in Appendix E.",
+        "kind": "table",
+        "label": "Table 1",
+        "number": null,
+        "page": 8
+      },
+      {
+        "caption": "Figure 5. Learned multi-modal density on SU(2) ∼",
+        "kind": "figure",
+        "label": "Figure 5",
+        "number": null,
+        "page": 8
+      },
+      {
+        "caption": "Figure 6. Detailed illustration of the recursive flow on the sphere S D showing the explicit wiring of the conditional flows. The sphere S D is recursively transformed to the cylinder S 1 × [−1, 1] D−1 , then an autoregressive flow is applied to the cylinder, and finally the cylinder is transformed back to the sphere.",
+        "kind": "figure",
+        "label": "Figure 6",
+        "number": null,
+        "page": 12
+      },
+      {
+        "caption": "Figure 7. Probability density functions of convex combinations of 15 Möbius transformations applied to a uniform base distribution on the circle S 1 . Each of these distributions required 30 = 15 × 2 parameters.",
+        "kind": "figure",
+        "label": "Figure 7",
+        "number": null,
+        "page": 13
+      },
+      {
+        "caption": "Table 2. Target densities used for experiments on T 2 .",
+        "kind": "table",
+        "label": "Table 2",
+        "number": null,
+        "page": 13
+      },
+      {
+        "caption": "Figure 8. Same as Figure 2, with KL and values for the Fourier transforms added. For the Fourier models, the numbers between brackets represent used frequencies, and a number before the bracket means each frequency was repeated. For example, Fourier3[1 − 4] is a Fourier model with 12 frequencies: 3 frequencies of k for each k = 1, . . . , 4.",
+        "kind": "figure",
+        "label": "Figure 8",
+        "number": null,
+        "page": 13
+      },
+      {
+        "caption": "Figure 9. Learning a non-axis-aligned density on S 2 using Equations (12) to (14) with and without composing with a learnable rotation. We compare Möbius-spline flow (MS) (K s = 32, K m = 12), learnable rotation composed with MS (Rot ◦ MS), small MS (K s = 3, K m = 3) (SMS) and learnable rotation composed with SMS (Rot ◦ SMS). We observed no substantial differences between these models, suggesting that the particular choice of axis inside the flow has no impact on performance.",
+        "kind": "figure",
+        "label": "Figure 9",
+        "number": null,
+        "page": 16
+      },
+      {
+        "caption": "Figure 10. Learning the posterior density over joint angles of a 6-link 2D robot arm. We used an autoregressive Möbius flow on the torus T 6 to approximate the posterior density of joint angles resulting in a Gaussian mixture density for the tip of the robot arm. Left: The heat map shows the target density for the tip of the robot arm, a Gaussian mixture with two modes with centres at (−0.5, 0.5) and (0.6, −0.1). White paths show arm configurations sampled from the learned model in angle space converted to position space. Right: Density of the tips of the robot arm using samples from the learned model.",
+        "kind": "figure",
+        "label": "Figure 10",
+        "number": null,
+        "page": 16
+      },
+      {
+        "caption": "Figure 11. Learning a complex density from data samples using autoregressive spline flows. Left: Target density from which i.i.d. data samples were generated. Middle: Model samples overlaid on target density; Right: Heat map of the learned density.",
+        "kind": "figure",
+        "label": "Figure 11",
+        "number": null,
+        "page": 16
+      }
+    ],
+    "references": [
+      {
+        "authors": [
+          "Hamelryck, T.",
+          "Kent, J. T.",
+          "Krogh",
+          "A. Sampling realistic protein conformations using local structural bias"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "PLoS Computational Biology, 2(9), 2006",
+        "venue": null,
+        "year": "2006"
+      },
+      {
+        "authors": [
+          "Arnaud, D.",
+          "de Freitas, N.",
+          "Gordon",
+          "N. Sequential Monte Carlo methods in practice"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "Information Science and Statistics",
+        "venue": "Springer New York",
+        "year": "2001"
+      },
+      {
+        "authors": [
+          "Boomsma, W.",
+          "Mardia, K. V.",
+          "Taylor, C. C.",
+          "Ferkinghoff- Borg, J.",
+          "Krogh, A.",
+          "Hamelryck",
+          "T. A generative",
+          "probabilistic model of local protein structure"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "Proceedings of the National Academy of Sciences, 105(26):8932– 8937, 2008",
+        "venue": null,
+        "year": "2008"
+      },
+      {
+        "authors": [
+          "Davidson, T. R.",
+          "Falorsi, L.",
+          "De Cao, N.",
+          "Kipf, T.",
+          "Tomczak",
+          "J. M. Hyperspherical variational auto-encoders. Conference on Uncertainty in Artificial Intelligence",
+          "Gatto, R.",
+          "Jammalamadaka",
+          "S. R. The generalized von Mises distribution"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "Statistical Methodology, 4(3):341– 353, 2007",
+        "venue": null,
+        "year": "2007"
+      },
+      {
+        "authors": [
+          "Gemici, M. C.",
+          "Rezende, D. J.",
+          "Mohamed",
+          "S. Normalizing flows on Riemannian manifolds"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "arXiv preprint arXiv:1611.02304, 2016",
+        "venue": null,
+        "year": "2016"
+      },
+      {
+        "authors": [
+          "Jakob",
+          "W. Numerically stable sampling of the von Mises Fisher distribution on S 2 (and other tricks)"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "Technical report, Interactive Geometry Lab, ETH Zürich, 2012",
+        "venue": null,
+        "year": "2012"
+      },
+      {
+        "authors": [
+          "Jona-Lasinio, G.",
+          "Gelfand, A.",
+          "Jona-Lasinio",
+          "M. Spatial analysis of wave direction data using wrapped Gaussian processes"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "The Annals of Applied Statistics, 6(4):1478– 1498, 2012",
+        "venue": null,
+        "year": "2012"
+      },
+      {
+        "authors": [
+          "Kato, S.",
+          "McCullagh",
+          "P. Möbius transformation Normalizing Flows on Tori",
+          "Spheres",
+          "a Cauchy family on the sphere"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 9,
+        "title": "arXiv preprint arXiv:1510.07679, 2015",
+        "venue": null,
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "Kato, S.",
+          "Shimizu, K.",
+          "Shieh",
+          "G. S. A circular–circular regression model"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Statistica Sinica, 18:633–645, 2008",
+        "venue": null,
+        "year": "2008"
+      },
+      {
+        "authors": [
+          "Kent",
+          "J. T. The Fisher–Bingham distribution on the sphere"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Journal of the Royal Statistical Society",
+        "venue": "Series B (Method- ological), 44(1):71–80",
+        "year": "1982"
+      },
+      {
+        "authors": [
+          "Kingma, D. P.",
+          "Ba",
+          "J. Adam: A method for stochastic optimization"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "International Conference for Learning Representations, 2015",
+        "venue": null,
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "Kingma, D. P.",
+          "Salimans, T.",
+          "Jozefowicz, R.",
+          "Chen, X.",
+          "Sutskever, I.",
+          "Welling",
+          "M. Improved variational inference with inverse autoregressive flow"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Advances in Neural Information Processing Systems, 2016",
+        "venue": null,
+        "year": "2016"
+      },
+      {
+        "authors": [
+          "Kobayashi, S.",
+          "Nomizu",
+          "K. Foundations of differential geometry",
+          "volume 1"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Interscience Publishers, 1963",
+        "venue": null,
+        "year": "1963"
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Liu, J. S. Monte Carlo strategies in scientific computing",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Springer Science",
+          "Business Media"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": null,
+        "venue": null,
+        "year": "2008"
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Jupp",
+          "P. E. Directional statistics"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Wiley Series in Probability and Statistics",
+        "venue": "John Wiley & Sons",
+        "year": "2009"
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Taylor, C. C.",
+          "Subramaniam",
+          "G. K. Protein bioinformatics",
+          "mixtures of bivariate von Mises distributions for angular data"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Biometrics, 63(2):505–512, 2007",
+        "venue": null,
+        "year": "2007"
+      },
+      {
+        "authors": [
+          "Mardia, K. V.",
+          "Hughes, G.",
+          "Taylor, C. C.",
+          "Singh",
+          "H. A multivariate von Mises distribution with applications to bioinformatics"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "The Canadian Journal of Statistics, 36 (1):99–109, 2008",
+        "venue": null,
+        "year": "2008"
+      },
+      {
+        "authors": [
+          "Mathieu, E.",
+          "Le Lan, C.",
+          "Maddison, C. J.",
+          "Tomioka, R.",
+          "Teh",
+          "Y. W. Continuous hierarchical representations with Poincaré variational auto-encoders. Advances in Neural Information Processing Systems"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": null,
+        "venue": null,
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "Müller, T.",
+          "McWilliams, B.",
+          "Rousselle, F.",
+          "Gross, M.",
+          "Novák",
+          "J. Neural importance sampling"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "ACM Transactions on Graphics, 38(5):1–19, 2019",
+        "venue": null,
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "Navarro, A. K. W.",
+          "Frellsen, J.",
+          "Turner",
+          "R. E. The multi-variate generalised von Mises distribution: Inference",
+          "applications"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "AAAI Conference on Artificial Intelligence, 2017",
+        "venue": null,
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "Papamakarios, G.",
+          "Pavlakou, T.",
+          "Murray",
+          "I. Masked autoregressive flow for density estimation"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Advances in Neural Information Processing Systems, 2017",
+        "venue": null,
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "Papamakarios, G.",
+          "Nalisnick, E.",
+          "Rezende, D. J.",
+          "Mohamed, S.",
+          "Lakshminarayanan",
+          "B. Normalizing flows for probabilistic modeling",
+          "inference"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "arXiv preprint arXiv:1912.02762, 2019",
+        "venue": null,
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "Peel, D.",
+          "Whiten, W. J.",
+          "McLachlan",
+          "G. J. Fitting mixtures of Kent distributions to aid in joint set identification"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Journal of the American Statistical Association, 96(453): 56–63, 2001",
+        "venue": null,
+        "year": "2001"
+      },
+      {
+        "authors": [
+          "Rezende, D. J.",
+          "Mohamed",
+          "S. Variational inference with normalizing flows"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "International Conference on Machine",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Learning"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": null,
+        "venue": null,
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "Sei",
+          "T. A Jacobian inequality for gradient maps on the sphere",
+          "its application to directional statistics"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Communications in Statistics—Theory and Methods, 42(14): 2525–2542, 2013",
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Senanayake, R.",
+          "Ramos",
+          "F. Directional grid maps: modeling multimodal angular uncertainty in dynamic environments"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "IEEE/RSJ International Conference on Intelligent Robots and Systems, 2018",
+        "venue": null,
+        "year": "2018"
+      },
+      {
+        "authors": [
+          "Shapovalov, M. V.",
+          "Dunbrack Jr",
+          "R. L. A smoothed backbone-dependent rotamer library for proteins derived from adaptive kernel density estimates",
+          "regressions"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Structure, 19(6):844–858, 2011",
+        "venue": null,
+        "year": "2011"
+      },
+      {
+        "authors": [
+          "Tabak, E. G.",
+          "Turner",
+          "C. V. A family of nonparametric density estimation algorithms"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Communications on Pure and Applied Mathematics, 66(2):145–164, 2013",
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Tilma, T.",
+          "Sudarshan",
+          "E. Generalized Euler angle parametrization for SU (N )"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Journal of Physics A: Mathematical and General, 35(48):10467, 2002",
+        "venue": null,
+        "year": "2002"
+      },
+      {
+        "authors": [
+          "Tilma, T.",
+          "Sudarshan",
+          "E. Generalized Euler angle parameterization for U (N ) with applications to SU (N ) coset volume measures"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Journal of Geometry and Physics, 52 (3):263–283, 2004",
+        "venue": null,
+        "year": "2004"
+      },
+      {
+        "authors": [
+          "Wang, F.",
+          "Gelfand",
+          "A. E. Directional data analysis under the general projected normal distribution"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Statistical Methodology, 10(1):113–127, 2013",
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Wang",
+          "M. Extensions of probability distributions on torus",
+          "cylinder",
+          "disc"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "PhD thesis, Graduate School of Science and Technology, Keio University, 2013",
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Wang, P. Z.",
+          "Wang",
+          "W. Y. Riemannian normalizing flow on variational Wasserstein autoencoder for text modeling"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, 2019",
+        "venue": null,
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "Wang, Z.",
+          "Cheng, S.",
+          "Li, Y.",
+          "Zhu, J.",
+          "Zhang",
+          "B. A Wasserstein minimum velocity approach to learning unnormalized models"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Symposium on Advances in Approximate Bayesian Inference, 2019",
+        "venue": null,
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "Woit",
+          "P. Quantum theory",
+          "groups",
+          "representations: An introduction"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 10,
+        "title": "Springer, 2017",
+        "venue": null,
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "Normalizing Flows on Tori",
+          "Spheres A. Density Transformations on Manifolds In this section",
+          "we explain how to update the density of a distribution transformed from one Riemannian manifold to another by a smooth map"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 11,
+        "title": "We only consider the case where both manifolds are sub-manifolds of Euclidean spaces",
+        "venue": "Let M and N be D-dimensional manifolds embedded into Euclidean spaces R m and R n respectively. For example, M and N could be S D embedded in R D+1 as in Section 2.3. Both manifolds inherit a Riemannian metric from their embedding spaces. Let T be a smooth injective map T : M → N . We will assume that T can be extended to a smooth map between open neighbourhoods of the embedding spaces that contain M and N , and that we have chosen such an extension. For example, the exponential-map flow in Equation (19) can be written using the coordinates of the embedding space R D+1 , and can thus be extended to open neighbourhoods of the embedding spaces as desired. In what follows, we will use the fact that if u 1 , . . . , u D are vectors in R n , then the p volume of the parallelepiped with sides u 1 , . . . , u D is det(U > U ), where U is the n × D matrix with column vectors u 1 , . . . , u D . If u 1 , . . . , u D form an orthonormal system, this volume is 1. Let π : M → R + be a density on M. This defines a distribution on M and we can use T to transform it into a distribution on N . Let p : N → R + be the density of the transformed distribution. We are interested in computing p assuming we know π. Let x be a point on M, and e 1 , . . . , e D be an orthonormal basis of the tangent space T x M. Define E to be the m × D matrix with i-th column vector e i . Let J be the n×m Jacobian of T , where T is seen as a map between open sets in R m and R n . The tangent map of T at x transforms each e i to Je i , and the matrix that collects all transformed vectors in its columns is JE. Hence, the volume p of the parallelepiped with p sides the trans- formed vectors is det((JE) > JE) = det(E > J > JE). Therefore, the density p is given by π(x) p(T (x)) = p . det(E > J > JE) (24) In the special case where M = N = R D and m = n = D, the matrix E is an orthogonal matrix, and the above reduces to the familiar density update in Equation (2). A.1. The case of T c→s : S D−1 × [−1, 1] → S D In this section, we specialize to M = S D−1 × (−1, 1) and N = S D with D ≥ 2. In particular, we will prove: Proposition 1. Let π be a density π : S D−1 × (−1, 1) → R + . Let p : S D → R + be the density of the transformed distribution under T c→s . Then: p(T c→s (z, r)) = π(z, r) D (1 − r 2 ) 2 −1 . (25) Proof. The sphere S D−1 is embedded in R D . This gives us an embedding of M in R D+1 . The map T c→s , introduced in Equation (14), is easily extended to a map R D √ × (−1, 1) → R D+1 using the same formula T c→s (z, r) = ( 1 − r 2 z, r). Its Jacobian is an upper triangular D + 1 by D + 1 matrix  √  1 r 1 − r 2 0 · · · √ −x 1−r 2 √  −x 2 r  √ 1 − r 2  0  1−r 2   J =  .. ..  . ..  . . .  0 ··· 1 We will use a symmetry argument to simplify the computation of the determinant in Equation (24). Let G be a rotation of R D+1 that leaves the last coordinate invariant. 1 Note that for any point x ∈ R D+1 , we have T c→s (Gx) = GT c→s (x). This means that the Jacobian J transforms as a function of x as J(Gx) = GJ(x)G > . Note also that if x is in M, and E(x) is a matrix where the column vectors form a basis of the tangent space at x, then Gx is also in M, and GE(x) is a matrix where the column vectors form a basis of the tangent space at Gx. So we can choose E(Gx) = GE(x). With that choice \u0001 det E(Gx) > J(Gx) > J(Gx)E(Gx) \u0001 = det E(x) > G > GJ(x) > G > GJ(x)G > GE(x) \u0001 = det E(x)J(x) > J(x)E(x) . Since for any x ∈ M, √ we can always choose G such that Gx is of the form ( 1 − r 2 , 0, . . . , 0, r), we can restrict ourselves to this case. For such a choice, the Jacobian simplifies to  √ −r  1 − r 2 0 · · · √ 1−r 2 √  0 1 − r 2 0    . J =  .. ..  ..  . . .  0 ··· 1 For E, we can simply choose the D + 1 by D matrix made by removing the first column from the identity matrix. Then JE is equal to J with the first column removed:  −r  0 0 · · · √ 1−r 2 √  1 − r 2  0 0   √  0 2 1 − r 0  JE =   .  .. ..  ..  . . .  0 ··· 1 The product (JE) > JE is simply a diagonal matrix of size 1 D with diagonal (1 − r 2 , . . . , 1 − r 2 , 1−r 2 ). Taking the determinant and applying Equation (24) concludes the proof. 1 The set of such rotations is the group of rotations of R D embedded in R D+1 . Normalizing Flows on Tori and Spheres At first, Proposition 1 might seem worrying since the density ratio in that proposition vanishes when r is −1 or 1. So, as r approaches the boundary of the interval [−1, 1], it seems that the correction term to the density will tend to infinity and lead to numerical instability. What saves us is that we do not use T c→s on its own, and instead combine it with a particular flow transformation on S D−1 × [−1, 1] and the inverse T s→c , as shown in Equations (12) to (14). In these formulas, the map g is a spline on the interval [−1, 1] which maps −1 to −1, 1 to 1, and has strictly positive slopes g 0 (−1) and g 0 (1). Looking only at −1 (the case 1 can be similarly dealt with), this means AR g(−1 + \u000f) ≈ −1 + g 0 (−1)\u000f. As \u000f goes to 0, the density corrections coming from T c→s and T s→c combine to \u0012 \u0013 D 1 − g(−1 + \u000f) 2 − 1 log , 2 1 − (−1 + \u000f) 2 which is equivalent to \u0012 \u0013 D − 1 log g 0 (−1) 2 as \u000f goes to 0. In particular, the terms that tend to infinity cancel each other, and the flow is well-behaved. When implementing the flow, numerical stability is achieved by not adding the terms that cancel each other. Finally, we note a subtle point about what we proved: the sequence of transformations T c→s ◦ T c→c ◦ T s→c will transform a distribution with finite density into another distribution with finite density, but we do not guarantee that the resulting density will be continuous. B. Detailed Diagram of Recursive Flow on S D In Figure 6, we provide an illustration of the recursive construction in Equations (12) to (14), showing the specific wiring order of the conditional maps inside the flow. This order is the one implied by the recursion. In general, any other order can be used, or a composition of autoregressive flows with multiple orders. C. Examples of Möbius Transformations 1 To illustrate the kind of densities we get on S using the Möbius flows, we show a few random examples in Figure 7. D. Fourier Transformations on S 1 Another family of circle transformations that we considered are Fourier transformations, defined by X α i f α,φ,w (θ) = θ + sin(w i θ − φ i ) + µ, (26) w i i P where µ = i α i sin(φ i ), w i ∈ Z, φ i ∈ [0, 2π] and P |α | ≤ 1. The integers w i are fixed frequencies in the i i Fourier basis. We found empirically that this family of transformations is not competitive with the other transformations considered in this paper, especially for highly concentrated densities as shown in Figure 8. E. Polynomial Exponential Map",
+        "year": null
+      },
+      {
+        "authors": [
+          "The polynomial exponential map of Sei"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 12,
+        "title": "is the exponential-map flow built using the scalar field φ(x) = µ > x + x > Ax, (27) where x ∈ S D in the coordinates of the embedding space R D+1",
+        "venue": "The parameters µ and A must satisfy the constraint kµk 1 + kAk 1 ≤ 1 where k·k 1 is the elementwise ` 1 norm. F. Target Densities Used in Experiments For the experiments on the torus T 2 , we used targets built from densities in the von Mises family as shown in Table 2. On the sphere S 2 , the target was a mixture of the form p(x) ∝ 4 X > e 10x T s→e (µ k ) , (28) k=1 where µ 1 = (0.7, 1.5), µ 2 = (−1, 1), µ 3 = (0.6, 0.5), µ 4 = (−0.7, 4), T s→e maps from spherical to Euclidean Normalizing Flows on Tori and Spheres Target Expression Unimodal Multi-modal p A (θ 1 , θ 2 ) ∝ exp[cos(θ 1 − φ 1 ) + cos(θ 2 − φ 2 )] P 3 p B (θ 1 , θ 2 ) ∝ 13 i=1 p A (θ 1 , θ 2 ; φ i ) Correlated p C (θ 1 , θ 2 ) ∝ exp[cos(θ 1 + θ 2 − φ)] Parameters φ = (4.18, 5.96) φ = {(0.21, 2.85), (1.89, 6.18), (3.77, 1.56)} φ = 1.94 Normalizing Flows on Tori and Spheres coordinates, and x ∈ R 3 is a point on the embedded sphere in Euclidean coordinates. On SU(2) ∼ = S 3 , the target was a mixture of the same form where µ 1 = (1.7, −1.5, 2.3), µ 2 = (−3.0, 1.0, 3.0), µ 3 = (0.6, −2.6, 4.5), µ 4 = (−2.5, 3.0, 5.0), and x ∈ R 4 is a point on the embedded sphere in Euclidean coordinates. We begin by expanding Equation (31) in terms of more basic trigonometric quantities, e iw = = 2 G. Misaligned Density on S The recursive formulas shown in Equations (12) to (14) require choosing a sequence of axes in order to construct the cylindrical coordinate system. This may introduce artifacts to the density related to this choice of axes. To test if this results in numerical problems, we compare the flow from Equations (12) to (14) on a target density that forms a nonaxis-aligned ring against a composition of the same flow with a learned rotation. The results of this experiment are shown in Figure 9. We compared both large (K s = 32, K m = 12) and small (K s = 3, K m = 3) versions of the auto-regressive Möbius- Spline flow and observed no significant differences between the two models on S 2 . More experiments would be necessary to investigate this potential effect in higher dimensions. = e iθ + 1−α 1+α iθ 1 + 1−α 1+α e 1−α −iθ e iθ + 1−α 1+α 1 + 1+α e 1−α −iθ iθ 1 + 1−α 1+α e 1 + 1+α e \u0011 2 \u0010 1−α e iθ + 2 1−α + e −iθ 1+α 1+α 2(cos(θ)+α 2 (− cos(θ))+α 2 +1) (α+1) 2 \u0010 θ \u0011 2 −i θ 2 e i 2 + 1−α 1+α e = 2(cos(θ)+α 2 (− cos(θ))+α 2 +1) (α+1) 2 \u0010 θ θ (1 + α)e i 2 + (1 − α)e −i 2 \u0011 2 1 2 cos(θ) + α 2 (− cos(θ)) + α 2 + 1 \u0001 \u0001\u0001 2 2 cos θ 2 + iα sin θ 2 = . cos(θ) + α 2 (− cos(θ)) + α 2 + 1 = In order to isolate w, only the numerator v = \u0001 \u0001\u0001 2 of the expression above matters 2 cos θ 2 + iα sin θ 2 as we are only interested in ratios of the imaginary and real parts of this expression, tan(w) = =(v) <(v) . The numerator can be expanded as H. NCP as a complex Möbius transformation 2 cos For a general Möbius transformation f (z) = az + b , cz + d z − a . h(z) = 1 − āz (30) This form ensures that h(z) h̄(z) = 1 if z z̄ = 1 and has two real-valued free parameters <(a) and =(a). In what follows we show that for the choice =(a) = 0 and <(a) = − 1−α equivalent 1+α , the transformation h(z) is \u0001 \u0001 to an NCP transform w = 2 arctan α tan θ 2 + β with scale parameter α and offset parameter β = 0 (assuming w, θ ∈ (−π, π)). If we define θ via z = e iθ , the goal is to show that w defined via e iθ + 1−α 1+α iθ 1 + 1−α 1+α e follows the NCP transformation rule \u0012 \u0012 \u0013\u0013 θ w = 2 arctan α tan 2 \u0001 + iα sin \u0001 2 cos 2 θ 2 θ 2 \u0001\u0001 2 (29) where a, b, c, d, z ∈ C, to define a diffeomorphism on S 1 it must be constrained to be of the form e iw = θ 2 , (31) mod 2π. \u0012 \u0013 θ 2 \u0012 \u0013 θ + 2α tan i + 1, 2 = −α 2 tan 2 from which we conclude, \u0001 2α tan θ 2 =(v) \u0001 . = tan(w) = <(v) 1 − α 2 tan 2 θ 2 (32) 2 tan(x) Using the trigonometric formula tan(2x) = 1−tan(x) 2 , we arrive at the final result \u0012 \u0013 \u0010 w \u0011 θ tan = α tan 2 2 ⇔ \u0012 \u0012 \u0013\u0013 θ w = 2 arctan α tan 2 mod 2π. I. Application: Multi-Link Robot Arm As a concrete application of flows on tori, we consider the problem of approximating the posterior density over joint angles θ 1,...,6 of a 6-link 2D robot arm, given (soft) constraints on the position of the tip of the arm. The possible Normalizing Flows on Tori and Spheres configurations of this arm are points in T 6 . The position r k of a joint k = 1, . . . , 6 of the robot arm is given by       X X r k = r k−1 +  l k cos  θ j  , l k sin  θ j   , j≤k j≤k where r 0 = (0, 0) is the position where the arm is affixed, l k = 0.2 is the length of the k-th link, and θ k is the angle of the k-th link in a local reference frame. The constraint on the position of the tip of the arm, r 6 , is expressed in the form of a Gaussian-mixture likelihood p(r 6 | θ 1,...,6 ) with two components. The prior p(θ 1,...,6 ) is taken to be a uniform distribution on T 6 . The experimental results are illustrated in Figure 10. J. Application: Learning from samples In most of the experiments shown on this paper, we trained the models to fit a target density known up to a normalization constant (i.e. an inference problem). In this experiment we train our flow directly on data samples instead. Training a flow-based model from data samples via maximum likelihood requires an explicit computation of the inverse map as shown in Equation (2). To demonstrate this is feasible with data coming from a non-trivial target density on the sphere S 2 (i.e. that would require a large number of mixture components from simpler densities such as von Mises), we created a dataset of samples on the sphere coming from a density shaped as Earth’s continental map as shown in Figure 11 (left). We trained a flow built from stacking two autoregressive flows. Each flow in the stack used circular splines and standard splines on the interval. The model was trained to maximize the likelihood of the dataset for 100,000 training steps. Both splines used K s = 80 segments. The neural networks producing the spline parameters are the same as for the other experiments. In Figure 11 (middle) we show samples from the learned model overlaid on Earth’s map and in Figure 11 (right) we show a heat map of the learned density. Normalizing Flows on Tori and Spheres",
+        "year": "2013"
+      }
+    ]
+  },
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/2002.02428v2.pdf",
+  "record_version": 2,
+  "totals": {
+    "cost_usd": 0.0,
+    "wall_s": 0.453683352
+  }
+}

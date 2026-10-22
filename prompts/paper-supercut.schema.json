@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "supercut"
+  ],
+  "properties": {
+    "supercut": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "text",
+          "page"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "source",
+              "connector"
+            ],
+            "description": "source: the paper's own sentences, verbatim. connector: your short bridging text."
+          },
+          "text": {
+            "type": "string"
+          },
+          "page": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Required for source segments; null for connectors."
+          }
+        }
+      },
+      "description": "The argument as ordered segments. Length and quote density follow the paper's importance and prose quality."
+    }
+  },
+  "description": "The argument as ordered segments."
+}

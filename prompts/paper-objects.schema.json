@@ -1,0 +1,85 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "objects"
+  ],
+  "properties": {
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "label",
+          "number",
+          "page",
+          "caption",
+          "latex",
+          "referenced_on_pages",
+          "confidence"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "figure",
+              "table",
+              "equation",
+              "algorithm"
+            ]
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "As printed, e.g. 'Figure 3', 'Table 1', '(12)'."
+          },
+          "number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The number alone, e.g. '3', '1', '12', 'A.2'."
+          },
+          "page": {
+            "type": "integer"
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The printed caption, copied verbatim. Null for equations and for any object without a printed caption; never write one."
+          },
+          "latex": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Equations: LaTeX read from the page image. Null otherwise."
+          },
+          "referenced_on_pages": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "description": "How sure you are that this item is correct."
+          }
+        }
+      },
+      "description": "Every figure, table and algorithm of the requested kinds whose caption is printed on the given pages, and every numbered displayed equation of the requested kinds whose number is printed on them. One object per printed label; never a range."
+    }
+  },
+  "description": "The figures, tables, algorithms and numbered equations printed on the given pages."
+}

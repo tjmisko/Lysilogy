@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "repairs"
+  ],
+  "properties": {
+    "repairs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "action",
+          "quote",
+          "page"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The id given for the failing quote."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "replace_quote",
+              "withdraw"
+            ]
+          },
+          "quote": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The exact text from the page, for replace_quote."
+          },
+          "page": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "description": "Repairs for quotes that are not verbatim in the paper."
+}

@@ -1,0 +1,1050 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T22:03:25.702588290Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Granger and Newbold - 1973 - Spurious Regressions in Econometrics.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 10,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 7050,
+      "cached_tokens": 7040,
+      "completion_tokens": 16443,
+      "reasoning_tokens": 12762,
+      "cost_usd": 0.006937028,
+      "cost_source": "reported",
+      "latency_s": 182.38039875
+    },
+    {
+      "stage": "extract.sections.refine",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 7400,
+      "cached_tokens": 6144,
+      "completion_tokens": 5798,
+      "reasoning_tokens": 4987,
+      "cost_usd": 0.0026368048,
+      "cost_source": "reported",
+      "latency_s": 68.522085298
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 9121,
+      "cached_tokens": 384,
+      "completion_tokens": 9907,
+      "reasoning_tokens": 9726,
+      "cost_usd": 0.0053857328,
+      "cost_source": "reported",
+      "latency_s": 91.595867144
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 23571,
+    "cached_tokens": 13568,
+    "completion_tokens": 32148,
+    "cost_usd": 0.014959565599999999,
+    "model_latency_s": 342.49835119200003,
+    "wall_s": 343.721687757
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e12-refine-30-2026-10-20/results/granger1974.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": null,
+      "text": null
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Box and Jenkins (1970)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that"
+              }
+            ],
+            "reference_key": "Box and Jenkins (1970)",
+            "why": "The paper uses ARIMA and differencing ideas from Box and Jenkins to frame economic time-series behavior."
+          },
+          {
+            "cited_work": "Box and Newbold (1971)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation."
+              }
+            ],
+            "reference_key": "Box and Newbold (1971)",
+            "why": "The authors build on prior experience showing how easily careless autocorrelation specification can produce a spurious model."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "traditional econometric regression on levels",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Thus a high value of R2 should not, on the grounds of traditional tests, be regarded as evidence of a significant relationship between autocorrelated series."
+              }
+            ],
+            "reference_key": null,
+            "why": "The paper critiques the practice of interpreting high R2 from level regressions as evidence when residuals are autocorrelated."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "In such a situation the test procedure just described breaks down, since the quantity F in eq. (9) will not follow Fisher’s F distribution under the null hypothesis (8)."
+          }
+        ],
+        "text": "Regressions on levels of nonstationary or highly autocorrelated economic time series can produce spurious apparent relationships, with high R2 and low Durbin-Watson d, because standard significance tests become invalid."
+      }
+    },
+    "citations": [
+      {
+        "context": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation.",
+        "page": 1,
+        "reference_key": "Box and Newbold (1971)"
+      },
+      {
+        "context": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that",
+        "page": 2,
+        "reference_key": "Box and Jenkins (1970)"
+      },
+      {
+        "context": "eq. (4) is very often one. [See, for example, Granger (1966), Reid (1969) and Newbold and Granger (1974).]",
+        "page": 3,
+        "reference_key": "Granger (1966), Reid (1969), Newbold and Granger (1974)"
+      },
+      {
+        "context": "[For a criticism of this approach to evaluation, see Granger and Newbold (1973).]",
+        "page": 3,
+        "reference_key": "Granger and Newbold (1973)"
+      },
+      {
+        "context": "Kendall (1954) gives:",
+        "page": 4,
+        "reference_key": "Kendall (1954)"
+      },
+      {
+        "context": "To put these results in context, they may be compared with results reported by Malinvaud (1966).",
+        "page": 5,
+        "reference_key": "Malinvaud (1966)"
+      },
+      {
+        "context": "One method we are currently considering is to build single series models for each variable, using the methods of Box and Jenkins (1970) for example, and then searching for relationships between series by relating the residuals from these single models.",
+        "page": 8,
+        "reference_key": "Box and Jenkins (1970)"
+      },
+      {
+        "context": "Sheppard (197 1) regressed U.K. consumption on autonomous expenditure and mid-year money stock, both for levels and changes for the time period 1947-1962.",
+        "page": 8,
+        "reference_key": "Sheppard (1971)"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "University of Nottingham, Nottingham NG7 ZRD, England",
+          "name": "C.W.J. GRANGER"
+        },
+        {
+          "affiliation": "University of Nottingham, Nottingham NG7 ZRD, England",
+          "name": "P. NEWBOLD"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "SPURIOUS\nREGRESSIONS\nC.W.J. GRANGER\nIN ECONOMETRICS\nand P. NEWBOLD\nUniversity of Nottingham, Nottingham NG7 ZRD, England"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "SPURIOUS REGRESSIONS IN ECONOMETRICS",
+      "venue": "Journal of Econometrics 2",
+      "year": 1974
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "We felt, then, that we should undertake a more detailed enquiry seeking to determine what, if anything, could be inferred from those regression equations having the properties just described."
+        }
+      ],
+      "text": "Can regressions relating levels of economic time series produce apparently significant but spurious relationships when the series are nonstationary or highly autocorrelated, and why do the usual significance tests become invalid?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Box, G.E.P.",
+          "Jenkins, G.M."
+        ],
+        "doi": null,
+        "key": "Box and Jenkins (1970)",
+        "page": 9,
+        "title": "Time series analysis, forecasting and control",
+        "venue": "Holden-Day, San Francisco",
+        "year": 1970
+      },
+      {
+        "authors": [
+          "Box, G.E.P.",
+          "Newbold, P."
+        ],
+        "doi": null,
+        "key": "Box and Newbold (1971)",
+        "page": 9,
+        "title": "Some comments on a paper of Coen, Gomme and Kendall",
+        "venue": "J. R. Statist. Soct. A 134, 229-240",
+        "year": 1971
+      },
+      {
+        "authors": [
+          "Granger, C.W.J."
+        ],
+        "doi": null,
+        "key": "Granger (1966)",
+        "page": 9,
+        "title": "The typical spectral shape of an economic variable",
+        "venue": "Econometrica 34, 150-161",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "Granger, C.W.J.",
+          "Newbold, P."
+        ],
+        "doi": null,
+        "key": "Granger and Newbold (1973)",
+        "page": 9,
+        "title": "Some comments on the evaluation of economic forecasts",
+        "venue": "Applied Economics 5, 35-47",
+        "year": 1973
+      },
+      {
+        "authors": [
+          "Kendall, M.G."
+        ],
+        "doi": null,
+        "key": "Kendall (1954)",
+        "page": 10,
+        "title": "Exercises in theoretical statistics",
+        "venue": "Griffin, London",
+        "year": 1954
+      },
+      {
+        "authors": [
+          "Malinvaud, E."
+        ],
+        "doi": null,
+        "key": "Malinvaud (1966)",
+        "page": 10,
+        "title": "Statistical methods of econometrics",
+        "venue": "North Holland, Amsterdam",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "Newbold, P.",
+          "Granger, C.W.J."
+        ],
+        "doi": null,
+        "key": "Newbold and Granger (1974)",
+        "page": 10,
+        "title": "Experience with forecasting univariate time series and the combination of forecasts",
+        "venue": "J. R. Statist. Soct. A 137, forthcoming",
+        "year": 1974
+      },
+      {
+        "authors": [
+          "Reid, D.J."
+        ],
+        "doi": null,
+        "key": "Reid (1969)",
+        "page": 10,
+        "title": "A comparative study of time series prediction techniques on economic data",
+        "venue": "Ph.D. Thesis, University of Nottingham, U.K.",
+        "year": 1969
+      },
+      {
+        "authors": [
+          "Sheppard, D.K."
+        ],
+        "doi": null,
+        "key": "Sheppard (1971)",
+        "page": 10,
+        "title": "The growth and role of U.K. financial institutions 1880-1962",
+        "venue": "Methuen. London",
+        "year": 1971
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation.",
+        "reference_key": "Box and Newbold (1971)",
+        "relation": "extends",
+        "why": "The authors extend prior evidence that spurious models arise from inadequate autocorrelation specification."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that",
+        "reference_key": "Box and Jenkins (1970)",
+        "relation": "uses_method",
+        "why": "The paper uses Box-Jenkins ARIMA and differencing as its time-series framework."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Kendall (1954) gives:",
+        "reference_key": "Kendall (1954)",
+        "relation": "uses_method",
+        "why": "The paper uses Kendall's variance result to show that R can be non-unimodal at zero and that high R2 is possible under independence."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "To put these results in context, they may be compared with results reported by Malinvaud (1966).",
+        "reference_key": "Malinvaud (1966)",
+        "relation": "compares",
+        "why": "The simulation results are compared with Malinvaud's autocorrelation correction factors."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "Sheppard (197 1) regressed U.K. consumption on autonomous expenditure and mid-year money stock, both for levels and changes for the time period 1947-1962.",
+        "reference_key": "Sheppard (1971)",
+        "relation": "uses_data",
+        "why": "Sheppard's U.K. consumption regression is used as an illustrative example of how differencing can change results."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "see Granger and Newbold (1973).]",
+          "start_page": 1,
+          "start_text": "1. Introduction"
+        },
+        "summary": "Introduces the paper's puzzle: applied time-series regressions often show high R2 and low Durbin-Watson d. It lists the consequences of autocorrelated errors, reviews stationary and integrated ARIMA representations, notes that economic levels are often near random walks or integrated processes, and presents simple random-walk and integrated-moving-average examples and benchmark forecasts.",
+        "title": "Spurious regressions and time-series background"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "TO examine this possibility, we conducted a number of simulation experiments which are reported in the following section.",
+          "start_page": 3,
+          "start_text": "3. How nonsense regressions can arise"
+        },
+        "summary": "Sets up the usual linear regression model with stochastic regressors, the null hypothesis, and the F test based on R2. It explains why autocorrelated residuals invalidate the test, discusses Kendall's variance result showing that high R2 can arise between independent autocorrelated series, and concludes that high R2 should not be treated as evidence of a significant relationship.",
+        "title": "Nonsense regressions in the standard model"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "is no indication of a true relationship.",
+          "start_page": 5,
+          "start_text": "4. Some simulation results"
+        },
+        "summary": "Reports simulation experiments regressing independent random walks, finding inflated t-values and frequent false rejection of no relationship. It compares these results with Malinvaud's autocorrelation correction, extends the experiment to multiple independent regressors and different processes, and shows that random walks or near-random walks make spurious relationships the rule rather than the exception.",
+        "title": "Simulation evidence on spurious regressions"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "despite the warnings given in the text books about this possibility.",
+          "start_page": 7,
+          "start_text": "5. Discussion"
+        },
+        "summary": "Concludes that strongly autocorrelated residuals imply mis-specification, whatever the observed R2. It considers possible corrections such as lagged dependent variables, differencing, or autoregressive errors, recommends first differencing highly autocorrelated variables, uses Sheppard's levels-versus-changes example, and discusses theory, lag structure, measurement error, and building models with both levels and changes.",
+        "title": "Discussion and conclusion"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "Sheppard, D.K., 1971, The growth and role of U.K. financial institutions 1880-1962",
+          "start_page": 9,
+          "start_text": "References"
+        },
+        "summary": "Lists the cited references for the paper.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a methodological econometrics journal article that critiques spurious regressions through analysis and simulation.",
+      "value": "method"
+    }
+  },
+  "pass1_check": {
+    "sites": 19,
+    "verbatim": 18,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/references/1/venue",
+      "action": "replace",
+      "value_json": "\"J. R. Statist. Sot. A 134, 229-240\"",
+      "reason": "Reference venue misspells the journal abbreviation as “Soct.”; the paper has “Sot.”",
+      "evidence": [
+        {
+          "quote": "J. R. Statist.Sot. A 134,229-240.",
+          "page": 9
+        }
+      ]
+    },
+    {
+      "path": "/references/6/venue",
+      "action": "replace",
+      "value_json": "\"J. R. Statist. Sot. A 137, forthcoming\"",
+      "reason": "Reference venue misspells the journal abbreviation as “Soct.”; the paper has “Sot.”",
+      "evidence": [
+        {
+          "quote": "J. R. Statist. Sot. A 137, forthcoming.",
+          "page": 10
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/references/1/venue",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/references/6/venue",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 19,
+    "verbatim": 18,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that",
+      "admitted": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation.",
+      "admitted": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Thus a high value of R2 should not, on the grounds of traditional tests, be regarded as evidence of a significant relationship between autocorrelated series.",
+      "admitted": "Thus a high value of R2 should not, on the grounds of traditional tests, be regarded as evidence of a significant relationship between autocorrelated series.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In such a situation the test procedure just described breaks down, since the quantity F in eq. (9) will not follow Fisher’s F distribution under the null hypothesis (8).",
+      "admitted": "In such a situation the test procedure just described breaks down, since the quantity F in eq. (9) will not follow Fisher’s F distribution under the null hypothesis (8).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "SPURIOUS\nREGRESSIONS\nC.W.J. GRANGER\nIN ECONOMETRICS\nand P. NEWBOLD\nUniversity of Nottingham, Nottingham NG7 ZRD, England",
+      "admitted": "SPURIOUS\nREGRESSIONS\nC.W.J. GRANGER\nIN ECONOMETRICS\nand P. NEWBOLD\nUniversity of Nottingham, Nottingham NG7 ZRD, England",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We felt, then, that we should undertake a more detailed enquiry seeking to determine what, if anything, could be inferred from those regression equations having the properties just described.",
+      "admitted": "We felt, then, that we should undertake a more detailed enquiry seeking to determine what, if anything, could be inferred from those regression equations having the properties just described.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation.",
+      "admitted": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that",
+      "admitted": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "eq. (4) is very often one. [See, for example, Granger (1966), Reid (1969) and Newbold and Granger (1974).]",
+      "admitted": "eq. (4) is very often one. [See, for example, Granger (1966), Reid (1969) and Newbold and Granger (1974).]",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "[For a criticism of this approach to evaluation, see Granger and Newbold (1973).]",
+      "admitted": "[For a criticism of this approach to evaluation, see Granger and Newbold (1973).]",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "Kendall (1954) gives:",
+      "admitted": "Kendall (1954) gives:",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "To put these results in context, they may be compared with results reported by Malinvaud (1966).",
+      "admitted": "To put these results in context, they may be compared with results reported by Malinvaud (1966).",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "repaired_local",
+      "original": "One method we are currently considering is to build single series models for each variable, using the methods of Box and Jenkins (1970) for example, and then searching for relationships between series by relating the residuals from these single models.",
+      "admitted": "econometrics method we are currently considering is to build single series models for each variable, using the methods of Box and Jenkins (1970) for example, and then searching for relationships between series by relating the residuals from these single models.",
+      "similarity": 0.975,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "Sheppard (197 1) regressed U.K. consumption on autonomous expenditure and mid-year money stock, both for levels and changes for the time period 1947-1962.",
+      "admitted": "Sheppard (197 1) regressed U.K. consumption on autonomous expenditure and mid-year money stock, both for levels and changes for the time period 1947-1962.",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation.",
+      "admitted": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that",
+      "admitted": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "Kendall (1954) gives:",
+      "admitted": "Kendall (1954) gives:",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "To put these results in context, they may be compared with results reported by Malinvaud (1966).",
+      "admitted": "To put these results in context, they may be compared with results reported by Malinvaud (1966).",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "Sheppard (197 1) regressed U.K. consumption on autonomous expenditure and mid-year money stock, both for levels and changes for the time period 1947-1962.",
+      "admitted": "Sheppard (197 1) regressed U.K. consumption on autonomous expenditure and mid-year money stock, both for levels and changes for the time period 1947-1962.",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 1,
+    "verbatim": 18
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": null,
+      "text": null
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Box and Jenkins (1970)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that"
+              }
+            ],
+            "reference_key": "Box and Jenkins (1970)",
+            "why": "The paper uses ARIMA and differencing ideas from Box and Jenkins to frame economic time-series behavior."
+          },
+          {
+            "cited_work": "Box and Newbold (1971)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation."
+              }
+            ],
+            "reference_key": "Box and Newbold (1971)",
+            "why": "The authors build on prior experience showing how easily careless autocorrelation specification can produce a spurious model."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "traditional econometric regression on levels",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Thus a high value of R2 should not, on the grounds of traditional tests, be regarded as evidence of a significant relationship between autocorrelated series."
+              }
+            ],
+            "reference_key": null,
+            "why": "The paper critiques the practice of interpreting high R2 from level regressions as evidence when residuals are autocorrelated."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 4,
+            "quote": "In such a situation the test procedure just described breaks down, since the quantity F in eq. (9) will not follow Fisher’s F distribution under the null hypothesis (8)."
+          }
+        ],
+        "text": "Regressions on levels of nonstationary or highly autocorrelated economic time series can produce spurious apparent relationships, with high R2 and low Durbin-Watson d, because standard significance tests become invalid."
+      }
+    },
+    "citations": [
+      {
+        "context": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation.",
+        "page": 1,
+        "reference_key": "Box and Newbold (1971)"
+      },
+      {
+        "context": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that",
+        "page": 2,
+        "reference_key": "Box and Jenkins (1970)"
+      },
+      {
+        "context": "eq. (4) is very often one. [See, for example, Granger (1966), Reid (1969) and Newbold and Granger (1974).]",
+        "page": 3,
+        "reference_key": "Granger (1966), Reid (1969), Newbold and Granger (1974)"
+      },
+      {
+        "context": "[For a criticism of this approach to evaluation, see Granger and Newbold (1973).]",
+        "page": 3,
+        "reference_key": "Granger and Newbold (1973)"
+      },
+      {
+        "context": "Kendall (1954) gives:",
+        "page": 4,
+        "reference_key": "Kendall (1954)"
+      },
+      {
+        "context": "To put these results in context, they may be compared with results reported by Malinvaud (1966).",
+        "page": 5,
+        "reference_key": "Malinvaud (1966)"
+      },
+      {
+        "context": "econometrics method we are currently considering is to build single series models for each variable, using the methods of Box and Jenkins (1970) for example, and then searching for relationships between series by relating the residuals from these single models.",
+        "page": 8,
+        "reference_key": "Box and Jenkins (1970)"
+      },
+      {
+        "context": "Sheppard (197 1) regressed U.K. consumption on autonomous expenditure and mid-year money stock, both for levels and changes for the time period 1947-1962.",
+        "page": 8,
+        "reference_key": "Sheppard (1971)"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "University of Nottingham, Nottingham NG7 ZRD, England",
+          "name": "C.W.J. GRANGER"
+        },
+        {
+          "affiliation": "University of Nottingham, Nottingham NG7 ZRD, England",
+          "name": "P. NEWBOLD"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "SPURIOUS\nREGRESSIONS\nC.W.J. GRANGER\nIN ECONOMETRICS\nand P. NEWBOLD\nUniversity of Nottingham, Nottingham NG7 ZRD, England"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "SPURIOUS REGRESSIONS IN ECONOMETRICS",
+      "venue": "Journal of Econometrics 2",
+      "year": 1974
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "We felt, then, that we should undertake a more detailed enquiry seeking to determine what, if anything, could be inferred from those regression equations having the properties just described."
+        }
+      ],
+      "text": "Can regressions relating levels of economic time series produce apparently significant but spurious relationships when the series are nonstationary or highly autocorrelated, and why do the usual significance tests become invalid?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Box, G.E.P.",
+          "Jenkins, G.M."
+        ],
+        "doi": null,
+        "key": "Box and Jenkins (1970)",
+        "page": 9,
+        "title": "Time series analysis, forecasting and control",
+        "venue": "Holden-Day, San Francisco",
+        "year": 1970
+      },
+      {
+        "authors": [
+          "Box, G.E.P.",
+          "Newbold, P."
+        ],
+        "doi": null,
+        "key": "Box and Newbold (1971)",
+        "page": 9,
+        "title": "Some comments on a paper of Coen, Gomme and Kendall",
+        "venue": "J. R. Statist. Sot. A 134, 229-240",
+        "year": 1971
+      },
+      {
+        "authors": [
+          "Granger, C.W.J."
+        ],
+        "doi": null,
+        "key": "Granger (1966)",
+        "page": 9,
+        "title": "The typical spectral shape of an economic variable",
+        "venue": "Econometrica 34, 150-161",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "Granger, C.W.J.",
+          "Newbold, P."
+        ],
+        "doi": null,
+        "key": "Granger and Newbold (1973)",
+        "page": 9,
+        "title": "Some comments on the evaluation of economic forecasts",
+        "venue": "Applied Economics 5, 35-47",
+        "year": 1973
+      },
+      {
+        "authors": [
+          "Kendall, M.G."
+        ],
+        "doi": null,
+        "key": "Kendall (1954)",
+        "page": 10,
+        "title": "Exercises in theoretical statistics",
+        "venue": "Griffin, London",
+        "year": 1954
+      },
+      {
+        "authors": [
+          "Malinvaud, E."
+        ],
+        "doi": null,
+        "key": "Malinvaud (1966)",
+        "page": 10,
+        "title": "Statistical methods of econometrics",
+        "venue": "North Holland, Amsterdam",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "Newbold, P.",
+          "Granger, C.W.J."
+        ],
+        "doi": null,
+        "key": "Newbold and Granger (1974)",
+        "page": 10,
+        "title": "Experience with forecasting univariate time series and the combination of forecasts",
+        "venue": "J. R. Statist. Sot. A 137, forthcoming",
+        "year": 1974
+      },
+      {
+        "authors": [
+          "Reid, D.J."
+        ],
+        "doi": null,
+        "key": "Reid (1969)",
+        "page": 10,
+        "title": "A comparative study of time series prediction techniques on economic data",
+        "venue": "Ph.D. Thesis, University of Nottingham, U.K.",
+        "year": 1969
+      },
+      {
+        "authors": [
+          "Sheppard, D.K."
+        ],
+        "doi": null,
+        "key": "Sheppard (1971)",
+        "page": 10,
+        "title": "The growth and role of U.K. financial institutions 1880-1962",
+        "venue": "Methuen. London",
+        "year": 1971
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The recent experience of one of us [see Box and Newbold (1971)] has indicated just how easily one can be led to produce a spurious model if sufficient care is not taken over an appropriate formulation for the autocorrelation structure of the errors from the regression equation.",
+        "reference_key": "Box and Newbold (1971)",
+        "relation": "extends",
+        "why": "The authors extend prior evidence that spurious models arise from inadequate autocorrelation specification."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Box and Jenkins (1970) urge that, while this series itself may not be stationary, it can often be reduced to stationarity by differencing a sufficient number of times; that is, there exists an integer d such that",
+        "reference_key": "Box and Jenkins (1970)",
+        "relation": "uses_method",
+        "why": "The paper uses Box-Jenkins ARIMA and differencing as its time-series framework."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Kendall (1954) gives:",
+        "reference_key": "Kendall (1954)",
+        "relation": "uses_method",
+        "why": "The paper uses Kendall's variance result to show that R can be non-unimodal at zero and that high R2 is possible under independence."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "To put these results in context, they may be compared with results reported by Malinvaud (1966).",
+        "reference_key": "Malinvaud (1966)",
+        "relation": "compares",
+        "why": "The simulation results are compared with Malinvaud's autocorrelation correction factors."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "Sheppard (197 1) regressed U.K. consumption on autonomous expenditure and mid-year money stock, both for levels and changes for the time period 1947-1962.",
+        "reference_key": "Sheppard (1971)",
+        "relation": "uses_data",
+        "why": "Sheppard's U.K. consumption regression is used as an illustrative example of how differencing can change results."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 3,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "see Granger and Newbold (1973).]",
+          "start_page": 1,
+          "start_text": "1. Introduction"
+        },
+        "summary": "Introduces the paper's puzzle: applied time-series regressions often show high R2 and low Durbin-Watson d. It lists the consequences of autocorrelated errors, reviews stationary and integrated ARIMA representations, notes that economic levels are often near random walks or integrated processes, and presents simple random-walk and integrated-moving-average examples and benchmark forecasts.",
+        "title": "Spurious regressions and time-series background"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "TO examine this possibility, we conducted a number of simulation experiments which are reported in the following section.",
+          "start_page": 3,
+          "start_text": "3. How nonsense regressions can arise"
+        },
+        "summary": "Sets up the usual linear regression model with stochastic regressors, the null hypothesis, and the F test based on R2. It explains why autocorrelated residuals invalidate the test, discusses Kendall's variance result showing that high R2 can arise between independent autocorrelated series, and concludes that high R2 should not be treated as evidence of a significant relationship.",
+        "title": "Nonsense regressions in the standard model"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "is no indication of a true relationship.",
+          "start_page": 5,
+          "start_text": "4. Some simulation results"
+        },
+        "summary": "Reports simulation experiments regressing independent random walks, finding inflated t-values and frequent false rejection of no relationship. It compares these results with Malinvaud's autocorrelation correction, extends the experiment to multiple independent regressors and different processes, and shows that random walks or near-random walks make spurious relationships the rule rather than the exception.",
+        "title": "Simulation evidence on spurious regressions"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "despite the warnings given in the text books about this possibility.",
+          "start_page": 7,
+          "start_text": "5. Discussion"
+        },
+        "summary": "Concludes that strongly autocorrelated residuals imply mis-specification, whatever the observed R2. It considers possible corrections such as lagged dependent variables, differencing, or autoregressive errors, recommends first differencing highly autocorrelated variables, uses Sheppard's levels-versus-changes example, and discusses theory, lag structure, measurement error, and building models with both levels and changes.",
+        "title": "Discussion and conclusion"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "Sheppard, D.K., 1971, The growth and role of U.K. financial institutions 1880-1962",
+          "start_page": 9,
+          "start_text": "References"
+        },
+        "summary": "Lists the cited references for the paper.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a methodological econometrics journal article that critiques spurious regressions through analysis and simulation.",
+      "value": "method"
+    }
+  }
+}

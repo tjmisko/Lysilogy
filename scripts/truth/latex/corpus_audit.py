@@ -37,7 +37,7 @@ def pairs(identities, index_root, source_root):
         stem = record["relative_path"].rsplit(".pdf", 1)[0]
         source = source_root / (stem + ".src")
         if index.exists() and source.exists():
-            found.append((stem, source, index))
+            found.append((stem, source, index, key))
     found.sort(key=lambda item: item[0])
     return found
 
@@ -56,16 +56,18 @@ def measure(found, limit):
         "rows": [],
     }
     completeness = []
-    for stem, source, index in found:
+    for stem, source, index, key in found:
         result = align(source, index)
         status = result.get("status", "invalid")
         aggregate["statuses"][status] = aggregate["statuses"].get(status, 0) + 1
-        row = {"stem": stem, "status": status}
+        row = {"stem": stem, "status": status, "identity": key}
         if status == "aligned":
             alignment = result["alignment"]
             completeness.append(alignment["overall_completeness"])
             row["completeness"] = alignment["overall_completeness"]
             row["bibliography_exhaustive"] = alignment["bibliography_exhaustive"]
+            row["main"] = result["main"]
+            row["kind_coverage"] = result["kind_coverage"]
             if alignment["bibliography_exhaustive"]:
                 aggregate["bibliography_exhaustive"] += 1
             for kind, coverage in result["kind_coverage"].items():

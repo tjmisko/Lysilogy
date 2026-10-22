@@ -21,9 +21,9 @@ use crate::{
 use super::{
     ANALYSIS_SCHEMA, AnalysisDraft, CLARIFICATION_SCHEMA, CONTEXT_SCHEMA, ClarificationDraft,
     ExperimentVariantRequest, ExternalContextDraft, LEARNING_RAMP_SCHEMA, ORIENTATION_SCHEMA,
-    OrientationDraft, STRUCTURE_SCHEMA, StructureDraft,
+    OrientationDraft, STRUCTURE_SCHEMA, StructureDraft, openrouter,
     prefetch::{PrefetchedPaperContext, clarification_context},
-    spend::{SpendLedger, SpendRecord, completion_cost},
+    spend::SpendLedger,
 };
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(20 * 60);
@@ -32,10 +32,8 @@ const CODEX_FAST_MODEL: &str = "gpt-5.6-luna";
 const CLAUDE_FAST_MODEL: &str = "haiku";
 const CODEX_PRIMARY_MODEL: &str = "gpt-5.6-terra";
 const CODEX_CONTEXT_MODEL: &str = "gpt-6-astra";
-/// `OpenRouter`'s chat completions endpoint.
-const OPENROUTER_URL: &str = "https://openrouter.ai/api/v1/chat/completions";
 /// The `OpenRouter` model that drives pi sessions.
-const OPENROUTER_MODEL: &str = "deepseek/deepseek-v4.1-flash";
+const OPENROUTER_MODEL: &str = openrouter::DEFAULT_MODEL;
 const PREFETCH_FILENAME: &str = "analysis-context.json";
 const CACHE_MANIFEST_FILENAME: &str = "analysis-stage-cache.json";
 const ORIENTATION_CACHE_FILENAME: &str = "analysis-orientation.json";
@@ -944,80 +942,24 @@ impl LocalCliAnalyzer {
 
     /// One chat completion through `OpenRouter`, billed to the spend ledger.
     async fn run_openrouter(&self, request: AgentRequest<'_>) -> Result<AgentOutput> {
-        let api_key = std::env::var("OPENROUTER_API_KEY")
-            .ok()
-            .filter(|value| !value.is_empty())
-            .ok_or_else(|| Error::ProgramUnavailable("OPENROUTER_API_KEY".to_owned()))?;
-        self.spend.ensure_available()?;
         let schema: serde_json::Value = serde_json::from_str(request.schema)?;
-        let body = serde_json::json!({
-            "model": OPENROUTER_MODEL,
-            "messages": [{"role": "user", "content": request.prompt}],
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {"name": "result", "strict": true, "schema": schema},
+        let parts = [openrouter::ContentPart::Text(request.prompt.to_owned())];
+        let completion = openrouter::complete(
+            &openrouter::client(self.timeout)?,
+            &self.spend,
+            &openrouter::ChatRequest {
+                model: OPENROUTER_MODEL,
+                parts: &parts,
+                schema: &schema,
+                stage: request.stage,
+                max_tokens: None,
+                reasoning: None,
+                provider_order: &[],
             },
-        });
-        let client = reqwest::Client::builder()
-            .timeout(self.timeout)
-            .build()
-            .map_err(|error| {
-                Error::Task(format!("could not build the OpenRouter HTTP client: {error}"))
-            })?;
-        let response = client
-            .post(OPENROUTER_URL)
-            .bearer_auth(api_key)
-            .header(reqwest::header::CONTENT_TYPE, "application/json")
-            .header("HTTP-Referer", "https://github.com/tjmisko/lysilogy")
-            .header("X-Title", "Lysilogy")
-            .body(serde_json::to_vec(&body)?)
-            .send()
-            .await
-            .map_err(|error| Error::Task(format!("OpenRouter request failed: {error}")))?;
-        let status = response.status();
-        let text = response.text().await.map_err(|error| {
-            Error::Task(format!("OpenRouter response could not be read: {error}"))
-        })?;
-        if !status.is_success() {
-            return Err(Error::Task(format!(
-                "OpenRouter returned {status}: {}",
-                truncate_error(&text)
-            )));
-        }
-        let value: serde_json::Value = serde_json::from_str(&text)?;
-        let content = value
-            .get("choices")
-            .and_then(|choices| choices.get(0))
-            .and_then(|choice| choice.get("message"))
-            .and_then(|message| message.get("content"))
-            .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| {
-                Error::InvalidAnalysis("OpenRouter returned no message content".to_owned())
-            })?;
-        let usage = value.get("usage");
-        let prompt_tokens = usage
-            .and_then(|usage| usage.get("prompt_tokens"))
-            .and_then(serde_json::Value::as_u64)
-            .unwrap_or(0);
-        let completion_tokens = usage
-            .and_then(|usage| usage.get("completion_tokens"))
-            .and_then(serde_json::Value::as_u64)
-            .unwrap_or(0);
-        let cost = usage
-            .and_then(|usage| usage.get("cost"))
-            .and_then(serde_json::Value::as_f64)
-            .filter(|cost| *cost > 0.0)
-            .unwrap_or_else(|| completion_cost(prompt_tokens, completion_tokens));
-        self.spend.record(&SpendRecord {
-            at: Utc::now(),
-            stage: request.stage.to_owned(),
-            model: OPENROUTER_MODEL.to_owned(),
-            prompt_tokens,
-            completion_tokens,
-            cost_usd: cost,
-        })?;
+        )
+        .await?;
         Ok(AgentOutput {
-            result: content.as_bytes().to_vec(),
+            result: completion.parsed.content.into_bytes(),
             session_id: None,
         })
     }

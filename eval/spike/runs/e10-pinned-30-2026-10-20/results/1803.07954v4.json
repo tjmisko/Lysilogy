@@ -1,0 +1,2292 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T05:46:45.101069275Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1803.07954v4.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 12,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "length",
+      "prompt_tokens": 20842,
+      "cached_tokens": 0,
+      "completion_tokens": 65536,
+      "reasoning_tokens": 14296,
+      "cost_usd": 0.030443,
+      "cost_source": "reported",
+      "latency_s": 348.274222789
+    },
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 20842,
+      "cached_tokens": 20736,
+      "completion_tokens": 20995,
+      "reasoning_tokens": 12079,
+      "cost_usd": 0.0089198312,
+      "cost_source": "reported",
+      "latency_s": 137.478205016
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 27221,
+      "cached_tokens": 384,
+      "completion_tokens": 4045,
+      "reasoning_tokens": 3750,
+      "cost_usd": 0.0054576928,
+      "cost_source": "reported",
+      "latency_s": 37.488173582
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 5537,
+      "cached_tokens": 0,
+      "completion_tokens": 1215,
+      "reasoning_tokens": 1156,
+      "cost_usd": 0.00128548,
+      "cost_source": "reported",
+      "latency_s": 11.345937026
+    }
+  ],
+  "totals": {
+    "calls": 4,
+    "prompt_tokens": 74442,
+    "cached_tokens": 21120,
+    "completion_tokens": 91791,
+    "cost_usd": 0.046106004,
+    "model_latency_s": 534.586538413,
+    "wall_s": 537.881150539
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e10-pinned-30-2026-10-20/results/1803.07954v4.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Applications in machine learning, optimization, and control require the sequential selection of a few system elements, such as sensors, data, or actuators, to optimize the system performance across multiple time steps. However, in failure-prone and adversarial environments, sensors get attacked, data get deleted, and actuators fail. Thence, traditional sequential design paradigms become insufficient and, in contrast, resilient sequential designs that adapt against system-wide attacks, deletions, or failures become important. In general, resilient sequential design problems are computationally hard. Also, even though they often involve objective functions that are monotone and (possibly) submodular, no scalable approximation algorithms are known for their solution. In this paper, we provide the first scalable algorithm, that achieves the following characteristics: system-wide resiliency, i.e., the algorithm is valid for any number of denial-ofservice attacks, deletions, or failures; adaptiveness, i.e., at each time step, the algorithm selects system elements based on the history of inflicted attacks, deletions, or failures; and provable approximation performance, i.e., the algorithm guarantees for monotone objective functions a solution close to the optimal. We quantify the algorithm’s approximation performance using a notion of curvature for monotone (not necessarily submodular) set functions. Finally, we support our theoretical analyses with simulated experiments, by considering a control-aware sensor scheduling scenario, namely, sensing-constrained robot navigation."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "state-of-the-art greedy/local greedy algorithms for monotone submodular maximization and curvature-based approximation",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6]."
+              }
+            ],
+            "reference_key": "11",
+            "why": "Algorithm 1 reduces to the local greedy algorithm when there are no removals, and it inherits curvature-based greedy guarantees."
+          },
+          {
+            "cited_work": "single-step resilient optimization and memoryless resilient optimization",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks."
+              }
+            ],
+            "reference_key": "21-24",
+            "why": "It extends resilient optimization from single-step or memoryless settings to multi-step adaptive sequential maximization against worst-case removals."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "Tzoumas et al. sensing-constrained robot navigation simulation setup",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 6,
+                "quote": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B]."
+              }
+            ],
+            "reference_key": "2",
+            "why": "The numerical experiments reuse the same UAV LQG sensor-scheduling instance from prior work."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "traditional sequential design paradigms in failure-prone and adversarial environments",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Thence, traditional sequential design paradigms become insufficient and, in contrast, resilient sequential designs that adapt against system-wide attacks, deletions, or failures become important."
+              }
+            ],
+            "reference_key": null,
+            "why": "The paper argues that existing non-resilient sequential designs cannot handle attacked sensors, deleted data, or failed actuators."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "We formalize the problem of resilient monotone sequential maximization against denialof-service removals, per eq. (2). This is the first work to formalize, address, and motivate this problem."
+          }
+        ],
+        "text": "The paper formalizes resilient monotone sequential maximization and provides the first adaptive greedy algorithm with system-wide resiliency and curvature-dependent approximation guarantees."
+      }
+    },
+    "citations": [
+      {
+        "context": "Problems in machine learning, optimization, and control [1]–[9] require the design of systems in applications such as:",
+        "page": 1,
+        "reference_key": "1-9"
+      },
+      {
+        "context": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+        "page": 1,
+        "reference_key": "10"
+      },
+      {
+        "context": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+        "page": 1,
+        "reference_key": "11"
+      },
+      {
+        "context": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+        "page": 1,
+        "reference_key": "12"
+      },
+      {
+        "context": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+        "page": 1,
+        "reference_key": "13"
+      },
+      {
+        "context": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+        "page": 1,
+        "reference_key": "14"
+      },
+      {
+        "context": "In more detail, the problem in eq. (2) may be interpreted as a T -stage perfect information sequential game between two players [15, Chapter 4], namely, a “maximization” player (designer), and a “minimization” player (attacker), who play",
+        "page": 1,
+        "reference_key": "15"
+      },
+      {
+        "context": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+        "page": 2,
+        "reference_key": "16-20"
+      },
+      {
+        "context": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+        "page": 2,
+        "reference_key": "21-23"
+      },
+      {
+        "context": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+        "page": 2,
+        "reference_key": "24"
+      },
+      {
+        "context": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+        "page": 2,
+        "reference_key": "25"
+      },
+      {
+        "context": "Hence, the problem in eq. (2) aims to protect the system performance over extended periods of time against real-time denial-of-service attacks or failures, which is vital in critical applications, such as multi-target surveillance with teams of mobile robots [9].",
+        "page": 2,
+        "reference_key": "9"
+      },
+      {
+        "context": "Definition 3 (Submodularity [26, Proposition 2.1]) Consider any finite set V.",
+        "page": 4,
+        "reference_key": "26"
+      },
+      {
+        "context": "Definition 4 (Curvature of monotone submodular functions [20]) Consider a finite set V, and a non-decreasing submodular set function g: 2V 7→ R such that (without loss of generality) for any element v ∈ V, it is g(v) 6= 0.",
+        "page": 4,
+        "reference_key": "20"
+      },
+      {
+        "context": "Definition 5 (Total curvature of non-decreasing functions [27, Section 8]) Consider a finite set V, and a monotone set function g: 2V 7→ R.",
+        "page": 4,
+        "reference_key": "27"
+      },
+      {
+        "context": "notably, although it is known for the problem of (non-resilient) set function maximization that the approximation bound (1 − cf) is tight [27, Theorem 8.6], the tightness of the bound (1−cf)5 in ineq. (8) for Problem 1 is an open problem.",
+        "page": 5,
+        "reference_key": "27"
+      },
+      {
+        "context": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+        "page": 5,
+        "reference_key": "17"
+      },
+      {
+        "context": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+        "page": 5,
+        "reference_key": "28"
+      },
+      {
+        "context": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+        "page": 5,
+        "reference_key": "29"
+      },
+      {
+        "context": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+        "page": 5,
+        "reference_key": "30"
+      },
+      {
+        "context": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+        "page": 5,
+        "reference_key": "2"
+      },
+      {
+        "context": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6].",
+        "page": 5,
+        "reference_key": "11"
+      },
+      {
+        "context": "In particular, such algorithms for (non-resilient) multi-step set function optimization [11, Section 4] [27, Section 8] terminate with O(|Vt|(αt − βt)) evaluations of the objective function f per maximization step t = 1,..., T, and Algorithm 1 also terminates with O(|Vt|(αt − βt)) evaluations of the objective function f per maximization step t = 1,..., T.",
+        "page": 5,
+        "reference_key": "27"
+      },
+      {
+        "context": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B].",
+        "page": 6,
+        "reference_key": "2"
+      },
+      {
+        "context": "Given a time horizon T for landing, in [2] it is proven that the UAV selects an optimal sensor schedule and generates an optimal LQG control input with cost matrices Q and R if it selects the sensors set St to activate at each time t = 1,..., T by minimizing an objective function of the form:",
+        "page": 6,
+        "reference_key": "2"
+      },
+      {
+        "context": "Our curvature-dependent characterizations complement the current knowledge on the curvature’s effect on the approximability of simpler problems, such as of non-sequential resilient maximization [22], [23], and of nonresilient maximization [17], [18], [20].",
+        "page": 7,
+        "reference_key": "22,23,17,18,20"
+      },
+      {
+        "context": "Future work in theory includes the extension of our results to matroid constraints, to enable applications of set coverage and of network design [34], [35].",
+        "page": 7,
+        "reference_key": "34,35"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": null,
+          "name": "Vasileios Tzoumas"
+        },
+        {
+          "affiliation": null,
+          "name": "Ali Jadbabaie"
+        },
+        {
+          "affiliation": null,
+          "name": "George J. Pappas"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Resilient Monotone Sequential Maximization"
+        },
+        {
+          "page": 1,
+          "quote": "Vasileios Tzoumas,1 Ali Jadbabaie,2 George J. Pappas1"
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:1803.07954v4[stat.ML]16Dec2020"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1803.07954v4[stat.ML]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Resilient Monotone Sequential Maximization",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this paper, we provide the first scalable algorithm, that achieves the following characteristics: system-wide resiliency, i.e., the algorithm is valid for any number of denial-ofservice attacks, deletions, or failures; adaptiveness, i.e., at each time step, the algorithm selects system elements based on the history of inflicted attacks, deletions, or failures; and provable approximation performance, i.e., the algorithm guarantees for monotone objective functions a solution close to the optimal."
+        }
+      ],
+      "text": "How can one design a scalable adaptive algorithm for monotone (possibly submodular) sequential maximization that remains resilient to worst-case attacks, deletions, or failures over multiple time steps and still has provable approximation performance?"
+    },
+    "references": [
+      {
+        "authors": [
+          "D. Golovin",
+          "A. Krause"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 7,
+        "title": "Adaptive submodularity: Theory and applications in active learning and stochastic optimization",
+        "venue": "Journal of Artificial Intelligence Research",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "V. Tzoumas",
+          "L. Carlone",
+          "G. J. Pappas",
+          "A. Jadbabaie"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 7,
+        "title": "Control and Sensing Co-design",
+        "venue": "ArXiv e-prints: 1802.08376",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "A. Clark",
+          "L. Bushnell",
+          "R. Poovendran"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 7,
+        "title": "A supermodular optimization framework for leader selection under link noise in linear multi-agent systems",
+        "venue": "IEEE Trans. on Aut. Contr.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "A. Das",
+          "D. Kempe"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 7,
+        "title": "Submodular meets spectral: Greedy algorithms for subset selection, sparse approximation and dictionary selection",
+        "venue": "International Conference on Machine Learning",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "R. Khanna",
+          "E. Elenberg",
+          "A. Dimakis",
+          "S. Negahban",
+          "J. Ghosh"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 7,
+        "title": "Scalable greedy feature selection via weak submodularity",
+        "venue": "Artificial Intelligence and Statistics",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "E. J. Candes",
+          "J. K. Romberg",
+          "T. Tao"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 7,
+        "title": "Stable signal recovery from incomplete and inaccurate measurements",
+        "venue": "Communications on pure and applied mathematics",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "C. Boutsidis",
+          "M. W. Mahoney",
+          "P. Drineas"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 7,
+        "title": "An improved approximation algorithm for the column subset selection problem",
+        "venue": "ACM-SIAM Symposium on Discrete algorithms",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Y. Zhao",
+          "F. Pasqualetti",
+          "J. Cortés"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 7,
+        "title": "Scheduling of control nodes for improved network controllability",
+        "venue": "IEEE 55th Conference on Decision and Control",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "P. Tokekar",
+          "V. Isler",
+          "A. Franchi"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 7,
+        "title": "Multi-target visual tracking with aerial robots",
+        "venue": "IEEE/RSJ International Conference on Intelligent Robots and Systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "U. Feige"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 7,
+        "title": "A threshold of ln(n) for approximating set cover",
+        "venue": "Journal of the ACM",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "M. L. Fisher",
+          "G. L. Nemhauser",
+          "L. A. Wolsey"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 7,
+        "title": "An analysis of approximations for maximizing submodular set functions – II",
+        "venue": "Polyhedral combinatorics",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "A. D. Wood",
+          "J. A. Stankovic"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 7,
+        "title": "Denial of service in sensor networks",
+        "venue": "Computer",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "B. Mirzasoleiman",
+          "A. Karbasi",
+          "A. Krause"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 7,
+        "title": "Deletion-robust submodular maximization: Data summarization with ‘the right to be forgotten’",
+        "venue": "International Conference on Machine Learning",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "A. S. Willsky"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 7,
+        "title": "A survey of design methods for failure detection in dynamic systems",
+        "venue": "Automatica",
+        "year": 1976
+      },
+      {
+        "authors": [
+          "R. B. Myerson"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 7,
+        "title": "Game theory",
+        "venue": "Harvard University Press",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "D. Golovin",
+          "A. Krause"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 7,
+        "title": "Adaptive submodularity: A new approach to active learning and stochastic optimization",
+        "venue": "Annual Conference on Learning Theory",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "R. K. Iyer",
+          "S. Jegelka",
+          "J. A. Bilmes"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 7,
+        "title": "Curvature and optimal algorithms for learning and minimizing submodular functions",
+        "venue": "Advances in Neural Inform. Processing Systems",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. A. Bian",
+          "J. M. Buhmann",
+          "A. Krause",
+          "S. Tschiatschek"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 7,
+        "title": "Guarantees for greedy maximization of non-submodular functions with applications",
+        "venue": "Int. Conf. on Machine Learning",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "G. L. Nemhauser",
+          "L. A. Wolsey"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 7,
+        "title": "Best algorithms for approximating the maximum of a submodular set function",
+        "venue": "Mathematics of operations research",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "M. Conforti",
+          "G. Cornuéjols"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 7,
+        "title": "Submodular set functions, matroids and the greedy algorithm",
+        "venue": "Discrete Applied Mathematics",
+        "year": 1984
+      },
+      {
+        "authors": [
+          "J. B. Orlin",
+          "A. S. Schulz",
+          "R. Udwani"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 7,
+        "title": "Robust monotone submodular function maximization",
+        "venue": "arXiv preprint:1507.06616",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "V. Tzoumas",
+          "K. Gatsis",
+          "A. Jadbabaie",
+          "G. J. Pappas"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 8,
+        "title": "Resilient monotone submodular function maximization",
+        "venue": "IEEE Conference on Decision and Control",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "I. Bogunovic",
+          "J. Zhao",
+          "V. Cevher"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 8,
+        "title": "Robust maximization of non-submodular objectives",
+        "venue": "ArXiv e-prints:1802.07073",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "S. Mitrovic",
+          "I. Bogunovic",
+          "A. Norouzi-Fard",
+          "J. M. Tarnawski",
+          "V. Cevher"
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 8,
+        "title": "Streaming robust submodular maximization",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "E. Kazemi",
+          "M. Zadimoghaddam",
+          "A. Karbasi"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 8,
+        "title": "Deletion-robust submodular maximization at scale",
+        "venue": "ArXiv e-prints:1711.07112",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "G. Nemhauser",
+          "L. Wolsey",
+          "M. Fisher"
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 8,
+        "title": "An analysis of approximations for maximizing submodular set functions – I",
+        "venue": "Mathematical Programming",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "M. Sviridenko",
+          "J. Vondrák",
+          "J. Ward"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 8,
+        "title": "Optimal approximation for submodular and supermodular optimization with bounded curvature",
+        "venue": "Math. of Operations Research",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "——"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 8,
+        "title": "Optimal approximation for submodular and supermodular optimization with bounded curvature",
+        "venue": "Proceedings of the 26th Annual ACM-SIAM Symposium on Discrete Algorithms",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "D. Sharma",
+          "A. Kapoor",
+          "A. Deshpande"
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 8,
+        "title": "On greedy maximization of entropy",
+        "venue": "Inter. Conf. on Machine Learning",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "E. R. Elenberg",
+          "R. Khanna",
+          "A. G. Dimakis",
+          "S. Negahban"
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 8,
+        "title": "Restricted strong convexity implies weak submodularity",
+        "venue": "ArXiv e-prints:1612.00804",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "A. Krause",
+          "A. Singh",
+          "C. Guestrin"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 8,
+        "title": "Near-optimal sensor placements in gaussian processes: Theory, efficient algorithms and empirical studies",
+        "venue": "J.l of Machine Learning Research",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "C. Bishop"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 8,
+        "title": "Pattern recognition and machine learning",
+        "venue": "Springer",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "D. P. Bertsekas"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 8,
+        "title": "Dynamic programming and optimal control, Vol. I",
+        "venue": "Athena Scientific",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "G. Calinescu",
+          "C. Chekuri",
+          "M. Pál",
+          "J. Vondrák"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 8,
+        "title": "Maximizing a monotone submodular function subject to a matroid constraint",
+        "venue": "SIAM Journal on Computing",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "A. Clark",
+          "B. Alomair",
+          "L. Bushnell",
+          "R. Poovendran"
+        ],
+        "doi": null,
+        "key": "35",
+        "page": 8,
+        "title": "Scalable and distributed submodular maximization with matroid constraints",
+        "venue": "International Symposium on Modeling and Optimization in Mobile, Ad Hoc, and Wireless Networks",
+        "year": 2015
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6].",
+        "reference_key": "11",
+        "relation": "extends",
+        "why": "The new algorithm generalizes the local greedy algorithm for non-resilient set function maximization to the resilient sequential setting."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+        "reference_key": "21-23",
+        "relation": "contrasts",
+        "why": "The paper positions multi-step adaptive resilient maximization against single-step and memoryless resilient optimization."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Definition 5 (Total curvature of non-decreasing functions [27, Section 8]) Consider a finite set V, and a monotone set function g: 2V 7→ R.",
+        "reference_key": "27",
+        "relation": "uses_method",
+        "why": "The approximation analysis adopts the total-curvature definition from prior curvature-based submodular optimization."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B].",
+        "reference_key": "2",
+        "relation": "uses_data",
+        "why": "The numerical section reuses the UAV sensor-scheduling simulation instance from prior work."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+        "reference_key": "10",
+        "relation": "uses_method",
+        "why": "The NP-hardness citation grounds the computational difficulty of the underlying sequential set-function optimization problem."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Problem 1 may be interpreted as a T -stage perfect information sequential game between two players [15, Chapter 4], a “maximization” player, and a “minimization” player, who play sequentially, both observing all past actions of all players, and with the “maximization” player starting the game.",
+          "start_page": 1,
+          "start_text": "ABSTRACT"
+        },
+        "summary": "Motivates sequential selection in machine learning, optimization, and control, then formalizes resilient monotone sequential maximization as a max-min sequential problem and a two-player perfect-information game. The introduction also states the main contributions and notation.",
+        "title": "Resilient Monotone Sequential Maximization: Problem and Motivation"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Algorithm 1 constructs At as the union of the previously constructed sets St,1 and St,2.",
+          "start_page": 3,
+          "start_text": "III. ADAPTIVE ALGORITHM FOR PROBLEM 1"
+        },
+        "summary": "Introduces Algorithm 1, its bait set St,1 for worst-case removal, its greedy set St,2 for completing the selection, and the construction At = St,1 ∪ St,2. The algorithm is shown to adapt each decision to the history of prior selections and removals.",
+        "title": "Algorithm 1: Adaptive Greedy Construction"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "Algorithm 1 ensures for all monotone objective functions f that are either submodular or approximately submodular (cf < 1), and for all T ≥ 1, a solution finitely close to the optimal.",
+          "start_page": 4,
+          "start_text": "IV. PERFORMANCE GUARANTEES FOR ALGORITHM 1"
+        },
+        "summary": "Defines modularity, submodularity, curvature κf, and total curvature cf, then states Theorem 1: Algorithm 1 gives approximation bounds (1 − κf)4 for monotone submodular functions and (1 − cf)5 for monotone functions, with O(|Vt|(αt − βt)) evaluations per step. The section discusses low-curvature exactness, no-failure reduction to local greedy, and minimal running time.",
+        "title": "Curvature and Approximation Guarantees"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "Future work in applications includes the experimental testing of the proposed algorithm in applications of motionplanning for multi-target covering with mobile vehicles [9], and in applications of control-aware sensor scheduling for multi-agent autonomous navigation [2], to enable resiliency in critical scenarios of surveillance, and of search and rescue.",
+          "start_page": 6,
+          "start_text": "V. NUMERICAL EXPERIMENTS"
+        },
+        "summary": "Tests Algorithm 1 on sensing-constrained UAV robot navigation with worst-case sensor failures. It compares optimal, random*, greedy, and resilient selections, reports that Algorithm 1 is near-optimal (at least 97% of optimal in the tested scenarios), and closes with conclusions and future work.",
+        "title": "Numerical Validation and Concluding Remarks"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "International Symposium on Modeling and Optimization in Mobile, Ad Hoc, and Wireless Networks, 2015, pp. 435–442.",
+          "start_page": 7,
+          "start_text": "REFERENCES"
+        },
+        "summary": "Bibliographic navigation unit: lists all 35 cited works in order, spanning submodular optimization, robust/resilient maximization, curvature, control, sensing, and related applications.",
+        "title": "References"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "eq. (34) holds for the same reasons as eq. (31).",
+          "start_page": 8,
+          "start_text": "APPENDIX A NOTATION"
+        },
+        "summary": "Appendix setup for proofs: defines marginal-notation f(X|X′), the optimal solution notation, and proves preliminary lemmas relating total curvature to additive inequalities and bounded greedy performance.",
+        "title": "Appendix: Notation and Preliminary Lemmas"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Overall, Algorithm 1 runs in (αt − βt)[|Vt|τf + |Vt|] + |Vt| log(|Vt|) + |Vt| + O(log(|Vt|)) = O(|Vt|(αt − βt)τf) time.",
+          "start_page": 11,
+          "start_text": "APPENDIX C PROOF OF THEOREM 1"
+        },
+        "summary": "Completes the proof of Theorem 1: first proves the (1 − cf)5 bound for monotone functions, then the (1 − κf)4 bound for monotone submodular functions, and finally derives the running-time bound O(|Vt|(αt − βt)τf).",
+        "title": "Appendix: Proof of Theorem 1"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper formalizes a new optimization problem, proposes an algorithm, proves approximation and running-time theorems, and reports numerical simulations.",
+      "value": "theory"
+    }
+  },
+  "pass1_check": {
+    "sites": 42,
+    "verbatim": 40,
+    "near": 1,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/identity/title",
+      "action": "replace",
+      "value_json": "\"Robust and Adaptive Sequential Submodular Optimization\"",
+      "reason": "The paper gives the official accepted-publication title as “Robust and Adaptive Sequential Submodular Optimization”; the draft records the arXiv title instead.",
+      "evidence": [
+        {
+          "quote": "Please cite the paper as: V. Tzoumas, A. Jadbabaie, George J. Pappas, “Robust and Adaptive Sequential Submodular Optimization”, IEEE Transactions on Automatic Control (TAC), in press.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/venue",
+      "action": "replace",
+      "value_json": "\"IEEE Transactions on Automatic Control\"",
+      "reason": "The paper states it is accepted for publication in IEEE Transactions on Automatic Control, not arXiv.",
+      "evidence": [
+        {
+          "quote": "Please cite the paper as: V. Tzoumas, A. Jadbabaie, George J. Pappas, “Robust and Adaptive Sequential Submodular Optimization”, IEEE Transactions on Automatic Control (TAC), in press.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/publication_state",
+      "action": "replace",
+      "value_json": "\"in_press\"",
+      "reason": "The paper is accepted/in press, not merely a preprint.",
+      "evidence": [
+        {
+          "quote": "This paper has been accepted for publication in the IEEE Transactions on Automatic Control.",
+          "page": 1
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/title",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/identity/venue",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/identity/publication_state",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "value does not match the schema: : value is not one of the allowed values"
+    }
+  ],
+  "pass2_check": {
+    "sites": 42,
+    "verbatim": 40,
+    "near": 1,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "repaired_local",
+      "original": "Applications in machine learning, optimization, and control require the sequential selection of a few system elements, such as sensors, data, or actuators, to optimize the system performance across multiple time steps. However, in failure-prone and adversarial environments, sensors get attacked, data get deleted, and actuators fail. Thence, traditional sequential design paradigms become insufficient and, in contrast, resilient sequential designs that adapt against system-wide attacks, deletions, or failures become important. In general, resilient sequential design problems are computationally hard. Also, even though they often involve objective functions that are monotone and (possibly) submodular, no scalable approximation algorithms are known for their solution. In this paper, we provide the first scalable algorithm, that achieves the following characteristics: system-wide resiliency, i.e., the algorithm is valid for any number of denial-ofservice attacks, deletions, or failures; adaptiveness, i.e., at each time step, the algorithm selects system elements based on the history of inflicted attacks, deletions, or failures; and provable approximation performance, i.e., the algorithm guarantees for monotone objective functions a solution close to the optimal. We quantify the algorithm’s approximation performance using a notion of curvature for monotone (not necessarily submodular) set functions. Finally, we support our theoretical analyses with simulated experiments, by considering a control-aware sensor scheduling scenario, namely, sensing-constrained robot navigation.",
+      "admitted": "Abstract—Applications in machine learning, optimization, and control require the sequential selection of a few system elements, such as sensors, data, or actuators, to optimize the system performance across multiple time steps. However, in failure-prone and adversarial environments, sensors get attacked, data get deleted, and actuators fail. Thence, traditional sequential design paradigms become insufficient and, in contrast, resilient sequential designs that adapt against system-wide attacks, deletions, or failures become important. In general, resilient sequential design problems are computationally hard. Also, even though they often involve objective functions that are monotone and (possibly) submodular, no scalable approximation algorithms are known for their solution. In this paper, we provide the first scalable algorithm, that achieves the following characteristics: system-wide resiliency, i.e., the algorithm is valid for any number of denial-ofservice attacks, deletions, or failures; adaptiveness, i.e., at each time step, the algorithm selects system elements based on the history of inflicted attacks, deletions, or failures; and provable approximation performance, i.e., the algorithm guarantees for monotone objective functions a solution close to the optimal. We quantify the algorithm’s approximation performance using a notion of curvature for monotone (not necessarily submodular) set functions. Finally, we support our theoretical analyses with simulated experiments, by considering a control-aware sensor scheduling scenario, namely, sensing-constrained robot navigation.",
+      "similarity": 0.9951923076923077,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6].",
+      "admitted": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6].",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "admitted": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/replications/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B].",
+      "admitted": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Thence, traditional sequential design paradigms become insufficient and, in contrast, resilient sequential designs that adapt against system-wide attacks, deletions, or failures become important.",
+      "admitted": "Thence, traditional sequential design paradigms become insufficient and, in contrast, resilient sequential designs that adapt against system-wide attacks, deletions, or failures become important.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We formalize the problem of resilient monotone sequential maximization against denialof-service removals, per eq. (2). This is the first work to formalize, address, and motivate this problem.",
+      "admitted": "We formalize the problem of resilient monotone sequential maximization against denialof-service removals, per eq. (2). This is the first work to formalize, address, and motivate this problem.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Resilient Monotone Sequential Maximization",
+      "admitted": "Resilient Monotone Sequential Maximization",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Vasileios Tzoumas,1 Ali Jadbabaie,2 George J. Pappas1",
+      "admitted": "Vasileios Tzoumas,1 Ali Jadbabaie,2 George J. Pappas1",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/2/quote",
+      "status": "verbatim",
+      "original": "arXiv:1803.07954v4[stat.ML]16Dec2020",
+      "admitted": "arXiv:1803.07954v4[stat.ML]16Dec2020",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper, we provide the first scalable algorithm, that achieves the following characteristics: system-wide resiliency, i.e., the algorithm is valid for any number of denial-ofservice attacks, deletions, or failures; adaptiveness, i.e., at each time step, the algorithm selects system elements based on the history of inflicted attacks, deletions, or failures; and provable approximation performance, i.e., the algorithm guarantees for monotone objective functions a solution close to the optimal.",
+      "admitted": "In this paper, we provide the first scalable algorithm, that achieves the following characteristics: system-wide resiliency, i.e., the algorithm is valid for any number of denial-ofservice attacks, deletions, or failures; adaptiveness, i.e., at each time step, the algorithm selects system elements based on the history of inflicted attacks, deletions, or failures; and provable approximation performance, i.e., the algorithm guarantees for monotone objective functions a solution close to the optimal.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "Problems in machine learning, optimization, and control [1]–[9] require the design of systems in applications such as:",
+      "admitted": "Problems in machine learning, optimization, and control [1]–[9] require the design of systems in applications such as:",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+      "admitted": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+      "admitted": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+      "admitted": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+      "admitted": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+      "admitted": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "In more detail, the problem in eq. (2) may be interpreted as a T -stage perfect information sequential game between two players [15, Chapter 4], namely, a “maximization” player (designer), and a “minimization” player (attacker), who play",
+      "admitted": "In more detail, the problem in eq. (2) may be interpreted as a T -stage perfect information sequential game between two players [15, Chapter 4], namely, a “maximization” player (designer), and a “minimization” player (attacker), who play",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "admitted": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "admitted": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "admitted": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "admitted": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "Hence, the problem in eq. (2) aims to protect the system performance over extended periods of time against real-time denial-of-service attacks or failures, which is vital in critical applications, such as multi-target surveillance with teams of mobile robots [9].",
+      "admitted": "Hence, the problem in eq. (2) aims to protect the system performance over extended periods of time against real-time denial-of-service attacks or failures, which is vital in critical applications, such as multi-target surveillance with teams of mobile robots [9].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "Definition 3 (Submodularity [26, Proposition 2.1]) Consider any finite set V.",
+      "admitted": "Definition 3 (Submodularity [26, Proposition 2.1]) Consider any finite set V.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "Definition 4 (Curvature of monotone submodular functions [20]) Consider a finite set V, and a non-decreasing submodular set function g: 2V 7→ R such that (without loss of generality) for any element v ∈ V, it is g(v) 6= 0.",
+      "admitted": "Definition 4 (Curvature of monotone submodular functions [20]) Consider a finite set V, and a non-decreasing submodular set function g: 2V 7→ R such that (without loss of generality) for any element v ∈ V, it is g(v) 6= 0.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "Definition 5 (Total curvature of non-decreasing functions [27, Section 8]) Consider a finite set V, and a monotone set function g: 2V 7→ R.",
+      "admitted": "Definition 5 (Total curvature of non-decreasing functions [27, Section 8]) Consider a finite set V, and a monotone set function g: 2V 7→ R.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "notably, although it is known for the problem of (non-resilient) set function maximization that the approximation bound (1 − cf) is tight [27, Theorem 8.6], the tightness of the bound (1−cf)5 in ineq. (8) for Problem 1 is an open problem.",
+      "admitted": "notably, although it is known for the problem of (non-resilient) set function maximization that the approximation bound (1 − cf) is tight [27, Theorem 8.6], the tightness of the bound (1−cf)5 in ineq. (8) for Problem 1 is an open problem.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+      "admitted": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+      "admitted": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+      "admitted": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+      "admitted": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+      "admitted": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6].",
+      "admitted": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6].",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "In particular, such algorithms for (non-resilient) multi-step set function optimization [11, Section 4] [27, Section 8] terminate with O(|Vt|(αt − βt)) evaluations of the objective function f per maximization step t = 1,..., T, and Algorithm 1 also terminates with O(|Vt|(αt − βt)) evaluations of the objective function f per maximization step t = 1,..., T.",
+      "admitted": "In particular, such algorithms for (non-resilient) multi-step set function optimization [11, Section 4] [27, Section 8] terminate with O(|Vt|(αt − βt)) evaluations of the objective function f per maximization step t = 1,..., T, and Algorithm 1 also terminates with O(|Vt|(αt − βt)) evaluations of the objective function f per maximization step t = 1,..., T.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B].",
+      "admitted": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "Given a time horizon T for landing, in [2] it is proven that the UAV selects an optimal sensor schedule and generates an optimal LQG control input with cost matrices Q and R if it selects the sensors set St to activate at each time t = 1,..., T by minimizing an objective function of the form:",
+      "admitted": "Given a time horizon T for landing, in [2] it is proven that the UAV selects an optimal sensor schedule and generates an optimal LQG control input with cost matrices Q and R if it selects the sensors set St to activate at each time t = 1,..., T by minimizing an objective function of the form:",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "verbatim",
+      "original": "Our curvature-dependent characterizations complement the current knowledge on the curvature’s effect on the approximability of simpler problems, such as of non-sequential resilient maximization [22], [23], and of nonresilient maximization [17], [18], [20].",
+      "admitted": "Our curvature-dependent characterizations complement the current knowledge on the curvature’s effect on the approximability of simpler problems, such as of non-sequential resilient maximization [22], [23], and of nonresilient maximization [17], [18], [20].",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "dropped",
+      "original": "Future work in theory includes the extension of our results to matroid constraints, to enable applications of set coverage and of network design [34], [35].",
+      "admitted": null,
+      "similarity": 0.64,
+      "cited_page": 7,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6].",
+      "admitted": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6].",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "admitted": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "Definition 5 (Total curvature of non-decreasing functions [27, Section 8]) Consider a finite set V, and a monotone set function g: 2V 7→ R.",
+      "admitted": "Definition 5 (Total curvature of non-decreasing functions [27, Section 8]) Consider a finite set V, and a monotone set function g: 2V 7→ R.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B].",
+      "admitted": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+      "admitted": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    }
+  ],
+  "admission_counts": {
+    "dropped": 1,
+    "repaired_local": 1,
+    "verbatim": 40
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Abstract—Applications in machine learning, optimization, and control require the sequential selection of a few system elements, such as sensors, data, or actuators, to optimize the system performance across multiple time steps. However, in failure-prone and adversarial environments, sensors get attacked, data get deleted, and actuators fail. Thence, traditional sequential design paradigms become insufficient and, in contrast, resilient sequential designs that adapt against system-wide attacks, deletions, or failures become important. In general, resilient sequential design problems are computationally hard. Also, even though they often involve objective functions that are monotone and (possibly) submodular, no scalable approximation algorithms are known for their solution. In this paper, we provide the first scalable algorithm, that achieves the following characteristics: system-wide resiliency, i.e., the algorithm is valid for any number of denial-ofservice attacks, deletions, or failures; adaptiveness, i.e., at each time step, the algorithm selects system elements based on the history of inflicted attacks, deletions, or failures; and provable approximation performance, i.e., the algorithm guarantees for monotone objective functions a solution close to the optimal. We quantify the algorithm’s approximation performance using a notion of curvature for monotone (not necessarily submodular) set functions. Finally, we support our theoretical analyses with simulated experiments, by considering a control-aware sensor scheduling scenario, namely, sensing-constrained robot navigation."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "state-of-the-art greedy/local greedy algorithms for monotone submodular maximization and curvature-based approximation",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6]."
+              }
+            ],
+            "reference_key": "11",
+            "why": "Algorithm 1 reduces to the local greedy algorithm when there are no removals, and it inherits curvature-based greedy guarantees."
+          },
+          {
+            "cited_work": "single-step resilient optimization and memoryless resilient optimization",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks."
+              }
+            ],
+            "reference_key": "21-24",
+            "why": "It extends resilient optimization from single-step or memoryless settings to multi-step adaptive sequential maximization against worst-case removals."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "Tzoumas et al. sensing-constrained robot navigation simulation setup",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 6,
+                "quote": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B]."
+              }
+            ],
+            "reference_key": "2",
+            "why": "The numerical experiments reuse the same UAV LQG sensor-scheduling instance from prior work."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "traditional sequential design paradigms in failure-prone and adversarial environments",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Thence, traditional sequential design paradigms become insufficient and, in contrast, resilient sequential designs that adapt against system-wide attacks, deletions, or failures become important."
+              }
+            ],
+            "reference_key": null,
+            "why": "The paper argues that existing non-resilient sequential designs cannot handle attacked sensors, deleted data, or failed actuators."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "We formalize the problem of resilient monotone sequential maximization against denialof-service removals, per eq. (2). This is the first work to formalize, address, and motivate this problem."
+          }
+        ],
+        "text": "The paper formalizes resilient monotone sequential maximization and provides the first adaptive greedy algorithm with system-wide resiliency and curvature-dependent approximation guarantees."
+      }
+    },
+    "citations": [
+      {
+        "context": "Problems in machine learning, optimization, and control [1]–[9] require the design of systems in applications such as:",
+        "page": 1,
+        "reference_key": "1-9"
+      },
+      {
+        "context": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+        "page": 1,
+        "reference_key": "10"
+      },
+      {
+        "context": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+        "page": 1,
+        "reference_key": "11"
+      },
+      {
+        "context": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+        "page": 1,
+        "reference_key": "12"
+      },
+      {
+        "context": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+        "page": 1,
+        "reference_key": "13"
+      },
+      {
+        "context": "But in all the above critical applications, sensors can get cyber-attacked [12]; data can get deleted [13]; and actuators can fail [14].",
+        "page": 1,
+        "reference_key": "14"
+      },
+      {
+        "context": "In more detail, the problem in eq. (2) may be interpreted as a T -stage perfect information sequential game between two players [15, Chapter 4], namely, a “maximization” player (designer), and a “minimization” player (attacker), who play",
+        "page": 1,
+        "reference_key": "15"
+      },
+      {
+        "context": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+        "page": 2,
+        "reference_key": "16-20"
+      },
+      {
+        "context": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+        "page": 2,
+        "reference_key": "21-23"
+      },
+      {
+        "context": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+        "page": 2,
+        "reference_key": "24"
+      },
+      {
+        "context": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+        "page": 2,
+        "reference_key": "25"
+      },
+      {
+        "context": "Hence, the problem in eq. (2) aims to protect the system performance over extended periods of time against real-time denial-of-service attacks or failures, which is vital in critical applications, such as multi-target surveillance with teams of mobile robots [9].",
+        "page": 2,
+        "reference_key": "9"
+      },
+      {
+        "context": "Definition 3 (Submodularity [26, Proposition 2.1]) Consider any finite set V.",
+        "page": 4,
+        "reference_key": "26"
+      },
+      {
+        "context": "Definition 4 (Curvature of monotone submodular functions [20]) Consider a finite set V, and a non-decreasing submodular set function g: 2V 7→ R such that (without loss of generality) for any element v ∈ V, it is g(v) 6= 0.",
+        "page": 4,
+        "reference_key": "20"
+      },
+      {
+        "context": "Definition 5 (Total curvature of non-decreasing functions [27, Section 8]) Consider a finite set V, and a monotone set function g: 2V 7→ R.",
+        "page": 4,
+        "reference_key": "27"
+      },
+      {
+        "context": "notably, although it is known for the problem of (non-resilient) set function maximization that the approximation bound (1 − cf) is tight [27, Theorem 8.6], the tightness of the bound (1−cf)5 in ineq. (8) for Problem 1 is an open problem.",
+        "page": 5,
+        "reference_key": "27"
+      },
+      {
+        "context": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+        "page": 5,
+        "reference_key": "17"
+      },
+      {
+        "context": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+        "page": 5,
+        "reference_key": "28"
+      },
+      {
+        "context": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+        "page": 5,
+        "reference_key": "29"
+      },
+      {
+        "context": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+        "page": 5,
+        "reference_key": "30"
+      },
+      {
+        "context": "Classes of functions f with κf < 1 are the concave over modular functions [17, Section 2.1], and the log det of positive-definite matrices [28], [29]. Classes of functions f with cf < 1 are support selection functions [30], and estimation error metrics such as the average minimum square error of the Kalman filter [2, Theorem 4]",
+        "page": 5,
+        "reference_key": "2"
+      },
+      {
+        "context": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6].",
+        "page": 5,
+        "reference_key": "11"
+      },
+      {
+        "context": "In particular, such algorithms for (non-resilient) multi-step set function optimization [11, Section 4] [27, Section 8] terminate with O(|Vt|(αt − βt)) evaluations of the objective function f per maximization step t = 1,..., T, and Algorithm 1 also terminates with O(|Vt|(αt − βt)) evaluations of the objective function f per maximization step t = 1,..., T.",
+        "page": 5,
+        "reference_key": "27"
+      },
+      {
+        "context": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B].",
+        "page": 6,
+        "reference_key": "2"
+      },
+      {
+        "context": "Given a time horizon T for landing, in [2] it is proven that the UAV selects an optimal sensor schedule and generates an optimal LQG control input with cost matrices Q and R if it selects the sensors set St to activate at each time t = 1,..., T by minimizing an objective function of the form:",
+        "page": 6,
+        "reference_key": "2"
+      },
+      {
+        "context": "Our curvature-dependent characterizations complement the current knowledge on the curvature’s effect on the approximability of simpler problems, such as of non-sequential resilient maximization [22], [23], and of nonresilient maximization [17], [18], [20].",
+        "page": 7,
+        "reference_key": "22,23,17,18,20"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": null,
+          "name": "Vasileios Tzoumas"
+        },
+        {
+          "affiliation": null,
+          "name": "Ali Jadbabaie"
+        },
+        {
+          "affiliation": null,
+          "name": "George J. Pappas"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Resilient Monotone Sequential Maximization"
+        },
+        {
+          "page": 1,
+          "quote": "Vasileios Tzoumas,1 Ali Jadbabaie,2 George J. Pappas1"
+        },
+        {
+          "page": 1,
+          "quote": "arXiv:1803.07954v4[stat.ML]16Dec2020"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1803.07954v4[stat.ML]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Robust and Adaptive Sequential Submodular Optimization",
+      "venue": "IEEE Transactions on Automatic Control",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this paper, we provide the first scalable algorithm, that achieves the following characteristics: system-wide resiliency, i.e., the algorithm is valid for any number of denial-ofservice attacks, deletions, or failures; adaptiveness, i.e., at each time step, the algorithm selects system elements based on the history of inflicted attacks, deletions, or failures; and provable approximation performance, i.e., the algorithm guarantees for monotone objective functions a solution close to the optimal."
+        }
+      ],
+      "text": "How can one design a scalable adaptive algorithm for monotone (possibly submodular) sequential maximization that remains resilient to worst-case attacks, deletions, or failures over multiple time steps and still has provable approximation performance?"
+    },
+    "references": [
+      {
+        "authors": [
+          "D. Golovin",
+          "A. Krause"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 7,
+        "title": "Adaptive submodularity: Theory and applications in active learning and stochastic optimization",
+        "venue": "Journal of Artificial Intelligence Research",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "V. Tzoumas",
+          "L. Carlone",
+          "G. J. Pappas",
+          "A. Jadbabaie"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 7,
+        "title": "Control and Sensing Co-design",
+        "venue": "ArXiv e-prints: 1802.08376",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "A. Clark",
+          "L. Bushnell",
+          "R. Poovendran"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 7,
+        "title": "A supermodular optimization framework for leader selection under link noise in linear multi-agent systems",
+        "venue": "IEEE Trans. on Aut. Contr.",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "A. Das",
+          "D. Kempe"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 7,
+        "title": "Submodular meets spectral: Greedy algorithms for subset selection, sparse approximation and dictionary selection",
+        "venue": "International Conference on Machine Learning",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "R. Khanna",
+          "E. Elenberg",
+          "A. Dimakis",
+          "S. Negahban",
+          "J. Ghosh"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 7,
+        "title": "Scalable greedy feature selection via weak submodularity",
+        "venue": "Artificial Intelligence and Statistics",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "E. J. Candes",
+          "J. K. Romberg",
+          "T. Tao"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 7,
+        "title": "Stable signal recovery from incomplete and inaccurate measurements",
+        "venue": "Communications on pure and applied mathematics",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "C. Boutsidis",
+          "M. W. Mahoney",
+          "P. Drineas"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 7,
+        "title": "An improved approximation algorithm for the column subset selection problem",
+        "venue": "ACM-SIAM Symposium on Discrete algorithms",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Y. Zhao",
+          "F. Pasqualetti",
+          "J. Cortés"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 7,
+        "title": "Scheduling of control nodes for improved network controllability",
+        "venue": "IEEE 55th Conference on Decision and Control",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "P. Tokekar",
+          "V. Isler",
+          "A. Franchi"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 7,
+        "title": "Multi-target visual tracking with aerial robots",
+        "venue": "IEEE/RSJ International Conference on Intelligent Robots and Systems",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "U. Feige"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 7,
+        "title": "A threshold of ln(n) for approximating set cover",
+        "venue": "Journal of the ACM",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "M. L. Fisher",
+          "G. L. Nemhauser",
+          "L. A. Wolsey"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 7,
+        "title": "An analysis of approximations for maximizing submodular set functions – II",
+        "venue": "Polyhedral combinatorics",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "A. D. Wood",
+          "J. A. Stankovic"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 7,
+        "title": "Denial of service in sensor networks",
+        "venue": "Computer",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "B. Mirzasoleiman",
+          "A. Karbasi",
+          "A. Krause"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 7,
+        "title": "Deletion-robust submodular maximization: Data summarization with ‘the right to be forgotten’",
+        "venue": "International Conference on Machine Learning",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "A. S. Willsky"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 7,
+        "title": "A survey of design methods for failure detection in dynamic systems",
+        "venue": "Automatica",
+        "year": 1976
+      },
+      {
+        "authors": [
+          "R. B. Myerson"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 7,
+        "title": "Game theory",
+        "venue": "Harvard University Press",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "D. Golovin",
+          "A. Krause"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 7,
+        "title": "Adaptive submodularity: A new approach to active learning and stochastic optimization",
+        "venue": "Annual Conference on Learning Theory",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "R. K. Iyer",
+          "S. Jegelka",
+          "J. A. Bilmes"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 7,
+        "title": "Curvature and optimal algorithms for learning and minimizing submodular functions",
+        "venue": "Advances in Neural Inform. Processing Systems",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. A. Bian",
+          "J. M. Buhmann",
+          "A. Krause",
+          "S. Tschiatschek"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 7,
+        "title": "Guarantees for greedy maximization of non-submodular functions with applications",
+        "venue": "Int. Conf. on Machine Learning",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "G. L. Nemhauser",
+          "L. A. Wolsey"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 7,
+        "title": "Best algorithms for approximating the maximum of a submodular set function",
+        "venue": "Mathematics of operations research",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "M. Conforti",
+          "G. Cornuéjols"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 7,
+        "title": "Submodular set functions, matroids and the greedy algorithm",
+        "venue": "Discrete Applied Mathematics",
+        "year": 1984
+      },
+      {
+        "authors": [
+          "J. B. Orlin",
+          "A. S. Schulz",
+          "R. Udwani"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 7,
+        "title": "Robust monotone submodular function maximization",
+        "venue": "arXiv preprint:1507.06616",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "V. Tzoumas",
+          "K. Gatsis",
+          "A. Jadbabaie",
+          "G. J. Pappas"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 8,
+        "title": "Resilient monotone submodular function maximization",
+        "venue": "IEEE Conference on Decision and Control",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "I. Bogunovic",
+          "J. Zhao",
+          "V. Cevher"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 8,
+        "title": "Robust maximization of non-submodular objectives",
+        "venue": "ArXiv e-prints:1802.07073",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "S. Mitrovic",
+          "I. Bogunovic",
+          "A. Norouzi-Fard",
+          "J. M. Tarnawski",
+          "V. Cevher"
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 8,
+        "title": "Streaming robust submodular maximization",
+        "venue": "Advances in Neural Information Processing Systems",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "E. Kazemi",
+          "M. Zadimoghaddam",
+          "A. Karbasi"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 8,
+        "title": "Deletion-robust submodular maximization at scale",
+        "venue": "ArXiv e-prints:1711.07112",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "G. Nemhauser",
+          "L. Wolsey",
+          "M. Fisher"
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 8,
+        "title": "An analysis of approximations for maximizing submodular set functions – I",
+        "venue": "Mathematical Programming",
+        "year": 1978
+      },
+      {
+        "authors": [
+          "M. Sviridenko",
+          "J. Vondrák",
+          "J. Ward"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 8,
+        "title": "Optimal approximation for submodular and supermodular optimization with bounded curvature",
+        "venue": "Math. of Operations Research",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "——"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 8,
+        "title": "Optimal approximation for submodular and supermodular optimization with bounded curvature",
+        "venue": "Proceedings of the 26th Annual ACM-SIAM Symposium on Discrete Algorithms",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "D. Sharma",
+          "A. Kapoor",
+          "A. Deshpande"
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 8,
+        "title": "On greedy maximization of entropy",
+        "venue": "Inter. Conf. on Machine Learning",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "E. R. Elenberg",
+          "R. Khanna",
+          "A. G. Dimakis",
+          "S. Negahban"
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 8,
+        "title": "Restricted strong convexity implies weak submodularity",
+        "venue": "ArXiv e-prints:1612.00804",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "A. Krause",
+          "A. Singh",
+          "C. Guestrin"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 8,
+        "title": "Near-optimal sensor placements in gaussian processes: Theory, efficient algorithms and empirical studies",
+        "venue": "J.l of Machine Learning Research",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "C. Bishop"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 8,
+        "title": "Pattern recognition and machine learning",
+        "venue": "Springer",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "D. P. Bertsekas"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 8,
+        "title": "Dynamic programming and optimal control, Vol. I",
+        "venue": "Athena Scientific",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "G. Calinescu",
+          "C. Chekuri",
+          "M. Pál",
+          "J. Vondrák"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 8,
+        "title": "Maximizing a monotone submodular function subject to a matroid constraint",
+        "venue": "SIAM Journal on Computing",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "A. Clark",
+          "B. Alomair",
+          "L. Bushnell",
+          "R. Poovendran"
+        ],
+        "doi": null,
+        "key": "35",
+        "page": 8,
+        "title": "Scalable and distributed submodular maximization with matroid constraints",
+        "venue": "International Symposium on Modeling and Optimization in Mobile, Ad Hoc, and Wireless Networks",
+        "year": 2015
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "In particular, when for all t = 1,..., T it is βt = 0, then Algorithm 1 is the same as the local greedy algorithm, proposed in [11, Section 4] for (nonresilient) set function maximization, whose approximation performance is optimal [27, Theorem 8.6].",
+        "reference_key": "11",
+        "relation": "extends",
+        "why": "The new algorithm generalizes the local greedy algorithm for non-resilient set function maximization to the resilient sequential setting."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "In sum, the problem in eq. (2) goes beyond traditional (nonresilient) optimization [16]–[20] by proposing resilient optimization; beyond single-step resilient optimization [21]–[23] by proposing multi-step (sequential) resilient optimization; beyond memoryless resilient optimization [24] by proposing adaptive resilient optimization; and beyond protection against non-adversarial attacks [13], [25] by proposing protection against worst-case attacks.",
+        "reference_key": "21-23",
+        "relation": "contrasts",
+        "why": "The paper positions multi-step adaptive resilient maximization against single-step and memoryless resilient optimization."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Definition 5 (Total curvature of non-decreasing functions [27, Section 8]) Consider a finite set V, and a monotone set function g: 2V 7→ R.",
+        "reference_key": "27",
+        "relation": "uses_method",
+        "why": "The approximation analysis adopts the total-curvature definition from prior curvature-based submodular optimization."
+      },
+      {
+        "confidence": "high",
+        "page": 6,
+        "quote": "We adopt the same instance of the sensing-constrained robot navigation scenario adopted in [2, Section V.B].",
+        "reference_key": "2",
+        "relation": "uses_data",
+        "why": "The numerical section reuses the UAV sensor-scheduling simulation instance from prior work."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The problem in eq. (1) is combinatorial, and, specifically, it is NPhard [10]; notwithstanding, several approximation algorithms have been proposed for its solution, such as the greedy [11].",
+        "reference_key": "10",
+        "relation": "uses_method",
+        "why": "The NP-hardness citation grounds the computational difficulty of the underlying sequential set-function optimization problem."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Problem 1 may be interpreted as a T -stage perfect information sequential game between two players [15, Chapter 4], a “maximization” player, and a “minimization” player, who play sequentially, both observing all past actions of all players, and with the “maximization” player starting the game.",
+          "start_page": 1,
+          "start_text": "ABSTRACT"
+        },
+        "summary": "Motivates sequential selection in machine learning, optimization, and control, then formalizes resilient monotone sequential maximization as a max-min sequential problem and a two-player perfect-information game. The introduction also states the main contributions and notation.",
+        "title": "Resilient Monotone Sequential Maximization: Problem and Motivation"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "Algorithm 1 constructs At as the union of the previously constructed sets St,1 and St,2.",
+          "start_page": 3,
+          "start_text": "III. ADAPTIVE ALGORITHM FOR PROBLEM 1"
+        },
+        "summary": "Introduces Algorithm 1, its bait set St,1 for worst-case removal, its greedy set St,2 for completing the selection, and the construction At = St,1 ∪ St,2. The algorithm is shown to adapt each decision to the history of prior selections and removals.",
+        "title": "Algorithm 1: Adaptive Greedy Construction"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "Algorithm 1 ensures for all monotone objective functions f that are either submodular or approximately submodular (cf < 1), and for all T ≥ 1, a solution finitely close to the optimal.",
+          "start_page": 4,
+          "start_text": "IV. PERFORMANCE GUARANTEES FOR ALGORITHM 1"
+        },
+        "summary": "Defines modularity, submodularity, curvature κf, and total curvature cf, then states Theorem 1: Algorithm 1 gives approximation bounds (1 − κf)4 for monotone submodular functions and (1 − cf)5 for monotone functions, with O(|Vt|(αt − βt)) evaluations per step. The section discusses low-curvature exactness, no-failure reduction to local greedy, and minimal running time.",
+        "title": "Curvature and Approximation Guarantees"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "Future work in applications includes the experimental testing of the proposed algorithm in applications of motionplanning for multi-target covering with mobile vehicles [9], and in applications of control-aware sensor scheduling for multi-agent autonomous navigation [2], to enable resiliency in critical scenarios of surveillance, and of search and rescue.",
+          "start_page": 6,
+          "start_text": "V. NUMERICAL EXPERIMENTS"
+        },
+        "summary": "Tests Algorithm 1 on sensing-constrained UAV robot navigation with worst-case sensor failures. It compares optimal, random*, greedy, and resilient selections, reports that Algorithm 1 is near-optimal (at least 97% of optimal in the tested scenarios), and closes with conclusions and future work.",
+        "title": "Numerical Validation and Concluding Remarks"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "International Symposium on Modeling and Optimization in Mobile, Ad Hoc, and Wireless Networks, 2015, pp. 435–442.",
+          "start_page": 7,
+          "start_text": "REFERENCES"
+        },
+        "summary": "Bibliographic navigation unit: lists all 35 cited works in order, spanning submodular optimization, robust/resilient maximization, curvature, control, sensing, and related applications.",
+        "title": "References"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "eq. (34) holds for the same reasons as eq. (31).",
+          "start_page": 8,
+          "start_text": "APPENDIX A NOTATION"
+        },
+        "summary": "Appendix setup for proofs: defines marginal-notation f(X|X′), the optimal solution notation, and proves preliminary lemmas relating total curvature to additive inequalities and bounded greedy performance.",
+        "title": "Appendix: Notation and Preliminary Lemmas"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "Overall, Algorithm 1 runs in (αt − βt)[|Vt|τf + |Vt|] + |Vt| log(|Vt|) + |Vt| + O(log(|Vt|)) = O(|Vt|(αt − βt)τf) time.",
+          "start_page": 11,
+          "start_text": "APPENDIX C PROOF OF THEOREM 1"
+        },
+        "summary": "Completes the proof of Theorem 1: first proves the (1 − cf)5 bound for monotone functions, then the (1 − κf)4 bound for monotone submodular functions, and finally derives the running-time bound O(|Vt|(αt − βt)τf).",
+        "title": "Appendix: Proof of Theorem 1"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The paper formalizes a new optimization problem, proposes an algorithm, proves approximation and running-time theorems, and reports numerical simulations.",
+      "value": "theory"
+    }
+  }
+}

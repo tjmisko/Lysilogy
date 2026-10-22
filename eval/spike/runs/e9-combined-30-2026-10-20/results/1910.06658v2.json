@@ -1,0 +1,1413 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T03:25:02.448117689Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1910.06658v2.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 14,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "InferenceNet",
+      "finish_reason": "stop",
+      "prompt_tokens": 10665,
+      "cached_tokens": 256,
+      "completion_tokens": 17302,
+      "reasoning_tokens": 12951,
+      "cost_usd": 0.013445105,
+      "cost_source": "reported",
+      "latency_s": 92.664156442
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 13804,
+      "cached_tokens": 768,
+      "completion_tokens": 5888,
+      "reasoning_tokens": 5108,
+      "cost_usd": 0.010981008,
+      "cost_source": "reported",
+      "latency_s": 26.10933838
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 24469,
+    "cached_tokens": 1024,
+    "completion_tokens": 23190,
+    "cost_usd": 0.024426113,
+    "model_latency_s": 118.773494822,
+    "wall_s": 121.688022101
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e9-combined-30-2026-10-20/results/1910.06658v2.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories. The TNG framework represents the environment as a directed graph composed of deep neural networks. Each vertex of the graph corresponds to a trajectory and is represented by a trajectory identification classifier and a trajectory imitation controller. For trajectory following, we propose the novel use of neural object detection architectures. The edges of TNG correspond to intersections between trajectories and are all represented by a classifier. We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation."
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Bojarski et al., 2016",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network."
+              }
+            ],
+            "reference_key": "10",
+            "why": "It extends imitation-learning navigation by adding graph-based goal direction."
+          },
+          {
+            "cited_work": "Savinov et al., 2018",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal."
+              }
+            ],
+            "reference_key": "13",
+            "why": "It contrasts with metric, topological, and hybrid navigation methods by using minimal localisation for reactive switching."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components."
+          }
+        ],
+        "text": "A topological navigation graph can compose non-goal-directed, imitation-learning trajectory controllers into a goal-directed navigation system for environments with intersecting trajectories."
+      }
+    },
+    "citations": [
+      {
+        "context": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+        "page": 1,
+        "reference_key": "1"
+      },
+      {
+        "context": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+        "page": 1,
+        "reference_key": "2"
+      },
+      {
+        "context": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+        "page": 1,
+        "reference_key": "3"
+      },
+      {
+        "context": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+        "page": 1,
+        "reference_key": "4"
+      },
+      {
+        "context": "On the other side, when humans learn various complex sensorimotor behaviours, including the skill to navigate, adaptivity and imitation play crucial roles [5].",
+        "page": 1,
+        "reference_key": "5"
+      },
+      {
+        "context": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+        "page": 1,
+        "reference_key": "10"
+      },
+      {
+        "context": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+        "page": 1,
+        "reference_key": "14"
+      },
+      {
+        "context": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+        "page": 1,
+        "reference_key": "19"
+      },
+      {
+        "context": "The main contributions of this study include the TNG framework, the application of neural object detection architectures to obtain more robust trajectory imitation, and the experimental evaluation of the suggested algorithms both in a simulator and the real world by using Neurotechnology’s SentiBotics mobile robot development kit [20].",
+        "page": 1,
+        "reference_key": "20"
+      },
+      {
+        "context": "The problem of learning imitation controllers has a long history [7] and is currently being actively researched [10, 21, 15, 16, 22, 14].",
+        "page": 2,
+        "reference_key": "7"
+      },
+      {
+        "context": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+        "page": 2,
+        "reference_key": "10"
+      },
+      {
+        "context": "Trained according to behaviour cloning [18], the regression controller is a neural network model:",
+        "page": 3,
+        "reference_key": "18"
+      },
+      {
+        "context": "Having a training set we obtain parameter estimate θ̂ by minimising the loss function of the ridge regression [27]:",
+        "page": 3,
+        "reference_key": "27"
+      },
+      {
+        "context": "We optimise (2) with the Adam optimisation algorithm [28].",
+        "page": 3,
+        "reference_key": "28"
+      },
+      {
+        "context": "As compared to similar work by [10], where the entire parameter set is optimised, our approach helps to reduce the training duration without affecting the performance.",
+        "page": 3,
+        "reference_key": "10"
+      },
+      {
+        "context": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+        "page": 3,
+        "reference_key": "15"
+      },
+      {
+        "context": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+        "page": 3,
+        "reference_key": "29"
+      },
+      {
+        "context": "Firstly, controllers trained with this approach are highly sensitive to rotational errors; that is, slight deviations from the trajectory may cause cascading errors [18] and eventually drive the robot out of the trajectory with no possibility of self-recovery.",
+        "page": 3,
+        "reference_key": "18"
+      },
+      {
+        "context": "Secondly, the trajectory following performance during execution does not necessarily correlate with the value of offline evaluation over the test set using the loss function [30], hence complicating the model evaluation.",
+        "page": 3,
+        "reference_key": "30"
+      },
+      {
+        "context": "In order to solve the aforementioned problems, we utilize the RetinaNet object detection architecture [31].",
+        "page": 3,
+        "reference_key": "31"
+      },
+      {
+        "context": "Conceptually, our approach is similar to that of [22].",
+        "page": 3,
+        "reference_key": "22"
+      },
+      {
+        "context": "The model used for training is pre-trained on the COCO dataset [32] over the object detection task.",
+        "page": 4,
+        "reference_key": "32"
+      },
+      {
+        "context": "During controller execution, the output of the object detector (i.e. coordinates of the bounding box showing the direction of movement) is coupled with a PID controller [33] to centre a detected bounding box, resulting in trajectory imitation.",
+        "page": 4,
+        "reference_key": "33"
+      },
+      {
+        "context": "The work from [11], which includes a mapper and a planner, advances previous approaches.",
+        "page": 4,
+        "reference_key": "11"
+      },
+      {
+        "context": "Another approach [13], proposes a semi-parametric topological memory (SPTM) architecture for navigation, where the environment is mapped on a non-parametric graph, in which every position is a node.",
+        "page": 4,
+        "reference_key": "13"
+      },
+      {
+        "context": "[34] attempts to tackle the challenge of learning goal-directed policies from data representing a single traversal in an environment spanning over 2 kilometres.",
+        "page": 4,
+        "reference_key": "34"
+      },
+      {
+        "context": "After the shortest path in the TNG between current and target vertices is computed (e.g. by Dijkstra’s algorithm [37]), we can start executing the controllers and classifiers, contained in its vertices and edges, switching them at every intersection connecting towards the goal, recognised by corresponding intersection classifiers until the goal trajectory is reached.",
+        "page": 5,
+        "reference_key": "37"
+      },
+      {
+        "context": "We select MobileNetV2 [25] because it allows us to achieve an acceptable execution speed using low cost embedded neural network inference hardware⁴.",
+        "page": 6,
+        "reference_key": "25"
+      },
+      {
+        "context": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+        "page": 6,
+        "reference_key": "38"
+      },
+      {
+        "context": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+        "page": 6,
+        "reference_key": "39"
+      },
+      {
+        "context": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+        "page": 6,
+        "reference_key": "40"
+      },
+      {
+        "context": "Our implementation of trajectory imitation controllers and TNG is performed with the use of Neurotechnology’s SentiBotics Navigation SDK 3.0 [20].",
+        "page": 6,
+        "reference_key": "20"
+      },
+      {
+        "context": "To compare the performance of trajectory imitation controllers we use percentage autonomy [10] as a controller quality measure:",
+        "page": 7,
+        "reference_key": "10"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "2"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "11"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "3"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "13"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "41"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "34"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "42"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "43"
+      },
+      {
+        "context": "Although the TNG framework is composed of \"black box\" modules, its operation is transparent and easily interpretable at the system level, which can also be regarded as a practical advantage, compared to entirely \"black box\" models (e.g. [11]).",
+        "page": 12,
+        "reference_key": "11"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "",
+          "name": "Povilas Daniušis"
+        },
+        {
+          "affiliation": "",
+          "name": "Shubham Juneja"
+        },
+        {
+          "affiliation": "",
+          "name": "Lukas Valatka"
+        },
+        {
+          "affiliation": "",
+          "name": "Linas Petkevičius"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Topological Navigation Graph Framework∗"
+        },
+        {
+          "page": 1,
+          "quote": "Povilas Daniušis†"
+        },
+        {
+          "page": 1,
+          "quote": "Shubham Juneja"
+        },
+        {
+          "page": 1,
+          "quote": "Lukas Valatka‡"
+        },
+        {
+          "page": 1,
+          "quote": "Linas Petkevičius"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1910.06658v2 [cs.RO]",
+        "doi": ""
+      },
+      "publication_state": "preprint",
+      "subtitle": "A Preprint",
+      "title": "Topological Navigation Graph Framework",
+      "venue": "Autonomous Robots",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components."
+        }
+      ],
+      "text": "How can reactive, non-goal-directed imitation-learning trajectory controllers be utilised for goal-directed autonomous mobile robot navigation?"
+    },
+    "references": [],
+    "relations": [],
+    "sections": [],
+    "type": {
+      "confidence": "medium",
+      "reason": "The paper proposes and evaluates a topological navigation graph framework and its components.",
+      "value": "method"
+    }
+  },
+  "pass1_check": {
+    "sites": 52,
+    "verbatim": 51,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 6
+  },
+  "corrections": [
+    {
+      "path": "/citations/5/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "The cited sentence appears on page 2, not page 1 (page 1 ends at '...recurrent neural network-based solution').",
+      "evidence": [
+        {
+          "quote": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/citations/6/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "The cited sentence appears on page 2, not page 1.",
+      "evidence": [
+        {
+          "quote": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/citations/7/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "The cited sentence appears on page 2, not page 1.",
+      "evidence": [
+        {
+          "quote": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/citations/8/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "The cited sentence appears on page 2, not page 1.",
+      "evidence": [
+        {
+          "quote": "The main contributions of this study include the TNG framework, the application of neural object detection architectures to obtain more robust trajectory imitation, and the experimental evaluation of the suggested algorithms both in a simulator and the real world by using Neurotechnology’s SentiBotics mobile robot development kit [20].",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/card/thesis/evidence/0/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "The supporting quote is located on page 2, not page 1.",
+      "evidence": [
+        {
+          "quote": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components.",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/question/evidence/0/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "The supporting quote is located on page 2, not page 1.",
+      "evidence": [
+        {
+          "quote": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components.",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/references",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft's references array is empty, but the paper contains a References section with 43 numbered entries ([1]–[43]). The reference list needs to be populated.",
+      "evidence": [
+        {
+          "quote": "[1] Sebastian Thrun, Wolfram Burgard, and Dieter Fox. Probabilistic robotics. MIT press, 2005.",
+          "page": 12
+        },
+        {
+          "quote": "[43] M. J. Milford and G. F. Wyeth. Mapping a suburb with a single camera using a biologically inspired slam system. IEEE Trans. Robot., 24(5):1038–1053, Oct 2008.",
+          "page": 14
+        }
+      ]
+    },
+    {
+      "path": "/sections",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The draft's sections array is empty, but the paper has five numbered sections (1 Introduction; 2 Trajectory Imitation Controllers; 3 Topological Navigation Graph (TNG); 4 Empirical Evaluation; 5 Conclusion) plus subsections.",
+      "evidence": [
+        {
+          "quote": "1\nIntroduction",
+          "page": 1
+        },
+        {
+          "quote": "3\nTopological Navigation Graph (TNG)",
+          "page": 4
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/citations/5/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/citations/6/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/citations/7/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/citations/8/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/card/thesis/evidence/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 5,
+      "path": "/question/evidence/0/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 6,
+      "path": "/references",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 7,
+      "path": "/sections",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 52,
+    "verbatim": 51,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories. The TNG framework represents the environment as a directed graph composed of deep neural networks. Each vertex of the graph corresponds to a trajectory and is represented by a trajectory identification classifier and a trajectory imitation controller. For trajectory following, we propose the novel use of neural object detection architectures. The edges of TNG correspond to intersections between trajectories and are all represented by a classifier. We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation.",
+      "admitted": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories. The TNG framework represents the environment as a directed graph composed of deep neural networks. Each vertex of the graph corresponds to a trajectory and is represented by a trajectory identification classifier and a trajectory imitation controller. For trajectory following, we propose the novel use of neural object detection architectures. The edges of TNG correspond to intersections between trajectories and are all represented by a classifier. We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+      "admitted": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "admitted": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components.",
+      "admitted": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Topological Navigation Graph Framework∗",
+      "admitted": "Topological Navigation Graph Framework∗",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Povilas Daniušis†",
+      "admitted": "Povilas Daniušis†",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/2/quote",
+      "status": "verbatim",
+      "original": "Shubham Juneja",
+      "admitted": "Shubham Juneja",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/3/quote",
+      "status": "verbatim",
+      "original": "Lukas Valatka‡",
+      "admitted": "Lukas Valatka‡",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/4/quote",
+      "status": "verbatim",
+      "original": "Linas Petkevičius",
+      "admitted": "Linas Petkevičius",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components.",
+      "admitted": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+      "admitted": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+      "admitted": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+      "admitted": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+      "admitted": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "On the other side, when humans learn various complex sensorimotor behaviours, including the skill to navigate, adaptivity and imitation play crucial roles [5].",
+      "admitted": "On the other side, when humans learn various complex sensorimotor behaviours, including the skill to navigate, adaptivity and imitation play crucial roles [5].",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+      "admitted": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+      "admitted": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+      "admitted": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "The main contributions of this study include the TNG framework, the application of neural object detection architectures to obtain more robust trajectory imitation, and the experimental evaluation of the suggested algorithms both in a simulator and the real world by using Neurotechnology’s SentiBotics mobile robot development kit [20].",
+      "admitted": "The main contributions of this study include the TNG framework, the application of neural object detection architectures to obtain more robust trajectory imitation, and the experimental evaluation of the suggested algorithms both in a simulator and the real world by using Neurotechnology’s SentiBotics mobile robot development kit [20].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "The problem of learning imitation controllers has a long history [7] and is currently being actively researched [10, 21, 15, 16, 22, 14].",
+      "admitted": "The problem of learning imitation controllers has a long history [7] and is currently being actively researched [10, 21, 15, 16, 22, 14].",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+      "admitted": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "Trained according to behaviour cloning [18], the regression controller is a neural network model:",
+      "admitted": "Trained according to behaviour cloning [18], the regression controller is a neural network model:",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "Having a training set we obtain parameter estimate θ̂ by minimising the loss function of the ridge regression [27]:",
+      "admitted": "Having a training set we obtain parameter estimate θ̂ by minimising the loss function of the ridge regression [27]:",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "We optimise (2) with the Adam optimisation algorithm [28].",
+      "admitted": "We optimise (2) with the Adam optimisation algorithm [28].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "As compared to similar work by [10], where the entire parameter set is optimised, our approach helps to reduce the training duration without affecting the performance.",
+      "admitted": "As compared to similar work by [10], where the entire parameter set is optimised, our approach helps to reduce the training duration without affecting the performance.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+      "admitted": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+      "admitted": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "Firstly, controllers trained with this approach are highly sensitive to rotational errors; that is, slight deviations from the trajectory may cause cascading errors [18] and eventually drive the robot out of the trajectory with no possibility of self-recovery.",
+      "admitted": "Firstly, controllers trained with this approach are highly sensitive to rotational errors; that is, slight deviations from the trajectory may cause cascading errors [18] and eventually drive the robot out of the trajectory with no possibility of self-recovery.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "repaired_local",
+      "original": "Secondly, the trajectory following performance during execution does not necessarily correlate with the value of offline evaluation over the test set using the loss function [30], hence complicating the model evaluation.",
+      "admitted": "Thirdly, the trajectory following performance during execution does not necessarily correlate with the value of offline evaluation over the test set using the loss function [30], hence complicating the model evaluation.",
+      "similarity": 0.967741935483871,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "In order to solve the aforementioned problems, we utilize the RetinaNet object detection architecture [31].",
+      "admitted": "In order to solve the aforementioned problems, we utilize the RetinaNet object detection architecture [31].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "Conceptually, our approach is similar to that of [22].",
+      "admitted": "Conceptually, our approach is similar to that of [22].",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "The model used for training is pre-trained on the COCO dataset [32] over the object detection task.",
+      "admitted": "The model used for training is pre-trained on the COCO dataset [32] over the object detection task.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "During controller execution, the output of the object detector (i.e. coordinates of the bounding box showing the direction of movement) is coupled with a PID controller [33] to centre a detected bounding box, resulting in trajectory imitation.",
+      "admitted": "During controller execution, the output of the object detector (i.e. coordinates of the bounding box showing the direction of movement) is coupled with a PID controller [33] to centre a detected bounding box, resulting in trajectory imitation.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "The work from [11], which includes a mapper and a planner, advances previous approaches.",
+      "admitted": "The work from [11], which includes a mapper and a planner, advances previous approaches.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "Another approach [13], proposes a semi-parametric topological memory (SPTM) architecture for navigation, where the environment is mapped on a non-parametric graph, in which every position is a node.",
+      "admitted": "Another approach [13], proposes a semi-parametric topological memory (SPTM) architecture for navigation, where the environment is mapped on a non-parametric graph, in which every position is a node.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "verbatim",
+      "original": "[34] attempts to tackle the challenge of learning goal-directed policies from data representing a single traversal in an environment spanning over 2 kilometres.",
+      "admitted": "[34] attempts to tackle the challenge of learning goal-directed policies from data representing a single traversal in an environment spanning over 2 kilometres.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "verbatim",
+      "original": "After the shortest path in the TNG between current and target vertices is computed (e.g. by Dijkstra’s algorithm [37]), we can start executing the controllers and classifiers, contained in its vertices and edges, switching them at every intersection connecting towards the goal, recognised by corresponding intersection classifiers until the goal trajectory is reached.",
+      "admitted": "After the shortest path in the TNG between current and target vertices is computed (e.g. by Dijkstra’s algorithm [37]), we can start executing the controllers and classifiers, contained in its vertices and edges, switching them at every intersection connecting towards the goal, recognised by corresponding intersection classifiers until the goal trajectory is reached.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "verbatim",
+      "original": "We select MobileNetV2 [25] because it allows us to achieve an acceptable execution speed using low cost embedded neural network inference hardware⁴.",
+      "admitted": "We select MobileNetV2 [25] because it allows us to achieve an acceptable execution speed using low cost embedded neural network inference hardware⁴.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/28/context",
+      "status": "verbatim",
+      "original": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+      "admitted": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/29/context",
+      "status": "verbatim",
+      "original": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+      "admitted": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/30/context",
+      "status": "verbatim",
+      "original": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+      "admitted": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/31/context",
+      "status": "verbatim",
+      "original": "Our implementation of trajectory imitation controllers and TNG is performed with the use of Neurotechnology’s SentiBotics Navigation SDK 3.0 [20].",
+      "admitted": "Our implementation of trajectory imitation controllers and TNG is performed with the use of Neurotechnology’s SentiBotics Navigation SDK 3.0 [20].",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/32/context",
+      "status": "verbatim",
+      "original": "To compare the performance of trajectory imitation controllers we use percentage autonomy [10] as a controller quality measure:",
+      "admitted": "To compare the performance of trajectory imitation controllers we use percentage autonomy [10] as a controller quality measure:",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/33/context",
+      "status": "verbatim",
+      "original": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "admitted": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/34/context",
+      "status": "verbatim",
+      "original": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "admitted": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/35/context",
+      "status": "verbatim",
+      "original": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "admitted": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/36/context",
+      "status": "verbatim",
+      "original": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "admitted": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/37/context",
+      "status": "verbatim",
+      "original": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "admitted": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/38/context",
+      "status": "verbatim",
+      "original": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "admitted": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/39/context",
+      "status": "verbatim",
+      "original": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "admitted": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/40/context",
+      "status": "verbatim",
+      "original": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "admitted": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/41/context",
+      "status": "verbatim",
+      "original": "Although the TNG framework is composed of \"black box\" modules, its operation is transparent and easily interpretable at the system level, which can also be regarded as a practical advantage, compared to entirely \"black box\" models (e.g. [11]).",
+      "admitted": "Although the TNG framework is composed of \"black box\" modules, its operation is transparent and easily interpretable at the system level, which can also be regarded as a practical advantage, compared to entirely \"black box\" models (e.g. [11]).",
+      "similarity": null,
+      "cited_page": 12,
+      "matched_page": 12
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 1,
+    "verbatim": 51
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We focus on the utilisation of reactive trajectory imitation controllers for goal-directed mobile robot navigation. We propose a topological navigation graph (TNG) - an imitationlearning-based framework for navigating through environments with intersecting trajectories. The TNG framework represents the environment as a directed graph composed of deep neural networks. Each vertex of the graph corresponds to a trajectory and is represented by a trajectory identification classifier and a trajectory imitation controller. For trajectory following, we propose the novel use of neural object detection architectures. The edges of TNG correspond to intersections between trajectories and are all represented by a classifier. We provide empirical evaluation of the proposed navigation framework and its components in simulated and real-world environments, demonstrating that TNG allows us to utilise non-goal-directed, imitation-learning methods for goal-directed autonomous navigation."
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Bojarski et al., 2016",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network."
+              }
+            ],
+            "reference_key": "10",
+            "why": "It extends imitation-learning navigation by adding graph-based goal direction."
+          },
+          {
+            "cited_work": "Savinov et al., 2018",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal."
+              }
+            ],
+            "reference_key": "13",
+            "why": "It contrasts with metric, topological, and hybrid navigation methods by using minimal localisation for reactive switching."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 2,
+            "quote": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components."
+          }
+        ],
+        "text": "A topological navigation graph can compose non-goal-directed, imitation-learning trajectory controllers into a goal-directed navigation system for environments with intersecting trajectories."
+      }
+    },
+    "citations": [
+      {
+        "context": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+        "page": 1,
+        "reference_key": "1"
+      },
+      {
+        "context": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+        "page": 1,
+        "reference_key": "2"
+      },
+      {
+        "context": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+        "page": 1,
+        "reference_key": "3"
+      },
+      {
+        "context": "For many years, the mainstream direction of robot navigation research has been largely focused on methods relying on accurate sensors and direct (e.g. probabilistic-geometric) models [1, 2, 3, 4].",
+        "page": 1,
+        "reference_key": "4"
+      },
+      {
+        "context": "On the other side, when humans learn various complex sensorimotor behaviours, including the skill to navigate, adaptivity and imitation play crucial roles [5].",
+        "page": 1,
+        "reference_key": "5"
+      },
+      {
+        "context": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+        "page": 2,
+        "reference_key": "10"
+      },
+      {
+        "context": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+        "page": 2,
+        "reference_key": "14"
+      },
+      {
+        "context": "However, many imitation learning algorithms (e.g. [10, 14, 19]) are not goal directed by design.",
+        "page": 2,
+        "reference_key": "19"
+      },
+      {
+        "context": "The main contributions of this study include the TNG framework, the application of neural object detection architectures to obtain more robust trajectory imitation, and the experimental evaluation of the suggested algorithms both in a simulator and the real world by using Neurotechnology’s SentiBotics mobile robot development kit [20].",
+        "page": 2,
+        "reference_key": "20"
+      },
+      {
+        "context": "The problem of learning imitation controllers has a long history [7] and is currently being actively researched [10, 21, 15, 16, 22, 14].",
+        "page": 2,
+        "reference_key": "7"
+      },
+      {
+        "context": "Our first model is derived from [10] which regresses motor commands with the use of a CNN, followed by our second model which is based on an object detection neural network.",
+        "page": 2,
+        "reference_key": "10"
+      },
+      {
+        "context": "Trained according to behaviour cloning [18], the regression controller is a neural network model:",
+        "page": 3,
+        "reference_key": "18"
+      },
+      {
+        "context": "Having a training set we obtain parameter estimate θ̂ by minimising the loss function of the ridge regression [27]:",
+        "page": 3,
+        "reference_key": "27"
+      },
+      {
+        "context": "We optimise (2) with the Adam optimisation algorithm [28].",
+        "page": 3,
+        "reference_key": "28"
+      },
+      {
+        "context": "As compared to similar work by [10], where the entire parameter set is optimised, our approach helps to reduce the training duration without affecting the performance.",
+        "page": 3,
+        "reference_key": "10"
+      },
+      {
+        "context": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+        "page": 3,
+        "reference_key": "15"
+      },
+      {
+        "context": "Following the insights of [15] we also use dataset aggregation (DAgger [29]) and augmentation (input/output shifting, random lighting, and regional dropout), allowing us to improve the model’s stability and robustness.",
+        "page": 3,
+        "reference_key": "29"
+      },
+      {
+        "context": "Firstly, controllers trained with this approach are highly sensitive to rotational errors; that is, slight deviations from the trajectory may cause cascading errors [18] and eventually drive the robot out of the trajectory with no possibility of self-recovery.",
+        "page": 3,
+        "reference_key": "18"
+      },
+      {
+        "context": "Thirdly, the trajectory following performance during execution does not necessarily correlate with the value of offline evaluation over the test set using the loss function [30], hence complicating the model evaluation.",
+        "page": 3,
+        "reference_key": "30"
+      },
+      {
+        "context": "In order to solve the aforementioned problems, we utilize the RetinaNet object detection architecture [31].",
+        "page": 3,
+        "reference_key": "31"
+      },
+      {
+        "context": "Conceptually, our approach is similar to that of [22].",
+        "page": 3,
+        "reference_key": "22"
+      },
+      {
+        "context": "The model used for training is pre-trained on the COCO dataset [32] over the object detection task.",
+        "page": 4,
+        "reference_key": "32"
+      },
+      {
+        "context": "During controller execution, the output of the object detector (i.e. coordinates of the bounding box showing the direction of movement) is coupled with a PID controller [33] to centre a detected bounding box, resulting in trajectory imitation.",
+        "page": 4,
+        "reference_key": "33"
+      },
+      {
+        "context": "The work from [11], which includes a mapper and a planner, advances previous approaches.",
+        "page": 4,
+        "reference_key": "11"
+      },
+      {
+        "context": "Another approach [13], proposes a semi-parametric topological memory (SPTM) architecture for navigation, where the environment is mapped on a non-parametric graph, in which every position is a node.",
+        "page": 4,
+        "reference_key": "13"
+      },
+      {
+        "context": "[34] attempts to tackle the challenge of learning goal-directed policies from data representing a single traversal in an environment spanning over 2 kilometres.",
+        "page": 4,
+        "reference_key": "34"
+      },
+      {
+        "context": "After the shortest path in the TNG between current and target vertices is computed (e.g. by Dijkstra’s algorithm [37]), we can start executing the controllers and classifiers, contained in its vertices and edges, switching them at every intersection connecting towards the goal, recognised by corresponding intersection classifiers until the goal trajectory is reached.",
+        "page": 5,
+        "reference_key": "37"
+      },
+      {
+        "context": "We select MobileNetV2 [25] because it allows us to achieve an acceptable execution speed using low cost embedded neural network inference hardware⁴.",
+        "page": 6,
+        "reference_key": "25"
+      },
+      {
+        "context": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+        "page": 6,
+        "reference_key": "38"
+      },
+      {
+        "context": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+        "page": 6,
+        "reference_key": "39"
+      },
+      {
+        "context": "In order to minimise manual data labelling in our implementation, we perform the learning of intersections with the use of a proprietary object recognition engine derived from [38], using FAST corners [39] and BRIEF features [40] as descriptors.",
+        "page": 6,
+        "reference_key": "40"
+      },
+      {
+        "context": "Our implementation of trajectory imitation controllers and TNG is performed with the use of Neurotechnology’s SentiBotics Navigation SDK 3.0 [20].",
+        "page": 6,
+        "reference_key": "20"
+      },
+      {
+        "context": "To compare the performance of trajectory imitation controllers we use percentage autonomy [10] as a controller quality measure:",
+        "page": 7,
+        "reference_key": "10"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "2"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "11"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "3"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "13"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "41"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "34"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "42"
+      },
+      {
+        "context": "In contrast to metric models (e.g. [2, 11, 3]), where localisation is performed by geometrically estimating a robot’s pose on a map, or to other topological (e.g. [13, 41, 34]) or hybrid (e.g. [42, 43]) approaches, the trajectory classifiers and trajectory intersection classifiers of TNG provide only minimal localisation information, required to keep or switch reactive behaviour in a way that eventually leads to reaching the given goal.",
+        "page": 9,
+        "reference_key": "43"
+      },
+      {
+        "context": "Although the TNG framework is composed of \"black box\" modules, its operation is transparent and easily interpretable at the system level, which can also be regarded as a practical advantage, compared to entirely \"black box\" models (e.g. [11]).",
+        "page": 12,
+        "reference_key": "11"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "",
+          "name": "Povilas Daniušis"
+        },
+        {
+          "affiliation": "",
+          "name": "Shubham Juneja"
+        },
+        {
+          "affiliation": "",
+          "name": "Lukas Valatka"
+        },
+        {
+          "affiliation": "",
+          "name": "Linas Petkevičius"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Topological Navigation Graph Framework∗"
+        },
+        {
+          "page": 1,
+          "quote": "Povilas Daniušis†"
+        },
+        {
+          "page": 1,
+          "quote": "Shubham Juneja"
+        },
+        {
+          "page": 1,
+          "quote": "Lukas Valatka‡"
+        },
+        {
+          "page": 1,
+          "quote": "Linas Petkevičius"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "1910.06658v2 [cs.RO]",
+        "doi": ""
+      },
+      "publication_state": "preprint",
+      "subtitle": "A Preprint",
+      "title": "Topological Navigation Graph Framework",
+      "venue": "Autonomous Robots",
+      "year": 2021
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "In this article, we solve this problem by suggesting a topological navigation graph (TNG) framework, which allows one to create goal-directed navigation systems from non-goal-directed, imitation-learning components."
+        }
+      ],
+      "text": "How can reactive, non-goal-directed imitation-learning trajectory controllers be utilised for goal-directed autonomous mobile robot navigation?"
+    },
+    "references": [],
+    "relations": [],
+    "sections": [],
+    "type": {
+      "confidence": "medium",
+      "reason": "The paper proposes and evaluates a topological navigation graph framework and its components.",
+      "value": "method"
+    }
+  }
+}

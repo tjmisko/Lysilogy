@@ -1,0 +1,56 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-20T21:57:46.496250784Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1912.06889v2.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 9,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 35192,
+      "provider": "Relace",
+      "finish_reason": "length",
+      "prompt_tokens": 10524,
+      "cached_tokens": 0,
+      "completion_tokens": 35192,
+      "reasoning_tokens": 19237,
+      "cost_usd": 0.01833268,
+      "cost_source": "reported",
+      "latency_s": 242.303528094
+    }
+  ],
+  "totals": {
+    "calls": 1,
+    "prompt_tokens": 10524,
+    "cached_tokens": 0,
+    "completion_tokens": 35192,
+    "cost_usd": 0.01833268,
+    "model_latency_s": 242.303528094,
+    "wall_s": 245.277634149
+  },
+  "budget_stopped": null,
+  "failures": [
+    {
+      "stage": "core",
+      "error": "output was cut off at the length limit",
+      "raw": "{\n  \"abstract\": {\n    \"confidence\": \"high\",\n    \"page\": 1,\n    \"text\": \"Neural network based word embeddings, such\\nas Word2Vec and GloVe, are purely data\\ndriven in that they capture the distributional information about words from the training corpus. Past works have attempted to improve\\nthese embeddings by incorporating semantic\\nknowledge from lexical resources like Word-\\nNet. Some techniques like retrofitting modify\\nword embeddings in the post-processing stage\\nwhile some others use a joint learning approach by modifying the objective function of\\nneural networks. In this paper, we discuss two\\nnovel approaches for incorporating semantic\\nknowledge into word embeddings. In the first\\napproach, we take advantage of Levy et al’s\\nwork which showed that using SVD based\\nmethods on co-occurrence matrix provide similar performance to neural network based embeddings. We propose a sprinkling technique\\nto add semantic relations to the co-occurrence\\nmatrix directly before factorization. In the second approach, WordNet similarity scores are\\nused to improve the retrofitting method. We\\nevaluate the proposed methods in both intrinsic and extrinsic tasks and observe significant\\nimprovements over the baselines in many of\\nthe datasets.\"\n  },\n  \"card\": {\n    \"position\": {\n      \"predecessors\": [\n        {\n          \"cited_work\": \"Levy and Goldberg (2014) SPPMI factorization\",\n          \"confidence\": \"high\",\n          \"evidence\": [\n            {\n              \"page\": 2,\n              \"quote\": \"we take advantage of Levy and Goldberg’s work (2014) in which the authors have shown that the objective function used in Word2vec (Mikolov et al., 2013a) implicitly factorizes a Shifted PPMI (SPPMI) matrix.\"\n            }\n          ],\n          \"reference_key\": \"Levy and Goldberg, 2014\",\n          \"why\": \"The proposed SS-PPMI method directly modifies the SPPMI matrix before SVD.\"\n        },\n        {\n          \"cited_work\": \"Chakraborti et al. (2006, 2007) sprinkling and adaptive s"
+    }
+  ],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e4-30-2026-10-20/results/1912.06889v2.reasoning.jsonl",
+  "pass1": null,
+  "pass1_check": null,
+  "corrections": [],
+  "correction_outcomes": [],
+  "pass2_check": null,
+  "admission": [],
+  "admission_counts": {},
+  "artifacts": null
+}

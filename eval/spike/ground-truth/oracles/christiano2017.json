@@ -1,0 +1,98 @@
+{
+  "title": "Deep Reinforcement Learning from Human Preferences",
+  "authors": [
+    "Paul F Christiano",
+    "Jan Leike",
+    "Tom B Brown",
+    "Miljan Martic",
+    "Shane Legg",
+    "Dario Amodei"
+  ],
+  "abstract": "For sophisticated reinforcement learning (RL) systems to interact usefully with real-world environments, we need to communicate complex goals to these systems. In this work, we explore goals defined in terms of (non-expert) human preferences between pairs of trajectory segments. We show that this approach can effectively solve complex RL tasks without access to the reward function, including Atari games and simulated robot locomotion, while providing feedback on less than 1% of our agent’s interactions with the environment. This reduces the cost of human oversight far enough that it can be practically applied to state-of-the-art RL systems. To demonstrate the flexibility of our approach, we show that we can successfully train complex novel behaviors with about an hour of human time. These behaviors and environments are considerably more complex than any which have been previously learned from human feedback.",
+  "sections": [
+    {
+      "title": "Communicating goals through human preferences",
+      "pages": {
+        "start": 1,
+        "end": 3
+      },
+      "source_span": {
+        "start_text": "Recent success in scaling reinforcement learning",
+        "start_page": 1,
+        "end_text": "bootstrapping RL from demonstrations (Silver et al., 2016; Hester et al., 2017).",
+        "end_page": 3
+      },
+      "summary": "Learning a reward model from short comparisons makes human feedback feasible for deep reinforcement learning when rewards are difficult to specify and demonstrations are impractical. The approach extends earlier preference-learning systems to complex robotics and visual environments."
+    },
+    {
+      "title": "Learning and optimizing a preference-based reward",
+      "pages": {
+        "start": 3,
+        "end": 6
+      },
+      "source_span": {
+        "start_text": "We consider an agent interacting with an environment",
+        "start_page": 3,
+        "end_text": "but we leave it to future work to explore this direction further.",
+        "end_page": 6
+      },
+      "summary": "Three asynchronous processes collect agent trajectories, elicit human comparisons, and fit an ensemble of reward predictors while a policy maximizes predicted reward. A Bradley–Terry comparison model, regularization, and disagreement-based query selection address feedback noise and limited supervision."
+    },
+    {
+      "title": "Benchmark performance and novel behaviors",
+      "pages": {
+        "start": 6,
+        "end": 9
+      },
+      "source_span": {
+        "start_text": "We implemented our algorithm in TensorFlow",
+        "start_page": 6,
+        "end_text": "These behaviors were trained using feedback from the authors.",
+        "end_page": 9
+      },
+      "summary": "Preference-trained MuJoCo and Atari agents do not observe the true reward; their performance is evaluated against true rewards and an RL baseline that does observe them, with roughly 700 human comparisons for robotics and 5,500 for Atari. Outcomes vary by task and human-feedback results are single runs; separate demonstrations teach backflips, one-legged locomotion, and driving alongside traffic."
+    },
+    {
+      "title": "Which components matter and what remains",
+      "pages": {
+        "start": 9,
+        "end": 11
+      },
+      "source_span": {
+        "start_text": "In order to better understand the performance of our algorithm",
+        "start_page": 9,
+        "end_text": "in the service of complex human values rather than low-complexity goals.",
+        "end_page": 11
+      },
+      "summary": "Ablations compare query selection, ensembles, online feedback, regularization, clip length, and score versus comparison prediction, with different effects across tasks. Offline reward fitting can produce exploitative behavior, motivating interleaved feedback; the experiments support economic feasibility rather than a general guarantee against reward exploitation."
+    },
+    {
+      "title": "Experimental implementation and supervision controls",
+      "pages": {
+        "start": 14,
+        "end": 15
+      },
+      "source_span": {
+        "start_text": "Many RL environments have termination conditions",
+        "start_page": 14,
+        "end_text": "the “target” beamrider curve is averaged over 2 runs rather than 3.",
+        "end_page": 15
+      },
+      "summary": "The appendix specifies environment modifications that remove hidden reward information, feedback schedules, network architectures, and optimization settings. It details robotics and Atari preprocessing, including masked score displays and ongoing reward-model updates."
+    },
+    {
+      "title": "Human-rater instructions",
+      "pages": {
+        "start": 15,
+        "end": 17
+      },
+      "source_span": {
+        "start_text": "Sign up for a slot in the spreadsheet.",
+        "start_page": 15,
+        "end_text": "Starting 30 minutes before or after the listed time is fine.",
+        "end_page": 17
+      },
+      "summary": "Contractor instructions define good and bad behavior for each robotics task and Atari game, explain ties and incomparable clips, and restrict judgments to visible events. Practical guidance covers game familiarization, keyboard controls, missing clips, and already-dead agents."
+    }
+  ]
+}

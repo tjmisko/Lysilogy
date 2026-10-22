@@ -1,0 +1,825 @@
+{
+  "abstract_status": "Accepted",
+  "artifacts": {
+    "abstract": {
+      "page": 1,
+      "text": "Neural network based word embeddings, such as Word2Vec and GloVe, are purely data driven in that they capture the distributional information about words from the training corpus. Past works have attempted to improve these embeddings by incorporating semantic knowledge from lexical resources like Word- Net. Some techniques like retrofitting modify word embeddings in the post-processing stage while some others use a joint learning approach by modifying the objective function of neural networks. In this paper, we discuss two novel approaches for incorporating semantic knowledge into word embeddings. In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings. We propose a sprinkling technique to add semantic relations to the co-occurrence matrix directly before factorization. In the second approach, WordNet similarity scores are used to improve the retrofitting method. We evaluate the proposed methods in both intrinsic and extrinsic tasks and observe significant improvements over the baselines in many of the datasets."
+    },
+    "citations": [
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 5
+      },
+      {
+        "page": 5
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      }
+    ],
+    "identity": {
+      "authors": [],
+      "title": ""
+    },
+    "objects": [
+      {
+        "caption": "Table 1: The characterization of scores given by different word similarity datasets",
+        "kind": "table",
+        "label": "Table 1",
+        "number": null,
+        "page": 3
+      },
+      {
+        "caption": "Table 2: Performance of the reachability-based embeddings on similarity datasets. Reported numbers are the Spearman correlation coefficients.",
+        "kind": "table",
+        "label": "Table 2",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Table 3: Results on word similarity datasets using SS-PPMI and DSS-PPMI embeddings",
+        "kind": "table",
+        "label": "Table 3",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Table 4: Analogy results using proposed SS-PPMI and DSS-PPMI approaches",
+        "kind": "table",
+        "label": "Table 4",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Table 5: Word Similarity results for W-Retrofitting approach",
+        "kind": "table",
+        "label": "Table 5",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Table 8: Results on Extrinsic Evaluation tasks using SS-PPMI and DSS-PPMI embeddings",
+        "kind": "table",
+        "label": "Table 8",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Table 6: Analogy results for W-Retrofitting",
+        "kind": "table",
+        "label": "Table 6",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Table 7: Comparison with various baselines for word similarity and relatedness.",
+        "kind": "table",
+        "label": "Table 7",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Table 9: Results on Extrinsic Evaluation tasks using W-Retrofitting",
+        "kind": "table",
+        "label": "Table 9",
+        "number": null,
+        "page": 6
+      }
+    ],
+    "references": [
+      {
+        "authors": [
+          "Yoshua Bengio",
+          "Réjean Ducharme",
+          "Pascal Vincent",
+          "Christian Jauvin."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "A neural probabilistic language model",
+        "venue": "Journal of machine learning research, 3(Feb):1137–1155",
+        "year": "2003"
+      },
+      {
+        "authors": [
+          "Elia Bruni",
+          "Nam-Khanh Tran",
+          "Marco Baroni."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Multimodal distributional semantics",
+        "venue": "Journal of Artificial Intelligence Research, 49:1–47",
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "Sutanu Chakraborti",
+          "Robert Lothian",
+          "Nirmalie Wiratunga",
+          "Stuart Watt."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Sprinkling: supervised latent semantic indexing",
+        "venue": "In European Conference on Information Retrieval, pages 510–514. Springer",
+        "year": "2006"
+      },
+      {
+        "authors": [
+          "Sutanu Chakraborti",
+          "Rahman Mukras",
+          "Robert Lothian",
+          "Nirmalie Wiratunga",
+          "Stuart NK Watt",
+          "David J Harper."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Supervised latent semantic indexing using adaptive sprinkling",
+        "venue": "In IJCAI, volume 7, pages 1582–1587",
+        "year": "2007"
+      },
+      {
+        "authors": [
+          "Jacob Devlin",
+          "Ming-Wei Chang",
+          "Kenton Lee",
+          "Kristina Toutanova."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Bert: Pre-training of deep bidirectional transformers for language understanding",
+        "venue": "In NAACL-HLT",
+        "year": "2018"
+      },
+      {
+        "authors": [
+          "Manaal Faruqui",
+          "Jesse Dodge",
+          "Sujay K Jauhar",
+          "Chris Dyer",
+          "Eduard Hovy",
+          "Noah A Smith."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Retrofitting word vectors to semantic lexicons",
+        "venue": "arXiv preprint",
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "Lev Finkelstein",
+          "Evgeniy Gabrilovich",
+          "Yossi Matias",
+          "Ehud Rivlin",
+          "Zach Solan",
+          "Gadi Wolfman",
+          "Eytan Ruppin."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Placing search in context: The concept revisited",
+        "venue": "ACM Transactions on information systems, 20(1):116–131",
+        "year": "2002"
+      },
+      {
+        "authors": [
+          "Daniel Fried",
+          "Kevin Duh."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Incorporating both distributional and relational semantics in word rep- resentations",
+        "venue": "arXiv preprint",
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "Juri Ganitkevitch",
+          "Benjamin Van Durme",
+          "Chris Callison-Burch."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": null,
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Ppdb: The paraphrase database"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "In Proceedings of the 2013 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 758–764",
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Felix Hill",
+          "Roi Reichart",
+          "Anna Korhonen."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Simlex-999: Evaluating semantic models with (genuine) similarity estimation",
+        "venue": "Computational Linguistics, 41(4):665–695",
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "Stanisław Jastrzebski",
+          "Damian Leśniak",
+          "Wojciech Marian Czarnecki."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "How to evaluate word embeddings?",
+        "venue": "on importance of data efficiency and simple supervised tasks. arXiv preprint",
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "Jay J Jiang",
+          "David W Conrath."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Semantic similarity based on corpus statistics and lexical taxonomy",
+        "venue": "arXiv preprint cmp-lg/9709008",
+        "year": "1997"
+      },
+      {
+        "authors": [
+          "Claudia Leacock",
+          "Martin Chodorow."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Combining local context and wordnet similarity for word sense identification",
+        "venue": "WordNet: An electronic lexical database, 49(2):265–283. Kenton Lee, Luheng He, and Luke S. Zettlemoyer",
+        "year": "1998"
+      },
+      {
+        "authors": [
+          "Omer Levy",
+          "Yoav Goldberg."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Neural word embedding as implicit matrix factorization",
+        "venue": "In Advances in neural information processing systems, pages 2177–2185",
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "Omer Levy",
+          "Yoav Goldberg",
+          "Ido Dagan."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Improving distributional similarity with lessons learned from word embeddings",
+        "venue": "Transactions of the Association for Computational Linguistics, 3:211– 225",
+        "year": "2015a"
+      },
+      {
+        "authors": [
+          "Ran Levy",
+          "Liat Ein-Dor",
+          "Shay Hummel",
+          "Ruty Rinott",
+          "Noam Slonim."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Tr9856: A multi-word term relatedness benchmark",
+        "venue": "In Proceedings of the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International Joint Conference on Natural Language Processing (Volume 2: Short Papers), volume 2, pages 419–424",
+        "year": "2015b"
+      },
+      {
+        "authors": [
+          "Dekang Lin et al."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "An information-theoretic definition of similarity",
+        "venue": "In Icml, volume 98, pages 296–",
+        "year": "1998"
+      },
+      {
+        "authors": [
+          "Citeseer"
+        ],
+        "doi": null,
+        "key": "304",
+        "page": 8,
+        "title": "Tomas Mikolov, Kai Chen, Greg Corrado, and Jeffrey Dean",
+        "venue": null,
+        "year": "2013a"
+      }
+    ]
+  },
+  "calls": [],
+  "failures": [],
+  "model": "deterministic",
+  "pages": 9,
+  "pass1": {
+    "abstract": {
+      "page": 1,
+      "text": "Neural network based word embeddings, such as Word2Vec and GloVe, are purely data driven in that they capture the distributional information about words from the training corpus. Past works have attempted to improve these embeddings by incorporating semantic knowledge from lexical resources like Word- Net. Some techniques like retrofitting modify word embeddings in the post-processing stage while some others use a joint learning approach by modifying the objective function of neural networks. In this paper, we discuss two novel approaches for incorporating semantic knowledge into word embeddings. In the first approach, we take advantage of Levy et al’s work which showed that using SVD based methods on co-occurrence matrix provide similar performance to neural network based embeddings. We propose a sprinkling technique to add semantic relations to the co-occurrence matrix directly before factorization. In the second approach, WordNet similarity scores are used to improve the retrofitting method. We evaluate the proposed methods in both intrinsic and extrinsic tasks and observe significant improvements over the baselines in many of the datasets."
+    },
+    "citations": [
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 5
+      },
+      {
+        "page": 5
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      }
+    ],
+    "identity": {
+      "authors": [],
+      "title": ""
+    },
+    "objects": [
+      {
+        "caption": "Table 1: The characterization of scores given by different word similarity datasets",
+        "kind": "table",
+        "label": "Table 1",
+        "number": null,
+        "page": 3
+      },
+      {
+        "caption": "Table 2: Performance of the reachability-based embeddings on similarity datasets. Reported numbers are the Spearman correlation coefficients.",
+        "kind": "table",
+        "label": "Table 2",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Table 3: Results on word similarity datasets using SS-PPMI and DSS-PPMI embeddings",
+        "kind": "table",
+        "label": "Table 3",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Table 4: Analogy results using proposed SS-PPMI and DSS-PPMI approaches",
+        "kind": "table",
+        "label": "Table 4",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Table 5: Word Similarity results for W-Retrofitting approach",
+        "kind": "table",
+        "label": "Table 5",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Table 8: Results on Extrinsic Evaluation tasks using SS-PPMI and DSS-PPMI embeddings",
+        "kind": "table",
+        "label": "Table 8",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Table 6: Analogy results for W-Retrofitting",
+        "kind": "table",
+        "label": "Table 6",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Table 7: Comparison with various baselines for word similarity and relatedness.",
+        "kind": "table",
+        "label": "Table 7",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Table 9: Results on Extrinsic Evaluation tasks using W-Retrofitting",
+        "kind": "table",
+        "label": "Table 9",
+        "number": null,
+        "page": 6
+      }
+    ],
+    "references": [
+      {
+        "authors": [
+          "Yoshua Bengio",
+          "Réjean Ducharme",
+          "Pascal Vincent",
+          "Christian Jauvin."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "A neural probabilistic language model",
+        "venue": "Journal of machine learning research, 3(Feb):1137–1155",
+        "year": "2003"
+      },
+      {
+        "authors": [
+          "Elia Bruni",
+          "Nam-Khanh Tran",
+          "Marco Baroni."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Multimodal distributional semantics",
+        "venue": "Journal of Artificial Intelligence Research, 49:1–47",
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "Sutanu Chakraborti",
+          "Robert Lothian",
+          "Nirmalie Wiratunga",
+          "Stuart Watt."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Sprinkling: supervised latent semantic indexing",
+        "venue": "In European Conference on Information Retrieval, pages 510–514. Springer",
+        "year": "2006"
+      },
+      {
+        "authors": [
+          "Sutanu Chakraborti",
+          "Rahman Mukras",
+          "Robert Lothian",
+          "Nirmalie Wiratunga",
+          "Stuart NK Watt",
+          "David J Harper."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Supervised latent semantic indexing using adaptive sprinkling",
+        "venue": "In IJCAI, volume 7, pages 1582–1587",
+        "year": "2007"
+      },
+      {
+        "authors": [
+          "Jacob Devlin",
+          "Ming-Wei Chang",
+          "Kenton Lee",
+          "Kristina Toutanova."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Bert: Pre-training of deep bidirectional transformers for language understanding",
+        "venue": "In NAACL-HLT",
+        "year": "2018"
+      },
+      {
+        "authors": [
+          "Manaal Faruqui",
+          "Jesse Dodge",
+          "Sujay K Jauhar",
+          "Chris Dyer",
+          "Eduard Hovy",
+          "Noah A Smith."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Retrofitting word vectors to semantic lexicons",
+        "venue": "arXiv preprint",
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "Lev Finkelstein",
+          "Evgeniy Gabrilovich",
+          "Yossi Matias",
+          "Ehud Rivlin",
+          "Zach Solan",
+          "Gadi Wolfman",
+          "Eytan Ruppin."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Placing search in context: The concept revisited",
+        "venue": "ACM Transactions on information systems, 20(1):116–131",
+        "year": "2002"
+      },
+      {
+        "authors": [
+          "Daniel Fried",
+          "Kevin Duh."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 7,
+        "title": "Incorporating both distributional and relational semantics in word rep- resentations",
+        "venue": "arXiv preprint",
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "Juri Ganitkevitch",
+          "Benjamin Van Durme",
+          "Chris Callison-Burch."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": null,
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Ppdb: The paraphrase database"
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "In Proceedings of the 2013 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 758–764",
+        "venue": null,
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "Felix Hill",
+          "Roi Reichart",
+          "Anna Korhonen."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Simlex-999: Evaluating semantic models with (genuine) similarity estimation",
+        "venue": "Computational Linguistics, 41(4):665–695",
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "Stanisław Jastrzebski",
+          "Damian Leśniak",
+          "Wojciech Marian Czarnecki."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "How to evaluate word embeddings?",
+        "venue": "on importance of data efficiency and simple supervised tasks. arXiv preprint",
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "Jay J Jiang",
+          "David W Conrath."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Semantic similarity based on corpus statistics and lexical taxonomy",
+        "venue": "arXiv preprint cmp-lg/9709008",
+        "year": "1997"
+      },
+      {
+        "authors": [
+          "Claudia Leacock",
+          "Martin Chodorow."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Combining local context and wordnet similarity for word sense identification",
+        "venue": "WordNet: An electronic lexical database, 49(2):265–283. Kenton Lee, Luheng He, and Luke S. Zettlemoyer",
+        "year": "1998"
+      },
+      {
+        "authors": [
+          "Omer Levy",
+          "Yoav Goldberg."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Neural word embedding as implicit matrix factorization",
+        "venue": "In Advances in neural information processing systems, pages 2177–2185",
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "Omer Levy",
+          "Yoav Goldberg",
+          "Ido Dagan."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Improving distributional similarity with lessons learned from word embeddings",
+        "venue": "Transactions of the Association for Computational Linguistics, 3:211– 225",
+        "year": "2015a"
+      },
+      {
+        "authors": [
+          "Ran Levy",
+          "Liat Ein-Dor",
+          "Shay Hummel",
+          "Ruty Rinott",
+          "Noam Slonim."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "Tr9856: A multi-word term relatedness benchmark",
+        "venue": "In Proceedings of the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International Joint Conference on Natural Language Processing (Volume 2: Short Papers), volume 2, pages 419–424",
+        "year": "2015b"
+      },
+      {
+        "authors": [
+          "Dekang Lin et al."
+        ],
+        "doi": null,
+        "key": null,
+        "page": 8,
+        "title": "An information-theoretic definition of similarity",
+        "venue": "In Icml, volume 98, pages 296–",
+        "year": "1998"
+      },
+      {
+        "authors": [
+          "Citeseer"
+        ],
+        "doi": null,
+        "key": "304",
+        "page": 8,
+        "title": "Tomas Mikolov, Kai Chen, Greg Corrado, and Jeffrey Dean",
+        "venue": null,
+        "year": "2013a"
+      }
+    ]
+  },
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1912.06889v2.pdf",
+  "record_version": 2,
+  "totals": {
+    "cost_usd": 0.0,
+    "wall_s": 0.190474537
+  }
+}

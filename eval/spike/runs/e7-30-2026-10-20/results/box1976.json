@@ -1,0 +1,254 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T01:42:16.257694894Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Box - 1976 - Science and Statistics.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 10,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 12230,
+      "cached_tokens": 256,
+      "completion_tokens": 18513,
+      "reasoning_tokens": 18016,
+      "cost_usd": 0.025809336,
+      "cost_source": "reported",
+      "latency_s": 36.305352422
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 12305,
+      "cached_tokens": 768,
+      "completion_tokens": 2388,
+      "reasoning_tokens": 2066,
+      "cost_usd": 0.006331308,
+      "cost_source": "reported",
+      "latency_s": 15.863779045
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 24535,
+    "cached_tokens": 1024,
+    "completion_tokens": 20901,
+    "cost_usd": 0.032140643999999996,
+    "model_latency_s": 52.169131467,
+    "wall_s": 55.039766252
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e7-30-2026-10-20/results/box1976.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 2,
+      "text": "Aspects of scientific method are discussed: In particular, its representation as a motivated iteration in which, in succession, practice\nconfronts theory, and theory, practice. Rapid progress requires sufficient flexibility to profit from such confrontations, and the ability\nto devise parsimonious but effective models, to worry selectively\nabout model inadequacies and to employ mathematics skillfully but\nappropriately. The development of statistical methods at Rothamsted\nExperimental Station by Sir Ronald Fisher is used to illustrate these\nthemes."
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": []
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [],
+        "text": "Scientific and statistical progress depends on a motivated feedback loop between theory and practice, as exemplified by Fisher's Rothamsted work."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": null,
+          "name": "GEORGE E. P. BOX"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Science and Statistics",
+      "venue": "Journal of the American Statistical Association",
+      "year": null
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [],
+      "text": "How does a theory-practice iteration drive scientific learning and statistical innovation, and what does Fisher's career reveal about the perils of abandoning that feedback loop?"
+    },
+    "references": [],
+    "relations": [],
+    "sections": [],
+    "type": {
+      "confidence": "high",
+      "reason": "The footnote states that this is the written version of the R.A. Fisher Memorial Lecture presented at the joint statistical meetings.",
+      "value": "replication"
+    }
+  },
+  "pass1_check": {
+    "sites": 1,
+    "verbatim": 0,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/identity/year",
+      "action": "replace",
+      "value_json": "1976",
+      "reason": "The draft leaves the publication year as null, but the paper was published in December 1976.",
+      "evidence": [
+        {
+          "quote": "Source: Journal of the American Statistical Association, Vol. 71, No. 356 (Dec., 1976), pp.",
+          "page": 1
+        },
+        {
+          "quote": "December 1976, Volume 71, Number 356",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/type/value",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The footnote describes this as a written version of the R.A. Fisher Memorial Lecture, not a replication, so 'replication' is unsupported by the paper.",
+      "evidence": [
+        {
+          "quote": "This is the written version of the R.A. Fisher Memorial Lecture presented at the joint statistical meetings",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/references",
+      "action": "flag",
+      "value_json": null,
+      "reason": "The paper contains a numbered reference list of at least 18 entries (pages 9-10), but the draft's references array is empty; these references are missing.",
+      "evidence": [
+        {
+          "quote": "[1] Box, G.E.P. and Tiao, G.C., Bayesian Inference in Statistical Analysis, Reading, Mass.: Addison-Wesley Publishing Co.,",
+          "page": 9
+        },
+        {
+          "quote": "[18] Wold, H., \"Nonlinear Estimation by Iterative Least Squares Procedures,\" in F.N. David, ed., Research Papers in Statistics,",
+          "page": 10
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/year",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/type/value",
+      "action": "flag",
+      "status": "flagged"
+    },
+    {
+      "index": 2,
+      "path": "/references",
+      "action": "flag",
+      "status": "flagged"
+    }
+  ],
+  "pass2_check": {
+    "sites": 1,
+    "verbatim": 0,
+    "near": 1,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "repaired_local",
+      "original": "Aspects of scientific method are discussed: In particular, its representation as a motivated iteration in which, in succession, practice\nconfronts theory, and theory, practice. Rapid progress requires sufficient flexibility to profit from such confrontations, and the ability\nto devise parsimonious but effective models, to worry selectively\nabout model inadequacies and to employ mathematics skillfully but\nappropriately. The development of statistical methods at Rothamsted\nExperimental Station by Sir Ronald Fisher is used to illustrate these\nthemes.",
+      "admitted": "Aspects of scientific method are discussed: In particular, its representation as a motivated iteration in which, in succession, practice confronts theory, and theory, practice. Rapid progress requires sufficient flexibility to profit from such confrontations, and the ability to devise parsimonious but effective models, to worry selectively about model inadequacies and to employ mathematics skillfully but appropriately. The development of statistical methods at Rothamsted Experimental Station by Sir Ronald Fisher is used to illustrate these",
+      "similarity": 0.9866666666666667,
+      "cited_page": 2,
+      "matched_page": 2
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 1
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 2,
+      "text": "Aspects of scientific method are discussed: In particular, its representation as a motivated iteration in which, in succession, practice confronts theory, and theory, practice. Rapid progress requires sufficient flexibility to profit from such confrontations, and the ability to devise parsimonious but effective models, to worry selectively about model inadequacies and to employ mathematics skillfully but appropriately. The development of statistical methods at Rothamsted Experimental Station by Sir Ronald Fisher is used to illustrate these"
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": []
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [],
+        "text": "Scientific and statistical progress depends on a motivated feedback loop between theory and practice, as exemplified by Fisher's Rothamsted work."
+      }
+    },
+    "citations": [],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": null,
+          "name": "GEORGE E. P. BOX"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Science and Statistics",
+      "venue": "Journal of the American Statistical Association",
+      "year": 1976
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [],
+      "text": "How does a theory-practice iteration drive scientific learning and statistical innovation, and what does Fisher's career reveal about the perils of abandoning that feedback loop?"
+    },
+    "references": [],
+    "relations": [],
+    "sections": [],
+    "type": {
+      "confidence": "high",
+      "reason": "The footnote states that this is the written version of the R.A. Fisher Memorial Lecture presented at the joint statistical meetings.",
+      "value": "replication"
+    }
+  }
+}

@@ -270,7 +270,7 @@ async fn build(
 
 // Background work remains bounded even on platforms without `nice`; priority
 // changes apply only to children, never the server or an already running job.
-fn extraction_command(program: &str, priority: BuildPriority) -> Command {
+pub(crate) fn extraction_command(program: &str, priority: BuildPriority) -> Command {
     #[cfg(unix)]
     if priority == BuildPriority::Background && Path::new("/usr/bin/nice").is_file() {
         let mut command = Command::new("/usr/bin/nice");
@@ -282,7 +282,11 @@ fn extraction_command(program: &str, priority: BuildPriority) -> Command {
 }
 
 /// Hard output/time limits and kill-on-drop also apply if a build task is canceled.
-async fn bounded_command(command: &mut Command, program: &str, limit: usize) -> Result<Vec<u8>> {
+pub(crate) async fn bounded_command(
+    command: &mut Command,
+    program: &str,
+    limit: usize,
+) -> Result<Vec<u8>> {
     use std::process::Stdio;
     let mut child = command
         .stdin(Stdio::null())

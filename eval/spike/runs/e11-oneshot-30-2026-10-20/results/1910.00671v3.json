@@ -1,0 +1,3058 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T20:43:14.021931022Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1910.00671v3.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 9,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 12271,
+      "cached_tokens": 256,
+      "completion_tokens": 25262,
+      "reasoning_tokens": 14896,
+      "cost_usd": 0.0122932152,
+      "cost_source": "reported",
+      "latency_s": 236.091253569
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 18957,
+      "cached_tokens": 384,
+      "completion_tokens": 17081,
+      "reasoning_tokens": 16461,
+      "cost_usd": 0.0097758528,
+      "cost_source": "reported",
+      "latency_s": 153.940467635
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 4418,
+      "cached_tokens": 0,
+      "completion_tokens": 2673,
+      "reasoning_tokens": 2421,
+      "cost_usd": 0.00174118,
+      "cost_source": "reported",
+      "latency_s": 61.557456194
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 35646,
+    "cached_tokens": 640,
+    "completion_tokens": 45016,
+    "cost_usd": 0.023810248,
+    "model_latency_s": 451.589177398,
+    "wall_s": 456.452940576
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e11-oneshot-30-2026-10-20/results/1910.00671v3.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos. In this note, we show that at the critical coupling between a superconducting dot and the complex Sachdev-Ye-Kitaev model, known to be maximally chaotic, the pairing gap ∆ behaves as η ~/tP at low temperatures, where η is an order one constant. The lower critical temperature emerges with a further increase of the coupling strength so that the finite ∆ domain is settled between the two critical temperatures."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "BCS/Richardson superconductivity",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²"
+              }
+            ],
+            "reference_key": "1,2",
+            "why": "It starts from the standard superconducting-dot/Richardson Hamiltonian before coupling it to the complex SYK sector."
+          },
+          {
+            "cited_work": "Planckian relaxation and quantum chaos",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos."
+              }
+            ],
+            "reference_key": "6,7,8",
+            "why": "It adopts the Planckian timescale as the benchmark for the low-temperature pairing gap."
+          },
+          {
+            "cited_work": "SYK and complex SYK models",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16"
+              }
+            ],
+            "reference_key": "12,13,14,15,16",
+            "why": "It couples a superconducting dot to the complex SYK model, whose incoherent quantum-critical behavior drives the result."
+          },
+          {
+            "cited_work": "Reentrant superconductivity and Andreev billiards",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40"
+              }
+            ],
+            "reference_key": "31,32,33,34,35,36,37,38,39,40,53",
+            "why": "It compares its reentrant phase and induced-gap behavior to earlier Kondo-superconductor and Andreev-billiard physics."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "∆ ∝ T in large-N models",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68]."
+              }
+            ],
+            "reference_key": "68",
+            "why": "It notes that its linear-in-temperature gap at critical coupling is consistent with a known large-N result."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "Conventional BCS quasiparticle superconductivity",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Meanwhile, the absence of long-living quasiparticles in high-temperature superconducting materials above the critical temperature is an immutable characteristic of the so-called strange metal state.3,4"
+              }
+            ],
+            "reference_key": "3,4",
+            "why": "It contrasts the quasiparticle-based BCS picture with the incoherent strange-metal/SYK setting."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "At the critical coupling the pairing gap turns out to be proportional to the Planckian relaxation rate at low temperatures,"
+          }
+        ],
+        "text": "At the critical coupling between a superconducting dot and the complex Sachdev-Ye-Kitaev model, the pairing gap scales as ηħ/tP at low temperatures and reentrant superconductivity appears between two critical temperatures."
+      }
+    },
+    "citations": [
+      {
+        "context": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²",
+        "page": 1,
+        "reference_key": "1,2"
+      },
+      {
+        "context": "The widely known Sachdev-Ye-Kitaev (SYK) model,12,13 describing strongly interacting Majorana zero modes in 0 + 1 dimensions, saturates the chaos bound tL = tP.13,14",
+        "page": 1,
+        "reference_key": "12,13,14"
+      },
+      {
+        "context": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16",
+        "page": 1,
+        "reference_key": "15,16"
+      },
+      {
+        "context": "The extensions of this model to the cSYK coupled clusters predict thermal diffusivity¹⁷ ∝ tP and reproduce the linear in temperature resistivity,¹⁸ observed in strange metals.19,20",
+        "page": 1,
+        "reference_key": "17,18,19,20"
+      },
+      {
+        "context": "Recently, a proposed theory of a Planckian metal,²¹ based on the destruction of a Fermi surface by the cSYK-like interactions, shows that the universal scattering time equals the Planckian time tP.",
+        "page": 1,
+        "reference_key": "21"
+      },
+      {
+        "context": "The latter one characterizes the linear in temperature resistivity property²² and was detected in cuprates,²³ pnictides,²⁴ and twisted bilayer graphene,²⁵ regardless of their different microscopic nature.",
+        "page": 1,
+        "reference_key": "22,23,24,25"
+      },
+      {
+        "context": "The success in applying the SYK model to qualitative studies of strange metals and the minimalistic structure of the model itself fostered the effort to find a mechanism by which the superconducting state is formed out of an incoherent SYK metal.26–29",
+        "page": 1,
+        "reference_key": "26,27,28,29"
+      },
+      {
+        "context": "Driven by the same curiosity, we consider a (0 + 1)-dimensional toy model which consists of a superconducting quantum dot³⁰ coupled to the complex-valued SYK model.¹⁵",
+        "page": 1,
+        "reference_key": "30,15"
+      },
+      {
+        "context": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40",
+        "page": 1,
+        "reference_key": "31,32,33,34,35,36,37,38,39,40"
+      },
+      {
+        "context": "We start with a superconducting Hamiltonian HSC that contains 2M modes described by the Richardson Hamiltonian41–43 without single-particle energies coupled to the SYK model HSYK with N fermions through a random tunneling term Htun,",
+        "page": 1,
+        "reference_key": "41,42,43"
+      },
+      {
+        "context": "The interaction terms in the Hamiltonian (2) are decoupled within the Hubbard-Stratonovich transformations,2,15 so that in the large M, N limit the self-consistent saddle-point equations are⁴⁴",
+        "page": 2,
+        "reference_key": "2,15,44"
+      },
+      {
+        "context": "It suppresses superconductivity similar to magnetic impurities: Increase of the coupling to the SYK subsystem decreases the critical temperature.⁴⁹",
+        "page": 2,
+        "reference_key": "49"
+      },
+      {
+        "context": "This phenomenon resembles the reentrant superconductivity31,32 in superconductors with Kondo impurities.33–35",
+        "page": 3,
+        "reference_key": "31,32,33,34,35"
+      },
+      {
+        "context": "In the SYK model the Lyapunov time coincides with the Planckian relaxation time tL = ~/ (2πkBT) = tP,13,14 although those are different physical quantities.⁵⁴",
+        "page": 3,
+        "reference_key": "13,14,54"
+      },
+      {
+        "context": "This observation seems to be reminiscent of quite a peculiar feature of an Andreev billiard:⁵³ In a clean chaotic cavity proximate to a superconductor, the induced gap equals ~/tE = ~/ tL ln p~F l,38–40 where tE is the Ehrenfest time (the typical timescale of quantum dynamics), tL is the Lyapunov time, pF is the Fermi momentum, and l is the characteristic cavity length.",
+        "page": 3,
+        "reference_key": "53,38,39,40"
+      },
+      {
+        "context": "On its own, ∆ ≈ η ~/tP may be used to characterize the cSYK quantum dots.59,60",
+        "page": 5,
+        "reference_key": "59,60"
+      },
+      {
+        "context": "Following Refs. 2 and 15, we decouple the interaction term on the top line of the action (A1) with the HubbardStratonovich transformation",
+        "page": 5,
+        "reference_key": "2,15"
+      },
+      {
+        "context": "using the adaptive golden ratio algorithm,⁶² where the weight λ is not fixed but automatically adjusted to the local properties of the operator T̂:",
+        "page": 7,
+        "reference_key": "62"
+      },
+      {
+        "context": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+        "page": 9,
+        "reference_key": "68"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Instituut-Lorentz, Universiteit Leiden",
+          "name": "Y. Cheipesh"
+        },
+        {
+          "affiliation": "The Abdus Salam International Centre for Theoretical Physics",
+          "name": "A. I. Pavlov"
+        },
+        {
+          "affiliation": "Instituut-Lorentz, Universiteit Leiden",
+          "name": "V. Scopelliti"
+        },
+        {
+          "affiliation": "Institute of Theoretical Physics, University of Warsaw",
+          "name": "J. Tworzydlo"
+        },
+        {
+          "affiliation": "Department of Physics, Yale University",
+          "name": "N. V. Gnezdilov"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Planckian superconductor"
+        },
+        {
+          "page": 1,
+          "quote": "Y. Cheipesh,¹ A. I. Pavlov,2, 3 V. Scopelliti,¹ J. Tworzydlo,4 and N. V. Gnezdilov5, ∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1910.00671v3",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Planckian superconductor",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The success in applying the SYK model to qualitative studies of strange metals and the minimalistic structure of the model itself fostered the effort to find a mechanism by which the superconducting state is formed out of an incoherent SYK metal."
+        },
+        {
+          "page": 1,
+          "quote": "At the critical coupling the pairing gap turns out to be proportional to the Planckian relaxation rate at low temperatures,"
+        }
+      ],
+      "text": "Can a superconducting state form out of an incoherent SYK metal, and at the critical coupling is the pairing gap set by the Planckian relaxation rate?"
+    },
+    "references": [
+      {
+        "authors": [
+          "J. Bardeen",
+          "L. N. Cooper",
+          "J. R. Schrieffer"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev.",
+        "year": 1957
+      },
+      {
+        "authors": [
+          "A. Altland",
+          "B. D. Simons"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 8,
+        "title": "Condensed Matter Field Theory, 2nd ed.",
+        "venue": "Cambridge University Press",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "T. Senthil"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "B. Keimer",
+          "S. A. Kivelson",
+          "M. R. Norman",
+          "S. Uchida",
+          "J. Zaanen"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 8,
+        "title": null,
+        "venue": "Nature",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "C. M. Varma",
+          "P. B. Littlewood",
+          "S. Schmitt-Rink",
+          "E. Abrahams",
+          "A. E. Ruckenstein"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1989
+      },
+      {
+        "authors": [
+          "S. Sachdev"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 8,
+        "title": "Quantum Phase Transitions, 2nd ed.",
+        "venue": "Cambridge University Press",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "J. Zaanen"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 8,
+        "title": null,
+        "venue": "Nature",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "J. Maldacena",
+          "S. H. Shenker",
+          "D. Stanford"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 8,
+        "title": null,
+        "venue": "Journal of High Energy Physics",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "S. H. Shenker",
+          "D. Stanford"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 8,
+        "title": null,
+        "venue": "Journal of High Energy Physics",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "D. A. Roberts",
+          "B. Swingle"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "A. I. Larkin",
+          "Y. N. Ovchinnikov"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 8,
+        "title": null,
+        "venue": "Sov. Phys. JETP",
+        "year": 1969
+      },
+      {
+        "authors": [
+          "S. Sachdev",
+          "J. Ye"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1993
+      },
+      {
+        "authors": [
+          "A. Kitaev"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 8,
+        "title": "KITP Program: Entanglement in Strongly-Correlated Quantum Matter",
+        "venue": null,
+        "year": 2015
+      },
+      {
+        "authors": [
+          "J. Maldacena",
+          "D. Stanford"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. D",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "S. Sachdev"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. X",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "K. Bulycheva"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 8,
+        "title": null,
+        "venue": "Journal of High Energy Physics",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "R. A. Davison",
+          "W. Fu",
+          "A. Georges",
+          "Y. Gu",
+          "K. Jensen",
+          "S. Sachdev"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "X.-Y. Song",
+          "C.-M. Jian",
+          "L. Balents"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "H. Takagi",
+          "B. Batlogg",
+          "H. L. Kao",
+          "J. Kwo",
+          "R. J. Cava",
+          "J. J. Krajewski",
+          "W. F. Peck"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1992
+      },
+      {
+        "authors": [
+          "L. Taillefer"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 8,
+        "title": null,
+        "venue": "Annual Review of Condensed Matter Physics",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "A. A. Patel",
+          "S. Sachdev"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "J. A. N. Bruin",
+          "H. Sakai",
+          "R. S. Perry",
+          "A. P. Mackenzie"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 8,
+        "title": null,
+        "venue": "Science",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. Legros",
+          "S. Benhabib",
+          "W. Tabis",
+          "F. Laliberté",
+          "M. Dion",
+          "M. Lizaire",
+          "B. Vignolle",
+          "D. Vignolles",
+          "H. Raffy",
+          "Z. Z. Li",
+          "P. Auban-Senzier",
+          "N. Doiron-Leyraud",
+          "P. Fournier",
+          "D. Colson",
+          "T. L.",
+          "C. Proust"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 8,
+        "title": null,
+        "venue": "Nature Physics",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y. Nakajima",
+          "T. Metz",
+          "C. Eckberg",
+          "K. Kirshenbaum",
+          "A. Hughes",
+          "R. Wang",
+          "L. Wang",
+          "S. R. Saha",
+          "I.-L. Liu",
+          "N. P. Butch",
+          "D. Campbell",
+          "Y. S. Eo",
+          "D. Graf",
+          "Z. Liu",
+          "S. V. Borisenko",
+          "P. Y. Zavalij",
+          "J. Paglione"
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 8,
+        "title": null,
+        "venue": "arXiv:1902.01034 [cond-mat.str-el]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y. Cao",
+          "D. Chowdhury",
+          "D. Rodan-Legrain",
+          "O. Rubies-Bigordà",
+          "K. Watanabe",
+          "T. Taniguchi",
+          "T. Senthil",
+          "P. Jarillo-Herrero"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 8,
+        "title": null,
+        "venue": "arXiv:1901.03710 [cond-mat.str-el]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "A. A. Patel",
+          "M. J. Lawler",
+          "Eu.-A. Kim"
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "I. Esterlis",
+          "J. Schmalian"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y. Wang"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 8,
+        "title": null,
+        "venue": "arXiv:1904.07240 [cond-mat.str-el]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "D. Chowdhury",
+          "E. Berg"
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 8,
+        "title": null,
+        "venue": "arXiv:1908.02757 [cond-mat.str-el]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "L. Kouwenhoven",
+          "C. Marcus"
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 8,
+        "title": null,
+        "venue": "Physics World",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "M. Maple",
+          "W. Fertig",
+          "A. Mota",
+          "L. DeLong",
+          "D. Wohlleben",
+          "R. Fitzgerald"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 8,
+        "title": null,
+        "venue": "Solid State Communications",
+        "year": 1972
+      },
+      {
+        "authors": [
+          "Y. B. Simons",
+          "O. Entin-Wohlman",
+          "Y. Oreg",
+          "Y. Imry"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "E. Müller-Hartmann",
+          "J. Zittartz"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1971
+      },
+      {
+        "authors": [
+          "G. Riblet",
+          "K. Winzer"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 8,
+        "title": null,
+        "venue": "Solid State Communications",
+        "year": 1971
+      },
+      {
+        "authors": [
+          "E. Mller-Hartmann",
+          "B. Schuh",
+          "J. Zittartz"
+        ],
+        "doi": null,
+        "key": "35",
+        "page": 8,
+        "title": null,
+        "venue": "Solid State Communications",
+        "year": 1976
+      },
+      {
+        "authors": [
+          "J. A. Melsen",
+          "P. W. Brouwer",
+          "K. M. Frahm",
+          "C. W. J. Beenakker"
+        ],
+        "doi": null,
+        "key": "36",
+        "page": 8,
+        "title": null,
+        "venue": "Physica Scripta",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "H. Schomerus",
+          "C. W. J. Beenakker"
+        ],
+        "doi": null,
+        "key": "37",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "A. Lodder",
+          "Yu. V. Nazarov"
+        ],
+        "doi": null,
+        "key": "38",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "İ. Adagideli",
+          "C. W. J. Beenakker"
+        ],
+        "doi": null,
+        "key": "39",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "M. G. Vavilov",
+          "A. I. Larkin"
+        ],
+        "doi": null,
+        "key": "40",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "R. Richardson"
+        ],
+        "doi": null,
+        "key": "41",
+        "page": 8,
+        "title": null,
+        "venue": "Physics Letters",
+        "year": 1963
+      },
+      {
+        "authors": [
+          "J. von Delft",
+          "A. D. Zaikin",
+          "D. S. Golubev",
+          "W. Tichy"
+        ],
+        "doi": null,
+        "key": "42",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "K. A. Matveev",
+          "A. I. Larkin"
+        ],
+        "doi": null,
+        "key": "43",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1997
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "44",
+        "page": 8,
+        "title": "See Appendix A.",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "S. Banerjee",
+          "E. Altman"
+        ],
+        "doi": null,
+        "key": "45",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "X. Chen",
+          "R. Fan",
+          "Y. Chen",
+          "H. Zhai",
+          "P. Zhang"
+        ],
+        "doi": null,
+        "key": "46",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "S.-K. Jian",
+          "H. Yao"
+        ],
+        "doi": null,
+        "key": "47",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "L. P. Gor’kov"
+        ],
+        "doi": null,
+        "key": "48",
+        "page": 8,
+        "title": null,
+        "venue": "Sov. Phys. JETP",
+        "year": 1958
+      },
+      {
+        "authors": [
+          "P. De Gennes"
+        ],
+        "doi": null,
+        "key": "49",
+        "page": 8,
+        "title": "Superconductivity of Metals and Alloys",
+        "venue": "Benjamin",
+        "year": 1966
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "50",
+        "page": 8,
+        "title": "The full self-consistent scheme (6-9) is solved numerically with the adaptive golden ratio algorithm [62,63].",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "51",
+        "page": 8,
+        "title": "Earlier it was shown that the superconducting instability in the unparticle system leads to the reentrance effect as well [64], whereas restoration of the quasiparticles makes the critical temperature a single-valued function of the pairing strenth.",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "52",
+        "page": 8,
+        "title": "The gap decrease in Figure 4 at very low temperatures (see the enlarged segments) has a numerical origin. As Matsubara frequencies are ∝ T, achieving temperatures close to zero requires a sufficient increase of the numerical grid. This leads to the accuracy reduce due to the computer memory overflow [63].",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "C. W. J. Beenakker"
+        ],
+        "doi": null,
+        "key": "53",
+        "page": 8,
+        "title": "“Andreev billiards,” in Quantum Dots: a Doorway to Nanoscale Physics",
+        "venue": "Springer Berlin Heidelberg",
+        "year": 2005
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "54",
+        "page": 8,
+        "title": "The equilibration time and the Lyapunov time are a priori different physical quantities. Nevertheless, the fact that both quantities are subjected to the same bound raises the question of whether those two seemingly independent quantities might be related. This hypothesis has been intensively investigated in the context of the AdS/CFT correspondence, in large–N vector models and spin systems (see [65] and the references therein). In systems with a small parameter (large–N quantum field theories or weakly coupled field theories) where a regime of exponential growth is present in the OTOC, however, they are set by the same physics even though they are quantitatively different [66,67].",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "M. Abramowitz",
+          "I. A. Stegun"
+        ],
+        "doi": null,
+        "key": "55",
+        "page": 9,
+        "title": "Handbook of Mathematical Functions with Formulas, Graphs, and Mathematical Tables",
+        "venue": "Dover",
+        "year": 1964
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "56",
+        "page": 9,
+        "title": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "57",
+        "page": 9,
+        "title": "We use ∫_0^{+∞} dω/π (it_c^2/(ω + √p G_SYK(ω)))^−4 = 9π^{3/2} p J/t_c^4.",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "A. Romero-Bermúdez",
+          "K. Schalm",
+          "V. Scopelliti"
+        ],
+        "doi": null,
+        "key": "58",
+        "page": 9,
+        "title": null,
+        "venue": "Journal of High Energy Physics",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "A. Chen",
+          "R. Ilan",
+          "F. de Juan",
+          "D. I. Pikulin",
+          "M. Franz"
+        ],
+        "doi": null,
+        "key": "59",
+        "page": 9,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "I. Danshita",
+          "M. Hanada",
+          "M. Tezuka"
+        ],
+        "doi": null,
+        "key": "60",
+        "page": 9,
+        "title": null,
+        "venue": "Progress of Theoretical and Experimental Physics",
+        "year": 2017
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "61",
+        "page": 9,
+        "title": "We compute the corresponding Green’s functions in time representation with the adapted Fast Fourier Transform each iteration.",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Yu. Malitsky"
+        ],
+        "doi": "10.1007/s10107-019-01416-w",
+        "key": "62",
+        "page": 9,
+        "title": null,
+        "venue": "Math. Program.",
+        "year": 2019
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "63",
+        "page": 9,
+        "title": "See Appendix B.",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "A. Karch",
+          "K. Limtragool",
+          "P. W. Phillips"
+        ],
+        "doi": null,
+        "key": "64",
+        "page": 9,
+        "title": null,
+        "venue": "Journal of High Energy Physics",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "J. Couch",
+          "S. Eccles",
+          "P. Nguyen",
+          "B. Swingle",
+          "S. Xu"
+        ],
+        "doi": null,
+        "key": "65",
+        "page": 9,
+        "title": null,
+        "venue": "arXiv:1908.06993 [cond-mat.stat-mech]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "S. Grozdanov",
+          "K. Schalm",
+          "V. Scopelliti"
+        ],
+        "doi": null,
+        "key": "66",
+        "page": 9,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "S. Grozdanov",
+          "K. Schalm",
+          "V. Scopelliti"
+        ],
+        "doi": null,
+        "key": "67",
+        "page": 9,
+        "title": null,
+        "venue": "Phys. Rev. E",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y.-M. Wu",
+          "A. Abanov",
+          "Y. Wang",
+          "A. V. Chubukov"
+        ],
+        "doi": null,
+        "key": "68",
+        "page": 9,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2019
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²",
+        "reference_key": "1,2",
+        "relation": "uses_method",
+        "why": "The paper starts from the standard BCS/Richardson description of the superconducting dot before adding the SYK coupling."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The widely known Sachdev-Ye-Kitaev (SYK) model,12,13 describing strongly interacting Majorana zero modes in 0 + 1 dimensions, saturates the chaos bound tL = tP.13,14",
+        "reference_key": "12,13,14",
+        "relation": "extends",
+        "why": "It takes the maximally chaotic SYK model and couples it to a superconducting dot."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16",
+        "reference_key": "15,16",
+        "relation": "uses_method",
+        "why": "It uses the complex SYK model as the fermionic incoherent sector in its Hamiltonian."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos.",
+        "reference_key": "6,7,8",
+        "relation": "extends",
+        "why": "It builds the central claim on the Planckian relaxation time as a universal timescale."
+      },
+      {
+        "confidence": "medium",
+        "page": 1,
+        "quote": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40",
+        "reference_key": "31,32,33,34,35,36,37,38,39,40",
+        "relation": "compares",
+        "why": "It explicitly draws parallels between its reentrant phase and earlier Kondo-superconductor and Andreev-billiard results."
+      },
+      {
+        "confidence": "medium",
+        "page": 3,
+        "quote": "In a clean chaotic cavity proximate to a superconductor, the induced gap equals ~/tE = ~/ tL ln p~F l,38–40 where tE is the Ehrenfest time (the typical timescale of quantum dynamics), tL is the Lyapunov time, pF is the Fermi momentum, and l is the characteristic cavity length.",
+        "reference_key": "38,39,40,53",
+        "relation": "contrasts",
+        "why": "It compares the SYK Planckian gap to the Andreev-billiard induced gap and notes the Ehrenfest-time difference."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "using the adaptive golden ratio algorithm,⁶² where the weight λ is not fixed but automatically adjusted to the local properties of the operator T̂:",
+        "reference_key": "62",
+        "relation": "uses_method",
+        "why": "The numerical solution of the self-consistent equations relies on the adaptive golden ratio algorithm."
+      },
+      {
+        "confidence": "medium",
+        "page": 9,
+        "quote": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+        "reference_key": "68",
+        "relation": "supports",
+        "why": "It notes that a known large-N result also gives ∆ ∝ T from low Matsubara frequencies, supporting the observed linear gap."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "the large M, N limit the self-consistent saddle-point equations are",
+          "start_page": 1,
+          "start_text": "Planckian superconductor"
+        },
+        "summary": "Motivates the Planckian/SYK problem, defines the superconducting-dot–cSYK Hamiltonian, and introduces the saddle-point equations and normal-phase behavior.",
+        "title": "Model and Normal Phase"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "the normal phase behaves as the conventional Fermi liquid at low temperatures and large p",
+          "start_page": 2,
+          "start_text": "The gap equation (9) at ∆ = 0 makes a boundary"
+        },
+        "summary": "Analyzes the competition among SYK non-Fermi liquid, free fermions, and superconductivity, yielding a critical coupling and reentrant superconductivity with two critical temperatures.",
+        "title": "Reentrant Superconductivity and Critical Coupling"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "may be used to characterize the cSYK quantum dots",
+          "start_page": 3,
+          "start_text": "From Figure 2 (right), one notices the pairing gap"
+        },
+        "summary": "Derives the low-temperature gap at critical coupling, compares it to Andreev-billiard expectations, obtains ∆ ∝ T and η ≈ 1.22 analytically versus η ≈ 0.96 numerically, and concludes the gap is set by ħ/tP.",
+        "title": "Planckian Gap and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "the precision of tc reaches 10−7 for p = 0.002",
+          "start_page": 5,
+          "start_text": "Appendix A: Derivation of the gap equation"
+        },
+        "summary": "Appendix A derives the disorder-averaged action and Schwinger-Dyson equations; Appendix B describes the adaptive golden ratio numerical solver, grid, precision, and extraction of tc and η.",
+        "title": "Appendices: Derivation and Numerical Method"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "Phys. Rev. B 99, 144512 (2019).",
+          "start_page": 8,
+          "start_text": "J. Bardeen, L. N. Cooper, and J. R. Schrieffer"
+        },
+        "summary": "Bibliography of cited works, including SYK, Planckian, superconducting, reentrant, Andreev-billiard, and numerical-method references.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a theoretical physics preprint presenting a model, saddle-point derivations, and numerical results.",
+      "value": "theory"
+    }
+  },
+  "pass1_check": {
+    "sites": 39,
+    "verbatim": 36,
+    "near": 1,
+    "missing": 2,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/identity/authors/1/affiliation",
+      "action": "replace",
+      "value_json": "\"The Abdus Salam International Centre for Theoretical Physics (ICTP) Strada Costiera 11, I-34151 Trieste, Italy; Institute for Theoretical Solid State Physics, Leibniz-Institut für Festkörper und Werkstoffforschung IFW-Dresden, Helmholtzstrasse 20, D-01169 Dresden, Germany\"",
+      "reason": "A. I. Pavlov has two affiliations in the paper; the draft lists only the ICTP affiliation.",
+      "evidence": [
+        {
+          "quote": "2 The Abdus Salam International Centre for Theoretical Physics (ICTP) Strada Costiera 11, I-34151 Trieste, Italy 3 Institute for Theoretical Solid State Physics, Leibniz-Institut für Festkörper und Werkstoffforschung IFW-Dresden, Helmholtzstrasse 20, D-01169 Dresden, Germany",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/sections/0/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"Summarizing, the normal phase in the infrared limit is described by the inverse Green’s function of the SYK model at small p, whereas it crosses over to free fermions for large p values.\"",
+      "reason": "The first section includes the normal-phase analysis, so its span should end after the normal-phase summary, not at the saddle-point equations sentence.",
+      "evidence": [
+        {
+          "quote": "Summarizing, the normal phase in the infrared limit is described by the inverse Green’s function of the SYK model at small p, whereas it crosses over to free fermions for large p values.",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/sections/1/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"It is still possible to suppress the superconductivity at zero temperature providing sufficient impurities, but there is only a single critical temperature as the normal phase is always set by the free fermions.⁵¹\"",
+      "reason": "The second section continues through the random-free-fermion comparison on page 3; the draft ends it too early.",
+      "evidence": [
+        {
+          "quote": "It is still possible to suppress the superconductivity at zero temperature providing sufficient impurities, but there is only a single critical temperature as the normal phase is always set by the free fermions.⁵¹",
+          "page": 3
+        }
+      ]
+    },
+    {
+      "path": "/sections/2/source_span/end_text",
+      "action": "replace",
+      "value_json": "\"However, this requires consideration of a more realistic setup such as a superconducting lead attached to the particular realization of the complex SYK model.\"",
+      "reason": "The conclusion continues past the quoted cSYK quantum-dot sentence; the span should end at the conclusion’s final sentence.",
+      "evidence": [
+        {
+          "quote": "However, this requires consideration of a more realistic setup such as a superconducting lead attached to the particular realization of the complex SYK model.",
+          "page": 5
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/identity/authors/1/affiliation",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/sections/0/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/sections/1/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/sections/2/source_span/end_text",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 39,
+    "verbatim": 36,
+    "near": 1,
+    "missing": 2,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos. In this note, we show that at the critical coupling between a superconducting dot and the complex Sachdev-Ye-Kitaev model, known to be maximally chaotic, the pairing gap ∆ behaves as η ~/tP at low temperatures, where η is an order one constant. The lower critical temperature emerges with a further increase of the coupling strength so that the finite ∆ domain is settled between the two critical temperatures.",
+      "admitted": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos. In this note, we show that at the critical coupling between a superconducting dot and the complex Sachdev-Ye-Kitaev model, known to be maximally chaotic, the pairing gap ∆ behaves as η ~/tP at low temperatures, where η is an order one constant. The lower critical temperature emerges with a further increase of the coupling strength so that the finite ∆ domain is settled between the two critical temperatures.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²",
+      "admitted": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos.",
+      "admitted": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16",
+      "admitted": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40",
+      "admitted": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/replications/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+      "admitted": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Meanwhile, the absence of long-living quasiparticles in high-temperature superconducting materials above the critical temperature is an immutable characteristic of the so-called strange metal state.3,4",
+      "admitted": "Meanwhile, the absence of long-living quasiparticles in high-temperature superconducting materials above the critical temperature is an immutable characteristic of the so-called strange metal state.3,4",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "At the critical coupling the pairing gap turns out to be proportional to the Planckian relaxation rate at low temperatures,",
+      "admitted": "At the critical coupling the pairing gap turns out to be proportional to the Planckian relaxation rate at low temperatures,",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Planckian superconductor",
+      "admitted": "Planckian superconductor",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Y. Cheipesh,¹ A. I. Pavlov,2, 3 V. Scopelliti,¹ J. Tworzydlo,4 and N. V. Gnezdilov5, ∗",
+      "admitted": "Y. Cheipesh,¹ A. I. Pavlov,2, 3 V. Scopelliti,¹ J. Tworzydlo,4 and N. V. Gnezdilov5, ∗",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "The success in applying the SYK model to qualitative studies of strange metals and the minimalistic structure of the model itself fostered the effort to find a mechanism by which the superconducting state is formed out of an incoherent SYK metal.",
+      "admitted": "The success in applying the SYK model to qualitative studies of strange metals and the minimalistic structure of the model itself fostered the effort to find a mechanism by which the superconducting state is formed out of an incoherent SYK",
+      "similarity": 0.975609756097561,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/1/quote",
+      "status": "verbatim",
+      "original": "At the critical coupling the pairing gap turns out to be proportional to the Planckian relaxation rate at low temperatures,",
+      "admitted": "At the critical coupling the pairing gap turns out to be proportional to the Planckian relaxation rate at low temperatures,",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²",
+      "admitted": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "The widely known Sachdev-Ye-Kitaev (SYK) model,12,13 describing strongly interacting Majorana zero modes in 0 + 1 dimensions, saturates the chaos bound tL = tP.13,14",
+      "admitted": "The widely known Sachdev-Ye-Kitaev (SYK) model,12,13 describing strongly interacting Majorana zero modes in 0 + 1 dimensions, saturates the chaos bound tL = tP.13,14",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16",
+      "admitted": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "The extensions of this model to the cSYK coupled clusters predict thermal diffusivity¹⁷ ∝ tP and reproduce the linear in temperature resistivity,¹⁸ observed in strange metals.19,20",
+      "admitted": "The extensions of this model to the cSYK coupled clusters predict thermal diffusivity¹⁷ ∝ tP and reproduce the linear in temperature resistivity,¹⁸ observed in strange metals.19,20",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "Recently, a proposed theory of a Planckian metal,²¹ based on the destruction of a Fermi surface by the cSYK-like interactions, shows that the universal scattering time equals the Planckian time tP.",
+      "admitted": "Recently, a proposed theory of a Planckian metal,²¹ based on the destruction of a Fermi surface by the cSYK-like interactions, shows that the universal scattering time equals the Planckian time tP.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "The latter one characterizes the linear in temperature resistivity property²² and was detected in cuprates,²³ pnictides,²⁴ and twisted bilayer graphene,²⁵ regardless of their different microscopic nature.",
+      "admitted": "The latter one characterizes the linear in temperature resistivity property²² and was detected in cuprates,²³ pnictides,²⁴ and twisted bilayer graphene,²⁵ regardless of their different microscopic nature.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "The success in applying the SYK model to qualitative studies of strange metals and the minimalistic structure of the model itself fostered the effort to find a mechanism by which the superconducting state is formed out of an incoherent SYK metal.26–29",
+      "admitted": "The success in applying the SYK model to qualitative studies of strange metals and the minimalistic structure of the model itself fostered the effort to find a mechanism by which the superconducting state is formed out of an incoherent SYK metal.26–29",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "Driven by the same curiosity, we consider a (0 + 1)-dimensional toy model which consists of a superconducting quantum dot³⁰ coupled to the complex-valued SYK model.¹⁵",
+      "admitted": "Driven by the same curiosity, we consider a (0 + 1)-dimensional toy model which consists of a superconducting quantum dot³⁰ coupled to the complex-valued SYK model.¹⁵",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40",
+      "admitted": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "We start with a superconducting Hamiltonian HSC that contains 2M modes described by the Richardson Hamiltonian41–43 without single-particle energies coupled to the SYK model HSYK with N fermions through a random tunneling term Htun,",
+      "admitted": "We start with a superconducting Hamiltonian HSC that contains 2M modes described by the Richardson Hamiltonian41–43 without single-particle energies coupled to the SYK model HSYK with N fermions through a random tunneling term Htun,",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "The interaction terms in the Hamiltonian (2) are decoupled within the Hubbard-Stratonovich transformations,2,15 so that in the large M, N limit the self-consistent saddle-point equations are⁴⁴",
+      "admitted": "The interaction terms in the Hamiltonian (2) are decoupled within the Hubbard-Stratonovich transformations,2,15 so that in the large M, N limit the self-consistent saddle-point equations are⁴⁴",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "It suppresses superconductivity similar to magnetic impurities: Increase of the coupling to the SYK subsystem decreases the critical temperature.⁴⁹",
+      "admitted": "It suppresses superconductivity similar to magnetic impurities: Increase of the coupling to the SYK subsystem decreases the critical temperature.⁴⁹",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "This phenomenon resembles the reentrant superconductivity31,32 in superconductors with Kondo impurities.33–35",
+      "admitted": "This phenomenon resembles the reentrant superconductivity31,32 in superconductors with Kondo impurities.33–35",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "In the SYK model the Lyapunov time coincides with the Planckian relaxation time tL = ~/ (2πkBT) = tP,13,14 although those are different physical quantities.⁵⁴",
+      "admitted": "In the SYK model the Lyapunov time coincides with the Planckian relaxation time tL = ~/ (2πkBT) = tP,13,14 although those are different physical quantities.⁵⁴",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "dropped",
+      "original": "This observation seems to be reminiscent of quite a peculiar feature of an Andreev billiard:⁵³ In a clean chaotic cavity proximate to a superconductor, the induced gap equals ~/tE = ~/ tL ln p~F l,38–40 where tE is the Ehrenfest time (the typical timescale of quantum dynamics), tL is the Lyapunov time, pF is the Fermi momentum, and l is the characteristic cavity length.",
+      "admitted": null,
+      "similarity": 0.5967741935483871,
+      "cited_page": 3,
+      "matched_page": null
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "On its own, ∆ ≈ η ~/tP may be used to characterize the cSYK quantum dots.59,60",
+      "admitted": "On its own, ∆ ≈ η ~/tP may be used to characterize the cSYK quantum dots.59,60",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "Following Refs. 2 and 15, we decouple the interaction term on the top line of the action (A1) with the HubbardStratonovich transformation",
+      "admitted": "Following Refs. 2 and 15, we decouple the interaction term on the top line of the action (A1) with the HubbardStratonovich transformation",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "using the adaptive golden ratio algorithm,⁶² where the weight λ is not fixed but automatically adjusted to the local properties of the operator T̂:",
+      "admitted": "using the adaptive golden ratio algorithm,⁶² where the weight λ is not fixed but automatically adjusted to the local properties of the operator T̂:",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+      "admitted": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²",
+      "admitted": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "The widely known Sachdev-Ye-Kitaev (SYK) model,12,13 describing strongly interacting Majorana zero modes in 0 + 1 dimensions, saturates the chaos bound tL = tP.13,14",
+      "admitted": "The widely known Sachdev-Ye-Kitaev (SYK) model,12,13 describing strongly interacting Majorana zero modes in 0 + 1 dimensions, saturates the chaos bound tL = tP.13,14",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16",
+      "admitted": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos.",
+      "admitted": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40",
+      "admitted": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "dropped",
+      "original": "In a clean chaotic cavity proximate to a superconductor, the induced gap equals ~/tE = ~/ tL ln p~F l,38–40 where tE is the Ehrenfest time (the typical timescale of quantum dynamics), tL is the Lyapunov time, pF is the Fermi momentum, and l is the characteristic cavity length.",
+      "admitted": null,
+      "similarity": 0.7659574468085106,
+      "cited_page": 3,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "using the adaptive golden ratio algorithm,⁶² where the weight λ is not fixed but automatically adjusted to the local properties of the operator T̂:",
+      "admitted": "using the adaptive golden ratio algorithm,⁶² where the weight λ is not fixed but automatically adjusted to the local properties of the operator T̂:",
+      "similarity": null,
+      "cited_page": 7,
+      "matched_page": 7
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+      "admitted": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    }
+  ],
+  "admission_counts": {
+    "dropped": 2,
+    "repaired_local": 1,
+    "verbatim": 36
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos. In this note, we show that at the critical coupling between a superconducting dot and the complex Sachdev-Ye-Kitaev model, known to be maximally chaotic, the pairing gap ∆ behaves as η ~/tP at low temperatures, where η is an order one constant. The lower critical temperature emerges with a further increase of the coupling strength so that the finite ∆ domain is settled between the two critical temperatures."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "BCS/Richardson superconductivity",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²"
+              }
+            ],
+            "reference_key": "1,2",
+            "why": "It starts from the standard superconducting-dot/Richardson Hamiltonian before coupling it to the complex SYK sector."
+          },
+          {
+            "cited_work": "Planckian relaxation and quantum chaos",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos."
+              }
+            ],
+            "reference_key": "6,7,8",
+            "why": "It adopts the Planckian timescale as the benchmark for the low-temperature pairing gap."
+          },
+          {
+            "cited_work": "SYK and complex SYK models",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16"
+              }
+            ],
+            "reference_key": "12,13,14,15,16",
+            "why": "It couples a superconducting dot to the complex SYK model, whose incoherent quantum-critical behavior drives the result."
+          },
+          {
+            "cited_work": "Reentrant superconductivity and Andreev billiards",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40"
+              }
+            ],
+            "reference_key": "31,32,33,34,35,36,37,38,39,40,53",
+            "why": "It compares its reentrant phase and induced-gap behavior to earlier Kondo-superconductor and Andreev-billiard physics."
+          }
+        ],
+        "replications": [
+          {
+            "cited_work": "∆ ∝ T in large-N models",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 9,
+                "quote": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68]."
+              }
+            ],
+            "reference_key": "68",
+            "why": "It notes that its linear-in-temperature gap at critical coupling is consistent with a known large-N result."
+          }
+        ],
+        "targets": [
+          {
+            "cited_work": "Conventional BCS quasiparticle superconductivity",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "Meanwhile, the absence of long-living quasiparticles in high-temperature superconducting materials above the critical temperature is an immutable characteristic of the so-called strange metal state.3,4"
+              }
+            ],
+            "reference_key": "3,4",
+            "why": "It contrasts the quasiparticle-based BCS picture with the incoherent strange-metal/SYK setting."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "At the critical coupling the pairing gap turns out to be proportional to the Planckian relaxation rate at low temperatures,"
+          }
+        ],
+        "text": "At the critical coupling between a superconducting dot and the complex Sachdev-Ye-Kitaev model, the pairing gap scales as ηħ/tP at low temperatures and reentrant superconductivity appears between two critical temperatures."
+      }
+    },
+    "citations": [
+      {
+        "context": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²",
+        "page": 1,
+        "reference_key": "1,2"
+      },
+      {
+        "context": "The widely known Sachdev-Ye-Kitaev (SYK) model,12,13 describing strongly interacting Majorana zero modes in 0 + 1 dimensions, saturates the chaos bound tL = tP.13,14",
+        "page": 1,
+        "reference_key": "12,13,14"
+      },
+      {
+        "context": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16",
+        "page": 1,
+        "reference_key": "15,16"
+      },
+      {
+        "context": "The extensions of this model to the cSYK coupled clusters predict thermal diffusivity¹⁷ ∝ tP and reproduce the linear in temperature resistivity,¹⁸ observed in strange metals.19,20",
+        "page": 1,
+        "reference_key": "17,18,19,20"
+      },
+      {
+        "context": "Recently, a proposed theory of a Planckian metal,²¹ based on the destruction of a Fermi surface by the cSYK-like interactions, shows that the universal scattering time equals the Planckian time tP.",
+        "page": 1,
+        "reference_key": "21"
+      },
+      {
+        "context": "The latter one characterizes the linear in temperature resistivity property²² and was detected in cuprates,²³ pnictides,²⁴ and twisted bilayer graphene,²⁵ regardless of their different microscopic nature.",
+        "page": 1,
+        "reference_key": "22,23,24,25"
+      },
+      {
+        "context": "The success in applying the SYK model to qualitative studies of strange metals and the minimalistic structure of the model itself fostered the effort to find a mechanism by which the superconducting state is formed out of an incoherent SYK metal.26–29",
+        "page": 1,
+        "reference_key": "26,27,28,29"
+      },
+      {
+        "context": "Driven by the same curiosity, we consider a (0 + 1)-dimensional toy model which consists of a superconducting quantum dot³⁰ coupled to the complex-valued SYK model.¹⁵",
+        "page": 1,
+        "reference_key": "30,15"
+      },
+      {
+        "context": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40",
+        "page": 1,
+        "reference_key": "31,32,33,34,35,36,37,38,39,40"
+      },
+      {
+        "context": "We start with a superconducting Hamiltonian HSC that contains 2M modes described by the Richardson Hamiltonian41–43 without single-particle energies coupled to the SYK model HSYK with N fermions through a random tunneling term Htun,",
+        "page": 1,
+        "reference_key": "41,42,43"
+      },
+      {
+        "context": "The interaction terms in the Hamiltonian (2) are decoupled within the Hubbard-Stratonovich transformations,2,15 so that in the large M, N limit the self-consistent saddle-point equations are⁴⁴",
+        "page": 2,
+        "reference_key": "2,15,44"
+      },
+      {
+        "context": "It suppresses superconductivity similar to magnetic impurities: Increase of the coupling to the SYK subsystem decreases the critical temperature.⁴⁹",
+        "page": 2,
+        "reference_key": "49"
+      },
+      {
+        "context": "This phenomenon resembles the reentrant superconductivity31,32 in superconductors with Kondo impurities.33–35",
+        "page": 3,
+        "reference_key": "31,32,33,34,35"
+      },
+      {
+        "context": "In the SYK model the Lyapunov time coincides with the Planckian relaxation time tL = ~/ (2πkBT) = tP,13,14 although those are different physical quantities.⁵⁴",
+        "page": 3,
+        "reference_key": "13,14,54"
+      },
+      {
+        "context": "On its own, ∆ ≈ η ~/tP may be used to characterize the cSYK quantum dots.59,60",
+        "page": 5,
+        "reference_key": "59,60"
+      },
+      {
+        "context": "Following Refs. 2 and 15, we decouple the interaction term on the top line of the action (A1) with the HubbardStratonovich transformation",
+        "page": 5,
+        "reference_key": "2,15"
+      },
+      {
+        "context": "using the adaptive golden ratio algorithm,⁶² where the weight λ is not fixed but automatically adjusted to the local properties of the operator T̂:",
+        "page": 7,
+        "reference_key": "62"
+      },
+      {
+        "context": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+        "page": 9,
+        "reference_key": "68"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Instituut-Lorentz, Universiteit Leiden",
+          "name": "Y. Cheipesh"
+        },
+        {
+          "affiliation": "The Abdus Salam International Centre for Theoretical Physics (ICTP) Strada Costiera 11, I-34151 Trieste, Italy; Institute for Theoretical Solid State Physics, Leibniz-Institut für Festkörper und Werkstoffforschung IFW-Dresden, Helmholtzstrasse 20, D-01169 Dresden, Germany",
+          "name": "A. I. Pavlov"
+        },
+        {
+          "affiliation": "Instituut-Lorentz, Universiteit Leiden",
+          "name": "V. Scopelliti"
+        },
+        {
+          "affiliation": "Institute of Theoretical Physics, University of Warsaw",
+          "name": "J. Tworzydlo"
+        },
+        {
+          "affiliation": "Department of Physics, Yale University",
+          "name": "N. V. Gnezdilov"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Planckian superconductor"
+        },
+        {
+          "page": 1,
+          "quote": "Y. Cheipesh,¹ A. I. Pavlov,2, 3 V. Scopelliti,¹ J. Tworzydlo,4 and N. V. Gnezdilov5, ∗"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1910.00671v3",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "Planckian superconductor",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The success in applying the SYK model to qualitative studies of strange metals and the minimalistic structure of the model itself fostered the effort to find a mechanism by which the superconducting state is formed out of an incoherent SYK"
+        },
+        {
+          "page": 1,
+          "quote": "At the critical coupling the pairing gap turns out to be proportional to the Planckian relaxation rate at low temperatures,"
+        }
+      ],
+      "text": "Can a superconducting state form out of an incoherent SYK metal, and at the critical coupling is the pairing gap set by the Planckian relaxation rate?"
+    },
+    "references": [
+      {
+        "authors": [
+          "J. Bardeen",
+          "L. N. Cooper",
+          "J. R. Schrieffer"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev.",
+        "year": 1957
+      },
+      {
+        "authors": [
+          "A. Altland",
+          "B. D. Simons"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 8,
+        "title": "Condensed Matter Field Theory, 2nd ed.",
+        "venue": "Cambridge University Press",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "T. Senthil"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "B. Keimer",
+          "S. A. Kivelson",
+          "M. R. Norman",
+          "S. Uchida",
+          "J. Zaanen"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 8,
+        "title": null,
+        "venue": "Nature",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "C. M. Varma",
+          "P. B. Littlewood",
+          "S. Schmitt-Rink",
+          "E. Abrahams",
+          "A. E. Ruckenstein"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1989
+      },
+      {
+        "authors": [
+          "S. Sachdev"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 8,
+        "title": "Quantum Phase Transitions, 2nd ed.",
+        "venue": "Cambridge University Press",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "J. Zaanen"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 8,
+        "title": null,
+        "venue": "Nature",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "J. Maldacena",
+          "S. H. Shenker",
+          "D. Stanford"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 8,
+        "title": null,
+        "venue": "Journal of High Energy Physics",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "S. H. Shenker",
+          "D. Stanford"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 8,
+        "title": null,
+        "venue": "Journal of High Energy Physics",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "D. A. Roberts",
+          "B. Swingle"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "A. I. Larkin",
+          "Y. N. Ovchinnikov"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 8,
+        "title": null,
+        "venue": "Sov. Phys. JETP",
+        "year": 1969
+      },
+      {
+        "authors": [
+          "S. Sachdev",
+          "J. Ye"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1993
+      },
+      {
+        "authors": [
+          "A. Kitaev"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 8,
+        "title": "KITP Program: Entanglement in Strongly-Correlated Quantum Matter",
+        "venue": null,
+        "year": 2015
+      },
+      {
+        "authors": [
+          "J. Maldacena",
+          "D. Stanford"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. D",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "S. Sachdev"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. X",
+        "year": 2015
+      },
+      {
+        "authors": [
+          "K. Bulycheva"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 8,
+        "title": null,
+        "venue": "Journal of High Energy Physics",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "R. A. Davison",
+          "W. Fu",
+          "A. Georges",
+          "Y. Gu",
+          "K. Jensen",
+          "S. Sachdev"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "X.-Y. Song",
+          "C.-M. Jian",
+          "L. Balents"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "H. Takagi",
+          "B. Batlogg",
+          "H. L. Kao",
+          "J. Kwo",
+          "R. J. Cava",
+          "J. J. Krajewski",
+          "W. F. Peck"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1992
+      },
+      {
+        "authors": [
+          "L. Taillefer"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 8,
+        "title": null,
+        "venue": "Annual Review of Condensed Matter Physics",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "A. A. Patel",
+          "S. Sachdev"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "J. A. N. Bruin",
+          "H. Sakai",
+          "R. S. Perry",
+          "A. P. Mackenzie"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 8,
+        "title": null,
+        "venue": "Science",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "A. Legros",
+          "S. Benhabib",
+          "W. Tabis",
+          "F. Laliberté",
+          "M. Dion",
+          "M. Lizaire",
+          "B. Vignolle",
+          "D. Vignolles",
+          "H. Raffy",
+          "Z. Z. Li",
+          "P. Auban-Senzier",
+          "N. Doiron-Leyraud",
+          "P. Fournier",
+          "D. Colson",
+          "T. L.",
+          "C. Proust"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 8,
+        "title": null,
+        "venue": "Nature Physics",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y. Nakajima",
+          "T. Metz",
+          "C. Eckberg",
+          "K. Kirshenbaum",
+          "A. Hughes",
+          "R. Wang",
+          "L. Wang",
+          "S. R. Saha",
+          "I.-L. Liu",
+          "N. P. Butch",
+          "D. Campbell",
+          "Y. S. Eo",
+          "D. Graf",
+          "Z. Liu",
+          "S. V. Borisenko",
+          "P. Y. Zavalij",
+          "J. Paglione"
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 8,
+        "title": null,
+        "venue": "arXiv:1902.01034 [cond-mat.str-el]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y. Cao",
+          "D. Chowdhury",
+          "D. Rodan-Legrain",
+          "O. Rubies-Bigordà",
+          "K. Watanabe",
+          "T. Taniguchi",
+          "T. Senthil",
+          "P. Jarillo-Herrero"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 8,
+        "title": null,
+        "venue": "arXiv:1901.03710 [cond-mat.str-el]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "A. A. Patel",
+          "M. J. Lawler",
+          "Eu.-A. Kim"
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "I. Esterlis",
+          "J. Schmalian"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y. Wang"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 8,
+        "title": null,
+        "venue": "arXiv:1904.07240 [cond-mat.str-el]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "D. Chowdhury",
+          "E. Berg"
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 8,
+        "title": null,
+        "venue": "arXiv:1908.02757 [cond-mat.str-el]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "L. Kouwenhoven",
+          "C. Marcus"
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 8,
+        "title": null,
+        "venue": "Physics World",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "M. Maple",
+          "W. Fertig",
+          "A. Mota",
+          "L. DeLong",
+          "D. Wohlleben",
+          "R. Fitzgerald"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 8,
+        "title": null,
+        "venue": "Solid State Communications",
+        "year": 1972
+      },
+      {
+        "authors": [
+          "Y. B. Simons",
+          "O. Entin-Wohlman",
+          "Y. Oreg",
+          "Y. Imry"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "E. Müller-Hartmann",
+          "J. Zittartz"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1971
+      },
+      {
+        "authors": [
+          "G. Riblet",
+          "K. Winzer"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 8,
+        "title": null,
+        "venue": "Solid State Communications",
+        "year": 1971
+      },
+      {
+        "authors": [
+          "E. Mller-Hartmann",
+          "B. Schuh",
+          "J. Zittartz"
+        ],
+        "doi": null,
+        "key": "35",
+        "page": 8,
+        "title": null,
+        "venue": "Solid State Communications",
+        "year": 1976
+      },
+      {
+        "authors": [
+          "J. A. Melsen",
+          "P. W. Brouwer",
+          "K. M. Frahm",
+          "C. W. J. Beenakker"
+        ],
+        "doi": null,
+        "key": "36",
+        "page": 8,
+        "title": null,
+        "venue": "Physica Scripta",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "H. Schomerus",
+          "C. W. J. Beenakker"
+        ],
+        "doi": null,
+        "key": "37",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "A. Lodder",
+          "Yu. V. Nazarov"
+        ],
+        "doi": null,
+        "key": "38",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 1998
+      },
+      {
+        "authors": [
+          "İ. Adagideli",
+          "C. W. J. Beenakker"
+        ],
+        "doi": null,
+        "key": "39",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2002
+      },
+      {
+        "authors": [
+          "M. G. Vavilov",
+          "A. I. Larkin"
+        ],
+        "doi": null,
+        "key": "40",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "R. Richardson"
+        ],
+        "doi": null,
+        "key": "41",
+        "page": 8,
+        "title": null,
+        "venue": "Physics Letters",
+        "year": 1963
+      },
+      {
+        "authors": [
+          "J. von Delft",
+          "A. D. Zaikin",
+          "D. S. Golubev",
+          "W. Tichy"
+        ],
+        "doi": null,
+        "key": "42",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "K. A. Matveev",
+          "A. I. Larkin"
+        ],
+        "doi": null,
+        "key": "43",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 1997
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "44",
+        "page": 8,
+        "title": "See Appendix A.",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "S. Banerjee",
+          "E. Altman"
+        ],
+        "doi": null,
+        "key": "45",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "X. Chen",
+          "R. Fan",
+          "Y. Chen",
+          "H. Zhai",
+          "P. Zhang"
+        ],
+        "doi": null,
+        "key": "46",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "S.-K. Jian",
+          "H. Yao"
+        ],
+        "doi": null,
+        "key": "47",
+        "page": 8,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "L. P. Gor’kov"
+        ],
+        "doi": null,
+        "key": "48",
+        "page": 8,
+        "title": null,
+        "venue": "Sov. Phys. JETP",
+        "year": 1958
+      },
+      {
+        "authors": [
+          "P. De Gennes"
+        ],
+        "doi": null,
+        "key": "49",
+        "page": 8,
+        "title": "Superconductivity of Metals and Alloys",
+        "venue": "Benjamin",
+        "year": 1966
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "50",
+        "page": 8,
+        "title": "The full self-consistent scheme (6-9) is solved numerically with the adaptive golden ratio algorithm [62,63].",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "51",
+        "page": 8,
+        "title": "Earlier it was shown that the superconducting instability in the unparticle system leads to the reentrance effect as well [64], whereas restoration of the quasiparticles makes the critical temperature a single-valued function of the pairing strenth.",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "52",
+        "page": 8,
+        "title": "The gap decrease in Figure 4 at very low temperatures (see the enlarged segments) has a numerical origin. As Matsubara frequencies are ∝ T, achieving temperatures close to zero requires a sufficient increase of the numerical grid. This leads to the accuracy reduce due to the computer memory overflow [63].",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "C. W. J. Beenakker"
+        ],
+        "doi": null,
+        "key": "53",
+        "page": 8,
+        "title": "“Andreev billiards,” in Quantum Dots: a Doorway to Nanoscale Physics",
+        "venue": "Springer Berlin Heidelberg",
+        "year": 2005
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "54",
+        "page": 8,
+        "title": "The equilibration time and the Lyapunov time are a priori different physical quantities. Nevertheless, the fact that both quantities are subjected to the same bound raises the question of whether those two seemingly independent quantities might be related. This hypothesis has been intensively investigated in the context of the AdS/CFT correspondence, in large–N vector models and spin systems (see [65] and the references therein). In systems with a small parameter (large–N quantum field theories or weakly coupled field theories) where a regime of exponential growth is present in the OTOC, however, they are set by the same physics even though they are quantitatively different [66,67].",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "M. Abramowitz",
+          "I. A. Stegun"
+        ],
+        "doi": null,
+        "key": "55",
+        "page": 9,
+        "title": "Handbook of Mathematical Functions with Formulas, Graphs, and Mathematical Tables",
+        "venue": "Dover",
+        "year": 1964
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "56",
+        "page": 9,
+        "title": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "57",
+        "page": 9,
+        "title": "We use ∫_0^{+∞} dω/π (it_c^2/(ω + √p G_SYK(ω)))^−4 = 9π^{3/2} p J/t_c^4.",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "A. Romero-Bermúdez",
+          "K. Schalm",
+          "V. Scopelliti"
+        ],
+        "doi": null,
+        "key": "58",
+        "page": 9,
+        "title": null,
+        "venue": "Journal of High Energy Physics",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "A. Chen",
+          "R. Ilan",
+          "F. de Juan",
+          "D. I. Pikulin",
+          "M. Franz"
+        ],
+        "doi": null,
+        "key": "59",
+        "page": 9,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "I. Danshita",
+          "M. Hanada",
+          "M. Tezuka"
+        ],
+        "doi": null,
+        "key": "60",
+        "page": 9,
+        "title": null,
+        "venue": "Progress of Theoretical and Experimental Physics",
+        "year": 2017
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "61",
+        "page": 9,
+        "title": "We compute the corresponding Green’s functions in time representation with the adapted Fast Fourier Transform each iteration.",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Yu. Malitsky"
+        ],
+        "doi": "10.1007/s10107-019-01416-w",
+        "key": "62",
+        "page": 9,
+        "title": null,
+        "venue": "Math. Program.",
+        "year": 2019
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "63",
+        "page": 9,
+        "title": "See Appendix B.",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "A. Karch",
+          "K. Limtragool",
+          "P. W. Phillips"
+        ],
+        "doi": null,
+        "key": "64",
+        "page": 9,
+        "title": null,
+        "venue": "Journal of High Energy Physics",
+        "year": 2016
+      },
+      {
+        "authors": [
+          "J. Couch",
+          "S. Eccles",
+          "P. Nguyen",
+          "B. Swingle",
+          "S. Xu"
+        ],
+        "doi": null,
+        "key": "65",
+        "page": 9,
+        "title": null,
+        "venue": "arXiv:1908.06993 [cond-mat.stat-mech]",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "S. Grozdanov",
+          "K. Schalm",
+          "V. Scopelliti"
+        ],
+        "doi": null,
+        "key": "66",
+        "page": 9,
+        "title": null,
+        "venue": "Phys. Rev. Lett.",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "S. Grozdanov",
+          "K. Schalm",
+          "V. Scopelliti"
+        ],
+        "doi": null,
+        "key": "67",
+        "page": 9,
+        "title": null,
+        "venue": "Phys. Rev. E",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Y.-M. Wu",
+          "A. Abanov",
+          "Y. Wang",
+          "A. V. Chubukov"
+        ],
+        "doi": null,
+        "key": "68",
+        "page": 9,
+        "title": null,
+        "venue": "Phys. Rev. B",
+        "year": 2019
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The Bardeen-Cooper-Schrieffer mechanism of conventional superconductivity¹ requires two species of fermions coupled by an attractive two-body interaction.²",
+        "reference_key": "1,2",
+        "relation": "uses_method",
+        "why": "The paper starts from the standard BCS/Richardson description of the superconducting dot before adding the SYK coupling."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The widely known Sachdev-Ye-Kitaev (SYK) model,12,13 describing strongly interacting Majorana zero modes in 0 + 1 dimensions, saturates the chaos bound tL = tP.13,14",
+        "reference_key": "12,13,14",
+        "relation": "extends",
+        "why": "It takes the maximally chaotic SYK model and couples it to a superconducting dot."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "These properties do not change upon replacing Majoranas with conventional fermions (complex SYK model).15,16",
+        "reference_key": "15,16",
+        "relation": "uses_method",
+        "why": "It uses the complex SYK model as the fermionic incoherent sector in its Hamiltonian."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The Planckian relaxation rate ~/tP = 2πkBT sets a characteristic timescale for both the equilibration of quantum critical systems and maximal quantum chaos.",
+        "reference_key": "6,7,8",
+        "relation": "extends",
+        "why": "It builds the central claim on the Planckian relaxation time as a universal timescale."
+      },
+      {
+        "confidence": "medium",
+        "page": 1,
+        "quote": "This theoretical finding that we refer to as a Planckian superconductor draws parallels to the phenomenon of reentrant superconductivity31,32 in Kondo superconductors33–35 and the physics of Andreev billiards.36–40",
+        "reference_key": "31,32,33,34,35,36,37,38,39,40",
+        "relation": "compares",
+        "why": "It explicitly draws parallels between its reentrant phase and earlier Kondo-superconductor and Andreev-billiard results."
+      },
+      {
+        "confidence": "high",
+        "page": 7,
+        "quote": "using the adaptive golden ratio algorithm,⁶² where the weight λ is not fixed but automatically adjusted to the local properties of the operator T̂:",
+        "reference_key": "62",
+        "relation": "uses_method",
+        "why": "The numerical solution of the self-consistent equations relies on the adaptive golden ratio algorithm."
+      },
+      {
+        "confidence": "medium",
+        "page": 9,
+        "quote": "Similarly, in large–N models, the primary contribution of low Matsubara frequencies ωn = ±πT to the gap equation leads to ∆ ∝ T [68].",
+        "reference_key": "68",
+        "relation": "supports",
+        "why": "It notes that a known large-N result also gives ∆ ∝ T from low Matsubara frequencies, supporting the observed linear gap."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Summarizing, the normal phase in the infrared limit is described by the inverse Green’s function of the SYK model at small p, whereas it crosses over to free fermions for large p values.",
+          "start_page": 1,
+          "start_text": "Planckian superconductor"
+        },
+        "summary": "Motivates the Planckian/SYK problem, defines the superconducting-dot–cSYK Hamiltonian, and introduces the saddle-point equations and normal-phase behavior.",
+        "title": "Model and Normal Phase"
+      },
+      {
+        "pages": {
+          "end": 3,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 3,
+          "end_text": "It is still possible to suppress the superconductivity at zero temperature providing sufficient impurities, but there is only a single critical temperature as the normal phase is always set by the free fermions.⁵¹",
+          "start_page": 2,
+          "start_text": "The gap equation (9) at ∆ = 0 makes a boundary"
+        },
+        "summary": "Analyzes the competition among SYK non-Fermi liquid, free fermions, and superconductivity, yielding a critical coupling and reentrant superconductivity with two critical temperatures.",
+        "title": "Reentrant Superconductivity and Critical Coupling"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "However, this requires consideration of a more realistic setup such as a superconducting lead attached to the particular realization of the complex SYK model.",
+          "start_page": 3,
+          "start_text": "From Figure 2 (right), one notices the pairing gap"
+        },
+        "summary": "Derives the low-temperature gap at critical coupling, compares it to Andreev-billiard expectations, obtains ∆ ∝ T and η ≈ 1.22 analytically versus η ≈ 0.96 numerically, and concludes the gap is set by ħ/tP.",
+        "title": "Planckian Gap and Conclusion"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "the precision of tc reaches 10−7 for p = 0.002",
+          "start_page": 5,
+          "start_text": "Appendix A: Derivation of the gap equation"
+        },
+        "summary": "Appendix A derives the disorder-averaged action and Schwinger-Dyson equations; Appendix B describes the adaptive golden ratio numerical solver, grid, precision, and extraction of tc and η.",
+        "title": "Appendices: Derivation and Numerical Method"
+      },
+      {
+        "pages": {
+          "end": 9,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 9,
+          "end_text": "Phys. Rev. B 99, 144512 (2019).",
+          "start_page": 8,
+          "start_text": "J. Bardeen, L. N. Cooper, and J. R. Schrieffer"
+        },
+        "summary": "Bibliography of cited works, including SYK, Planckian, superconducting, reentrant, Andreev-billiard, and numerical-method references.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a theoretical physics preprint presenting a model, saddle-point derivations, and numerical results.",
+      "value": "theory"
+    }
+  }
+}

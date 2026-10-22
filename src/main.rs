@@ -66,7 +66,7 @@ struct Cli {
     notes: PathBuf,
 
     /// JSON settings file; defaults to optional ./lysilogy.config.json.
-    #[arg(long, env = "LYSILOGY_CONFIG", global = true)]
+    #[arg(long, env = "LYSILOGY_CONFIG")]
     config: Option<PathBuf>,
 
     #[command(subcommand)]
@@ -88,6 +88,44 @@ impl LabelSidecar {
             Self::Claude => AnalysisProvider::Claude,
             Self::Codex => AnalysisProvider::Codex,
             Self::OpenRouter => AnalysisProvider::OpenRouter,
+        }
+    }
+}
+
+/// How much reasoning `extract` asks each model call to spend.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+enum ReasoningChoice {
+    Off,
+    Low,
+    Medium,
+    High,
+}
+
+impl ReasoningChoice {
+    const fn effort(self) -> lysilogy::analysis::openrouter::ReasoningEffort {
+        use lysilogy::analysis::openrouter::ReasoningEffort;
+        match self {
+            Self::Off => ReasoningEffort::Off,
+            Self::Low => ReasoningEffort::Low,
+            Self::Medium => ReasoningEffort::Medium,
+            Self::High => ReasoningEffort::High,
+        }
+    }
+}
+
+/// How `extract` asks for the core fields.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
+enum CoreModeChoice {
+    Combined,
+    Fanout,
+}
+
+impl CoreModeChoice {
+    const fn mode(self) -> lysilogy::paper_artifacts::run::CoreMode {
+        use lysilogy::paper_artifacts::run::CoreMode;
+        match self {
+            Self::Combined => CoreMode::Combined,
+            Self::Fanout => CoreMode::Fanout,
         }
     }
 }
@@ -225,6 +263,53 @@ enum Command {
         /// Emit JSON instead of a text summary.
         #[arg(long)]
         json: bool,
+    },
+    /// Fill the paper-artifacts schema from a PDF with one model (extraction spike).
+    Extract {
+        /// A paper ID or an unambiguous title fragment; or pass --pdf.
+        #[arg(required_unless_present = "pdf", conflicts_with = "pdf")]
+        query: Option<String>,
+        /// Any PDF path, inside the library or not.
+        #[arg(long)]
+        pdf: Option<PathBuf>,
+        /// The `OpenRouter` model.
+        #[arg(long, default_value = lysilogy::analysis::openrouter::DEFAULT_MODEL)]
+        model: String,
+        /// 1 for a single pass, 2 to add the self-check pass.
+        #[arg(long, default_value_t = 2, value_parser = clap::value_parser!(u8).range(1..=2))]
+        passes: u8,
+        /// Where the JSON record goes; defaults to <data>/extract/<stem>.json.
+        #[arg(long)]
+        out: Option<PathBuf>,
+        /// Where page text and images go; defaults to <data>/extract/<stem>/.
+        #[arg(long)]
+        work: Option<PathBuf>,
+        /// Page image resolution.
+        #[arg(long, default_value_t = lysilogy::paper_artifacts::resources::DEFAULT_DPI)]
+        dpi: u32,
+        /// No further model call starts once this paper has spent this much (USD).
+        #[arg(long, default_value_t = 0.15)]
+        paper_budget_usd: f64,
+        /// Optional feature passes after the core pass: figures, tables,
+        /// algorithms, equations, objects, supercut, analysis, glossary, all, none.
+        #[arg(long, default_value = "")]
+        features: String,
+        /// Pages per chunk for the chunked object pass.
+        #[arg(long, default_value_t = 6, value_parser = clap::value_parser!(u16).range(1..=50))]
+        object_pages: u16,
+        /// How much reasoning each model call may spend.
+        #[arg(long, value_enum, default_value = "low")]
+        reasoning: ReasoningChoice,
+        /// Ask for the core fields one per call over a shared prefix (`fanout`),
+        /// or all at once (`combined`).
+        #[arg(long, value_enum, default_value = "combined")]
+        core_mode: CoreModeChoice,
+        /// Try this provider first and do not fall back; repeat to order several.
+        #[arg(long = "provider")]
+        providers: Vec<String>,
+        /// A run config JSON; its call list replaces --features and --core-mode.
+        #[arg(long)]
+        config: Option<PathBuf>,
     },
     /// Analyze one paper selected by ID or an unambiguous title fragment.
     Analyze {
@@ -514,6 +599,73 @@ async fn run(cli: Cli) -> Result<()> {
             Ok(())
         }
         Command::Audit { query, all, json } => audit_command(&state, query, all, json).await,
+        Command::Extract {
+            query,
+            pdf,
+            model,
+            passes,
+            out,
+            work,
+            dpi,
+            paper_budget_usd,
+            features,
+            object_pages,
+            reasoning,
+            core_mode,
+            providers,
+            config,
+        } => {
+            let pdf = match (pdf, query) {
+                (Some(pdf), _) => pdf,
+                (None, Some(query)) => {
+                    let id = resolve_paper(&state, &query).await?;
+                    let paper = state.paper(&id).await?;
+                    cli.library.join(&paper.paper.relative_path)
+                }
+                (None, None) => {
+                    return Err(Error::InvalidRequest("provide a paper or --pdf".into()));
+                }
+            };
+            let stem = pdf.file_stem().map_or_else(
+                || "paper".to_owned(),
+                |stem| stem.to_string_lossy().into_owned(),
+            );
+            let extract_root = cli.data.join("extract");
+            let options = lysilogy::paper_artifacts::run::ExtractOptions {
+                output: out.unwrap_or_else(|| extract_root.join(format!("{stem}.json"))),
+                work_directory: work.unwrap_or_else(|| extract_root.join(&stem)),
+                pdf,
+                model,
+                passes,
+                dpi,
+                paper_budget_usd,
+                timeout: std::time::Duration::from_secs(20 * 60),
+                features: lysilogy::paper_artifacts::features::Features::parse(&features)?,
+                object_pages: usize::from(object_pages),
+                reasoning: reasoning.effort(),
+                core_mode: core_mode.mode(),
+                providers,
+                plan: match config {
+                    Some(path) => Some(lysilogy::paper_artifacts::config::RunConfig::parse(
+                        &tokio::fs::read_to_string(&path)
+                            .await
+                            .map_err(|error| Error::io(&path, error))?,
+                    )?),
+                    None => None,
+                },
+            };
+            let ledger = lysilogy::analysis::spend::SpendLedger::with_defaults();
+            let record = lysilogy::paper_artifacts::run::extract(&options, &ledger).await?;
+            print_extract_summary(&record, &options.output);
+            if record.succeeded() {
+                Ok(())
+            } else {
+                Err(Error::Task(format!(
+                    "extraction incomplete; see {}",
+                    options.output.display()
+                )))
+            }
+        }
         Command::Spend => {
             let path = lysilogy::analysis::spend::default_ledger_path();
             let budget = lysilogy::analysis::spend::budget_usd();
@@ -2317,6 +2469,58 @@ fn format_counts(counts: &BTreeMap<String, usize>) -> String {
         .join(", ")
 }
 
+fn print_extract_summary(
+    record: &lysilogy::paper_artifacts::run::ExtractRecord,
+    output: &std::path::Path,
+) {
+    println!(
+        "{} · {} pages · {}",
+        record.model,
+        record.pages,
+        record.pdf.display()
+    );
+    for call in &record.calls {
+        println!(
+            "  {:<16} {:>7} in {:>7} out  ${:.4}  {:>6.1}s  {}",
+            call.stage,
+            call.prompt_tokens,
+            call.completion_tokens,
+            call.cost_usd,
+            call.latency_s,
+            call.finish_reason.as_deref().unwrap_or("-"),
+        );
+    }
+    println!(
+        "  total ${:.4} · {:.1}s wall",
+        record.totals.cost_usd, record.totals.wall_s
+    );
+    if let Some(trace) = &record.reasoning_trace {
+        println!("  reasoning traces: {trace}");
+    }
+    if !record.admission_counts.is_empty() {
+        let counts = record
+            .admission_counts
+            .iter()
+            .map(|(status, count)| format!("{status} {count}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        println!("  quotes: {counts}");
+    }
+    if !record.correction_outcomes.is_empty() {
+        println!(
+            "  self-check: {} corrections",
+            record.correction_outcomes.len()
+        );
+    }
+    if let Some(reason) = &record.budget_stopped {
+        println!("  budget: {reason}");
+    }
+    for failure in &record.failures {
+        println!("  failed {}: {}", failure.stage, failure.error);
+    }
+    println!("  wrote {}", output.display());
+}
+
 async fn resolve_paper(state: &AppState, query: &str) -> Result<PaperId> {
     if let Ok(id) = query.parse::<PaperId>()
         && state.paper(&id).await.is_ok()
@@ -2646,6 +2850,28 @@ mod tests {
             Cli::try_parse_from(["lysilogy", "fetch", "--cited-by", "Paper", "--limit", "5"])
                 .is_ok()
         );
+    }
+
+    #[test]
+    fn should_bind_config_to_the_extract_plan_not_app_settings() {
+        let plan = Cli::try_parse_from([
+            "lysilogy", "extract", "--pdf", "x.pdf", "--config", "run.json",
+        ])
+        .expect("extract plan config");
+        assert!(plan.config.is_none());
+        assert!(matches!(
+            plan.command,
+            Some(Command::Extract { config: Some(path), .. }) if path == Path::new("run.json")
+        ));
+        let settings = Cli::try_parse_from([
+            "lysilogy", "--config", "app.json", "extract", "--pdf", "x.pdf",
+        ])
+        .expect("app settings config");
+        assert_eq!(settings.config.as_deref(), Some(Path::new("app.json")));
+        assert!(matches!(
+            settings.command,
+            Some(Command::Extract { config: None, .. })
+        ));
     }
 
     #[test]

@@ -1,0 +1,533 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T21:11:19.495724820Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Dijkstra - 1968 - GOTO Statements Considered Harmful.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 4,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65536,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 8008,
+      "cached_tokens": 256,
+      "completion_tokens": 9266,
+      "reasoning_tokens": 8090,
+      "cost_usd": 0.0049780752,
+      "cost_source": "reported",
+      "latency_s": 92.513937391
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 8112,
+      "cached_tokens": 384,
+      "completion_tokens": 10580,
+      "reasoning_tokens": 10209,
+      "cost_usd": 0.0055271328,
+      "cost_source": "reported",
+      "latency_s": 93.110330396
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 3748,
+      "cached_tokens": 0,
+      "completion_tokens": 323,
+      "reasoning_tokens": 292,
+      "cost_usd": 0.00066038,
+      "cost_source": "reported",
+      "latency_s": 7.599276611
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 19868,
+    "cached_tokens": 640,
+    "completion_tokens": 20169,
+    "cost_usd": 0.011165588,
+    "model_latency_s": 193.223544398,
+    "wall_s": 194.086486024
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e11-oneshot-30-2026-10-20/results/dijkstra1968.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "Not abstract"
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": []
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "the go to statement as it stands is just too primitive"
+          }
+        ],
+        "text": "The go to statement should be abolished from higher-level programming languages because it makes program intelligibility and process description worse."
+      }
+    },
+    "citations": [
+      {
+        "context": "Wirth and Hoare together make a remark in the same direction in motivating the case construction: \"Like the conditional, it mirrors die dynamic structure of a program more eleaHy than go to statements a~d switches, s a d it eliminates the need for introducing a large number of labels i~ the program.\"",
+        "page": 2,
+        "reference_key": "1"
+      },
+      {
+        "context": "Guiseppe aaeopini seems to have proved the (togieM) superfluousness of the go to statement.",
+        "page": 2,
+        "reference_key": "2"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Technogogicag University Eindhoven, The NegheHa~ds",
+          "name": "EDSGER Wo I)UKSTRA"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Go T o S t a t e m e n t\nConsidered Harmful"
+        },
+        {
+          "page": 1,
+          "quote": "EDSGER Wo I)UKSTRA"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Go T o S t a t e m e n t Considered Harmful",
+      "venue": "Communications of the ACM",
+      "year": 1968
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "the use of the go to statement has such disastrous effects"
+        }
+      ],
+      "text": "Why does the use of the go to statement have disastrous effects, and should it be abolished from higher-level programming languages?"
+    },
+    "references": [
+      {
+        "authors": [
+          "WIRTH, N.",
+          "HOARE, C. A. R."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 2,
+        "title": "A contribution to the development of ALGOL",
+        "venue": "Comm. ACM",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "BOHM, CORRADO",
+          "JACOPINI, GIUSEPPE"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 2,
+        "title": "Flow diagrams, Turing machines and languages with only two formation rules",
+        "venue": "Comm. ACM",
+        "year": 1966
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Like the conditional, it mirrors die dynamic",
+        "reference_key": "1",
+        "relation": "critiques",
+        "why": "Dijkstra cites Wirth and Hoare's case construction as a structured alternative that reduces reliance on go to statements."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Guiseppe aaeopini seems to have proved the (togieM)",
+        "reference_key": "2",
+        "relation": "supports",
+        "why": "Dijkstra cites Bohm and Jacopini as having shown the logical superfluousness of the go to statement, but cautions against mechanically using the result to rewrite flow diagrams."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "The remark about the undesirability of the go to statement is far from new.",
+          "start_page": 1,
+          "start_text": "Go T o S t a t e m e n t"
+        },
+        "summary": "Dijkstra argues that the go to statement should be abolished from higher-level programming languages because it destroys the programmer's ability to describe the dynamic progress of a process with meaningful independent coordinates.",
+        "title": "Go To Statement Considered Harmful"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The text is printed as a signed letter headed by 'EDITOR:' in the Communications of the ACM, but it functions as a short position paper arguing against the go to statement.",
+      "value": "position"
+    }
+  },
+  "pass1_check": {
+    "sites": 9,
+    "verbatim": 7,
+    "near": 1,
+    "missing": 1,
+    "wrong_page": 1
+  },
+  "corrections": [
+    {
+      "path": "/card/thesis/evidence/0/quote",
+      "action": "replace",
+      "value_json": "\"The go to statement as it stands is just too primitive\"",
+      "reason": "Quote must match the paper exactly, including capitalization.",
+      "evidence": [
+        {
+          "quote": "The go to statement as it stands is just too primitive; it is too much an invitation to make a mess of one's program.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/identity/evidence/1/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "The author signature appears on page 2, not page 1.",
+      "evidence": [
+        {
+          "quote": "EDSGER Wo I)UKSTRA",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/relations/0/relation",
+      "action": "replace",
+      "value_json": "\"supports\"",
+      "reason": "The cited Wirth and Hoare remark is presented as being in the same direction, i.e. supporting Dijkstra's argument, not critiquing it.",
+      "evidence": [
+        {
+          "quote": "Wirth and Hoare together make a remark in the same direetion in motivating the case eonstruetion",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/sections/0/summary",
+      "action": "replace",
+      "value_json": "\"Dijkstra argues that the go to statement should be abolished from higher-level programming languages because its unbridled use makes it terribly hard to find a meaningful set of coordinates to describe the process progress.\"",
+      "reason": "The paper says it becomes terribly hard to find meaningful coordinates, not that the ability is destroyed.",
+      "evidence": [
+        {
+          "quote": "The unbridled use of the go to statement has an immediate consequence that it becomes terribly hard to find a meaningful set of coordinates in which to describe the process progress.",
+          "page": 1
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/card/thesis/evidence/0/quote",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/identity/evidence/1/page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/relations/0/relation",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/sections/0/summary",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 9,
+    "verbatim": 7,
+    "near": 1,
+    "missing": 1,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "withdrawn",
+      "original": "Not abstract",
+      "admitted": null,
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": null
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The go to statement as it stands is just too primitive",
+      "admitted": "The go to statement as it stands is just too primitive",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Go T o S t a t e m e n t\nConsidered Harmful",
+      "admitted": "Go T o S t a t e m e n t\nConsidered Harmful",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "EDSGER Wo I)UKSTRA",
+      "admitted": "EDSGER Wo I)UKSTRA",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "the use of the go to statement has such disastrous effects",
+      "admitted": "the use of the go to statement has such disastrous effects",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "repaired_local",
+      "original": "Wirth and Hoare together make a remark in the same direction in motivating the case construction: \"Like the conditional, it mirrors die dynamic structure of a program more eleaHy than go to statements a~d switches, s a d it eliminates the need for introducing a large number of labels i~ the program.\"",
+      "admitted": "Wirth and Hoare together make a remark in the same direetion in motivating the case eonstruetion: \"Like the conditional, it mirrors die dynamic structure of a program more eleaHy than go to statements a~d switches, s a d it eliminates the need for introducing a large number of labels i~ the program.\"",
+      "similarity": 0.9615384615384616,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "Guiseppe aaeopini seems to have proved the (togieM) superfluousness of the go to statement.",
+      "admitted": "Guiseppe aaeopini seems to have proved the (togieM) superfluousness of the go to statement.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "Like the conditional, it mirrors die dynamic",
+      "admitted": "Like the conditional, it mirrors die dynamic",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Guiseppe aaeopini seems to have proved the (togieM)",
+      "admitted": "Guiseppe aaeopini seems to have proved the (togieM)",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 1,
+    "verbatim": 7,
+    "withdrawn": 1
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": null
+    },
+    "card": {
+      "position": {
+        "predecessors": [],
+        "replications": [],
+        "targets": []
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "The go to statement as it stands is just too primitive"
+          }
+        ],
+        "text": "The go to statement should be abolished from higher-level programming languages because it makes program intelligibility and process description worse."
+      }
+    },
+    "citations": [
+      {
+        "context": "Wirth and Hoare together make a remark in the same direetion in motivating the case eonstruetion: \"Like the conditional, it mirrors die dynamic structure of a program more eleaHy than go to statements a~d switches, s a d it eliminates the need for introducing a large number of labels i~ the program.\"",
+        "page": 2,
+        "reference_key": "1"
+      },
+      {
+        "context": "Guiseppe aaeopini seems to have proved the (togieM) superfluousness of the go to statement.",
+        "page": 2,
+        "reference_key": "2"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Technogogicag University Eindhoven, The NegheHa~ds",
+          "name": "EDSGER Wo I)UKSTRA"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "Go T o S t a t e m e n t\nConsidered Harmful"
+        },
+        {
+          "page": 2,
+          "quote": "EDSGER Wo I)UKSTRA"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "Go T o S t a t e m e n t Considered Harmful",
+      "venue": "Communications of the ACM",
+      "year": 1968
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "the use of the go to statement has such disastrous effects"
+        }
+      ],
+      "text": "Why does the use of the go to statement have disastrous effects, and should it be abolished from higher-level programming languages?"
+    },
+    "references": [
+      {
+        "authors": [
+          "WIRTH, N.",
+          "HOARE, C. A. R."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 2,
+        "title": "A contribution to the development of ALGOL",
+        "venue": "Comm. ACM",
+        "year": 1966
+      },
+      {
+        "authors": [
+          "BOHM, CORRADO",
+          "JACOPINI, GIUSEPPE"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 2,
+        "title": "Flow diagrams, Turing machines and languages with only two formation rules",
+        "venue": "Comm. ACM",
+        "year": 1966
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Like the conditional, it mirrors die dynamic",
+        "reference_key": "1",
+        "relation": "supports",
+        "why": "Dijkstra cites Wirth and Hoare's case construction as a structured alternative that reduces reliance on go to statements."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Guiseppe aaeopini seems to have proved the (togieM)",
+        "reference_key": "2",
+        "relation": "supports",
+        "why": "Dijkstra cites Bohm and Jacopini as having shown the logical superfluousness of the go to statement, but cautions against mechanically using the result to rewrite flow diagrams."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "The remark about the undesirability of the go to statement is far from new.",
+          "start_page": 1,
+          "start_text": "Go T o S t a t e m e n t"
+        },
+        "summary": "Dijkstra argues that the go to statement should be abolished from higher-level programming languages because its unbridled use makes it terribly hard to find a meaningful set of coordinates to describe the process progress.",
+        "title": "Go To Statement Considered Harmful"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "The text is printed as a signed letter headed by 'EDITOR:' in the Communications of the ACM, but it functions as a short position paper arguing against the go to statement.",
+      "value": "position"
+    }
+  }
+}

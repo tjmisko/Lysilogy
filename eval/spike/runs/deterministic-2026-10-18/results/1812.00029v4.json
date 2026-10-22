@@ -1,0 +1,2049 @@
+{
+  "abstract_status": "Accepted",
+  "artifacts": {
+    "abstract": {
+      "page": 1,
+      "text": "Decision forests are popular tools for classification and regression. These forests naturally generate proximity matrices that measure the frequency of observations appearing in the same leaf node. While other kernels are known to have strong theoretical properties such as being characteristic, there is no similar result available for decision forest-based kernels. In addition, existing approaches to independence and k-sample testing may require unfeasibly large sample sizes and are not interpretable. In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests. We leverage this to introduce kernel mean embedding random forest (KMERF), which is a valid and consistent method for independence and k-sample testing. Our extensive simulations demonstrate that KMERF outperforms other tests across a variety of independence and two-sample testing scenarios. Additionally, the test is interpretable, and its key features are readily discernible. This work therefore demonstrates the existence of a test that is both more powerful and more interpretable than existing methods, flying in the face of conventional wisdom of the trade-off between the two. 1 Introduction Decision forests are ensemble method popularized by Breiman [5]. It is highly effective in classification and regression tasks, particularly in high-dimensional settings [7, 8, 39]. This is achieved by randomly partitioning the feature set and using subsampling techniques to construct multiple decision trees from the training data. To measure the similarity between two observations, a proximity matrix can be constructed, defined as the percentage of trees in which both observations lie in the same leaf node [6]. This proximity matrix serves as an induced kernel or similarity matrix for the decision forest. In general, any random partition algorithm may produce such a kernel matrix. As the complexity of datasets grow, it becomes increasingly necessary to develop methods that can efficiently perform independence and k-sample testing. We also desire methods that are interpretable, lending insight into how and why statistically significant results were determined. Parametric methods are often highly interpretable, such as Pearson’s correlation and its rank variants [18, 24, 35]. These methods are still popular to detect linear and monotonic relationships in univariate settings, but they are not consistent for detecting more complicated nonlinear relationships. Nonparametric methods can be very powerful. The more recent distance correlation (Dcorr) [37, 38] and the kernel correlation (HSIC) [12, 13] are consistent for testing independence against any distribution of finite second moments for any finite dimensionality; moreover, the energy-based statistics (such as Dcorr) and kernel-based statistics (such as HSIC) are known to be exactly equivalent for all finite samples [23, 32]. The theory supporting universal consistency of these methods (which we refer to as kernel methods hereafter, without loss of generality) depends on those kernels being characteristic kernel [20, 21, 30, 32]. Unfortunately, the above tests do not attempt to further characterize the dependency structure. To the best of our knowledge, very few tests exist[17, 40]. In addition, although these methods all have asymptotic guarantees, for finite samples, performance can be impaired by poorly choosing a particular characteristic kernel. Choosing an appropriate kernel that properly summarize geometries within the data is often times non-obvious [29]. High-dimensional data is particularly vexing [27, 40], and a number of extensions have been proposed to achieve better power such as adaptive metric kernel choice [14], low-dimensional projections [16], and marginal correlations [31]. In this paper, we leverage the popular random forest method [5] and a recent chi-square test [34] for a more powerful and interpretable method for hypothesis testing. We prove that the random for- 1 † Johns Hopkins University (JHU),² University of Delaware. denotes equal contribution, ∗ corresponding author: jovo@jhu.edu. est induced kernel is a characteristic kernel, and the resulting kernel mean embedding random forest (KMERF) is a valid and consistent method for independence and k-sample testing. We then demonstrate its empirical advantage over existing tools for high-dimensional testing in a variety of dependence settings, suggesting that it will often be more powerful than existing approaches in real data. As random forest can directly estimate feature importances [5], the outputs of KMERF are also interpretable, KMERF therefore flies in the face of conventional wisdom that one must choose between power and interpretability: KMERF is both empirically more powerful and more interpretable than existing approaches. 2 Preliminaries 2.1 Hypothesis Testing The testing independence hypothesis is formulated as follows: suppose iid x i ∈ R p and y i ∈ R q, and n samples of (x i, y i) ∼ F XY, i.e., x i and y i are realizations of random variables X and Y. The hypothesis for testing independence is H 0: F XY = F X F Y, H A: F XY ̸ = F X F Y. Given any kernel function k(·, ·), we can formulate the kernel induced correlation measure as c nk (x, y) using the sample kernel matrices [12, 32], where x = {x i } and y = {y i }. When the kernel function k(·, ·) is characteristic, it has been shown that c nk (x, y) → 0 if and only if x and y are independent [12]. j The k-sample hypothesis is formulated as follows: let u i ∈ R p be the realization of random variable U j for j = 1,..., l and i = 1,..., n j. Suppose the l datasets that are sampled i.i.d. from F 1,..., F l and independently from one another. Then, H 0: F 1 = F 2 = · · · = F l, H A: ∃ j ̸ = j ′ s.t. F j ̸ = F j ′. By concatenating the l datasets and introducing an auxiliary random variable, the kernel correlation measure can be used for k-sample testing [23]. 2.2 Characteristic Kernel Definition 1. Let X be a separable metric space, such as R p. A kernel function k(·, ·): X × X → R measures the similarity between two observations in X, and an n × n kernel matrix for {x i ∈ X, i = 1,..., n} is defined by K(i, j) = k(x i, x j). • A kernel k(·, ·): X × X → R is positive definite if, for any n ≥ 2, x 1,..., x n ∈ X and a 1,..., a n ∈ R, it satisfies n X a i a j k(x i, x j) ≥ 0. i, j=1 • A characteristic kernel is a positive definite kernel that has the following property: for any two random variables X 1 and X 2 with distributions F X 1 and F X 2, (2.1) 3 E[k(·, X 1)] = E[k(·, X 2)] if and only if F X 1 = F X 2. KMERF The proposed approach for hypothesis testing, KMERF, involves the following steps:"
+    },
+    "citations": [
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      }
+    ],
+    "identity": {
+      "authors": [],
+      "title": ""
+    },
+    "objects": [
+      {
+        "caption": "Figure 1: Multivariate independence testing power for 20 different settings with increasing p , fixed q = 1 , and n = 100 . For the majority of the simulations and simulation dimensions, KMERF performs as well as, or better than, existing multivariate independence tests in high-dimensional dependence testing.",
+        "kind": "figure",
+        "label": "Figure 1",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Figure 2: Multivariate two-sample testing power for 20 different settings with increasing p , fixed q = 1 , and n = 100 . For nearly all simulations and simulation dimensions, KMERF performs as well as, or better than, existing multivariate two-sample tests in high-dimensional dependence testing.",
+        "kind": "figure",
+        "label": "Figure 2",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Figure 3: Normalized mean (black) and 95% confidence intervals (light grey) using min-max normalization for relative feature importances derived from random forest over five dimensions for each simulation tested for 100 samples. The features were sorted from most to least informative for all simulations except for the Independence simulation). As expected, estimated feature importance decreases as dimension increases. A feature of KMERF is insights into interpretability, and we show here which dimensions of our simulations influence the outcome of independence test the most.",
+        "kind": "figure",
+        "label": "Figure 3",
+        "number": null,
+        "page": 7
+      },
+      {
+        "caption": "Figure 4: (A) For each peptide, the p-values for testing dependence between pancreatic and healthy subjects by KMERF is compared to the p-value for testing dependence between pancreatic and all other subjects. At the critical level 0.05, KMERF identifies a unique protein. (B) The true and false positive counts using a k-nearest neighbor (choosing the best k ∈ [1, 10] ) leave-one-out classification using only the significant peptides identified by each method. The peptide identified by KMERF achieves the best true and false positive rates.",
+        "kind": "figure",
+        "label": "Figure 4",
+        "number": null,
+        "page": 8
+      }
+    ],
+    "references": [
+      {
+        "authors": [
+          "S. Athey",
+          "J. Tibshirani",
+          "S. Wager"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 9,
+        "title": "Generalized random forests",
+        "venue": "Annals of Statistics, 47(2): 1148–1178",
+        "year": "2018"
+      },
+      {
+        "authors": [
+          "Y. Benjamini",
+          "Y. Hochberg"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 9,
+        "title": "Controlling the false discovery rate: a practical and powerful approach to multiple testing",
+        "venue": "Journal of the royal statistical society. Series B (Methodological), pages 289–300",
+        "year": "1995"
+      },
+      {
+        "authors": [
+          "P. J. Bickel",
+          "K. A. Doksum"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 9,
+        "title": "Mathematical Statistics: Basic Ideas and Selected Topics, Vol I. Prentice Hall, 2nd edition, 2006",
+        "venue": null,
+        "year": "2006"
+      },
+      {
+        "authors": [
+          "R. Blaser",
+          "P. Fryzlewicz"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 9,
+        "title": "Random rotation ensembles",
+        "venue": "Journal of Machine Learning Research, 17(4):1–26",
+        "year": "2016"
+      },
+      {
+        "authors": [
+          "L. Breiman"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 9,
+        "title": "Random forests",
+        "venue": "Machine Learning, 4(1):5–32, October",
+        "year": "2001"
+      },
+      {
+        "authors": [
+          "L. Breiman"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 9,
+        "title": "Some infinity theory for predictor ensembles",
+        "venue": "Journal of Combinatorial Theory, Series A, 98:175–191",
+        "year": "2002"
+      },
+      {
+        "authors": [
+          "R. Caruana",
+          "A. Niculescu-Mizil. An empirical comparison of supervised learning algorithms"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 9,
+        "title": "In Proceedings of the 23rd international conference on Machine learning, pages 161–168",
+        "venue": "ACM",
+        "year": "2006"
+      },
+      {
+        "authors": [
+          "R. Caruana",
+          "N. Karampatziakis",
+          "A. Yessenalina"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 9,
+        "title": "An empirical evaluation of supervised learning in high dimensions",
+        "venue": "Proceedings of the 25th International Conference on Machine Learning",
+        "year": "2008"
+      },
+      {
+        "authors": [
+          "A. Davies",
+          "Z. Ghahramani"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 9,
+        "title": "The random forest kernel and creating other kernels for big data from random partitions",
+        "venue": null,
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "L. Devroye",
+          "L. Györfi",
+          "G. Lugosi"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 9,
+        "title": "A Probabilistic Theory of Pattern Recognition",
+        "venue": "Springer",
+        "year": "1996"
+      },
+      {
+        "authors": [
+          "P. Good"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 9,
+        "title": "Permutation, Parametric, and Bootstrap Tests of Hypotheses",
+        "venue": "Springer",
+        "year": "2005"
+      },
+      {
+        "authors": [
+          "A. Gretton",
+          "R. Herbrich",
+          "A. Smola",
+          "O. Bousquet",
+          "B. Scholkopf"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 9,
+        "title": "Kernel methods for measuring independence",
+        "venue": "Journal of Machine Learning Research, 6",
+        "year": "2005"
+      },
+      {
+        "authors": [
+          "A. Gretton",
+          "K. M. Borgwardt",
+          "M. J. Rasch",
+          "B. Schölkopf",
+          "A. Smola"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 9,
+        "title": "A Kernel Two-Sample Test",
+        "venue": "Journal of Machine Learning Research, 13(25):723–773",
+        "year": "2012"
+      },
+      {
+        "authors": [
+          "A. Gretton",
+          "D. Sejdinovic",
+          "H. Strathmann",
+          "S. Balakrishnan",
+          "M. M. Pontil",
+          "K. Fukumizu",
+          "B. K. Sriperumbudur"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 9,
+        "title": "Optimal kernel choice for large-scale two-sample tests",
+        "venue": "In Advances in neural information processing systems 25, pages 1205–1213",
+        "year": "2012"
+      },
+      {
+        "authors": [
+          "R. Heller",
+          "Y. Heller",
+          "M. Gorfine"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 9,
+        "title": "A consistent multivariate test of association based on ranks of distances",
+        "venue": "Biometrika, 100(2):503–510",
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "C. Huang",
+          "X. Huo"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 9,
+        "title": "A statistically and numerically efficient independence test based on random projections and distance covariance",
+        "venue": "arXiv",
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "W. Jitkrittum",
+          "Z. Szabó",
+          "K. P. Chwialkowski",
+          "A. Gretton"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 9,
+        "title": "Interpretable distribution features with maximum testing power",
+        "venue": "In Advances in Neural Information Processing Systems, pages 181–189",
+        "year": "2016"
+      },
+      {
+        "authors": [
+          "M. G. Kendall"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 9,
+        "title": "Rank Correlation Methods",
+        "venue": "London: Griffin",
+        "year": "1970"
+      },
+      {
+        "authors": [
+          "Y. Lin",
+          "Y. Jeon"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 9,
+        "title": "Random forests and adaptive nearest neighbors",
+        "venue": "J. Am. Stat. Assoc., 101 (474):578–590",
+        "year": "2006"
+      },
+      {
+        "authors": [
+          "R. Lyons"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 9,
+        "title": "Distance covariance in metric spaces",
+        "venue": "Annals of Probability, 41(5):3284–3305",
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "R. Lyons"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 9,
+        "title": "Errata to “distance covariance in metric spaces”",
+        "venue": "Annals of Probability, 46(4):2400– 2405",
+        "year": "2018"
+      },
+      {
+        "authors": [
+          "S. Panda",
+          "S. Palaniappan",
+          "J. Xiong",
+          "E. W. Bridgeford",
+          "R. Mehta",
+          "C. Shen",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 9,
+        "title": "hyppo: A comprehensive multivariate hypothesis testing python package, 2020",
+        "venue": null,
+        "year": "2020"
+      },
+      {
+        "authors": [
+          "S. Panda",
+          "C. Shen",
+          "R. Perry",
+          "J. Zorn",
+          "A. Lutz",
+          "C. E. Priebe",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 9,
+        "title": "Nonpar manova via independence testing, 2021",
+        "venue": null,
+        "year": "2021"
+      },
+      {
+        "authors": [
+          "K. Pearson"
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 9,
+        "title": "Notes on regression and inheritance in the case of two parents",
+        "venue": "Proceedings of the Royal Society of London, 58:240–242",
+        "year": "1895"
+      },
+      {
+        "authors": [
+          "F. Pedregosa",
+          "G. Varoquaux",
+          "A. Gramfort",
+          "V. Michel",
+          "B. Thirion",
+          "O. Grisel",
+          "M. Blondel",
+          "P. Prettenhofer",
+          "R. Weiss",
+          "V. Dubourg",
+          "J. Vanderplas",
+          "A. Passos",
+          "D. Cournapeau",
+          "M. Brucher",
+          "M. Perrot",
+          "Édouard Duchesnay"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 10,
+        "title": "Scikit-learn: Machine learning in python",
+        "venue": "Journal of Machine Learning Research, 12(85):2825–2830",
+        "year": "2011"
+      },
+      {
+        "authors": [
+          "A. Pentina",
+          "S. Ben-David. Multi-task",
+          "lifelong learning of kernels"
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 10,
+        "title": "In Algorithmic Learning Theory, pages 194–208",
+        "venue": "Springer International Publishing",
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "A. Ramdas",
+          "S. J. Reddi",
+          "B. Póczos",
+          "A. Singh",
+          "L. Wasserman"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 10,
+        "title": "On the decreasing power of kernel and distance based nonparametric hypothesis tests in high dimensions",
+        "venue": "In 29th AAAI Conference on Artificial Intelligence",
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "B. Schölkopf",
+          "A. J. Smola"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 10,
+        "title": "Learning with kernels: support vector machines, regularization, optimization, and beyond",
+        "venue": "MIT press",
+        "year": "2002"
+      },
+      {
+        "authors": [
+          "D. Sejdinovic",
+          "A. Gretton",
+          "B. Sriperumbudur",
+          "K. Fukumizu"
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 10,
+        "title": "Hypothesis testing using pairwise distances and associated kernels (with appendix)",
+        "venue": "arXiv preprint",
+        "year": "2012"
+      },
+      {
+        "authors": [
+          "D. Sejdinovic",
+          "B. Sriperumbudur",
+          "A. Gretton",
+          "K. Fukumizu"
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 10,
+        "title": "Equivalence of distance-based and rkhs-based statistics in hypothesis testing",
+        "venue": "Annals of Statistics, 41(5):2263–2291",
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "C. Shen"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 10,
+        "title": "Scaling up independence testing: Maximum marginal distance correlation and the chisquare test",
+        "venue": null,
+        "year": "2023"
+      },
+      {
+        "authors": [
+          "C. Shen",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 10,
+        "title": "The exact equivalence of distance and kernel methods in hypothesis testing",
+        "venue": "AStA Advances in Statistical Analysis, 105(3):385–403",
+        "year": "2021"
+      },
+      {
+        "authors": [
+          "C. Shen",
+          "C. E. Priebe",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 10,
+        "title": "From distance correlation to multiscale graph correla- tion",
+        "venue": "Journal of the American Statistical Association, 115(529):280–291",
+        "year": "2020"
+      },
+      {
+        "authors": [
+          "C. Shen",
+          "S. Panda",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 10,
+        "title": "The chi-square test of distance correlation",
+        "venue": "Journal of Computational and Graphical Statistics, 31(1):254–262",
+        "year": "2022"
+      },
+      {
+        "authors": [
+          "C. Spearman"
+        ],
+        "doi": "10.2307/1412159",
+        "key": "35",
+        "page": 10,
+        "title": "The Proof and Measurement of Association between Two Things",
+        "venue": "The American Journal of Psychology, 15(1):72",
+        "year": "1904"
+      },
+      {
+        "authors": [
+          "G. Szekely",
+          "M. Rizzo"
+        ],
+        "doi": null,
+        "key": "36",
+        "page": 10,
+        "title": "Partial distance correlation with methods for dissimilarities",
+        "venue": "Annals of Statistics, 42(6):2382–2412",
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "G. Székely",
+          "M. L. Rizzo"
+        ],
+        "doi": null,
+        "key": "37",
+        "page": 10,
+        "title": "The distance correlation t-test of independence in high dimension",
+        "venue": "Journal of Multivariate Analysis, 117:193–213",
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "G. Székely",
+          "M. L. Rizzo",
+          "N. K. Bakirov"
+        ],
+        "doi": null,
+        "key": "38",
+        "page": 10,
+        "title": "Measuring and testing independence by correlation of distances",
+        "venue": "Annals of Statistics, 35(6):2769–2794",
+        "year": "2007"
+      },
+      {
+        "authors": [
+          "T. Tomita",
+          "J. Browne",
+          "C. Shen",
+          "J. Chung",
+          "J. Patsolic",
+          "B. Falk",
+          "J. Yim",
+          "C. E. Priebe",
+          "R. Burns",
+          "M. Maggioni",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "39",
+        "page": 10,
+        "title": "Sparse projection oblique randomer forests",
+        "venue": "Journal of Machine Learning Research, 21(104):1–39",
+        "year": "2020"
+      },
+      {
+        "authors": [
+          "J. T. Vogelstein",
+          "Q. Wang",
+          "E. W. Bridgeford",
+          "C. E. Priebe",
+          "M. Maggioni",
+          "C. Shen"
+        ],
+        "doi": null,
+        "key": "40",
+        "page": 10,
+        "title": "Discovering and deciphering relationships across disparate data modalities",
+        "venue": "eLife, 8:e41690",
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "J. T. Vogelstein",
+          "J. Dey",
+          "H. S. Helm",
+          "W. LeVine",
+          "R. D. Mehta",
+          "T. M. Tomita",
+          "H. Xu",
+          "A. Geisa",
+          "Q. Wang",
+          "G. M. van de Ven",
+          "C. Gao",
+          "W. Yang",
+          "B. Tower",
+          "J. Larson",
+          "C. M. White",
+          "C. E. Priebe"
+        ],
+        "doi": null,
+        "key": "41",
+        "page": 10,
+        "title": "Representation ensembling for synergistic lifelong learning with quasilinear complexity, 2023",
+        "venue": null,
+        "year": "2023"
+      },
+      {
+        "authors": [
+          "Q. Wang",
+          "R. Chaerkady",
+          "J. Wu",
+          "H. J. Hwang",
+          "N. Papadopoulos",
+          "L. Kopelovich",
+          "A. Maitra",
+          "H. Matthaei",
+          "J. R. Eshleman",
+          "R. H. Hruban",
+          "et al. Mutant proteins as cancer-specific biomark- ers"
+        ],
+        "doi": null,
+        "key": "42",
+        "page": 10,
+        "title": "Proceedings of the National Academy of Sciences, 108(6):2444–2449, 2011",
+        "venue": null,
+        "year": "2011"
+      },
+      {
+        "authors": [
+          "Q. Wang",
+          "M. Zhang",
+          "T. Tomita",
+          "J. T. Vogelstein",
+          "S. Zhou",
+          "N. Papadopoulos",
+          "K. W. Kinzler",
+          "B. Vogelstein"
+        ],
+        "doi": null,
+        "key": "43",
+        "page": 10,
+        "title": "Selected reaction monitoring approach for validating peptide biomarkers",
+        "venue": "Proceedings of the National Academy of Sciences, 114(51):13519–13524",
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "E. A. Willemse",
+          "A. De Vos",
+          "E. M. Herries",
+          "U. Andreasson",
+          "S. Engelborghs",
+          "W. M. Van Der Flier",
+          "P. Scheltens",
+          "D. Crimmins",
+          "J. H. Ladenson",
+          "E. Vanmechelen",
+          "et al. Neurogranin as cerebrospinal fluid biomarker for alzheimer disease: an assay comparison study"
+        ],
+        "doi": null,
+        "key": "44",
+        "page": 10,
+        "title": "Clinical chemistry, 64(6):927– 937, 2018",
+        "venue": null,
+        "year": "2018"
+      },
+      {
+        "authors": [
+          "J. Yang",
+          "F. K. Korley",
+          "M. Dai",
+          "A. D. Everett"
+        ],
+        "doi": null,
+        "key": "45",
+        "page": 11,
+        "title": "Serum neurogranin measurement as a biomarker of acute traumatic brain injury",
+        "venue": "Clinical biochemistry, 48(13-14):843–848",
+        "year": "2015"
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "1",
+        "page": 13,
+        "title": "Linear (X, Y ) ∈ R p × R : X ∼ U (−1, 1) p , Y = w T X + κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "2",
+        "page": 13,
+        "title": "Exponential (X, Y ) ∈ R p × R : X ∼ U (0, 3) p , \u0010 \u0011 Y = exp w T X + 10κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Cubic (X",
+          "Y ) ∈ R p × R : X ∼ U (−1",
+          "1) p",
+          "\u0012 \u0013 \u0012 \u0013 \u0012 \u0013 1 3 1 2 1 T T T Y = 128 w X − + 48 w X − − 12 w X − + 80κϵ"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 13,
+        "title": null,
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Joint Normal (X",
+          "Y ) ∈ R p × R \u0014 p : Let ρ = 1/2p",
+          "I p \u0015 be the identity matrix of size p × p",
+          "J p be the matrix of ones of size p × p",
+          "Σ = I p ρJ p"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 13,
+        "title": "Then, ρJ p (1 + 0.5κ) I p (X, Y ) ∼ N (0, Σ)",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "5",
+        "page": 14,
+        "title": "Step Function (X, Y ) ∈ R p × R : X ∼ U (−1, 1) p , \u0010 \u0011 Y = I w T X > 0 + ϵ, where I is the indicator function; that is, I (z) is unity whenever z is true, and 0 otherwise",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "6",
+        "page": 14,
+        "title": "Quadratic (X, Y ) ∈ R p × R : X ∼ U (−1, 1) p , \u0010 \u0011 2 Y = w T X + 0.5κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "7",
+        "page": 14,
+        "title": "W-Shape (X, Y ) ∈ R p × R : For U ∼ U (−1, 1) p , X ∼ U (−1, 1) p , Y =4 \"\u0012 \u0010 w T X \u0011 2 1 − 2 \u0013 2 w T U + 500 # + 0.5κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "8",
+        "page": 14,
+        "title": "Spiral (X, Y ) ∈ R p × R : For U ∼ U (0, 5) , ϵ ∼ N (0, 1) , X |d| = U sin (πU ) cos d (πU ) for d = 1, ..., p − 1, X |p| = U cos p (πU ) , Y = U sin (πU ) + 0.4pϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "9",
+        "page": 14,
+        "title": "Uncorrelated Bernoulli (X, Y ) ∈ R p × R : For U ∼ B (0.5) , ϵ 1 ∼ N (0, I p ) , ϵ 2 ∼ N (0, 1) , X ∼ B (0.5) p + 0.5ϵ 1 , Y = (2U − 1) w T X + 0.5ϵ 2",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "10",
+        "page": 14,
+        "title": "Logarithmic (X, Y ) ∈ R p × R p : For ϵ ∼ N (0, I p ) , X ∼ N (0, I p ) , Y |d| = 2 log 2 X |d| \u0001 + 3κϵ |d| for d = 1, ..., p",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "11",
+        "page": 14,
+        "title": "Fourth Root (X, Y ) ∈ R p × R : X ∼ U (−1, 1) p , Y = w T X 1/4 + κ ϵ. 4",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "12",
+        "page": 14,
+        "title": "Sine Period 4 π(X, Y ) ∈ R p × R p : For U ∼ U (−1, 1) , V ∼ N (0, 1) p , θ = 4π , X |d| = U + 0.02pV |d| for d = 1, ..., p, Y = sin(θX) + κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "13",
+        "page": 14,
+        "title": "Sine Period 16 π(X, Y ) ∈ R p × R p : Same as above except θ = 16π and the noise on Y is changed to 0.5κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "14",
+        "page": 15,
+        "title": "Square (X, Y ) ∈ R p × R p : For U ∼ U (−1, 1) , V ∼ U (−1, 1) , ϵ ∼ N (0, 1) p , θ = − π 8 , X |d| = U cos (θ) + V sin (θ) + 0.05pϵ |d| , Y |d| = −U sin (θ) + V cos (θ)",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "15",
+        "page": 15,
+        "title": "Diamond (X, Y ) ∈ R p × R p : Same as above except θ = π/4",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Two Parabolas (X",
+          "Y ) ∈ R p × R : For ϵ ∼ U (0",
+          "1)",
+          "U ∼ B (0.5)",
+          "X ∼ U (−1",
+          "1) p",
+          "\u0012\u0010 \u0013 \u0012 \u0013 \u0011 2 1 T Y ="
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 15,
+        "title": "w X + 2κϵ · U − 2",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "17",
+        "page": 15,
+        "title": "Circle (X, Y ) ∈ R p × R : For U ∼ U (−1, 1) p , ϵ ∼ N (0, I p ) , r = 1 ,  X |d| = r  sin πU |d+1| d \u0001 Y  \u0001 cos πU |j|  for d = 1, ..., p − 1, j=1  X |p| = r  p Y  \u0001 cos πU |j|  , j=1 \u0001 Y = sin πU |1| + 0.4ϵ |p|",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "18",
+        "page": 15,
+        "title": "Ellipse (X, Y ) ∈ R p × R p : Same as above except r = 5",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "19",
+        "page": 15,
+        "title": "Multiplicative Noise (x, y) ∈ R p × R p : u ∼ N (0, I p ) , x ∼ N (0, I p ) , y |d| = u |d| x |d| for d = 1, ..., p",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Multimodal Independence (X",
+          "Y ) ∈ R p × R : For U ∼ N (0",
+          "I p )",
+          "V ∼ N (0",
+          "I p )",
+          "U ′ ∼ B (0.5) p",
+          "V ′ ∼ B (0.5) p",
+          "X = U/3 + 2U ′ − 1",
+          "Y = V /3 + 2V ′ − 1"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 15,
+        "title": "Figure F1 visualizes these equations",
+        "venue": "The light grey points in the figure are each simulation with noise added and the dark grey points are each simulation without noise added. Note that the last two simulations don’t have any noise parameters. C.2 Two-Sample Simulations We do two-sample testing between Z and Z ′ , generated as follows: let Z = [X|Y ] be the respective random variables from the independence simulation setup. Then define Q θ as a rotation matrix for a given angle θ , i.e.,   cos θ 0 . . . − sin θ  0 1 ... 0    Q θ =  . . ..  .. . . .  .. .  sin θ 0 . . . cos θ Then we let Z ′ = Q θ Z T be the rotated versions of Z . Independence Simulations Linear Exponential Cubic Joint Normal Step Quadratic W-Shaped Spiral Bernoulli Logarithmic Fourth Root Sine 4 Sine 16 Square Two Parabolas Ellipse Diamond Noise Independence Circle Noisy No Noise Figure F2 visualizes the above simulations. The simulations light grey points is a simulated data set and the dark grey points are the same dataset rotated by 10 degrees counter-clockwise. Simulations were plotted with min-max normalization for visualization purposes. Appendix D. Real Data. Previous studies have shown the utility of selection reaction monitoring when measuring protein and peptide abundance [42], and one was used to identify 318 peptides from 33 normal, 10 pancreatic cancer, 28 colorectal cancer, and 24 ovarian cancer samples [43]. For all tests, we created a binary label vector, where 1 indicated presence of pancreatic cancer in the patients and 0 otherwise. We then evaluated at a type 1 error level of α = 0.05 , and used the Benjamini- Hochberg procedure to control the false discovery rate [2] for our 318 p-values. All data used in this experiment are provided in the supplmental. Two-Sample Simulations Linear Exponential Cubic Joint Normal Step Quadratic W-Shaped Spiral Bernoulli Logarithmic Fourth Root Sine 4 Sine 16 Square Two Parabolas Circle Ellipse Diamond Noise Independence Sample 1 Sample 2 Appendix E. Hardware and Software Configurations. • Operating System: Linux (ubuntu 20.04) • VM Size: Azure Standard D96as v4 (96 vcpus, 384 GiB memory), Azure Standard B20ms (20 vcpus, 80 GiB memory) • Software: Python 3.8, hyppo v0.4.0",
+        "year": null
+      }
+    ]
+  },
+  "calls": [],
+  "failures": [],
+  "model": "deterministic",
+  "pages": 17,
+  "pass1": {
+    "abstract": {
+      "page": 1,
+      "text": "Decision forests are popular tools for classification and regression. These forests naturally generate proximity matrices that measure the frequency of observations appearing in the same leaf node. While other kernels are known to have strong theoretical properties such as being characteristic, there is no similar result available for decision forest-based kernels. In addition, existing approaches to independence and k-sample testing may require unfeasibly large sample sizes and are not interpretable. In this manuscript, we prove that the decision forest induced proximity is a characteristic kernel, enabling consistent independence and k-sample testing via decision forests. We leverage this to introduce kernel mean embedding random forest (KMERF), which is a valid and consistent method for independence and k-sample testing. Our extensive simulations demonstrate that KMERF outperforms other tests across a variety of independence and two-sample testing scenarios. Additionally, the test is interpretable, and its key features are readily discernible. This work therefore demonstrates the existence of a test that is both more powerful and more interpretable than existing methods, flying in the face of conventional wisdom of the trade-off between the two. 1 Introduction Decision forests are ensemble method popularized by Breiman [5]. It is highly effective in classification and regression tasks, particularly in high-dimensional settings [7, 8, 39]. This is achieved by randomly partitioning the feature set and using subsampling techniques to construct multiple decision trees from the training data. To measure the similarity between two observations, a proximity matrix can be constructed, defined as the percentage of trees in which both observations lie in the same leaf node [6]. This proximity matrix serves as an induced kernel or similarity matrix for the decision forest. In general, any random partition algorithm may produce such a kernel matrix. As the complexity of datasets grow, it becomes increasingly necessary to develop methods that can efficiently perform independence and k-sample testing. We also desire methods that are interpretable, lending insight into how and why statistically significant results were determined. Parametric methods are often highly interpretable, such as Pearson’s correlation and its rank variants [18, 24, 35]. These methods are still popular to detect linear and monotonic relationships in univariate settings, but they are not consistent for detecting more complicated nonlinear relationships. Nonparametric methods can be very powerful. The more recent distance correlation (Dcorr) [37, 38] and the kernel correlation (HSIC) [12, 13] are consistent for testing independence against any distribution of finite second moments for any finite dimensionality; moreover, the energy-based statistics (such as Dcorr) and kernel-based statistics (such as HSIC) are known to be exactly equivalent for all finite samples [23, 32]. The theory supporting universal consistency of these methods (which we refer to as kernel methods hereafter, without loss of generality) depends on those kernels being characteristic kernel [20, 21, 30, 32]. Unfortunately, the above tests do not attempt to further characterize the dependency structure. To the best of our knowledge, very few tests exist[17, 40]. In addition, although these methods all have asymptotic guarantees, for finite samples, performance can be impaired by poorly choosing a particular characteristic kernel. Choosing an appropriate kernel that properly summarize geometries within the data is often times non-obvious [29]. High-dimensional data is particularly vexing [27, 40], and a number of extensions have been proposed to achieve better power such as adaptive metric kernel choice [14], low-dimensional projections [16], and marginal correlations [31]. In this paper, we leverage the popular random forest method [5] and a recent chi-square test [34] for a more powerful and interpretable method for hypothesis testing. We prove that the random for- 1 † Johns Hopkins University (JHU),² University of Delaware. denotes equal contribution, ∗ corresponding author: jovo@jhu.edu. est induced kernel is a characteristic kernel, and the resulting kernel mean embedding random forest (KMERF) is a valid and consistent method for independence and k-sample testing. We then demonstrate its empirical advantage over existing tools for high-dimensional testing in a variety of dependence settings, suggesting that it will often be more powerful than existing approaches in real data. As random forest can directly estimate feature importances [5], the outputs of KMERF are also interpretable, KMERF therefore flies in the face of conventional wisdom that one must choose between power and interpretability: KMERF is both empirically more powerful and more interpretable than existing approaches. 2 Preliminaries 2.1 Hypothesis Testing The testing independence hypothesis is formulated as follows: suppose iid x i ∈ R p and y i ∈ R q, and n samples of (x i, y i) ∼ F XY, i.e., x i and y i are realizations of random variables X and Y. The hypothesis for testing independence is H 0: F XY = F X F Y, H A: F XY ̸ = F X F Y. Given any kernel function k(·, ·), we can formulate the kernel induced correlation measure as c nk (x, y) using the sample kernel matrices [12, 32], where x = {x i } and y = {y i }. When the kernel function k(·, ·) is characteristic, it has been shown that c nk (x, y) → 0 if and only if x and y are independent [12]. j The k-sample hypothesis is formulated as follows: let u i ∈ R p be the realization of random variable U j for j = 1,..., l and i = 1,..., n j. Suppose the l datasets that are sampled i.i.d. from F 1,..., F l and independently from one another. Then, H 0: F 1 = F 2 = · · · = F l, H A: ∃ j ̸ = j ′ s.t. F j ̸ = F j ′. By concatenating the l datasets and introducing an auxiliary random variable, the kernel correlation measure can be used for k-sample testing [23]. 2.2 Characteristic Kernel Definition 1. Let X be a separable metric space, such as R p. A kernel function k(·, ·): X × X → R measures the similarity between two observations in X, and an n × n kernel matrix for {x i ∈ X, i = 1,..., n} is defined by K(i, j) = k(x i, x j). • A kernel k(·, ·): X × X → R is positive definite if, for any n ≥ 2, x 1,..., x n ∈ X and a 1,..., a n ∈ R, it satisfies n X a i a j k(x i, x j) ≥ 0. i, j=1 • A characteristic kernel is a positive definite kernel that has the following property: for any two random variables X 1 and X 2 with distributions F X 1 and F X 2, (2.1) 3 E[k(·, X 1)] = E[k(·, X 2)] if and only if F X 1 = F X 2. KMERF The proposed approach for hypothesis testing, KMERF, involves the following steps:"
+    },
+    "citations": [
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 1
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 2
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 3
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 4
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 6
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      },
+      {
+        "page": 7
+      }
+    ],
+    "identity": {
+      "authors": [],
+      "title": ""
+    },
+    "objects": [
+      {
+        "caption": "Figure 1: Multivariate independence testing power for 20 different settings with increasing p , fixed q = 1 , and n = 100 . For the majority of the simulations and simulation dimensions, KMERF performs as well as, or better than, existing multivariate independence tests in high-dimensional dependence testing.",
+        "kind": "figure",
+        "label": "Figure 1",
+        "number": null,
+        "page": 5
+      },
+      {
+        "caption": "Figure 2: Multivariate two-sample testing power for 20 different settings with increasing p , fixed q = 1 , and n = 100 . For nearly all simulations and simulation dimensions, KMERF performs as well as, or better than, existing multivariate two-sample tests in high-dimensional dependence testing.",
+        "kind": "figure",
+        "label": "Figure 2",
+        "number": null,
+        "page": 6
+      },
+      {
+        "caption": "Figure 3: Normalized mean (black) and 95% confidence intervals (light grey) using min-max normalization for relative feature importances derived from random forest over five dimensions for each simulation tested for 100 samples. The features were sorted from most to least informative for all simulations except for the Independence simulation). As expected, estimated feature importance decreases as dimension increases. A feature of KMERF is insights into interpretability, and we show here which dimensions of our simulations influence the outcome of independence test the most.",
+        "kind": "figure",
+        "label": "Figure 3",
+        "number": null,
+        "page": 7
+      },
+      {
+        "caption": "Figure 4: (A) For each peptide, the p-values for testing dependence between pancreatic and healthy subjects by KMERF is compared to the p-value for testing dependence between pancreatic and all other subjects. At the critical level 0.05, KMERF identifies a unique protein. (B) The true and false positive counts using a k-nearest neighbor (choosing the best k ∈ [1, 10] ) leave-one-out classification using only the significant peptides identified by each method. The peptide identified by KMERF achieves the best true and false positive rates.",
+        "kind": "figure",
+        "label": "Figure 4",
+        "number": null,
+        "page": 8
+      }
+    ],
+    "references": [
+      {
+        "authors": [
+          "S. Athey",
+          "J. Tibshirani",
+          "S. Wager"
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 9,
+        "title": "Generalized random forests",
+        "venue": "Annals of Statistics, 47(2): 1148–1178",
+        "year": "2018"
+      },
+      {
+        "authors": [
+          "Y. Benjamini",
+          "Y. Hochberg"
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 9,
+        "title": "Controlling the false discovery rate: a practical and powerful approach to multiple testing",
+        "venue": "Journal of the royal statistical society. Series B (Methodological), pages 289–300",
+        "year": "1995"
+      },
+      {
+        "authors": [
+          "P. J. Bickel",
+          "K. A. Doksum"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 9,
+        "title": "Mathematical Statistics: Basic Ideas and Selected Topics, Vol I. Prentice Hall, 2nd edition, 2006",
+        "venue": null,
+        "year": "2006"
+      },
+      {
+        "authors": [
+          "R. Blaser",
+          "P. Fryzlewicz"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 9,
+        "title": "Random rotation ensembles",
+        "venue": "Journal of Machine Learning Research, 17(4):1–26",
+        "year": "2016"
+      },
+      {
+        "authors": [
+          "L. Breiman"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 9,
+        "title": "Random forests",
+        "venue": "Machine Learning, 4(1):5–32, October",
+        "year": "2001"
+      },
+      {
+        "authors": [
+          "L. Breiman"
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 9,
+        "title": "Some infinity theory for predictor ensembles",
+        "venue": "Journal of Combinatorial Theory, Series A, 98:175–191",
+        "year": "2002"
+      },
+      {
+        "authors": [
+          "R. Caruana",
+          "A. Niculescu-Mizil. An empirical comparison of supervised learning algorithms"
+        ],
+        "doi": null,
+        "key": "7",
+        "page": 9,
+        "title": "In Proceedings of the 23rd international conference on Machine learning, pages 161–168",
+        "venue": "ACM",
+        "year": "2006"
+      },
+      {
+        "authors": [
+          "R. Caruana",
+          "N. Karampatziakis",
+          "A. Yessenalina"
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 9,
+        "title": "An empirical evaluation of supervised learning in high dimensions",
+        "venue": "Proceedings of the 25th International Conference on Machine Learning",
+        "year": "2008"
+      },
+      {
+        "authors": [
+          "A. Davies",
+          "Z. Ghahramani"
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 9,
+        "title": "The random forest kernel and creating other kernels for big data from random partitions",
+        "venue": null,
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "L. Devroye",
+          "L. Györfi",
+          "G. Lugosi"
+        ],
+        "doi": null,
+        "key": "10",
+        "page": 9,
+        "title": "A Probabilistic Theory of Pattern Recognition",
+        "venue": "Springer",
+        "year": "1996"
+      },
+      {
+        "authors": [
+          "P. Good"
+        ],
+        "doi": null,
+        "key": "11",
+        "page": 9,
+        "title": "Permutation, Parametric, and Bootstrap Tests of Hypotheses",
+        "venue": "Springer",
+        "year": "2005"
+      },
+      {
+        "authors": [
+          "A. Gretton",
+          "R. Herbrich",
+          "A. Smola",
+          "O. Bousquet",
+          "B. Scholkopf"
+        ],
+        "doi": null,
+        "key": "12",
+        "page": 9,
+        "title": "Kernel methods for measuring independence",
+        "venue": "Journal of Machine Learning Research, 6",
+        "year": "2005"
+      },
+      {
+        "authors": [
+          "A. Gretton",
+          "K. M. Borgwardt",
+          "M. J. Rasch",
+          "B. Schölkopf",
+          "A. Smola"
+        ],
+        "doi": null,
+        "key": "13",
+        "page": 9,
+        "title": "A Kernel Two-Sample Test",
+        "venue": "Journal of Machine Learning Research, 13(25):723–773",
+        "year": "2012"
+      },
+      {
+        "authors": [
+          "A. Gretton",
+          "D. Sejdinovic",
+          "H. Strathmann",
+          "S. Balakrishnan",
+          "M. M. Pontil",
+          "K. Fukumizu",
+          "B. K. Sriperumbudur"
+        ],
+        "doi": null,
+        "key": "14",
+        "page": 9,
+        "title": "Optimal kernel choice for large-scale two-sample tests",
+        "venue": "In Advances in neural information processing systems 25, pages 1205–1213",
+        "year": "2012"
+      },
+      {
+        "authors": [
+          "R. Heller",
+          "Y. Heller",
+          "M. Gorfine"
+        ],
+        "doi": null,
+        "key": "15",
+        "page": 9,
+        "title": "A consistent multivariate test of association based on ranks of distances",
+        "venue": "Biometrika, 100(2):503–510",
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "C. Huang",
+          "X. Huo"
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 9,
+        "title": "A statistically and numerically efficient independence test based on random projections and distance covariance",
+        "venue": "arXiv",
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "W. Jitkrittum",
+          "Z. Szabó",
+          "K. P. Chwialkowski",
+          "A. Gretton"
+        ],
+        "doi": null,
+        "key": "17",
+        "page": 9,
+        "title": "Interpretable distribution features with maximum testing power",
+        "venue": "In Advances in Neural Information Processing Systems, pages 181–189",
+        "year": "2016"
+      },
+      {
+        "authors": [
+          "M. G. Kendall"
+        ],
+        "doi": null,
+        "key": "18",
+        "page": 9,
+        "title": "Rank Correlation Methods",
+        "venue": "London: Griffin",
+        "year": "1970"
+      },
+      {
+        "authors": [
+          "Y. Lin",
+          "Y. Jeon"
+        ],
+        "doi": null,
+        "key": "19",
+        "page": 9,
+        "title": "Random forests and adaptive nearest neighbors",
+        "venue": "J. Am. Stat. Assoc., 101 (474):578–590",
+        "year": "2006"
+      },
+      {
+        "authors": [
+          "R. Lyons"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 9,
+        "title": "Distance covariance in metric spaces",
+        "venue": "Annals of Probability, 41(5):3284–3305",
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "R. Lyons"
+        ],
+        "doi": null,
+        "key": "21",
+        "page": 9,
+        "title": "Errata to “distance covariance in metric spaces”",
+        "venue": "Annals of Probability, 46(4):2400– 2405",
+        "year": "2018"
+      },
+      {
+        "authors": [
+          "S. Panda",
+          "S. Palaniappan",
+          "J. Xiong",
+          "E. W. Bridgeford",
+          "R. Mehta",
+          "C. Shen",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "22",
+        "page": 9,
+        "title": "hyppo: A comprehensive multivariate hypothesis testing python package, 2020",
+        "venue": null,
+        "year": "2020"
+      },
+      {
+        "authors": [
+          "S. Panda",
+          "C. Shen",
+          "R. Perry",
+          "J. Zorn",
+          "A. Lutz",
+          "C. E. Priebe",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "23",
+        "page": 9,
+        "title": "Nonpar manova via independence testing, 2021",
+        "venue": null,
+        "year": "2021"
+      },
+      {
+        "authors": [
+          "K. Pearson"
+        ],
+        "doi": null,
+        "key": "24",
+        "page": 9,
+        "title": "Notes on regression and inheritance in the case of two parents",
+        "venue": "Proceedings of the Royal Society of London, 58:240–242",
+        "year": "1895"
+      },
+      {
+        "authors": [
+          "F. Pedregosa",
+          "G. Varoquaux",
+          "A. Gramfort",
+          "V. Michel",
+          "B. Thirion",
+          "O. Grisel",
+          "M. Blondel",
+          "P. Prettenhofer",
+          "R. Weiss",
+          "V. Dubourg",
+          "J. Vanderplas",
+          "A. Passos",
+          "D. Cournapeau",
+          "M. Brucher",
+          "M. Perrot",
+          "Édouard Duchesnay"
+        ],
+        "doi": null,
+        "key": "25",
+        "page": 10,
+        "title": "Scikit-learn: Machine learning in python",
+        "venue": "Journal of Machine Learning Research, 12(85):2825–2830",
+        "year": "2011"
+      },
+      {
+        "authors": [
+          "A. Pentina",
+          "S. Ben-David. Multi-task",
+          "lifelong learning of kernels"
+        ],
+        "doi": null,
+        "key": "26",
+        "page": 10,
+        "title": "In Algorithmic Learning Theory, pages 194–208",
+        "venue": "Springer International Publishing",
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "A. Ramdas",
+          "S. J. Reddi",
+          "B. Póczos",
+          "A. Singh",
+          "L. Wasserman"
+        ],
+        "doi": null,
+        "key": "27",
+        "page": 10,
+        "title": "On the decreasing power of kernel and distance based nonparametric hypothesis tests in high dimensions",
+        "venue": "In 29th AAAI Conference on Artificial Intelligence",
+        "year": "2015"
+      },
+      {
+        "authors": [
+          "B. Schölkopf",
+          "A. J. Smola"
+        ],
+        "doi": null,
+        "key": "28",
+        "page": 10,
+        "title": "Learning with kernels: support vector machines, regularization, optimization, and beyond",
+        "venue": "MIT press",
+        "year": "2002"
+      },
+      {
+        "authors": [
+          "D. Sejdinovic",
+          "A. Gretton",
+          "B. Sriperumbudur",
+          "K. Fukumizu"
+        ],
+        "doi": null,
+        "key": "29",
+        "page": 10,
+        "title": "Hypothesis testing using pairwise distances and associated kernels (with appendix)",
+        "venue": "arXiv preprint",
+        "year": "2012"
+      },
+      {
+        "authors": [
+          "D. Sejdinovic",
+          "B. Sriperumbudur",
+          "A. Gretton",
+          "K. Fukumizu"
+        ],
+        "doi": null,
+        "key": "30",
+        "page": 10,
+        "title": "Equivalence of distance-based and rkhs-based statistics in hypothesis testing",
+        "venue": "Annals of Statistics, 41(5):2263–2291",
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "C. Shen"
+        ],
+        "doi": null,
+        "key": "31",
+        "page": 10,
+        "title": "Scaling up independence testing: Maximum marginal distance correlation and the chisquare test",
+        "venue": null,
+        "year": "2023"
+      },
+      {
+        "authors": [
+          "C. Shen",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "32",
+        "page": 10,
+        "title": "The exact equivalence of distance and kernel methods in hypothesis testing",
+        "venue": "AStA Advances in Statistical Analysis, 105(3):385–403",
+        "year": "2021"
+      },
+      {
+        "authors": [
+          "C. Shen",
+          "C. E. Priebe",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "33",
+        "page": 10,
+        "title": "From distance correlation to multiscale graph correla- tion",
+        "venue": "Journal of the American Statistical Association, 115(529):280–291",
+        "year": "2020"
+      },
+      {
+        "authors": [
+          "C. Shen",
+          "S. Panda",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "34",
+        "page": 10,
+        "title": "The chi-square test of distance correlation",
+        "venue": "Journal of Computational and Graphical Statistics, 31(1):254–262",
+        "year": "2022"
+      },
+      {
+        "authors": [
+          "C. Spearman"
+        ],
+        "doi": "10.2307/1412159",
+        "key": "35",
+        "page": 10,
+        "title": "The Proof and Measurement of Association between Two Things",
+        "venue": "The American Journal of Psychology, 15(1):72",
+        "year": "1904"
+      },
+      {
+        "authors": [
+          "G. Szekely",
+          "M. Rizzo"
+        ],
+        "doi": null,
+        "key": "36",
+        "page": 10,
+        "title": "Partial distance correlation with methods for dissimilarities",
+        "venue": "Annals of Statistics, 42(6):2382–2412",
+        "year": "2014"
+      },
+      {
+        "authors": [
+          "G. Székely",
+          "M. L. Rizzo"
+        ],
+        "doi": null,
+        "key": "37",
+        "page": 10,
+        "title": "The distance correlation t-test of independence in high dimension",
+        "venue": "Journal of Multivariate Analysis, 117:193–213",
+        "year": "2013"
+      },
+      {
+        "authors": [
+          "G. Székely",
+          "M. L. Rizzo",
+          "N. K. Bakirov"
+        ],
+        "doi": null,
+        "key": "38",
+        "page": 10,
+        "title": "Measuring and testing independence by correlation of distances",
+        "venue": "Annals of Statistics, 35(6):2769–2794",
+        "year": "2007"
+      },
+      {
+        "authors": [
+          "T. Tomita",
+          "J. Browne",
+          "C. Shen",
+          "J. Chung",
+          "J. Patsolic",
+          "B. Falk",
+          "J. Yim",
+          "C. E. Priebe",
+          "R. Burns",
+          "M. Maggioni",
+          "J. T. Vogelstein"
+        ],
+        "doi": null,
+        "key": "39",
+        "page": 10,
+        "title": "Sparse projection oblique randomer forests",
+        "venue": "Journal of Machine Learning Research, 21(104):1–39",
+        "year": "2020"
+      },
+      {
+        "authors": [
+          "J. T. Vogelstein",
+          "Q. Wang",
+          "E. W. Bridgeford",
+          "C. E. Priebe",
+          "M. Maggioni",
+          "C. Shen"
+        ],
+        "doi": null,
+        "key": "40",
+        "page": 10,
+        "title": "Discovering and deciphering relationships across disparate data modalities",
+        "venue": "eLife, 8:e41690",
+        "year": "2019"
+      },
+      {
+        "authors": [
+          "J. T. Vogelstein",
+          "J. Dey",
+          "H. S. Helm",
+          "W. LeVine",
+          "R. D. Mehta",
+          "T. M. Tomita",
+          "H. Xu",
+          "A. Geisa",
+          "Q. Wang",
+          "G. M. van de Ven",
+          "C. Gao",
+          "W. Yang",
+          "B. Tower",
+          "J. Larson",
+          "C. M. White",
+          "C. E. Priebe"
+        ],
+        "doi": null,
+        "key": "41",
+        "page": 10,
+        "title": "Representation ensembling for synergistic lifelong learning with quasilinear complexity, 2023",
+        "venue": null,
+        "year": "2023"
+      },
+      {
+        "authors": [
+          "Q. Wang",
+          "R. Chaerkady",
+          "J. Wu",
+          "H. J. Hwang",
+          "N. Papadopoulos",
+          "L. Kopelovich",
+          "A. Maitra",
+          "H. Matthaei",
+          "J. R. Eshleman",
+          "R. H. Hruban",
+          "et al. Mutant proteins as cancer-specific biomark- ers"
+        ],
+        "doi": null,
+        "key": "42",
+        "page": 10,
+        "title": "Proceedings of the National Academy of Sciences, 108(6):2444–2449, 2011",
+        "venue": null,
+        "year": "2011"
+      },
+      {
+        "authors": [
+          "Q. Wang",
+          "M. Zhang",
+          "T. Tomita",
+          "J. T. Vogelstein",
+          "S. Zhou",
+          "N. Papadopoulos",
+          "K. W. Kinzler",
+          "B. Vogelstein"
+        ],
+        "doi": null,
+        "key": "43",
+        "page": 10,
+        "title": "Selected reaction monitoring approach for validating peptide biomarkers",
+        "venue": "Proceedings of the National Academy of Sciences, 114(51):13519–13524",
+        "year": "2017"
+      },
+      {
+        "authors": [
+          "E. A. Willemse",
+          "A. De Vos",
+          "E. M. Herries",
+          "U. Andreasson",
+          "S. Engelborghs",
+          "W. M. Van Der Flier",
+          "P. Scheltens",
+          "D. Crimmins",
+          "J. H. Ladenson",
+          "E. Vanmechelen",
+          "et al. Neurogranin as cerebrospinal fluid biomarker for alzheimer disease: an assay comparison study"
+        ],
+        "doi": null,
+        "key": "44",
+        "page": 10,
+        "title": "Clinical chemistry, 64(6):927– 937, 2018",
+        "venue": null,
+        "year": "2018"
+      },
+      {
+        "authors": [
+          "J. Yang",
+          "F. K. Korley",
+          "M. Dai",
+          "A. D. Everett"
+        ],
+        "doi": null,
+        "key": "45",
+        "page": 11,
+        "title": "Serum neurogranin measurement as a biomarker of acute traumatic brain injury",
+        "venue": "Clinical biochemistry, 48(13-14):843–848",
+        "year": "2015"
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "1",
+        "page": 13,
+        "title": "Linear (X, Y ) ∈ R p × R : X ∼ U (−1, 1) p , Y = w T X + κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "2",
+        "page": 13,
+        "title": "Exponential (X, Y ) ∈ R p × R : X ∼ U (0, 3) p , \u0010 \u0011 Y = exp w T X + 10κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Cubic (X",
+          "Y ) ∈ R p × R : X ∼ U (−1",
+          "1) p",
+          "\u0012 \u0013 \u0012 \u0013 \u0012 \u0013 1 3 1 2 1 T T T Y = 128 w X − + 48 w X − − 12 w X − + 80κϵ"
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 13,
+        "title": null,
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Joint Normal (X",
+          "Y ) ∈ R p × R \u0014 p : Let ρ = 1/2p",
+          "I p \u0015 be the identity matrix of size p × p",
+          "J p be the matrix of ones of size p × p",
+          "Σ = I p ρJ p"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 13,
+        "title": "Then, ρJ p (1 + 0.5κ) I p (X, Y ) ∼ N (0, Σ)",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "5",
+        "page": 14,
+        "title": "Step Function (X, Y ) ∈ R p × R : X ∼ U (−1, 1) p , \u0010 \u0011 Y = I w T X > 0 + ϵ, where I is the indicator function; that is, I (z) is unity whenever z is true, and 0 otherwise",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "6",
+        "page": 14,
+        "title": "Quadratic (X, Y ) ∈ R p × R : X ∼ U (−1, 1) p , \u0010 \u0011 2 Y = w T X + 0.5κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "7",
+        "page": 14,
+        "title": "W-Shape (X, Y ) ∈ R p × R : For U ∼ U (−1, 1) p , X ∼ U (−1, 1) p , Y =4 \"\u0012 \u0010 w T X \u0011 2 1 − 2 \u0013 2 w T U + 500 # + 0.5κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "8",
+        "page": 14,
+        "title": "Spiral (X, Y ) ∈ R p × R : For U ∼ U (0, 5) , ϵ ∼ N (0, 1) , X |d| = U sin (πU ) cos d (πU ) for d = 1, ..., p − 1, X |p| = U cos p (πU ) , Y = U sin (πU ) + 0.4pϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "9",
+        "page": 14,
+        "title": "Uncorrelated Bernoulli (X, Y ) ∈ R p × R : For U ∼ B (0.5) , ϵ 1 ∼ N (0, I p ) , ϵ 2 ∼ N (0, 1) , X ∼ B (0.5) p + 0.5ϵ 1 , Y = (2U − 1) w T X + 0.5ϵ 2",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "10",
+        "page": 14,
+        "title": "Logarithmic (X, Y ) ∈ R p × R p : For ϵ ∼ N (0, I p ) , X ∼ N (0, I p ) , Y |d| = 2 log 2 X |d| \u0001 + 3κϵ |d| for d = 1, ..., p",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "11",
+        "page": 14,
+        "title": "Fourth Root (X, Y ) ∈ R p × R : X ∼ U (−1, 1) p , Y = w T X 1/4 + κ ϵ. 4",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "12",
+        "page": 14,
+        "title": "Sine Period 4 π(X, Y ) ∈ R p × R p : For U ∼ U (−1, 1) , V ∼ N (0, 1) p , θ = 4π , X |d| = U + 0.02pV |d| for d = 1, ..., p, Y = sin(θX) + κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "13",
+        "page": 14,
+        "title": "Sine Period 16 π(X, Y ) ∈ R p × R p : Same as above except θ = 16π and the noise on Y is changed to 0.5κϵ",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "14",
+        "page": 15,
+        "title": "Square (X, Y ) ∈ R p × R p : For U ∼ U (−1, 1) , V ∼ U (−1, 1) , ϵ ∼ N (0, 1) p , θ = − π 8 , X |d| = U cos (θ) + V sin (θ) + 0.05pϵ |d| , Y |d| = −U sin (θ) + V cos (θ)",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "15",
+        "page": 15,
+        "title": "Diamond (X, Y ) ∈ R p × R p : Same as above except θ = π/4",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Two Parabolas (X",
+          "Y ) ∈ R p × R : For ϵ ∼ U (0",
+          "1)",
+          "U ∼ B (0.5)",
+          "X ∼ U (−1",
+          "1) p",
+          "\u0012\u0010 \u0013 \u0012 \u0013 \u0011 2 1 T Y ="
+        ],
+        "doi": null,
+        "key": "16",
+        "page": 15,
+        "title": "w X + 2κϵ · U − 2",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "17",
+        "page": 15,
+        "title": "Circle (X, Y ) ∈ R p × R : For U ∼ U (−1, 1) p , ϵ ∼ N (0, I p ) , r = 1 ,  X |d| = r  sin πU |d+1| d \u0001 Y  \u0001 cos πU |j|  for d = 1, ..., p − 1, j=1  X |p| = r  p Y  \u0001 cos πU |j|  , j=1 \u0001 Y = sin πU |1| + 0.4ϵ |p|",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "18",
+        "page": 15,
+        "title": "Ellipse (X, Y ) ∈ R p × R p : Same as above except r = 5",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [],
+        "doi": null,
+        "key": "19",
+        "page": 15,
+        "title": "Multiplicative Noise (x, y) ∈ R p × R p : u ∼ N (0, I p ) , x ∼ N (0, I p ) , y |d| = u |d| x |d| for d = 1, ..., p",
+        "venue": null,
+        "year": null
+      },
+      {
+        "authors": [
+          "Multimodal Independence (X",
+          "Y ) ∈ R p × R : For U ∼ N (0",
+          "I p )",
+          "V ∼ N (0",
+          "I p )",
+          "U ′ ∼ B (0.5) p",
+          "V ′ ∼ B (0.5) p",
+          "X = U/3 + 2U ′ − 1",
+          "Y = V /3 + 2V ′ − 1"
+        ],
+        "doi": null,
+        "key": "20",
+        "page": 15,
+        "title": "Figure F1 visualizes these equations",
+        "venue": "The light grey points in the figure are each simulation with noise added and the dark grey points are each simulation without noise added. Note that the last two simulations don’t have any noise parameters. C.2 Two-Sample Simulations We do two-sample testing between Z and Z ′ , generated as follows: let Z = [X|Y ] be the respective random variables from the independence simulation setup. Then define Q θ as a rotation matrix for a given angle θ , i.e.,   cos θ 0 . . . − sin θ  0 1 ... 0    Q θ =  . . ..  .. . . .  .. .  sin θ 0 . . . cos θ Then we let Z ′ = Q θ Z T be the rotated versions of Z . Independence Simulations Linear Exponential Cubic Joint Normal Step Quadratic W-Shaped Spiral Bernoulli Logarithmic Fourth Root Sine 4 Sine 16 Square Two Parabolas Ellipse Diamond Noise Independence Circle Noisy No Noise Figure F2 visualizes the above simulations. The simulations light grey points is a simulated data set and the dark grey points are the same dataset rotated by 10 degrees counter-clockwise. Simulations were plotted with min-max normalization for visualization purposes. Appendix D. Real Data. Previous studies have shown the utility of selection reaction monitoring when measuring protein and peptide abundance [42], and one was used to identify 318 peptides from 33 normal, 10 pancreatic cancer, 28 colorectal cancer, and 24 ovarian cancer samples [43]. For all tests, we created a binary label vector, where 1 indicated presence of pancreatic cancer in the patients and 0 otherwise. We then evaluated at a type 1 error level of α = 0.05 , and used the Benjamini- Hochberg procedure to control the false discovery rate [2] for our 318 p-values. All data used in this experiment are provided in the supplmental. Two-Sample Simulations Linear Exponential Cubic Joint Normal Step Quadratic W-Shaped Spiral Bernoulli Logarithmic Fourth Root Sine 4 Sine 16 Square Two Parabolas Circle Ellipse Diamond Noise Independence Sample 1 Sample 2 Appendix E. Hardware and Software Configurations. • Operating System: Linux (ubuntu 20.04) • VM Size: Azure Standard D96as v4 (96 vcpus, 384 GiB memory), Azure Standard B20ms (20 vcpus, 80 GiB memory) • Software: Python 3.8, hyppo v0.4.0",
+        "year": null
+      }
+    ]
+  },
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1812.00029v4.pdf",
+  "record_version": 2,
+  "totals": {
+    "cost_usd": 0.0,
+    "wall_s": 2.172139738
+  }
+}

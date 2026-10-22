@@ -1,0 +1,2083 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-20T21:46:54.436233095Z",
+  "pdf": "/home/tjmisko/Corpora/arxiv/pdf/1909.01112v2.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 19,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 65192,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 18948,
+      "cached_tokens": 0,
+      "completion_tokens": 27653,
+      "reasoning_tokens": 17181,
+      "cost_usd": 0.01515286,
+      "cost_source": "reported",
+      "latency_s": 158.522010117
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "Relace",
+      "finish_reason": "stop",
+      "prompt_tokens": 24890,
+      "cached_tokens": 0,
+      "completion_tokens": 16051,
+      "reasoning_tokens": 15858,
+      "cost_usd": 0.0097678,
+      "cost_source": "reported",
+      "latency_s": 102.393564737
+    }
+  ],
+  "totals": {
+    "calls": 2,
+    "prompt_tokens": 43838,
+    "cached_tokens": 0,
+    "completion_tokens": 43704,
+    "cost_usd": 0.02492066,
+    "model_latency_s": 260.915574854,
+    "wall_s": 264.26653486
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e4-30-2026-10-20/results/1909.01112v2.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time. Compared to the existing notions introduced in (Huang & Nguyen-Huu, 2018) and (Christensen & Lindensjö, 2018), which in this paper are called mild equilibrium and weak equilibrium respectively, a strong equilibrium captures the idea of subgame perfect Nash equilibrium more accurately. When the state process is a continuoustime Markov chain and the discount function is log sub-additive, we show that an optimal mild equilibrium is always a strong equilibrium. Moreover, we provide a new iteration method that can directly construct an optimal mild equilibrium and thus also prove its existence."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Huang & Nguyen-Huu (2018)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium."
+              }
+            ],
+            "reference_key": "Huang & Nguyen-Huu, 2018",
+            "why": "This paper adopts the mild-equilibrium definition from Huang & Nguyen-Huu and critiques it."
+          },
+          {
+            "cited_work": "Huang & Zhou (2020)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established."
+              }
+            ],
+            "reference_key": "Huang & Zhou, 2020",
+            "why": "The paper builds on the optimal mild equilibrium selection problem and its existence result."
+          },
+          {
+            "cited_work": "Christensen & Lindensjö (2018)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting)."
+              }
+            ],
+            "reference_key": "Christensen & Lindensjö, 2018",
+            "why": "The paper adopts and contrasts with the weak-equilibrium definition from Christensen & Lindensjö."
+          },
+          {
+            "cited_work": "Huang & Zhou (n.d.)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.)."
+              }
+            ],
+            "reference_key": "Huang & Zhou, n.d.",
+            "why": "The strong-equilibrium concept is explicitly inspired by Huang & Zhou's control-problem equilibrium notion."
+          },
+          {
+            "cited_work": "Strotz (1955)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955)."
+              }
+            ],
+            "reference_key": "Strotz, 1955",
+            "why": "The paper locates its consistent-planning approach in the tradition dating back to Strotz."
+          },
+          {
+            "cited_work": "Björk et al. (2017)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate."
+              }
+            ],
+            "reference_key": "Björk et al., 2017",
+            "why": "Their remark on first-order criteria in time-inconsistent control motivates the paper's critique of weak equilibrium."
+          },
+          {
+            "cited_work": "Grenadier & Wang (2007)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting."
+              }
+            ],
+            "reference_key": "Grenadier & Wang, 2007",
+            "why": "The paper aligns itself with equilibrium stopping under time-inconsistent, quasi-hyperbolic discounting."
+          },
+          {
+            "cited_work": "He & Jiang (2020)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.)."
+              }
+            ],
+            "reference_key": "He & Jiang, 2020",
+            "why": "The paper distinguishes its stopping-problem equilibrium notions from He & Jiang's related equilibrium-control discussion."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "mild equilibrium",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Compared to (1.3) and (1.6), condition (1.8) not only captures the deviation from stopping to continuing, but also more precisely indicates the disincentive of such deviation."
+              }
+            ],
+            "reference_key": "mild equilibrium",
+            "why": "The paper argues mild equilibrium may fail to capture actual deviations when return time is zero."
+          },
+          {
+            "cited_work": "weak equilibrium",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate."
+              }
+            ],
+            "reference_key": "weak equilibrium",
+            "why": "The weak-equilibrium first-order condition can admit profitable deviations when the limit equals zero."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time."
+          }
+        ],
+        "text": "For continuous-time time-inconsistent stopping, the paper introduces a strong-equilibrium notion that better captures subgame-perfect Nash equilibrium, proves that optimal mild equilibria are strong under Markov-chain and log-subadditive discounting assumptions, and gives an iteration method that directly constructs an optimal mild equilibrium."
+      }
+    },
+    "citations": [
+      {
+        "context": "Compared to the existing notions introduced in (Huang & Nguyen-Huu, 2018) and (Christensen & Lindensjö, 2018), which in this paper are called mild equilibrium and weak equilibrium respectively, a strong equilibrium captures the idea of subgame perfect Nash equilibrium more accurately.",
+        "page": 1,
+        "reference_key": "Huang & Nguyen-Huu, 2018; Christensen & Lindensjö, 2018"
+      },
+      {
+        "context": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955).",
+        "page": 2,
+        "reference_key": "Strotz, 1955"
+      },
+      {
+        "context": "For discussions on different approaches, see (Pollak, 1968), (Ekeland & Lazrak, 2006), (Björk & Murgoci, 2014), (Björk, Khapko, & Murgoci, 2017), (Christensen & Lindensjö, 2018), (Huang, Nguyen-Huu, & Zhou, 2019), (Huang & Nguyen-Huu, 2018) and references therein.",
+        "page": 2,
+        "reference_key": "Pollak, 1968; Ekeland & Lazrak, 2006; Björk & Murgoci, 2014; Björk, Khapko, & Murgoci, 2017; Christensen & Lindensjö, 2018; Huang, Nguyen-Huu, & Zhou, 2019; Huang & Nguyen-Huu, 2018"
+      },
+      {
+        "context": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium.",
+        "page": 2,
+        "reference_key": "Huang & Nguyen-Huu, 2018; Huang & Zhou, 2020"
+      },
+      {
+        "context": "See (Huang & Zhou, 2017, Remark 2.3) and (Bayraktar, Zhang, & Zhou, 2019, Definition 2.2).",
+        "page": 2,
+        "reference_key": "Huang & Zhou, 2017; Bayraktar, Zhang, & Zhou, 2019"
+      },
+      {
+        "context": "As can be seen from (Huang & Nguyen-Huu, 2018; Huang et al., 2019; Huang & Zhou, 2020; Huang & Yu, 2019), there is often a continuum of mild equilibria in many natural models, which naturally leads to the question of equilibrium selection.",
+        "page": 2,
+        "reference_key": "Huang & Nguyen-Huu, 2018; Huang et al., 2019; Huang & Zhou, 2020; Huang & Yu, 2019"
+      },
+      {
+        "context": "In particular, from (Huang & Zhou, 2020, Definition 2.3) we have the following definition.",
+        "page": 2,
+        "reference_key": "Huang & Zhou, 2020"
+      },
+      {
+        "context": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established.",
+        "page": 3,
+        "reference_key": "Huang & Zhou, 2020"
+      },
+      {
+        "context": "A discrete-time version is in (Huang & Zhou, 2017).",
+        "page": 3,
+        "reference_key": "Huang & Zhou, 2017"
+      },
+      {
+        "context": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting).",
+        "page": 3,
+        "reference_key": "Christensen & Lindensjö, 2018"
+      },
+      {
+        "context": "The second notion of equilibrium, which we call weak equilibrium in this paper, is proposed in (Christensen & Lindensjö, 2018) and further investigated in (Christensen & Lindensjö, 2020).",
+        "page": 3,
+        "reference_key": "Christensen & Lindensjö, 2018; Christensen & Lindensjö, 2020"
+      },
+      {
+        "context": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+        "page": 3,
+        "reference_key": "Björk et al., 2017; Huang & Zhou, n.d."
+      },
+      {
+        "context": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.).",
+        "page": 3,
+        "reference_key": "Huang & Zhou, n.d."
+      },
+      {
+        "context": "In (Huang & Zhou, 2017, 2020), an optimal equilibrium is constructed by the intersection of all (mild) equilibriums.",
+        "page": 3,
+        "reference_key": "Huang & Zhou, 2017, 2020"
+      },
+      {
+        "context": "We refer to (Huang & Zhou, 2017, Section 5) and (Huang & Zhou, 2020, Section 6.3) for more such examples.",
+        "page": 4,
+        "reference_key": "Huang & Zhou, 2017; Huang & Zhou, 2020"
+      },
+      {
+        "context": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting.",
+        "page": 4,
+        "reference_key": "Grenadier & Wang, 2007"
+      },
+      {
+        "context": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.).",
+        "page": 4,
+        "reference_key": "He & Jiang, 2020"
+      },
+      {
+        "context": "Following (Prelec, 2004, Definition 1) and (Noor, 2009), the discount function δ induces DI if",
+        "page": 5,
+        "reference_key": "Prelec, 2004; Noor, 2009"
+      },
+      {
+        "context": "Consequently, (2.1) is often used when studying problems involving non-exponential discounting; see e.g., (Huang & Nguyen-Huu, 2018; Huang & Zhou, 2017, 2020).",
+        "page": 5,
+        "reference_key": "Huang & Nguyen-Huu, 2018; Huang & Zhou, 2017, 2020"
+      },
+      {
+        "context": "It is well-documented in empirical studies, e.g. (Loewenstein & Prelec, 1992; Loewenstein & Thaler, 1989; Thaler, 1981), that people admits DI: when choosing between two rewards, people are more willing to wait for the larger reward (more patient) when these two rewards are further away in time.",
+        "page": 5,
+        "reference_key": "Loewenstein & Prelec, 1992; Loewenstein & Thaler, 1989; Thaler, 1981"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Department of Mathematics, University of Michigan.",
+          "name": "ERHAN BAYRAKTAR"
+        },
+        {
+          "affiliation": "Department of Mathematics, University of Michigan.",
+          "name": "JINGJIE ZHANG"
+        },
+        {
+          "affiliation": "School of Mathematics and Statistics, University of Sydney.",
+          "name": "ZHOU ZHOU"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "EQUILIBRIUM CONCEPTS FOR TIME-INCONSISTENT STOPPING PROBLEMS IN CONTINUOUS TIME"
+        },
+        {
+          "page": 1,
+          "quote": "ERHAN BAYRAKTAR, JINGJIE ZHANG, AND ZHOU ZHOU"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1909.01112v2 [q-fin.MF]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "EQUILIBRIUM CONCEPTS FOR TIME-INCONSISTENT STOPPING PROBLEMS IN CONTINUOUS TIME",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time."
+        }
+      ],
+      "text": "How should equilibrium be defined for time-inconsistent stopping problems in continuous time so that it accurately captures subgame-perfect Nash equilibrium, and how do mild, weak, strong, and optimal mild equilibria relate?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Bayraktar, E.",
+          "Zhang, J.",
+          "Zhou, Z."
+        ],
+        "doi": "10.1137/18M1216432",
+        "key": "Bayraktar, Zhang, & Zhou, 2019",
+        "page": 18,
+        "title": "Time consistent stopping for the mean-standard deviation problem—the discrete time case.",
+        "venue": "SIAM Journal on Financial Mathematics",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Björk, T.",
+          "Khapko, M.",
+          "Murgoci, A."
+        ],
+        "doi": "10.1007/s00780-017-0327-5",
+        "key": "Björk, Khapko, & Murgoci, 2017",
+        "page": 18,
+        "title": "On time-inconsistent stochastic control in continuous time.",
+        "venue": "Finance and Stochastics",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Björk, T.",
+          "Murgoci, A."
+        ],
+        "doi": "10.1007/s00780-014-0234-y",
+        "key": "Björk & Murgoci, 2014",
+        "page": 18,
+        "title": "A theory of markovian time-inconsistent stochastic control in discrete time.",
+        "venue": "Finance and Stochastics",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Christensen, S.",
+          "Lindensjö, K."
+        ],
+        "doi": "10.1137/17M1153029",
+        "key": "Christensen & Lindensjö, 2018",
+        "page": 18,
+        "title": "On finding equilibrium stopping times for time-inconsistent markovian problems.",
+        "venue": "SIAM Journal on Control and Optimization",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Christensen, S.",
+          "Lindensjö, K."
+        ],
+        "doi": "10.1016/j.spa.2019.08.010",
+        "key": "Christensen & Lindensjö, 2020",
+        "page": 18,
+        "title": "On time-inconsistent stopping problems and mixed strategy stopping times.",
+        "venue": "Stochastic Process. Appl.",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Ekeland, I.",
+          "Lazrak, A."
+        ],
+        "doi": null,
+        "key": "Ekeland & Lazrak, 2006",
+        "page": 18,
+        "title": "Being serious about non-commitment: subgame perfect equilibrium in continuous time.",
+        "venue": "arXiv e-prints",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Grenadier, S. R.",
+          "Wang, N."
+        ],
+        "doi": null,
+        "key": "Grenadier & Wang, 2007",
+        "page": 18,
+        "title": "Investment under uncertainty and time-inconsistent preferences.",
+        "venue": "Journal of Financial Economics",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "He, X. D.",
+          "Jiang, Z. L."
+        ],
+        "doi": "10.2139/ssrn.3308274",
+        "key": "He & Jiang, 2020",
+        "page": 18,
+        "title": "On the Equilibrium Strategies for Time-Inconsistent Problems in Continuous Time.",
+        "venue": "SSRN",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Nguyen-Huu, A."
+        ],
+        "doi": "10.1007/s00780-017-0350-6",
+        "key": "Huang & Nguyen-Huu, 2018",
+        "page": 18,
+        "title": "Time-consistent stopping under decreasing impatience.",
+        "venue": "Finance and Stochastics",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Nguyen-Huu, A.",
+          "Zhou, X. Y."
+        ],
+        "doi": null,
+        "key": "Huang, Nguyen-Huu, & Zhou, 2019",
+        "page": 18,
+        "title": "General stopping behaviors of naïve and non-committed sophisticated agents, with application to probability distortion.",
+        "venue": "Mathematical Finance",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Yu, X."
+        ],
+        "doi": null,
+        "key": "Huang & Yu, 2019",
+        "page": 18,
+        "title": "Optimal Stopping under Model Ambiguity: a Time-Consistent Equilibrium Approach.",
+        "venue": "arXiv e-prints",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Zhou, Z."
+        ],
+        "doi": null,
+        "key": "Huang & Zhou, n.d.",
+        "page": 18,
+        "title": "Strong and Weak Equilibria for Time-Inconsistent Stochastic Control in Continuous Time.",
+        "venue": "Mathematics of Operations Research",
+        "year": null
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Zhou, Z."
+        ],
+        "doi": null,
+        "key": "Huang & Zhou, 2017",
+        "page": 19,
+        "title": "The optimal equilibrium for time-inconsistent stopping problems - the discrete-time case.",
+        "venue": "SIAM J. Control and Optimization",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Zhou, Z."
+        ],
+        "doi": "10.1111/mafi.12251",
+        "key": "Huang & Zhou, 2020",
+        "page": 19,
+        "title": "Optimal equilibria for time-inconsistent stopping problems in continuous time.",
+        "venue": "Math. Finance",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Loewenstein, G.",
+          "Prelec, D."
+        ],
+        "doi": null,
+        "key": "Loewenstein & Prelec, 1992",
+        "page": 19,
+        "title": "Anomalies in intertemporal choice: evidence and an interpretation.",
+        "venue": "Q. J. Econ.",
+        "year": 1992
+      },
+      {
+        "authors": [
+          "Loewenstein, G.",
+          "Thaler, R."
+        ],
+        "doi": null,
+        "key": "Loewenstein & Thaler, 1989",
+        "page": 19,
+        "title": "Anomalies: Intertemporal choice.",
+        "venue": "Journal of Economic Perspectives",
+        "year": 1989
+      },
+      {
+        "authors": [
+          "Noor, J."
+        ],
+        "doi": null,
+        "key": "Noor, 2009",
+        "page": 19,
+        "title": "Decreasing impatience and the magnitude effect jointly contradict exponential discounting.",
+        "venue": "Journal of Economics Theory",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Pollak, R. A."
+        ],
+        "doi": null,
+        "key": "Pollak, 1968",
+        "page": 19,
+        "title": "Consistent planning.",
+        "venue": "The Review of Economic Studies",
+        "year": 1968
+      },
+      {
+        "authors": [
+          "Prelec, D."
+        ],
+        "doi": null,
+        "key": "Prelec, 2004",
+        "page": 19,
+        "title": "Decreasing impatience: A criterion for non-stationary time preference and “hyperbolic” discounting.",
+        "venue": "The Scandinavian Journal of Economics",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Strotz, R. H."
+        ],
+        "doi": null,
+        "key": "Strotz, 1955",
+        "page": 19,
+        "title": "Myopia and inconsistency in dynamic utility maximization.",
+        "venue": "Review of Economic Studies",
+        "year": 1955
+      },
+      {
+        "authors": [
+          "Thaler, R."
+        ],
+        "doi": null,
+        "key": "Thaler, 1981",
+        "page": 19,
+        "title": "Some empirical evidence on dynamic inconsistency.",
+        "venue": "Econ. Lett.",
+        "year": 1981
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955).",
+        "reference_key": "Strotz, 1955",
+        "relation": "background",
+        "why": "Positions the paper's consistent-planning approach in the tradition initiated by Strotz."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium.",
+        "reference_key": "Huang & Nguyen-Huu, 2018; Huang & Zhou, 2020",
+        "relation": "uses_method",
+        "why": "Adopts the mild-equilibrium definition as the baseline notion that the paper critiques and extends."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting).",
+        "reference_key": "Christensen & Lindensjö, 2018",
+        "relation": "compares",
+        "why": "Uses the weak-equilibrium definition as a contrasting equilibrium concept."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established.",
+        "reference_key": "Huang & Zhou, 2020",
+        "relation": "extends",
+        "why": "Builds on Huang & Zhou's optimal mild equilibrium and provides a new iteration construction."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.).",
+        "reference_key": "Huang & Zhou, n.d.",
+        "relation": "extends",
+        "why": "Transfers the strong-equilibrium idea from time-inconsistent control to stopping problems."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+        "reference_key": "Björk et al., 2017",
+        "relation": "critiques",
+        "why": "Uses their remark on first-order criteria to argue that weak equilibrium can miss actual incentives to deviate."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting.",
+        "reference_key": "Grenadier & Wang, 2007",
+        "relation": "background",
+        "why": "Aligns the paper with equilibrium stopping under quasi-hyperbolic time-inconsistent preferences."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.).",
+        "reference_key": "He & Jiang, 2020",
+        "relation": "contrasts",
+        "why": "Distinguishes this paper's stopping-problem focus and novel optimal-mild-implies-strong result from related equilibrium-control work."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Definition 1.3. A mild equilibrium S ∗ is said to be optimal, if for any other mild equilibrium S,",
+          "start_page": 1,
+          "start_text": "On a filtered probability space"
+        },
+        "summary": "Sets up continuous-time optimal stopping with non-exponential discounting, explains time inconsistency and consistent planning, and introduces mild and optimal mild equilibria.",
+        "title": "Time-Inconsistent Stoping and Mild Equilibrium"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "The notions of mild equilibrium and optimal mild equilibrium only make sense for stopping problems not control problems.",
+          "start_page": 3,
+          "start_text": "The second notion of equilibrium"
+        },
+        "summary": "Defines weak equilibrium via a first-order condition and strong equilibrium via an ε-neighborhood disincentive, then positions the contribution against existing notions and related control literature.",
+        "title": "Weak and Strong Equilibrium Concepts"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "If in addition Assumption 2.2 (ii) holds, then S ∞ is a strong equilibrium.",
+          "start_page": 5,
+          "start_text": "In this section, we apply the concepts in Section 1 to a continuous-time Markov chain"
+        },
+        "summary": "Specializes to continuous-time Markov chains with log-subadditive discounting and states the two main results: optimal mild equilibria are strong, and an iteration constructs an optimal mild equilibrium.",
+        "title": "Markov-Chain Assumptions and Main Theorems"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "which implies S is a strong equilibrium.",
+          "start_page": 6,
+          "start_text": "2.1. Proof of Theorem 2.1"
+        },
+        "summary": "Characterizes weak equilibria via a holding-time inequality, derives sufficient conditions for strong equilibrium, and proves Theorem 2.1 using optimality and the log-subadditivity inequality.",
+        "title": "Proof That Optimal Mild Equilibria Are Strong"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "which implies (2.8).",
+          "start_page": 9,
+          "start_text": "2.2. Proof of Theorem 2.2"
+        },
+        "summary": "Proves the iteration S_n converges to the smallest mild equilibrium, hence the optimal mild equilibrium, and then strengthens it to strong equilibrium.",
+        "title": "Iteration Method and Existence of Optimal Mild Equilibrium"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Therefore S n = S 2 = {x 2, x 3, x 4 } for n ≥ 2.",
+          "start_page": 11,
+          "start_text": "3. Examples illustrating the iteration method in Theorem 2.2"
+        },
+        "summary": "Shows the iteration terminates in one step under exponential/time-consistent discounting and works through a four-state hyperbolic-discounting example.",
+        "title": "Time-Consistent Benchmark and Finite-State Iteration Example"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Therefore the iteration method will terminate within n 0 − m 0 + 1 steps",
+          "start_page": 13,
+          "start_text": "3.1. Example 3.2"
+        },
+        "summary": "Applies the iteration to an American put payoff on a geometric random walk and characterizes the stopping region S∞ in terms of a threshold.",
+        "title": "Infinite-State American Option: Computing the Equilibrium"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "If it is replaced by the largest optimal solution, then the assumption in Proposition 3.3 is not needed.",
+          "start_page": 15,
+          "start_text": "3.1.1. Discussion on how non-standard discounting affects the value of the option"
+        },
+        "summary": "Discusses how non-standard discounting changes option value and proves the equilibrium stopping time is earlier than the smallest precommitment optimal stopping time.",
+        "title": "Equilibrium vs Precommitment in the American Put"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "In this case, {a, b} is not an optimal mild equilibrium.",
+          "start_page": 16,
+          "start_text": "4. Exact Containment of Equilibria"
+        },
+        "summary": "Uses a two-state Markov chain to separate mild, weak, strong, and optimal mild equilibria with explicit parameter conditions.",
+        "title": "Two-State Model: Exact Containment of Equilibrium Classes"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "Some empirical evidence on dynamic inconsistency.",
+          "start_page": 18,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of works cited.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "Research paper introducing and proving new equilibrium concepts for continuous-time time-inconsistent stopping, with definitions, theorems, proofs, and examples.",
+      "value": "method"
+    }
+  },
+  "pass1_check": {
+    "sites": 43,
+    "verbatim": 32,
+    "near": 11,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/sections/0/title",
+      "action": "replace",
+      "value_json": "\"Time-Inconsistent Stopping and Mild Equilibrium\"",
+      "reason": "Fixes the misspelling “Stoping”; the paper uses “stopping”.",
+      "evidence": [
+        {
+          "quote": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time.",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/card/targets/0/evidence/0/quote",
+      "action": "replace",
+      "value_json": "\"In other words, when the time of return is 0, there is no actual deviation captured by (1.3) from stopping to continuing, and Definition 1.1 is equivalent to the following.\"",
+      "reason": "The existing quote describes condition (1.8) for strong equilibrium, not mild equilibrium. This quote directly supports the mild-equilibrium target point.",
+      "evidence": [
+        {
+          "quote": "In other words, when the time of return is 0, there is no actual deviation captured by (1.3) from stopping to continuing, and Definition 1.1 is equivalent to the following.",
+          "page": 2
+        }
+      ]
+    },
+    {
+      "path": "/card/targets/0/evidence/0/page",
+      "action": "replace",
+      "value_json": "2",
+      "reason": "The replacement mild-equilibrium quote appears on page 2, not page 3.",
+      "evidence": [
+        {
+          "quote": "In other words, when the time of return is 0, there is no actual deviation captured by (1.3) from stopping to continuing, and Definition 1.1 is equivalent to the following.",
+          "page": 2
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/sections/0/title",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/card/targets/0/evidence/0/quote",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "path does not exist"
+    },
+    {
+      "index": 2,
+      "path": "/card/targets/0/evidence/0/page",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "path does not exist"
+    }
+  ],
+  "pass2_check": {
+    "sites": 43,
+    "verbatim": 32,
+    "near": 11,
+    "missing": 0,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "repaired_local",
+      "original": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time. Compared to the existing notions introduced in (Huang & Nguyen-Huu, 2018) and (Christensen & Lindensjö, 2018), which in this paper are called mild equilibrium and weak equilibrium respectively, a strong equilibrium captures the idea of subgame perfect Nash equilibrium more accurately. When the state process is a continuoustime Markov chain and the discount function is log sub-additive, we show that an optimal mild equilibrium is always a strong equilibrium. Moreover, we provide a new iteration method that can directly construct an optimal mild equilibrium and thus also prove its existence.",
+      "admitted": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time. Compared to the existing notions introduced in (Huang & Nguyen-Huu, 2018) and (Christensen & Lindensjö, 2018), which in this paper are called mild equilibrium and weak equilibrium respectively, a strong equilibrium captures the idea of subgame perfect Nash equilibrium more accurately. When the state process is a continuoustime Markov chain and the discount function is log sub-additive, we show that an optimal mild equilibrium is always a strong equilibrium. Moreover, we provide a new iteration method that can directly construct an optimal mild equilibrium and thus also prove its existence.",
+      "similarity": 0.9906542056074766,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium.",
+      "admitted": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established.",
+      "admitted": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting).",
+      "admitted": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting).",
+      "similarity": 0.9473684210526316,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.).",
+      "admitted": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/4/evidence/0/quote",
+      "status": "verbatim",
+      "original": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955).",
+      "admitted": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/5/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+      "admitted": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+      "similarity": 0.9841269841269842,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/6/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting.",
+      "admitted": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/7/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.).",
+      "admitted": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Compared to (1.3) and (1.6), condition (1.8) not only captures the deviation from stopping to continuing, but also more precisely indicates the disincentive of such deviation.",
+      "admitted": "Compared to (1.3) and (1.6), condition (1.8) not only captures the deviation from stopping to continuing, but also more precisely indicates the disincentive of such deviation.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+      "admitted": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+      "similarity": 0.9841269841269842,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time.",
+      "admitted": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "EQUILIBRIUM CONCEPTS FOR TIME-INCONSISTENT STOPPING PROBLEMS IN CONTINUOUS TIME",
+      "admitted": "EQUILIBRIUM CONCEPTS FOR TIME-INCONSISTENT STOPPING PROBLEMS IN CONTINUOUS TIME",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "ERHAN BAYRAKTAR, JINGJIE ZHANG, AND ZHOU ZHOU",
+      "admitted": "ERHAN BAYRAKTAR, JINGJIE ZHANG, AND ZHOU ZHOU",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time.",
+      "admitted": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "repaired_local",
+      "original": "Compared to the existing notions introduced in (Huang & Nguyen-Huu, 2018) and (Christensen & Lindensjö, 2018), which in this paper are called mild equilibrium and weak equilibrium respectively, a strong equilibrium captures the idea of subgame perfect Nash equilibrium more accurately.",
+      "admitted": "Compared to the existing notions introduced in (Huang & Nguyen-Huu, 2018) and (Christensen & Lindensjö, 2018), which in this paper are called mild equilibrium and weak equilibrium respectively, a strong equilibrium captures the idea of subgame perfect Nash equilibrium more accurately.",
+      "similarity": 0.9743589743589743,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955).",
+      "admitted": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "repaired_local",
+      "original": "For discussions on different approaches, see (Pollak, 1968), (Ekeland & Lazrak, 2006), (Björk & Murgoci, 2014), (Björk, Khapko, & Murgoci, 2017), (Christensen & Lindensjö, 2018), (Huang, Nguyen-Huu, & Zhou, 2019), (Huang & Nguyen-Huu, 2018) and references therein.",
+      "admitted": "For discussions on different approaches, see (Pollak, 1968), (Ekeland & Lazrak, 2006), (Björk & Murgoci, 2014), (Björk, Khapko, & Murgoci, 2017), (Christensen & Lindensjö, 2018), (Huang, Nguyen-Huu, & Zhou, 2019), (Huang & Nguyen-Huu, 2018) and references therein.",
+      "similarity": 0.9032258064516129,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium.",
+      "admitted": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "See (Huang & Zhou, 2017, Remark 2.3) and (Bayraktar, Zhang, & Zhou, 2019, Definition 2.2).",
+      "admitted": "See (Huang & Zhou, 2017, Remark 2.3) and (Bayraktar, Zhang, & Zhou, 2019, Definition 2.2).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "As can be seen from (Huang & Nguyen-Huu, 2018; Huang et al., 2019; Huang & Zhou, 2020; Huang & Yu, 2019), there is often a continuum of mild equilibria in many natural models, which naturally leads to the question of equilibrium selection.",
+      "admitted": "As can be seen from (Huang & Nguyen-Huu, 2018; Huang et al., 2019; Huang & Zhou, 2020; Huang & Yu, 2019), there is often a continuum of mild equilibria in many natural models, which naturally leads to the question of equilibrium selection.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "In particular, from (Huang & Zhou, 2020, Definition 2.3) we have the following definition.",
+      "admitted": "In particular, from (Huang & Zhou, 2020, Definition 2.3) we have the following definition.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established.",
+      "admitted": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "A discrete-time version is in (Huang & Zhou, 2017).",
+      "admitted": "A discrete-time version is in (Huang & Zhou, 2017).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "repaired_local",
+      "original": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting).",
+      "admitted": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting).",
+      "similarity": 0.9473684210526316,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "repaired_local",
+      "original": "The second notion of equilibrium, which we call weak equilibrium in this paper, is proposed in (Christensen & Lindensjö, 2018) and further investigated in (Christensen & Lindensjö, 2020).",
+      "admitted": "The second notion of equilibrium, which we call weak equilibrium in this paper, is proposed in (Christensen & Lindensjö, 2018) and further investigated in (Christensen & Lindensjö, 2020).",
+      "similarity": 0.9230769230769231,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "repaired_local",
+      "original": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+      "admitted": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+      "similarity": 0.9841269841269842,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.).",
+      "admitted": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "In (Huang & Zhou, 2017, 2020), an optimal equilibrium is constructed by the intersection of all (mild) equilibriums.",
+      "admitted": "In (Huang & Zhou, 2017, 2020), an optimal equilibrium is constructed by the intersection of all (mild) equilibriums.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "We refer to (Huang & Zhou, 2017, Section 5) and (Huang & Zhou, 2020, Section 6.3) for more such examples.",
+      "admitted": "We refer to (Huang & Zhou, 2017, Section 5) and (Huang & Zhou, 2020, Section 6.3) for more such examples.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting.",
+      "admitted": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "verbatim",
+      "original": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.).",
+      "admitted": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "Following (Prelec, 2004, Definition 1) and (Noor, 2009), the discount function δ induces DI if",
+      "admitted": "Following (Prelec, 2004, Definition 1) and (Noor, 2009), the discount function δ induces DI if",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "Consequently, (2.1) is often used when studying problems involving non-exponential discounting; see e.g., (Huang & Nguyen-Huu, 2018; Huang & Zhou, 2017, 2020).",
+      "admitted": "Consequently, (2.1) is often used when studying problems involving non-exponential discounting; see e.g., (Huang & Nguyen-Huu, 2018; Huang & Zhou, 2017, 2020).",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "It is well-documented in empirical studies, e.g. (Loewenstein & Prelec, 1992; Loewenstein & Thaler, 1989; Thaler, 1981), that people admits DI: when choosing between two rewards, people are more willing to wait for the larger reward (more patient) when these two rewards are further away in time.",
+      "admitted": "It is well-documented in empirical studies, e.g. (Loewenstein & Prelec, 1992; Loewenstein & Thaler, 1989; Thaler, 1981), that people admits DI: when choosing between two rewards, people are more willing to wait for the larger reward (more patient) when these two rewards are further away in time.",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955).",
+      "admitted": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium.",
+      "admitted": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "repaired_local",
+      "original": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting).",
+      "admitted": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting).",
+      "similarity": 0.9473684210526316,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established.",
+      "admitted": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.).",
+      "admitted": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "repaired_local",
+      "original": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+      "admitted": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+      "similarity": 0.9841269841269842,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting.",
+      "admitted": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.).",
+      "admitted": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 11,
+    "verbatim": 32
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time. Compared to the existing notions introduced in (Huang & Nguyen-Huu, 2018) and (Christensen & Lindensjö, 2018), which in this paper are called mild equilibrium and weak equilibrium respectively, a strong equilibrium captures the idea of subgame perfect Nash equilibrium more accurately. When the state process is a continuoustime Markov chain and the discount function is log sub-additive, we show that an optimal mild equilibrium is always a strong equilibrium. Moreover, we provide a new iteration method that can directly construct an optimal mild equilibrium and thus also prove its existence."
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Huang & Nguyen-Huu (2018)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium."
+              }
+            ],
+            "reference_key": "Huang & Nguyen-Huu, 2018",
+            "why": "This paper adopts the mild-equilibrium definition from Huang & Nguyen-Huu and critiques it."
+          },
+          {
+            "cited_work": "Huang & Zhou (2020)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established."
+              }
+            ],
+            "reference_key": "Huang & Zhou, 2020",
+            "why": "The paper builds on the optimal mild equilibrium selection problem and its existence result."
+          },
+          {
+            "cited_work": "Christensen & Lindensjö (2018)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting)."
+              }
+            ],
+            "reference_key": "Christensen & Lindensjö, 2018",
+            "why": "The paper adopts and contrasts with the weak-equilibrium definition from Christensen & Lindensjö."
+          },
+          {
+            "cited_work": "Huang & Zhou (n.d.)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.)."
+              }
+            ],
+            "reference_key": "Huang & Zhou, n.d.",
+            "why": "The strong-equilibrium concept is explicitly inspired by Huang & Zhou's control-problem equilibrium notion."
+          },
+          {
+            "cited_work": "Strotz (1955)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955)."
+              }
+            ],
+            "reference_key": "Strotz, 1955",
+            "why": "The paper locates its consistent-planning approach in the tradition dating back to Strotz."
+          },
+          {
+            "cited_work": "Björk et al. (2017)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate."
+              }
+            ],
+            "reference_key": "Björk et al., 2017",
+            "why": "Their remark on first-order criteria in time-inconsistent control motivates the paper's critique of weak equilibrium."
+          },
+          {
+            "cited_work": "Grenadier & Wang (2007)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting."
+              }
+            ],
+            "reference_key": "Grenadier & Wang, 2007",
+            "why": "The paper aligns itself with equilibrium stopping under time-inconsistent, quasi-hyperbolic discounting."
+          },
+          {
+            "cited_work": "He & Jiang (2020)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.)."
+              }
+            ],
+            "reference_key": "He & Jiang, 2020",
+            "why": "The paper distinguishes its stopping-problem equilibrium notions from He & Jiang's related equilibrium-control discussion."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "mild equilibrium",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Compared to (1.3) and (1.6), condition (1.8) not only captures the deviation from stopping to continuing, but also more precisely indicates the disincentive of such deviation."
+              }
+            ],
+            "reference_key": "mild equilibrium",
+            "why": "The paper argues mild equilibrium may fail to capture actual deviations when return time is zero."
+          },
+          {
+            "cited_work": "weak equilibrium",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate."
+              }
+            ],
+            "reference_key": "weak equilibrium",
+            "why": "The weak-equilibrium first-order condition can admit profitable deviations when the limit equals zero."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time."
+          }
+        ],
+        "text": "For continuous-time time-inconsistent stopping, the paper introduces a strong-equilibrium notion that better captures subgame-perfect Nash equilibrium, proves that optimal mild equilibria are strong under Markov-chain and log-subadditive discounting assumptions, and gives an iteration method that directly constructs an optimal mild equilibrium."
+      }
+    },
+    "citations": [
+      {
+        "context": "Compared to the existing notions introduced in (Huang & Nguyen-Huu, 2018) and (Christensen & Lindensjö, 2018), which in this paper are called mild equilibrium and weak equilibrium respectively, a strong equilibrium captures the idea of subgame perfect Nash equilibrium more accurately.",
+        "page": 1,
+        "reference_key": "Huang & Nguyen-Huu, 2018; Christensen & Lindensjö, 2018"
+      },
+      {
+        "context": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955).",
+        "page": 2,
+        "reference_key": "Strotz, 1955"
+      },
+      {
+        "context": "For discussions on different approaches, see (Pollak, 1968), (Ekeland & Lazrak, 2006), (Björk & Murgoci, 2014), (Björk, Khapko, & Murgoci, 2017), (Christensen & Lindensjö, 2018), (Huang, Nguyen-Huu, & Zhou, 2019), (Huang & Nguyen-Huu, 2018) and references therein.",
+        "page": 2,
+        "reference_key": "Pollak, 1968; Ekeland & Lazrak, 2006; Björk & Murgoci, 2014; Björk, Khapko, & Murgoci, 2017; Christensen & Lindensjö, 2018; Huang, Nguyen-Huu, & Zhou, 2019; Huang & Nguyen-Huu, 2018"
+      },
+      {
+        "context": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium.",
+        "page": 2,
+        "reference_key": "Huang & Nguyen-Huu, 2018; Huang & Zhou, 2020"
+      },
+      {
+        "context": "See (Huang & Zhou, 2017, Remark 2.3) and (Bayraktar, Zhang, & Zhou, 2019, Definition 2.2).",
+        "page": 2,
+        "reference_key": "Huang & Zhou, 2017; Bayraktar, Zhang, & Zhou, 2019"
+      },
+      {
+        "context": "As can be seen from (Huang & Nguyen-Huu, 2018; Huang et al., 2019; Huang & Zhou, 2020; Huang & Yu, 2019), there is often a continuum of mild equilibria in many natural models, which naturally leads to the question of equilibrium selection.",
+        "page": 2,
+        "reference_key": "Huang & Nguyen-Huu, 2018; Huang et al., 2019; Huang & Zhou, 2020; Huang & Yu, 2019"
+      },
+      {
+        "context": "In particular, from (Huang & Zhou, 2020, Definition 2.3) we have the following definition.",
+        "page": 2,
+        "reference_key": "Huang & Zhou, 2020"
+      },
+      {
+        "context": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established.",
+        "page": 3,
+        "reference_key": "Huang & Zhou, 2020"
+      },
+      {
+        "context": "A discrete-time version is in (Huang & Zhou, 2017).",
+        "page": 3,
+        "reference_key": "Huang & Zhou, 2017"
+      },
+      {
+        "context": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting).",
+        "page": 3,
+        "reference_key": "Christensen & Lindensjö, 2018"
+      },
+      {
+        "context": "The second notion of equilibrium, which we call weak equilibrium in this paper, is proposed in (Christensen & Lindensjö, 2018) and further investigated in (Christensen & Lindensjö, 2020).",
+        "page": 3,
+        "reference_key": "Christensen & Lindensjö, 2018; Christensen & Lindensjö, 2020"
+      },
+      {
+        "context": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+        "page": 3,
+        "reference_key": "Björk et al., 2017; Huang & Zhou, n.d."
+      },
+      {
+        "context": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.).",
+        "page": 3,
+        "reference_key": "Huang & Zhou, n.d."
+      },
+      {
+        "context": "In (Huang & Zhou, 2017, 2020), an optimal equilibrium is constructed by the intersection of all (mild) equilibriums.",
+        "page": 3,
+        "reference_key": "Huang & Zhou, 2017, 2020"
+      },
+      {
+        "context": "We refer to (Huang & Zhou, 2017, Section 5) and (Huang & Zhou, 2020, Section 6.3) for more such examples.",
+        "page": 4,
+        "reference_key": "Huang & Zhou, 2017; Huang & Zhou, 2020"
+      },
+      {
+        "context": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting.",
+        "page": 4,
+        "reference_key": "Grenadier & Wang, 2007"
+      },
+      {
+        "context": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.).",
+        "page": 4,
+        "reference_key": "He & Jiang, 2020"
+      },
+      {
+        "context": "Following (Prelec, 2004, Definition 1) and (Noor, 2009), the discount function δ induces DI if",
+        "page": 5,
+        "reference_key": "Prelec, 2004; Noor, 2009"
+      },
+      {
+        "context": "Consequently, (2.1) is often used when studying problems involving non-exponential discounting; see e.g., (Huang & Nguyen-Huu, 2018; Huang & Zhou, 2017, 2020).",
+        "page": 5,
+        "reference_key": "Huang & Nguyen-Huu, 2018; Huang & Zhou, 2017, 2020"
+      },
+      {
+        "context": "It is well-documented in empirical studies, e.g. (Loewenstein & Prelec, 1992; Loewenstein & Thaler, 1989; Thaler, 1981), that people admits DI: when choosing between two rewards, people are more willing to wait for the larger reward (more patient) when these two rewards are further away in time.",
+        "page": 5,
+        "reference_key": "Loewenstein & Prelec, 1992; Loewenstein & Thaler, 1989; Thaler, 1981"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Department of Mathematics, University of Michigan.",
+          "name": "ERHAN BAYRAKTAR"
+        },
+        {
+          "affiliation": "Department of Mathematics, University of Michigan.",
+          "name": "JINGJIE ZHANG"
+        },
+        {
+          "affiliation": "School of Mathematics and Statistics, University of Sydney.",
+          "name": "ZHOU ZHOU"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "EQUILIBRIUM CONCEPTS FOR TIME-INCONSISTENT STOPPING PROBLEMS IN CONTINUOUS TIME"
+        },
+        {
+          "page": 1,
+          "quote": "ERHAN BAYRAKTAR, JINGJIE ZHANG, AND ZHOU ZHOU"
+        }
+      ],
+      "identifiers": {
+        "arxiv": "arXiv:1909.01112v2 [q-fin.MF]",
+        "doi": null
+      },
+      "publication_state": "preprint",
+      "subtitle": null,
+      "title": "EQUILIBRIUM CONCEPTS FOR TIME-INCONSISTENT STOPPING PROBLEMS IN CONTINUOUS TIME",
+      "venue": "arXiv",
+      "year": 2020
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "A new notion of equilibrium, which we call strong equilibrium, is introduced for time-inconsistent stopping problems in continuous time."
+        }
+      ],
+      "text": "How should equilibrium be defined for time-inconsistent stopping problems in continuous time so that it accurately captures subgame-perfect Nash equilibrium, and how do mild, weak, strong, and optimal mild equilibria relate?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Bayraktar, E.",
+          "Zhang, J.",
+          "Zhou, Z."
+        ],
+        "doi": "10.1137/18M1216432",
+        "key": "Bayraktar, Zhang, & Zhou, 2019",
+        "page": 18,
+        "title": "Time consistent stopping for the mean-standard deviation problem—the discrete time case.",
+        "venue": "SIAM Journal on Financial Mathematics",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Björk, T.",
+          "Khapko, M.",
+          "Murgoci, A."
+        ],
+        "doi": "10.1007/s00780-017-0327-5",
+        "key": "Björk, Khapko, & Murgoci, 2017",
+        "page": 18,
+        "title": "On time-inconsistent stochastic control in continuous time.",
+        "venue": "Finance and Stochastics",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Björk, T.",
+          "Murgoci, A."
+        ],
+        "doi": "10.1007/s00780-014-0234-y",
+        "key": "Björk & Murgoci, 2014",
+        "page": 18,
+        "title": "A theory of markovian time-inconsistent stochastic control in discrete time.",
+        "venue": "Finance and Stochastics",
+        "year": 2014
+      },
+      {
+        "authors": [
+          "Christensen, S.",
+          "Lindensjö, K."
+        ],
+        "doi": "10.1137/17M1153029",
+        "key": "Christensen & Lindensjö, 2018",
+        "page": 18,
+        "title": "On finding equilibrium stopping times for time-inconsistent markovian problems.",
+        "venue": "SIAM Journal on Control and Optimization",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Christensen, S.",
+          "Lindensjö, K."
+        ],
+        "doi": "10.1016/j.spa.2019.08.010",
+        "key": "Christensen & Lindensjö, 2020",
+        "page": 18,
+        "title": "On time-inconsistent stopping problems and mixed strategy stopping times.",
+        "venue": "Stochastic Process. Appl.",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Ekeland, I.",
+          "Lazrak, A."
+        ],
+        "doi": null,
+        "key": "Ekeland & Lazrak, 2006",
+        "page": 18,
+        "title": "Being serious about non-commitment: subgame perfect equilibrium in continuous time.",
+        "venue": "arXiv e-prints",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Grenadier, S. R.",
+          "Wang, N."
+        ],
+        "doi": null,
+        "key": "Grenadier & Wang, 2007",
+        "page": 18,
+        "title": "Investment under uncertainty and time-inconsistent preferences.",
+        "venue": "Journal of Financial Economics",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "He, X. D.",
+          "Jiang, Z. L."
+        ],
+        "doi": "10.2139/ssrn.3308274",
+        "key": "He & Jiang, 2020",
+        "page": 18,
+        "title": "On the Equilibrium Strategies for Time-Inconsistent Problems in Continuous Time.",
+        "venue": "SSRN",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Nguyen-Huu, A."
+        ],
+        "doi": "10.1007/s00780-017-0350-6",
+        "key": "Huang & Nguyen-Huu, 2018",
+        "page": 18,
+        "title": "Time-consistent stopping under decreasing impatience.",
+        "venue": "Finance and Stochastics",
+        "year": 2018
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Nguyen-Huu, A.",
+          "Zhou, X. Y."
+        ],
+        "doi": null,
+        "key": "Huang, Nguyen-Huu, & Zhou, 2019",
+        "page": 18,
+        "title": "General stopping behaviors of naïve and non-committed sophisticated agents, with application to probability distortion.",
+        "venue": "Mathematical Finance",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Yu, X."
+        ],
+        "doi": null,
+        "key": "Huang & Yu, 2019",
+        "page": 18,
+        "title": "Optimal Stopping under Model Ambiguity: a Time-Consistent Equilibrium Approach.",
+        "venue": "arXiv e-prints",
+        "year": 2019
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Zhou, Z."
+        ],
+        "doi": null,
+        "key": "Huang & Zhou, n.d.",
+        "page": 18,
+        "title": "Strong and Weak Equilibria for Time-Inconsistent Stochastic Control in Continuous Time.",
+        "venue": "Mathematics of Operations Research",
+        "year": null
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Zhou, Z."
+        ],
+        "doi": null,
+        "key": "Huang & Zhou, 2017",
+        "page": 19,
+        "title": "The optimal equilibrium for time-inconsistent stopping problems - the discrete-time case.",
+        "venue": "SIAM J. Control and Optimization",
+        "year": 2017
+      },
+      {
+        "authors": [
+          "Huang, Y.-J.",
+          "Zhou, Z."
+        ],
+        "doi": "10.1111/mafi.12251",
+        "key": "Huang & Zhou, 2020",
+        "page": 19,
+        "title": "Optimal equilibria for time-inconsistent stopping problems in continuous time.",
+        "venue": "Math. Finance",
+        "year": 2020
+      },
+      {
+        "authors": [
+          "Loewenstein, G.",
+          "Prelec, D."
+        ],
+        "doi": null,
+        "key": "Loewenstein & Prelec, 1992",
+        "page": 19,
+        "title": "Anomalies in intertemporal choice: evidence and an interpretation.",
+        "venue": "Q. J. Econ.",
+        "year": 1992
+      },
+      {
+        "authors": [
+          "Loewenstein, G.",
+          "Thaler, R."
+        ],
+        "doi": null,
+        "key": "Loewenstein & Thaler, 1989",
+        "page": 19,
+        "title": "Anomalies: Intertemporal choice.",
+        "venue": "Journal of Economic Perspectives",
+        "year": 1989
+      },
+      {
+        "authors": [
+          "Noor, J."
+        ],
+        "doi": null,
+        "key": "Noor, 2009",
+        "page": 19,
+        "title": "Decreasing impatience and the magnitude effect jointly contradict exponential discounting.",
+        "venue": "Journal of Economics Theory",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Pollak, R. A."
+        ],
+        "doi": null,
+        "key": "Pollak, 1968",
+        "page": 19,
+        "title": "Consistent planning.",
+        "venue": "The Review of Economic Studies",
+        "year": 1968
+      },
+      {
+        "authors": [
+          "Prelec, D."
+        ],
+        "doi": null,
+        "key": "Prelec, 2004",
+        "page": 19,
+        "title": "Decreasing impatience: A criterion for non-stationary time preference and “hyperbolic” discounting.",
+        "venue": "The Scandinavian Journal of Economics",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Strotz, R. H."
+        ],
+        "doi": null,
+        "key": "Strotz, 1955",
+        "page": 19,
+        "title": "Myopia and inconsistency in dynamic utility maximization.",
+        "venue": "Review of Economic Studies",
+        "year": 1955
+      },
+      {
+        "authors": [
+          "Thaler, R."
+        ],
+        "doi": null,
+        "key": "Thaler, 1981",
+        "page": 19,
+        "title": "Some empirical evidence on dynamic inconsistency.",
+        "venue": "Econ. Lett.",
+        "year": 1981
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "There are mainly three ways to approach such time inconsistency: pre-committed strategy, naive strategy and consistent planning strategy, dating back to (Strotz, 1955).",
+        "reference_key": "Strotz, 1955",
+        "relation": "background",
+        "why": "Positions the paper's consistent-planning approach in the tradition initiated by Strotz."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Following (Huang & Nguyen-Huu, 2018, Definition 3.3) and (Huang & Zhou, 2020, Definition 2.2), we have the following definition of mild equilibrium.",
+        "reference_key": "Huang & Nguyen-Huu, 2018; Huang & Zhou, 2020",
+        "relation": "uses_method",
+        "why": "Adopts the mild-equilibrium definition as the baseline notion that the paper critiques and extends."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Following (Christensen & Lindensjö, 2018), we have the definition of weak equilibrium (we adapt the definition slightly for our setting).",
+        "reference_key": "Christensen & Lindensjö, 2018",
+        "relation": "compares",
+        "why": "Uses the weak-equilibrium definition as a contrasting equilibrium concept."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In (Huang & Zhou, 2020) the existence of optimal equilibrium is established.",
+        "reference_key": "Huang & Zhou, 2020",
+        "relation": "extends",
+        "why": "Builds on Huang & Zhou's optimal mild equilibrium and provides a new iteration construction."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In time-inconsistent optimal stopping problems, we introduce the following concept of strong equilibrium, which is inspired by (Huang & Zhou, n.d.).",
+        "reference_key": "Huang & Zhou, n.d.",
+        "relation": "extends",
+        "why": "Transfers the strong-equilibrium idea from time-inconsistent control to stopping problems."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "However, similar to that for time-inconsistent control (see e.g., (Björk et al., 2017, Remark 3.5) and (Huang & Zhou, n.d.)), the first-order criterion does not correspond to the equilibrium concept perfectly: when the limit in (1.6) equals zero, it is possible that for all ε > 0, x < E x [δ(τ S ε)X τ S ε], in which case there is an incentive to deviate.",
+        "reference_key": "Björk et al., 2017",
+        "relation": "critiques",
+        "why": "Uses their remark on first-order criteria to argue that weak equilibrium can miss actual incentives to deviate."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Our paper is inline with the work (Grenadier & Wang, 2007), where equilibrium stopping strategies are considered in an entrepreneur’s investment-timing problem under time-inconsistent preferences due to quasi-hyperbolic discounting.",
+        "reference_key": "Grenadier & Wang, 2007",
+        "relation": "background",
+        "why": "Aligns the paper with equilibrium stopping under quasi-hyperbolic time-inconsistent preferences."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Let us mention the recent work of (He & Jiang, 2020), where the authors also discuss notions of equilibrium control based on condition (1.3) in (Huang & Zhou, n.d.).",
+        "reference_key": "He & Jiang, 2020",
+        "relation": "contrasts",
+        "why": "Distinguishes this paper's stopping-problem focus and novel optimal-mild-implies-strong result from related equilibrium-control work."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "Definition 1.3. A mild equilibrium S ∗ is said to be optimal, if for any other mild equilibrium S,",
+          "start_page": 1,
+          "start_text": "On a filtered probability space"
+        },
+        "summary": "Sets up continuous-time optimal stopping with non-exponential discounting, explains time inconsistency and consistent planning, and introduces mild and optimal mild equilibria.",
+        "title": "Time-Inconsistent Stopping and Mild Equilibrium"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "The notions of mild equilibrium and optimal mild equilibrium only make sense for stopping problems not control problems.",
+          "start_page": 3,
+          "start_text": "The second notion of equilibrium"
+        },
+        "summary": "Defines weak equilibrium via a first-order condition and strong equilibrium via an ε-neighborhood disincentive, then positions the contribution against existing notions and related control literature.",
+        "title": "Weak and Strong Equilibrium Concepts"
+      },
+      {
+        "pages": {
+          "end": 6,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 6,
+          "end_text": "If in addition Assumption 2.2 (ii) holds, then S ∞ is a strong equilibrium.",
+          "start_page": 5,
+          "start_text": "In this section, we apply the concepts in Section 1 to a continuous-time Markov chain"
+        },
+        "summary": "Specializes to continuous-time Markov chains with log-subadditive discounting and states the two main results: optimal mild equilibria are strong, and an iteration constructs an optimal mild equilibrium.",
+        "title": "Markov-Chain Assumptions and Main Theorems"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 6
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "which implies S is a strong equilibrium.",
+          "start_page": 6,
+          "start_text": "2.1. Proof of Theorem 2.1"
+        },
+        "summary": "Characterizes weak equilibria via a holding-time inequality, derives sufficient conditions for strong equilibrium, and proves Theorem 2.1 using optimality and the log-subadditivity inequality.",
+        "title": "Proof That Optimal Mild Equilibria Are Strong"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "which implies (2.8).",
+          "start_page": 9,
+          "start_text": "2.2. Proof of Theorem 2.2"
+        },
+        "summary": "Proves the iteration S_n converges to the smallest mild equilibrium, hence the optimal mild equilibrium, and then strengthens it to strong equilibrium.",
+        "title": "Iteration Method and Existence of Optimal Mild Equilibrium"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Therefore S n = S 2 = {x 2, x 3, x 4 } for n ≥ 2.",
+          "start_page": 11,
+          "start_text": "3. Examples illustrating the iteration method in Theorem 2.2"
+        },
+        "summary": "Shows the iteration terminates in one step under exponential/time-consistent discounting and works through a four-state hyperbolic-discounting example.",
+        "title": "Time-Consistent Benchmark and Finite-State Iteration Example"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "Therefore the iteration method will terminate within n 0 − m 0 + 1 steps",
+          "start_page": 13,
+          "start_text": "3.1. Example 3.2"
+        },
+        "summary": "Applies the iteration to an American put payoff on a geometric random walk and characterizes the stopping region S∞ in terms of a threshold.",
+        "title": "Infinite-State American Option: Computing the Equilibrium"
+      },
+      {
+        "pages": {
+          "end": 16,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 16,
+          "end_text": "If it is replaced by the largest optimal solution, then the assumption in Proposition 3.3 is not needed.",
+          "start_page": 15,
+          "start_text": "3.1.1. Discussion on how non-standard discounting affects the value of the option"
+        },
+        "summary": "Discusses how non-standard discounting changes option value and proves the equilibrium stopping time is earlier than the smallest precommitment optimal stopping time.",
+        "title": "Equilibrium vs Precommitment in the American Put"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 16
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "In this case, {a, b} is not an optimal mild equilibrium.",
+          "start_page": 16,
+          "start_text": "4. Exact Containment of Equilibria"
+        },
+        "summary": "Uses a two-state Markov chain to separate mild, weak, strong, and optimal mild equilibria with explicit parameter conditions.",
+        "title": "Two-State Model: Exact Containment of Equilibrium Classes"
+      },
+      {
+        "pages": {
+          "end": 19,
+          "start": 18
+        },
+        "source_span": {
+          "end_page": 19,
+          "end_text": "Some empirical evidence on dynamic inconsistency.",
+          "start_page": 18,
+          "start_text": "References"
+        },
+        "summary": "Bibliography of works cited.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "Research paper introducing and proving new equilibrium concepts for continuous-time time-inconsistent stopping, with definitions, theorems, proofs, and examples.",
+      "value": "method"
+    }
+  }
+}

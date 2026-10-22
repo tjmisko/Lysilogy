@@ -1,0 +1,4087 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T00:18:10.003063203Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Autor, Dorn, and Hanson - 2013 - The China Syndrome - Local Labor Market Effects of Import Competition in the United States.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 48,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 131072,
+      "provider": "Together",
+      "finish_reason": "stop",
+      "prompt_tokens": 42898,
+      "cached_tokens": 256,
+      "completion_tokens": 30512,
+      "reasoning_tokens": 13211,
+      "cost_usd": 0.049408536,
+      "cost_source": "reported",
+      "latency_s": 68.691699956
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DigitalOcean",
+      "finish_reason": "stop",
+      "prompt_tokens": 55632,
+      "cached_tokens": 0,
+      "completion_tokens": 22061,
+      "reasoning_tokens": 21545,
+      "cost_usd": 0.0323721,
+      "cost_source": "reported",
+      "latency_s": 91.090750366
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "Parasail",
+      "finish_reason": "stop",
+      "prompt_tokens": 3315,
+      "cached_tokens": 0,
+      "completion_tokens": 442,
+      "reasoning_tokens": 299,
+      "cost_usd": 0.0015249,
+      "cost_source": "reported",
+      "latency_s": 3.650909842
+    }
+  ],
+  "totals": {
+    "calls": 3,
+    "prompt_tokens": 101845,
+    "cached_tokens": 256,
+    "completion_tokens": 53015,
+    "cost_usd": 0.083305536,
+    "model_latency_s": 163.433360164,
+    "wall_s": 172.415918389
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e6-30-2026-10-20/results/autor2013.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We analyze the effect of rising Chinese import competition between 1990 and 2007 on US local labor markets, exploiting ­cross-market variation in import exposure stemming from initial differences in industry specialization and instrumenting for US imports using changes in Chinese imports by other high-income countries. Rising imports cause higher unemployment, lower labor force participation, and reduced wages in local labor markets that house i­mportcompeting manufacturing industries. In our main specification, import competition explains one-quarter of the contemporaneous aggregate decline in US manufacturing employment. Transfer benefits payments for unemployment, disability, retirement, and healthcare also rise sharply in more trade-exposed labor markets. (JEL E24, F14, F16, J23, J31, L60, O47, R12, R23)"
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Autor and Dorn (2013)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013)."
+              },
+              {
+                "page": 8,
+                "quote": "In our main specifications, we will control for the start-of-period manufacturing share within CZs so as to focus on variation in exposure to Chinese imports stemming from differences in industry mix within local manufacturing sectors."
+              }
+            ],
+            "reference_key": "Autor and Dorn (2013)",
+            "why": "The paper adopts the CZ-based local labor market design and occupational task controls from this prior work."
+          },
+          {
+            "cited_work": "Topalova (2005, 2010), Kovak (2013)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil, respectively.⁷"
+              }
+            ],
+            "reference_key": "Topalova (2005, 2010); Kovak (2013)",
+            "why": "The paper builds on the regional trade-shock literature that maps trade liberalization to local wages and poverty."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Bloom, Draca, and Van Reenen (2011)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008)."
+              },
+              {
+                "page": 27,
+                "quote": "An alternative possibility, suggested by Bloom, Draca, and Van Reenen (2011), is that manufacturing plants react to import competition by accelerating technological and organizational innovations that increase productivity and may raise wages."
+              }
+            ],
+            "reference_key": "Bloom, Draca, and Van Reenen (2011)",
+            "why": "The paper contrasts its labor-market-adjustment focus with this innovation/productivity mechanism as an alternative interpretation."
+          },
+          {
+            "cited_work": "McLaren and Hakobyan (2010)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries."
+              },
+              {
+                "page": 27,
+                "quote": "An exception to this generalization is McLaren and Hakobyan (2010), who find a wage impact on US industries exposed to increased competition from Mexico by NAFTA."
+              }
+            ],
+            "reference_key": "McLaren and Hakobyan (2010)",
+            "why": "The paper contrasts NAFTA's weak local effects with the strong local effects it finds for Chinese import competition."
+          },
+          {
+            "cited_work": "Autor and Duggan (2003)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003)."
+              },
+              {
+                "page": 25,
+                "quote": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010)."
+              }
+            ],
+            "reference_key": "Autor and Duggan (2003, 2010)",
+            "why": "The paper builds on the evidence that disability rolls respond to labor-market shocks when interpreting transfer-benefit effects."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Rising imports cause higher unemployment, lower labor force participation, and reduced wages in local labor markets that house i­mportcompeting manufacturing industries."
+          },
+          {
+            "page": 1,
+            "quote": "Transfer benefits payments for unemployment, disability, retirement, and healthcare also rise sharply in more trade-exposed labor markets."
+          }
+        ],
+        "text": "Rising Chinese import competition caused higher unemployment, lower labor-force participation, lower wages, and higher transfer benefits in exposed US local labor markets, explaining a substantial share of the decline in US manufacturing employment."
+      }
+    },
+    "citations": [
+      {
+        "context": "The past two decades have seen a fruitful debate on the impact of international trade on US labor markets (Feenstra 2010).",
+        "page": 1,
+        "reference_key": "Feenstra 2010"
+      },
+      {
+        "context": "While in the 1980s, trade in the form of foreign outsourcing was associated with modest increases in the wage premium for skilled manufacturing labor (Feenstra and Hanson 1999), the evidence suggests that other shocks, including skill biased technical change, played a more important role in the evolution of the US wage structure in that decade (Katz and Autor 1999).",
+        "page": 1,
+        "reference_key": "Feenstra and Hanson 1999; Katz and Autor 1999"
+      },
+      {
+        "context": "One factor limiting trade’s impact on US labor is that historically, imports from low-wage countries have been small (Krugman 2000).",
+        "page": 1,
+        "reference_key": "Krugman 2000"
+      },
+      {
+        "context": "Though freer trade with countries at any income level may affect wages and employment, trade theory identifies low-wage countries as a likely source of disruption to high-wage labor markets (Krugman 2008).",
+        "page": 1,
+        "reference_key": "Krugman 2008"
+      },
+      {
+        "context": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013).",
+        "page": 2,
+        "reference_key": "Tolbert and Sizer 1996; Autor and Dorn 2013"
+      },
+      {
+        "context": "In particular, there is differentiation according to local labor market reliance on labor-intensive industries, in which China’s comparative advantage is pronounced (Amiti and Freund 2010).",
+        "page": 3,
+        "reference_key": "Amiti and Freund 2010"
+      },
+      {
+        "context": "The growth in low-income-country exports over the time period we examine is driven by China’s transition to a market-oriented economy, which has involved rural-to-urban migration of over 150 million workers (Chen, Jin, and Yue 2010), Chinese industries gaining access to long banned foreign technologies, capital goods, and intermediate inputs (Hsieh and Klenow 2009), and multinational enterprises being permitted to operate in the country (Naughton 2007).",
+        "page": 3,
+        "reference_key": "Chen, Jin, and Yue 2010; Hsieh and Klenow 2009; Naughton 2007"
+      },
+      {
+        "context": "Compounding the positive effects of internal reforms on China’s trade is the country’s accession to the WTO, which gives it most-favored nation status among the 153 WTO members (Branstetter and Lardy 2006).",
+        "page": 3,
+        "reference_key": "Branstetter and Lardy 2006"
+      },
+      {
+        "context": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008).",
+        "page": 3,
+        "reference_key": "Bloom, Draca, and Van Reenen 2011; Auer and Fischer 2008"
+      },
+      {
+        "context": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil, respectively.",
+        "page": 4,
+        "reference_key": "Borjas and Ramey 1995; Chiquiar 2008; Topalova 2005, 2010; Kovak 2013"
+      },
+      {
+        "context": "This approach is taken in recent work focusing on US imports from low-income countries, including Bernard, Jensen, and Schott (2006), who find that over 1977–1997, manufacturing plants more exposed to low-wage-country imports grew more slowly and were more likely to exit, and Liu and Trefler (2008), who estimate that over 1996–2006, US outsourcing of services to China and India had minimal effects on changes in occupation, employment, or earnings for US workers.",
+        "page": 4,
+        "reference_key": "Bernard, Jensen, and Schott 2006; Liu and Trefler 2008"
+      },
+      {
+        "context": "Ebenstein et al. (2010), who like Liu and Trefler (2008) use data from the CPS, find larger effects of trade on wages, with wages growing more slowly in occupations more exposed to import penetration and to US multinationals moving production offshore.",
+        "page": 4,
+        "reference_key": "Ebenstein et al. 2010; Liu and Trefler 2008"
+      },
+      {
+        "context": "The literature on regional adjustment to labor-market shocks suggests that mobility responses to labor demand shocks across US cities and states are slow and incomplete (Topel 1986; Blanchard and Katz 1992; Glaeser and Gyourko 2005).",
+        "page": 4,
+        "reference_key": "Topel 1986; Blanchard and Katz 1992; Glaeser and Gyourko 2005"
+      },
+      {
+        "context": "Mobility is lowest for noncollege workers, who are overrepresented in manufacturing (Bound and Holzer 2000; Notowidigdo 2010).",
+        "page": 4,
+        "reference_key": "Bound and Holzer 2000; Notowidigdo 2010"
+      },
+      {
+        "context": "The sluggish response of regional labor supply to import exposure may be related to the costly mobility of labor between sectors, as documented by Artuç, Chaudhuri, and McLaren (2010) in the United States and Dix-Carneiro (2011) in Brazil, also in the context of adjustment to trade shocks.",
+        "page": 4,
+        "reference_key": "Artuç, Chaudhuri, and McLaren 2010; Dix-Carneiro 2011"
+      },
+      {
+        "context": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003).",
+        "page": 5,
+        "reference_key": "Autor and Duggan 2003"
+      },
+      {
+        "context": "In the online Theory Appendix, we develop a simple model of trade based on monopolistic competition (Helpman and Krugman 1987) and variation in industry labor productivities across countries.",
+        "page": 5,
+        "reference_key": "Helpman and Krugman 1987"
+      },
+      {
+        "context": "In applying the monopolistic competition model, we assume that trade has a “gravity” structure (as in Arkolakis, Costinot, and Rodriguez-Clare 2012), in which case one can map changes in trade quantities into labor-market outcomes.",
+        "page": 6,
+        "reference_key": "Arkolakis, Costinot, and Rodriguez-Clare 2012"
+      },
+      {
+        "context": "An alternative approach would be to use a Heckscher-Ohlin or a specific-factors model, as in Topalova (2005, 2010) or Kovak (2013), in which the mapping is strictly from trade prices to wages and employment.",
+        "page": 6,
+        "reference_key": "Topalova 2005, 2010; Kovak 2013"
+      },
+      {
+        "context": "For global general equilibrium analyses of trade and productivity growth in China, see Hsieh and Ossa (2011) and di Giovanni, Levchenko, and Zhang (2011).",
+        "page": 6,
+        "reference_key": "Hsieh and Ossa 2011; di Giovanni, Levchenko, and Zhang 2011"
+      },
+      {
+        "context": "Melitz (2003) and Eaton, Kortum, and Kramarz (2011) give microfoundations for differences in national industry productivities in trade models based on monopolistic competition.",
+        "page": 6,
+        "reference_key": "Melitz 2003; Eaton, Kortum, and Kramarz 2011"
+      },
+      {
+        "context": "Brandt, Van Biesebroeck, and Zhang (2012) estimate that over 1998 to 2007, China had average annual TFP growth in manufacturing of 8.0 percent, compared to the Bureau of Labor Statistics’ estimate (http://www.bls.gov/mfp/) of 3.9 percent for the United States.",
+        "page": 10,
+        "reference_key": "Brandt, Van Biesebroeck, and Zhang 2012"
+      },
+      {
+        "context": "Both variables are based on occupational task data, which are described in detail in Autor and Dorn (2013).",
+        "page": 17,
+        "reference_key": "Autor and Dorn 2013"
+      },
+      {
+        "context": "(iv) the change in imports per worker net of imported intermediate inputs, the latter of which may have productivity enhancing effects on US industries (Goldberg et al. 2010).",
+        "page": 11,
+        "reference_key": "Goldberg et al. 2010"
+      },
+      {
+        "context": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries.",
+        "page": 3,
+        "reference_key": "McLaren and Hakobyan 2010"
+      },
+      {
+        "context": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010).",
+        "page": 25,
+        "reference_key": "Autor and Duggan 2003, 2010"
+      },
+      {
+        "context": "An alternative possibility, suggested by Bloom, Draca, and Van Reenen (2011), is that manufacturing plants react to import competition by accelerating technological and organizational innovations that increase productivity and may raise wages.",
+        "page": 27,
+        "reference_key": "Bloom, Draca, and Van Reenen 2011"
+      },
+      {
+        "context": "This finding mirrors the outcomes of industry-level studies such as Edwards and Lawrence (2010) or Ebenstein et al. (2010), which observe no negative wage effects of imports on US workers in i­mport-competing manufacturing industries.",
+        "page": 27,
+        "reference_key": "Edwards and Lawrence 2010; Ebenstein et al. 2010"
+      },
+      {
+        "context": "However, applying a typical estimate of the deadweight loss of taxation of around 40 cents on the dollar (Gruber 2010), the real cost of the transfers spurred by rising import exposure is nontrivial.",
+        "page": 30,
+        "reference_key": "Gruber 2010"
+      },
+      {
+        "context": "We estimate these voluntary responses by applying Hicksian labor force participation and hours elasticities of ηe≈0.25 and ηh≈0.50, respectively, drawn from Chetty (2012).",
+        "page": 37,
+        "reference_key": "Chetty 2012"
+      },
+      {
+        "context": "An earlier literature, based on Heckscher-Ohlin trade theory, models trade as affecting labor markets through the import of factor services embodied in goods (Deardorff and Staiger 1988; Borjas, Freeman, and Katz 1997).",
+        "page": 34,
+        "reference_key": "Deardorff and Staiger 1988; Borjas, Freeman, and Katz 1997"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Department of Economics, MIT, 50 Memorial Drive, E52-371, Cambridge, MA 02142, and NBER",
+          "name": "David H. Autor"
+        },
+        {
+          "affiliation": "CEMFI, Casado del Alisal 5, 28014 Madrid, Spain",
+          "name": "David Dorn"
+        },
+        {
+          "affiliation": "School of International Relations and Pacific Studies, 0519, University of California, San Diego, 9500 Gilman Drive, La Jolla, CA 92093-0519, and NBER",
+          "name": "Gordon H. Hanson"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The China Syndrome: Local Labor Market Effects\nof Import Competition in the United States†"
+        },
+        {
+          "page": 1,
+          "quote": "By David H. Autor, David Dorn, and Gordon H. Hanson*"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": "10.1257/aer.103.6.2121"
+      },
+      "publication_state": "published",
+      "subtitle": "Local Labor Market Effects of Import Competition in the United States",
+      "title": "The China Syndrome",
+      "venue": "American Economic Review",
+      "year": 2013
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "In this paper, we relate changes in labor-market outcomes from 1990 to 2007 across US local labor markets to changes in exposure to Chinese import competition."
+        }
+      ],
+      "text": "What is the causal effect of rising Chinese import competition between 1990 and 2007 on US local labor market outcomes, including manufacturing employment, unemployment, labor-force participation, wages, and transfer-benefit receipt?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Amiti, Mary",
+          "Davis, Donald R."
+        ],
+        "doi": null,
+        "key": "Amiti and Davis 2009",
+        "page": 46,
+        "title": "“Trade, Firms, and Wages: Theory and Evidence.”",
+        "venue": "National Bureau of Economic Research Working Paper 14106.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Amiti, Mary",
+          "Freund, Caroline"
+        ],
+        "doi": null,
+        "key": "Amiti and Freund 2010",
+        "page": 46,
+        "title": "“The Anatomy of China’s Export Growth.”",
+        "venue": "In China’s Growing Role in World Trade, edited by Robert C. Feenstra and Shang-Jin Wei, 35–62. Chicago: University of Chicago Press.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Arkolakis, Costas",
+          "Costinot, Arnaud",
+          "Rodriguez-Clare, Andres"
+        ],
+        "doi": null,
+        "key": "Arkolakis, Costinot, and Rodriguez-Clare 2012",
+        "page": 46,
+        "title": "“New Trade Models, Same Old Gains?”",
+        "venue": "American Economic Review 102 (1): 94–130.",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Artuç, Erhan",
+          "Chaudhuri, Shubham",
+          "McLaren, John"
+        ],
+        "doi": null,
+        "key": "Artuç, Chaudhuri, and McLaren 2010",
+        "page": 46,
+        "title": "“Trade Shocks and Labor Adjustment: A Structural Empirical Approach.”",
+        "venue": "American Economic Review 100 (3): 1008–45.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Auer, Rafael",
+          "Fischer, Andreas"
+        ],
+        "doi": null,
+        "key": "Auer and Fischer 2008",
+        "page": 46,
+        "title": "“The Effect of Trade with Low-Income Countries on US Industry.”",
+        "venue": "Unpublished.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Acemoglu, Daron"
+        ],
+        "doi": null,
+        "key": "Autor and Acemoglu 2011",
+        "page": 46,
+        "title": "“Skills, Tasks and Technologies: Implications for Employment and Earnings.”",
+        "venue": "In Handbook of Labor Economics, Vol. 4B, edited by Orley Ashenfelter and David Card, 1043–1171. Amsterdam: Elsevier.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Autor, David",
+          "Dorn, David"
+        ],
+        "doi": null,
+        "key": "Autor and Dorn 2009",
+        "page": 46,
+        "title": "“This Job Is ‘Getting Old’: Measuring Changes in Job Opportunities Using Occupational Age Structure.”",
+        "venue": "American Economic Review 99 (2): 45–51.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Dorn, David"
+        ],
+        "doi": null,
+        "key": "Autor and Dorn 2013",
+        "page": 46,
+        "title": "“The Growth of Low Skill Service Jobs and the Polarization of the US Labor Market.”",
+        "venue": "American Economic Review 103 (5): 1553–97.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Dorn, David",
+          "Hanson, Gordon H."
+        ],
+        "doi": "10.1257/aer.103.6.2121",
+        "key": "Autor, Dorn, and Hanson 2013",
+        "page": 46,
+        "title": "“The China Syndrome: Local Labor Market Effects of Import Competition in the United States: Dataset.”",
+        "venue": "American Economic Review. http://dx.doi.org/10.1257/aer.103.6.2121.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Duggan, Mark"
+        ],
+        "doi": null,
+        "key": "Autor and Duggan 2003",
+        "page": 46,
+        "title": "“The Rise in the Disability Rolls and the Decline in Unemployment.”",
+        "venue": "Quarterly Journal of Economics 118 (1): 157–205.",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Duggan, Mark"
+        ],
+        "doi": null,
+        "key": "Autor and Duggan 2010",
+        "page": 46,
+        "title": "“Supporting Work: A Proposal for Modernizing the US Disability Insurance System.”",
+        "venue": "Washington, DC: Center for American Progress and the Hamilton Project.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Katz, Lawrence F.",
+          "Kearney, Melissa S."
+        ],
+        "doi": null,
+        "key": "Autor, Katz, and Kearney 2008",
+        "page": 46,
+        "title": "“Trends in US Wage Inequality: Revising the Revisionists.”",
+        "venue": "Review of Economics and Statistics 90 (2): 300–23.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Beaudry, Paul",
+          "Doms, Mark",
+          "Lewis, Ethan"
+        ],
+        "doi": null,
+        "key": "Beaudry, Doms, and Lewis 2010",
+        "page": 46,
+        "title": "“Should the Personal Computer Be Considered a Technological Revolution? Evidence from US Metropolitan Areas.”",
+        "venue": "Journal of Political Economy 118 (5): 988–1036.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Bernard, Andrew B.",
+          "Jensen, J. Bradford",
+          "Schott, Peter K."
+        ],
+        "doi": null,
+        "key": "Bernard, Jensen, and Schott 2006",
+        "page": 46,
+        "title": "“Survival of the Best Fit: Exposure to Low-Wage Countries and the (Uneven) Growth of US Manufacturing Plants.”",
+        "venue": "Journal of International Economics 68 (1): 219–37.",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Blanchard, Olivier Jean",
+          "Katz, Lawrence F."
+        ],
+        "doi": null,
+        "key": "Blanchard and Katz 1992",
+        "page": 46,
+        "title": "“Regional Evolutions.”",
+        "venue": "Brookings Papers on Economic Activity (1): 1–61.",
+        "year": 1992
+      },
+      {
+        "authors": [
+          "Bloom, Nicholas",
+          "Draca, Mirko",
+          "Van Reenen, John"
+        ],
+        "doi": null,
+        "key": "Bloom, Draca, and Van Reenen 2011",
+        "page": 46,
+        "title": "“Trade Induced Technical Change? The Impact of Chinese Imports on Diffusion, Innovation, and Productivity.”",
+        "venue": "Unpublished.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Borjas, George J.",
+          "Freeman, Richard B.",
+          "Katz, Lawrence F."
+        ],
+        "doi": null,
+        "key": "Borjas, Freeman, and Katz 1997",
+        "page": 46,
+        "title": "“How Much Do Immigration and Trade Affect Labor Market Outcomes?”",
+        "venue": "Brookings Papers on Economic Activity (1): 1–67.",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Borjas, George J.",
+          "Ramey, Valerie A."
+        ],
+        "doi": null,
+        "key": "Borjas and Ramey 1995",
+        "page": 46,
+        "title": "“Foreign Competition, Market Power, and Wage Inequality.”",
+        "venue": "Quarterly Journal of Economics 110 (4): 1075–110.",
+        "year": 1995
+      },
+      {
+        "authors": [
+          "Bound, John",
+          "Holzer, Harry J."
+        ],
+        "doi": null,
+        "key": "Bound and Holzer 2000",
+        "page": 46,
+        "title": "“Demand Shifts, Population Adjustments, and Labor Market Outcomes during the 1980s.”",
+        "venue": "Journal of Labor Economics 18 (1): 20–54.",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Brandt, Loren",
+          "Van Biesebroeck, Johannes",
+          "Zhang, Yifan"
+        ],
+        "doi": null,
+        "key": "Brandt, Van Biesebroeck, and Zhang 2012",
+        "page": 46,
+        "title": "“Creative Accounting or Creative Destruction? Firm-Level Productivity Growth in Chinese Manufacturing.”",
+        "venue": "Journal of Development Economics 97 (2): 339–51.",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Branstetter, Lee",
+          "Lardy, Nicholas"
+        ],
+        "doi": null,
+        "key": "Branstetter and Lardy 2006",
+        "page": 46,
+        "title": "“China’s Embrace of Globalization.”",
+        "venue": "National Bureau of Economic Research Working Paper 12373.",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Broda, Christian",
+          "Weinstein, David E."
+        ],
+        "doi": null,
+        "key": "Broda and Weinstein 2006",
+        "page": 46,
+        "title": "“Globalization and the Gains from Variety.”",
+        "venue": "Quarterly Journal of Economics 121 (2): 541–85.",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Burstein, Ariel",
+          "Vogel, Jonathan"
+        ],
+        "doi": null,
+        "key": "Burstein and Vogel 2011",
+        "page": 46,
+        "title": "“Factor Prices and International Trade: A Unifying Perspective.”",
+        "venue": "National Bureau of Economic Research Working Paper 16904.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Chen, Yuyu",
+          "Jin, Ginger Zhe",
+          "Yue, Yang"
+        ],
+        "doi": null,
+        "key": "Chen, Jin, and Yue 2010",
+        "page": 46,
+        "title": "“Peer Migration in China.”",
+        "venue": "National Bureau of Economic Research Working Paper 15671.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Chetty, Raj"
+        ],
+        "doi": null,
+        "key": "Chetty 2012",
+        "page": 46,
+        "title": "“Bounds on Elasticities with Optimization Frictions: A Synthesis of Micro and Macro Evidence on Labor Supply.”",
+        "venue": "Econometrica 80 (3): 969–1018.",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Chiquiar, Daniel"
+        ],
+        "doi": null,
+        "key": "Chiquiar 2008",
+        "page": 46,
+        "title": "“Globalization, Regional Wage Differentials and the Stolper-Samuelson Theorem: Evidence from Mexico.”",
+        "venue": "Journal of International Economics 74 (1): 70–93.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Deardorff, Alan V.",
+          "Staiger, Robert W."
+        ],
+        "doi": null,
+        "key": "Deardorff and Staiger 1988",
+        "page": 47,
+        "title": "“An Interpretation of the Factor Content of Trade.”",
+        "venue": "Journal of International Economics 24 (1/2): 93–107.",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "di Giovanni, Julian",
+          "Levchenko, Andrei",
+          "Zhang, Jing"
+        ],
+        "doi": null,
+        "key": "di Giovanni, Levchenko, and Zhang 2011",
+        "page": 47,
+        "title": "“The Global Welfare Impact of China: Trade Integration and Technological Change.”",
+        "venue": "Unpublished.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Dix-Carneiro, Rafael"
+        ],
+        "doi": null,
+        "key": "Dix-Carneiro 2011",
+        "page": 47,
+        "title": "“Trade Liberalization and Labor Market Dynamics.”",
+        "venue": "Unpublished.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Dorn, David"
+        ],
+        "doi": null,
+        "key": "Dorn 2009",
+        "page": 47,
+        "title": "“Essays on Inequality, Spatial Interaction, and the Demand for Skills.”",
+        "venue": "Dissertation, University of St. Gallen no. 3613.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Eaton, Jonathan",
+          "Kortum, Samuel",
+          "Kramarz, Francis"
+        ],
+        "doi": null,
+        "key": "Eaton, Kortum, and Kramarz 2011",
+        "page": 47,
+        "title": "“An Anatomy of International Trade: Evidence from French Firms.”",
+        "venue": "Econometrica 79 (5): 1453–98.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Ebenstein, Avraham",
+          "Harrison, Ann",
+          "McMillan, Margaret",
+          "Phillips, Shannon"
+        ],
+        "doi": null,
+        "key": "Ebenstein et al. 2010",
+        "page": 47,
+        "title": "“Estimating the Impact of Trade and Offshoring on American Workers Using the Current Population Surveys.”",
+        "venue": "Unpublished.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Edwards, Lawrence",
+          "Lawrence, Robert Z."
+        ],
+        "doi": null,
+        "key": "Edwards and Lawrence 2010",
+        "page": 47,
+        "title": "“US Trade and Wages: The Misleading Implications of Conventional Theory.”",
+        "venue": "National Bureau of Economic Research Working Paper 16106.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Feenstra, Robert C."
+        ],
+        "doi": null,
+        "key": "Feenstra 2004",
+        "page": 47,
+        "title": "Advanced International Trade: Theory and Evidence.",
+        "venue": "Princeton, NJ: Princeton University Press.",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Feenstra, Robert C."
+        ],
+        "doi": null,
+        "key": "Feenstra 2010",
+        "page": 47,
+        "title": "Offshoring in the Global Economy: Microeconomic Structure and Macroeconomic Implications.",
+        "venue": "Cambridge, MA: MIT Press.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Feenstra, Robert C.",
+          "Hanson, Gordon H."
+        ],
+        "doi": null,
+        "key": "Feenstra and Hanson 1999",
+        "page": 47,
+        "title": "“The Impact of Outsourcing and High-Technology Capital on Wages: Estimates for the United States, 1979–1990.”",
+        "venue": "Quarterly Journal of Economics 114 (3): 907–40.",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "Feenstra, Robert C.",
+          "Hanson, Gordon H."
+        ],
+        "doi": null,
+        "key": "Feenstra and Hanson 2005",
+        "page": 47,
+        "title": "“Ownership and Control in Outsourcing to China: Estimating the Property-Rights Theory of the Firm.”",
+        "venue": "Quarterly Journal of Economics 120 (2):729–61.",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Firpo, Sergio",
+          "Fortin, Nicole M.",
+          "Lemieux, Thomas"
+        ],
+        "doi": null,
+        "key": "Firpo, Fortin, and Lemieux 2011",
+        "page": 47,
+        "title": "“Occupational Tasks and Changes in the Wage Structure.”",
+        "venue": "Unpublished.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Glaeser, Edward L.",
+          "Gyourko, Joseph"
+        ],
+        "doi": null,
+        "key": "Glaeser and Gyourko 2005",
+        "page": 47,
+        "title": "“Urban Decline and Durable Housing.”",
+        "venue": "Journal of Political Economy 113 (2): 345–75.",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Goldberg, Pinelopi Koujianou",
+          "Khandelwal, Amit Kumar",
+          "Pavcnik, Nina",
+          "Topalova, Petia"
+        ],
+        "doi": null,
+        "key": "Goldberg et al. 2010",
+        "page": 47,
+        "title": "“Imported Intermediate Inputs and Domestic Product Growth: Evidence from India.”",
+        "venue": "Quarterly Journal of Economics 125 (4): 1727–67.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Gruber, Jonathan"
+        ],
+        "doi": null,
+        "key": "Gruber 1997",
+        "page": 47,
+        "title": "“The Consumption Smoothing Benefits of Unemployment Insurance.”",
+        "venue": "American Economic Review 87 (1): 192–205.",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Gruber, Jonathan"
+        ],
+        "doi": null,
+        "key": "Gruber 2010",
+        "page": 47,
+        "title": "Public Finance and Public Policy. 3rd ed.",
+        "venue": "New York: Worth Publishers.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Hanson, Gordon H."
+        ],
+        "doi": null,
+        "key": "Hanson 2010",
+        "page": 47,
+        "title": "“Why Isn’t Mexico Rich?”",
+        "venue": "Journal of Economic Literature 48 (4):987–1004.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Harrigan, James"
+        ],
+        "doi": null,
+        "key": "Harrigan 2000",
+        "page": 47,
+        "title": "“International Trade and American Wages in General Equilibrium, 1967–1995.”",
+        "venue": "In The Impact of International Trade, edited by Robert C. Feenstra, 171–96. Chicago: University of Chicago Press.",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Helpman, Elhanan",
+          "Krugman, Paul"
+        ],
+        "doi": null,
+        "key": "Helpman and Krugman 1987",
+        "page": 47,
+        "title": "Market Structure and Foreign Trade.",
+        "venue": "Cambridge, MA: MIT Press.",
+        "year": 1987
+      },
+      {
+        "authors": [
+          "Hsieh, Chang-Tai",
+          "Klenow, Peter J."
+        ],
+        "doi": null,
+        "key": "Hsieh and Klenow 2009",
+        "page": 47,
+        "title": "“Misallocation and Manufacturing TFP in China and India.”",
+        "venue": "Quarterly Journal of Economics 124 (4): 1403–48.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Hsieh, Chang-Tai",
+          "Ossa, Ralph"
+        ],
+        "doi": null,
+        "key": "Hsieh and Ossa 2011",
+        "page": 47,
+        "title": "“A Global View of Productivity Growth in China.”",
+        "venue": "National Bureau of Economic Research Working Paper 16778.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Hummels, David"
+        ],
+        "doi": null,
+        "key": "Hummels 2007",
+        "page": 47,
+        "title": "“Transportation Costs and International Trade in the Second Era of Globalization.”",
+        "venue": "Journal of Economic Perspectives 21 (3): 131–54.",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Hummels, David",
+          "Ishii, Jun",
+          "Yi, Kei-Mu"
+        ],
+        "doi": null,
+        "key": "Hummels, Ishii, and Yi 2001",
+        "page": 47,
+        "title": "“The Nature and Growth of Vertical Specialization in World Trade.”",
+        "venue": "Journal of International Economics 54 (1): 75–96.",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Hummels, David",
+          "Jorgensen, Rasmus",
+          "Munch, Jakob",
+          "Xiang, Chong"
+        ],
+        "doi": null,
+        "key": "Hummels et al. 2010",
+        "page": 47,
+        "title": "“The Wage and Employment Effects of Outsourcing: Evidence from Danish Matched Worker-Firm Data.”",
+        "venue": "Unpublished.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Katz, Lawrence F.",
+          "Autor, David"
+        ],
+        "doi": null,
+        "key": "Katz and Autor 1999",
+        "page": 47,
+        "title": "“Changes in the Wage Structure and Earnings Inequality.”",
+        "venue": "In Handbook of Labor Economics, Vol. 3A, edited by Orley Ashenfelter and David Card, 1463–555. Amsterdam: Elsevier Science.",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "Koopman, Robert",
+          "Powers, William",
+          "Wang, Zhi",
+          "Wei, Shang-Jin"
+        ],
+        "doi": null,
+        "key": "Koopman et al. 2010",
+        "page": 47,
+        "title": "“Give Credit Where Credit Is Due: Tracing Value Added in Global Production Chains.”",
+        "venue": "National Bureau of Economic Research Working Paper 16426.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Kovak, Brian"
+        ],
+        "doi": null,
+        "key": "Kovak 2013",
+        "page": 47,
+        "title": "“Regional Effects of Trade Reform: What is the Correct Measure of Liberalization?”",
+        "venue": "American Economic Review 103 (5): 1960–76.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Krugman, Paul R."
+        ],
+        "doi": null,
+        "key": "Krugman 2000",
+        "page": 47,
+        "title": "“Technology, Trade and Factor Prices.”",
+        "venue": "Journal of International Economics 50 (1): 51–71.",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Krugman, Paul R."
+        ],
+        "doi": null,
+        "key": "Krugman 2008",
+        "page": 47,
+        "title": "“Trade and Wages, Reconsidered.”",
+        "venue": "Brookings Papers on Economic Activity 2008 (1): 103–38.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Leamer, Edward E."
+        ],
+        "doi": null,
+        "key": "Leamer 1993",
+        "page": 48,
+        "title": "“Wage Effects of a US-Mexican Free Trade Agreement.”",
+        "venue": "In The Mexico-US Free Trade Agreement, edited by Peter M. Garber, 57–128. Cambridge, MA: MIT Press.",
+        "year": 1993
+      },
+      {
+        "authors": [
+          "Leamer, Edward E."
+        ],
+        "doi": null,
+        "key": "Leamer 2000",
+        "page": 48,
+        "title": "“What’s the Use of Factor Contents?”",
+        "venue": "Journal of International Economics 50 (1): 17–49.",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Lemieux, Thomas"
+        ],
+        "doi": null,
+        "key": "Lemieux 2006",
+        "page": 48,
+        "title": "“Increasing Residual Wage Inequality: Composition Effects, Noisy Data, or Rising Demand for Skill?”",
+        "venue": "American Economic Review 96 (3): 461–98.",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Liu, Runjuan",
+          "Trefler, Daniel"
+        ],
+        "doi": null,
+        "key": "Liu and Trefler 2008",
+        "page": 48,
+        "title": "“Much Ado About Nothing: American Jobs and the Rise of Service Outsourcing to China and India.”",
+        "venue": "National Bureau of Economic Research Working Paper 14061.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "McLaren, John",
+          "Hakobyan, Shushanik"
+        ],
+        "doi": null,
+        "key": "McLaren and Hakobyan 2010",
+        "page": 48,
+        "title": "“Looking for Local Labor Market Effects of NAFTA.”",
+        "venue": "National Bureau of Economic Research Working Paper 16535.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Melitz, Marc J."
+        ],
+        "doi": null,
+        "key": "Melitz 2003",
+        "page": 48,
+        "title": "“The Impact of Trade on Intra-industry Reallocations and Aggregate Industry Productivity.”",
+        "venue": "Econometrica 71 (6): 1695–725.",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Michaels, Guy"
+        ],
+        "doi": null,
+        "key": "Michaels 2008",
+        "page": 48,
+        "title": "“The Effect of Trade on the Demand for Skill: Evidence from the Interstate Highway System.”",
+        "venue": "Review of Economics and Statistics 90 (4): 683–701.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Naughton, Barry"
+        ],
+        "doi": null,
+        "key": "Naughton 2007",
+        "page": 48,
+        "title": "The Chinese Economy: Transitions and Growth.",
+        "venue": "Cambridge, MA: MIT Press.",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Notowidigdo, Matthew J."
+        ],
+        "doi": null,
+        "key": "Notowidigdo 2010",
+        "page": 48,
+        "title": "“The Incidence of Local Labor Demand Shocks.”",
+        "venue": "Unpublished.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Pierce, Justin R.",
+          "Schott, Peter K."
+        ],
+        "doi": null,
+        "key": "Pierce and Schott 2009",
+        "page": 48,
+        "title": "“A Concordance Between Ten-Digit US Harmonized System Codes and SIC/NAICS Product Classes and Industries.”",
+        "venue": "National Bureau of Economic Research Working Paper 15548.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Romalis, John"
+        ],
+        "doi": null,
+        "key": "Romalis 2007",
+        "page": 48,
+        "title": "“NAFTA’s and CUSFTA’s Impact on International Trade.”",
+        "venue": "Review of Economics and Statistics 89 (3): 416–35.",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Ruggles, Steven",
+          "Sobek, Matthew",
+          "Alexander, Trent",
+          "Fitch, Catherine A.",
+          "Goeken, Ronald",
+          "Hall, Patricia Kelly",
+          "King, Miriam",
+          "Ronnander, Chad"
+        ],
+        "doi": null,
+        "key": "Ruggles et al. 2010",
+        "page": 48,
+        "title": "Integrated Public Use Microdata Series: Version 3.0 [Machine-readable database].",
+        "venue": "Minneapolis, MN: Minnesota Population Center [producer and distributor].",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Smith, Christopher L."
+        ],
+        "doi": null,
+        "key": "Smith 2010",
+        "page": 48,
+        "title": "“Polarization of the US Adult Labor Market and Its Effects on the Demand for Teenage Labor.”",
+        "venue": "Unpublished.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Tolbert, Charles M.",
+          "Sizer, Molly"
+        ],
+        "doi": null,
+        "key": "Tolbert and Sizer 1996",
+        "page": 48,
+        "title": "“US Commuting Zones and Labor Market Areas: A 1990 Update.”",
+        "venue": "Economic Research Service Staff Paper 9614.",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "Topalova, Petia"
+        ],
+        "doi": null,
+        "key": "Topalova 2005",
+        "page": 48,
+        "title": "“Trade Liberalization, Poverty, and Inequality: Evidence from Indian Districts.”",
+        "venue": "National Bureau of Economic Research Working Paper 11614.",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Topalova, Petia"
+        ],
+        "doi": null,
+        "key": "Topalova 2010",
+        "page": 48,
+        "title": "“Factor Immobility and Regional Impacts of Trade Liberalization: Evidence on Poverty from India.”",
+        "venue": "American Economic Journal: Applied Economics 2 (4): 1–41.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Topel, Robert H."
+        ],
+        "doi": null,
+        "key": "Topel 1986",
+        "page": 48,
+        "title": "“Local Labor Markets.”",
+        "venue": "Journal of Political Economy 94 (3): S111–43.",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "United Nations Statistics Division"
+        ],
+        "doi": null,
+        "key": "United Nations Statistics Division 2009",
+        "page": 48,
+        "title": "United Nations Comtrade Database.",
+        "venue": "New York: United Nations. http://comtrade.un.org/.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "US Bureau of Economic Analysis"
+        ],
+        "doi": null,
+        "key": "US Bureau of Economic Analysis 2009",
+        "page": 48,
+        "title": "Table CA35, Personal Current Transfer Receipts.",
+        "venue": "http://www.bea.gov/iTable/iTable.cfm?reqid=6&step=3&isuri=1&600=1#reqid=6&step=3&isuri=1&600=1.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "US Census Bureau"
+        ],
+        "doi": null,
+        "key": "US Census Bureau 2009",
+        "page": 48,
+        "title": "County Business Patterns.",
+        "venue": "https://explore.data.gov/Business-Enterprise/County-Business-Patterns/nsmw-x6kx.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "US Social Security Administration"
+        ],
+        "doi": null,
+        "key": "US Social Security Administration Various years",
+        "page": 48,
+        "title": "Annual Statistical Report on the Social Security Disability Insurance Program.",
+        "venue": "",
+        "year": null
+      },
+      {
+        "authors": [
+          "US Social Security Administration"
+        ],
+        "doi": null,
+        "key": "US Social Security Administration Various years",
+        "page": 48,
+        "title": "Annual Statistical Supplement to the Social Security Bulletin.",
+        "venue": "Washington, DC: US Government Printing Office.",
+        "year": null
+      },
+      {
+        "authors": [
+          "Verhoogen, Eric A."
+        ],
+        "doi": null,
+        "key": "Verhoogen 2008",
+        "page": 48,
+        "title": "“Trade, Quality Upgrading, and Wage Inequality in the Mexican Manufacturing Sector.”",
+        "venue": "Quarterly Journal of Economics 123 (2): 489–530.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Wooldridge, Jeffrey M."
+        ],
+        "doi": null,
+        "key": "Wooldridge 2002",
+        "page": 48,
+        "title": "Econometric Analysis of Cross Section and Panel Data.",
+        "venue": "Cambridge, MA: MIT Press.",
+        "year": 2002
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The past two decades have seen a fruitful debate on the impact of international trade on US labor markets (Feenstra 2010).",
+        "reference_key": "Feenstra 2010",
+        "relation": "supports",
+        "why": "Situates the paper within the ongoing debate on trade and US labor markets."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013).",
+        "reference_key": "Autor and Dorn 2013",
+        "relation": "uses_method",
+        "why": "Adopts CZ-based local labor market definition and prior occupational task measures."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008).",
+        "reference_key": "Bloom, Draca, and Van Reenen 2011",
+        "relation": "contrasts",
+        "why": "The paper contrasts its labor-market adjustment findings with the innovation/productivity channel emphasized there."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries.",
+        "reference_key": "McLaren and Hakobyan 2010",
+        "relation": "contrasts",
+        "why": "Their weak NAFTA local effects contrast with the strong local effects found for Chinese import competition."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil, respectively.",
+        "reference_key": "Topalova 2005, 2010; Kovak 2013",
+        "relation": "extends",
+        "why": "Extends regional trade-shock analyses to US local labor markets and nonwage outcomes."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003).",
+        "reference_key": "Autor and Duggan 2003",
+        "relation": "supports",
+        "why": "Supports interpretation that SSDI transfers are long-lasting and elastic to adverse labor-market shocks."
+      },
+      {
+        "confidence": "high",
+        "page": 25,
+        "quote": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010).",
+        "reference_key": "Autor and Duggan 2003, 2010",
+        "relation": "supports",
+        "why": "Provides evidence that disability rolls respond to labor-demand shocks, supporting the transfer-benefit mechanism."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "(iv) the change in imports per worker net of imported intermediate inputs, the latter of which may have productivity enhancing effects on US industries (Goldberg et al. 2010).",
+        "reference_key": "Goldberg et al. 2010",
+        "relation": "contrasts",
+        "why": "Considers an offsetting productivity mechanism from imported intermediate inputs."
+      },
+      {
+        "confidence": "high",
+        "page": 30,
+        "quote": "However, applying a typical estimate of the deadweight loss of taxation of around 40 cents on the dollar (Gruber 2010), the real cost of the transfers spurred by rising import exposure is nontrivial.",
+        "reference_key": "Gruber 2010",
+        "relation": "uses_method",
+        "why": "Uses the deadweight-loss-of-taxation estimate to value the efficiency cost of increased transfers."
+      },
+      {
+        "confidence": "high",
+        "page": 34,
+        "quote": "An earlier literature, based on Heckscher-Ohlin trade theory, models trade as affecting labor markets through the import of factor services embodied in goods (Deardorff and Staiger 1988; Borjas, Freeman, and Katz 1997).",
+        "reference_key": "Deardorff and Staiger 1988; Borjas, Freeman, and Katz 1997",
+        "relation": "uses_method",
+        "why": "Provides the factor-content approach used as an alternative trade-exposure measure."
+      },
+      {
+        "confidence": "high",
+        "page": 10,
+        "quote": "Brandt, Van Biesebroeck, and Zhang (2012) estimate that over 1998 to 2007, China had average annual TFP growth in manufacturing of 8.0 percent, compared to the Bureau of Labor Statistics’ estimate (http://www.bls.gov/mfp/) of 3.9 percent for the United States.",
+        "reference_key": "Brandt, Van Biesebroeck, and Zhang 2012",
+        "relation": "supports",
+        "why": "Supports the claim that China's export surge was driven by rapid productivity growth."
+      },
+      {
+        "confidence": "high",
+        "page": 37,
+        "quote": "We estimate these voluntary responses by applying Hicksian labor force participation and hours elasticities of ηe≈0.25 and ηh≈0.50, respectively, drawn from Chetty (2012).",
+        "reference_key": "Chetty 2012",
+        "relation": "uses_method",
+        "why": "Supplies the labor-supply elasticities used to separate voluntary from involuntary nonemployment."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "In this paper, we relate changes in labor-market outcomes from 1990 to 2007 across US local labor markets to changes in exposure to Chinese import competition.",
+          "start_page": 1,
+          "start_text": "We analyze the effect of rising Chinese import competition between 1990 and 2007 on US local labor markets"
+        },
+        "summary": "Motivates the paper by documenting China's rise as a source of US import competition and the simultaneous decline in manufacturing employment.",
+        "title": "Introduction: China's import surge and labor-market stakes"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "Section VIII concludes.",
+          "start_page": 2,
+          "start_text": "In this paper, we relate changes in labor-market outcomes from 1990 to 2007"
+        },
+        "summary": "Explains why the paper studies commuting zones, how it differs from industry/occupation studies, and previews results.",
+        "title": "Local labor market approach and contribution"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "Imbalanced trade breaks this symmetry, allowing shocks to affect the size of the traded sector.",
+          "start_page": 5,
+          "start_text": "In this section, we consider theoretically how growth in US imports from China affects the demand for goods produced by US regional economies."
+        },
+        "summary": "Derives how Chinese export-supply and import-demand shocks affect a region's wages, traded employment, and nontraded employment.",
+        "title": "Theoretical model of regional trade shocks"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 7
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "In our main specifications, we will control for the start-of-period manufacturing share within CZs so as to focus on variation in exposure to Chinese imports stemming from differences in industry mix within local manufacturing sectors.",
+          "start_page": 7,
+          "start_text": "Following (2),our main measure of local labor market exposure to import competition is the change in Chinese import exposure per worker in a region"
+        },
+        "summary": "Defines the main measure: change in Chinese import exposure per worker, apportioned by regional industry employment.",
+        "title": "Empirical measure of import exposure"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "That our gravity and IV estimates are similar suggests that correlated import demand shocks across countries are not overly important for our results.",
+          "start_page": 8,
+          "start_text": "To identify the supply-driven component of Chinese imports, we instrument for growth in Chinese imports to the United States using the contemporaneous composition and growth of Chinese imports in eight other developed countries."
+        },
+        "summary": "Explains instrumentation using Chinese imports to other high-income countries and addresses identification threats.",
+        "title": "IV strategy and threats"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Appendix Table 2 provides means and standard deviations for the main variables.",
+          "start_page": 11,
+          "start_text": "This section provides summary information on our data construction and measurement, with further details given in the online Data Appendix."
+        },
+        "summary": "Describes trade data, commuting zones, industry employment, Census/ACS outcomes, and transfer-payment data.",
+        "title": "Data sources and measurement"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "That the estimated coefficient is similar in magnitude in both time periods and all three models underscores the stability of the statistical relationships.",
+          "start_page": 13,
+          "start_text": "Table 2 presents initial estimates of the relationship between Chinese import exposure and US manufacturing employment."
+        },
+        "summary": "Presents main 2SLS estimates: higher Chinese import exposure reduces manufacturing employment share.",
+        "title": "Manufacturing employment baseline 2SLS"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "The fully augmented model in column 6 indicates a sizable, robust negative impact of increasing import exposure on manufacturing employment.",
+          "start_page": 15,
+          "start_text": "To verify that our results capture the period-specific effects of exposure to China trade, and not some long-run common causal factor behind both the fall in manufacturing employment and the rise in Chinese imports, we conduct a falsification exercise"
+        },
+        "summary": "Tests reverse causality with past employment changes and adds demographic/occupation controls.",
+        "title": "Falsification and robustness controls"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 19
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "The results of Sections IIIA to IIIC suggest that the exposure of CZs to growing imports from China is a quantitatively important determinant of the decline in the share of manufacturing employment in the working-age population.",
+          "start_page": 19,
+          "start_text": "We estimate that rising exposure to Chinese import competition explains 33 percent of the US manufacturing employment decline"
+        },
+        "summary": "Quantifies how much Chinese import competition explains of the aggregate US manufacturing employment decline.",
+        "title": "Benchmarking aggregate manufacturing decline"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "The final 2SLS estimates in column 5, analyzing the impact of all other middle-income and high-income-country imports on US manufacturing, find small and inconsistently signed effects.",
+          "start_page": 20,
+          "start_text": "To consider Chinese imports alongside those of other countries, Appendix Table 4 compares the impact of growing exposure to Chinese imports to the effect of exposure to imports from other source countries."
+        },
+        "summary": "Compares China to other low-income, Mexico/CAFTA, and other exporters.",
+        "title": "Non-China trade comparisons"
+      },
+      {
+        "pages": {
+          "end": 23,
+          "start": 21
+        },
+        "source_span": {
+          "end_page": 23,
+          "end_text": "Our evidence below is most consistent with the third interpretation.",
+          "start_page": 21,
+          "start_text": "We begin in Table 4 by assessing the degree to which import shocks to local manufacturing cause reallocation of workers across CZs."
+        },
+        "summary": "Finds no robust population adjustment across CZs in response to import shocks.",
+        "title": "Population mobility null"
+      },
+      {
+        "pages": {
+          "end": 25,
+          "start": 23
+        },
+        "source_span": {
+          "end_page": 25,
+          "end_text": "It is likely that the increase in disability rolls is strongly concentrated among older workers and workers without a college education, though we cannot directly test this assumption since the SSDI data are not available to us separately by age or education group at the detailed geographic level.",
+          "start_page": 23,
+          "start_text": "In the first panel of Table 5, we study the impact of import shocks on the log change in the number of non-elderly adults in four exhaustive and mutually exclusive categories"
+        },
+        "summary": "Shows import shocks reduce manufacturing and nonmanufacturing employment and raise unemployment and labor-force nonparticipation.",
+        "title": "Employment status and nonparticipation"
+      },
+      {
+        "pages": {
+          "end": 28,
+          "start": 25
+        },
+        "source_span": {
+          "end_page": 28,
+          "end_text": "Overall, the findings suggest that general equilibrium effects operate within but not across local labor markets",
+          "start_page": 25,
+          "start_text": "In Table 6, we analyze effects of import exposure shocks on CZ wage levels."
+        },
+        "summary": "Finds negative wage effects outside manufacturing, while manufacturing wages do not fall significantly.",
+        "title": "Wage effects"
+      },
+      {
+        "pages": {
+          "end": 30,
+          "start": 28
+        },
+        "source_span": {
+          "end_page": 30,
+          "end_text": "These transfer payments vastly exceed the expenses of the TAA program, which specifically targets workers who lose employment due to import competition.",
+          "start_page": 28,
+          "start_text": "Table 8 studies how a variety of public transfer benefits respond to changes in import exposure."
+        },
+        "summary": "Studies public transfer payments, finding large increases in disability and medical benefits, small TAA.",
+        "title": "Transfer payments"
+      },
+      {
+        "pages": {
+          "end": 31,
+          "start": 30
+        },
+        "source_span": {
+          "end_page": 31,
+          "end_text": "Also consistent with the estimates in Table 8, we find that rising transfer income offsets only a small part of the decline in household earnings.",
+          "start_page": 30,
+          "start_text": "The models in Table 9, which are estimated using data from the Census and American Community Survey (rather than the BEA transfer data above), find that a $1,000 increase in a CZ’s import exposure leads to a fall in CZ average household wage and salary income"
+        },
+        "summary": "Shows falling household earnings and only small transfer offset.",
+        "title": "Household income effects"
+      },
+      {
+        "pages": {
+          "end": 34,
+          "start": 31
+        },
+        "source_span": {
+          "end_page": 34,
+          "end_text": "A $1,000 per worker increase in Chinese net import exposure reduces the manufacturing employment to population ratio by 0.45 percentage points.",
+          "start_page": 31,
+          "start_text": "In this section, we consider alternative measures of trade exposure for US commuting zones in order to gauge the robustness of our results."
+        },
+        "summary": "Tests alternative import exposure measures including international competition, intermediate inputs, net imports.",
+        "title": "Alternative exposure measures: international, intermediate, net"
+      },
+      {
+        "pages": {
+          "end": 35,
+          "start": 34
+        },
+        "source_span": {
+          "end_page": 35,
+          "end_text": "These coefficients are precisely estimated and are consistent with our findings for other measures of trade exposure: larger increases in the factor content of net imports yield lower wages in nonmanufacturing, higher government transfers to households, and lower household wage and salary income.",
+          "start_page": 34,
+          "start_text": "Panel E of Table 10 use the gravity-based approach to measure the exposure of CZs to Chinese trade."
+        },
+        "summary": "Uses gravity residual and factor content of net imports as additional robustness checks.",
+        "title": "Alternative exposure measures: gravity and factor content"
+      },
+      {
+        "pages": {
+          "end": 38,
+          "start": 35
+        },
+        "source_span": {
+          "end_page": 38,
+          "end_text": "Nevertheless, in the medium run, losses in economic efficiency from increased usage of public benefits and involuntary labor-force nonparticipation may offset a portion of the gains from trade with China.",
+          "start_page": 35,
+          "start_text": "What do our results imply about US gains from trade with China?"
+        },
+        "summary": "Estimates deadweight losses from transfer take-up and involuntary labor-force nonparticipation.",
+        "title": "Efficiency losses from transfers and involuntary nonparticipation"
+      },
+      {
+        "pages": {
+          "end": 39,
+          "start": 38
+        },
+        "source_span": {
+          "end_page": 39,
+          "end_text": "The consequences of China trade for US employment, household income, and government benefit programs may contribute to public ambivalence toward globalization and specific anxiety about increasing trade with China.",
+          "start_page": 38,
+          "start_text": "The value of annual US goods imports from China increased by a staggering 1,156 percent from 1991 to 2007"
+        },
+        "summary": "Summarizes distributional consequences and medium-run efficiency losses from China trade.",
+        "title": "Conclusion"
+      },
+      {
+        "pages": {
+          "end": 45,
+          "start": 40
+        },
+        "source_span": {
+          "end_page": 45,
+          "end_text": "Note that in (B6) we use lagged values for employment shares, as in (4).",
+          "start_page": 40,
+          "start_text": "A. Tables"
+        },
+        "summary": "Provides descriptive statistics, falsification tests, alternative exporters, employment status by sex/age, variance decomposition, and gravity model.",
+        "title": "Appendix tables and theory appendix"
+      },
+      {
+        "pages": {
+          "end": 48,
+          "start": 46
+        },
+        "source_span": {
+          "end_page": 48,
+          "end_text": "Wooldridge, Jeffrey M. 2002. Econometric Analysis of Cross Section and Panel Data. Cambridge, MA: MIT Press.",
+          "start_page": 46,
+          "start_text": "REFERENCES"
+        },
+        "summary": "Bibliography.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a published American Economic Review empirical labor-trade study using CZ-level OLS and 2SLS analysis.",
+      "value": "survey"
+    }
+  },
+  "pass1_check": {
+    "sites": 58,
+    "verbatim": 45,
+    "near": 11,
+    "missing": 2,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/type/value",
+      "action": "replace",
+      "value_json": "\"empirical\"",
+      "reason": "The paper is an empirical study, not a survey.",
+      "evidence": [
+        {
+          "quote": "Table 2 presents initial estimates of the relationship between Chinese import exposure and US manufacturing employment.",
+          "page": 13
+        }
+      ]
+    },
+    {
+      "path": "/sections/0/source_span/start_text",
+      "action": "replace",
+      "value_json": "\"The past two decades have seen a fruitful debate on the impact of international trade on US labor markets (Feenstra 2010).\"",
+      "reason": "The Introduction begins with this sentence, not with the abstract's first sentence.",
+      "evidence": [
+        {
+          "quote": "The past two decades have seen a fruitful debate on the impact of international trade on US labor markets (Feenstra 2010).",
+          "page": 1
+        }
+      ]
+    },
+    {
+      "path": "/sections/3/pages/start",
+      "action": "replace",
+      "value_json": "8",
+      "reason": "The section starts on page 8, not page 7.",
+      "evidence": [
+        {
+          "quote": "Following (2),our main measure of local labor market exposure to import competition is the change in Chinese import exposure per worker in a region",
+          "page": 8
+        }
+      ]
+    },
+    {
+      "path": "/sections/3/source_span/start_page",
+      "action": "replace",
+      "value_json": "8",
+      "reason": "The quoted start text appears on page 8, not page 7.",
+      "evidence": [
+        {
+          "quote": "Following (2),our main measure of local labor market exposure to import competition is the change in Chinese import exposure per worker in a region",
+          "page": 8
+        }
+      ]
+    },
+    {
+      "path": "/sections/4/pages/start",
+      "action": "replace",
+      "value_json": "9",
+      "reason": "The IV strategy section starts on page 9, not page 8.",
+      "evidence": [
+        {
+          "quote": "To identify the supply-driven component of Chinese imports, we instrument for growth in Chinese imports to the United States using the contemporaneous composition and growth of Chinese imports in eight other developed countries.",
+          "page": 9
+        }
+      ]
+    },
+    {
+      "path": "/sections/4/source_span/start_page",
+      "action": "replace",
+      "value_json": "9",
+      "reason": "The quoted start text appears on page 9, not page 8.",
+      "evidence": [
+        {
+          "quote": "To identify the supply-driven component of Chinese imports, we instrument for growth in Chinese imports to the United States using the contemporaneous composition and growth of Chinese imports in eight other developed countries.",
+          "page": 9
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/type/value",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 1,
+      "path": "/sections/0/source_span/start_text",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/sections/3/pages/start",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/sections/3/source_span/start_page",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/sections/4/pages/start",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 5,
+      "path": "/sections/4/source_span/start_page",
+      "action": "replace",
+      "status": "applied"
+    }
+  ],
+  "pass2_check": {
+    "sites": 58,
+    "verbatim": 45,
+    "near": 11,
+    "missing": 2,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "abstract",
+      "pointer": "/abstract/text",
+      "status": "verbatim",
+      "original": "We analyze the effect of rising Chinese import competition between 1990 and 2007 on US local labor markets, exploiting ­cross-market variation in import exposure stemming from initial differences in industry specialization and instrumenting for US imports using changes in Chinese imports by other high-income countries. Rising imports cause higher unemployment, lower labor force participation, and reduced wages in local labor markets that house i­mportcompeting manufacturing industries. In our main specification, import competition explains one-quarter of the contemporaneous aggregate decline in US manufacturing employment. Transfer benefits payments for unemployment, disability, retirement, and healthcare also rise sharply in more trade-exposed labor markets. (JEL E24, F14, F16, J23, J31, L60, O47, R12, R23)",
+      "admitted": "We analyze the effect of rising Chinese import competition between 1990 and 2007 on US local labor markets, exploiting ­cross-market variation in import exposure stemming from initial differences in industry specialization and instrumenting for US imports using changes in Chinese imports by other high-income countries. Rising imports cause higher unemployment, lower labor force participation, and reduced wages in local labor markets that house i­mportcompeting manufacturing industries. In our main specification, import competition explains one-quarter of the contemporaneous aggregate decline in US manufacturing employment. Transfer benefits payments for unemployment, disability, retirement, and healthcare also rise sharply in more trade-exposed labor markets. (JEL E24, F14, F16, J23, J31, L60, O47, R12, R23)",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013).",
+      "admitted": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/1/quote",
+      "status": "verbatim",
+      "original": "In our main specifications, we will control for the start-of-period manufacturing share within CZs so as to focus on variation in exposure to Chinese imports stemming from differences in industry mix within local manufacturing sectors.",
+      "admitted": "In our main specifications, we will control for the start-of-period manufacturing share within CZs so as to focus on variation in exposure to Chinese imports stemming from differences in industry mix within local manufacturing sectors.",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil, respectively.⁷",
+      "admitted": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil, respectively.⁷",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008).",
+      "admitted": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/1/quote",
+      "status": "verbatim",
+      "original": "An alternative possibility, suggested by Bloom, Draca, and Van Reenen (2011), is that manufacturing plants react to import competition by accelerating technological and organizational innovations that increase productivity and may raise wages.",
+      "admitted": "An alternative possibility, suggested by Bloom, Draca, and Van Reenen (2011), is that manufacturing plants react to import competition by accelerating technological and organizational innovations that increase productivity and may raise wages.",
+      "similarity": null,
+      "cited_page": 27,
+      "matched_page": 27
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries.",
+      "admitted": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/1/evidence/1/quote",
+      "status": "verbatim",
+      "original": "An exception to this generalization is McLaren and Hakobyan (2010), who find a wage impact on US industries exposed to increased competition from Mexico by NAFTA.",
+      "admitted": "An exception to this generalization is McLaren and Hakobyan (2010), who find a wage impact on US industries exposed to increased competition from Mexico by NAFTA.",
+      "similarity": null,
+      "cited_page": 27,
+      "matched_page": 27
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003).",
+      "admitted": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003).",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/2/evidence/1/quote",
+      "status": "verbatim",
+      "original": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010).",
+      "admitted": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010).",
+      "similarity": null,
+      "cited_page": 25,
+      "matched_page": 25
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "Rising imports cause higher unemployment, lower labor force participation, and reduced wages in local labor markets that house i­mportcompeting manufacturing industries.",
+      "admitted": "Rising imports cause higher unemployment, lower labor force participation, and reduced wages in local labor markets that house i­mportcompeting manufacturing industries.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/1/quote",
+      "status": "verbatim",
+      "original": "Transfer benefits payments for unemployment, disability, retirement, and healthcare also rise sharply in more trade-exposed labor markets.",
+      "admitted": "Transfer benefits payments for unemployment, disability, retirement, and healthcare also rise sharply in more trade-exposed labor markets.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The China Syndrome: Local Labor Market Effects\nof Import Competition in the United States†",
+      "admitted": "The China Syndrome: Local Labor Market Effects\nof Import Competition in the United States†",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/1/quote",
+      "status": "verbatim",
+      "original": "By David H. Autor, David Dorn, and Gordon H. Hanson*",
+      "admitted": "By David H. Autor, David Dorn, and Gordon H. Hanson*",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "In this paper, we relate changes in labor-market outcomes from 1990 to 2007 across US local labor markets to changes in exposure to Chinese import competition.",
+      "admitted": "In this paper, we relate changes in labor-market outcomes from 1990 to 2007 across US local labor markets to changes in exposure to Chinese import competition.",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "The past two decades have seen a fruitful debate on the impact of international trade on US labor markets (Feenstra 2010).",
+      "admitted": "The past two decades have seen a fruitful debate on the impact of international trade on US labor markets (Feenstra 2010).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "repaired_local",
+      "original": "While in the 1980s, trade in the form of foreign outsourcing was associated with modest increases in the wage premium for skilled manufacturing labor (Feenstra and Hanson 1999), the evidence suggests that other shocks, including skill biased technical change, played a more important role in the evolution of the US wage structure in that decade (Katz and Autor 1999).",
+      "admitted": "While in the 1980s, trade in the form of foreign outsourcing was associated with modest increases in the wage premium for skilled manufacturing labor (Feenstra and Hanson 1999), the evidence suggests that other shocks, including skill biased technical change, played a more important role in the evolution of the US wage structure in that decade (Katz and Autor",
+      "similarity": 0.9830508474576272,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "One factor limiting trade’s impact on US labor is that historically, imports from low-wage countries have been small (Krugman 2000).",
+      "admitted": "One factor limiting trade’s impact on US labor is that historically, imports from low-wage countries have been small (Krugman 2000).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "Though freer trade with countries at any income level may affect wages and employment, trade theory identifies low-wage countries as a likely source of disruption to high-wage labor markets (Krugman 2008).",
+      "admitted": "Though freer trade with countries at any income level may affect wages and employment, trade theory identifies low-wage countries as a likely source of disruption to high-wage labor markets (Krugman 2008).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013).",
+      "admitted": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "In particular, there is differentiation according to local labor market reliance on labor-intensive industries, in which China’s comparative advantage is pronounced (Amiti and Freund 2010).",
+      "admitted": "In particular, there is differentiation according to local labor market reliance on labor-intensive industries, in which China’s comparative advantage is pronounced (Amiti and Freund 2010).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "repaired_local",
+      "original": "The growth in low-income-country exports over the time period we examine is driven by China’s transition to a market-oriented economy, which has involved rural-to-urban migration of over 150 million workers (Chen, Jin, and Yue 2010), Chinese industries gaining access to long banned foreign technologies, capital goods, and intermediate inputs (Hsieh and Klenow 2009), and multinational enterprises being permitted to operate in the country (Naughton 2007).",
+      "admitted": "The growth in low-income-country exports over the time period we examine is driven by China’s transition to a market-oriented economy, which has involved rural-to-urban migration of over 150 million workers (Chen, Jin, and Yue 2010), Chinese industries gaining access to long banned foreign technologies, capital goods, and intermediate inputs (Hsieh and Klenow 2009), and multinational enterprises being permitted to operate in the country (Naughton",
+      "similarity": 0.9846153846153847,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "Compounding the positive effects of internal reforms on China’s trade is the country’s accession to the WTO, which gives it most-favored nation status among the 153 WTO members (Branstetter and Lardy 2006).",
+      "admitted": "Compounding the positive effects of internal reforms on China’s trade is the country’s accession to the WTO, which gives it most-favored nation status among the 153 WTO members (Branstetter and Lardy 2006).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008).",
+      "admitted": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "repaired_local",
+      "original": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil, respectively.",
+      "admitted": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil,",
+      "similarity": 0.9864864864864865,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "verbatim",
+      "original": "This approach is taken in recent work focusing on US imports from low-income countries, including Bernard, Jensen, and Schott (2006), who find that over 1977–1997, manufacturing plants more exposed to low-wage-country imports grew more slowly and were more likely to exit, and Liu and Trefler (2008), who estimate that over 1996–2006, US outsourcing of services to China and India had minimal effects on changes in occupation, employment, or earnings for US workers.",
+      "admitted": "This approach is taken in recent work focusing on US imports from low-income countries, including Bernard, Jensen, and Schott (2006), who find that over 1977–1997, manufacturing plants more exposed to low-wage-country imports grew more slowly and were more likely to exit, and Liu and Trefler (2008), who estimate that over 1996–2006, US outsourcing of services to China and India had minimal effects on changes in occupation, employment, or earnings for US workers.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "repaired_local",
+      "original": "Ebenstein et al. (2010), who like Liu and Trefler (2008) use data from the CPS, find larger effects of trade on wages, with wages growing more slowly in occupations more exposed to import penetration and to US multinationals moving production offshore.",
+      "admitted": "Ebenstein et al. (2010), who like Liu and Trefler (2008) use data from the CPS, find larger effects of trade on wages, with wages growing more slowly in occupations more exposed to import penetration and to US multinationals moving production",
+      "similarity": 0.975609756097561,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "verbatim",
+      "original": "The literature on regional adjustment to labor-market shocks suggests that mobility responses to labor demand shocks across US cities and states are slow and incomplete (Topel 1986; Blanchard and Katz 1992; Glaeser and Gyourko 2005).",
+      "admitted": "The literature on regional adjustment to labor-market shocks suggests that mobility responses to labor demand shocks across US cities and states are slow and incomplete (Topel 1986; Blanchard and Katz 1992; Glaeser and Gyourko 2005).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "verbatim",
+      "original": "Mobility is lowest for noncollege workers, who are overrepresented in manufacturing (Bound and Holzer 2000; Notowidigdo 2010).",
+      "admitted": "Mobility is lowest for noncollege workers, who are overrepresented in manufacturing (Bound and Holzer 2000; Notowidigdo 2010).",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "The sluggish response of regional labor supply to import exposure may be related to the costly mobility of labor between sectors, as documented by Artuç, Chaudhuri, and McLaren (2010) in the United States and Dix-Carneiro (2011) in Brazil, also in the context of adjustment to trade shocks.",
+      "admitted": "The sluggish response of regional labor supply to import exposure may be related to the costly mobility of labor between sectors, as documented by Artuç, Chaudhuri, and McLaren (2010) in the United States and Dix-Carneiro (2011) in Brazil, also in the context of adjustment to trade shocks.",
+      "similarity": null,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/15/context",
+      "status": "verbatim",
+      "original": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003).",
+      "admitted": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003).",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/16/context",
+      "status": "repaired_local",
+      "original": "In the online Theory Appendix, we develop a simple model of trade based on monopolistic competition (Helpman and Krugman 1987) and variation in industry labor productivities across countries.",
+      "admitted": "In the online Theory Appendix, we develop a simple model of trade based on monopolistic competition (Helpman and Krugman 1987) and variation in industry labor",
+      "similarity": 0.8928571428571429,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/17/context",
+      "status": "verbatim",
+      "original": "In applying the monopolistic competition model, we assume that trade has a “gravity” structure (as in Arkolakis, Costinot, and Rodriguez-Clare 2012), in which case one can map changes in trade quantities into labor-market outcomes.",
+      "admitted": "In applying the monopolistic competition model, we assume that trade has a “gravity” structure (as in Arkolakis, Costinot, and Rodriguez-Clare 2012), in which case one can map changes in trade quantities into labor-market outcomes.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/18/context",
+      "status": "verbatim",
+      "original": "An alternative approach would be to use a Heckscher-Ohlin or a specific-factors model, as in Topalova (2005, 2010) or Kovak (2013), in which the mapping is strictly from trade prices to wages and employment.",
+      "admitted": "An alternative approach would be to use a Heckscher-Ohlin or a specific-factors model, as in Topalova (2005, 2010) or Kovak (2013), in which the mapping is strictly from trade prices to wages and employment.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/19/context",
+      "status": "verbatim",
+      "original": "For global general equilibrium analyses of trade and productivity growth in China, see Hsieh and Ossa (2011) and di Giovanni, Levchenko, and Zhang (2011).",
+      "admitted": "For global general equilibrium analyses of trade and productivity growth in China, see Hsieh and Ossa (2011) and di Giovanni, Levchenko, and Zhang (2011).",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/20/context",
+      "status": "verbatim",
+      "original": "Melitz (2003) and Eaton, Kortum, and Kramarz (2011) give microfoundations for differences in national industry productivities in trade models based on monopolistic competition.",
+      "admitted": "Melitz (2003) and Eaton, Kortum, and Kramarz (2011) give microfoundations for differences in national industry productivities in trade models based on monopolistic competition.",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/21/context",
+      "status": "verbatim",
+      "original": "Brandt, Van Biesebroeck, and Zhang (2012) estimate that over 1998 to 2007, China had average annual TFP growth in manufacturing of 8.0 percent, compared to the Bureau of Labor Statistics’ estimate (http://www.bls.gov/mfp/) of 3.9 percent for the United States.",
+      "admitted": "Brandt, Van Biesebroeck, and Zhang (2012) estimate that over 1998 to 2007, China had average annual TFP growth in manufacturing of 8.0 percent, compared to the Bureau of Labor Statistics’ estimate (http://www.bls.gov/mfp/) of 3.9 percent for the United States.",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/22/context",
+      "status": "verbatim",
+      "original": "Both variables are based on occupational task data, which are described in detail in Autor and Dorn (2013).",
+      "admitted": "Both variables are based on occupational task data, which are described in detail in Autor and Dorn (2013).",
+      "similarity": null,
+      "cited_page": 17,
+      "matched_page": 17
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/23/context",
+      "status": "verbatim",
+      "original": "(iv) the change in imports per worker net of imported intermediate inputs, the latter of which may have productivity enhancing effects on US industries (Goldberg et al. 2010).",
+      "admitted": "(iv) the change in imports per worker net of imported intermediate inputs, the latter of which may have productivity enhancing effects on US industries (Goldberg et al. 2010).",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/24/context",
+      "status": "verbatim",
+      "original": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries.",
+      "admitted": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/25/context",
+      "status": "verbatim",
+      "original": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010).",
+      "admitted": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010).",
+      "similarity": null,
+      "cited_page": 25,
+      "matched_page": 25
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/26/context",
+      "status": "verbatim",
+      "original": "An alternative possibility, suggested by Bloom, Draca, and Van Reenen (2011), is that manufacturing plants react to import competition by accelerating technological and organizational innovations that increase productivity and may raise wages.",
+      "admitted": "An alternative possibility, suggested by Bloom, Draca, and Van Reenen (2011), is that manufacturing plants react to import competition by accelerating technological and organizational innovations that increase productivity and may raise wages.",
+      "similarity": null,
+      "cited_page": 27,
+      "matched_page": 27
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/27/context",
+      "status": "repaired_local",
+      "original": "This finding mirrors the outcomes of industry-level studies such as Edwards and Lawrence (2010) or Ebenstein et al. (2010), which observe no negative wage effects of imports on US workers in i­mport-competing manufacturing industries.",
+      "admitted": "This finding mirrors the outcomes of industry-level studies such as Edwards and Lawrence (2010) or Ebenstein et al. (2010), which observe no negative wage effects of imports on US workers in i­mport-competing manufacturing",
+      "similarity": 0.9705882352941176,
+      "cited_page": 27,
+      "matched_page": 27
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/28/context",
+      "status": "repaired_local",
+      "original": "However, applying a typical estimate of the deadweight loss of taxation of around 40 cents on the dollar (Gruber 2010), the real cost of the transfers spurred by rising import exposure is nontrivial.",
+      "admitted": "However, applying a typical estimate of the deadweight loss of taxation of around 40 cents on the dollar (Gruber 2010), the real cost of the transfers spurred by rising import exposure is",
+      "similarity": 0.9696969696969697,
+      "cited_page": 30,
+      "matched_page": 30
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/29/context",
+      "status": "repaired_model",
+      "original": "We estimate these voluntary responses by applying Hicksian labor force participation and hours elasticities of ηe≈0.25 and ηh≈0.50, respectively, drawn from Chetty (2012).",
+      "admitted": "We estimate these voluntary responses by applying Hicksian labor force participation and hours elasticities of ηe​​≈ 0.25 and ηh​​≈ 0.50, respectively, drawn from Chetty (2012).",
+      "similarity": 0.8260869565217391,
+      "cited_page": 37,
+      "matched_page": 37
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/30/context",
+      "status": "repaired_local",
+      "original": "An earlier literature, based on Heckscher-Ohlin trade theory, models trade as affecting labor markets through the import of factor services embodied in goods (Deardorff and Staiger 1988; Borjas, Freeman, and Katz 1997).",
+      "admitted": "An earlier literature, based on Heckscher-Ohlin trade theory, models trade as affecting labor markets through the import of factor services embodied in goods (Deardorff and Staiger 1988; Borjas, Freeman, and Katz",
+      "similarity": 0.96875,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "The past two decades have seen a fruitful debate on the impact of international trade on US labor markets (Feenstra 2010).",
+      "admitted": "The past two decades have seen a fruitful debate on the impact of international trade on US labor markets (Feenstra 2010).",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013).",
+      "admitted": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013).",
+      "similarity": null,
+      "cited_page": 2,
+      "matched_page": 2
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "verbatim",
+      "original": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008).",
+      "admitted": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008).",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries.",
+      "admitted": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries.",
+      "similarity": null,
+      "cited_page": 3,
+      "matched_page": 3
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "repaired_local",
+      "original": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil, respectively.",
+      "admitted": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil,",
+      "similarity": 0.9864864864864865,
+      "cited_page": 4,
+      "matched_page": 4
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "verbatim",
+      "original": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003).",
+      "admitted": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003).",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/6/quote",
+      "status": "verbatim",
+      "original": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010).",
+      "admitted": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010).",
+      "similarity": null,
+      "cited_page": 25,
+      "matched_page": 25
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/7/quote",
+      "status": "verbatim",
+      "original": "(iv) the change in imports per worker net of imported intermediate inputs, the latter of which may have productivity enhancing effects on US industries (Goldberg et al. 2010).",
+      "admitted": "(iv) the change in imports per worker net of imported intermediate inputs, the latter of which may have productivity enhancing effects on US industries (Goldberg et al. 2010).",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/8/quote",
+      "status": "repaired_local",
+      "original": "However, applying a typical estimate of the deadweight loss of taxation of around 40 cents on the dollar (Gruber 2010), the real cost of the transfers spurred by rising import exposure is nontrivial.",
+      "admitted": "However, applying a typical estimate of the deadweight loss of taxation of around 40 cents on the dollar (Gruber 2010), the real cost of the transfers spurred by rising import exposure is",
+      "similarity": 0.9696969696969697,
+      "cited_page": 30,
+      "matched_page": 30
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/9/quote",
+      "status": "repaired_local",
+      "original": "An earlier literature, based on Heckscher-Ohlin trade theory, models trade as affecting labor markets through the import of factor services embodied in goods (Deardorff and Staiger 1988; Borjas, Freeman, and Katz 1997).",
+      "admitted": "An earlier literature, based on Heckscher-Ohlin trade theory, models trade as affecting labor markets through the import of factor services embodied in goods (Deardorff and Staiger 1988; Borjas, Freeman, and Katz",
+      "similarity": 0.96875,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/10/quote",
+      "status": "verbatim",
+      "original": "Brandt, Van Biesebroeck, and Zhang (2012) estimate that over 1998 to 2007, China had average annual TFP growth in manufacturing of 8.0 percent, compared to the Bureau of Labor Statistics’ estimate (http://www.bls.gov/mfp/) of 3.9 percent for the United States.",
+      "admitted": "Brandt, Van Biesebroeck, and Zhang (2012) estimate that over 1998 to 2007, China had average annual TFP growth in manufacturing of 8.0 percent, compared to the Bureau of Labor Statistics’ estimate (http://www.bls.gov/mfp/) of 3.9 percent for the United States.",
+      "similarity": null,
+      "cited_page": 10,
+      "matched_page": 10
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/11/quote",
+      "status": "repaired_model",
+      "original": "We estimate these voluntary responses by applying Hicksian labor force participation and hours elasticities of ηe≈0.25 and ηh≈0.50, respectively, drawn from Chetty (2012).",
+      "admitted": "We estimate these voluntary responses by applying Hicksian labor force participation and hours elasticities of ηe​​≈ 0.25 and ηh​​≈ 0.50, respectively, drawn from Chetty (2012).",
+      "similarity": 0.8260869565217391,
+      "cited_page": 37,
+      "matched_page": 37
+    }
+  ],
+  "admission_counts": {
+    "repaired_local": 11,
+    "repaired_model": 2,
+    "verbatim": 45
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": 1,
+      "text": "We analyze the effect of rising Chinese import competition between 1990 and 2007 on US local labor markets, exploiting ­cross-market variation in import exposure stemming from initial differences in industry specialization and instrumenting for US imports using changes in Chinese imports by other high-income countries. Rising imports cause higher unemployment, lower labor force participation, and reduced wages in local labor markets that house i­mportcompeting manufacturing industries. In our main specification, import competition explains one-quarter of the contemporaneous aggregate decline in US manufacturing employment. Transfer benefits payments for unemployment, disability, retirement, and healthcare also rise sharply in more trade-exposed labor markets. (JEL E24, F14, F16, J23, J31, L60, O47, R12, R23)"
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Autor and Dorn (2013)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 2,
+                "quote": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013)."
+              },
+              {
+                "page": 8,
+                "quote": "In our main specifications, we will control for the start-of-period manufacturing share within CZs so as to focus on variation in exposure to Chinese imports stemming from differences in industry mix within local manufacturing sectors."
+              }
+            ],
+            "reference_key": "Autor and Dorn (2013)",
+            "why": "The paper adopts the CZ-based local labor market design and occupational task controls from this prior work."
+          },
+          {
+            "cited_work": "Topalova (2005, 2010), Kovak (2013)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 4,
+                "quote": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil, respectively.⁷"
+              }
+            ],
+            "reference_key": "Topalova (2005, 2010); Kovak (2013)",
+            "why": "The paper builds on the regional trade-shock literature that maps trade liberalization to local wages and poverty."
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "Bloom, Draca, and Van Reenen (2011)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008)."
+              },
+              {
+                "page": 27,
+                "quote": "An alternative possibility, suggested by Bloom, Draca, and Van Reenen (2011), is that manufacturing plants react to import competition by accelerating technological and organizational innovations that increase productivity and may raise wages."
+              }
+            ],
+            "reference_key": "Bloom, Draca, and Van Reenen (2011)",
+            "why": "The paper contrasts its labor-market-adjustment focus with this innovation/productivity mechanism as an alternative interpretation."
+          },
+          {
+            "cited_work": "McLaren and Hakobyan (2010)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 3,
+                "quote": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries."
+              },
+              {
+                "page": 27,
+                "quote": "An exception to this generalization is McLaren and Hakobyan (2010), who find a wage impact on US industries exposed to increased competition from Mexico by NAFTA."
+              }
+            ],
+            "reference_key": "McLaren and Hakobyan (2010)",
+            "why": "The paper contrasts NAFTA's weak local effects with the strong local effects it finds for Chinese import competition."
+          },
+          {
+            "cited_work": "Autor and Duggan (2003)",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 5,
+                "quote": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003)."
+              },
+              {
+                "page": 25,
+                "quote": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010)."
+              }
+            ],
+            "reference_key": "Autor and Duggan (2003, 2010)",
+            "why": "The paper builds on the evidence that disability rolls respond to labor-market shocks when interpreting transfer-benefit effects."
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "Rising imports cause higher unemployment, lower labor force participation, and reduced wages in local labor markets that house i­mportcompeting manufacturing industries."
+          },
+          {
+            "page": 1,
+            "quote": "Transfer benefits payments for unemployment, disability, retirement, and healthcare also rise sharply in more trade-exposed labor markets."
+          }
+        ],
+        "text": "Rising Chinese import competition caused higher unemployment, lower labor-force participation, lower wages, and higher transfer benefits in exposed US local labor markets, explaining a substantial share of the decline in US manufacturing employment."
+      }
+    },
+    "citations": [
+      {
+        "context": "The past two decades have seen a fruitful debate on the impact of international trade on US labor markets (Feenstra 2010).",
+        "page": 1,
+        "reference_key": "Feenstra 2010"
+      },
+      {
+        "context": "While in the 1980s, trade in the form of foreign outsourcing was associated with modest increases in the wage premium for skilled manufacturing labor (Feenstra and Hanson 1999), the evidence suggests that other shocks, including skill biased technical change, played a more important role in the evolution of the US wage structure in that decade (Katz and Autor",
+        "page": 1,
+        "reference_key": "Feenstra and Hanson 1999; Katz and Autor 1999"
+      },
+      {
+        "context": "One factor limiting trade’s impact on US labor is that historically, imports from low-wage countries have been small (Krugman 2000).",
+        "page": 1,
+        "reference_key": "Krugman 2000"
+      },
+      {
+        "context": "Though freer trade with countries at any income level may affect wages and employment, trade theory identifies low-wage countries as a likely source of disruption to high-wage labor markets (Krugman 2008).",
+        "page": 1,
+        "reference_key": "Krugman 2008"
+      },
+      {
+        "context": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013).",
+        "page": 2,
+        "reference_key": "Tolbert and Sizer 1996; Autor and Dorn 2013"
+      },
+      {
+        "context": "In particular, there is differentiation according to local labor market reliance on labor-intensive industries, in which China’s comparative advantage is pronounced (Amiti and Freund 2010).",
+        "page": 3,
+        "reference_key": "Amiti and Freund 2010"
+      },
+      {
+        "context": "The growth in low-income-country exports over the time period we examine is driven by China’s transition to a market-oriented economy, which has involved rural-to-urban migration of over 150 million workers (Chen, Jin, and Yue 2010), Chinese industries gaining access to long banned foreign technologies, capital goods, and intermediate inputs (Hsieh and Klenow 2009), and multinational enterprises being permitted to operate in the country (Naughton",
+        "page": 3,
+        "reference_key": "Chen, Jin, and Yue 2010; Hsieh and Klenow 2009; Naughton 2007"
+      },
+      {
+        "context": "Compounding the positive effects of internal reforms on China’s trade is the country’s accession to the WTO, which gives it most-favored nation status among the 153 WTO members (Branstetter and Lardy 2006).",
+        "page": 3,
+        "reference_key": "Branstetter and Lardy 2006"
+      },
+      {
+        "context": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008).",
+        "page": 3,
+        "reference_key": "Bloom, Draca, and Van Reenen 2011; Auer and Fischer 2008"
+      },
+      {
+        "context": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil,",
+        "page": 4,
+        "reference_key": "Borjas and Ramey 1995; Chiquiar 2008; Topalova 2005, 2010; Kovak 2013"
+      },
+      {
+        "context": "This approach is taken in recent work focusing on US imports from low-income countries, including Bernard, Jensen, and Schott (2006), who find that over 1977–1997, manufacturing plants more exposed to low-wage-country imports grew more slowly and were more likely to exit, and Liu and Trefler (2008), who estimate that over 1996–2006, US outsourcing of services to China and India had minimal effects on changes in occupation, employment, or earnings for US workers.",
+        "page": 4,
+        "reference_key": "Bernard, Jensen, and Schott 2006; Liu and Trefler 2008"
+      },
+      {
+        "context": "Ebenstein et al. (2010), who like Liu and Trefler (2008) use data from the CPS, find larger effects of trade on wages, with wages growing more slowly in occupations more exposed to import penetration and to US multinationals moving production",
+        "page": 4,
+        "reference_key": "Ebenstein et al. 2010; Liu and Trefler 2008"
+      },
+      {
+        "context": "The literature on regional adjustment to labor-market shocks suggests that mobility responses to labor demand shocks across US cities and states are slow and incomplete (Topel 1986; Blanchard and Katz 1992; Glaeser and Gyourko 2005).",
+        "page": 4,
+        "reference_key": "Topel 1986; Blanchard and Katz 1992; Glaeser and Gyourko 2005"
+      },
+      {
+        "context": "Mobility is lowest for noncollege workers, who are overrepresented in manufacturing (Bound and Holzer 2000; Notowidigdo 2010).",
+        "page": 4,
+        "reference_key": "Bound and Holzer 2000; Notowidigdo 2010"
+      },
+      {
+        "context": "The sluggish response of regional labor supply to import exposure may be related to the costly mobility of labor between sectors, as documented by Artuç, Chaudhuri, and McLaren (2010) in the United States and Dix-Carneiro (2011) in Brazil, also in the context of adjustment to trade shocks.",
+        "page": 4,
+        "reference_key": "Artuç, Chaudhuri, and McLaren 2010; Dix-Carneiro 2011"
+      },
+      {
+        "context": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003).",
+        "page": 5,
+        "reference_key": "Autor and Duggan 2003"
+      },
+      {
+        "context": "In the online Theory Appendix, we develop a simple model of trade based on monopolistic competition (Helpman and Krugman 1987) and variation in industry labor",
+        "page": 5,
+        "reference_key": "Helpman and Krugman 1987"
+      },
+      {
+        "context": "In applying the monopolistic competition model, we assume that trade has a “gravity” structure (as in Arkolakis, Costinot, and Rodriguez-Clare 2012), in which case one can map changes in trade quantities into labor-market outcomes.",
+        "page": 6,
+        "reference_key": "Arkolakis, Costinot, and Rodriguez-Clare 2012"
+      },
+      {
+        "context": "An alternative approach would be to use a Heckscher-Ohlin or a specific-factors model, as in Topalova (2005, 2010) or Kovak (2013), in which the mapping is strictly from trade prices to wages and employment.",
+        "page": 6,
+        "reference_key": "Topalova 2005, 2010; Kovak 2013"
+      },
+      {
+        "context": "For global general equilibrium analyses of trade and productivity growth in China, see Hsieh and Ossa (2011) and di Giovanni, Levchenko, and Zhang (2011).",
+        "page": 6,
+        "reference_key": "Hsieh and Ossa 2011; di Giovanni, Levchenko, and Zhang 2011"
+      },
+      {
+        "context": "Melitz (2003) and Eaton, Kortum, and Kramarz (2011) give microfoundations for differences in national industry productivities in trade models based on monopolistic competition.",
+        "page": 6,
+        "reference_key": "Melitz 2003; Eaton, Kortum, and Kramarz 2011"
+      },
+      {
+        "context": "Brandt, Van Biesebroeck, and Zhang (2012) estimate that over 1998 to 2007, China had average annual TFP growth in manufacturing of 8.0 percent, compared to the Bureau of Labor Statistics’ estimate (http://www.bls.gov/mfp/) of 3.9 percent for the United States.",
+        "page": 10,
+        "reference_key": "Brandt, Van Biesebroeck, and Zhang 2012"
+      },
+      {
+        "context": "Both variables are based on occupational task data, which are described in detail in Autor and Dorn (2013).",
+        "page": 17,
+        "reference_key": "Autor and Dorn 2013"
+      },
+      {
+        "context": "(iv) the change in imports per worker net of imported intermediate inputs, the latter of which may have productivity enhancing effects on US industries (Goldberg et al. 2010).",
+        "page": 11,
+        "reference_key": "Goldberg et al. 2010"
+      },
+      {
+        "context": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries.",
+        "page": 3,
+        "reference_key": "McLaren and Hakobyan 2010"
+      },
+      {
+        "context": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010).",
+        "page": 25,
+        "reference_key": "Autor and Duggan 2003, 2010"
+      },
+      {
+        "context": "An alternative possibility, suggested by Bloom, Draca, and Van Reenen (2011), is that manufacturing plants react to import competition by accelerating technological and organizational innovations that increase productivity and may raise wages.",
+        "page": 27,
+        "reference_key": "Bloom, Draca, and Van Reenen 2011"
+      },
+      {
+        "context": "This finding mirrors the outcomes of industry-level studies such as Edwards and Lawrence (2010) or Ebenstein et al. (2010), which observe no negative wage effects of imports on US workers in i­mport-competing manufacturing",
+        "page": 27,
+        "reference_key": "Edwards and Lawrence 2010; Ebenstein et al. 2010"
+      },
+      {
+        "context": "However, applying a typical estimate of the deadweight loss of taxation of around 40 cents on the dollar (Gruber 2010), the real cost of the transfers spurred by rising import exposure is",
+        "page": 30,
+        "reference_key": "Gruber 2010"
+      },
+      {
+        "context": "We estimate these voluntary responses by applying Hicksian labor force participation and hours elasticities of ηe​​≈ 0.25 and ηh​​≈ 0.50, respectively, drawn from Chetty (2012).",
+        "page": 37,
+        "reference_key": "Chetty 2012"
+      },
+      {
+        "context": "An earlier literature, based on Heckscher-Ohlin trade theory, models trade as affecting labor markets through the import of factor services embodied in goods (Deardorff and Staiger 1988; Borjas, Freeman, and Katz",
+        "page": 34,
+        "reference_key": "Deardorff and Staiger 1988; Borjas, Freeman, and Katz 1997"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Department of Economics, MIT, 50 Memorial Drive, E52-371, Cambridge, MA 02142, and NBER",
+          "name": "David H. Autor"
+        },
+        {
+          "affiliation": "CEMFI, Casado del Alisal 5, 28014 Madrid, Spain",
+          "name": "David Dorn"
+        },
+        {
+          "affiliation": "School of International Relations and Pacific Studies, 0519, University of California, San Diego, 9500 Gilman Drive, La Jolla, CA 92093-0519, and NBER",
+          "name": "Gordon H. Hanson"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The China Syndrome: Local Labor Market Effects\nof Import Competition in the United States†"
+        },
+        {
+          "page": 1,
+          "quote": "By David H. Autor, David Dorn, and Gordon H. Hanson*"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": "10.1257/aer.103.6.2121"
+      },
+      "publication_state": "published",
+      "subtitle": "Local Labor Market Effects of Import Competition in the United States",
+      "title": "The China Syndrome",
+      "venue": "American Economic Review",
+      "year": 2013
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 2,
+          "quote": "In this paper, we relate changes in labor-market outcomes from 1990 to 2007 across US local labor markets to changes in exposure to Chinese import competition."
+        }
+      ],
+      "text": "What is the causal effect of rising Chinese import competition between 1990 and 2007 on US local labor market outcomes, including manufacturing employment, unemployment, labor-force participation, wages, and transfer-benefit receipt?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Amiti, Mary",
+          "Davis, Donald R."
+        ],
+        "doi": null,
+        "key": "Amiti and Davis 2009",
+        "page": 46,
+        "title": "“Trade, Firms, and Wages: Theory and Evidence.”",
+        "venue": "National Bureau of Economic Research Working Paper 14106.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Amiti, Mary",
+          "Freund, Caroline"
+        ],
+        "doi": null,
+        "key": "Amiti and Freund 2010",
+        "page": 46,
+        "title": "“The Anatomy of China’s Export Growth.”",
+        "venue": "In China’s Growing Role in World Trade, edited by Robert C. Feenstra and Shang-Jin Wei, 35–62. Chicago: University of Chicago Press.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Arkolakis, Costas",
+          "Costinot, Arnaud",
+          "Rodriguez-Clare, Andres"
+        ],
+        "doi": null,
+        "key": "Arkolakis, Costinot, and Rodriguez-Clare 2012",
+        "page": 46,
+        "title": "“New Trade Models, Same Old Gains?”",
+        "venue": "American Economic Review 102 (1): 94–130.",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Artuç, Erhan",
+          "Chaudhuri, Shubham",
+          "McLaren, John"
+        ],
+        "doi": null,
+        "key": "Artuç, Chaudhuri, and McLaren 2010",
+        "page": 46,
+        "title": "“Trade Shocks and Labor Adjustment: A Structural Empirical Approach.”",
+        "venue": "American Economic Review 100 (3): 1008–45.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Auer, Rafael",
+          "Fischer, Andreas"
+        ],
+        "doi": null,
+        "key": "Auer and Fischer 2008",
+        "page": 46,
+        "title": "“The Effect of Trade with Low-Income Countries on US Industry.”",
+        "venue": "Unpublished.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Acemoglu, Daron"
+        ],
+        "doi": null,
+        "key": "Autor and Acemoglu 2011",
+        "page": 46,
+        "title": "“Skills, Tasks and Technologies: Implications for Employment and Earnings.”",
+        "venue": "In Handbook of Labor Economics, Vol. 4B, edited by Orley Ashenfelter and David Card, 1043–1171. Amsterdam: Elsevier.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Autor, David",
+          "Dorn, David"
+        ],
+        "doi": null,
+        "key": "Autor and Dorn 2009",
+        "page": 46,
+        "title": "“This Job Is ‘Getting Old’: Measuring Changes in Job Opportunities Using Occupational Age Structure.”",
+        "venue": "American Economic Review 99 (2): 45–51.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Dorn, David"
+        ],
+        "doi": null,
+        "key": "Autor and Dorn 2013",
+        "page": 46,
+        "title": "“The Growth of Low Skill Service Jobs and the Polarization of the US Labor Market.”",
+        "venue": "American Economic Review 103 (5): 1553–97.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Dorn, David",
+          "Hanson, Gordon H."
+        ],
+        "doi": "10.1257/aer.103.6.2121",
+        "key": "Autor, Dorn, and Hanson 2013",
+        "page": 46,
+        "title": "“The China Syndrome: Local Labor Market Effects of Import Competition in the United States: Dataset.”",
+        "venue": "American Economic Review. http://dx.doi.org/10.1257/aer.103.6.2121.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Duggan, Mark"
+        ],
+        "doi": null,
+        "key": "Autor and Duggan 2003",
+        "page": 46,
+        "title": "“The Rise in the Disability Rolls and the Decline in Unemployment.”",
+        "venue": "Quarterly Journal of Economics 118 (1): 157–205.",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Duggan, Mark"
+        ],
+        "doi": null,
+        "key": "Autor and Duggan 2010",
+        "page": 46,
+        "title": "“Supporting Work: A Proposal for Modernizing the US Disability Insurance System.”",
+        "venue": "Washington, DC: Center for American Progress and the Hamilton Project.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Autor, David H.",
+          "Katz, Lawrence F.",
+          "Kearney, Melissa S."
+        ],
+        "doi": null,
+        "key": "Autor, Katz, and Kearney 2008",
+        "page": 46,
+        "title": "“Trends in US Wage Inequality: Revising the Revisionists.”",
+        "venue": "Review of Economics and Statistics 90 (2): 300–23.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Beaudry, Paul",
+          "Doms, Mark",
+          "Lewis, Ethan"
+        ],
+        "doi": null,
+        "key": "Beaudry, Doms, and Lewis 2010",
+        "page": 46,
+        "title": "“Should the Personal Computer Be Considered a Technological Revolution? Evidence from US Metropolitan Areas.”",
+        "venue": "Journal of Political Economy 118 (5): 988–1036.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Bernard, Andrew B.",
+          "Jensen, J. Bradford",
+          "Schott, Peter K."
+        ],
+        "doi": null,
+        "key": "Bernard, Jensen, and Schott 2006",
+        "page": 46,
+        "title": "“Survival of the Best Fit: Exposure to Low-Wage Countries and the (Uneven) Growth of US Manufacturing Plants.”",
+        "venue": "Journal of International Economics 68 (1): 219–37.",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Blanchard, Olivier Jean",
+          "Katz, Lawrence F."
+        ],
+        "doi": null,
+        "key": "Blanchard and Katz 1992",
+        "page": 46,
+        "title": "“Regional Evolutions.”",
+        "venue": "Brookings Papers on Economic Activity (1): 1–61.",
+        "year": 1992
+      },
+      {
+        "authors": [
+          "Bloom, Nicholas",
+          "Draca, Mirko",
+          "Van Reenen, John"
+        ],
+        "doi": null,
+        "key": "Bloom, Draca, and Van Reenen 2011",
+        "page": 46,
+        "title": "“Trade Induced Technical Change? The Impact of Chinese Imports on Diffusion, Innovation, and Productivity.”",
+        "venue": "Unpublished.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Borjas, George J.",
+          "Freeman, Richard B.",
+          "Katz, Lawrence F."
+        ],
+        "doi": null,
+        "key": "Borjas, Freeman, and Katz 1997",
+        "page": 46,
+        "title": "“How Much Do Immigration and Trade Affect Labor Market Outcomes?”",
+        "venue": "Brookings Papers on Economic Activity (1): 1–67.",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Borjas, George J.",
+          "Ramey, Valerie A."
+        ],
+        "doi": null,
+        "key": "Borjas and Ramey 1995",
+        "page": 46,
+        "title": "“Foreign Competition, Market Power, and Wage Inequality.”",
+        "venue": "Quarterly Journal of Economics 110 (4): 1075–110.",
+        "year": 1995
+      },
+      {
+        "authors": [
+          "Bound, John",
+          "Holzer, Harry J."
+        ],
+        "doi": null,
+        "key": "Bound and Holzer 2000",
+        "page": 46,
+        "title": "“Demand Shifts, Population Adjustments, and Labor Market Outcomes during the 1980s.”",
+        "venue": "Journal of Labor Economics 18 (1): 20–54.",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Brandt, Loren",
+          "Van Biesebroeck, Johannes",
+          "Zhang, Yifan"
+        ],
+        "doi": null,
+        "key": "Brandt, Van Biesebroeck, and Zhang 2012",
+        "page": 46,
+        "title": "“Creative Accounting or Creative Destruction? Firm-Level Productivity Growth in Chinese Manufacturing.”",
+        "venue": "Journal of Development Economics 97 (2): 339–51.",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Branstetter, Lee",
+          "Lardy, Nicholas"
+        ],
+        "doi": null,
+        "key": "Branstetter and Lardy 2006",
+        "page": 46,
+        "title": "“China’s Embrace of Globalization.”",
+        "venue": "National Bureau of Economic Research Working Paper 12373.",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Broda, Christian",
+          "Weinstein, David E."
+        ],
+        "doi": null,
+        "key": "Broda and Weinstein 2006",
+        "page": 46,
+        "title": "“Globalization and the Gains from Variety.”",
+        "venue": "Quarterly Journal of Economics 121 (2): 541–85.",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Burstein, Ariel",
+          "Vogel, Jonathan"
+        ],
+        "doi": null,
+        "key": "Burstein and Vogel 2011",
+        "page": 46,
+        "title": "“Factor Prices and International Trade: A Unifying Perspective.”",
+        "venue": "National Bureau of Economic Research Working Paper 16904.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Chen, Yuyu",
+          "Jin, Ginger Zhe",
+          "Yue, Yang"
+        ],
+        "doi": null,
+        "key": "Chen, Jin, and Yue 2010",
+        "page": 46,
+        "title": "“Peer Migration in China.”",
+        "venue": "National Bureau of Economic Research Working Paper 15671.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Chetty, Raj"
+        ],
+        "doi": null,
+        "key": "Chetty 2012",
+        "page": 46,
+        "title": "“Bounds on Elasticities with Optimization Frictions: A Synthesis of Micro and Macro Evidence on Labor Supply.”",
+        "venue": "Econometrica 80 (3): 969–1018.",
+        "year": 2012
+      },
+      {
+        "authors": [
+          "Chiquiar, Daniel"
+        ],
+        "doi": null,
+        "key": "Chiquiar 2008",
+        "page": 46,
+        "title": "“Globalization, Regional Wage Differentials and the Stolper-Samuelson Theorem: Evidence from Mexico.”",
+        "venue": "Journal of International Economics 74 (1): 70–93.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Deardorff, Alan V.",
+          "Staiger, Robert W."
+        ],
+        "doi": null,
+        "key": "Deardorff and Staiger 1988",
+        "page": 47,
+        "title": "“An Interpretation of the Factor Content of Trade.”",
+        "venue": "Journal of International Economics 24 (1/2): 93–107.",
+        "year": 1988
+      },
+      {
+        "authors": [
+          "di Giovanni, Julian",
+          "Levchenko, Andrei",
+          "Zhang, Jing"
+        ],
+        "doi": null,
+        "key": "di Giovanni, Levchenko, and Zhang 2011",
+        "page": 47,
+        "title": "“The Global Welfare Impact of China: Trade Integration and Technological Change.”",
+        "venue": "Unpublished.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Dix-Carneiro, Rafael"
+        ],
+        "doi": null,
+        "key": "Dix-Carneiro 2011",
+        "page": 47,
+        "title": "“Trade Liberalization and Labor Market Dynamics.”",
+        "venue": "Unpublished.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Dorn, David"
+        ],
+        "doi": null,
+        "key": "Dorn 2009",
+        "page": 47,
+        "title": "“Essays on Inequality, Spatial Interaction, and the Demand for Skills.”",
+        "venue": "Dissertation, University of St. Gallen no. 3613.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Eaton, Jonathan",
+          "Kortum, Samuel",
+          "Kramarz, Francis"
+        ],
+        "doi": null,
+        "key": "Eaton, Kortum, and Kramarz 2011",
+        "page": 47,
+        "title": "“An Anatomy of International Trade: Evidence from French Firms.”",
+        "venue": "Econometrica 79 (5): 1453–98.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Ebenstein, Avraham",
+          "Harrison, Ann",
+          "McMillan, Margaret",
+          "Phillips, Shannon"
+        ],
+        "doi": null,
+        "key": "Ebenstein et al. 2010",
+        "page": 47,
+        "title": "“Estimating the Impact of Trade and Offshoring on American Workers Using the Current Population Surveys.”",
+        "venue": "Unpublished.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Edwards, Lawrence",
+          "Lawrence, Robert Z."
+        ],
+        "doi": null,
+        "key": "Edwards and Lawrence 2010",
+        "page": 47,
+        "title": "“US Trade and Wages: The Misleading Implications of Conventional Theory.”",
+        "venue": "National Bureau of Economic Research Working Paper 16106.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Feenstra, Robert C."
+        ],
+        "doi": null,
+        "key": "Feenstra 2004",
+        "page": 47,
+        "title": "Advanced International Trade: Theory and Evidence.",
+        "venue": "Princeton, NJ: Princeton University Press.",
+        "year": 2004
+      },
+      {
+        "authors": [
+          "Feenstra, Robert C."
+        ],
+        "doi": null,
+        "key": "Feenstra 2010",
+        "page": 47,
+        "title": "Offshoring in the Global Economy: Microeconomic Structure and Macroeconomic Implications.",
+        "venue": "Cambridge, MA: MIT Press.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Feenstra, Robert C.",
+          "Hanson, Gordon H."
+        ],
+        "doi": null,
+        "key": "Feenstra and Hanson 1999",
+        "page": 47,
+        "title": "“The Impact of Outsourcing and High-Technology Capital on Wages: Estimates for the United States, 1979–1990.”",
+        "venue": "Quarterly Journal of Economics 114 (3): 907–40.",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "Feenstra, Robert C.",
+          "Hanson, Gordon H."
+        ],
+        "doi": null,
+        "key": "Feenstra and Hanson 2005",
+        "page": 47,
+        "title": "“Ownership and Control in Outsourcing to China: Estimating the Property-Rights Theory of the Firm.”",
+        "venue": "Quarterly Journal of Economics 120 (2):729–61.",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Firpo, Sergio",
+          "Fortin, Nicole M.",
+          "Lemieux, Thomas"
+        ],
+        "doi": null,
+        "key": "Firpo, Fortin, and Lemieux 2011",
+        "page": 47,
+        "title": "“Occupational Tasks and Changes in the Wage Structure.”",
+        "venue": "Unpublished.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Glaeser, Edward L.",
+          "Gyourko, Joseph"
+        ],
+        "doi": null,
+        "key": "Glaeser and Gyourko 2005",
+        "page": 47,
+        "title": "“Urban Decline and Durable Housing.”",
+        "venue": "Journal of Political Economy 113 (2): 345–75.",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Goldberg, Pinelopi Koujianou",
+          "Khandelwal, Amit Kumar",
+          "Pavcnik, Nina",
+          "Topalova, Petia"
+        ],
+        "doi": null,
+        "key": "Goldberg et al. 2010",
+        "page": 47,
+        "title": "“Imported Intermediate Inputs and Domestic Product Growth: Evidence from India.”",
+        "venue": "Quarterly Journal of Economics 125 (4): 1727–67.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Gruber, Jonathan"
+        ],
+        "doi": null,
+        "key": "Gruber 1997",
+        "page": 47,
+        "title": "“The Consumption Smoothing Benefits of Unemployment Insurance.”",
+        "venue": "American Economic Review 87 (1): 192–205.",
+        "year": 1997
+      },
+      {
+        "authors": [
+          "Gruber, Jonathan"
+        ],
+        "doi": null,
+        "key": "Gruber 2010",
+        "page": 47,
+        "title": "Public Finance and Public Policy. 3rd ed.",
+        "venue": "New York: Worth Publishers.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Hanson, Gordon H."
+        ],
+        "doi": null,
+        "key": "Hanson 2010",
+        "page": 47,
+        "title": "“Why Isn’t Mexico Rich?”",
+        "venue": "Journal of Economic Literature 48 (4):987–1004.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Harrigan, James"
+        ],
+        "doi": null,
+        "key": "Harrigan 2000",
+        "page": 47,
+        "title": "“International Trade and American Wages in General Equilibrium, 1967–1995.”",
+        "venue": "In The Impact of International Trade, edited by Robert C. Feenstra, 171–96. Chicago: University of Chicago Press.",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Helpman, Elhanan",
+          "Krugman, Paul"
+        ],
+        "doi": null,
+        "key": "Helpman and Krugman 1987",
+        "page": 47,
+        "title": "Market Structure and Foreign Trade.",
+        "venue": "Cambridge, MA: MIT Press.",
+        "year": 1987
+      },
+      {
+        "authors": [
+          "Hsieh, Chang-Tai",
+          "Klenow, Peter J."
+        ],
+        "doi": null,
+        "key": "Hsieh and Klenow 2009",
+        "page": 47,
+        "title": "“Misallocation and Manufacturing TFP in China and India.”",
+        "venue": "Quarterly Journal of Economics 124 (4): 1403–48.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Hsieh, Chang-Tai",
+          "Ossa, Ralph"
+        ],
+        "doi": null,
+        "key": "Hsieh and Ossa 2011",
+        "page": 47,
+        "title": "“A Global View of Productivity Growth in China.”",
+        "venue": "National Bureau of Economic Research Working Paper 16778.",
+        "year": 2011
+      },
+      {
+        "authors": [
+          "Hummels, David"
+        ],
+        "doi": null,
+        "key": "Hummels 2007",
+        "page": 47,
+        "title": "“Transportation Costs and International Trade in the Second Era of Globalization.”",
+        "venue": "Journal of Economic Perspectives 21 (3): 131–54.",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Hummels, David",
+          "Ishii, Jun",
+          "Yi, Kei-Mu"
+        ],
+        "doi": null,
+        "key": "Hummels, Ishii, and Yi 2001",
+        "page": 47,
+        "title": "“The Nature and Growth of Vertical Specialization in World Trade.”",
+        "venue": "Journal of International Economics 54 (1): 75–96.",
+        "year": 2001
+      },
+      {
+        "authors": [
+          "Hummels, David",
+          "Jorgensen, Rasmus",
+          "Munch, Jakob",
+          "Xiang, Chong"
+        ],
+        "doi": null,
+        "key": "Hummels et al. 2010",
+        "page": 47,
+        "title": "“The Wage and Employment Effects of Outsourcing: Evidence from Danish Matched Worker-Firm Data.”",
+        "venue": "Unpublished.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Katz, Lawrence F.",
+          "Autor, David"
+        ],
+        "doi": null,
+        "key": "Katz and Autor 1999",
+        "page": 47,
+        "title": "“Changes in the Wage Structure and Earnings Inequality.”",
+        "venue": "In Handbook of Labor Economics, Vol. 3A, edited by Orley Ashenfelter and David Card, 1463–555. Amsterdam: Elsevier Science.",
+        "year": 1999
+      },
+      {
+        "authors": [
+          "Koopman, Robert",
+          "Powers, William",
+          "Wang, Zhi",
+          "Wei, Shang-Jin"
+        ],
+        "doi": null,
+        "key": "Koopman et al. 2010",
+        "page": 47,
+        "title": "“Give Credit Where Credit Is Due: Tracing Value Added in Global Production Chains.”",
+        "venue": "National Bureau of Economic Research Working Paper 16426.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Kovak, Brian"
+        ],
+        "doi": null,
+        "key": "Kovak 2013",
+        "page": 47,
+        "title": "“Regional Effects of Trade Reform: What is the Correct Measure of Liberalization?”",
+        "venue": "American Economic Review 103 (5): 1960–76.",
+        "year": 2013
+      },
+      {
+        "authors": [
+          "Krugman, Paul R."
+        ],
+        "doi": null,
+        "key": "Krugman 2000",
+        "page": 47,
+        "title": "“Technology, Trade and Factor Prices.”",
+        "venue": "Journal of International Economics 50 (1): 51–71.",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Krugman, Paul R."
+        ],
+        "doi": null,
+        "key": "Krugman 2008",
+        "page": 47,
+        "title": "“Trade and Wages, Reconsidered.”",
+        "venue": "Brookings Papers on Economic Activity 2008 (1): 103–38.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Leamer, Edward E."
+        ],
+        "doi": null,
+        "key": "Leamer 1993",
+        "page": 48,
+        "title": "“Wage Effects of a US-Mexican Free Trade Agreement.”",
+        "venue": "In The Mexico-US Free Trade Agreement, edited by Peter M. Garber, 57–128. Cambridge, MA: MIT Press.",
+        "year": 1993
+      },
+      {
+        "authors": [
+          "Leamer, Edward E."
+        ],
+        "doi": null,
+        "key": "Leamer 2000",
+        "page": 48,
+        "title": "“What’s the Use of Factor Contents?”",
+        "venue": "Journal of International Economics 50 (1): 17–49.",
+        "year": 2000
+      },
+      {
+        "authors": [
+          "Lemieux, Thomas"
+        ],
+        "doi": null,
+        "key": "Lemieux 2006",
+        "page": 48,
+        "title": "“Increasing Residual Wage Inequality: Composition Effects, Noisy Data, or Rising Demand for Skill?”",
+        "venue": "American Economic Review 96 (3): 461–98.",
+        "year": 2006
+      },
+      {
+        "authors": [
+          "Liu, Runjuan",
+          "Trefler, Daniel"
+        ],
+        "doi": null,
+        "key": "Liu and Trefler 2008",
+        "page": 48,
+        "title": "“Much Ado About Nothing: American Jobs and the Rise of Service Outsourcing to China and India.”",
+        "venue": "National Bureau of Economic Research Working Paper 14061.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "McLaren, John",
+          "Hakobyan, Shushanik"
+        ],
+        "doi": null,
+        "key": "McLaren and Hakobyan 2010",
+        "page": 48,
+        "title": "“Looking for Local Labor Market Effects of NAFTA.”",
+        "venue": "National Bureau of Economic Research Working Paper 16535.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Melitz, Marc J."
+        ],
+        "doi": null,
+        "key": "Melitz 2003",
+        "page": 48,
+        "title": "“The Impact of Trade on Intra-industry Reallocations and Aggregate Industry Productivity.”",
+        "venue": "Econometrica 71 (6): 1695–725.",
+        "year": 2003
+      },
+      {
+        "authors": [
+          "Michaels, Guy"
+        ],
+        "doi": null,
+        "key": "Michaels 2008",
+        "page": 48,
+        "title": "“The Effect of Trade on the Demand for Skill: Evidence from the Interstate Highway System.”",
+        "venue": "Review of Economics and Statistics 90 (4): 683–701.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Naughton, Barry"
+        ],
+        "doi": null,
+        "key": "Naughton 2007",
+        "page": 48,
+        "title": "The Chinese Economy: Transitions and Growth.",
+        "venue": "Cambridge, MA: MIT Press.",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Notowidigdo, Matthew J."
+        ],
+        "doi": null,
+        "key": "Notowidigdo 2010",
+        "page": 48,
+        "title": "“The Incidence of Local Labor Demand Shocks.”",
+        "venue": "Unpublished.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Pierce, Justin R.",
+          "Schott, Peter K."
+        ],
+        "doi": null,
+        "key": "Pierce and Schott 2009",
+        "page": 48,
+        "title": "“A Concordance Between Ten-Digit US Harmonized System Codes and SIC/NAICS Product Classes and Industries.”",
+        "venue": "National Bureau of Economic Research Working Paper 15548.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "Romalis, John"
+        ],
+        "doi": null,
+        "key": "Romalis 2007",
+        "page": 48,
+        "title": "“NAFTA’s and CUSFTA’s Impact on International Trade.”",
+        "venue": "Review of Economics and Statistics 89 (3): 416–35.",
+        "year": 2007
+      },
+      {
+        "authors": [
+          "Ruggles, Steven",
+          "Sobek, Matthew",
+          "Alexander, Trent",
+          "Fitch, Catherine A.",
+          "Goeken, Ronald",
+          "Hall, Patricia Kelly",
+          "King, Miriam",
+          "Ronnander, Chad"
+        ],
+        "doi": null,
+        "key": "Ruggles et al. 2010",
+        "page": 48,
+        "title": "Integrated Public Use Microdata Series: Version 3.0 [Machine-readable database].",
+        "venue": "Minneapolis, MN: Minnesota Population Center [producer and distributor].",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Smith, Christopher L."
+        ],
+        "doi": null,
+        "key": "Smith 2010",
+        "page": 48,
+        "title": "“Polarization of the US Adult Labor Market and Its Effects on the Demand for Teenage Labor.”",
+        "venue": "Unpublished.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Tolbert, Charles M.",
+          "Sizer, Molly"
+        ],
+        "doi": null,
+        "key": "Tolbert and Sizer 1996",
+        "page": 48,
+        "title": "“US Commuting Zones and Labor Market Areas: A 1990 Update.”",
+        "venue": "Economic Research Service Staff Paper 9614.",
+        "year": 1996
+      },
+      {
+        "authors": [
+          "Topalova, Petia"
+        ],
+        "doi": null,
+        "key": "Topalova 2005",
+        "page": 48,
+        "title": "“Trade Liberalization, Poverty, and Inequality: Evidence from Indian Districts.”",
+        "venue": "National Bureau of Economic Research Working Paper 11614.",
+        "year": 2005
+      },
+      {
+        "authors": [
+          "Topalova, Petia"
+        ],
+        "doi": null,
+        "key": "Topalova 2010",
+        "page": 48,
+        "title": "“Factor Immobility and Regional Impacts of Trade Liberalization: Evidence on Poverty from India.”",
+        "venue": "American Economic Journal: Applied Economics 2 (4): 1–41.",
+        "year": 2010
+      },
+      {
+        "authors": [
+          "Topel, Robert H."
+        ],
+        "doi": null,
+        "key": "Topel 1986",
+        "page": 48,
+        "title": "“Local Labor Markets.”",
+        "venue": "Journal of Political Economy 94 (3): S111–43.",
+        "year": 1986
+      },
+      {
+        "authors": [
+          "United Nations Statistics Division"
+        ],
+        "doi": null,
+        "key": "United Nations Statistics Division 2009",
+        "page": 48,
+        "title": "United Nations Comtrade Database.",
+        "venue": "New York: United Nations. http://comtrade.un.org/.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "US Bureau of Economic Analysis"
+        ],
+        "doi": null,
+        "key": "US Bureau of Economic Analysis 2009",
+        "page": 48,
+        "title": "Table CA35, Personal Current Transfer Receipts.",
+        "venue": "http://www.bea.gov/iTable/iTable.cfm?reqid=6&step=3&isuri=1&600=1#reqid=6&step=3&isuri=1&600=1.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "US Census Bureau"
+        ],
+        "doi": null,
+        "key": "US Census Bureau 2009",
+        "page": 48,
+        "title": "County Business Patterns.",
+        "venue": "https://explore.data.gov/Business-Enterprise/County-Business-Patterns/nsmw-x6kx.",
+        "year": 2009
+      },
+      {
+        "authors": [
+          "US Social Security Administration"
+        ],
+        "doi": null,
+        "key": "US Social Security Administration Various years",
+        "page": 48,
+        "title": "Annual Statistical Report on the Social Security Disability Insurance Program.",
+        "venue": "",
+        "year": null
+      },
+      {
+        "authors": [
+          "US Social Security Administration"
+        ],
+        "doi": null,
+        "key": "US Social Security Administration Various years",
+        "page": 48,
+        "title": "Annual Statistical Supplement to the Social Security Bulletin.",
+        "venue": "Washington, DC: US Government Printing Office.",
+        "year": null
+      },
+      {
+        "authors": [
+          "Verhoogen, Eric A."
+        ],
+        "doi": null,
+        "key": "Verhoogen 2008",
+        "page": 48,
+        "title": "“Trade, Quality Upgrading, and Wage Inequality in the Mexican Manufacturing Sector.”",
+        "venue": "Quarterly Journal of Economics 123 (2): 489–530.",
+        "year": 2008
+      },
+      {
+        "authors": [
+          "Wooldridge, Jeffrey M."
+        ],
+        "doi": null,
+        "key": "Wooldridge 2002",
+        "page": 48,
+        "title": "Econometric Analysis of Cross Section and Panel Data.",
+        "venue": "Cambridge, MA: MIT Press.",
+        "year": 2002
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "The past two decades have seen a fruitful debate on the impact of international trade on US labor markets (Feenstra 2010).",
+        "reference_key": "Feenstra 2010",
+        "relation": "supports",
+        "why": "Situates the paper within the ongoing debate on trade and US labor markets."
+      },
+      {
+        "confidence": "high",
+        "page": 2,
+        "quote": "Commuting zones (CZs), which encompass all metropolitan and nonmetropolitan areas in the United States, are logical geographic units for defining local labor markets (Tolbert and Sizer 1996; Autor and Dorn 2013).",
+        "reference_key": "Autor and Dorn 2013",
+        "relation": "uses_method",
+        "why": "Adopts CZ-based local labor market definition and prior occupational task measures."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "Our identification strategy is related to that used by Bloom, Draca, and Van Reenen (2011), who consider the relationship between imports from China and innovation in Europe. See also Auer and Fischer (2008).",
+        "reference_key": "Bloom, Draca, and Van Reenen 2011",
+        "relation": "contrasts",
+        "why": "The paper contrasts its labor-market adjustment findings with the innovation/productivity channel emphasized there."
+      },
+      {
+        "confidence": "high",
+        "page": 3,
+        "quote": "In recent work, McLaren and Hakobyan (2010) do not detect substantial effects of NAFTA on local US labor markets, though they do find effects on wage growth nationally in exposed industries.",
+        "reference_key": "McLaren and Hakobyan 2010",
+        "relation": "contrasts",
+        "why": "Their weak NAFTA local effects contrast with the strong local effects found for Chinese import competition."
+      },
+      {
+        "confidence": "high",
+        "page": 4,
+        "quote": "Our local labor market approach to analyzing the impacts of trade exposure follows important early work by Borjas and Ramey (1995), who also emphasize the role of trade imbalances in mapping trade shocks to labor-market outcomes, as well as more recent work by Chiquiar (2008),Topalova (2005, 2010), and Kovak (2013), who study the effects of trade liberalizations on wages, poverty, and migration in local and regional labor markets in Mexico, India, and Brazil,",
+        "reference_key": "Topalova 2005, 2010; Kovak 2013",
+        "relation": "extends",
+        "why": "Extends regional trade-shock analyses to US local labor markets and nonwage outcomes."
+      },
+      {
+        "confidence": "high",
+        "page": 5,
+        "quote": "TAA grants are however temporary, whereas most workers who take-up disability receive SSDI benefits until retirement or death (Autor and Duggan 2003).",
+        "reference_key": "Autor and Duggan 2003",
+        "relation": "supports",
+        "why": "Supports interpretation that SSDI transfers are long-lasting and elastic to adverse labor-market shocks."
+      },
+      {
+        "confidence": "high",
+        "page": 25,
+        "quote": "As of 2010, 4.6 percent of adults age 25 to 64 receive SSDI benefits, and SSDI applications and awards are elastic to adverse labor market shocks (Autor and Duggan 2003 and 2010).",
+        "reference_key": "Autor and Duggan 2003, 2010",
+        "relation": "supports",
+        "why": "Provides evidence that disability rolls respond to labor-demand shocks, supporting the transfer-benefit mechanism."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "(iv) the change in imports per worker net of imported intermediate inputs, the latter of which may have productivity enhancing effects on US industries (Goldberg et al. 2010).",
+        "reference_key": "Goldberg et al. 2010",
+        "relation": "contrasts",
+        "why": "Considers an offsetting productivity mechanism from imported intermediate inputs."
+      },
+      {
+        "confidence": "high",
+        "page": 30,
+        "quote": "However, applying a typical estimate of the deadweight loss of taxation of around 40 cents on the dollar (Gruber 2010), the real cost of the transfers spurred by rising import exposure is",
+        "reference_key": "Gruber 2010",
+        "relation": "uses_method",
+        "why": "Uses the deadweight-loss-of-taxation estimate to value the efficiency cost of increased transfers."
+      },
+      {
+        "confidence": "high",
+        "page": 34,
+        "quote": "An earlier literature, based on Heckscher-Ohlin trade theory, models trade as affecting labor markets through the import of factor services embodied in goods (Deardorff and Staiger 1988; Borjas, Freeman, and Katz",
+        "reference_key": "Deardorff and Staiger 1988; Borjas, Freeman, and Katz 1997",
+        "relation": "uses_method",
+        "why": "Provides the factor-content approach used as an alternative trade-exposure measure."
+      },
+      {
+        "confidence": "high",
+        "page": 10,
+        "quote": "Brandt, Van Biesebroeck, and Zhang (2012) estimate that over 1998 to 2007, China had average annual TFP growth in manufacturing of 8.0 percent, compared to the Bureau of Labor Statistics’ estimate (http://www.bls.gov/mfp/) of 3.9 percent for the United States.",
+        "reference_key": "Brandt, Van Biesebroeck, and Zhang 2012",
+        "relation": "supports",
+        "why": "Supports the claim that China's export surge was driven by rapid productivity growth."
+      },
+      {
+        "confidence": "high",
+        "page": 37,
+        "quote": "We estimate these voluntary responses by applying Hicksian labor force participation and hours elasticities of ηe​​≈ 0.25 and ηh​​≈ 0.50, respectively, drawn from Chetty (2012).",
+        "reference_key": "Chetty 2012",
+        "relation": "uses_method",
+        "why": "Supplies the labor-supply elasticities used to separate voluntary from involuntary nonemployment."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "In this paper, we relate changes in labor-market outcomes from 1990 to 2007 across US local labor markets to changes in exposure to Chinese import competition.",
+          "start_page": 1,
+          "start_text": "The past two decades have seen a fruitful debate on the impact of international trade on US labor markets (Feenstra 2010)."
+        },
+        "summary": "Motivates the paper by documenting China's rise as a source of US import competition and the simultaneous decline in manufacturing employment.",
+        "title": "Introduction: China's import surge and labor-market stakes"
+      },
+      {
+        "pages": {
+          "end": 5,
+          "start": 2
+        },
+        "source_span": {
+          "end_page": 5,
+          "end_text": "Section VIII concludes.",
+          "start_page": 2,
+          "start_text": "In this paper, we relate changes in labor-market outcomes from 1990 to 2007"
+        },
+        "summary": "Explains why the paper studies commuting zones, how it differs from industry/occupation studies, and previews results.",
+        "title": "Local labor market approach and contribution"
+      },
+      {
+        "pages": {
+          "end": 7,
+          "start": 5
+        },
+        "source_span": {
+          "end_page": 7,
+          "end_text": "Imbalanced trade breaks this symmetry, allowing shocks to affect the size of the traded sector.",
+          "start_page": 5,
+          "start_text": "In this section, we consider theoretically how growth in US imports from China affects the demand for goods produced by US regional economies."
+        },
+        "summary": "Derives how Chinese export-supply and import-demand shocks affect a region's wages, traded employment, and nontraded employment.",
+        "title": "Theoretical model of regional trade shocks"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "In our main specifications, we will control for the start-of-period manufacturing share within CZs so as to focus on variation in exposure to Chinese imports stemming from differences in industry mix within local manufacturing sectors.",
+          "start_page": 8,
+          "start_text": "Following (2),our main measure of local labor market exposure to import competition is the change in Chinese import exposure per worker in a region"
+        },
+        "summary": "Defines the main measure: change in Chinese import exposure per worker, apportioned by regional industry employment.",
+        "title": "Empirical measure of import exposure"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 9
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "That our gravity and IV estimates are similar suggests that correlated import demand shocks across countries are not overly important for our results.",
+          "start_page": 9,
+          "start_text": "To identify the supply-driven component of Chinese imports, we instrument for growth in Chinese imports to the United States using the contemporaneous composition and growth of Chinese imports in eight other developed countries."
+        },
+        "summary": "Explains instrumentation using Chinese imports to other high-income countries and addresses identification threats.",
+        "title": "IV strategy and threats"
+      },
+      {
+        "pages": {
+          "end": 13,
+          "start": 11
+        },
+        "source_span": {
+          "end_page": 13,
+          "end_text": "Appendix Table 2 provides means and standard deviations for the main variables.",
+          "start_page": 11,
+          "start_text": "This section provides summary information on our data construction and measurement, with further details given in the online Data Appendix."
+        },
+        "summary": "Describes trade data, commuting zones, industry employment, Census/ACS outcomes, and transfer-payment data.",
+        "title": "Data sources and measurement"
+      },
+      {
+        "pages": {
+          "end": 15,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 15,
+          "end_text": "That the estimated coefficient is similar in magnitude in both time periods and all three models underscores the stability of the statistical relationships.",
+          "start_page": 13,
+          "start_text": "Table 2 presents initial estimates of the relationship between Chinese import exposure and US manufacturing employment."
+        },
+        "summary": "Presents main 2SLS estimates: higher Chinese import exposure reduces manufacturing employment share.",
+        "title": "Manufacturing employment baseline 2SLS"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "The fully augmented model in column 6 indicates a sizable, robust negative impact of increasing import exposure on manufacturing employment.",
+          "start_page": 15,
+          "start_text": "To verify that our results capture the period-specific effects of exposure to China trade, and not some long-run common causal factor behind both the fall in manufacturing employment and the rise in Chinese imports, we conduct a falsification exercise"
+        },
+        "summary": "Tests reverse causality with past employment changes and adds demographic/occupation controls.",
+        "title": "Falsification and robustness controls"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 19
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "The results of Sections IIIA to IIIC suggest that the exposure of CZs to growing imports from China is a quantitatively important determinant of the decline in the share of manufacturing employment in the working-age population.",
+          "start_page": 19,
+          "start_text": "We estimate that rising exposure to Chinese import competition explains 33 percent of the US manufacturing employment decline"
+        },
+        "summary": "Quantifies how much Chinese import competition explains of the aggregate US manufacturing employment decline.",
+        "title": "Benchmarking aggregate manufacturing decline"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 20
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "The final 2SLS estimates in column 5, analyzing the impact of all other middle-income and high-income-country imports on US manufacturing, find small and inconsistently signed effects.",
+          "start_page": 20,
+          "start_text": "To consider Chinese imports alongside those of other countries, Appendix Table 4 compares the impact of growing exposure to Chinese imports to the effect of exposure to imports from other source countries."
+        },
+        "summary": "Compares China to other low-income, Mexico/CAFTA, and other exporters.",
+        "title": "Non-China trade comparisons"
+      },
+      {
+        "pages": {
+          "end": 23,
+          "start": 21
+        },
+        "source_span": {
+          "end_page": 23,
+          "end_text": "Our evidence below is most consistent with the third interpretation.",
+          "start_page": 21,
+          "start_text": "We begin in Table 4 by assessing the degree to which import shocks to local manufacturing cause reallocation of workers across CZs."
+        },
+        "summary": "Finds no robust population adjustment across CZs in response to import shocks.",
+        "title": "Population mobility null"
+      },
+      {
+        "pages": {
+          "end": 25,
+          "start": 23
+        },
+        "source_span": {
+          "end_page": 25,
+          "end_text": "It is likely that the increase in disability rolls is strongly concentrated among older workers and workers without a college education, though we cannot directly test this assumption since the SSDI data are not available to us separately by age or education group at the detailed geographic level.",
+          "start_page": 23,
+          "start_text": "In the first panel of Table 5, we study the impact of import shocks on the log change in the number of non-elderly adults in four exhaustive and mutually exclusive categories"
+        },
+        "summary": "Shows import shocks reduce manufacturing and nonmanufacturing employment and raise unemployment and labor-force nonparticipation.",
+        "title": "Employment status and nonparticipation"
+      },
+      {
+        "pages": {
+          "end": 28,
+          "start": 25
+        },
+        "source_span": {
+          "end_page": 28,
+          "end_text": "Overall, the findings suggest that general equilibrium effects operate within but not across local labor markets",
+          "start_page": 25,
+          "start_text": "In Table 6, we analyze effects of import exposure shocks on CZ wage levels."
+        },
+        "summary": "Finds negative wage effects outside manufacturing, while manufacturing wages do not fall significantly.",
+        "title": "Wage effects"
+      },
+      {
+        "pages": {
+          "end": 30,
+          "start": 28
+        },
+        "source_span": {
+          "end_page": 30,
+          "end_text": "These transfer payments vastly exceed the expenses of the TAA program, which specifically targets workers who lose employment due to import competition.",
+          "start_page": 28,
+          "start_text": "Table 8 studies how a variety of public transfer benefits respond to changes in import exposure."
+        },
+        "summary": "Studies public transfer payments, finding large increases in disability and medical benefits, small TAA.",
+        "title": "Transfer payments"
+      },
+      {
+        "pages": {
+          "end": 31,
+          "start": 30
+        },
+        "source_span": {
+          "end_page": 31,
+          "end_text": "Also consistent with the estimates in Table 8, we find that rising transfer income offsets only a small part of the decline in household earnings.",
+          "start_page": 30,
+          "start_text": "The models in Table 9, which are estimated using data from the Census and American Community Survey (rather than the BEA transfer data above), find that a $1,000 increase in a CZ’s import exposure leads to a fall in CZ average household wage and salary income"
+        },
+        "summary": "Shows falling household earnings and only small transfer offset.",
+        "title": "Household income effects"
+      },
+      {
+        "pages": {
+          "end": 34,
+          "start": 31
+        },
+        "source_span": {
+          "end_page": 34,
+          "end_text": "A $1,000 per worker increase in Chinese net import exposure reduces the manufacturing employment to population ratio by 0.45 percentage points.",
+          "start_page": 31,
+          "start_text": "In this section, we consider alternative measures of trade exposure for US commuting zones in order to gauge the robustness of our results."
+        },
+        "summary": "Tests alternative import exposure measures including international competition, intermediate inputs, net imports.",
+        "title": "Alternative exposure measures: international, intermediate, net"
+      },
+      {
+        "pages": {
+          "end": 35,
+          "start": 34
+        },
+        "source_span": {
+          "end_page": 35,
+          "end_text": "These coefficients are precisely estimated and are consistent with our findings for other measures of trade exposure: larger increases in the factor content of net imports yield lower wages in nonmanufacturing, higher government transfers to households, and lower household wage and salary income.",
+          "start_page": 34,
+          "start_text": "Panel E of Table 10 use the gravity-based approach to measure the exposure of CZs to Chinese trade."
+        },
+        "summary": "Uses gravity residual and factor content of net imports as additional robustness checks.",
+        "title": "Alternative exposure measures: gravity and factor content"
+      },
+      {
+        "pages": {
+          "end": 38,
+          "start": 35
+        },
+        "source_span": {
+          "end_page": 38,
+          "end_text": "Nevertheless, in the medium run, losses in economic efficiency from increased usage of public benefits and involuntary labor-force nonparticipation may offset a portion of the gains from trade with China.",
+          "start_page": 35,
+          "start_text": "What do our results imply about US gains from trade with China?"
+        },
+        "summary": "Estimates deadweight losses from transfer take-up and involuntary labor-force nonparticipation.",
+        "title": "Efficiency losses from transfers and involuntary nonparticipation"
+      },
+      {
+        "pages": {
+          "end": 39,
+          "start": 38
+        },
+        "source_span": {
+          "end_page": 39,
+          "end_text": "The consequences of China trade for US employment, household income, and government benefit programs may contribute to public ambivalence toward globalization and specific anxiety about increasing trade with China.",
+          "start_page": 38,
+          "start_text": "The value of annual US goods imports from China increased by a staggering 1,156 percent from 1991 to 2007"
+        },
+        "summary": "Summarizes distributional consequences and medium-run efficiency losses from China trade.",
+        "title": "Conclusion"
+      },
+      {
+        "pages": {
+          "end": 45,
+          "start": 40
+        },
+        "source_span": {
+          "end_page": 45,
+          "end_text": "Note that in (B6) we use lagged values for employment shares, as in (4).",
+          "start_page": 40,
+          "start_text": "A. Tables"
+        },
+        "summary": "Provides descriptive statistics, falsification tests, alternative exporters, employment status by sex/age, variance decomposition, and gravity model.",
+        "title": "Appendix tables and theory appendix"
+      },
+      {
+        "pages": {
+          "end": 48,
+          "start": 46
+        },
+        "source_span": {
+          "end_page": 48,
+          "end_text": "Wooldridge, Jeffrey M. 2002. Econometric Analysis of Cross Section and Panel Data. Cambridge, MA: MIT Press.",
+          "start_page": 46,
+          "start_text": "REFERENCES"
+        },
+        "summary": "Bibliography.",
+        "title": "References"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a published American Economic Review empirical labor-trade study using CZ-level OLS and 2SLS analysis.",
+      "value": "empirical"
+    }
+  }
+}

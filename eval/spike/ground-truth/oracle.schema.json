@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Paper ground truth",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "authors", "abstract", "sections"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The title exactly as printed on the first page."
+    },
+    "authors": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Authors in printed order, given name and family name, no affiliations or footnote marks."
+    },
+    "abstract": {
+      "type": ["string", "null"],
+      "description": "The abstract copied verbatim, paragraphs separated by a blank line. Null only when the paper prints no abstract."
+    },
+    "sections": {
+      "type": "array",
+      "description": "A reading map: coherent topic units in increasing page order, non-overlapping, covering the main text.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "pages", "source_span", "summary"],
+        "properties": {
+          "title": {"type": "string", "description": "A short topic title, not the paper's own heading."},
+          "pages": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["start", "end"],
+            "properties": {
+              "start": {"type": "integer", "description": "First 1-based PDF page."},
+              "end": {"type": "integer", "description": "Last 1-based PDF page."}
+            }
+          },
+          "source_span": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["start_text", "start_page", "end_text", "end_page"],
+            "properties": {
+              "start_text": {"type": "string"},
+              "start_page": {"type": "integer"},
+              "end_text": {"type": "string"},
+              "end_page": {"type": "integer"}
+            }
+          },
+          "summary": {"type": "string", "description": "One or two sentences synthesizing the unit."}
+        }
+      }
+    }
+  }
+}

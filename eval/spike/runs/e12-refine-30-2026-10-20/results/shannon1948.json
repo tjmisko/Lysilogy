@@ -1,0 +1,1897 @@
+{
+  "record_version": 5,
+  "started_at": "2026-10-21T21:58:22.957856977Z",
+  "pdf": "/home/tjmisko/Projects/Lysilogy/local-articles/Shannon - 1948 - A Mathematical Theory of Communication.pdf",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "passes_requested": 2,
+  "features": "",
+  "core_mode": "plan",
+  "reasoning": "low",
+  "dpi": 120,
+  "pages": 55,
+  "calls": [
+    {
+      "stage": "core",
+      "max_tokens": 131072,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 39922,
+      "cached_tokens": 39808,
+      "completion_tokens": 16502,
+      "reasoning_tokens": 9549,
+      "cost_usd": 0.0071139936,
+      "cost_source": "reported",
+      "latency_s": 136.060474152
+    },
+    {
+      "stage": "extract.sections.refine",
+      "max_tokens": 131072,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 42061,
+      "cached_tokens": 38912,
+      "completion_tokens": 9769,
+      "reasoning_tokens": 6970,
+      "cost_usd": 0.0047072704,
+      "cost_source": "reported",
+      "latency_s": 108.083915205
+    },
+    {
+      "stage": "extract.pass2",
+      "max_tokens": 49152,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 43991,
+      "cached_tokens": 384,
+      "completion_tokens": 29381,
+      "reasoning_tokens": 28988,
+      "cost_usd": 0.0184466128,
+      "cost_source": "reported",
+      "latency_s": 336.833527225
+    },
+    {
+      "stage": "extract.repair",
+      "max_tokens": 32768,
+      "provider": "DeepInfra",
+      "finish_reason": "stop",
+      "prompt_tokens": 2526,
+      "cached_tokens": 0,
+      "completion_tokens": 2763,
+      "reasoning_tokens": 2570,
+      "cost_usd": 0.0015141,
+      "cost_source": "reported",
+      "latency_s": 57.610874589
+    }
+  ],
+  "totals": {
+    "calls": 4,
+    "prompt_tokens": 128500,
+    "cached_tokens": 79104,
+    "completion_tokens": 58415,
+    "cost_usd": 0.0317819768,
+    "model_latency_s": 638.588791171,
+    "wall_s": 647.671739431
+  },
+  "budget_stopped": null,
+  "failures": [],
+  "recovered_failures": [],
+  "object_chunks": [],
+  "object_merge": null,
+  "reasoning_trace": "eval/spike/runs/e12-refine-30-2026-10-20/results/shannon1948.reasoning.jsonl",
+  "pass1": {
+    "abstract": {
+      "confidence": "high",
+      "page": null,
+      "text": null
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Nyquist and Hartley",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject."
+              }
+            ],
+            "reference_key": "1,2",
+            "why": "builds_on"
+          },
+          {
+            "cited_work": "Fréchet, Markov processes",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 8,
+                "quote": "For a detailed treatment see M. Fréchet, Méthode des fonctions arbitraires. Théorie des événements en chaîne dans le cas d’un nombre fini d’états possibles. Paris, Gauthier-Villars, 1938."
+              }
+            ],
+            "reference_key": "6",
+            "why": "uses"
+          },
+          {
+            "cited_work": "Tolman, Principles of Statistical Mechanics",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 11,
+                "quote": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space."
+              }
+            ],
+            "reference_key": "8",
+            "why": "uses"
+          },
+          {
+            "cited_work": "R. M. Fano",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 17,
+                "quote": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹"
+              }
+            ],
+            "reference_key": "9",
+            "why": "parallel"
+          },
+          {
+            "cited_work": "N. Wiener",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 34,
+                "quote": "Communication theory is heavily indebted to Wiener for much of its basic philosophy and theory."
+              }
+            ],
+            "reference_key": "4",
+            "why": "acknowledges"
+          },
+          {
+            "cited_work": "W. G. Tuller",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 44,
+                "quote": "We may mention the work of N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection."
+              }
+            ],
+            "reference_key": "8",
+            "why": "acknowledges"
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "semantic aspects of communication",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "These semantic aspects of communication are irrelevant to the engineering problem."
+              }
+            ],
+            "reference_key": "none",
+            "why": "contrasts_with"
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point."
+          }
+        ],
+        "text": "Communication can be treated mathematically as selection from possible messages, with information measured by entropy, and reliable transmission bounded by channel capacity even in the presence of noise."
+      }
+    },
+    "citations": [
+      {
+        "context": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+        "page": 1,
+        "reference_key": "1,2"
+      },
+      {
+        "context": "A physical system, or a mathematical model of a system which produces such a sequence of symbols governed by a set of probabilities, is known as a stochastic process.³",
+        "page": 5,
+        "reference_key": "3"
+      },
+      {
+        "context": "This was constructed with the use of a table of random numbers.⁴",
+        "page": 5,
+        "reference_key": "4"
+      },
+      {
+        "context": "The first-order approximation is obtained by choosing successive letters independently but each letter having the same probability that it has in the natural language.⁵",
+        "page": 6,
+        "reference_key": "5"
+      },
+      {
+        "context": "Stochastic processes of the type described above are known mathematically as discrete Markoff processes and have been extensively studied in the literature.⁶",
+        "page": 8,
+        "reference_key": "6"
+      },
+      {
+        "context": "If the graph has the following two properties⁷ the corresponding process will be ergodic:",
+        "page": 9,
+        "reference_key": "7"
+      },
+      {
+        "context": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+        "page": 11,
+        "reference_key": "8"
+      },
+      {
+        "context": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+        "page": 17,
+        "reference_key": "9"
+      },
+      {
+        "context": "An ensemble of functions is a set of functions together with a probability measure whereby we may determine the probability of a function in the set having certain properties.¹",
+        "page": 32,
+        "reference_key": "1"
+      },
+      {
+        "context": "This is a representation of “white” noise, band limited to the band from 0 to W cycles per second and with average power N.2",
+        "page": 33,
+        "reference_key": "2"
+      },
+      {
+        "context": "This is the famous ergodic theorem or rather one aspect of this theorem which was proved in somewhat different formulations by Birkoff, von Neumann, and Koopman, and subsequently generalized by Wiener, Hopf, Hurewicz and others.³",
+        "page": 33,
+        "reference_key": "3"
+      },
+      {
+        "context": "Wiener has pointed out the intimate relation between the invariance of physical devices under time translations and Fourier theory.⁴",
+        "page": 34,
+        "reference_key": "4"
+      },
+      {
+        "context": "For a proof of this theorem and further discussion see the author’s paper “Communication in the Presence of Noise” published in the Proceedings of the Institute of Radio Engineers, v. 37, No. 1, Jan., 1949, pp. 10–21.⁵",
+        "page": 34,
+        "reference_key": "5"
+      },
+      {
+        "context": "This and other properties of the white noise case are discussed from the geometrical point of view in “Communication in the Presence of Noise,” loc. cit.⁶",
+        "page": 43,
+        "reference_key": "6"
+      },
+      {
+        "context": "We may mention the work of N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+        "page": 44,
+        "reference_key": "7,8"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Bell Telephone Laboratories",
+          "name": "C. E. SHANNON"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "By C. E. SHANNON"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "A Mathematical Theory of Communication",
+      "venue": "The Bell System Technical Journal",
+      "year": 1948
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point."
+        }
+      ],
+      "text": "Can a general mathematical theory measure information and determine the maximum reliable transmission rate for discrete and continuous communication systems, including noise and fidelity constraints?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Nyquist, H."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 1,
+        "title": "Certain Factors Affecting Telegraph Speed",
+        "venue": "Bell System Technical Journal",
+        "year": 1924
+      },
+      {
+        "authors": [
+          "Nyquist, H."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 1,
+        "title": "Certain Topics in Telegraph Transmission Theory",
+        "venue": "A.I.E. E. Trans.",
+        "year": 1928
+      },
+      {
+        "authors": [
+          "Hartley, R. V. L."
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 1,
+        "title": "Transmission of Information",
+        "venue": "Bell System Technical Journal",
+        "year": 1928
+      },
+      {
+        "authors": [
+          "Chandrasekhar, S."
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 5,
+        "title": "Stochastic Problems in Physics and Astronomy",
+        "venue": "Reviews of Modern Physics",
+        "year": 1943
+      },
+      {
+        "authors": [
+          "Kendall and Smith"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 5,
+        "title": "Tables of Random Sampling Numbers",
+        "venue": "Cambridge",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "Pratt, Fletcher"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 6,
+        "title": "Secret and Urgent",
+        "venue": "Blue Ribbon Books",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "Dewey, G."
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 6,
+        "title": "Relative Frequency of English Speech Sounds",
+        "venue": "Harvard University Press",
+        "year": 1923
+      },
+      {
+        "authors": [
+          "Fréchet, M."
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 8,
+        "title": "Méthode des fonctions arbitraires. Théorie des événements en chaîne dans le cas d’un nombre fini d’états possibles.",
+        "venue": "Gauthier-Villars",
+        "year": 1938
+      },
+      {
+        "authors": [
+          "Tolman, R. C."
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 11,
+        "title": "Principles of Statistical Mechanics",
+        "venue": "Clarendon",
+        "year": 1938
+      },
+      {
+        "authors": [
+          "Fano, R. M."
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 17,
+        "title": "Technical Report No. 65",
+        "venue": "The Research Laboratory of Electronics, M.I.T.",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "Hopf, E.",
+          "Wiener, N."
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 33,
+        "title": "Ergodentheorie; On Causality Statistics and Probability; The Ergodic Theorem",
+        "venue": "Ergebnisse der Mathematik und ihrer Grenzgebiete; Journal of Mathematics and Physics; Duke Mathematical Journal",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "Wiener, N."
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 34,
+        "title": "The Interpolation, Extrapolation and Smoothing of Stationary Time Series; Cybernetics",
+        "venue": "Wiley",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "Shannon, C. E."
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 34,
+        "title": "Communication in the Presence of Noise",
+        "venue": "Proceedings of the Institute of Radio Engineers",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "Tuller, W. G."
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 44,
+        "title": "Theoretical Limitations on the Rate of Transmission of Information",
+        "venue": "Proceedings of the Institute of Radio Engineers",
+        "year": 1949
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+        "reference_key": "1,2",
+        "relation": "uses_method",
+        "why": "Shannon explicitly bases the general theory on their prior work on modulation and information."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "These semantic aspects of communication are irrelevant to the engineering problem.",
+        "reference_key": "none",
+        "relation": "contrasts",
+        "why": "The paper separates its engineering theory of information from semantic theories of meaning."
+      },
+      {
+        "confidence": "high",
+        "page": 8,
+        "quote": "For a detailed treatment see M. Fréchet, Méthode des fonctions arbitraires. Théorie des événements en chaîne dans le cas d’un nombre fini d’états possibles. Paris, Gauthier-Villars, 1938.",
+        "reference_key": "6",
+        "relation": "uses_method",
+        "why": "He cites Fréchet for the mathematical treatment of discrete Markoff processes."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+        "reference_key": "8",
+        "relation": "uses_method",
+        "why": "The entropy measure is identified with the statistical-mechanical entropy formulation."
+      },
+      {
+        "confidence": "high",
+        "page": 17,
+        "quote": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+        "reference_key": "9",
+        "relation": "compares",
+        "why": "Shannon notes that his coding method is essentially the same as Fano’s independent method."
+      },
+      {
+        "confidence": "high",
+        "page": 34,
+        "quote": "Communication theory is heavily indebted to Wiener for much of its basic philosophy and theory.",
+        "reference_key": "4",
+        "relation": "uses_method",
+        "why": "The paper acknowledges Wiener’s statistical formulation of communication as an important influence."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "By a communication system we will mean a system of the type indicated schematically in Fig. 1.",
+          "start_page": 1,
+          "start_text": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point."
+        },
+        "summary": "Shannon frames communication as message selection, dismisses semantic content for engineering purposes, justifies a logarithmic information measure, defines bits, and diagrams the source-transmitter-channel-receiver-destination system.",
+        "title": "Introduction and the General Communication Model"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "Theorem 1: Let bi j be the duration of the sth symbol which is allowable in state i and leads to state j.",
+          "start_page": 3,
+          "start_text": "Definition: The capacity C of a discrete channel is given by"
+        },
+        "summary": "Defines discrete noiseless channels, gives the logarithmic capacity formula, develops difference equations for symbol durations, and states graphical constraint theorem.",
+        "title": "Discrete Noiseless Channel Capacity"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "A similar process was used for (4), (5) and (6).",
+          "start_page": 4,
+          "start_text": "We now consider the information source."
+        },
+        "summary": "Represents information sources as stochastic processes, gives artificial-language examples of independent and dependent symbol sources, then builds successive approximations to English from equiprobable letters through word-transition models and explains how the samples were constructed.",
+        "title": "Discrete Sources and Approximations to English"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "Except when the contrary is stated we shall assume a source to be ergodic.",
+          "start_page": 8,
+          "start_text": "Stochastic processes of the type described above are known mathematically as discrete Markoff processes and have been extensively studied in the literature.⁶"
+        },
+        "summary": "Describes discrete Markoff sources graphically, defines ergodic and mixed sources, and states graph conditions for ergodicity.",
+        "title": "Markoff, Ergodic, and Mixed Sources"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 10
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "The uncertainty of y is never increased by knowledge of x.",
+          "start_page": 10,
+          "start_text": "Can we define a quantity which will measure, in some sense, how much information is “produced” by such a process, or better, at what rate information is produced?"
+        },
+        "summary": "Introduces choice, uncertainty, and entropy, proves the uniqueness theorem for H, and develops entropy properties including joint and conditional entropy.",
+        "title": "Choice, Uncertainty, and Entropy"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "The ratio of the entropy of a source to the maximum value it could have while still restricted to the same symbols will be called its relative entropy.",
+          "start_page": 13,
+          "start_text": "This is the entropy of the source per symbol of text."
+        },
+        "summary": "Defines source entropy per symbol and per second, proves asymptotic theorems on typical sequences and coding, and introduces relative entropy and redundancy.",
+        "title": "Entropy of an Information Source"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "In this case we can actually achieve the limiting value by the following code (obtained by the method of the second proof of Theorem 9):",
+          "start_page": 15,
+          "start_text": "Either of these will be called a discrete transducer."
+        },
+        "summary": "Formalizes encoding and decoding as transducers, proves capacity bounds for noiseless channels, and gives coding examples including Fano’s related method.",
+        "title": "Encoding, Decoding, and the Noiseless Coding Theorem"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 19
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "The rate of transmission R can be written in two other forms due to the identities noted above.",
+          "start_page": 19,
+          "start_text": "The case of interest here is that in which the signal does not always undergo the same change in transmission."
+        },
+        "summary": "Represents noisy discrete channels, defines equivocation as missing information, interprets correction channels, and derives alternative forms for transmission rate.",
+        "title": "Noisy Discrete Channels and Equivocation"
+      },
+      {
+        "pages": {
+          "end": 25,
+          "start": 22
+        },
+        "source_span": {
+          "end_page": 25,
+          "end_text": "In other words, no matter how we set out limits of reliability, we can distinguish reliably in time T enough messages to correspond to about CT bits, when T is sufficiently large.",
+          "start_page": 22,
+          "start_text": "Theorem 11: Let a discrete channel have the capacity C and a discrete source the entropy per second H."
+        },
+        "summary": "States and proves the fundamental noisy-channel coding theorem, discusses attainability, and gives the alternative capacity formulation for reliable distinguishable signals.",
+        "title": "Fundamental Theorem for a Noisy Channel"
+      },
+      {
+        "pages": {
+          "end": 28,
+          "start": 25
+        },
+        "source_span": {
+          "end_page": 28,
+          "end_text": "Let a block of seven symbols be X1 X2 X7.",
+          "start_page": 25,
+          "start_text": "We wish to choose P and Q in such a way as to maximize H(x),Hy(x), subject to the constraint P + 2Q = 1."
+        },
+        "summary": "Works a concrete noisy channel example, derives special-case capacity formulas, and presents Hamming’s efficient seven-symbol error-correcting code.",
+        "title": "Discrete Channel Examples and Special Capacity Cases"
+      },
+      {
+        "pages": {
+          "end": 31,
+          "start": 28
+        },
+        "source_span": {
+          "end_page": 31,
+          "end_text": "Hence the rate is C and as this could never be exceeded this is the maximum, justifying the assumed solution.",
+          "start_page": 28,
+          "start_text": "APPENDIX 1"
+        },
+        "summary": "Collects appendices proving block-growth asymptotics, deriving the entropy form, stating ergodic-source theorems, and solving the maximum-rate constraint problem.",
+        "title": "Appendices 1–4: Discrete-Channel Derivations"
+      },
+      {
+        "pages": {
+          "end": 34,
+          "start": 32
+        },
+        "source_span": {
+          "end_page": 34,
+          "end_text": "A communication system is designed not for a particular speech function and still less for a sine wave, but for the ensemble of speech functions.",
+          "start_page": 32,
+          "start_text": "We shall have to deal in the continuous case with sets of functions and ensembles of functions."
+        },
+        "summary": "Introduces continuous sets and ensembles, stationarity, ergodicity, invariant operations, and the ensemble viewpoint for communication theory.",
+        "title": "Continuous Sets and Ensembles"
+      },
+      {
+        "pages": {
+          "end": 38,
+          "start": 34
+        },
+        "source_span": {
+          "end_page": 38,
+          "end_text": "There is one important difference between the continuous and discrete entropies.",
+          "start_page": 34,
+          "start_text": "Theorem 13: Let f (t) contain no frequencies over W."
+        },
+        "summary": "Gives the sampling theorem, extends entropy to continuous distributions, proves entropy inequalities, identifies Gaussian maxima, and notes coordinate dependence.",
+        "title": "Band-Limited Ensembles and Continuous Entropy"
+      },
+      {
+        "pages": {
+          "end": 41,
+          "start": 38
+        },
+        "source_span": {
+          "end_page": 41,
+          "end_text": "The last term is the signal power, while the first is the noise power.",
+          "start_page": 38,
+          "start_text": "We define the entropy of the ensemble per degree of freedom by"
+        },
+        "summary": "Defines entropy per degree of freedom and entropy power; applies linear-filter entropy loss and tabulates ideal filter gains; proves bounds on entropy power of summed ensembles and analyzes white Gaussian noise absorption of small signals.",
+        "title": "Entropy Power, Filtering, and Sums of Ensembles"
+      },
+      {
+        "pages": {
+          "end": 43,
+          "start": 41
+        },
+        "source_span": {
+          "end_page": 43,
+          "end_text": "Since H(n) is independent of P(x), maximizing R requires maximizing H(y), the entropy of the received signal.",
+          "start_page": 41,
+          "start_text": "In a continuous channel the input or transmitted signals will be continuous functions of time f (t) belonging to a certain set, and the output or received signals will be perturbed versions of these."
+        },
+        "summary": "Defines continuous-channel rate and capacity, gives the integral capacity expression, and derives the additive-noise theorem.",
+        "title": "Continuous Channel Capacity and Additive Noise"
+      },
+      {
+        "pages": {
+          "end": 45,
+          "start": 43
+        },
+        "source_span": {
+          "end_page": 45,
+          "end_text": "Theorem 19: If we set the capacity for a given transmitter power P equal to",
+          "start_page": 43,
+          "start_text": "Theorem 17: The capacity of a channel of band W perturbed by white thermal noise power N when the average transmitter power is limited to P is given by"
+        },
+        "summary": "Solves capacity under average power limitation for white noise and arbitrary noise, then proves monotonicity of the capacity parameter.",
+        "title": "Average Power Limitation"
+      },
+      {
+        "pages": {
+          "end": 47,
+          "start": 45
+        },
+        "source_span": {
+          "end_page": 47,
+          "end_text": "This can be ensured by taking small enough (after t is chosen).",
+          "start_page": 45,
+          "start_text": "In some applications the transmitter is limited not by the average power output but by the peak instantaneous power."
+        },
+        "summary": "Derives bounds and asymptotic capacity for channels constrained by peak instead of average transmitter power.",
+        "title": "Peak Power Limitation"
+      },
+      {
+        "pages": {
+          "end": 51,
+          "start": 47
+        },
+        "source_span": {
+          "end_page": 51,
+          "end_text": "Theorem 23: The rate for any source of band W1 is bounded by",
+          "start_page": 47,
+          "start_text": "In the case of a discrete source of information we were able to determine a definite rate of generating information, namely the entropy of the underlying stochastic process."
+        },
+        "summary": "Formalizes fidelity evaluation and rate-distortion for continuous sources, proves coding sufficiency, and calculates rates for white-noise and general sources.",
+        "title": "Fidelity Evaluation and Rate for Continuous Sources"
+      },
+      {
+        "pages": {
+          "end": 55,
+          "start": 52
+        },
+        "source_span": {
+          "end_page": 55,
+          "end_text": "This is a generalization of the measure type definitions of dimension in topology, and agrees with the intuitive dimension rate for simple ensembles where the desired result is obvious.",
+          "start_page": 52,
+          "start_text": "APPENDIX 5"
+        },
+        "summary": "Appendices prove invariance and ergodicity preservation, derive lower bounds for entropy power sums, and give a rigorous measure-theoretic formulation including dimension rate.",
+        "title": "Appendices 5–7 and Dimension Rate"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a theoretical research article reprinted from The Bell System Technical Journal, with original theorems, proofs, and appendices.",
+      "value": "theory"
+    }
+  },
+  "pass1_check": {
+    "sites": 31,
+    "verbatim": 24,
+    "near": 5,
+    "missing": 2,
+    "wrong_page": 0
+  },
+  "corrections": [
+    {
+      "path": "/citations/5/reference_key",
+      "action": "replace",
+      "value_json": "\"6\"",
+      "reason": "Footnote 7 refers to Fréchet, whose reference key is 6.",
+      "evidence": [
+        {
+          "quote": "These are restatements in terms of the graph of conditions given in Fréchet.",
+          "page": 9
+        }
+      ]
+    },
+    {
+      "path": "/citations/8/reference_key",
+      "action": "replace",
+      "value_json": "\"none\"",
+      "reason": "Footnote 1 is not a bibliographic reference.",
+      "evidence": [
+        {
+          "quote": "In mathematical terminology the functions belong to a measure space whose total measure is unity.",
+          "page": 32
+        }
+      ]
+    },
+    {
+      "path": "/citations/9/reference_key",
+      "action": "replace",
+      "value_json": "\"none\"",
+      "reason": "Footnote 2 is not a bibliographic reference.",
+      "evidence": [
+        {
+          "quote": "This representation can be used as a definition of band limited white noise. It has certain advantages in that it involves fewer limiting operations than do definitions that have been used in the past.",
+          "page": 33
+        }
+      ]
+    },
+    {
+      "path": "/citations/13/reference_key",
+      "action": "replace",
+      "value_json": "\"5\"",
+      "reason": "The loc. cit. refers to Shannon's “Communication in the Presence of Noise,” reference key 5.",
+      "evidence": [
+        {
+          "quote": "This and other properties of the white noise case are discussed from the geometrical point of view in “Communication in the Presence of Noise,” loc. cit.",
+          "page": 43
+        }
+      ]
+    },
+    {
+      "path": "/citations/14/reference_key",
+      "action": "replace",
+      "value_json": "\"4,8\"",
+      "reason": "The Wiener loc. cit. refers to Cybernetics, included in reference key 4; Tuller is key 8.",
+      "evidence": [
+        {
+          "quote": "Cybernetics, loc. cit.",
+          "page": 44
+        }
+      ]
+    }
+  ],
+  "correction_outcomes": [
+    {
+      "index": 0,
+      "path": "/citations/5/reference_key",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "evidence is not in the source"
+    },
+    {
+      "index": 1,
+      "path": "/citations/8/reference_key",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 2,
+      "path": "/citations/9/reference_key",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 3,
+      "path": "/citations/13/reference_key",
+      "action": "replace",
+      "status": "applied"
+    },
+    {
+      "index": 4,
+      "path": "/citations/14/reference_key",
+      "action": "replace",
+      "status": "rejected",
+      "reason": "evidence is not in the source"
+    }
+  ],
+  "pass2_check": {
+    "sites": 31,
+    "verbatim": 24,
+    "near": 5,
+    "missing": 2,
+    "wrong_page": 0
+  },
+  "admission": [
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+      "admitted": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/1/evidence/0/quote",
+      "status": "dropped",
+      "original": "For a detailed treatment see M. Fréchet, Méthode des fonctions arbitraires. Théorie des événements en chaîne dans le cas d’un nombre fini d’états possibles. Paris, Gauthier-Villars, 1938.",
+      "admitted": null,
+      "similarity": 0.7407407407407407,
+      "cited_page": 8,
+      "matched_page": null
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/2/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+      "admitted": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/3/evidence/0/quote",
+      "status": "verbatim",
+      "original": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+      "admitted": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+      "similarity": null,
+      "cited_page": 17,
+      "matched_page": 17
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/4/evidence/0/quote",
+      "status": "repaired_local",
+      "original": "Communication theory is heavily indebted to Wiener for much of its basic philosophy and theory.",
+      "admitted": "4Communication theory is heavily indebted to Wiener for much of its basic philosophy and theory.",
+      "similarity": 0.9333333333333333,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/predecessors/5/evidence/0/quote",
+      "status": "verbatim",
+      "original": "We may mention the work of N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+      "admitted": "We may mention the work of N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+      "similarity": null,
+      "cited_page": 44,
+      "matched_page": 44
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/position/targets/0/evidence/0/quote",
+      "status": "verbatim",
+      "original": "These semantic aspects of communication are irrelevant to the engineering problem.",
+      "admitted": "These semantic aspects of communication are irrelevant to the engineering problem.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/card/thesis/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point.",
+      "admitted": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/identity/evidence/0/quote",
+      "status": "verbatim",
+      "original": "By C. E. SHANNON",
+      "admitted": "By C. E. SHANNON",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "evidence",
+      "pointer": "/question/evidence/0/quote",
+      "status": "verbatim",
+      "original": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point.",
+      "admitted": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/0/context",
+      "status": "verbatim",
+      "original": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+      "admitted": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/1/context",
+      "status": "verbatim",
+      "original": "A physical system, or a mathematical model of a system which produces such a sequence of symbols governed by a set of probabilities, is known as a stochastic process.³",
+      "admitted": "A physical system, or a mathematical model of a system which produces such a sequence of symbols governed by a set of probabilities, is known as a stochastic process.³",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/2/context",
+      "status": "verbatim",
+      "original": "This was constructed with the use of a table of random numbers.⁴",
+      "admitted": "This was constructed with the use of a table of random numbers.⁴",
+      "similarity": null,
+      "cited_page": 5,
+      "matched_page": 5
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/3/context",
+      "status": "verbatim",
+      "original": "The first-order approximation is obtained by choosing successive letters independently but each letter having the same probability that it has in the natural language.⁵",
+      "admitted": "The first-order approximation is obtained by choosing successive letters independently but each letter having the same probability that it has in the natural language.⁵",
+      "similarity": null,
+      "cited_page": 6,
+      "matched_page": 6
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/4/context",
+      "status": "verbatim",
+      "original": "Stochastic processes of the type described above are known mathematically as discrete Markoff processes and have been extensively studied in the literature.⁶",
+      "admitted": "Stochastic processes of the type described above are known mathematically as discrete Markoff processes and have been extensively studied in the literature.⁶",
+      "similarity": null,
+      "cited_page": 8,
+      "matched_page": 8
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/5/context",
+      "status": "verbatim",
+      "original": "If the graph has the following two properties⁷ the corresponding process will be ergodic:",
+      "admitted": "If the graph has the following two properties⁷ the corresponding process will be ergodic:",
+      "similarity": null,
+      "cited_page": 9,
+      "matched_page": 9
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/6/context",
+      "status": "verbatim",
+      "original": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+      "admitted": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/7/context",
+      "status": "verbatim",
+      "original": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+      "admitted": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+      "similarity": null,
+      "cited_page": 17,
+      "matched_page": 17
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/8/context",
+      "status": "verbatim",
+      "original": "An ensemble of functions is a set of functions together with a probability measure whereby we may determine the probability of a function in the set having certain properties.¹",
+      "admitted": "An ensemble of functions is a set of functions together with a probability measure whereby we may determine the probability of a function in the set having certain properties.¹",
+      "similarity": null,
+      "cited_page": 32,
+      "matched_page": 32
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/9/context",
+      "status": "verbatim",
+      "original": "This is a representation of “white” noise, band limited to the band from 0 to W cycles per second and with average power N.2",
+      "admitted": "This is a representation of “white” noise, band limited to the band from 0 to W cycles per second and with average power N.2",
+      "similarity": null,
+      "cited_page": 33,
+      "matched_page": 33
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/10/context",
+      "status": "repaired_local",
+      "original": "This is the famous ergodic theorem or rather one aspect of this theorem which was proved in somewhat different formulations by Birkoff, von Neumann, and Koopman, and subsequently generalized by Wiener, Hopf, Hurewicz and others.³",
+      "admitted": "3This is the famous ergodic theorem or rather one aspect of this theorem which was proved in somewhat different formulations by Birkoff, von Neumann, and Koopman, and subsequently generalized by Wiener, Hopf, Hurewicz and",
+      "similarity": 0.9428571428571428,
+      "cited_page": 33,
+      "matched_page": 33
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/11/context",
+      "status": "verbatim",
+      "original": "Wiener has pointed out the intimate relation between the invariance of physical devices under time translations and Fourier theory.⁴",
+      "admitted": "Wiener has pointed out the intimate relation between the invariance of physical devices under time translations and Fourier theory.⁴",
+      "similarity": null,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/12/context",
+      "status": "repaired_local",
+      "original": "For a proof of this theorem and further discussion see the author’s paper “Communication in the Presence of Noise” published in the Proceedings of the Institute of Radio Engineers, v. 37, No. 1, Jan., 1949, pp. 10–21.⁵",
+      "admitted": "5For a proof of this theorem and further discussion see the author’s paper “Communication in the Presence of Noise” published in the Proceedings of the Institute of Radio Engineers, v. 37, No. 1, Jan., 1949, pp.",
+      "similarity": 0.9459459459459459,
+      "cited_page": 34,
+      "matched_page": 34
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/13/context",
+      "status": "repaired_local",
+      "original": "This and other properties of the white noise case are discussed from the geometrical point of view in “Communication in the Presence of Noise,” loc. cit.⁶",
+      "admitted": "6This and other properties of the white noise case are discussed from the geometrical point of view in “Communication in the Presence of Noise,” loc.",
+      "similarity": 0.9230769230769231,
+      "cited_page": 43,
+      "matched_page": 43
+    },
+    {
+      "kind": "citation",
+      "pointer": "/citations/14/context",
+      "status": "verbatim",
+      "original": "We may mention the work of N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+      "admitted": "We may mention the work of N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+      "similarity": null,
+      "cited_page": 44,
+      "matched_page": 44
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/0/quote",
+      "status": "verbatim",
+      "original": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+      "admitted": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/1/quote",
+      "status": "verbatim",
+      "original": "These semantic aspects of communication are irrelevant to the engineering problem.",
+      "admitted": "These semantic aspects of communication are irrelevant to the engineering problem.",
+      "similarity": null,
+      "cited_page": 1,
+      "matched_page": 1
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/2/quote",
+      "status": "dropped",
+      "original": "For a detailed treatment see M. Fréchet, Méthode des fonctions arbitraires. Théorie des événements en chaîne dans le cas d’un nombre fini d’états possibles. Paris, Gauthier-Villars, 1938.",
+      "admitted": null,
+      "similarity": 0.7407407407407407,
+      "cited_page": 8,
+      "matched_page": null
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/3/quote",
+      "status": "verbatim",
+      "original": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+      "admitted": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+      "similarity": null,
+      "cited_page": 11,
+      "matched_page": 11
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/4/quote",
+      "status": "verbatim",
+      "original": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+      "admitted": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+      "similarity": null,
+      "cited_page": 17,
+      "matched_page": 17
+    },
+    {
+      "kind": "relation",
+      "pointer": "/relations/5/quote",
+      "status": "repaired_local",
+      "original": "Communication theory is heavily indebted to Wiener for much of its basic philosophy and theory.",
+      "admitted": "4Communication theory is heavily indebted to Wiener for much of its basic philosophy and theory.",
+      "similarity": 0.9333333333333333,
+      "cited_page": 34,
+      "matched_page": 34
+    }
+  ],
+  "admission_counts": {
+    "dropped": 2,
+    "repaired_local": 5,
+    "verbatim": 24
+  },
+  "artifacts": {
+    "abstract": {
+      "confidence": "high",
+      "page": null,
+      "text": null
+    },
+    "card": {
+      "position": {
+        "predecessors": [
+          {
+            "cited_work": "Nyquist and Hartley",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject."
+              }
+            ],
+            "reference_key": "1,2",
+            "why": "builds_on"
+          },
+          {
+            "cited_work": "Fréchet, Markov processes",
+            "confidence": "high",
+            "evidence": [],
+            "reference_key": "6",
+            "why": "uses"
+          },
+          {
+            "cited_work": "Tolman, Principles of Statistical Mechanics",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 11,
+                "quote": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space."
+              }
+            ],
+            "reference_key": "8",
+            "why": "uses"
+          },
+          {
+            "cited_work": "R. M. Fano",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 17,
+                "quote": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹"
+              }
+            ],
+            "reference_key": "9",
+            "why": "parallel"
+          },
+          {
+            "cited_work": "N. Wiener",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 34,
+                "quote": "4Communication theory is heavily indebted to Wiener for much of its basic philosophy and theory."
+              }
+            ],
+            "reference_key": "4",
+            "why": "acknowledges"
+          },
+          {
+            "cited_work": "W. G. Tuller",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 44,
+                "quote": "We may mention the work of N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection."
+              }
+            ],
+            "reference_key": "8",
+            "why": "acknowledges"
+          }
+        ],
+        "replications": [],
+        "targets": [
+          {
+            "cited_work": "semantic aspects of communication",
+            "confidence": "high",
+            "evidence": [
+              {
+                "page": 1,
+                "quote": "These semantic aspects of communication are irrelevant to the engineering problem."
+              }
+            ],
+            "reference_key": "none",
+            "why": "contrasts_with"
+          }
+        ]
+      },
+      "thesis": {
+        "confidence": "high",
+        "evidence": [
+          {
+            "page": 1,
+            "quote": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point."
+          }
+        ],
+        "text": "Communication can be treated mathematically as selection from possible messages, with information measured by entropy, and reliable transmission bounded by channel capacity even in the presence of noise."
+      }
+    },
+    "citations": [
+      {
+        "context": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+        "page": 1,
+        "reference_key": "1,2"
+      },
+      {
+        "context": "A physical system, or a mathematical model of a system which produces such a sequence of symbols governed by a set of probabilities, is known as a stochastic process.³",
+        "page": 5,
+        "reference_key": "3"
+      },
+      {
+        "context": "This was constructed with the use of a table of random numbers.⁴",
+        "page": 5,
+        "reference_key": "4"
+      },
+      {
+        "context": "The first-order approximation is obtained by choosing successive letters independently but each letter having the same probability that it has in the natural language.⁵",
+        "page": 6,
+        "reference_key": "5"
+      },
+      {
+        "context": "Stochastic processes of the type described above are known mathematically as discrete Markoff processes and have been extensively studied in the literature.⁶",
+        "page": 8,
+        "reference_key": "6"
+      },
+      {
+        "context": "If the graph has the following two properties⁷ the corresponding process will be ergodic:",
+        "page": 9,
+        "reference_key": "7"
+      },
+      {
+        "context": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+        "page": 11,
+        "reference_key": "8"
+      },
+      {
+        "context": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+        "page": 17,
+        "reference_key": "9"
+      },
+      {
+        "context": "An ensemble of functions is a set of functions together with a probability measure whereby we may determine the probability of a function in the set having certain properties.¹",
+        "page": 32,
+        "reference_key": "none"
+      },
+      {
+        "context": "This is a representation of “white” noise, band limited to the band from 0 to W cycles per second and with average power N.2",
+        "page": 33,
+        "reference_key": "none"
+      },
+      {
+        "context": "3This is the famous ergodic theorem or rather one aspect of this theorem which was proved in somewhat different formulations by Birkoff, von Neumann, and Koopman, and subsequently generalized by Wiener, Hopf, Hurewicz and",
+        "page": 33,
+        "reference_key": "3"
+      },
+      {
+        "context": "Wiener has pointed out the intimate relation between the invariance of physical devices under time translations and Fourier theory.⁴",
+        "page": 34,
+        "reference_key": "4"
+      },
+      {
+        "context": "5For a proof of this theorem and further discussion see the author’s paper “Communication in the Presence of Noise” published in the Proceedings of the Institute of Radio Engineers, v. 37, No. 1, Jan., 1949, pp.",
+        "page": 34,
+        "reference_key": "5"
+      },
+      {
+        "context": "6This and other properties of the white noise case are discussed from the geometrical point of view in “Communication in the Presence of Noise,” loc.",
+        "page": 43,
+        "reference_key": "5"
+      },
+      {
+        "context": "We may mention the work of N. Wiener,⁷ W. G. Tuller,⁸ and H. Sullivan in this connection.",
+        "page": 44,
+        "reference_key": "7,8"
+      }
+    ],
+    "identity": {
+      "authors": [
+        {
+          "affiliation": "Bell Telephone Laboratories",
+          "name": "C. E. SHANNON"
+        }
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "By C. E. SHANNON"
+        }
+      ],
+      "identifiers": {
+        "arxiv": null,
+        "doi": null
+      },
+      "publication_state": "published",
+      "subtitle": null,
+      "title": "A Mathematical Theory of Communication",
+      "venue": "The Bell System Technical Journal",
+      "year": 1948
+    },
+    "question": {
+      "confidence": "high",
+      "evidence": [
+        {
+          "page": 1,
+          "quote": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point."
+        }
+      ],
+      "text": "Can a general mathematical theory measure information and determine the maximum reliable transmission rate for discrete and continuous communication systems, including noise and fidelity constraints?"
+    },
+    "references": [
+      {
+        "authors": [
+          "Nyquist, H."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 1,
+        "title": "Certain Factors Affecting Telegraph Speed",
+        "venue": "Bell System Technical Journal",
+        "year": 1924
+      },
+      {
+        "authors": [
+          "Nyquist, H."
+        ],
+        "doi": null,
+        "key": "1",
+        "page": 1,
+        "title": "Certain Topics in Telegraph Transmission Theory",
+        "venue": "A.I.E. E. Trans.",
+        "year": 1928
+      },
+      {
+        "authors": [
+          "Hartley, R. V. L."
+        ],
+        "doi": null,
+        "key": "2",
+        "page": 1,
+        "title": "Transmission of Information",
+        "venue": "Bell System Technical Journal",
+        "year": 1928
+      },
+      {
+        "authors": [
+          "Chandrasekhar, S."
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 5,
+        "title": "Stochastic Problems in Physics and Astronomy",
+        "venue": "Reviews of Modern Physics",
+        "year": 1943
+      },
+      {
+        "authors": [
+          "Kendall and Smith"
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 5,
+        "title": "Tables of Random Sampling Numbers",
+        "venue": "Cambridge",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "Pratt, Fletcher"
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 6,
+        "title": "Secret and Urgent",
+        "venue": "Blue Ribbon Books",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "Dewey, G."
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 6,
+        "title": "Relative Frequency of English Speech Sounds",
+        "venue": "Harvard University Press",
+        "year": 1923
+      },
+      {
+        "authors": [
+          "Fréchet, M."
+        ],
+        "doi": null,
+        "key": "6",
+        "page": 8,
+        "title": "Méthode des fonctions arbitraires. Théorie des événements en chaîne dans le cas d’un nombre fini d’états possibles.",
+        "venue": "Gauthier-Villars",
+        "year": 1938
+      },
+      {
+        "authors": [
+          "Tolman, R. C."
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 11,
+        "title": "Principles of Statistical Mechanics",
+        "venue": "Clarendon",
+        "year": 1938
+      },
+      {
+        "authors": [
+          "Fano, R. M."
+        ],
+        "doi": null,
+        "key": "9",
+        "page": 17,
+        "title": "Technical Report No. 65",
+        "venue": "The Research Laboratory of Electronics, M.I.T.",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "Hopf, E.",
+          "Wiener, N."
+        ],
+        "doi": null,
+        "key": "3",
+        "page": 33,
+        "title": "Ergodentheorie; On Causality Statistics and Probability; The Ergodic Theorem",
+        "venue": "Ergebnisse der Mathematik und ihrer Grenzgebiete; Journal of Mathematics and Physics; Duke Mathematical Journal",
+        "year": 1939
+      },
+      {
+        "authors": [
+          "Wiener, N."
+        ],
+        "doi": null,
+        "key": "4",
+        "page": 34,
+        "title": "The Interpolation, Extrapolation and Smoothing of Stationary Time Series; Cybernetics",
+        "venue": "Wiley",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "Shannon, C. E."
+        ],
+        "doi": null,
+        "key": "5",
+        "page": 34,
+        "title": "Communication in the Presence of Noise",
+        "venue": "Proceedings of the Institute of Radio Engineers",
+        "year": 1949
+      },
+      {
+        "authors": [
+          "Tuller, W. G."
+        ],
+        "doi": null,
+        "key": "8",
+        "page": 44,
+        "title": "Theoretical Limitations on the Rate of Transmission of Information",
+        "venue": "Proceedings of the Institute of Radio Engineers",
+        "year": 1949
+      }
+    ],
+    "relations": [
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "A basis for such a theory is contained in the important papers of Nyquist¹ and Hartley² on this subject.",
+        "reference_key": "1,2",
+        "relation": "uses_method",
+        "why": "Shannon explicitly bases the general theory on their prior work on modulation and information."
+      },
+      {
+        "confidence": "high",
+        "page": 1,
+        "quote": "These semantic aspects of communication are irrelevant to the engineering problem.",
+        "reference_key": "none",
+        "relation": "contrasts",
+        "why": "The paper separates its engineering theory of information from semantic theories of meaning."
+      },
+      {
+        "confidence": "high",
+        "page": 11,
+        "quote": "The form of H will be recognized as that of entropy as defined in certain formulations of statistical mechanics⁸ where pi is the probability of a system being in cell i of its phase space.",
+        "reference_key": "8",
+        "relation": "uses_method",
+        "why": "The entropy measure is identified with the statistical-mechanical entropy formulation."
+      },
+      {
+        "confidence": "high",
+        "page": 17,
+        "quote": "This method of encoding is substantially the same as one found independently by R. M. Fano.⁹",
+        "reference_key": "9",
+        "relation": "compares",
+        "why": "Shannon notes that his coding method is essentially the same as Fano’s independent method."
+      },
+      {
+        "confidence": "high",
+        "page": 34,
+        "quote": "4Communication theory is heavily indebted to Wiener for much of its basic philosophy and theory.",
+        "reference_key": "4",
+        "relation": "uses_method",
+        "why": "The paper acknowledges Wiener’s statistical formulation of communication as an important influence."
+      }
+    ],
+    "sections": [
+      {
+        "pages": {
+          "end": 2,
+          "start": 1
+        },
+        "source_span": {
+          "end_page": 2,
+          "end_text": "By a communication system we will mean a system of the type indicated schematically in Fig. 1.",
+          "start_page": 1,
+          "start_text": "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a message selected at another point."
+        },
+        "summary": "Shannon frames communication as message selection, dismisses semantic content for engineering purposes, justifies a logarithmic information measure, defines bits, and diagrams the source-transmitter-channel-receiver-destination system.",
+        "title": "Introduction and the General Communication Model"
+      },
+      {
+        "pages": {
+          "end": 4,
+          "start": 3
+        },
+        "source_span": {
+          "end_page": 4,
+          "end_text": "Theorem 1: Let bi j be the duration of the sth symbol which is allowable in state i and leads to state j.",
+          "start_page": 3,
+          "start_text": "Definition: The capacity C of a discrete channel is given by"
+        },
+        "summary": "Defines discrete noiseless channels, gives the logarithmic capacity formula, develops difference equations for symbol durations, and states graphical constraint theorem.",
+        "title": "Discrete Noiseless Channel Capacity"
+      },
+      {
+        "pages": {
+          "end": 8,
+          "start": 4
+        },
+        "source_span": {
+          "end_page": 8,
+          "end_text": "A similar process was used for (4), (5) and (6).",
+          "start_page": 4,
+          "start_text": "We now consider the information source."
+        },
+        "summary": "Represents information sources as stochastic processes, gives artificial-language examples of independent and dependent symbol sources, then builds successive approximations to English from equiprobable letters through word-transition models and explains how the samples were constructed.",
+        "title": "Discrete Sources and Approximations to English"
+      },
+      {
+        "pages": {
+          "end": 10,
+          "start": 8
+        },
+        "source_span": {
+          "end_page": 10,
+          "end_text": "Except when the contrary is stated we shall assume a source to be ergodic.",
+          "start_page": 8,
+          "start_text": "Stochastic processes of the type described above are known mathematically as discrete Markoff processes and have been extensively studied in the literature.⁶"
+        },
+        "summary": "Describes discrete Markoff sources graphically, defines ergodic and mixed sources, and states graph conditions for ergodicity.",
+        "title": "Markoff, Ergodic, and Mixed Sources"
+      },
+      {
+        "pages": {
+          "end": 12,
+          "start": 10
+        },
+        "source_span": {
+          "end_page": 12,
+          "end_text": "The uncertainty of y is never increased by knowledge of x.",
+          "start_page": 10,
+          "start_text": "Can we define a quantity which will measure, in some sense, how much information is “produced” by such a process, or better, at what rate information is produced?"
+        },
+        "summary": "Introduces choice, uncertainty, and entropy, proves the uniqueness theorem for H, and develops entropy properties including joint and conditional entropy.",
+        "title": "Choice, Uncertainty, and Entropy"
+      },
+      {
+        "pages": {
+          "end": 14,
+          "start": 13
+        },
+        "source_span": {
+          "end_page": 14,
+          "end_text": "The ratio of the entropy of a source to the maximum value it could have while still restricted to the same symbols will be called its relative entropy.",
+          "start_page": 13,
+          "start_text": "This is the entropy of the source per symbol of text."
+        },
+        "summary": "Defines source entropy per symbol and per second, proves asymptotic theorems on typical sequences and coding, and introduces relative entropy and redundancy.",
+        "title": "Entropy of an Information Source"
+      },
+      {
+        "pages": {
+          "end": 18,
+          "start": 15
+        },
+        "source_span": {
+          "end_page": 18,
+          "end_text": "In this case we can actually achieve the limiting value by the following code (obtained by the method of the second proof of Theorem 9):",
+          "start_page": 15,
+          "start_text": "Either of these will be called a discrete transducer."
+        },
+        "summary": "Formalizes encoding and decoding as transducers, proves capacity bounds for noiseless channels, and gives coding examples including Fano’s related method.",
+        "title": "Encoding, Decoding, and the Noiseless Coding Theorem"
+      },
+      {
+        "pages": {
+          "end": 21,
+          "start": 19
+        },
+        "source_span": {
+          "end_page": 21,
+          "end_text": "The rate of transmission R can be written in two other forms due to the identities noted above.",
+          "start_page": 19,
+          "start_text": "The case of interest here is that in which the signal does not always undergo the same change in transmission."
+        },
+        "summary": "Represents noisy discrete channels, defines equivocation as missing information, interprets correction channels, and derives alternative forms for transmission rate.",
+        "title": "Noisy Discrete Channels and Equivocation"
+      },
+      {
+        "pages": {
+          "end": 25,
+          "start": 22
+        },
+        "source_span": {
+          "end_page": 25,
+          "end_text": "In other words, no matter how we set out limits of reliability, we can distinguish reliably in time T enough messages to correspond to about CT bits, when T is sufficiently large.",
+          "start_page": 22,
+          "start_text": "Theorem 11: Let a discrete channel have the capacity C and a discrete source the entropy per second H."
+        },
+        "summary": "States and proves the fundamental noisy-channel coding theorem, discusses attainability, and gives the alternative capacity formulation for reliable distinguishable signals.",
+        "title": "Fundamental Theorem for a Noisy Channel"
+      },
+      {
+        "pages": {
+          "end": 28,
+          "start": 25
+        },
+        "source_span": {
+          "end_page": 28,
+          "end_text": "Let a block of seven symbols be X1 X2 X7.",
+          "start_page": 25,
+          "start_text": "We wish to choose P and Q in such a way as to maximize H(x),Hy(x), subject to the constraint P + 2Q = 1."
+        },
+        "summary": "Works a concrete noisy channel example, derives special-case capacity formulas, and presents Hamming’s efficient seven-symbol error-correcting code.",
+        "title": "Discrete Channel Examples and Special Capacity Cases"
+      },
+      {
+        "pages": {
+          "end": 31,
+          "start": 28
+        },
+        "source_span": {
+          "end_page": 31,
+          "end_text": "Hence the rate is C and as this could never be exceeded this is the maximum, justifying the assumed solution.",
+          "start_page": 28,
+          "start_text": "APPENDIX 1"
+        },
+        "summary": "Collects appendices proving block-growth asymptotics, deriving the entropy form, stating ergodic-source theorems, and solving the maximum-rate constraint problem.",
+        "title": "Appendices 1–4: Discrete-Channel Derivations"
+      },
+      {
+        "pages": {
+          "end": 34,
+          "start": 32
+        },
+        "source_span": {
+          "end_page": 34,
+          "end_text": "A communication system is designed not for a particular speech function and still less for a sine wave, but for the ensemble of speech functions.",
+          "start_page": 32,
+          "start_text": "We shall have to deal in the continuous case with sets of functions and ensembles of functions."
+        },
+        "summary": "Introduces continuous sets and ensembles, stationarity, ergodicity, invariant operations, and the ensemble viewpoint for communication theory.",
+        "title": "Continuous Sets and Ensembles"
+      },
+      {
+        "pages": {
+          "end": 38,
+          "start": 34
+        },
+        "source_span": {
+          "end_page": 38,
+          "end_text": "There is one important difference between the continuous and discrete entropies.",
+          "start_page": 34,
+          "start_text": "Theorem 13: Let f (t) contain no frequencies over W."
+        },
+        "summary": "Gives the sampling theorem, extends entropy to continuous distributions, proves entropy inequalities, identifies Gaussian maxima, and notes coordinate dependence.",
+        "title": "Band-Limited Ensembles and Continuous Entropy"
+      },
+      {
+        "pages": {
+          "end": 41,
+          "start": 38
+        },
+        "source_span": {
+          "end_page": 41,
+          "end_text": "The last term is the signal power, while the first is the noise power.",
+          "start_page": 38,
+          "start_text": "We define the entropy of the ensemble per degree of freedom by"
+        },
+        "summary": "Defines entropy per degree of freedom and entropy power; applies linear-filter entropy loss and tabulates ideal filter gains; proves bounds on entropy power of summed ensembles and analyzes white Gaussian noise absorption of small signals.",
+        "title": "Entropy Power, Filtering, and Sums of Ensembles"
+      },
+      {
+        "pages": {
+          "end": 43,
+          "start": 41
+        },
+        "source_span": {
+          "end_page": 43,
+          "end_text": "Since H(n) is independent of P(x), maximizing R requires maximizing H(y), the entropy of the received signal.",
+          "start_page": 41,
+          "start_text": "In a continuous channel the input or transmitted signals will be continuous functions of time f (t) belonging to a certain set, and the output or received signals will be perturbed versions of these."
+        },
+        "summary": "Defines continuous-channel rate and capacity, gives the integral capacity expression, and derives the additive-noise theorem.",
+        "title": "Continuous Channel Capacity and Additive Noise"
+      },
+      {
+        "pages": {
+          "end": 45,
+          "start": 43
+        },
+        "source_span": {
+          "end_page": 45,
+          "end_text": "Theorem 19: If we set the capacity for a given transmitter power P equal to",
+          "start_page": 43,
+          "start_text": "Theorem 17: The capacity of a channel of band W perturbed by white thermal noise power N when the average transmitter power is limited to P is given by"
+        },
+        "summary": "Solves capacity under average power limitation for white noise and arbitrary noise, then proves monotonicity of the capacity parameter.",
+        "title": "Average Power Limitation"
+      },
+      {
+        "pages": {
+          "end": 47,
+          "start": 45
+        },
+        "source_span": {
+          "end_page": 47,
+          "end_text": "This can be ensured by taking small enough (after t is chosen).",
+          "start_page": 45,
+          "start_text": "In some applications the transmitter is limited not by the average power output but by the peak instantaneous power."
+        },
+        "summary": "Derives bounds and asymptotic capacity for channels constrained by peak instead of average transmitter power.",
+        "title": "Peak Power Limitation"
+      },
+      {
+        "pages": {
+          "end": 51,
+          "start": 47
+        },
+        "source_span": {
+          "end_page": 51,
+          "end_text": "Theorem 23: The rate for any source of band W1 is bounded by",
+          "start_page": 47,
+          "start_text": "In the case of a discrete source of information we were able to determine a definite rate of generating information, namely the entropy of the underlying stochastic process."
+        },
+        "summary": "Formalizes fidelity evaluation and rate-distortion for continuous sources, proves coding sufficiency, and calculates rates for white-noise and general sources.",
+        "title": "Fidelity Evaluation and Rate for Continuous Sources"
+      },
+      {
+        "pages": {
+          "end": 55,
+          "start": 52
+        },
+        "source_span": {
+          "end_page": 55,
+          "end_text": "This is a generalization of the measure type definitions of dimension in topology, and agrees with the intuitive dimension rate for simple ensembles where the desired result is obvious.",
+          "start_page": 52,
+          "start_text": "APPENDIX 5"
+        },
+        "summary": "Appendices prove invariance and ergodicity preservation, derive lower bounds for entropy power sums, and give a rigorous measure-theoretic formulation including dimension rate.",
+        "title": "Appendices 5–7 and Dimension Rate"
+      }
+    ],
+    "type": {
+      "confidence": "high",
+      "reason": "It is a theoretical research article reprinted from The Bell System Technical Journal, with original theorems, proofs, and appendices.",
+      "value": "theory"
+    }
+  }
+}
