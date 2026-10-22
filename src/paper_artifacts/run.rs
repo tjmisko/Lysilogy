@@ -26,7 +26,7 @@ use super::{
         apply_removals, check, quote_sites,
     },
     config::{
-        Input, InputFormat, Repair as RepairMode, RunConfig, SelfCheck as SelfCheckMode,
+        Call, Input, InputFormat, Repair as RepairMode, RunConfig, SelfCheck as SelfCheckMode,
         scope_pages,
     },
     core_fields::CORE_FIELDS,
@@ -62,6 +62,9 @@ const RECORD_VERSION: u16 = 5;
 
 /// Object chunks in flight at once.
 const CHUNK_CONCURRENCY: usize = 3;
+
+/// Independent plan calls in flight at once.
+const PLAN_CONCURRENCY: usize = 3;
 
 // Output ceilings per call, reasoning included, so a looping answer fails
 // fast instead of running to the provider limit (131k tokens, 16 cents).
@@ -969,87 +972,154 @@ fn plan_schema(plan: &RunConfig) -> Value {
     schema
 }
 
-/// Run a configured list of calls and merge their answers into one draft.
-#[allow(clippy::too_many_lines)]
+/// Run the configured calls in dependency order, independent calls together.
 async fn run_plan(
     session: &Session<'_>,
     resources: &PageResources,
     plan: &RunConfig,
     object_pages: usize,
 ) -> (Option<Value>, Vec<ChunkRecord>, Option<MergeStats>) {
+    let dependencies = plan.dependencies();
+    let mut completed = BTreeSet::new();
     let mut draft = serde_json::Map::new();
     let mut chunks = Vec::new();
     let mut merge = None;
-    for call in &plan.calls {
-        let scope = scope_pages(call.scope.as_deref());
-        if call.fields.iter().any(|field| field == "objects") {
-            let kinds = ["figure", "table", "algorithm", "equation"];
-            let page_parts = match page_parts(resources).await {
-                Ok(parts) => parts,
-                Err(error) => {
-                    session.fail(&call.name, None, error.to_string(), None);
-                    continue;
-                }
-            };
-            let (inventory, call_merge, call_chunks) =
-                object_pass(session, resources, &page_parts, &kinds, object_pages).await;
-            draft.insert("objects".to_owned(), Value::Array(inventory));
-            chunks.extend(call_chunks);
-            merge = Some(call_merge);
-            continue;
-        }
-        let schema = call_schema(call);
-        let Ok(schema) = serde_json::to_string(&schema) else {
-            continue;
-        };
-        let instruction = call
-            .fields
+    while completed.len() < plan.calls.len() {
+        let ready: Vec<&Call> = plan
+            .calls
             .iter()
-            .map(|field| unit_instruction(field, resources.paper.pages.len()))
-            .collect::<Vec<_>>()
-            .join("\n");
-        let mut parts = vec![ContentPart::Text(FIELDS_PROMPT.to_owned())];
-        match rendered_parts(resources, &plan.input, scope).await {
-            Ok(mut paper) => parts.append(&mut paper),
-            Err(error) => {
-                session.fail(&call.name, None, error.to_string(), None);
-                continue;
-            }
+            .filter(|call| {
+                !completed.contains(call.name.as_str())
+                    && dependencies
+                        .get(call.name.as_str())
+                        .is_none_or(|deps| deps.iter().all(|dep| completed.contains(*dep)))
+            })
+            .collect();
+        if ready.is_empty() {
+            break;
         }
-        if call.fields.iter().any(|field| field == "identity")
-            && let Some(title) = likely_title(resources)
-        {
-            parts.push(ContentPart::Text(format!(
-                "Authoritative title from the largest heading on page 1: {title}. Return this exact string as `identity.title`; never use a cite-as or accepted-for-publication title."
-            )));
-        }
-        if call.include_draft
-            && let Some(current) = draft_subset(&draft, &call.fields)
-        {
-            parts.push(ContentPart::Text(format!(
-                "The current draft for these fields is:\n{current}\nMerge and adjust this draft to the target range; do not start over."
-            )));
-        }
-        parts.push(ContentPart::Text(instruction));
-        let model = plan.model_for(call);
-        let max_tokens = plan_max_tokens(call, resources.paper.pages.len());
-        let value = session
-            .call_with::<Value>(
-                &call.name,
-                None,
-                &parts,
-                &schema,
-                max_tokens,
-                &model,
-                call.effort.reasoning(),
-            )
+        for batch in ready.chunks(PLAN_CONCURRENCY) {
+            let results = futures_util::future::join_all(batch.iter().map(|call| {
+                let draft = draft.clone();
+                plan_call(session, resources, plan, call, object_pages, draft)
+            }))
             .await;
-        if let Some(value) = value {
-            merge_fields(&mut draft, &value);
+            for result in results {
+                completed.insert(result.name);
+                if let Some(value) = result.value {
+                    merge_fields(&mut draft, &value);
+                }
+                chunks.extend(result.chunks);
+                if result.merge.is_some() {
+                    merge = result.merge;
+                }
+            }
         }
     }
     let draft = (!draft.is_empty()).then_some(Value::Object(draft));
     (draft, chunks, merge)
+}
+
+/// One plan call's merged fragment and bookkeeping.
+struct PlanCallResult {
+    name: String,
+    value: Option<Value>,
+    chunks: Vec<ChunkRecord>,
+    merge: Option<MergeStats>,
+}
+
+impl PlanCallResult {
+    fn failed(name: &str) -> Self {
+        Self {
+            name: name.to_owned(),
+            value: None,
+            chunks: Vec::new(),
+            merge: None,
+        }
+    }
+}
+
+/// One plan call: the chunked object pass, or one text call over the paper.
+#[allow(clippy::too_many_lines)]
+async fn plan_call(
+    session: &Session<'_>,
+    resources: &PageResources,
+    plan: &RunConfig,
+    call: &Call,
+    object_pages: usize,
+    draft: serde_json::Map<String, Value>,
+) -> PlanCallResult {
+    if call.fields.iter().any(|field| field == "objects") {
+        let kinds = ["figure", "table", "algorithm", "equation"];
+        let page_parts = match page_parts(resources).await {
+            Ok(parts) => parts,
+            Err(error) => {
+                session.fail(&call.name, None, error.to_string(), None);
+                return PlanCallResult::failed(&call.name);
+            }
+        };
+        let (inventory, merge, chunks) =
+            object_pass(session, resources, &page_parts, &kinds, object_pages).await;
+        return PlanCallResult {
+            name: call.name.clone(),
+            value: Some(serde_json::json!({"objects": inventory})),
+            chunks,
+            merge: Some(merge),
+        };
+    }
+    let schema = call_schema(call);
+    let Ok(schema) = serde_json::to_string(&schema) else {
+        return PlanCallResult::failed(&call.name);
+    };
+    let instruction = call
+        .fields
+        .iter()
+        .map(|field| unit_instruction(field, resources.paper.pages.len()))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let mut parts = vec![ContentPart::Text(FIELDS_PROMPT.to_owned())];
+    match rendered_parts(resources, &plan.input, scope_pages(call.scope.as_deref())).await {
+        Ok(mut paper) => parts.append(&mut paper),
+        Err(error) => {
+            session.fail(&call.name, None, error.to_string(), None);
+            return PlanCallResult::failed(&call.name);
+        }
+    }
+    if call.fields.iter().any(|field| field == "identity")
+        && let Some(title) = likely_title(resources)
+    {
+        parts.push(ContentPart::Text(format!(
+            "Authoritative title from the largest heading on page 1: {title}. Return this exact string as `identity.title`; never use a cite-as or accepted-for-publication title."
+        )));
+    }
+    if call.include_draft
+        && let Some(current) = draft_subset(&draft, &call.fields)
+    {
+        parts.push(ContentPart::Text(format!(
+            "The current draft for these fields is:\n{current}\nMerge and adjust this draft to the target range; do not start over."
+        )));
+    }
+    drop(draft);
+    parts.push(ContentPart::Text(instruction));
+    let model = plan.model_for(call);
+    let max_tokens = plan_max_tokens(call, resources.paper.pages.len());
+    let value = session
+        .call_with::<Value>(
+            &call.name,
+            None,
+            &parts,
+            &schema,
+            max_tokens,
+            &model,
+            call.effort.reasoning(),
+        )
+        .await;
+    PlanCallResult {
+        name: call.name.clone(),
+        value,
+        chunks: Vec::new(),
+        merge: None,
+    }
 }
 
 /// The paper as the model sees it: raw page-marked text or markdown, first
@@ -2005,6 +2075,7 @@ mod tests {
                 max_tokens,
                 include_draft: false,
                 scope: None,
+                requires: Vec::new(),
             }
         };
         assert_eq!(
@@ -2043,6 +2114,7 @@ mod tests {
             max_tokens: None,
             include_draft: false,
             scope: None,
+            requires: Vec::new(),
         };
         let schema = call_schema(&call);
         assert!(schema["properties"].get("references").is_some());
@@ -2118,5 +2190,55 @@ mod tests {
                 Err(Error::InvalidRequest(_))
             ));
         }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn should_merge_independent_plan_calls() -> Result<()> {
+        use std::os::unix::fs::PermissionsExt;
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let script = directory.path().join("stub-codex");
+        std::fs::write(
+            &script,
+            r#"#!/bin/sh
+prompt=$(cat)
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--output-last-message" ]; then shift; output="$1"; fi
+  shift
+done
+case "$prompt" in
+  *glossary*) printf '{"glossary":[]}' > "$output" ;;
+  *supercut*) printf '{"supercut":[]}' > "$output" ;;
+  *) printf '{}' > "$output" ;;
+esac
+"#,
+        )
+        .expect("stub script");
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o700))
+            .expect("executable");
+        let cli = LocalCliAnalyzer::with_commands(&script, &script);
+        let session = Session::new(
+            Backend::Plan {
+                analyzer: &cli,
+                provider: AnalysisProvider::Codex,
+                directory: directory.path().to_path_buf(),
+            },
+            openrouter::DEFAULT_MODEL,
+            1.0,
+            ReasoningEffort::Low,
+            Vec::new(),
+        );
+        let plan = RunConfig::parse(
+            r#"{"calls":[
+                {"name":"cut","fields":["supercut"]},
+                {"name":"words","fields":["glossary"]}
+            ]}"#,
+        )
+        .expect("plan");
+        let (draft, _, _) = run_plan(&session, &resources(), &plan, 6).await;
+        let draft = draft.expect("merged draft");
+        assert!(draft.get("supercut").is_some_and(Value::is_array));
+        assert!(draft.get("glossary").is_some_and(Value::is_array));
+        Ok(())
     }
 }
