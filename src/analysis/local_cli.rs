@@ -109,7 +109,7 @@ impl PromptStage {
                 claude_tools: "",
                 claude_model: None,
             },
-            Self::Structure => StageProfile {
+            Self::Structure | Self::Revision => StageProfile {
                 codex_model: CODEX_PRIMARY_MODEL,
                 effort: "medium",
                 live_web: false,
@@ -143,15 +143,6 @@ impl PromptStage {
                 local_files: false,
                 persist_session: false,
                 claude_tools: "WebSearch,WebFetch",
-                claude_model: None,
-            },
-            Self::Revision => StageProfile {
-                codex_model: CODEX_PRIMARY_MODEL,
-                effort: "medium",
-                live_web: true,
-                local_files: true,
-                persist_session: true,
-                claude_tools: "Read,Grep,WebSearch,WebFetch",
                 claude_model: None,
             },
         }
@@ -1419,7 +1410,7 @@ fn external_context_prompt(context: &PrefetchedPaperContext) -> String {
 
 fn revision_prompt(paper: &ExtractedPaper, feedback: &str) -> String {
     format!(
-        r"Revise the current Lysilogy atlas in response to the reader feedback below. Read `analysis.json` for the current state and `source.txt` to verify every changed claim, quotation, page, and boundary. Use live web research only when the feedback changes external context.
+        r"Revise the current Lysilogy atlas in response to the reader feedback below. Read `analysis.json` for the current state and `source.txt` to verify every changed claim, quotation, page, and boundary. Do not browse the web.
 
 Paper: {title}
 PDF pages: {pages}
