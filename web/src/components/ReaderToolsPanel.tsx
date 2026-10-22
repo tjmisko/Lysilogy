@@ -45,17 +45,19 @@ function CutView({ cut, title, onSource }: { cut: Supercut; title: string; onSou
   </section>;
 }
 
-function ReferenceCard({ reference, papers, disabled, modelDisabled, onFind, onConnect, onLink, onRemove, onSource }: {
+function ReferenceCard({ reference, papers, disabled, modelDisabled, onFind, onResolve, onConnect, onLink, onRemove, onSource }: {
   reference: SavedReference; papers: PaperOverview[]; disabled: boolean; modelDisabled: boolean;
-  onFind: () => void; onConnect: (question: string) => void; onLink: (id: string) => void;
+  onFind: () => void; onResolve: () => void; onConnect: (question: string) => void; onLink: (id: string) => void;
   onRemove: () => void; onSource: (id: string, page: number) => void;
 }) {
   const [question, setQuestion] = useState(reference.question ?? "");
+  const resolution = reference.resolution;
   return <article className="saved-reference">
     <header><h3>{reference.citation}</h3><button type="button" disabled={disabled} onClick={onRemove} aria-label={`Remove reference: ${reference.citation}`}>Remove</button></header>
     {reference.source_page !== null && <p>Saved from PDF page {reference.source_page}</p>}
     {reference.note !== "" && <p>{reference.note}</p>}
     <div className="reader-tool-actions">
+      <button type="button" disabled={disabled} onClick={onResolve}>Resolve</button>
       <button type="button" disabled={modelDisabled} onClick={onFind}>Find &amp; fetch paper</button>
       <label>Link a paper in your library
         <select aria-label="Linked paper" disabled={disabled} value={reference.linked_paper_id ?? ""} onChange={(event) => onLink(event.target.value)}>
@@ -67,6 +69,19 @@ function ReferenceCard({ reference, papers, disabled, modelDisabled, onFind, onC
         if (reference.linked_paper_id !== null) onSource(reference.linked_paper_id, 1);
       }}>Open linked paper</button>}
     </div>
+    {resolution !== null && <div className="reference-resolution">
+      <strong>
+        {resolution.state === "resolved" ? "Resolved" : resolution.state === "ambiguous" ? "Possible matches" : "Unresolved"}
+        {resolution.method !== null ? ` · ${resolution.method}` : ""}
+        {resolution.confidence !== null ? ` · ${Math.round(resolution.confidence * 100)}%` : ""}
+      </strong>
+      {resolution.candidates.map((candidate, index) => <div className="reference-resolution-candidate" key={`${candidate.source}-${candidate.source_id}-${index}`}>
+        <span>{candidate.title === "" ? "(untitled)" : candidate.title}</span>
+        <small>{[candidate.authors.slice(0, 3).join(", "), candidate.year, candidate.venue].filter((part) => part !== null && part !== "").join(" · ")}</small>
+        <small>{candidate.source}{candidate.source_id !== "" ? ` · ${candidate.source_id}` : ""}{candidate.doi !== null ? ` · ${candidate.doi}` : ""}</small>
+      </div>)}
+      {resolution.state === "unresolved" && <p>No registry matched this reference. Try “Find &amp; fetch paper” or link a copy in your library.</p>}
+    </div>}
     {reference.candidate !== null && <div className="reference-candidate">
       <strong>Search candidate: {reference.candidate.title}</strong>
       <p>{reference.candidate.explanation}</p>
@@ -249,9 +264,14 @@ export function ReaderToolsPanel({ paperId, title, papers, provider, initialTab,
           </div>
         </form>
         {!loading && tools.references.length === 0 && <p>No saved references yet. Select a citation in the PDF and choose “Save citation”, or paste one above.</p>}
+        {tools.references.length > 0 && <div className="reader-tool-actions">
+          <button type="button" disabled={disabled} onClick={() => start({ kind: "resolve_references", reference_ids: [] })}>Resolve references</button>
+          <span>{tools.references.filter((entry) => entry.resolution === null || entry.resolution.state !== "resolved").length} without a resolution</span>
+        </div>}
         {[...tools.references].reverse().map((reference) => <ReferenceCard key={reference.id}
           reference={reference} papers={papers.filter((paper) => paper.id !== paperId)} disabled={disabled} modelDisabled={modelDisabled}
           onFind={() => start({ kind: "find_reference", reference_id: reference.id })}
+          onResolve={() => start({ kind: "resolve_references", reference_ids: [reference.id] })}
           onConnect={(question) => start({ kind: "connect_reference", reference_id: reference.id, question })}
           onLink={(id) => { void act(() => readerToolsApi.link(paperId, reference.id, id)); }}
           onRemove={() => { void act(() => readerToolsApi.remove(paperId, reference.id)); }}

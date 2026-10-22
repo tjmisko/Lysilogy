@@ -6,11 +6,19 @@ use crate::{
     domain::{AnalysisProvider, ExtractedPaper},
     reader_tools::{
         AGENT_NAME, CutDraft, CutFormat, ReaderTools, ReferenceCandidate, ReferenceConnection,
-        SavedReference, Supercut, ToolAction, ToolJob, ToolJobStatus, bounded_text,
-        validate_connection, validate_cut,
+        ReferenceResolution, ResolutionState, ResolvedCandidate, SavedReference, Supercut,
+        ToolAction, ToolJob, ToolJobStatus, bounded_text, validate_connection, validate_cut,
     },
 };
 use chrono::Utc;
+use lysilogy_core::{
+    IdentifierScheme, IdentifierStatus, Visibility, WorkId, WorkKind, WorkVersionId,
+};
+use lysilogy_ingest::openalex::ReqwestTransport;
+use lysilogy_ingest::reference::{
+    CandidateRecord, CrossrefRegistry, IdentifierAgreement, MatchDecision, MatchScore,
+    OpenAlexRegistry, ReferenceRecord, Resolution, SemanticScholarRegistry, resolve,
+};
 use serde::{Deserialize, de::DeserializeOwned};
 use std::{
     sync::atomic::{AtomicU64, Ordering},
@@ -83,6 +91,9 @@ fn reference_busy(tools: &ReaderTools, id: &str) -> bool {
             && match &job.action {
                 ToolAction::FindReference { reference_id }
                 | ToolAction::ConnectReference { reference_id, .. } => reference_id == id,
+                ToolAction::ResolveReferences { reference_ids } => {
+                    reference_ids.is_empty() || reference_ids.iter().any(|entry| entry == id)
+                }
                 ToolAction::Supercut { .. } => false,
             }
     })
@@ -133,6 +144,9 @@ impl AppState {
             ToolAction::Supercut { format } => self.make_supercut(id, job, *format).await,
             ToolAction::FindReference { reference_id } => {
                 self.find_saved_reference(id, job, reference_id).await
+            }
+            ToolAction::ResolveReferences { reference_ids } => {
+                self.resolve_saved_references(id, job, reference_ids).await
             }
             ToolAction::ConnectReference {
                 reference_id,
@@ -252,6 +266,110 @@ At least 80% of ALL output words must be exact source text. Each paragraph must 
         Ok(())
     }
 
+    /// Resolve saved references against `OpenAlex`, Crossref, and Semantic
+    /// Scholar, persisting the outcome on each reference. A single-reference
+    /// request may fall back to the model search; a batch stays deterministic.
+    async fn resolve_saved_references(
+        &self,
+        id: &PaperId,
+        job: &ToolJob,
+        reference_ids: &[String],
+    ) -> Result<()> {
+        let targets: Vec<SavedReference> = {
+            let tools = self.store.load_reader_tools(id).await?;
+            tools
+                .references
+                .iter()
+                .filter(|entry| {
+                    reference_ids.is_empty()
+                        || reference_ids.iter().any(|wanted| wanted == &entry.id)
+                })
+                .filter(|entry| {
+                    entry
+                        .resolution
+                        .as_ref()
+                        .is_none_or(|resolution| resolution.state != ResolutionState::Resolved)
+                })
+                .cloned()
+                .collect()
+        };
+        let openalex = OpenAlexRegistry::new(ReqwestTransport::from_environment()?);
+        let crossref = CrossrefRegistry::new(ReqwestTransport::from_environment()?);
+        let semantic_scholar = SemanticScholarRegistry::new(ReqwestTransport::from_environment()?);
+        for saved in targets {
+            let record = ReferenceRecord::from_raw(&saved.citation);
+            let online = resolve(&[&openalex, &crossref, &semantic_scholar], &record).await;
+            let mut resolution = resolution_from(&record, &online);
+            if resolution.state == ResolutionState::Unresolved
+                && reference_ids.len() == 1
+                && job.provider != AnalysisProvider::Heuristic
+            {
+                self.find_saved_reference(id, job, &saved.id).await?;
+                resolution = self.model_resolution(id, &saved.id, resolution).await?;
+            }
+            if resolution.state == ResolutionState::Resolved
+                && let Some(graph) = &self.graph
+                && let Some(candidate) = resolution.candidates.first()
+            {
+                let (work, version) = persist_resolved_work(graph, candidate).await?;
+                resolution.work_id = Some(work);
+                resolution.work_version_id = version;
+            }
+            self.store_resolution(id, &saved.id, resolution).await?;
+        }
+        Ok(())
+    }
+
+    /// Fold a model search candidate into a resolution, when one was found.
+    async fn model_resolution(
+        &self,
+        id: &PaperId,
+        reference_id: &str,
+        fallback: ReferenceResolution,
+    ) -> Result<ReferenceResolution> {
+        let tools = self.store.load_reader_tools(id).await?;
+        let Some(candidate) = reference(&tools, reference_id)?.candidate.clone() else {
+            return Ok(fallback);
+        };
+        Ok(ReferenceResolution {
+            state: ResolutionState::Resolved,
+            method: Some("model".to_owned()),
+            confidence: None,
+            work_id: None,
+            work_version_id: None,
+            candidates: vec![ResolvedCandidate {
+                title: candidate.title,
+                authors: Vec::new(),
+                year: None,
+                venue: None,
+                doi: None,
+                arxiv_id: None,
+                source: "model".to_owned(),
+                source_id: String::new(),
+                score: 0.0,
+            }],
+            resolved_at: Utc::now(),
+        })
+    }
+
+    async fn store_resolution(
+        &self,
+        id: &PaperId,
+        reference_id: &str,
+        resolution: ReferenceResolution,
+    ) -> Result<()> {
+        let _guard = self.tools_write.lock().await;
+        let mut tools = self.store.load_reader_tools(id).await?;
+        if let Some(entry) = tools
+            .references
+            .iter_mut()
+            .find(|entry| entry.id == reference_id)
+        {
+            entry.resolution = Some(resolution);
+        }
+        self.store.save_reader_tools(id, &tools).await
+    }
+
     async fn connect_saved_reference(
         &self,
         id: &PaperId,
@@ -296,6 +414,137 @@ At least 80% of ALL output words must be exact source text. Each paragraph must 
         entry.question = Some(question.to_owned());
         self.store.save_reader_tools(id, &tools).await
     }
+}
+
+fn resolution_from(record: &ReferenceRecord, online: &Resolution) -> ReferenceResolution {
+    let ranked = lysilogy_ingest::reference::rank(record, &online.candidates);
+    let candidates: Vec<ResolvedCandidate> = ranked
+        .iter()
+        .take(5)
+        .map(|scored| resolved_candidate(&online.candidates[scored.index], scored.score.total))
+        .collect();
+    let (state, method, confidence) = match &online.decision {
+        MatchDecision::Accepted { score, .. } => (
+            ResolutionState::Resolved,
+            Some(method_label(score)),
+            Some(score.total),
+        ),
+        MatchDecision::Ambiguous { .. } => (ResolutionState::Ambiguous, None, None),
+        MatchDecision::Rejected(_) => (ResolutionState::Unresolved, Some("none".to_owned()), None),
+    };
+    ReferenceResolution {
+        state,
+        method,
+        confidence,
+        work_id: None,
+        work_version_id: None,
+        candidates,
+        resolved_at: Utc::now(),
+    }
+}
+
+fn resolved_candidate(candidate: &CandidateRecord, score: f64) -> ResolvedCandidate {
+    ResolvedCandidate {
+        title: candidate.title.clone().unwrap_or_default(),
+        authors: candidate.authors.clone(),
+        year: candidate.year,
+        venue: candidate.venue.clone(),
+        doi: candidate
+            .identifier(IdentifierScheme::Doi)
+            .map(str::to_owned),
+        arxiv_id: candidate
+            .identifier(IdentifierScheme::Arxiv)
+            .map(str::to_owned),
+        source: candidate.source.clone(),
+        source_id: candidate.source_id.clone(),
+        score,
+    }
+}
+
+fn method_label(score: &MatchScore) -> String {
+    match score.identifier {
+        IdentifierAgreement::Match => "identifier".to_owned(),
+        _ => "fuzzy_match".to_owned(),
+    }
+}
+
+/// Find or create the Work a resolved candidate names, and select its version.
+async fn persist_resolved_work(
+    graph: &crate::graph::GraphState,
+    candidate: &ResolvedCandidate,
+) -> Result<(WorkId, Option<WorkVersionId>)> {
+    let (work, _) = if let Some(doi) = &candidate.doi {
+        graph
+            .works
+            .resolve_or_create(IdentifierScheme::Doi, doi, WorkKind::Article, None)
+            .await?
+    } else if let Some(arxiv) = &candidate.arxiv_id {
+        graph
+            .works
+            .resolve_or_create(IdentifierScheme::Arxiv, arxiv, WorkKind::Article, None)
+            .await?
+    } else if candidate.source == "openalex" && !candidate.source_id.is_empty() {
+        graph
+            .works
+            .resolve_or_create(
+                IdentifierScheme::Openalex,
+                &candidate.source_id,
+                WorkKind::Article,
+                None,
+            )
+            .await?
+    } else if candidate.source == "semantic_scholar" && !candidate.source_id.is_empty() {
+        graph
+            .works
+            .resolve_or_create(
+                IdentifierScheme::SemanticScholar,
+                &candidate.source_id,
+                WorkKind::Article,
+                None,
+            )
+            .await?
+    } else {
+        (
+            graph
+                .works
+                .create(WorkKind::Article, Visibility::Private)
+                .await?,
+            true,
+        )
+    };
+    if !candidate.title.is_empty() {
+        graph
+            .works
+            .set_display_title(work.id, &candidate.title)
+            .await?;
+    }
+    if let Some(year) = candidate.year {
+        graph.works.set_display_year(work.id, year).await?;
+    }
+    let work_anchor = (candidate.source == "openalex").then_some(candidate.source_id.as_str());
+    let s2_anchor =
+        (candidate.source == "semantic_scholar").then_some(candidate.source_id.as_str());
+    for (scheme, value) in [
+        (IdentifierScheme::Doi, candidate.doi.as_deref()),
+        (IdentifierScheme::Arxiv, candidate.arxiv_id.as_deref()),
+        (IdentifierScheme::Openalex, work_anchor),
+        (IdentifierScheme::SemanticScholar, s2_anchor),
+    ] {
+        if let Some(value) = value {
+            let _ = graph
+                .works
+                .add_identifier(work.id, scheme, value, None, IdentifierStatus::Active)
+                .await?;
+        }
+    }
+    let version = graph
+        .works
+        .versions(work.id)
+        .await?
+        .first()
+        .map(|version| version.id);
+    graph.works.recompute_display_year(work.id).await?;
+    Ok((work.id, version))
 }
 
 fn bounded_source(paper: &ExtractedPaper) -> Result<String> {
@@ -345,6 +594,7 @@ async fn save_reference(
         note: request.note.trim().to_owned(),
         created_at: Utc::now(),
         candidate: None,
+        resolution: None,
         linked_paper_id: None,
         connection: None,
         question: None,
@@ -419,7 +669,13 @@ async fn start_job(
 ) -> Result<(StatusCode, Json<ToolJob>)> {
     let id = super::parse_id(&id)?;
     state.require_paper(&id).await?;
-    if request.provider == AnalysisProvider::Heuristic {
+    let needs_model = matches!(
+        &request.action,
+        ToolAction::Supercut { .. }
+            | ToolAction::FindReference { .. }
+            | ToolAction::ConnectReference { .. }
+    );
+    if needs_model && request.provider == AnalysisProvider::Heuristic {
         return Err(Error::InvalidRequest(
             "Lysilogos tasks need the Codex or Claude reader".to_owned(),
         ));
@@ -451,6 +707,11 @@ async fn start_job(
                     ));
                 }
                 *question = bounded_text(question, "question", 4000)?;
+            }
+            ToolAction::ResolveReferences { reference_ids } => {
+                for reference_id in reference_ids.iter() {
+                    reference(&tools, reference_id)?;
+                }
             }
             ToolAction::Supercut { .. } => {}
         }

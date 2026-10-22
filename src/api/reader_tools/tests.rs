@@ -435,3 +435,77 @@ async fn routes_reject_bad_ids_and_offline_generation() {
         .is_err()
     );
 }
+
+#[cfg(test)]
+mod reference_resolution {
+    use super::*;
+    use lysilogy_core::VersionKind;
+    use lysilogy_ingest::reference::{
+        IdentifierAgreement, ReferenceIdentifier, RejectionReason, Resolution,
+    };
+
+    fn candidate() -> CandidateRecord {
+        CandidateRecord {
+            source: "openalex".to_owned(),
+            source_id: "W1".to_owned(),
+            title: Some("A Study of Things".to_owned()),
+            authors: vec!["J. Smith".to_owned()],
+            year: Some(2010),
+            venue: None,
+            identifiers: vec![ReferenceIdentifier {
+                scheme: IdentifierScheme::Doi,
+                value: "10.1234/abc".to_owned(),
+            }],
+            version_kind: VersionKind::Published,
+            version_label: None,
+            cited_by_count: None,
+        }
+    }
+
+    fn score(identifier: IdentifierAgreement) -> MatchScore {
+        MatchScore {
+            identifier,
+            title: Some(1.0),
+            authors: Some(1.0),
+            year: Some(1.0),
+            venue: None,
+            total: 1.0,
+        }
+    }
+
+    fn online(decision: MatchDecision) -> Resolution {
+        Resolution {
+            searches: Vec::new(),
+            candidates: vec![candidate()],
+            decision,
+        }
+    }
+
+    #[test]
+    fn should_mark_identifier_match_resolved() {
+        let record =
+            ReferenceRecord::from_raw("Smith, J. A Study of Things. 2010. doi:10.1234/abc");
+        let resolution = resolution_from(
+            &record,
+            &online(MatchDecision::Accepted {
+                candidate: 0,
+                score: score(IdentifierAgreement::Match),
+            }),
+        );
+        assert_eq!(resolution.state, ResolutionState::Resolved);
+        assert_eq!(resolution.method.as_deref(), Some("identifier"));
+        assert_eq!(resolution.candidates.len(), 1);
+        assert_eq!(resolution.candidates[0].doi.as_deref(), Some("10.1234/abc"));
+    }
+
+    #[test]
+    fn should_mark_rejection_unresolved() {
+        let record = ReferenceRecord::from_raw("Smith, J. A Study of Things. 2010.");
+        let resolution = resolution_from(
+            &record,
+            &online(MatchDecision::Rejected(RejectionReason::TitleDisagrees)),
+        );
+        assert_eq!(resolution.state, ResolutionState::Unresolved);
+        assert_eq!(resolution.method.as_deref(), Some("none"));
+    }
+}

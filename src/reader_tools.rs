@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use lysilogy_core::{WorkId, WorkVersionId};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -60,6 +61,43 @@ pub struct ReferenceCandidate {
     pub explanation: String,
 }
 
+/// A Work proposed by a registry for a saved reference, with its match score.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ResolvedCandidate {
+    pub title: String,
+    pub authors: Vec<String>,
+    pub year: Option<i32>,
+    pub venue: Option<String>,
+    pub doi: Option<String>,
+    pub arxiv_id: Option<String>,
+    pub source: String,
+    pub source_id: String,
+    pub score: f64,
+}
+
+/// How a saved reference's resolution came out.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResolutionState {
+    Resolved,
+    Ambiguous,
+    Unresolved,
+}
+
+/// The deterministic resolution of a saved reference.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ReferenceResolution {
+    pub state: ResolutionState,
+    /// `identifier`, `fuzzy_match`, `model`, or `none`.
+    pub method: Option<String>,
+    pub confidence: Option<f64>,
+    pub work_id: Option<WorkId>,
+    pub work_version_id: Option<WorkVersionId>,
+    /// Ranked candidates; the accepted one is first when resolved.
+    pub candidates: Vec<ResolvedCandidate>,
+    pub resolved_at: DateTime<Utc>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PaperEvidence {
     pub paper_id: PaperId,
@@ -93,6 +131,8 @@ pub struct SavedReference {
     pub note: String,
     pub created_at: DateTime<Utc>,
     pub candidate: Option<ReferenceCandidate>,
+    #[serde(default)]
+    pub resolution: Option<ReferenceResolution>,
     pub linked_paper_id: Option<PaperId>,
     pub connection: Option<ReferenceConnection>,
     pub question: Option<String>,
@@ -114,6 +154,11 @@ pub enum ToolAction {
     },
     FindReference {
         reference_id: String,
+    },
+    /// Resolve the given saved references deterministically. An empty list
+    /// resolves every reference that has no accepted resolution yet.
+    ResolveReferences {
+        reference_ids: Vec<String>,
     },
     ConnectReference {
         reference_id: String,

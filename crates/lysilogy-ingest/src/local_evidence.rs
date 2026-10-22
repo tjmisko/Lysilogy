@@ -11,8 +11,8 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use lysilogy_core::provenance::FieldValue;
 use lysilogy_core::{
     ClaimConfidence, ClaimOrigin, Coverage, DocumentVersionId, IdentifierScheme, IdentifierStatus,
-    ResolutionMethod, ResolutionStatus, SourceRecordId, Visibility, Work, WorkId, WorkKind,
-    identifier::normalize, title_key,
+    ResolutionMethod, ResolutionStatus, SourceRecordId, VersionKind, Visibility, Work, WorkId,
+    WorkKind, identifier::normalize, title_key,
 };
 use lysilogy_db::DbError;
 use lysilogy_db::citation::CitationRepository;
@@ -29,6 +29,9 @@ use crate::bibliography::{
 };
 use crate::field_model::FieldHarvestSummary;
 use crate::labels::LabelSummary;
+use crate::reference::{
+    CANDIDATE_SCORE, CandidateRecord, MatchDecision, ReferenceRecord, decide, rank,
+};
 
 /// Source record kind for the extraction evidence.
 pub const LOCAL_BIBLIOGRAPHY_KIND: &str = "local_bibliography";
@@ -69,6 +72,7 @@ pub struct LocalEvidenceInput<'a> {
 pub struct ResolutionCounts {
     pub identifier: usize,
     pub title_match: usize,
+    pub fuzzy_match: usize,
     pub local_stub: usize,
     /// Entries whose earlier accepted resolution was kept.
     pub reused: usize,
@@ -123,6 +127,8 @@ enum Lookup {
         work: WorkId,
         method: ResolutionMethod,
         confidence: f64,
+        /// Scored candidates to persist as `candidate` resolutions.
+        candidates: Vec<(WorkId, f64)>,
     },
     Ambiguous(Vec<WorkId>),
     SelfReference,
@@ -248,6 +254,7 @@ const fn count_resolution(
     }
     match method {
         ResolutionMethod::Identifier => summary.resolutions.identifier += 1,
+        ResolutionMethod::FuzzyMatch => summary.resolutions.fuzzy_match += 1,
         ResolutionMethod::TitleMatch | ResolutionMethod::Merge => {
             summary.resolutions.title_match += 1;
         }
@@ -406,7 +413,7 @@ async fn resolve_entry(
         None => None,
     };
 
-    let found = lookup_entry(ctx, citing, neighborhood, fields, stub).await?;
+    let found = lookup_entry(ctx, citing, neighborhood, &entry.raw_text, fields, stub).await?;
     if let Some(stub) = stub {
         let reused = EntryOutcome::Resolved {
             work: stub,
@@ -445,7 +452,9 @@ async fn resolve_entry(
             work,
             method,
             confidence,
+            candidates,
         } => {
+            persist_candidates(ctx, entry.id, method, &candidates).await?;
             ctx.evidence
                 .record_resolution(
                     entry.id,
@@ -455,7 +464,10 @@ async fn resolve_entry(
                     Some(confidence),
                 )
                 .await?;
-            if method == ResolutionMethod::TitleMatch {
+            if matches!(
+                method,
+                ResolutionMethod::TitleMatch | ResolutionMethod::FuzzyMatch
+            ) {
                 attach_identifiers(ctx, work, fields, record, number, warnings).await?;
             }
             Ok(EntryOutcome::Resolved {
@@ -466,26 +478,54 @@ async fn resolve_entry(
                 merged: false,
             })
         }
-        Lookup::Nothing => {
-            let work = create_stub(ctx, fields, record).await?;
-            ctx.evidence
-                .record_resolution(
-                    entry.id,
-                    work,
-                    ResolutionStatus::Accepted,
-                    ResolutionMethod::LocalStub,
-                    None,
-                )
-                .await?;
-            Ok(EntryOutcome::Resolved {
-                work,
-                method: ResolutionMethod::LocalStub,
-                created: true,
-                reused: false,
-                merged: false,
-            })
-        }
+        Lookup::Nothing => create_stub_resolution(ctx, entry, fields, record).await,
     }
+}
+
+async fn create_stub_resolution(
+    ctx: &LocalEvidenceContext<'_>,
+    entry: &StoredEntry,
+    fields: &BibliographicFields,
+    record: SourceRecordId,
+) -> Result<EntryOutcome> {
+    let work = create_stub(ctx, fields, record).await?;
+    ctx.evidence
+        .record_resolution(
+            entry.id,
+            work,
+            ResolutionStatus::Accepted,
+            ResolutionMethod::LocalStub,
+            None,
+        )
+        .await?;
+    Ok(EntryOutcome::Resolved {
+        work,
+        method: ResolutionMethod::LocalStub,
+        created: true,
+        reused: false,
+        merged: false,
+    })
+}
+
+/// Store every scored candidate before the accepted resolution.
+async fn persist_candidates(
+    ctx: &LocalEvidenceContext<'_>,
+    entry: lysilogy_core::EntryId,
+    method: ResolutionMethod,
+    candidates: &[(WorkId, f64)],
+) -> Result<()> {
+    for (candidate, score) in candidates {
+        ctx.evidence
+            .record_resolution(
+                entry,
+                *candidate,
+                ResolutionStatus::Candidate,
+                method,
+                Some(*score),
+            )
+            .await?;
+    }
+    Ok(())
 }
 
 /// The entry's DOI, then arXiv ID, as normalized `(scheme, value)` pairs.
@@ -515,6 +555,7 @@ async fn lookup_entry(
     ctx: &LocalEvidenceContext<'_>,
     citing: WorkId,
     neighborhood: &[Work],
+    raw_text: &str,
     fields: &BibliographicFields,
     exclude: Option<WorkId>,
 ) -> Result<Lookup> {
@@ -533,6 +574,7 @@ async fn lookup_entry(
             work,
             method: ResolutionMethod::Identifier,
             confidence: 1.0,
+            candidates: Vec::new(),
         });
     }
 
@@ -556,7 +598,7 @@ async fn lookup_entry(
         return Ok(if cites_itself {
             Lookup::SelfReference
         } else {
-            Lookup::Nothing
+            fuzzy_lookup(citing, &near, &global, raw_text, fields)
         });
     }
     let near_ids: HashSet<WorkId> = near.iter().map(|work| work.id).collect();
@@ -571,13 +613,79 @@ async fn lookup_entry(
     } else {
         HashSet::new()
     };
+    let persisted: Vec<(WorkId, f64)> = candidates
+        .iter()
+        .map(|work| (work.id, TITLE_MATCH_CONFIDENCE))
+        .collect();
     Ok(match select_candidate(&candidates, &near_ids, &openalex) {
         Ok(work) => Lookup::Found {
             work,
             method: ResolutionMethod::TitleMatch,
             confidence: TITLE_MATCH_CONFIDENCE,
+            candidates: persisted,
         },
         Err(pool) => Lookup::Ambiguous(pool),
+    })
+}
+
+/// Score the neighborhood and exact-key pool with the fuzzy matcher.
+fn fuzzy_lookup(
+    citing: WorkId,
+    near: &[Work],
+    global: &[Work],
+    raw_text: &str,
+    fields: &BibliographicFields,
+) -> Lookup {
+    let record = ReferenceRecord::from_fields(raw_text, fields);
+    let mut seen = HashSet::new();
+    let mut pool: Vec<Work> = Vec::new();
+    let mut candidates: Vec<CandidateRecord> = Vec::new();
+    for work in near.iter().chain(global) {
+        if work.id == citing || !seen.insert(work.id) {
+            continue;
+        }
+        let Some(candidate) = work_candidate(work) else {
+            continue;
+        };
+        pool.push(work.clone());
+        candidates.push(candidate);
+    }
+    if candidates.is_empty() {
+        return Lookup::Nothing;
+    }
+    let persisted: Vec<(WorkId, f64)> = rank(&record, &candidates)
+        .into_iter()
+        .filter(|scored| scored.score.total >= CANDIDATE_SCORE)
+        .map(|scored| (pool[scored.index].id, scored.score.total))
+        .collect();
+    match decide(&record, &candidates) {
+        MatchDecision::Accepted { candidate, score } => Lookup::Found {
+            work: pool[candidate].id,
+            method: ResolutionMethod::FuzzyMatch,
+            confidence: score.total,
+            candidates: persisted,
+        },
+        MatchDecision::Ambiguous {
+            candidates: indices,
+            ..
+        } => Lookup::Ambiguous(indices.iter().map(|index| pool[*index].id).collect()),
+        MatchDecision::Rejected(_) => Lookup::Nothing,
+    }
+}
+
+fn work_candidate(work: &Work) -> Option<CandidateRecord> {
+    let title = work.display_title.clone()?;
+    Some(CandidateRecord {
+        source: "local".to_owned(),
+        source_id: work.id.to_string(),
+        title: Some(title),
+        authors: work.display_authors.clone().unwrap_or_default(),
+        year: work.display_year,
+        venue: None,
+        identifiers: Vec::new(),
+        version_kind: VersionKind::Unknown,
+        version_label: None,
+        cited_by_count: None,
     })
 }
 

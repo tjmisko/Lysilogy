@@ -355,12 +355,14 @@ impl AcquisitionRepository {
                                where d.workspace_id = $2 and d.work_id = w.id \
                                  and d.relative_path is not null) \
              order by \
-                 exists (select 1 from graph.work_identifier i \
-                         where i.work_id = w.id and i.status = 'active' \
+                 exists (select 1 from graph.work_version_identifier i \
+                         join graph.work_version v on v.id = i.version_id \
+                         where v.work_id = w.id and i.status = 'active' \
                            and (i.scheme = 'arxiv' or (i.scheme = 'doi' \
                                 and i.value_normalized like '10.48550/arxiv.%'))) desc, \
-                 exists (select 1 from graph.work_identifier i \
-                         where i.work_id = w.id and i.status = 'active' \
+                 exists (select 1 from graph.work_version_identifier i \
+                         join graph.work_version v on v.id = i.version_id \
+                         where v.work_id = w.id and i.status = 'active' \
                            and i.scheme = 'doi') desc, \
                  w.display_year desc nulls last, w.display_title nulls last, w.id",
         )

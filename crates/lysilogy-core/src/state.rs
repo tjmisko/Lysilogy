@@ -117,6 +117,7 @@ string_enum!(
     ResolutionMethod {
         Identifier => "identifier",
         TitleMatch => "title_match",
+        FuzzyMatch => "fuzzy_match",
         LocalStub => "local_stub",
         Merge => "merge",
     }
@@ -155,6 +156,20 @@ string_enum!(
         Url => "url",
     }
 );
+
+impl IdentifierScheme {
+    /// Whether this scheme names one manifestation rather than a Work.
+    ///
+    /// DOI, arXiv, PMID, ISBN and URL identify a version; `OpenAlex` and
+    /// Semantic Scholar identify the Work.
+    #[must_use]
+    pub const fn is_version_level(self) -> bool {
+        matches!(
+            self,
+            Self::Doi | Self::Arxiv | Self::Pmid | Self::Isbn | Self::Url
+        )
+    }
+}
 
 string_enum!(
     /// Whether an identifier claim is trusted, disputed, or withdrawn.

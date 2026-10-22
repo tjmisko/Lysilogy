@@ -53,6 +53,21 @@ pub struct WorkVersion {
     pub created_at: DateTime<Utc>,
 }
 
+/// One scheme-specific identifier claimed for a Work version.
+///
+/// DOI, arXiv, PMID, ISBN and URL name a manifestation, so they live here
+/// rather than on the Work.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkVersionIdentifier {
+    pub id: IdentifierId,
+    pub version_id: WorkVersionId,
+    pub scheme: IdentifierScheme,
+    pub value_normalized: String,
+    pub source_record_id: Option<SourceRecordId>,
+    pub status: IdentifierStatus,
+    pub created_at: DateTime<Utc>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

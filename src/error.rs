@@ -64,6 +64,12 @@ impl From<lysilogy_ingest::openalex::ProviderError> for Error {
     }
 }
 
+impl From<lysilogy_db::DbError> for Error {
+    fn from(error: lysilogy_db::DbError) -> Self {
+        Self::Literature(error.to_string())
+    }
+}
+
 impl Error {
     #[must_use]
     pub fn io(path: impl Into<PathBuf>, source: io::Error) -> Self {
