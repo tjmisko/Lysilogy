@@ -690,8 +690,7 @@ impl AppState {
                 .map_err(|error| (ProcessingStage::Persistence, error))?;
         }
         let outcome = self
-            .analysis
-            .analyze(provider, &paper, &self.store.paper_dir(id), reset_stages)
+            .run_analysis_backend(id, provider, &paper, reset_stages)
             .await
             .map_err(|error| (ProcessingStage::Analysis, error))?;
         for task in ["prefetch", "orientation", "structure", "context"] {
@@ -747,6 +746,27 @@ impl AppState {
             }
         }
         Ok(())
+    }
+
+    /// Route a model reader through the new `paper-artifacts` backend, keeping
+    /// the plan harnesses on the existing pipeline.
+    async fn run_analysis_backend(
+        &self,
+        id: &PaperId,
+        provider: AnalysisProvider,
+        paper: &crate::domain::ExtractedPaper,
+        reset_stages: bool,
+    ) -> Result<crate::analysis::AnalysisOutcome> {
+        if provider == AnalysisProvider::OpenRouter {
+            let pdf = self.source_path(id).await?;
+            self.analysis
+                .analyze_core_artifacts(provider, paper, &pdf, &self.store.paper_dir(id))
+                .await
+        } else {
+            self.analysis
+                .analyze(provider, paper, &self.store.paper_dir(id), reset_stages)
+                .await
+        }
     }
 
     async fn load_or_extract(

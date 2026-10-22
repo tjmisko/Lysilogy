@@ -134,6 +134,58 @@ impl AnalysisService {
         Ok(AnalysisOutcome { analysis, session })
     }
 
+    /// Run the spike's core `paper-artifacts` extraction and map it onto the
+    /// reader model. This is the new backend for `analyze` on model readers.
+    ///
+    /// The abstract is taken from the extraction; the deterministic abstract
+    /// verifier is not used on this path.
+    pub async fn analyze_core_artifacts(
+        &self,
+        provider: AnalysisProvider,
+        paper: &ExtractedPaper,
+        pdf: &Path,
+        artifact_directory: &Path,
+    ) -> Result<AnalysisOutcome> {
+        use crate::paper_artifacts::{
+            features::Features,
+            resources::DEFAULT_DPI,
+            run::{CoreMode, ExtractOptions, extract},
+        };
+        let options = ExtractOptions {
+            pdf: pdf.to_path_buf(),
+            model: openrouter::DEFAULT_MODEL.to_owned(),
+            passes: 2,
+            dpi: DEFAULT_DPI,
+            work_directory: artifact_directory.join("paper-artifacts"),
+            output: artifact_directory.join("paper-artifacts.json"),
+            paper_budget_usd: 0.15,
+            timeout: std::time::Duration::from_secs(20 * 60),
+            features: Features::parse("none")?,
+            object_pages: 6,
+            reasoning: openrouter::ReasoningEffort::Low,
+            core_mode: CoreMode::Combined,
+            providers: Vec::new(),
+            plan: None,
+        };
+        let record = extract(&options, &spend::SpendLedger::with_defaults()).await?;
+        let artifacts = record.artifacts.ok_or_else(|| {
+            Error::InvalidAnalysis("the extraction produced no artifacts".to_owned())
+        })?;
+        let draft = draft_from_artifacts(&artifacts)?;
+        let mut analysis = normalize_analysis(draft, provider, paper)?;
+        analysis.author_abstract = artifacts
+            .pointer("/abstract/text")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_owned);
+        analysis.abstract_extraction = None;
+        Ok(AnalysisOutcome {
+            analysis,
+            session: None,
+        })
+    }
+
     pub async fn refresh_context(
         &self,
         provider: AnalysisProvider,
@@ -543,6 +595,78 @@ pub(crate) struct SourceSpanDraft {
 
 const fn one() -> u8 {
     1
+}
+
+/// Convert admitted `paper-artifacts` core JSON into the reader's draft.
+///
+/// The core fields are identity, type, abstract, card, question, sections,
+/// references, citations, and relations. Only the reader-model fields are
+/// mapped here; the graph fields feed the reference resolver instead.
+pub(crate) fn draft_from_artifacts(artifacts: &serde_json::Value) -> Result<AnalysisDraft> {
+    let thesis = artifacts
+        .pointer("/card/thesis")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| Error::InvalidAnalysis("the extraction returned no thesis".to_owned()))?
+        .to_owned();
+    let sections = artifacts
+        .get("sections")
+        .and_then(serde_json::Value::as_array)
+        .map(|items| items.iter().filter_map(section_from_artifact).collect())
+        .unwrap_or_default();
+    Ok(AnalysisDraft {
+        thesis,
+        outsider_brief: String::new(),
+        author_abstract: None,
+        context_notes: Vec::new(),
+        context_sources: Vec::new(),
+        assessment: None,
+        prerequisites: Vec::new(),
+        sections,
+        claims: Vec::new(),
+        glossary: Vec::new(),
+        caveats: Vec::new(),
+        reading_path: Vec::new(),
+    })
+}
+
+fn section_from_artifact(item: &serde_json::Value) -> Option<SectionDraft> {
+    let title = item.get("title")?.as_str()?.trim();
+    if title.is_empty() {
+        return None;
+    }
+    let summary = item
+        .get("summary")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(title)
+        .to_owned();
+    let pages = item.get("pages")?;
+    let start = u32::try_from(pages.get("start")?.as_u64()?).ok()?;
+    let end = u32::try_from(pages.get("end")?.as_u64()?).ok()?;
+    let source_span = item.get("source_span").and_then(|span| {
+        Some(SourceSpanDraft {
+            start_text: span.get("start_text")?.as_str()?.to_owned(),
+            start_page: u32::try_from(span.get("start_page")?.as_u64()?).ok()?,
+            end_text: span.get("end_text")?.as_str()?.to_owned(),
+            end_page: u32::try_from(span.get("end_page")?.as_u64()?).ok()?,
+        })
+    });
+    Some(SectionDraft {
+        title: title.to_owned(),
+        kind: SectionKind::default(),
+        family: SectionFamily::default(),
+        pages: PageSpan { start, end },
+        digest: summary.clone(),
+        summary,
+        source_span,
+        key_quotes: Vec::new(),
+        related_terms: Vec::new(),
+        tile_width: 1,
+        tile_height: 1,
+    })
 }
 
 #[derive(Debug, Deserialize)]
@@ -1353,5 +1477,34 @@ mod tests {
         assert!(notes.is_empty());
         assert_eq!(sources.len(), 1);
         assert_eq!(brief, "Legacy context must not leak through.");
+    }
+
+    #[test]
+    fn maps_core_artifacts_to_a_reader_draft() {
+        let artifacts = serde_json::json!({
+            "card": {"thesis": "A sharper thesis."},
+            "abstract": {"text": "The authors' abstract."},
+            "sections": [{
+                "title": "Opening",
+                "summary": "What the section does.",
+                "pages": {"start": 1, "end": 3},
+                "source_span": {
+                    "start_text": "1", "start_page": 1,
+                    "end_text": "end", "end_page": 3
+                }
+            }]
+        });
+        let draft = draft_from_artifacts(&artifacts).expect("draft");
+        assert_eq!(draft.thesis, "A sharper thesis.");
+        assert_eq!(draft.sections.len(), 1);
+        assert_eq!(draft.sections[0].title, "Opening");
+        assert_eq!(draft.sections[0].pages.start, 1);
+        assert!(draft.sections[0].source_span.is_some());
+    }
+
+    #[test]
+    fn rejects_artifacts_without_a_thesis() {
+        let artifacts = serde_json::json!({"sections": []});
+        assert!(draft_from_artifacts(&artifacts).is_err());
     }
 }
